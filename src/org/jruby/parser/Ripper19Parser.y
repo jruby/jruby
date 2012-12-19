@@ -77,7 +77,8 @@ public class Ripper19Parser implements RubyParser {
 
 %token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <IRubyObject> variable
-%type <IRubyObject> sym symbol operation operation2 operation3 cname fname op 
+%type <IRubyObject> sym symbol operation operation2 operation3 cname fname 
+%type <Token> op 
 %type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
@@ -610,7 +611,7 @@ undef_list      : fitem {
                 | undef_list ',' {
                     lexer.setState(LexState.EXPR_FNAME);
                 } fitem {
-                    $1.append($4);
+                    $$ = $1.append($4);
                 }
 
 // Token:op
@@ -679,73 +680,106 @@ arg             : lhs '=' arg {
                     $$ = support.dispatch("on_dot3", $1, $3);
                 }
                 | arg tPLUS arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('+'), $3);
                 }
                 | arg tMINUS arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('-'), $3);
                 }
                 | arg tSTAR2 arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('*'), $3);
                 }
                 | arg tDIVIDE arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('/'), $3);
                 }
                 | arg tPERCENT arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('%'), $3);
                 }
                 | arg tPOW arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("**"), $3);
                 }
                 | tUMINUS_NUM tINTEGER tPOW arg {
+                    $$ = support.dispatch("on_binary", $2, support.string("**"), $4);
+                    $$ = support.dispatch("on_unary", support.string("-@"), $$);
                 }
                 | tUMINUS_NUM tFLOAT tPOW arg {
+                    $$ = support.dispatch("on_binary", $2, support.string("**"), $4);
+                    $$ = support.dispatch("on_unary", support.string("-@"), $$);
                 }
                 | tUPLUS arg {
+                    $$ = support.dispatch("on_unary", support.string("+@"), $2);
                 }
                 | tUMINUS arg {
+                    $$ = support.dispatch("on_unary", support.string("-@"), $2);
                 }
                 | arg tPIPE arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('|'), $3);
                 }
                 | arg tCARET arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('^'), $3);
                 }
                 | arg tAMPER2 arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('&'), $3);
                 }
                 | arg tCMP arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("<=>"), $3);
                 }
                 | arg tGT arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('>'), $3);
                 }
                 | arg tGEQ arg {
+                    $$ = support.dispatch("on_binary", $1, support.stringl("<="), $3);
                 }
                 | arg tLT arg {
+                    $$ = support.dispatch("on_binary", $1, support.symbol('<'), $3);
                 }
                 | arg tLEQ arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("<="), $3);
                 }
                 | arg tEQ arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("=="), $3);
                 }
                 | arg tEQQ arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("==="), $3);
                 }
                 | arg tNEQ arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("!="), $3);
                 }
                 | arg tMATCH arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("=~"), $3);
                 }
                 | arg tNMATCH arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("!~"), $3);
                 }
                 | tBANG arg {
+                    $$ = support.dispatch("on_unary", support.symbol('!'), $2);
                 }
                 | tTILDE arg {
+                    $$ = support.dispatch("on_unary", support.symbol('~'), $2);
                 }
                 | arg tLSHFT arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("<<"), $3);
                 }
                 | arg tRSHFT arg {
+                    $$ = support.dispatch("on_binary", $1, support.string(">>"), $3);
                 }
                 | arg tANDOP arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("&&"), $3);
                 }
                 | arg tOROP arg {
+                    $$ = support.dispatch("on_binary", $1, support.string("||"), $3);
                 }
                 | kDEFINED opt_nl arg {
+                    $$ = support.dispatch("on_defined", $4);
                 }
                 | arg '?' arg opt_nl ':' arg {
+                    $$ = support.dispatch("on_ifop", $1, $3, $6);
                 }
                 | primary {
+                    $$ = $1;
                 }
 
 arg_value       : arg {
-                    support.checkExpression($1);
-                    $$ = $1 != null ? $1 : NilImplicitNode.NIL;
+                    $$ = $1;
                 }
 
 aref_args       : none
