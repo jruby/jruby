@@ -4,7 +4,7 @@ http://www.jruby.org
 
 == DESCRIPTION:
 
-This gem includes the core JRuby code and the JRuby 1.8 stdlib as jar files.
+This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
 It provides a way to have other gems depend on JRuby without including (and
 freezing to) a specific jruby-complete jar version.
 
