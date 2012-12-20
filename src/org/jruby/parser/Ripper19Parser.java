@@ -37,16 +37,10 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.lexer.yacc.Token;
-import org.jruby.util.ByteList;
 
 public class Ripper19Parser implements RubyParser {
     protected RipperSupport support;
@@ -67,7 +61,7 @@ public class Ripper19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 71 "-"
+					// line 65 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1672,7 +1666,7 @@ states[303] = new ParserState() {
 };
 states[471] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (support.id_is_var(support.get_id(((IRubyObject)yyVals[0+yyTop])))) {
+                    if (support.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
                         yyVal = support.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
                     } else {
                         yyVal = support.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
@@ -1682,7 +1676,7 @@ states[471] = new ParserState() {
 };
 states[2] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  support.setResult(support.dispatch("on_program", ((IRubyObject)yyVals[0+yyTop])));
+                  support.setRipperResult(support.dispatch("on_program", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -2116,8 +2110,7 @@ states[443] = new ParserState() {
 };
 states[376] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.new_bv(support.get_id(((IRubyObject)yyVals[0+yyTop])));
-                    yyVal = support.get_value(((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = support.new_bv(((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4117,7 +4110,7 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 1906 "Ripper19Parser.y"
+					// line 1899 "Ripper19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4125,7 +4118,6 @@ states[267] = new ParserState() {
     public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
-        support.setResult(new RubyParserResult());
         
         lexer.reset();
         lexer.setSource(source);
@@ -4150,4 +4142,4 @@ states[267] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8151 "-"
+					// line 8143 "-"

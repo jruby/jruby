@@ -1618,6 +1618,10 @@ public class ParserSupport {
     public IRubyObject arg_add_star(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
+
+    public IRubyObject arg_var(IRubyObject identifier) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
     
     public IRubyObject assignable(IRubyObject name, IRubyObject value) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
@@ -1655,6 +1659,14 @@ public class ParserSupport {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
+    public IRubyObject formal_argument(IRubyObject identifier) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public boolean is_id_var(IRubyObject identifier) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
     public IRubyObject intern(String value) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
     }    
@@ -1679,12 +1691,20 @@ public class ParserSupport {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }    
     
-    public IRubyObject mlhs_new() {
+    public IRubyObject new_bv(IRubyObject identifier) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
     public IRubyObject params_new(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public void setRipperResult(IRubyObject top) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
+    }
+    
+    public IRubyObject shadowing_lvar(IRubyObject identifier) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
     }
     
     public IRubyObject symbol(char value) {

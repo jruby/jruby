@@ -34,16 +34,10 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.lexer.yacc.Token;
-import org.jruby.util.ByteList;
 
 public class Ripper19Parser implements RubyParser {
     protected RipperSupport support;
@@ -214,7 +208,7 @@ public class Ripper19Parser implements RubyParser {
 program       : {
                   lexer.setState(LexState.EXPR_BEG);
               } top_compstmt {
-                  support.setResult(support.dispatch("on_program", $2));
+                  support.setRipperResult(support.dispatch("on_program", $2));
               }
 
 top_compstmt  : top_stmts opt_terms {
@@ -1345,8 +1339,7 @@ bv_decls        : bvar {
                 }
 
 bvar            : tIDENTIFIER {
-                    support.new_bv(support.get_id($1));
-                    $$ = support.get_value($1);
+                    $$ = support.new_bv($1);
                 }
                 | f_bad_arg {
                     $$ = null;
@@ -1659,7 +1652,7 @@ keyword_variable : kNIL
 
 // [!null]
 var_ref         : user_variable {
-                    if (support.id_is_var(support.get_id($1))) {
+                    if (support.is_id_var($1)) {
                         $$ = support.dispatch("on_var_ref", $1);
                     } else {
                         $$ = support.dispatch("on_vcall", $1);
@@ -1910,7 +1903,6 @@ none_block_pass : /* none */ {
     public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
-        support.setResult(new RubyParserResult());
         
         lexer.reset();
         lexer.setSource(source);
