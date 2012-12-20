@@ -8,7 +8,9 @@ JRUBY_COMPLETE_JAR = 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar'
 
 task :default => :package
 
-file JRUBY_COMPLETE_JAR => "pkg" do
+directory 'pkg'
+
+file JRUBY_COMPLETE_JAR => :pkg do
   pkg_dir = File.expand_path('pkg')
   fail "Run `ant dist' first to create complete jar" unless File.exist?("../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar")
   cp "../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
