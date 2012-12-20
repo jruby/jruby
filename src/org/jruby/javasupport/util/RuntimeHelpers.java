@@ -135,6 +135,13 @@ public class RuntimeHelpers {
         return false;
     }
 
+    public static boolean invokeEqqForCaselessWhen(IRubyObject[] receivers) {
+        for (IRubyObject receiver : receivers) {
+            if (!receiver.isTrue()) return false;
+        }
+        return true;
+    }
+
     public static boolean invokeEqqForCaselessWhen(IRubyObject receiver) {
         return receiver.isTrue();
     }

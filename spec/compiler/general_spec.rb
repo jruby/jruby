@@ -480,8 +480,28 @@ ary
       foo
       EOC
 
-      result.should
+      result.should == ["0.1+0i", "1/10"]
     end
+  end
+  
+  it "handles 0-4 arg and splatted whens in a caseless case/when" do
+    result = compile_and_run <<-EOC
+      case
+      when false
+        fail
+      when false, false
+        fail
+      when false, false, false
+        fail
+      when false, false, false, false
+        fail
+      when *[false, false, false, false]
+      else
+        42
+      end
+    EOC
+    
+    result.should == 42
   end
   
   it "does a bunch of other stuff" do
