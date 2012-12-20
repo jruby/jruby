@@ -1606,6 +1606,10 @@ public class ParserSupport {
     public IRubyObject arg_add_assocs(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
+ 
+    public IRubyObject arg_add_block(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
@@ -1619,7 +1623,7 @@ public class ParserSupport {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }    
     
-    public IRubyObject assignable(String name, IRubyObject value) {
+    public IRubyObject assignable(IRubyObject name, IRubyObject value) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
@@ -1646,6 +1650,10 @@ public class ParserSupport {
     public IRubyObject escape(IRubyObject arg) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
+    
+    public IRubyObject intern(String value) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
+    }    
     
     public IRubyObject method_add_block(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
@@ -1694,10 +1702,6 @@ public class ParserSupport {
     public IRubyObject remove_begin(IRubyObject arg) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
-    
-    public IRubyObject string(String value) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
-    }    
     
     public IRubyObject symbol(char value) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
