@@ -504,6 +504,17 @@ ary
     result.should == 42
   end
   
+  it "matches any true value for a caseless case/when with > 3 args" do
+    result = compile_and_run <<-EOC
+      case
+      when false, false, false, true
+        42
+      end
+    EOC
+    
+    result.should == 42
+  end
+  
   it "does a bunch of other stuff" do
     silence_warnings {
       # bug 1305, no values yielded to single-arg block assigns a null into the arg
