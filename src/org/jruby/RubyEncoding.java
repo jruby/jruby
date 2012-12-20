@@ -116,10 +116,22 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
-        if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
-            Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
-            Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+        Encoding enc1 = null;
+        Encoding enc2 = null;
 
+        if (obj1 instanceof RubyEncoding) {
+          enc1 = ((RubyEncoding)obj1).getEncoding();
+        } else if (obj1 instanceof EncodingCapable) {
+          enc1 = ((EncodingCapable)obj1).getEncoding();
+        }
+
+        if (obj2 instanceof RubyEncoding) {
+          enc2 = ((RubyEncoding)obj2).getEncoding();
+        } else if (obj2 instanceof EncodingCapable) {
+          enc2 = ((EncodingCapable)obj2).getEncoding();
+        }
+
+        if (enc1 != null && enc2 != null) {
             if (enc1 == enc2) return enc1;
 
             if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
