@@ -305,6 +305,11 @@ public class LoadService {
         return loadedFeaturesIndex.containsKey(shortName);
     }
 
+    @Deprecated
+    protected void addLoadedFeature(String name) {
+        addLoadedFeature(name, name);
+    }
+
     protected void addLoadedFeature(String shortName, String name) {
         loadedFeatures.append(RubyString.newString(runtime, name));
         
