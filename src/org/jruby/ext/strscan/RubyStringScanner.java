@@ -231,7 +231,9 @@ public class RubyStringScanner extends RubyObject {
         if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
         check();
         
-        Regex pattern = ((RubyRegexp)regex).preparePattern(str);
+        Regex pattern = runtime.is1_9() ?
+                ((RubyRegexp)regex).preparePattern(str) :
+                ((RubyRegexp)regex).getPattern();
 
         clearMatched();
         int rest = str.getByteList().getRealSize() - pos;
