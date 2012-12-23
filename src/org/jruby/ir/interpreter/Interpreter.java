@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -27,13 +28,13 @@ import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
-import org.jruby.ir.instructions.calladapter.CallAdapter;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ModuleVersionGuardInstr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveOptArgBase;
 import org.jruby.ir.instructions.ReceiveRestArgBase;
@@ -50,15 +51,13 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
@@ -83,19 +82,11 @@ public class Interpreter {
     private static int globalThreadPollCount = 0;
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
 
-    public static boolean inProfileMode() {
-        return RubyInstanceConfig.IR_PROFILE;
-    }
-
-    public static boolean isDebug() {
-        return RubyInstanceConfig.IR_DEBUG;
-    }
-
     private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
         // that is going on
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
-        // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
+        // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to
         //    the stack in ThreadContext.java:preExecuteUnder
         // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
         // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
@@ -115,7 +106,7 @@ public class Interpreter {
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager(), is_1_9).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
-        ThreadContext context = runtime.getCurrentContext(); 
+        ThreadContext context = runtime.getCurrentContext();
         runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
         IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
         runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
@@ -163,7 +154,7 @@ public class Interpreter {
             InterpretedIRMethod method = new InterpretedIRMethod(root, currModule);
             IRubyObject rv =  method.call(context, self, currModule, "(root)", IRubyObject.NULL_ARRAY);
             runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
-            if (isDebug() || inProfileMode()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
+            if (IRRuntimeHelpers.isDebug() || IRRuntimeHelpers.inProfileMode()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
@@ -183,6 +174,7 @@ public class Interpreter {
         // We are now good to go -- start analyzing the profile
         ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
         Collections.sort(scopes, new java.util.Comparator<IRScope> () {
+            @Override
             public int compare(IRScope a, IRScope b) {
                 float aCount = scopeThreadPollCounts.get(a).count;
                 float bCount = scopeThreadPollCounts.get(b).count;
@@ -249,7 +241,7 @@ public class Interpreter {
                                     Instr[] instrs = tgtMethod.getInstrsForInterpretation();
                                     // Dont inline large methods -- 200 is arbitrary
                                     // Can be null if a previously inlined method hasn't been rebuilt
-                                    if ((instrs == null) || instrs.length > 150) continue; 
+                                    if ((instrs == null) || instrs.length > 150) continue;
 
                                     RubyModule implClass = dynMeth.getImplementationClass();
                                     int classToken = implClass.getGeneration();
@@ -292,6 +284,7 @@ public class Interpreter {
     private static void outputProfileStats() {
         ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
         Collections.sort(scopes, new java.util.Comparator<IRScope> () {
+            @Override
             public int compare(IRScope a, IRScope b) {
                 // In non-methods and non-closures, we may not have any thread poll instrs.
                 int aden = a.getThreadPollInstrsCount();
@@ -299,7 +292,7 @@ public class Interpreter {
                 int bden = b.getThreadPollInstrsCount();
                 if (bden == 0) bden = 1;
 
-                // Use estimated instr count to order scopes -- rather than raw thread-poll count 
+                // Use estimated instr count to order scopes -- rather than raw thread-poll count
                 float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInstrsForInterpretation().length/aden);
                 float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInstrsForInterpretation().length/bden);
                 if (aCount == bCount) return 0;
@@ -345,10 +338,10 @@ public class Interpreter {
         }
     }
 
-    private static IRubyObject interpret(ThreadContext context, IRubyObject self, 
+    private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
-        boolean debug = isDebug();
-        boolean profile = inProfileMode();
+        boolean debug = IRRuntimeHelpers.isDebug();
+        boolean profile = IRRuntimeHelpers.inProfileMode();
         boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.getInstrsForInterpretation();
 
@@ -395,10 +388,16 @@ public class Interpreter {
             // - The second try-catch around the first try-catch handles Ruby-visible exceptions and
             //   invokes Ruby-level exceptions handlers.
             try {
+                boolean rethrowBJ = false;
                 Variable resultVar = null;
                 Object result = null;
                 try {
                     switch(operation) {
+                    case CHECK_ARITY: {
+                        ((CheckArityInstr)lastInstr).checkArity(runtime, args.length);
+                        ipc++;
+                        break;
+                    }
                     case PUSH_FRAME: {
                         context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
                         context.setCurrentVisibility(visibility);
@@ -435,13 +434,13 @@ public class Interpreter {
                     case B_TRUE: {
                         BranchInstr br = (BranchInstr)lastInstr;
                         Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
-                        ipc = ((IRubyObject)value1).isTrue()? br.getJumpTarget().getTargetPC() : ipc+1;
+                        ipc = ((IRubyObject)value1).isTrue() ? br.getJumpTarget().getTargetPC() : ipc+1;
                         break;
                     }
                     case B_FALSE: {
                         BranchInstr br = (BranchInstr)lastInstr;
                         Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
-                        ipc = !((IRubyObject)value1).isTrue()? br.getJumpTarget().getTargetPC() : ipc+1;
+                        ipc = !((IRubyObject)value1).isTrue() ? br.getJumpTarget().getTargetPC() : ipc+1;
                         break;
                     }
                     case B_NIL: {
@@ -473,6 +472,15 @@ public class Interpreter {
                         boolean eql = arg2 == scope.getManager().getNil() || arg2 == UndefinedValue.UNDEFINED ?
                                 value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
                         ipc = !eql ? bne.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case BREAK: {
+                        // Alternatively we have to pass in block-type into BreakInstr
+                        BreakInstr bi = (BreakInstr)lastInstr;
+                        IRBreakJump bj = IRBreakJump.create(bi.getScopeToReturnTo(), bi.getReturnValue().retrieve(context, self, currDynScope, temp));
+                        rethrowBJ = true; // we dont the break-jump caught in the same scope
+                        IRRuntimeHelpers.initiateBreak(context, scope, bj, self, blockType);
+                        // control will never reach here!
                         break;
                     }
                     case MODULE_GUARD: {
@@ -524,15 +532,9 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
-                    case CLOSURE_RETURN:
-                    case RETURN: {
-                        rv = (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
-                        ipc = n;
-                        break;
-                    }
                     case THREAD_POLL: {
-                        if (profile) { 
-                            tpCount.count++; 
+                        if (profile) {
+                            tpCount.count++;
                             globalThreadPollCount++;
                             // SSS: Uncomment this to analyze profile
                             // Every 10K profile counts, spit out profile stats
@@ -554,13 +556,18 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
-                    case CHECK_ARITY: {
-                        CheckArityInstr ca = (CheckArityInstr)lastInstr;
-                        int numArgs = args.length;
-                        if ((numArgs < ca.required) || ((ca.rest == -1) && (numArgs > (ca.required + ca.opt)))) {
-                            Arity.raiseArgumentError(runtime, numArgs, ca.required, ca.required + ca.opt);
+                    case RETURN:
+                        rv = (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                        ipc = n;
+                        break;
+                    case NONLOCAL_RETURN: {
+                        NonlocalReturnInstr ri = (NonlocalReturnInstr)lastInstr;
+                        rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
+                        ipc = n;
+                        // If not in a lambda, and lastInstr was a return, check if this was a non-local return
+                        if (!IRRuntimeHelpers.inLambda(blockType)) {
+                            IRRuntimeHelpers.handleNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
                         }
-                        ipc++;
                         break;
                     }
                     default: {
@@ -590,7 +597,7 @@ public class Interpreter {
                     // interpreter.
                     if (ipc == -1) {
                         // No ensure block here, propagate the return
-                        return handleReturnJumpInClosure(scope, rj, blockType);
+                        return IRRuntimeHelpers.handleReturnJumpInClosure(scope, rj, blockType);
                     } else {
                         // Set the return jump as the exception to the ensure block and continue
                         // The ensure block will rethrow this exception at which time control
@@ -598,35 +605,26 @@ public class Interpreter {
                         exception = rj;
                     }
                 } catch (IRBreakJump bj) {
-                    if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
-                        handleBreakJump(context, scope, bj, self, blockType, inClosure);
-                    } else if (inNonMethodBodyLambda(scope, blockType)) {
-                        // We just unwound all the way up because of a non-local break
-                        throw IRException.BREAK_LocalJumpError.getException(runtime);
-                    } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
-                        // We got where we need to get to (because a lambda stopped us, or because we popped to the
-                        // lexical scope where we got called from).  Retrieve the result and store it.
-
-                        // SSS FIXME: why cannot I just use resultVar from the loop above?? why did it break something?
-                        if (lastInstr instanceof ResultInstr) {
-                            resultVar = ((ResultInstr) lastInstr).getResult();
-                            if (resultVar instanceof TemporaryVariable) {
-                                temp[((TemporaryVariable)resultVar).offset] = bj.breakValue;
-                            }
-                            else {
-                                LocalVariable lv = (LocalVariable)resultVar;
-                                currDynScope.setValue((IRubyObject) bj.breakValue, lv.getLocation(), lv.getScopeDepth());
-                            }
-                        }
-                        ipc += 1;
-                    } else {
-                        // We need to continue to break upwards.
-                        // Run any ensures we need to run before breaking up. 
-                        // Quite easy to do this by passing 'bj' as the exception to the ensure block!
-                        ipc = scope.getEnsurerPC(lastInstr);
-                        if (ipc == -1) throw bj; // No ensure block here, just rethrow bj
-                        exception = bj; // Found an ensure block, set 'bj' as the exception and transfer control
+                    if (rethrowBJ) {
+                        throw bj;
                     }
+
+                    IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, self, blockType);
+
+                    // We got where we need to get to (because a lambda stopped us, or because we popped to the
+                    // lexical scope where we got called from).  Retrieve the result and store it.
+                    // SSS FIXME: why cannot I just use resultVar from the loop above?? why did it break something?
+                    if (lastInstr instanceof ResultInstr) {
+                        resultVar = ((ResultInstr) lastInstr).getResult();
+                        if (resultVar instanceof TemporaryVariable) {
+                            temp[((TemporaryVariable)resultVar).offset] = bj.breakValue;
+                        }
+                        else {
+                            LocalVariable lv = (LocalVariable)resultVar;
+                            currDynScope.setValue((IRubyObject) bj.breakValue, lv.getLocation(), lv.getScopeDepth());
+                        }
+                    }
+                    ipc += 1;
                 }
             } catch (RaiseException re) {
                 if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
@@ -646,85 +644,15 @@ public class Interpreter {
                     ipc = scope.getRescuerPC(lastInstr);
                     if (debug) LOG.info("ipc for rescuer: " + ipc);
                 }
-                if (ipc == -1) UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on! 
+                if (ipc == -1) UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on!
                 exception = t;
             }
-        }
-
-        // If not in a lambda, and lastInstr was a return, check if this was a non-local return
-        if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
-            handleNonLocalReturn(context, scope, ((ReturnInstr) lastInstr).methodToReturnFrom, rv, inClosure);
         }
 
         return rv;
     }
 
-    /*
-     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
-     */
-    private static void handleNonLocalReturn(ThreadContext context, IRScope scope, IRMethod methodToReturnFrom, IRubyObject returnValue, boolean inClosure) {
-        if (inClosure) {
-            if (methodToReturnFrom == null) {
-                // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
-                //
-                //      jruby -X-CIR -e "Thread.new { Proc.new { return }.call }.join"
-                //
-                // This should report a LocalJumpError, not a ThreadError.
-                //
-                // The right fix would involve checking the closure to see who it is associated with.
-                // If it is a thread-body, it would be a ThreadError.  If not, it would be a local-jump-error
-                // This requires having access to the block -- same requirement as in handleBreakJump.
-                if (context.getThread() == context.runtime.getThreadService().getMainThread()) {
-                    throw IRException.RETURN_LocalJumpError.getException(context.runtime);
-                } else {
-                    throw context.runtime.newThreadError("return can't jump across threads");
-                }
-            }
-
-            // Cannot return to the call that we have long since exited.
-            if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
-                if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
-                throw IRException.RETURN_LocalJumpError.getException(context.runtime);
-            }
-
-            throw IRReturnJump.create(methodToReturnFrom, returnValue);
-        } else if ((methodToReturnFrom != null)) {
-            // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
-            throw IRReturnJump.create(methodToReturnFrom, returnValue);
-        }        
-    }
-
-    private static IRubyObject handleReturnJumpInClosure(IRScope scope, IRReturnJump rj, Type blockType) throws IRReturnJump {
-        // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-        if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
-
-        // - If not, Just pass it along!
-        throw rj;
-    }
-
-    private static void handleBreakJump(ThreadContext context, IRScope scope, IRBreakJump bj, IRubyObject self, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
-        bj.breakInEval = false;  // Clear eval flag
-
-        // Error
-        if (!inClosure) {
-            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-        }
-
-        if (inProc(blockType)) {
-            // SSS FIXME: Here we need to check if the current executing block has escaped
-            // which means the block has to be passed in from Block.call -> BlockBody.call -> Interpreter.interpret
-        } else if (inLambda(blockType)) {
-            bj.caughtByLambda = true;
-        } else if (scope instanceof IREvalScript) {
-            // If we are in an eval, record it so we can account for it
-            bj.breakInEval = true;
-        }
-
-        // Pass it upward
-        throw bj;
-    }
-
-    public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self, 
+    public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
             IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
@@ -734,7 +662,7 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self, 
+    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self,
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
@@ -744,12 +672,12 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod, 
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod,
         IRubyObject self, String name, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby       runtime   = context.runtime;
         IRScope    scope     = irMethod.getIRMethod();
         RubyModule implClass = irMethod.getImplementationClass();
-		  Visibility viz       = irMethod.getVisibility();
+        Visibility viz       = irMethod.getVisibility();
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
@@ -765,23 +693,6 @@ public class Interpreter {
             }
         }
     }
-    
-    private static boolean inNonMethodBodyLambda(IRScope scope, Block.Type blockType) {
-        // SSS FIXME: Hack! AST interpreter and JIT compiler marks a proc's static scope as
-        // an argument scope if it is used to define a method's body via :define_method.
-        // Since that is exactly what we want to figure out here, am just using that flag here.
-        // But, this is ugly (as is the original hack in the current runtime).  What is really
-        // needed is a new block type -- a block that is used to define a method body.
-        return blockType == Block.Type.LAMBDA && !scope.getStaticScope().isArgumentScope();
-    }
-    
-    private static boolean inLambda(Block.Type blockType) {
-        return blockType == Block.Type.LAMBDA;
-    }
-
-    public static boolean inProc(Block.Type blockType) {
-        return blockType == Block.Type.PROC;
-    }    
 
     private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);

@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -79,7 +80,7 @@ public class IREvalScript extends IRClosure {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block, String backtraceName) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             LOG.info("CFG:\n" + cfg());
         }
         try {

@@ -2027,8 +2027,9 @@ public class IRBuilder {
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
-        if (closureRetVal != U_NIL)  // can be null if the node is an if node with returns in both branches.
-            closure.addInstr(new ClosureReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
+            closure.addInstr(new ReturnInstr(closureRetVal));
+        }
 
         return new WrappedIRClosure(closure);
     }
@@ -2180,8 +2181,9 @@ public class IRBuilder {
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : closureBuilder.build(iterNode.getBodyNode(), closure);
-        if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
-            closure.addInstr(new ClosureReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
+            closure.addInstr(new ReturnInstr(closureRetVal));
+        }
 
         return new WrappedIRClosure(closure);
     }
@@ -2353,7 +2355,7 @@ public class IRBuilder {
         } else {
             s.addInstr(new ThreadPollInstr(true));
             // If a closure, the next is simply a return from the closure!
-            if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
+            if (s instanceof IRClosure) s.addInstr(new ReturnInstr(rv));
             else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
         }
 
@@ -2861,13 +2863,13 @@ public class IRBuilder {
             // If this happens to be a module body, the runtime throws a local jump error if
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
-            s.addInstr(new ReturnInstr(retVal, s.getNearestMethod()));
+            s.addInstr(new NonlocalReturnInstr(retVal, s.getNearestMethod()));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else s.addInstr(new ReturnInstr(retVal, sm));
+            else s.addInstr(new NonlocalReturnInstr(retVal, sm));
         } else {
             s.addInstr(new ReturnInstr(retVal));
         }
@@ -2891,7 +2893,7 @@ public class IRBuilder {
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
-        script.addInstr(new ClosureReturnInstr(rval));
+        script.addInstr(new ReturnInstr(rval));
 
         return script;
     }

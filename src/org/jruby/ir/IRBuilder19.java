@@ -23,7 +23,6 @@ import org.jruby.ir.instructions.BEQInstr;
 import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
-import org.jruby.ir.instructions.ClosureReturnInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
@@ -31,6 +30,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
@@ -393,7 +393,7 @@ public class IRBuilder19 extends IRBuilder {
         Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
 
         // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) closure.addInstr(new ClosureReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) closure.addInstr(new ReturnInstr(closureRetVal));
 
         Variable lambda = s.getNewTemporaryVariable();
         s.addInstr(new BuildLambdaInstr(lambda, closure, node.getPosition()));

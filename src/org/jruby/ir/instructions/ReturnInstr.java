@@ -8,38 +8,29 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ReturnInstr extends ReturnBase {
-    public final IRMethod methodToReturnFrom;
-
-    public ReturnInstr(Operand returnValue, IRMethod methodToReturnFrom) {
-        super(Operation.RETURN, returnValue);
-        this.methodToReturnFrom = methodToReturnFrom;
-    }
-
     public ReturnInstr(Operand returnValue) {
-        this(returnValue, null);
+        super(Operation.RETURN, returnValue);
     }
 
     @Override
     public String toString() { 
-        return getOperation() + "(" + returnValue + (methodToReturnFrom == null ? "" : ", <" + methodToReturnFrom.getName() + ">") + ")";
+        return getOperation() + "(" + returnValue + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
+        return new ReturnInstr(returnValue.cloneForInlining(ii));
     }
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        if (methodToReturnFrom == null) {
-            Variable v = ii.getCallResultVariable();
-            return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
-        } else if (ii.getInlineHostScope() == methodToReturnFrom) {
-            // Convert to a regular return instruction
-            return new ReturnInstr(returnValue.cloneForInlining(ii));
-        } else {
-            return cloneForInlining(ii);
-        }
+        Variable v = ii.getCallResultVariable();
+        return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+    }
+
+    @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
     }
 
     @Override

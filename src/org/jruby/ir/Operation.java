@@ -65,7 +65,7 @@ public enum Operation {
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    CLOSURE_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     /* BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure */
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),

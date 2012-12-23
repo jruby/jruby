@@ -15,10 +15,10 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.operands.CurrentScope;
@@ -779,7 +779,7 @@ public abstract class IRScope {
             } else if (op == Operation.BREAK) {
                 // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasBreakInstrs = true;
-            } else if ((i instanceof ReturnInstr) && ((ReturnInstr)i).methodToReturnFrom != null) {
+            } else if (i instanceof NonlocalReturnInstr) {
                 // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasNonlocalReturns = true;
             }
