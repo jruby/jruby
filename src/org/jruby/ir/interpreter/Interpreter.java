@@ -603,7 +603,7 @@ public class Interpreter {
                 if (ipc == -1) {
                     if (t instanceof IRReturnJump) {
                         // No ensure block here, propagate the return
-                        rv = IRRuntimeHelpers.handleReturnJumpInClosure(scope, ((IRReturnJump)t), blockType);
+                        rv = IRRuntimeHelpers.handleReturnJump(scope, ((IRReturnJump)t), blockType);
                         ipc = n;
                     } else {
                         UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on!

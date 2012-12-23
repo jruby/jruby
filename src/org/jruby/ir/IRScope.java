@@ -13,6 +13,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
@@ -782,6 +783,13 @@ public abstract class IRScope {
             } else if (i instanceof NonlocalReturnInstr) {
                 // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasNonlocalReturns = true;
+            } else if (i instanceof DefineMetaClassInstr) {
+                // SSS: Inner-classes are defined with closures and
+                // a return in the closure can force a return from this method
+                // For now conservatively assume that a scope with inner-classes
+                // can receive non-local returns. (Alternatively, have to inspect
+                // all lexically nested scopes, not just closures in computeScopeFlags())
+                this.canReceiveNonlocalReturns = true;
             }
         }
 

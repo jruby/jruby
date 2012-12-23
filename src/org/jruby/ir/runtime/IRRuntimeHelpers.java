@@ -68,15 +68,13 @@ public class IRRuntimeHelpers {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw IRException.RETURN_LocalJumpError.getException(context.runtime);
             }
-
-            throw IRReturnJump.create(methodToReturnFrom, returnValue);
-        } else {
-            // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
-            throw IRReturnJump.create(methodToReturnFrom, returnValue);
         }
+
+        // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
+        throw IRReturnJump.create(methodToReturnFrom, returnValue);
     }
 
-    public static IRubyObject handleReturnJumpInClosure(IRScope scope, IRReturnJump rj, Block.Type blockType) throws IRReturnJump {
+    public static IRubyObject handleReturnJump(IRScope scope, IRReturnJump rj, Block.Type blockType) throws IRReturnJump {
         // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
         if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
 
