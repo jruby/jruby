@@ -111,6 +111,12 @@ namespace :spec do
        :compat => "1.8"
   end
 
+  desc "All 1.8 specs in interpreted IR mode only"
+  task :all_interpreted_ir_18 do
+    mspec :compile_mode => "OFFIR", 
+       :compat => "1.8"
+  end
+
   desc "All 1.8 specs in JIT mode only (threshold=0)"
   task :all_compiled_18 do
     mspec :compile_mode => "JIT", :jit_threshold => 0, 
@@ -144,6 +150,11 @@ namespace :spec do
   desc "All 1.9 specs in interpreted mode only"
   task :all_interpreted_19 do
     mspec :compile_mode => "OFF", :compat => "1.9"
+  end
+
+  desc "All 1.9 specs in interpreted IR mode only"
+  task :all_interpreted_ir_19 do
+    mspec :compile_mode => "OFFIR", :compat => "1.9"
   end
 
   desc "All 1.9 specs in JIT mode only (threshold=0)"

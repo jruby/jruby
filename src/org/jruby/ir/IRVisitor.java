@@ -89,7 +89,6 @@ public abstract class IRVisitor {
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) { error(checkargsarrayarityinstr); }
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
-    public void ClosureReturnInstr(ClosureReturnInstr closurereturninstr) { error(closurereturninstr); }
     public void ConstMissingInstr(ConstMissingInstr constmissinginstr) { error(constmissinginstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
@@ -120,6 +119,7 @@ public abstract class IRVisitor {
     public void MatchInstr(MatchInstr matchinstr) { error(matchinstr); }
     public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) { error(methodlookupinstr); }
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) { error(moduleversionguardinstr); }
+    public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
     public void NopInstr(NopInstr nopinstr) { error(nopinstr); }
     public void NoResultCallInstr(NoResultCallInstr noresultcallinstr) { error(noresultcallinstr); }
     public void NotInstr(NotInstr notinstr) { error(notinstr); }

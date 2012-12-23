@@ -4,7 +4,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -58,7 +58,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? this.name : name;
             LOG.info("Executing '" + realName + "'");
@@ -83,7 +83,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? this.name : name;
             LOG.info("Executing '" + realName + "'");
@@ -108,7 +108,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? this.name : name;
             LOG.info("Executing '" + realName + "'");
@@ -133,7 +133,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? this.name : name;
             LOG.info("Executing '" + realName + "'");
@@ -158,7 +158,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? this.name : name;
             LOG.info("Executing '" + realName + "'");

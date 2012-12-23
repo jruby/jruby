@@ -10,6 +10,7 @@ import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
@@ -135,6 +136,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public String emitScope(IRScope scope, String name, int arity) {
+        this.currentScope = scope;
         name = name + scope.getLineNumber();
         jvm.pushmethod(name, arity);
 
@@ -374,11 +376,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
         super.ClassSuperInstr(classsuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void ClosureReturnInstr(ClosureReturnInstr closurereturninstr) {
-        super.ClosureReturnInstr(closurereturninstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
@@ -910,6 +907,26 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void NonlocalReturnInstr(NonlocalReturnInstr returninstr) {
+        if (this.currentScope instanceof IRClosure) {
+            /* generate run-time call to check non-local-return, errors, etc */
+            SkinnyMethodAdapter a = jvm.method().adapter;
+            a.aload(0); // 1. ThreadContext
+            a.aload(1); // 2. current scope
+            // 3. ref. to returnInstr.methodToReturnFrom
+            visit(returninstr.getReturnValue()); // 4. return value
+            // boolean about whether we are in a closure or not 
+            // call to handle non-local return
+        } else if (returninstr.methodToReturnFrom != null) {
+            // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
+            /* throw IR-return-jump */
+        } else {
+            visit(returninstr.getReturnValue());
+            jvm.method().returnValue();
+        }
+    }
+
+    @Override
     public void ReturnInstr(ReturnInstr returninstr) {
         visit(returninstr.getReturnValue());
         jvm.method().returnValue();
@@ -1324,4 +1341,5 @@ public class JVMVisitor extends IRVisitor {
 
     private final JVM jvm;
     private IRScriptBody script;
+    private IRScope currentScope;
 }

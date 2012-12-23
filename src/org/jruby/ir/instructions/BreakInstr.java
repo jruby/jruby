@@ -3,9 +3,9 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.interpreter.IRBreakJump;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -35,16 +35,24 @@ import java.util.Map;
 //
 public class BreakInstr extends Instr {
     private final IRScope scopeToReturnTo;
-    protected Operand returnValue;
+    private Operand returnValue;
 
     public BreakInstr(Operand rv, IRScope s) {
         super(Operation.BREAK);
         this.scopeToReturnTo = s;
         this.returnValue = rv;
     }
-    
+
     public Operand[] getOperands() {
         return new Operand[] { returnValue };
+    }
+
+    public IRScope getScopeToReturnTo() {
+        return scopeToReturnTo;
+    }
+
+    public Operand getReturnValue() {
+        return returnValue;
     }
 
     @Override
@@ -66,11 +74,6 @@ public class BreakInstr extends Instr {
         } else {
             return cloneForInlining(ii);
         }
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        throw IRBreakJump.create(scopeToReturnTo, returnValue.retrieve(context, self, currDynScope, temp));
     }
 
     @Override
