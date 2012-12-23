@@ -10,10 +10,13 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.WeakReferenceReaper;
 
 import static org.jruby.runtime.Visibility.*;
@@ -75,14 +78,26 @@ public final class AutoPointer extends Pointer {
 
         checkPointer(runtime, pointerArg);
 
-        // If no release method is defined, then memory leaks will result.
-        if (!getMetaClass().respondsTo("release")) {
-                throw runtime.newRuntimeError("No release method defined");
+        Object ffiHandle = getMetaClass().getFFIHandle();
+        if (!(ffiHandle instanceof ClassData)) {
+            getMetaClass().setFFIHandle(ffiHandle = new ClassData());
         }
+        ClassData classData = (ClassData) ffiHandle;
+
+        // If no release method is defined, then memory leaks will result.
+        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache(getMetaClass().getMetaClass(), classData.releaseCallSite.getMethodName()).method;
+        if (releaseMethod.isUndefined()) {
+            throw runtime.newRuntimeError("release method undefined");
+
+        } else if ((releaseMethod.getArity().isFixed() && releaseMethod.getArity().required() != 1) || releaseMethod.getArity().required() > 1) {
+            throw runtime.newRuntimeError("wrong number of arguments to release method ("
+                    + 1 + " for " + releaseMethod.getArity().required()  + ")");
+        }
+
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;        
-        setReaper(new Reaper(pointer, getMetaClass(), "release"));
+        setReaper(new Reaper(pointer, getMetaClass(), classData.releaseCallSite));
 
         return this;
     }
@@ -95,7 +110,23 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        setReaper(new Reaper(pointer, releaser, "call"));
+        Object ffiHandle = releaser.getMetaClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(releaser);
+        if (!(ffiHandle instanceof ReleaserData)) {
+            getMetaClass().setFFIHandle(ffiHandle = new ReleaserData());
+        }
+
+        ReleaserData releaserData = (ReleaserData) ffiHandle;
+        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser.getMetaClass(), releaserData.releaseCallSite.getMethodName()).method;
+        // If no release method is defined, then memory leaks will result.
+        if (releaseMethod.isUndefined()) {
+            throw context.runtime.newRuntimeError("call method undefined");
+
+        } else if ((releaseMethod.getArity().isFixed() && releaseMethod.getArity().required() != 1) || releaseMethod.getArity().required() > 1) {
+            throw context.runtime.newRuntimeError("wrong number of arguments to call method ("
+                    + 1 + " for " + releaseMethod.getArity().required()  + ")");
+        }
+
+        setReaper(new Reaper(pointer, releaser, releaserData.releaseCallSite));
 
         return this;
     }
@@ -188,16 +219,16 @@ public final class AutoPointer extends Pointer {
     private static final class Reaper {
         final Pointer pointer;
         final IRubyObject proc;
-        final String methodName;
+        final CachingCallSite callSite;
         volatile Reaper next;
         volatile boolean released;
         volatile boolean unmanaged;
 
 
-        private Reaper(Pointer ptr, IRubyObject proc, String methodName) {
+        private Reaper(Pointer ptr, IRubyObject proc, CachingCallSite callSite) {
             this.pointer = ptr;
             this.proc = proc;
-            this.methodName = methodName;
+            this.callSite = callSite;
         }
         
         final Ruby getRuntime() {
@@ -205,7 +236,7 @@ public final class AutoPointer extends Pointer {
         }
         
         void dispose(ThreadContext context) {
-            proc.callMethod(context, methodName, pointer);
+            callSite.call(context, proc, proc, pointer);
         }
 
         public final void release(ThreadContext context) {
@@ -218,5 +249,13 @@ public final class AutoPointer extends Pointer {
         public final void autorelease(boolean autorelease) {
             this.unmanaged = !autorelease;
         }
+    }
+
+    private static final class ClassData {
+        private final CachingCallSite releaseCallSite = new FunctionalCachingCallSite("release");
+    }
+
+    private static final class ReleaserData {
+        private final CachingCallSite releaseCallSite = new FunctionalCachingCallSite("call");
     }
 }

@@ -53,6 +53,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 import static org.jruby.runtime.Visibility.*;
 
@@ -551,13 +553,15 @@ public final class StructLayout extends Type {
 
     static final class DefaultFieldIO implements FieldIO {
         public static final FieldIO INSTANCE = new DefaultFieldIO();
+        private final CachingCallSite getCallSite = new FunctionalCachingCallSite("get");
+        private final CachingCallSite putCallSite = new FunctionalCachingCallSite("put");
 
         public IRubyObject get(ThreadContext context, Storage cache, Member m, AbstractMemory ptr) {
-            return m.field.callMethod(context, "get", ptr);
+            return getCallSite.call(context, m.field, m.field, ptr);
         }
 
         public void put(ThreadContext context, Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            m.field.callMethod(context, "put", new IRubyObject[] { ptr, value });
+            putCallSite.call(context, m.field, m.field, ptr, value);
         }
 
         public final boolean isCacheable() {
