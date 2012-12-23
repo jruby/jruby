@@ -74,20 +74,20 @@ class TestEnv < Test::Unit::TestCase
     assert_equal(true, ENV.has_value?(val.upcase))
   end
 
-  def test_key
+  def test_index
     val = 'a'
     val.succ! while ENV.has_value?(val) && ENV.has_value?(val.upcase)
     ENV['test'] = val[0...-1]
 
-    assert_equal(nil, ENV.key(val))
-    assert_equal(nil, ENV.key(val.upcase))
+    assert_equal(nil, ENV.index(val))
+    assert_equal(nil, ENV.index(val.upcase))
     ENV['test'] = val
-    assert_equal('test', ENV.key(val))
+    assert_equal('test', ENV.index(val))
 
-    assert_equal(nil, ENV.key(val.upcase))
+    assert_equal(nil, ENV.index(val.upcase))
     ENV['test'] = val.upcase
-    assert_equal(nil, ENV.key(val))
-    assert_equal('test', ENV.key(val.upcase))
+    assert_equal(nil, ENV.index(val))
+    assert_equal('test', ENV.index(val.upcase))
 
     #nil values are ok (corresponding key will be deleted)
     #nil keys are not ok
