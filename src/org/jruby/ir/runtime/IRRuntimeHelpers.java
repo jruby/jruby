@@ -63,7 +63,7 @@ public class IRRuntimeHelpers {
                 }
             }
 
-            // Cannot return to the call that we have long since exited.
+            // Cannot return from the call that we have long since exited.
             if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw IRException.RETURN_LocalJumpError.getException(context.runtime);
@@ -82,40 +82,50 @@ public class IRRuntimeHelpers {
         throw rj;
     }
 
-    public static void initiateBreak(ThreadContext context, IRScope scope, IRBreakJump bj, IRubyObject self, Block.Type blockType) throws RaiseException, IRBreakJump {
-        if (!(scope instanceof IRClosure)) {
-            // Error -- breaks can only be initiated in closures
-            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-        }
+    public static IRubyObject initiateBreak(ThreadContext context, IRScope scope, IRScope scopeToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RaiseException, IRBreakJump {
+        if (inLambda(blockType)) {
+            // Ensures would already have been run since the IR builder makes
+            // sure that ensure code has run before we hit the break.  Treat
+            // the break as a regular return from the closure.
+            return breakValue;
+        } else {
+            if (!(scope instanceof IRClosure)) {
+                // Error -- breaks can only be initiated in closures
+                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+            }
 
-        if (inProc(blockType)) {
-            // SSS FIXME: Here we need to check if the current executing block has escaped
-            // which means the block has to be passed in from Block.call -> BlockBody.call -> Interpreter.interpret -> here
-            // or it has to be set in context from where we can retrieve it.
-        } else if (inLambda(blockType)) {
-            bj.caughtByLambda = true;
-        } else if (scope instanceof IREvalScript) {
-            // If we are in an eval, record it so we can account for it
-            bj.breakInEval = true;
-        }
+            IRBreakJump bj = IRBreakJump.create(scopeToReturnTo, breakValue);
+            if (scope instanceof IREvalScript) {
+                // If we are in an eval, record it so we can account for it
+                bj.breakInEval = true;
+            }
 
-        // Start the process of breaking through the intermediate scopes
-        throw bj;
+            // Start the process of breaking through the intermediate scopes
+            throw bj;
+        }
     }
 
     public static void handlePropagatedBreak(ThreadContext context, IRScope scope, IRBreakJump bj, IRubyObject self, Block.Type blockType) throws RaiseException, IRBreakJump {
         if (bj.breakInEval) {
             // If the break was in an eval, we pretend as if it was in the containing scope
-            bj.breakInEval = false;
-            initiateBreak(context, scope, bj, self, blockType);
-        } else if (inNonMethodBodyLambda(scope, blockType)) {
-            // We just unwound all the way up because of a non-local break
-            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        } else if (!bj.caughtByLambda && (bj.scopeToReturnTo != scope)) {
+            if (!(scope instanceof IRClosure)) {
+                // Error -- breaks can only be initiated in closures
+                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+            } else {
+                bj.breakInEval = false;
+                throw bj;
+            }
+        } else if (bj.scopeToReturnTo == scope) {
+            // Done!! Hurray!
+            return;
+/* ---------------------------------------------------------------
+ * FIXME: Puzzled .. Why is this not needed?
+        } else if (!context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) {
+            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+ * --------------------------------------------------------------- */
+        } else {
             // Propagate
             throw bj;
         }
-
-        // If we got here, the break has been handled!
     }
 };

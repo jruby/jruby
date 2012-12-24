@@ -342,7 +342,6 @@ public class Interpreter {
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.getInstrsForInterpretation();
 
         // The base IR may not have been processed yet
@@ -353,7 +352,6 @@ public class Interpreter {
         int n   = instrs.length;
         int ipc = 0;
         Instr lastInstr = null;
-        IRubyObject rv = null;
         Object exception = null;
         Ruby runtime = context.runtime;
         DynamicScope currDynScope = context.getCurrentScope();
@@ -469,10 +467,9 @@ public class Interpreter {
                 case BREAK: {
                     // Alternatively we have to pass in block-type into BreakInstr
                     BreakInstr bi = (BreakInstr)lastInstr;
-                    IRBreakJump bj = IRBreakJump.create(bi.getScopeToReturnTo(), bi.getReturnValue().retrieve(context, self, currDynScope, temp));
-                    IRRuntimeHelpers.initiateBreak(context, scope, bj, self, blockType);
-                    // control will never reach here!
-                    break;
+                    IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
+                    // This also handles breaks in lambdas -- by converting them to a return
+                    return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo(), rv, blockType);
                 }
                 case MODULE_GUARD: {
                     ModuleVersionGuardInstr mvg = (ModuleVersionGuardInstr)lastInstr;
@@ -547,29 +544,41 @@ public class Interpreter {
                     ipc++;
                     break;
                 }
-                case RETURN:
-                    rv = (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
-                    ipc = n;
-                    break;
+                case RETURN: {
+                    return (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                }
                 case NONLOCAL_RETURN: {
                     NonlocalReturnInstr ri = (NonlocalReturnInstr)lastInstr;
-                    rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
+                    IRubyObject rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
                     ipc = n;
-                    // If not in a lambda, and lastInstr was a return, check if this was a non-local return
+                    // If not in a lambda, check if this was a non-local return
                     if (!IRRuntimeHelpers.inLambda(blockType)) {
                         IRRuntimeHelpers.handleNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
                     }
-                    break;
+                    return rv;
                 }
                 default:
+                    ipc++;
+                    if (lastInstr instanceof ResultInstr) resultVar = ((ResultInstr)lastInstr).getResult();
                     try {
-                        ipc++;
-                        if (lastInstr instanceof ResultInstr) resultVar = ((ResultInstr)lastInstr).getResult();
                         result = lastInstr.interpret(context, currDynScope, self, temp, block);
                     } catch (IRBreakJump bj) {
                         IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, self, blockType);
                         result = bj.breakValue;
                     }
+/**
+                    if (lastInstr instanceof CallBase && ((CallBase)lastInstr).getClosureArg(null) != null) {
+                        // Handle propagated break only for calls with closures
+                        try {
+                            result = lastInstr.interpret(context, currDynScope, self, temp, block);
+                        } catch (IRBreakJump bj) {
+                            IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, self, blockType);
+                            result = bj.breakValue;
+                        }
+                    } else {
+                        result = lastInstr.interpret(context, currDynScope, self, temp, block);
+                    }
+**/
                     break;
                 }
 
@@ -603,8 +612,10 @@ public class Interpreter {
                 if (ipc == -1) {
                     if (t instanceof IRReturnJump) {
                         // No ensure block here, propagate the return
-                        rv = IRRuntimeHelpers.handleReturnJump(scope, ((IRReturnJump)t), blockType);
-                        ipc = n;
+                        return IRRuntimeHelpers.handleReturnJump(scope, ((IRReturnJump)t), blockType);
+                    } else if ((t instanceof IRBreakJump) && IRRuntimeHelpers.inNonMethodBodyLambda(scope, blockType)) {
+                        // We just unwound all the way up because of a non-local break
+                        throw IRException.BREAK_LocalJumpError.getException(runtime);
                     } else {
                         UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on!
                     }
@@ -613,7 +624,8 @@ public class Interpreter {
             }
         }
 
-        return rv;
+        // SSS FIXME: Control never get here!
+        return null;
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,

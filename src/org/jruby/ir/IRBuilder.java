@@ -755,7 +755,7 @@ public class IRBuilder {
         for (Node child : node.childNodes()) {
             retVal = build(child, s);
         }
-        
+
            // Value of the last expression in the block 
         return retVal;
     }
@@ -786,9 +786,8 @@ public class IRBuilder {
                     s.addInstr(new BreakInstr(rv, returnScope));
                 }
             } else {
-                // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
-                // Since we know this right now, should we build an exception instruction here?
-                s.addInstr(new BreakInstr(rv, null));
+                // We are not in a closure or a loop => bad break instr!
+                s.addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
             }
         }
 
