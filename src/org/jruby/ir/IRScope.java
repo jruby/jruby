@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
@@ -357,13 +358,19 @@ public abstract class IRScope {
     public void addClosure(IRClosure c) {
         nestedClosures.add(c);
     }
-    
+
     public Instr getLastInstr() {
         return instrList.get(instrList.size() - 1);
     }
-    
+
     public void addInstr(Instr i) {
+        // SSS FIXME: If more instructions set these flags, there may be
+        // a better way to do this by encoding flags in its own object
+        // and letting every instruction update it.
         if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
+        else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
+        else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
+        else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         instrList.add(i);
     }
 
@@ -778,10 +785,8 @@ public abstract class IRScope {
             } else if (op == Operation.MATCH || op == Operation.MATCH2 || op == Operation.MATCH3) {
                 this.usesBackrefOrLastline = true;
             } else if (op == Operation.BREAK) {
-                // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasBreakInstrs = true;
             } else if (i instanceof NonlocalReturnInstr) {
-                // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasNonlocalReturns = true;
             } else if (i instanceof DefineMetaClassInstr) {
                 // SSS: Inner-classes are defined with closures and

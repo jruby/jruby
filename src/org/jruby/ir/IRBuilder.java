@@ -795,6 +795,45 @@ public class IRBuilder {
         return UnexecutableNil.U_NIL;
     }
 
+    // Wrap call in a rescue handler that catches the IRBreakJump
+    private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr) {
+        // Check if we have to handle a break
+        if (block != null && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure)block).getClosure();
+            if (!closure.hasBreakInstrs) {
+                // No protection needed -- add the call and return
+                s.addInstr(callInstr);
+                return;
+            }
+        } else {
+            // No protection needed -- add the call and return
+            s.addInstr((Instr)callInstr);
+            return;
+        }
+
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label rescueLabel = s.getNewLabel();
+
+        // Protected region
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstr(callInstr);
+        s.addInstr(new JumpInstr(rEndLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
+        s.addInstr(new LabelInstr(rescueLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc));
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
+        s.addInstr(new RuntimeHelperCall(callInstr.getResult(), "handlePropagatedBreak", new Operand[]{exc} ));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
+    }
+
     public Operand buildCall(CallNode callNode, IRScope s) {
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
@@ -806,8 +845,8 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
-        s.addInstr(callInstr);
+        CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+        receiveBreakException(s, block, callInstr);
         return callResult;
     }
 
@@ -1111,10 +1150,9 @@ public class IRBuilder {
         } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
             List<Operand> args       = setupCallArgs(null, s);
-            Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
             Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()), 
-                    null, args.toArray(new Operand[args.size()]), block);
+                    null, args.toArray(new Operand[args.size()]), null);
             s.addInstr(callInstr);
             return callResult;
         } else { 
@@ -1883,8 +1921,8 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
-        s.addInstr(callInstr);
+        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
+        receiveBreakException(s, block, callInstr);
         return callResult;
     }
 
@@ -1999,9 +2037,9 @@ public class IRBuilder {
     public Operand buildFor(ForNode forNode, IRScope s) {
         Variable result = s.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), s);
-        Operand  forBlock = buildForIter(forNode, s);     
-        // SSS FIXME: Really?  Why the internal call?
-        s.addInstr(new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock));
+        Operand  forBlock = buildForIter(forNode, s);
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
+        receiveBreakException(s, forBlock, callInstr);
 
         return result;
     }
@@ -2939,22 +2977,24 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
-        MethAddr maddr;
+        CallInstr superInstr;
         Variable ret = s.getNewTemporaryVariable();
         if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
             IRMethod m = (IRMethod)s;
             if (m.isInstanceMethod) {
-                s.addInstr(new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+                superInstr = new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
             } else {
-                s.addInstr(new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+                superInstr = new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            s.addInstr(new UnresolvedSuperInstr(ret, getSelf(s), args, block));
+            superInstr = new UnresolvedSuperInstr(ret, getSelf(s), args, block);
         }
+
+        receiveBreakException(s, block, superInstr);
         return ret;
     }
 
@@ -2962,7 +3002,7 @@ public class IRBuilder {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
         
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
-        Operand  block = setupCallClosure(superNode.getIterNode(), s);
+        Operand block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
@@ -3126,7 +3166,7 @@ public class IRBuilder {
             // receive args from the nearest method the block is embedded in.  But,
             // in the presence of 'define_method', all bets are off.
             Variable ret = s.getNewTemporaryVariable();
-            s.addInstr(new ZSuperInstr(ret, getSelf(s), block));
+            receiveBreakException(s, block, new ZSuperInstr(ret, getSelf(s), block));
             return ret;
         }
     }

@@ -143,6 +143,7 @@ public abstract class IRVisitor {
     public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) { error(rescueeqqinstr); }
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) { error(restargmultipleasgninstr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
+    public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
     public void SetReturnAddressInstr(SetReturnAddressInstr setreturnaddressinstr) { error(setreturnaddressinstr); }
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }

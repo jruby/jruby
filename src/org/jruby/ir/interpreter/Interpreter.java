@@ -41,6 +41,7 @@ import org.jruby.ir.instructions.ReceiveRestArgBase;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Label;
@@ -351,7 +352,7 @@ public class Interpreter {
         Object[] temp = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         int n   = instrs.length;
         int ipc = 0;
-        Instr lastInstr = null;
+        Instr instr = null;
         Object exception = null;
         Ruby runtime = context.runtime;
         DynamicScope currDynScope = context.getCurrentScope();
@@ -368,11 +369,11 @@ public class Interpreter {
 
         // Enter the looooop!
         while (ipc < n) {
-            lastInstr = instrs[ipc];
-            Operation operation = lastInstr.getOperation();
+            instr = instrs[ipc];
+            Operation operation = instr.getOperation();
 
             if (debug) {
-                LOG.info("I: {}", lastInstr);
+                LOG.info("I: {}", instr);
                interpInstrsCount++;
             } else if (profile) {
                 if (operation.modifiesCode()) codeModificationsCount++;
@@ -384,7 +385,7 @@ public class Interpreter {
                 Object result = null;
                 switch(operation) {
                 case CHECK_ARITY: {
-                    ((CheckArityInstr)lastInstr).checkArity(runtime, args.length);
+                    ((CheckArityInstr)instr).checkArity(runtime, args.length);
                     ipc++;
                     break;
                 }
@@ -414,39 +415,39 @@ public class Interpreter {
                     break;
                 }
                 case JUMP: {
-                    ipc = ((JumpInstr)lastInstr).getJumpTarget().getTargetPC();
+                    ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC();
                     break;
                 }
                 case JUMP_INDIRECT: {
-                    ipc = ((Label)((JumpIndirectInstr)lastInstr).getJumpTarget().retrieve(context, self, currDynScope, temp)).getTargetPC();
+                    ipc = ((Label)((JumpIndirectInstr)instr).getJumpTarget().retrieve(context, self, currDynScope, temp)).getTargetPC();
                     break;
                 }
                 case B_TRUE: {
-                    BranchInstr br = (BranchInstr)lastInstr;
+                    BranchInstr br = (BranchInstr)instr;
                     Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
                     ipc = ((IRubyObject)value1).isTrue() ? br.getJumpTarget().getTargetPC() : ipc+1;
                     break;
                 }
                 case B_FALSE: {
-                    BranchInstr br = (BranchInstr)lastInstr;
+                    BranchInstr br = (BranchInstr)instr;
                     Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
                     ipc = !((IRubyObject)value1).isTrue() ? br.getJumpTarget().getTargetPC() : ipc+1;
                     break;
                 }
                 case B_NIL: {
-                    BranchInstr br = (BranchInstr)lastInstr;
+                    BranchInstr br = (BranchInstr)instr;
                     Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
                     ipc = value1 == context.nil ? br.getJumpTarget().getTargetPC() : ipc+1;
                     break;
                 }
                 case B_UNDEF: {
-                    BranchInstr br = (BranchInstr)lastInstr;
+                    BranchInstr br = (BranchInstr)instr;
                     Object value1 = br.getArg1().retrieve(context, self, currDynScope, temp);
                     ipc = value1 == UndefinedValue.UNDEFINED ? br.getJumpTarget().getTargetPC() : ipc+1;
                     break;
                 }
                 case BEQ: {
-                    BEQInstr beq = (BEQInstr)lastInstr;
+                    BEQInstr beq = (BEQInstr)instr;
                     Object value1 = beq.getArg1().retrieve(context, self, currDynScope, temp);
                     Object value2 = beq.getArg2().retrieve(context, self, currDynScope, temp);
                     boolean eql = ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
@@ -454,7 +455,7 @@ public class Interpreter {
                     break;
                 }
                 case BNE: {
-                    BNEInstr bne = (BNEInstr)lastInstr;
+                    BNEInstr bne = (BNEInstr)instr;
                     Operand arg1 = bne.getArg1();
                     Operand arg2 = bne.getArg2();
                     Object value1 = arg1.retrieve(context, self, currDynScope, temp);
@@ -466,18 +467,18 @@ public class Interpreter {
                 }
                 case BREAK: {
                     // Alternatively we have to pass in block-type into BreakInstr
-                    BreakInstr bi = (BreakInstr)lastInstr;
+                    BreakInstr bi = (BreakInstr)instr;
                     IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
                     // This also handles breaks in lambdas -- by converting them to a return
                     return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo(), rv, blockType);
                 }
                 case MODULE_GUARD: {
-                    ModuleVersionGuardInstr mvg = (ModuleVersionGuardInstr)lastInstr;
+                    ModuleVersionGuardInstr mvg = (ModuleVersionGuardInstr)instr;
                     ipc = mvg.versionMatches(context, currDynScope, self, temp) ? ipc + 1 : mvg.getFailurePathLabel().getTargetPC();
                     break;
                 }
                 case RECV_PRE_REQD_ARG: {
-                    ReceivePreReqdArgInstr ra = (ReceivePreReqdArgInstr)lastInstr;
+                    ReceivePreReqdArgInstr ra = (ReceivePreReqdArgInstr)instr;
                     int argIndex = ra.getArgIndex();
                     result = (argIndex < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
                     resultVar = ra.getResult();
@@ -485,7 +486,7 @@ public class Interpreter {
                     break;
                 }
                 case RECV_POST_REQD_ARG: {
-                    ReceivePostReqdArgInstr ra = (ReceivePostReqdArgInstr)lastInstr;
+                    ReceivePostReqdArgInstr ra = (ReceivePostReqdArgInstr)instr;
                     result = ra.receivePostReqdArg(args);
                     if (result == null) result = context.nil; // For blocks
                     resultVar = ra.getResult();
@@ -493,14 +494,14 @@ public class Interpreter {
                     break;
                 }
                 case RECV_OPT_ARG: {
-                    ReceiveOptArgBase ra = (ReceiveOptArgBase)lastInstr;
+                    ReceiveOptArgBase ra = (ReceiveOptArgBase)instr;
                     result = ra.receiveOptArg(args);
                     resultVar = ra.getResult();
                     ipc++;
                     break;
                 }
                 case RECV_REST_ARG: {
-                    ReceiveRestArgBase ra = (ReceiveRestArgBase)lastInstr;
+                    ReceiveRestArgBase ra = (ReceiveRestArgBase)instr;
                     result = ra.receiveRestArg(runtime, args);
                     resultVar = ra.getResult();
                     ipc++;
@@ -508,7 +509,7 @@ public class Interpreter {
                 }
                 case RECV_CLOSURE: {
                     result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(Block.Type.PROC, block);
-                    resultVar = ((ResultInstr)lastInstr).getResult();
+                    resultVar = ((ResultInstr)instr).getResult();
                     ipc++;
                     break;
                 }
@@ -516,7 +517,7 @@ public class Interpreter {
                     // In the interpreter, we dont use the 'checkType' field because the exception is
                     // properly set up in the places below where it is caught and setup.
                     result = exception;
-                    resultVar = ((ResultInstr)lastInstr).getResult();
+                    resultVar = ((ResultInstr)instr).getResult();
                     ipc++;
                     break;
                 }
@@ -533,22 +534,22 @@ public class Interpreter {
                     break;
                 }
                 case LINE_NUM: {
-                    context.setLine(((LineNumberInstr)lastInstr).lineNumber);
+                    context.setLine(((LineNumberInstr)instr).lineNumber);
                     ipc++;
                     break;
                 }
                 case COPY: {
-                    CopyInstr c = (CopyInstr)lastInstr;
+                    CopyInstr c = (CopyInstr)instr;
                     result = c.getSource().retrieve(context, self, currDynScope, temp);
-                    resultVar = ((ResultInstr)lastInstr).getResult();
+                    resultVar = ((ResultInstr)instr).getResult();
                     ipc++;
                     break;
                 }
                 case RETURN: {
-                    return (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                    return (IRubyObject)((ReturnBase)instr).getReturnValue().retrieve(context, self, currDynScope, temp);
                 }
                 case NONLOCAL_RETURN: {
-                    NonlocalReturnInstr ri = (NonlocalReturnInstr)lastInstr;
+                    NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                     IRubyObject rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
                     ipc = n;
                     // If not in a lambda, check if this was a non-local return
@@ -557,28 +558,15 @@ public class Interpreter {
                     }
                     return rv;
                 }
+                case RUNTIME_HELPER:
+                    ipc++;
+                    resultVar = ((ResultInstr)instr).getResult();
+                    result = ((RuntimeHelperCall)instr).callHelper(context, currDynScope, self, temp, scope, blockType);
+                    break;
                 default:
                     ipc++;
-                    if (lastInstr instanceof ResultInstr) resultVar = ((ResultInstr)lastInstr).getResult();
-                    try {
-                        result = lastInstr.interpret(context, currDynScope, self, temp, block);
-                    } catch (IRBreakJump bj) {
-                        IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, self, blockType);
-                        result = bj.breakValue;
-                    }
-/**
-                    if (lastInstr instanceof CallBase && ((CallBase)lastInstr).getClosureArg(null) != null) {
-                        // Handle propagated break only for calls with closures
-                        try {
-                            result = lastInstr.interpret(context, currDynScope, self, temp, block);
-                        } catch (IRBreakJump bj) {
-                            IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, self, blockType);
-                            result = bj.breakValue;
-                        }
-                    } else {
-                        result = lastInstr.interpret(context, currDynScope, self, temp, block);
-                    }
-**/
+                    if (instr instanceof ResultInstr) resultVar = ((ResultInstr)instr).getResult();
+                    result = instr.interpret(context, currDynScope, self, temp, block);
                     break;
                 }
 
@@ -592,30 +580,39 @@ public class Interpreter {
                     }
                 }
             } catch (RaiseException re) {
-                if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
-                ipc = scope.getRescuerPC(lastInstr);
+                if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + instr);
+                ipc = scope.getRescuerPC(instr);
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 exception = re.getException();
+            } catch (IRBreakJump bj) {
+                if (debug) LOG.info("in scope: " + scope + ", caught break jump: " + bj + "; excepting instr: " + instr);
+                ipc = scope.getRescuerPC(instr);
+                if (debug) LOG.info("ipc for rescuer: " + ipc);
+                if (ipc != -1) {
+                    exception = bj;
+                } else if (IRRuntimeHelpers.inNonMethodBodyLambda(scope, blockType)) {
+                    // We just unwound all the way up because of a non-local break
+                    throw IRException.BREAK_LocalJumpError.getException(runtime);
+                } else {
+                    throw bj; // No rescue/ensure block here, pass it on!
+                }
             } catch (Throwable t) {
                 if (t instanceof Unrescuable) {
-                    // IRBreakJump, IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
+                    // IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
                     // These cannot be rescued -- only run ensure blocks
-                    ipc = scope.getEnsurerPC(lastInstr);
+                     ipc = scope.getEnsurerPC(instr);
                 } else {
                     // Error and other java exceptions which could be rescued
-                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
-                    ipc = scope.getRescuerPC(lastInstr);
+                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    ipc = scope.getRescuerPC(instr);
                     if (debug) LOG.info("ipc for rescuer: " + ipc);
                 }
                 if (ipc == -1) {
                     if (t instanceof IRReturnJump) {
                         // No ensure block here, propagate the return
                         return IRRuntimeHelpers.handleReturnJump(scope, ((IRReturnJump)t), blockType);
-                    } else if ((t instanceof IRBreakJump) && IRRuntimeHelpers.inNonMethodBodyLambda(scope, blockType)) {
-                        // We just unwound all the way up because of a non-local break
-                        throw IRException.BREAK_LocalJumpError.getException(runtime);
                     } else {
                         UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on!
                     }

@@ -105,7 +105,12 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static void handlePropagatedBreak(ThreadContext context, IRScope scope, IRBreakJump bj, IRubyObject self, Block.Type blockType) throws RaiseException, IRBreakJump {
+    public static Object handlePropagatedBreak(ThreadContext context, IRScope scope, Object bjExc, Block.Type blockType) throws RaiseException, IRBreakJump {
+        if (!(bjExc instanceof IRBreakJump)) {
+            throw (RuntimeException)bjExc;
+        }
+
+        IRBreakJump bj = (IRBreakJump)bjExc;
         if (bj.breakInEval) {
             // If the break was in an eval, we pretend as if it was in the containing scope
             if (!(scope instanceof IRClosure)) {
@@ -117,7 +122,7 @@ public class IRRuntimeHelpers {
             }
         } else if (bj.scopeToReturnTo == scope) {
             // Done!! Hurray!
-            return;
+            return bj.breakValue;
 /* ---------------------------------------------------------------
  * FIXME: Puzzled .. Why is this not needed?
         } else if (!context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) {

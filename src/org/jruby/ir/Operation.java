@@ -61,7 +61,7 @@ public enum Operation {
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
