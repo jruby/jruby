@@ -229,6 +229,11 @@ public abstract class Instr {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 
+    @Interp
+    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
+
     public void visit(IRVisitor visitor) {
         throw new RuntimeException(this.getClass().getSimpleName() + " has no compile logic");
     }

@@ -9,6 +9,9 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
@@ -67,7 +70,7 @@ public class ModuleVersionGuardInstr extends Instr {
         return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), failurePathLabel);
     }
 
-    public boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
         //
@@ -75,6 +78,11 @@ public class ModuleVersionGuardInstr extends Instr {
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
         return (receiver.getMetaClass().getGeneration() == expectedVersion);
+    }
+
+    @Override
+    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
+        return versionMatches(context, currDynScope, self, temp) ? ipc + 1 : getFailurePathLabel().getTargetPC();
     }
 
     @Override
