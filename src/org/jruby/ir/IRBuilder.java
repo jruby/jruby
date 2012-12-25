@@ -775,7 +775,16 @@ public class IRBuilder {
             if (s instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-                s.addInstr(new BreakInstr(rv, s.getLexicalParent()));
+                IRScope returnScope = s.getLexicalParent();
+                if (is1_9()) {
+                    // In 1.9 mode, no breaks from evals
+                    if (s instanceof IREvalScript) s.addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                    else s.addInstr(new BreakInstr(rv, returnScope));
+                } else {
+                    // In pre-1.9 mode, breaks from evals are legitimate!
+                    if (s instanceof IREvalScript) returnScope = returnScope.getLexicalParent();
+                    s.addInstr(new BreakInstr(rv, returnScope));
+                }
             } else {
                 // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
                 // Since we know this right now, should we build an exception instruction here?
