@@ -560,8 +560,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
             
-            boolean result = 0 == runtime.getPosix().chmod(filename.getAbsolutePath(), (int)mode.getLongValue());
-            if (result) {
+            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int)mode.getLongValue())) {
+                throw runtime.newErrnoFromLastPOSIXErrno();
+            } else {
                 count++;
             }
         }
@@ -590,8 +591,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
             
-            boolean result = 0 == runtime.getPosix().chown(filename.getAbsolutePath(), owner, group);
-            if (result) {
+            if (0 != runtime.getPosix().chown(filename.getAbsolutePath(), owner, group)) {
+                throw runtime.newErrnoFromLastPOSIXErrno();
+            } else {
                 count++;
             }
         }
@@ -829,14 +831,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
-            RubyString filename = get_path(context, args[i]);
-            
-            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
-                throw runtime.newErrnoENOENTError(filename.toString());
-            }
-            
-            boolean result = 0 == runtime.getPosix().lchmod(filename.getUnicodeValue(), (int)mode.getLongValue());
-            if (result) {
+            JRubyFile file = file(args[i]);
+            if (0 != runtime.getPosix().lchmod(file.toString(), (int)mode.getLongValue())) {
+                throw runtime.newErrnoFromLastPOSIXErrno();
+            } else {
                 count++;
             }
         }
@@ -852,9 +850,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int count = 0;
 
         for (int i = 2; i < args.length; i++) {
-            IRubyObject filename = args[i];
+            JRubyFile file = file(args[i]);
 
-            if (0 != runtime.getPosix().lchown(filename.toString(), owner, group)) {
+            if (0 != runtime.getPosix().lchown(file.toString(), owner, group)) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -867,10 +865,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
-        RubyString fromStr = get_path(context, from);
-        RubyString toStr = get_path(context, to);
+        String fromStr = file(from).toString();
+        String toStr = file(to).toString();
 
-        int ret = runtime.getPosix().link(fromStr.getUnicodeValue(), toStr.getUnicodeValue());
+        int ret = runtime.getPosix().link(fromStr, toStr);
         if (ret != 0) {
             if (runtime.getPosix().isNative()) {
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno(), String.format("(%s, %s)", fromStr, toStr));
