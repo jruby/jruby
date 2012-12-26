@@ -12,6 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -44,7 +45,7 @@ public class IRRuntimeHelpers {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    public static void handleNonLocalReturn(ThreadContext context, IRScope scope, IRMethod methodToReturnFrom, IRubyObject returnValue) {
+    public static void initiateNonLocalReturn(ThreadContext context, IRScope scope, IRMethod methodToReturnFrom, IRubyObject returnValue) {
         if (scope instanceof IRClosure) {
             if (methodToReturnFrom == null) {
                 // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
@@ -74,15 +75,22 @@ public class IRRuntimeHelpers {
         throw IRReturnJump.create(methodToReturnFrom, returnValue);
     }
 
-    public static IRubyObject handleReturnJump(IRScope scope, IRReturnJump rj, Block.Type blockType) throws IRReturnJump {
-        // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-        if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
+    public static IRubyObject handleNonlocalReturn(IRScope scope, Object rjExc, Block.Type blockType) throws RuntimeException {
+        if (!(rjExc instanceof IRReturnJump)) {
+            UnsafeFactory.getUnsafe().throwException((Throwable)rjExc);
+            return null;
+        } else {
+            IRReturnJump rj = (IRReturnJump)rjExc;
 
-        // - If not, Just pass it along!
-        throw rj;
+            // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
+            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
+
+            // - If not, Just pass it along!
+            throw rj;
+        }
     }
 
-    public static IRubyObject initiateBreak(ThreadContext context, IRScope scope, IRScope scopeToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RaiseException, IRBreakJump {
+    public static IRubyObject initiateBreak(ThreadContext context, IRScope scope, IRScope scopeToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
         if (inLambda(blockType)) {
             // Ensures would already have been run since the IR builder makes
             // sure that ensure code has run before we hit the break.  Treat
@@ -105,7 +113,17 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static Object handlePropagatedBreak(ThreadContext context, IRScope scope, Object bjExc, Block.Type blockType) throws RaiseException, IRBreakJump {
+    public static RuntimeException propagateBreak(ThreadContext context, IRScope scope, IRBreakJump bj, Block.Type blockType) {
+        if (inNonMethodBodyLambda(scope, blockType)) {
+            // We just unwound all the way up because of a non-local break
+            return IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        } else {
+            // Propagate
+            return bj;
+        }
+    }
+
+    public static IRubyObject handlePropagatedBreak(ThreadContext context, IRScope scope, Object bjExc, Block.Type blockType) throws RuntimeException {
         if (!(bjExc instanceof IRBreakJump)) {
             throw (RuntimeException)bjExc;
         }
@@ -115,7 +133,7 @@ public class IRRuntimeHelpers {
             // If the break was in an eval, we pretend as if it was in the containing scope
             if (!(scope instanceof IRClosure)) {
                 // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+                throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
             } else {
                 bj.breakInEval = false;
                 throw bj;

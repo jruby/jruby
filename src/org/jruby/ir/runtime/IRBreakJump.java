@@ -5,10 +5,11 @@ import java.lang.ref.SoftReference;
 
 import org.jruby.ir.IRScope;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBreakJump extends RuntimeException implements Unrescuable {
     public IRScope scopeToReturnTo;
-    public Object breakValue;
+    public IRubyObject breakValue;
     public boolean caughtByLambda;
     public boolean breakInEval;
 
@@ -20,7 +21,7 @@ public class IRBreakJump extends RuntimeException implements Unrescuable {
 
     private static ThreadLocal<Reference<IRBreakJump>> threadLocalBJ = new ThreadLocal<Reference<IRBreakJump>>();
 
-    public static IRBreakJump create(IRScope s, Object rv) {
+    public static IRBreakJump create(IRScope s, IRubyObject rv) {
         IRBreakJump bj;
         Reference<IRBreakJump> bjRef = threadLocalBJ.get();
         if (bjRef != null) {

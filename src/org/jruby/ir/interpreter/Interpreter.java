@@ -58,7 +58,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -456,7 +455,7 @@ public class Interpreter {
                     ipc = n;
                     // If not in a lambda, check if this was a non-local return
                     if (!IRRuntimeHelpers.inLambda(blockType)) {
-                        IRRuntimeHelpers.handleNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
+                        IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
                     }
                     return rv;
                 }
@@ -546,40 +545,40 @@ public class Interpreter {
                 if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + instr);
                 ipc = scope.getRescuerPC(instr);
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
-                if (ipc == -1) throw re; // No one rescued exception, pass it on!
+
+                if (ipc == -1) {
+                    // No one rescued exception, pass it on!
+                    throw re;
+                }
 
                 exception = re.getException();
             } catch (IRBreakJump bj) {
                 if (debug) LOG.info("in scope: " + scope + ", caught break jump: " + bj + "; excepting instr: " + instr);
                 ipc = scope.getRescuerPC(instr);
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
-                if (ipc != -1) {
-                    exception = bj;
-                } else if (IRRuntimeHelpers.inNonMethodBodyLambda(scope, blockType)) {
-                    // We just unwound all the way up because of a non-local break
-                    throw IRException.BREAK_LocalJumpError.getException(runtime);
-                } else {
-                    throw bj; // No rescue/ensure block here, pass it on!
-                }
-            } catch (Throwable t) {
-                if (t instanceof Unrescuable) {
-                    // IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
-                    // These cannot be rescued -- only run ensure blocks
-                     ipc = scope.getEnsurerPC(instr);
-                } else {
-                    // Error and other java exceptions which could be rescued
-                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                    ipc = scope.getRescuerPC(instr);
-                    if (debug) LOG.info("ipc for rescuer: " + ipc);
-                }
+
                 if (ipc == -1) {
-                    if (t instanceof IRReturnJump) {
-                        // No ensure block here, propagate the return
-                        return IRRuntimeHelpers.handleReturnJump(scope, ((IRReturnJump)t), blockType);
-                    } else {
-                        UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on!
-                    }
+                    // Should always throw an exception
+                    throw IRRuntimeHelpers.propagateBreak(context, scope, bj, blockType);
                 }
+
+                exception = bj;
+            } catch (Throwable t) {
+                // Unrescuable:
+                //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
+                //    These cannot be rescued -- only run ensure blocks
+                // Others:
+                //    Error and other java exceptions
+                //    These can be rescued -- run rescue blocks
+                if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                ipc = (t instanceof Unrescuable) ? scope.getEnsurerPC(instr) : scope.getRescuerPC(instr);
+                if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
+
+                if (ipc == -1) {
+                    // No ensure block here, propagate the return, if necessary
+                    return IRRuntimeHelpers.handleNonlocalReturn(scope, t, blockType);
+                }
+
                 exception = t;
             }
         }
