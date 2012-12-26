@@ -651,19 +651,6 @@ public abstract class IRScope {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
-        // OPTIMIZATION: dont add to all scopes
-        if (this.canReceiveNonlocalReturns) {
-            // Add a global exception-handler block to check if this scope
-            // is the target of the nonlocal return
-        }
-
-        // OPTIMIZATION: dont add to all scopes
-        if (this.canReceiveBreaks) {
-            // Add try-catch logic around all closure-receiving calls
-            // to check for break jumps and handle them.
-            // Or should this be done in the code generator?
-        }
-
         try {
             buildLinearization(); // FIXME: compiler passes should have done this
             depends(linearization());

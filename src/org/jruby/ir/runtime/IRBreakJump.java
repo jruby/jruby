@@ -7,7 +7,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class IRBreakJump extends RuntimeException implements Unrescuable {
+public class IRBreakJump extends RuntimeException {
     public IRScope scopeToReturnTo;
     public IRubyObject breakValue;
     public boolean caughtByLambda;

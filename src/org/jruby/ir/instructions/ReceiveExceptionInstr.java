@@ -14,8 +14,8 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
      *  RaiseException values would have to be unwrapped, but other Throwables are
      *  passed right through. This flag is just an optimization to let the compiler
      *  not emit type-check and unwrapping code where it wont be necessary. */
-    private boolean  checkType;
-    
+    public final boolean checkType;
+
     public ReceiveExceptionInstr(Variable result, boolean checkType) {
         super(Operation.RECV_EXCEPTION);
         

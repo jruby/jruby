@@ -30,6 +30,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveOptArgBase;
 import org.jruby.ir.instructions.ReceiveRestArgBase;
@@ -431,10 +432,9 @@ public class Interpreter {
                     break;
                 }
                 case RECV_EXCEPTION: {
-                    // In the interpreter, we dont use the 'checkType' field because the exception is
-                    // properly set up in the places below where it is caught and setup.
-                    result = exception;
-                    resultVar = ((ResultInstr)instr).getResult();
+                    ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
+                    result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
+                    resultVar = rei.getResult();
                     ipc++;
                     break;
                 }
@@ -473,7 +473,9 @@ public class Interpreter {
                     break;
                 }
                 case PUSH_BINDING: {
-                    // SSS FIXME: Blocks are a headache -- so, these instrs. are only added to IRMethods
+                    // SSS NOTE: Method scopes only!
+                    //
+                    // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                     // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                     currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                     context.pushScope(currDynScope);
@@ -541,45 +543,36 @@ public class Interpreter {
                         currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
                     }
                 }
-            } catch (RaiseException re) {
-                if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + instr);
-                ipc = scope.getRescuerPC(instr);
-                if (debug) LOG.info("ipc for rescuer: " + ipc);
-
-                if (ipc == -1) {
-                    // No one rescued exception, pass it on!
-                    throw re;
-                }
-
-                exception = re.getException();
-            } catch (IRBreakJump bj) {
-                if (debug) LOG.info("in scope: " + scope + ", caught break jump: " + bj + "; excepting instr: " + instr);
-                ipc = scope.getRescuerPC(instr);
-                if (debug) LOG.info("ipc for rescuer: " + ipc);
-
-                if (ipc == -1) {
-                    // Should always throw an exception
-                    throw IRRuntimeHelpers.propagateBreak(context, scope, bj, blockType);
-                }
-
-                exception = bj;
             } catch (Throwable t) {
                 // Unrescuable:
                 //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
                 //    These cannot be rescued -- only run ensure blocks
+                //
                 // Others:
-                //    Error and other java exceptions
+                //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
                 //    These can be rescued -- run rescue blocks
+
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = (t instanceof Unrescuable) ? scope.getEnsurerPC(instr) : scope.getRescuerPC(instr);
                 if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
 
                 if (ipc == -1) {
-                    // No ensure block here, propagate the return, if necessary
-                    return IRRuntimeHelpers.handleNonlocalReturn(scope, t, blockType);
+                    // SSS FIXME: Modify instruction stream to eliminate these two cases
+                    // of special handling of uncaught break-jumps and local-returns
+                    //
+                    // Add global-ensure-block to handle these scenarios:
+                    // -> for break jumps,      needed in closures only
+                    // -> for nonlocal returns, needed in methods only
+                    if (t instanceof IRBreakJump) {
+                        // Should always throw an exception
+                        throw IRRuntimeHelpers.propagateBreak(context, scope, (IRBreakJump)t, blockType);
+                    } else {
+                        // No ensure block here, propagate the return, if necessary
+                        return IRRuntimeHelpers.handleNonlocalReturn(scope, t, blockType);
+                    }
+                } else {
+                    exception = t;
                 }
-
-                exception = t;
             }
         }
 
