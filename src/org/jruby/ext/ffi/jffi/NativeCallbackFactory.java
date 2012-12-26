@@ -8,6 +8,8 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.WeakIdentityHashMap;
 
 /**
@@ -20,6 +22,7 @@ public class NativeCallbackFactory {
     private final NativeFunctionInfo closureInfo;
     private final CallbackInfo callbackInfo;
     private final RubyClass callbackClass;
+    private final CachingCallSite callSite = new FunctionalCachingCallSite("call");
 
     public NativeCallbackFactory(Ruby runtime, CallbackInfo cbInfo) {
         this.runtime = runtime;
@@ -30,47 +33,52 @@ public class NativeCallbackFactory {
     }
 
     public final Pointer getCallback(RubyObject callable) {
+        return getCallback(callable, callSite);
+    }
+
+    public final Pointer getCallback(IRubyObject callable, CachingCallSite callSite) {
         if (callable instanceof Pointer) {
             return (Pointer) callable;
         }
 
-        Object ffiHandle = callable.getFFIHandle();
+        Object ffiHandle = callable.getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(callable);
         NativeCallbackPointer cbptr;
         if (ffiHandle instanceof NativeCallbackPointer && ((cbptr = (NativeCallbackPointer) ffiHandle).cbInfo == callbackInfo)) {
             return cbptr;
         }
 
-        synchronized (callable) {
-            cbptr = (NativeCallbackPointer) closures.get(callable);
-            if (cbptr != null) {
-                return cbptr;
-            }
-
-            cbptr = newCallback(callable);
-
-            if (callable.getFFIHandle() == null) {
-                callable.setFFIHandle(cbptr);
-            } else {
-                closures.put(callable, cbptr);
-            }
-
-            return cbptr;
-        }
+        return getCallbackPointer(callable, callSite);
     }
 
-    NativeCallbackPointer newCallback(IRubyObject callable) {
-        if (!(callable instanceof RubyProc) && !callable.respondsTo("call")) {
-            throw runtime.newArgumentError("callable does not respond to :call");
+    private synchronized Pointer getCallbackPointer(IRubyObject callable, CachingCallSite callSite) {
+        NativeCallbackPointer cbptr = (NativeCallbackPointer) closures.get(callable);
+        if (cbptr != null) {
+            return cbptr;
+        }
+
+        closures.put(callable, cbptr = newCallback(callable, callSite));
+
+        RubyClass.VariableAccessorField ffiField = callable.getMetaClass().getRealClass().getFFIHandleAccessorField();
+        if (ffiField.getVariableAccessorForRead().get(callable) == null) {
+            ffiField.getVariableAccessorForWrite().set(callable, cbptr);
+        }
+
+        return cbptr;
+    }
+
+    NativeCallbackPointer newCallback(IRubyObject callable, CachingCallSite callSite) {
+        if (callSite.retrieveCache(callable.getMetaClass(), callSite.getMethodName()).method.isUndefined()) {
+            throw runtime.newArgumentError("callback does not respond to :" + callSite.getMethodName());
         }
 
         return new NativeCallbackPointer(runtime, callbackClass,
-                closurePool.newClosureHandle(new NativeClosureProxy(runtime, closureInfo, callable)),
+                closurePool.newClosureHandle(new NativeClosureProxy(runtime, closureInfo, callable, callSite)),
                 callbackInfo, closureInfo);
     }
 
     NativeCallbackPointer newCallback(Object callable) {
         return new NativeCallbackPointer(runtime, callbackClass,
-                closurePool.newClosureHandle(new NativeClosureProxy(runtime, closureInfo, callable)),
+                closurePool.newClosureHandle(new NativeClosureProxy(runtime, closureInfo, callable, callSite)),
                 callbackInfo, closureInfo);
     }
 

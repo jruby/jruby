@@ -7,8 +7,11 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
 
@@ -20,11 +23,17 @@ final class NativeClosureProxy implements Closure {
     protected final Ruby runtime;
     protected final NativeFunctionInfo closureInfo;
     private final WeakReference<Object> proc;
+    private final CallSite callSite;
 
     NativeClosureProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc) {
+        this(runtime, closureInfo, proc,  new FunctionalCachingCallSite("call"));
+    }
+
+    NativeClosureProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc, CallSite callSite) {
         this.runtime = runtime;
         this.closureInfo = closureInfo;
         this.proc = new WeakReference<Object>(proc);
+        this.callSite = callSite;
     }
 
     public void invoke(Buffer buffer) {
@@ -44,14 +53,9 @@ final class NativeClosureProxy implements Closure {
             params[i] = fromNative(runtime, closureInfo.parameterTypes[i], buffer, i);
         }
 
-        IRubyObject retVal;
-        if (recv instanceof RubyProc) {
-            retVal = ((RubyProc) recv).call(context, params);
-        } else if (recv instanceof Block) {
-            retVal = ((Block) recv).call(context, params);
-        } else {
-            retVal = ((IRubyObject) recv).callMethod(context, "call", params);
-        }
+        IRubyObject retVal = recv instanceof Block
+                ? ((Block) recv).call(context, params)
+                : callSite.call(context, (IRubyObject) recv, (IRubyObject) recv, params);
 
         setReturnValue(runtime, closureInfo.returnType, buffer, retVal);
     }
