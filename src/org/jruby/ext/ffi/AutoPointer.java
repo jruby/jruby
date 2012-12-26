@@ -67,7 +67,7 @@ public final class AutoPointer extends Pointer {
 
     @JRubyMethod(name="from_native", meta = true)
     public static IRubyObject from_native(ThreadContext context, IRubyObject recv, IRubyObject value, IRubyObject ctx) {
-        return ((RubyClass) recv).newInstance(context, new IRubyObject[] { value }, Block.NULL_BLOCK);
+        return ((RubyClass) recv).newInstance(context, value, Block.NULL_BLOCK);
     }
 
     @Override
