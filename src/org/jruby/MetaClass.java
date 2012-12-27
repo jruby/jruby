@@ -29,8 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.lang.ref.SoftReference;
-
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
@@ -39,7 +37,7 @@ public final class MetaClass extends RubyClass {
      */
     public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
-        this.attached = new SoftReference<IRubyObject>(attached);
+        this.attached = attached;
         this.index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
 
@@ -53,14 +51,12 @@ public final class MetaClass extends RubyClass {
     }
 
     public IRubyObject getAttached() {
-        return attached.get();
+        return attached;
     }
 
     public void setAttached(IRubyObject attached) {
-        this.attached = new SoftReference<IRubyObject>(attached);
+        this.attached = attached;
     }
 
-    private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
-
-    private SoftReference<IRubyObject> attached = NULL_SOFT_REF;
+    private IRubyObject attached = null;
 }
