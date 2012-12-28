@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
-public class Struct extends RubyObject implements StructLayout.Storage {
+public class Struct extends MemoryObject implements StructLayout.Storage {
     private StructLayout layout;
     private AbstractMemory memory;
     private volatile Object[] referenceCache;
@@ -141,6 +141,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         }
 
         memory = (AbstractMemory) ptr;
+        setMemoryIO(memory.getMemoryIO());
         
         return this;
     }
@@ -173,6 +174,8 @@ public class Struct extends RubyObject implements StructLayout.Storage {
             referenceCache = new Object[layout.getReferenceFieldCount()];
             System.arraycopy(orig.referenceCache, 0, referenceCache, 0, referenceCache.length);
         }
+        setMemoryIO(memory.getMemoryIO());
+
         return this;
     }
 
@@ -360,7 +363,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return memory != null ? memory : (memory = MemoryPointer.allocate(getRuntime(), layout.getSize(), 1, true));
     }
 
-    final MemoryIO getMemoryIO() {
+    protected final MemoryIO allocateMemoryIO() {
         return getMemory().getMemoryIO();
     }
 

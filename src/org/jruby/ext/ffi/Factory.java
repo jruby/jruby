@@ -156,7 +156,7 @@ public abstract class Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>AllocatedDirectMemoryIO</tt>.
      */
-    public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
+    public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
 
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
@@ -166,7 +166,7 @@ public abstract class Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>AllocatedDirectMemoryIO</tt>.
      */
-    public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
+    public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
      * Allocates transient native memory (not from C heap) and wraps it in a <tt>MemoryIO</tt> accessor.
@@ -176,7 +176,7 @@ public abstract class Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>AllocatedDirectMemoryIO</tt>.
      */
-    public abstract DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear);
+    public abstract MemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
      * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
@@ -185,7 +185,7 @@ public abstract class Factory {
      * 
      * @return A new <tt>MemoryIO</tt>.
      */
-    public abstract DirectMemoryIO wrapDirectMemory(Ruby runtime, long address);
+    public abstract MemoryIO wrapDirectMemory(Ruby runtime, long address);
 
 
     public abstract CallbackManager getCallbackManager();

@@ -43,7 +43,7 @@ public final class MemoryPointer extends Pointer {
         super(runtime, (RubyClass) klass);
     }
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long total, int typeSize) {
+    private MemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long total, int typeSize) {
         super(runtime, (RubyClass) klass, io, total, typeSize);
     }
 
@@ -79,7 +79,7 @@ public final class MemoryPointer extends Pointer {
 
     static MemoryPointer newInstance(Ruby runtime, IRubyObject klass, int typeSize, int count, boolean clear) {
         final int total = typeSize * count;
-        AllocatedDirectMemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
+        MemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", count, typeSize), true);

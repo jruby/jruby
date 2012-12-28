@@ -1,6 +1,6 @@
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.util.ByteList;
 
 /**
@@ -8,9 +8,9 @@ import org.jruby.util.ByteList;
 */
 final class NativeStringHandle {
     final ByteList bl;
-    final DirectMemoryIO memory;
+    final MemoryIO memory;
 
-    NativeStringHandle(DirectMemoryIO memory, ByteList bl) {
+    NativeStringHandle(MemoryIO memory, ByteList bl) {
         this.memory = memory;
         this.bl = bl;
     }

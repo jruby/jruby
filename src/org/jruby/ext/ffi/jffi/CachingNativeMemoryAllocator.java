@@ -3,6 +3,7 @@ package org.jruby.ext.ffi.jffi;
 import jnr.ffi.util.ref.FinalizableWeakReference;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -37,7 +38,7 @@ final class CachingNativeMemoryAllocator {
      * @param clear Whether the memory should be cleared (zeroed)
      * @return A new {@link org.jruby.ext.ffi.AllocatedDirectMemoryIO}
      */
-    static AllocatedDirectMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
+    static MemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
         // Caching seems to work best for small allocations (<= 256 bytes).  For everything else, use the default allocator
         if (size > 256 || align > 8) {
             return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);

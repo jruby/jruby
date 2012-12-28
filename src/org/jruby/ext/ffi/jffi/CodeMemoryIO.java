@@ -29,38 +29,22 @@
 package org.jruby.ext.ffi.jffi;
 
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 
 /**
  * Representation of code (executable) memory blocks
  */
-public final class CodeMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
+public final class CodeMemoryIO extends InvalidMemoryIO {
     private final Pointer pointer;
-    private final long address;
 
     public CodeMemoryIO(Ruby runtime, long address) {
-        super(runtime, "code region is inaccessible");
+        super(runtime, true, address, "code region is inaccessible");
         this.pointer = null;
-        this.address = address;
     }
 
     public CodeMemoryIO(Ruby runtime, Pointer pointer) {
-        super(runtime, "code region is inaccessible");
+        super(runtime, true, pointer.getAddress(), "code region is inaccessible");
         this.pointer = pointer;
-        this.address = pointer.getAddress();
-    }
-
-    public long getAddress() {
-        return address;
-    }
-
-    public boolean isDirect() {
-        return true;
-    }
-
-    public boolean isNull() {
-        return address == 0;
     }
 }

@@ -7,7 +7,6 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
@@ -36,7 +35,7 @@ class NativeCallbackPointer extends AbstractInvoker {
 
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
-        com.kenai.jffi.Function function = new com.kenai.jffi.Function(((DirectMemoryIO) getMemoryIO()).getAddress(),
+        com.kenai.jffi.Function function = new com.kenai.jffi.Function(getMemoryIO().address(),
                 closureInfo.jffiReturnType, closureInfo.jffiParameterTypes);
         return MethodFactory.createDynamicMethod(getRuntime(), module, function,
                 closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil(), false);

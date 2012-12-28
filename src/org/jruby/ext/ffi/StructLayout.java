@@ -1176,7 +1176,7 @@ public final class StructLayout extends Type {
             } else if (value instanceof Struct) {
                 MemoryIO mem = ((Struct) value).getMemoryIO();
 
-                if (!(mem instanceof DirectMemoryIO)) {
+                if (!mem.isDirect()) {
                     throw context.runtime.newArgumentError("Struct memory not backed by a native pointer");
                 }
                 ptr.getMemoryIO().putMemoryIO(m.offset, mem);
@@ -1199,7 +1199,7 @@ public final class StructLayout extends Type {
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
-            DirectMemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
+            MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
             IRubyObject old = cache.getCachedValue(m);
             if (old instanceof Pointer) {
                 MemoryIO oldMemory = ((Pointer) old).getMemoryIO();

@@ -30,17 +30,15 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.PageManager;
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.util.WeakReferenceReaper;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements DirectMemoryIO {
+final class TransientNativeMemoryIO extends BoundedNativeMemoryIO {
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<Magazine, Boolean> referenceSet = new ConcurrentHashMap<Magazine, Boolean>();
     private static final ThreadLocal<Reference<Magazine>> currentMagazine = new ThreadLocal<Reference<Magazine>>();
@@ -56,7 +54,7 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
      * @param clear Whether the memory should be cleared (zeroed)
      * @return A new {@link org.jruby.ext.ffi.AllocatedDirectMemoryIO}
      */
-    static DirectMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
+    static MemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
         if (size > 1024) {
             return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);
         }

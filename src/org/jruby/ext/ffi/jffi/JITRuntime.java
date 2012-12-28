@@ -1,10 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import org.jruby.*;
-import org.jruby.ext.ffi.AbstractMemory;
-import org.jruby.ext.ffi.Buffer;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
@@ -424,29 +421,22 @@ public final class JITRuntime {
         return RubyFloat.newFloat(runtime, Double.longBitsToDouble(value));
     }
 
-    private static final PointerParameterStrategy DIRECT_POINTER = new DirectPointerParameterStrategy();
-    private static final PointerParameterStrategy DIRECT_STRUCT = new DirectStructParameterStrategy();
-    private static final PointerParameterStrategy HEAP_STRUCT = new HeapStructParameterStrategy();
+    private static final PointerParameterStrategy DIRECT_MEMORY_OBJECT = new MemoryObjectParameterStrategy(true);
+    private static final PointerParameterStrategy HEAP_MEMORY_OBJECT = new MemoryObjectParameterStrategy(false);
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
-    private static final PointerParameterStrategy HEAP_POINTER_STRATEGY = new HeapPointerParameterStrategy();
-    private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new TransientStringParameterStrategy();
-    private static final PointerParameterStrategy DIRECT_STRING_POINTER_STRATEGY = new ConstStringPointerParameterStrategy();
+    private static final PointerParameterStrategy HEAP_STRING_POINTER_STRATEGY = new StringParameterStrategy(false, false);
+    private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(false, true);
+    private static final PointerParameterStrategy DIRECT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(true, true);
 
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof Pointer) {
-            return DIRECT_POINTER;
+        if (parameter instanceof MemoryObject) {
+            return ((MemoryObject) parameter).getMemoryIO().isDirect() ? DIRECT_MEMORY_OBJECT : HEAP_MEMORY_OBJECT;
 
-        } else if (parameter instanceof Buffer) {
-            return ((AbstractMemory) parameter).getMemoryIO().isDirect() ? DIRECT_POINTER : HEAP_POINTER_STRATEGY;
-
-        } else if (parameter instanceof Struct) {
-            return ((Struct) parameter).getMemory().getMemoryIO().isDirect() ? DIRECT_STRUCT : HEAP_STRUCT;
-
-        } else if (parameter.isNil()) {
+        } else if (parameter instanceof RubyNil) {
             return NIL_POINTER_STRATEGY;
 
         } else if (parameter instanceof RubyString) {
-            return TRANSIENT_STRING_PARAMETER_STRATEGY;
+            return HEAP_STRING_POINTER_STRATEGY;
 
         } else if (parameter.respondsTo("to_ptr")) {
             IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
@@ -460,8 +450,7 @@ public final class JITRuntime {
 
     public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof RubyString) {
-            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
-            return DIRECT_STRING_POINTER_STRATEGY;
+            return DIRECT_STRING_PARAMETER_STRATEGY;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
@@ -473,7 +462,6 @@ public final class JITRuntime {
 
     public static PointerParameterStrategy transientStringParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof RubyString) {
-            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
             return TRANSIENT_STRING_PARAMETER_STRATEGY;
 
         } else if (parameter.isNil()) {
@@ -485,15 +473,15 @@ public final class JITRuntime {
     }
 
     public static boolean isDirectPointer(IRubyObject parameter) {
-        return parameter instanceof Pointer;
+        return parameter instanceof MemoryObject && ((MemoryObject) parameter).getMemoryIO().isDirect();
     }
 
     public static int pointerValue32(IRubyObject parameter) {
-        return (int) pointerParameterStrategy(parameter).address(parameter);
+        return (int) ((MemoryObject) parameter).getMemoryIO().address();
     }
 
     public static long pointerValue64(IRubyObject parameter) {
-        return pointerParameterStrategy(parameter).address(parameter);
+        return ((MemoryObject) parameter).getMemoryIO().address();
     }
 
     public static boolean isTrue(boolean p1) {

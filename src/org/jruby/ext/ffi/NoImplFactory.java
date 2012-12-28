@@ -21,22 +21,22 @@ public class NoImplFactory extends Factory {
 
 
     @Override
-    public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
+    public MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
         throw runtime.newNotImplementedError(msg);
     }
 
     @Override
-    public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+    public MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         throw runtime.newNotImplementedError(msg);
     }
 
     @Override
-    public DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+    public MemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         throw runtime.newNotImplementedError(msg);
     }
 
     @Override
-    public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
+    public MemoryIO wrapDirectMemory(Ruby runtime, long address) {
         throw runtime.newNotImplementedError(msg);
     }
 

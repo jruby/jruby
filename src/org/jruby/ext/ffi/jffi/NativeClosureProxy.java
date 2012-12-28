@@ -10,7 +10,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
@@ -170,8 +169,8 @@ final class NativeClosureProxy implements Closure {
                 Struct s = (Struct) value;
                 MemoryIO memory = s.getMemory().getMemoryIO();
 
-                if (memory instanceof DirectMemoryIO) {
-                    long address = ((DirectMemoryIO) memory).getAddress();
+                if (memory.isDirect()) {
+                    long address = memory.address();
                     if (address != 0) {
                         buffer.setStructReturn(address);
                     } else {
@@ -283,7 +282,7 @@ final class NativeClosureProxy implements Closure {
         } else if (type instanceof StructByValue) {
             StructByValue sbv = (StructByValue) type;
             final long address = buffer.getStruct(index);
-            DirectMemoryIO memory = address != 0
+            MemoryIO memory = address != 0
                     ? new BoundedNativeMemoryIO(runtime, address, type.getNativeSize())
                     : runtime.getFFI().getNullMemoryIO();
 

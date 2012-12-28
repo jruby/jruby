@@ -65,7 +65,7 @@ public abstract class AbstractInvoker extends Pointer {
      * Creates a new <tt>AbstractInvoker</tt> instance.
      * @param arity
      */
-    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, DirectMemoryIO io) {
+    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, MemoryIO io) {
         super(runtime, klass, io, 0);
         this.arity = Arity.fixed(arity);
     }

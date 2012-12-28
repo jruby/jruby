@@ -57,19 +57,19 @@ public class Pointer extends AbstractMemory {
         super(runtime, klazz, runtime.getFFI().getNullMemoryIO(), 0);
     }
 
-    public Pointer(Ruby runtime, DirectMemoryIO io) {
+    public Pointer(Ruby runtime, MemoryIO io) {
         this(runtime, getPointerClass(runtime), io);
     }
-    public Pointer(Ruby runtime, DirectMemoryIO io, long size, int typeSize) {
+    public Pointer(Ruby runtime, MemoryIO io, long size, int typeSize) {
         this(runtime, getPointerClass(runtime), io, size, typeSize);
     }
-    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io) {
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io) {
         super(runtime, klass, io, Long.MAX_VALUE);
     }
-    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io, long size) {
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass, io, size);
     }
-    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io, long size, int typeSize) {
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size, int typeSize) {
         super(runtime, klass, io, size, typeSize);
     }
 
@@ -79,15 +79,15 @@ public class Pointer extends AbstractMemory {
 
     public final AbstractMemory order(Ruby runtime, ByteOrder order) {
         return new Pointer(runtime,
-                order.equals(getMemoryIO().order()) ? (DirectMemoryIO) getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
+                order.equals(getMemoryIO().order()) ? getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
                 size, typeSize);
     }
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
-        io = address instanceof Pointer
+        setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -96,9 +96,9 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
-        io = address instanceof Pointer
+        setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 
@@ -155,7 +155,7 @@ public class Pointer extends AbstractMemory {
      * @return A long containing the native memory address.
      */
     public final long getAddress() {
-        return ((DirectMemoryIO) getMemoryIO()).getAddress();
+        return getMemoryIO().address();
     }
 
     @JRubyMethod(name = "==", required = 1)
@@ -168,14 +168,14 @@ public class Pointer extends AbstractMemory {
     @Override
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new Pointer(runtime, getPointerClass(runtime),
-                (DirectMemoryIO) getMemoryIO().slice(offset),
+                getMemoryIO().slice(offset),
                 size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset, typeSize);
     }
 
     @Override
     protected AbstractMemory slice(Ruby runtime, long offset, long size) {
         return new Pointer(runtime, getPointerClass(runtime),
-                (DirectMemoryIO) getMemoryIO().slice(offset, size), size, typeSize);
+                getMemoryIO().slice(offset, size), size, typeSize);
     }
 
     protected Pointer getPointer(Ruby runtime, long offset) {

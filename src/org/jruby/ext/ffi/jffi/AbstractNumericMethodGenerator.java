@@ -53,7 +53,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         int nextLocalVar = firstParam + signature.getParameterCount();
         final int heapPointerCountVar = nextLocalVar++;
         final int firstStrategyVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
+        int firstMemoryVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
         int nextStrategyVar = firstStrategyVar;
+        int nextMemoryVar = firstMemoryVar;
         
         // Perform any generic data conversions on the parameters
         for (int i = 0; i < signature.getParameterCount(); i++) {
@@ -131,7 +133,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 case BUFFER_INOUT:
                 case STRING:
                 case TRANSIENT_STRING:
-                    Label address = new Label();
+                    Label direct = new Label();
                     Label next = new Label();
                     if (pointerCount++ < 1) {
                         mv.pushInt(0);
@@ -144,17 +146,29 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     mv.invokestatic(p(JITRuntime.class), strategyMethod,
                             sig(PointerParameterStrategy.class, IRubyObject.class));
                     mv.astore(nextStrategyVar);
-                    mv.aload(nextStrategyVar);
-                    mv.invokevirtual(p(ObjectParameterStrategy.class), "isDirect", sig(boolean.class));
-                    mv.iftrue(address);
-                    mv.iinc(heapPointerCountVar, 1);
-                    mv.label(address);
-                    // It is now direct, get the address, and convert to the native int type
+
+                    // Retrieve the MemoryIO instance and store it until the call is completed
                     mv.aload(nextStrategyVar);
                     mv.aload(paramVar);
-                    mv.invokevirtual(p(ObjectParameterStrategy.class), "address", sig(long.class, Object.class));
+                    mv.invokevirtual(p(PointerParameterStrategy.class), "getMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, Object.class));
+                    mv.astore(nextMemoryVar);
+
+                    mv.aload(nextMemoryVar);
+                    mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "isDirect", sig(boolean.class));
+
+                    mv.iftrue(direct);
+                    mv.iinc(heapPointerCountVar, 1);
+                    if (int.class == nativeIntType) mv.iconst_0(); else mv.lconst_0();
+                    mv.go_to(next);
+
+                    mv.label(direct);
+                    
+                    // Now we have a MemoryIO, get the address from it
+                    mv.aload(nextMemoryVar);
+                    mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "address", sig(long.class));
                     narrow(mv, long.class, nativeIntType);
                     nextStrategyVar++;
+                    nextMemoryVar++;
                     mv.label(next);
                     break;
 

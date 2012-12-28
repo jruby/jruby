@@ -1,6 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.ObjectParameterType;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -12,7 +13,7 @@ public final class DelegatingPointerParameterStrategy extends PointerParameterSt
     private final PointerParameterStrategy strategy;
 
     public DelegatingPointerParameterStrategy(IRubyObject value, PointerParameterStrategy strategy) {
-        super(strategy.isDirect(), OBJECT_TYPE);
+        super(strategy.isDirect(), strategy.isReferenceRequired(), OBJECT_TYPE);
         this.value = value;
         this.strategy = strategy;
     }
@@ -35,5 +36,10 @@ public final class DelegatingPointerParameterStrategy extends PointerParameterSt
     @Override
     public int length(Object parameter) {
         return strategy.length(value);
+    }
+
+    @Override
+    public MemoryIO getMemoryIO(Object parameter) {
+        return strategy.getMemoryIO(value);
     }
 }

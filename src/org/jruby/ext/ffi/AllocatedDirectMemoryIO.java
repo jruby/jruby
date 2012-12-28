@@ -1,7 +1,7 @@
 
 package org.jruby.ext.ffi;
 
-public interface AllocatedDirectMemoryIO extends DirectMemoryIO {
+abstract public interface AllocatedDirectMemoryIO {
     public void free();
     public void setAutoRelease(boolean autorelease);
     public boolean isAutoRelease();

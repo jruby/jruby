@@ -11,7 +11,7 @@ import org.jruby.Ruby;
 /**
  *
  */
-public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
+public final class SwappedMemoryIO extends MemoryIO {
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
     protected static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
 
@@ -19,6 +19,7 @@ public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
     private final MemoryIO io;
 
     SwappedMemoryIO(Ruby runtime, MemoryIO io) {
+        super(io.isDirect(), io.address());
         this.runtime = runtime;
         this.io = io;
     }
@@ -28,8 +29,16 @@ public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
                 ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
 
-    public final long getAddress() {
-        return io instanceof DirectMemoryIO ? ((DirectMemoryIO) io).getAddress() : 0L;
+    public Object array() {
+        return io.array();
+    }
+
+    public int arrayOffset() {
+        return io.arrayOffset();
+    }
+
+    public int arrayLength() {
+        return io.arrayLength();
     }
 
     public SwappedMemoryIO slice(long offset) {
@@ -60,14 +69,6 @@ public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
     @Override
     public final int hashCode() {
         return io.hashCode();
-    }
-
-    public final boolean isNull() {
-        return io.isNull();
-    }
-
-    public final boolean isDirect() {
-        return io.isDirect();
     }
 
     public final byte getByte(long offset) {
@@ -102,7 +103,7 @@ public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
         throw runtime.newRuntimeError("cannot get native address values in non-native byte order memory");
     }
 
-    public final DirectMemoryIO getMemoryIO(long offset) {
+    public final MemoryIO getMemoryIO(long offset) {
         throw runtime.newRuntimeError("cannot get native address values in non-native byte order memory");
     }
 

@@ -37,20 +37,45 @@ import java.nio.ByteOrder;
  * ByteBuffer.
  * </p>
  */
-public interface MemoryIO {
+abstract public class MemoryIO {
+    protected final boolean isDirect;
+    protected final long address;
+
+    protected MemoryIO(boolean direct, long address) {
+        isDirect = direct;
+        this.address = address;
+    }
+
     /**
      * Checks if the memory area is NULL.
      * 
      * @return <tt>true</tt> if the memory area is invalid.
      */
-    public boolean isNull();
+    public final boolean isNull() {
+        return address == 0L;
+    }
 
     /**
      * Checks if the memory area is a native memory pointer.
      *
      * @return <tt>true</tt> if the memory area is a native pointer.
      */
-    public boolean isDirect();
+    public final boolean isDirect() {
+        return isDirect;
+    }
+
+    /**
+     * Gets the native address of this memory region.  May return NULL (0) if this is not a direct pointer.
+     *
+     * @return A long value containing the native memory address
+     */
+    public final long address() {
+        return address;
+    }
+
+    abstract public Object array();
+    abstract public int arrayOffset();
+    abstract public int arrayLength();
 
     /**
      * Gets the {@link ByteOrder} this {@code MemoryIO} instance will read/write
@@ -58,7 +83,7 @@ public interface MemoryIO {
      *
      * @return The current ByteOrder
      */
-    public ByteOrder order();
+    abstract public ByteOrder order();
 
     /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this
@@ -67,7 +92,7 @@ public interface MemoryIO {
      * new <tt>MemoryIO</tt> at.
      * @return A <tt>MemoryIO</tt> instance.
      */
-    public MemoryIO slice(long offset);
+    abstract public MemoryIO slice(long offset);
 
     /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this
@@ -78,21 +103,21 @@ public interface MemoryIO {
      *
      * @return A <tt>MemoryIO</tt> instance.
      */
-    public MemoryIO slice(long offset, long size);
+    abstract public MemoryIO slice(long offset, long size);
 
     /**
      * Duplicates this <tt>MemoryIO</tt>, including its contents.
      * 
      * @return A <tt>MemoryIO</tt> instance.
      */
-    public MemoryIO dup();
+    abstract public MemoryIO dup();
 
     /**
      * Creates a view of this memory object as a java NIO byte buffer.
      *
      * @return A ByteBuffer instance
      */
-    public java.nio.ByteBuffer asByteBuffer();
+    abstract public java.nio.ByteBuffer asByteBuffer();
     
     /**
      * Reads an 8 bit integer value from the memory area.
@@ -100,7 +125,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The 8 bit integer value read from <tt>offset</tt>
      */
-    public byte getByte(long offset);
+    abstract public byte getByte(long offset);
     
     /**
      * Reads a 16 bit integer value from the memory area.
@@ -108,7 +133,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The 16 bit integer value read from <tt>offset</tt>
      */
-    public short getShort(long offset);
+    abstract public short getShort(long offset);
     
     /**
      * Reads a 32 bit integer value from the memory area.
@@ -116,7 +141,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The 32 bit integer value read from <tt>offset</tt>
      */
-    public int getInt(long offset);
+    abstract public int getInt(long offset);
     
     /**
      * Reads a 64 bit integer value from the memory area.
@@ -124,7 +149,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The 64 bit integer value read from <tt>offset</tt>
      */
-    public long getLong(long offset);
+    abstract public long getLong(long offset);
     
     /**
      * Reads a native long integer value from the memory area.
@@ -140,7 +165,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The native long value read from <tt>offset</tt>
      */
-    public long getNativeLong(long offset);
+    abstract public long getNativeLong(long offset);
     
     /**
      * Reads a float value from the memory area.
@@ -148,7 +173,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The float value read from <tt>offset</tt>
      */
-    public float getFloat(long offset);
+    abstract public float getFloat(long offset);
     
     /**
      * Reads a double value from the memory area.
@@ -156,7 +181,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return The double value read from <tt>offset</tt>
      */
-    public double getDouble(long offset);
+    abstract public double getDouble(long offset);
 
      /**
      * Reads a pointer value at the specified offset within the memory area.
@@ -164,7 +189,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to read the value.
      * @return A <tt>long</tt> value that represents the address.
      */
-    public long getAddress(long offset);
+     abstract public long getAddress(long offset);
 
     /**
      * Reads a pointer value at the specified offset within the memory area, and
@@ -174,7 +199,7 @@ public interface MemoryIO {
      * @return A <tt>DirectMemoryIO</tt> accessor that can be used to access the memory
      * pointed to by the address.
      */
-    public DirectMemoryIO getMemoryIO(long offset);
+    abstract public MemoryIO getMemoryIO(long offset);
     
     /**
      * Writes an 8 bit integer value to the memory area at the specified offset.
@@ -182,7 +207,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 8 bit integer value to write to the memory location.
      */
-    public void putByte(long offset, byte value);
+    abstract public void putByte(long offset, byte value);
     
     /**
      * Writes a 16 bit integer value to the memory area at the specified offset.
@@ -190,7 +215,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 16 bit integer value to write to the memory location.
      */
-    public void putShort(long offset, short value);
+    abstract public void putShort(long offset, short value);
     
     /**
      * Writes a 32 bit integer value to the memory area at the specified offset.
@@ -198,7 +223,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 32 bit integer value to write to the memory location.
      */
-    public void putInt(long offset, int value);
+    abstract public void putInt(long offset, int value);
     
     /**
      * Writes a 64 bit integer value to the memory area at the specified offset.
@@ -206,7 +231,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 64 bit integer value to write to the memory location.
      */
-    public void putLong(long offset, long value);
+    abstract public void putLong(long offset, long value);
     
     /**
      * Writes a native long integer value to the memory area at the specified offset.
@@ -214,7 +239,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The native long integer value to write to the memory location.
      */
-    public void putNativeLong(long offset, long value);
+    abstract public void putNativeLong(long offset, long value);
     
     /**
      * Writes a 32 bit float value to the memory area at the specified offset.
@@ -222,7 +247,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 32 bit float value to write to the memory location.
      */
-    public void putFloat(long offset, float value);
+    abstract public void putFloat(long offset, float value);
     
     /**
      * Writes a 64 bit float value to the memory area at the specified offset.
@@ -230,7 +255,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The 64 bit float value to write to the memory location.
      */
-    public void putDouble(long offset, double value);
+    abstract public void putDouble(long offset, double value);
     
     /**
      * Writes a pointer value to the memory area at the specified offset.
@@ -238,7 +263,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The pointer value to write to the memory location.
      */
-    public void putMemoryIO(long offset, MemoryIO value);
+    abstract public void putMemoryIO(long offset, MemoryIO value);
 
     /**
      * Writes a pointer value to the memory area at the specified offset.
@@ -246,7 +271,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area to write the value.
      * @param value The pointer value to write to the memory location.
      */
-    public void putAddress(long offset, long value);
+    abstract public void putAddress(long offset, long value);
     
     /**
      * Reads an array of bytes from the memory area at the specified offset.
@@ -256,7 +281,7 @@ public interface MemoryIO {
      * @param off The offset within the byte array to start copying.
      * @param len The length of data to read.
      */
-    public void get(long offset, byte[] dst, int off, int len);
+    abstract public void get(long offset, byte[] dst, int off, int len);
     
     /**
      * Writes an array of bytes to the memory area at the specified offset.
@@ -266,7 +291,7 @@ public interface MemoryIO {
      * @param off The offset within the byte array to start copying.
      * @param len The length of data to write.
      */
-    public void put(long offset, byte[] src, int off, int len);
+    abstract public void put(long offset, byte[] src, int off, int len);
 
     /**
      * Reads an array of shorts from the memory area at the specified offset.
@@ -276,7 +301,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of shorts to read.
      */
-    public void get(long offset, short[] dst, int off, int len);
+    abstract public void get(long offset, short[] dst, int off, int len);
 
     /**
      * Writes an array of shorts to the memory area at the specified offset.
@@ -286,7 +311,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of shorts to write.
      */
-    public void put(long offset, short[] src, int off, int len);
+    abstract public void put(long offset, short[] src, int off, int len);
     
     /**
      * Reads an array of ints from the memory area at the specified offset.
@@ -296,7 +321,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of ints to read.
      */
-    public void get(long offset, int[] dst, int off, int len);
+    abstract public void get(long offset, int[] dst, int off, int len);
 
     /**
      * Writes an array of ints to the memory area at the specified offset.
@@ -306,7 +331,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of ints to write.
      */
-    public void put(long offset, int[] src, int off, int len);
+    abstract public void put(long offset, int[] src, int off, int len);
     
     /**
      * Reads an array of longs from the memory area at the specified offset.
@@ -316,7 +341,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of longs to read.
      */
-    public void get(long offset, long[] dst, int off, int len);
+    abstract public void get(long offset, long[] dst, int off, int len);
 
     /**
      * Writes an array of longs to the memory area at the specified offset.
@@ -326,7 +351,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of longs to write.
      */
-    public void put(long offset, long[] src, int off, int len);
+    abstract public void put(long offset, long[] src, int off, int len);
 
     /**
      * Reads an array of floats from the memory area at the specified offset.
@@ -336,7 +361,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of floats to read.
      */
-    public void get(long offset, float[] dst, int off, int len);
+    abstract public void get(long offset, float[] dst, int off, int len);
 
     /**
      * Writes an array of floats to the memory area at the specified offset.
@@ -346,7 +371,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of floats to write.
      */
-    public void put(long offset, float[] src, int off, int len);
+    abstract public void put(long offset, float[] src, int off, int len);
 
     /**
      * Reads an array of doubles from the memory area at the specified offset.
@@ -356,7 +381,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of doubles to read.
      */
-    public void get(long offset, double[] dst, int off, int len);
+    abstract public void get(long offset, double[] dst, int off, int len);
 
     /**
      * Writes an array of doubles to the memory area at the specified offset.
@@ -366,7 +391,7 @@ public interface MemoryIO {
      * @param off The offset within the array to start copying.
      * @param len The number of doubles to write.
      */
-    public void put(long offset, double[] src, int off, int len);
+    abstract public void put(long offset, double[] src, int off, int len);
 
     /**
      * Gets the first index within the memory area of a particular 8 bit value.
@@ -376,7 +401,7 @@ public interface MemoryIO {
      * 
      * @return The index of the value, relative to offset.
      */
-    public int indexOf(long offset, byte value);
+    abstract public int indexOf(long offset, byte value);
     
     /**
      * Gets the first index within the memory area of a particular 8 bit value.
@@ -386,7 +411,7 @@ public interface MemoryIO {
      * 
      * @return The index of the value, relative to offset.
      */
-    public int indexOf(long offset, byte value, int maxlen);
+    abstract public int indexOf(long offset, byte value, int maxlen);
 
     /**
      * Sets the contents of the memory area to the value.
@@ -395,7 +420,7 @@ public interface MemoryIO {
      * @param size The number of bytes to set to the value.
      * @param value The value to set each byte to.
      */
-    public void setMemory(long offset, long size, byte value);
+    abstract public void setMemory(long offset, long size, byte value);
 
     /**
      * Reads a zero terminated byte array (e.g. an ascii or utf-8 string)
@@ -403,7 +428,7 @@ public interface MemoryIO {
      * @param offset The offset within the memory area of the start of the string.
      * @return A byte array containing a copy of the data.
      */
-    public byte[] getZeroTerminatedByteArray(long offset);
+    abstract public byte[] getZeroTerminatedByteArray(long offset);
 
     /**
      * Reads a zero terminated byte array (e.g. an ascii or utf-8 string)
@@ -412,7 +437,7 @@ public interface MemoryIO {
      * @param maxlen The maximum length to search for the zero byte terminator.
      * @return A byte array containing a copy of the data.
      */
-    public byte[] getZeroTerminatedByteArray(long offset, int maxlen);
+    abstract public byte[] getZeroTerminatedByteArray(long offset, int maxlen);
 
     /**
      * Writes a byte array to memory, and appends a zero terminator
@@ -422,5 +447,5 @@ public interface MemoryIO {
      * @param off The offset with the byte array to start copying.
      * @param maxlen The number of bytes of the byte array to write to the memory area. (not including zero byte)
      */
-    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len);
+    abstract public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len);
 }

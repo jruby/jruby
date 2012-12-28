@@ -8,9 +8,9 @@ import org.jruby.RubyClass;
 /**
  * An implementation of MemoryIO that throws an exception on any access.
  */
-public class NullMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
+public class NullMemoryIO extends InvalidMemoryIO {
     public NullMemoryIO(Ruby runtime) {
-        super(runtime, "NULL pointer access");
+        super(runtime, true, 0L, "NULL pointer access");
     }
 
     @Override
@@ -18,20 +18,9 @@ public class NullMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
         return runtime.getModule("FFI").getClass("NullPointerError");
     }
 
-    public long getAddress() {
-        return 0L;
-    }
-
-    public boolean isNull() {
-        return true;
-    }
-    public final boolean isDirect() {
-        return true;
-    }
-
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof DirectMemoryIO && ((DirectMemoryIO) obj).getAddress() == 0;
+        return obj instanceof MemoryIO && ((MemoryIO) obj).address() == 0;
     }
 
     @Override

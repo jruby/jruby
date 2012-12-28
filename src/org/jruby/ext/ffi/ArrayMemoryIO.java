@@ -5,7 +5,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.jruby.Ruby;
 
-public final class ArrayMemoryIO implements MemoryIO {
+public final class ArrayMemoryIO extends MemoryIO {
 
     protected static final ArrayIO IO = getArrayIO();
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
@@ -16,6 +16,7 @@ public final class ArrayMemoryIO implements MemoryIO {
     protected final int offset, length;
 
     public ArrayMemoryIO(Ruby runtime, byte[] buffer, int offset, int length) {
+        super(false, 0L);
         this.runtime = runtime;
         this.buffer = buffer;
         this.offset = offset;
@@ -29,16 +30,20 @@ public final class ArrayMemoryIO implements MemoryIO {
     private final void checkBounds(long off, long len) {
         Util.checkBounds(runtime, arrayLength(), off, len);
     }
-    
+
+
     public final byte[] array() {
         return buffer;
     }
+
     public final int arrayOffset() {
         return offset;
     }
+
     public final int arrayLength() {
         return length;
     }
+
     private static final ArrayIO getArrayIO() {
         if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
             return Platform.getPlatform().addressSize() == 64
@@ -62,12 +67,6 @@ public final class ArrayMemoryIO implements MemoryIO {
     }
     protected final int index(long off) {
         return this.offset + (int) off;
-    }
-    public final boolean isNull() {
-        return false;
-    }
-    public final boolean isDirect() {
-        return false;
     }
 
     public final ByteOrder order() {
@@ -100,14 +99,14 @@ public final class ArrayMemoryIO implements MemoryIO {
         return java.nio.ByteBuffer.wrap(buffer, offset, length).duplicate();
     }
 
-    public final DirectMemoryIO getMemoryIO(long offset) {
+    public final MemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
         return Factory.getInstance().wrapDirectMemory(runtime, getAddress(offset));
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        putAddress(offset, ((DirectMemoryIO) value).getAddress());
+        putAddress(offset, value.address());
     }
     public final byte getByte(long offset) {
         checkBounds(offset, 1);
