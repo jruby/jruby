@@ -24,11 +24,14 @@ public final class StringParameterStrategy extends PointerParameterStrategy {
     }
 
     public final MemoryIO getMemoryIO(Object parameter) {
-        RubyString s = (RubyString) parameter;
+        return getMemoryIO((RubyString) parameter, isDirect(), checkStringSafety);
+    }
+    
+    static MemoryIO getMemoryIO(RubyString s, boolean isDirect, boolean checkStringSafety) {
         Object existingHandle = s.getFFIHandle();
         if (existingHandle instanceof NativeStringHandle) {
             NativeStringHandle sh = (NativeStringHandle) existingHandle;
-            if (s.getByteList() == sh.bl && sh.memory.isDirect() == isDirect()) {
+            if (s.getByteList() == sh.bl && sh.memory.isDirect() == isDirect) {
                 return sh.memory;
             }
         }
@@ -36,7 +39,7 @@ public final class StringParameterStrategy extends PointerParameterStrategy {
         ByteList bl = s.getByteList();
         if (checkStringSafety) StringSupport.checkStringSafety(s.getRuntime(), s);
         MemoryIO memory;
-        if (isDirect()) {
+        if (isDirect) {
             memory = TransientNativeMemoryIO.allocateAligned(s.getRuntime(), bl.length() + 1, 1, false);
             memory.putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
         } else {

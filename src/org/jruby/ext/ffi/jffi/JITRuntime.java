@@ -426,6 +426,8 @@ public final class JITRuntime {
 
     private static final PointerParameterStrategy DIRECT_MEMORY_OBJECT = new MemoryObjectParameterStrategy(true);
     private static final PointerParameterStrategy HEAP_MEMORY_OBJECT = new MemoryObjectParameterStrategy(false);
+    private static final PointerParameterStrategy DIRECT_MEMORY_IO = new MemoryIOParameterStrategy(true);
+    private static final PointerParameterStrategy HEAP_MEMORY_IO = new MemoryIOParameterStrategy(false);
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
     private static final PointerParameterStrategy HEAP_STRING_POINTER_STRATEGY = new StringParameterStrategy(false, false);
     private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(false, true);
@@ -445,7 +447,63 @@ public final class JITRuntime {
         
         return null;
     }
-    
+
+    public static MemoryIO lookupPointerMemoryIO(IRubyObject parameter) {
+        if (parameter instanceof MemoryObject) {
+            return ((MemoryObject) parameter).getMemoryIO();
+
+        } else if (parameter instanceof RubyNil) {
+            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
+
+        } else if (parameter instanceof RubyString) {
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, false, false);
+
+        }
+
+        return null;
+    }
+
+    public static MemoryIO getPointerMemoryIO(IRubyObject parameter) {
+        MemoryIO memory = lookupPointerMemoryIO(parameter);
+        if (memory != null) {
+            return memory;
+        
+        } else if (parameter.respondsTo("to_ptr")) {
+            return getPointerMemoryIO(parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr"));
+                    
+        } else {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+        }
+    }
+
+    public static MemoryIO getStringMemoryIO(IRubyObject parameter) {
+        if (parameter instanceof RubyString) {
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, true, true);
+
+        } else if (parameter instanceof RubyNil) {
+            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
+
+        } else {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native string");
+        } 
+    }
+
+    public static MemoryIO getTransientStringMemoryIO(IRubyObject parameter) {
+        if (parameter instanceof RubyString) {
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, false, true);
+
+        } else if (parameter instanceof RubyNil) {
+            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
+
+        } else {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native string");
+        }
+    }
+
+    public static PointerParameterStrategy getMemoryIOStrategy(MemoryIO memory) {
+        return memory.isDirect() ? DIRECT_MEMORY_IO : HEAP_MEMORY_IO;
+    }
+
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
         PointerParameterStrategy strategy = lookupPointerParameterStrategy(parameter);
         if (strategy != null) {
@@ -491,8 +549,19 @@ public final class JITRuntime {
             return method.call(context, parameter, parameter.getMetaClass(), "call", Block.NULL_BLOCK);
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
+                    + " to native pointer; does not respond to :to_ptr");
         }
+    }
+
+    public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {
+        DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
+        if (method.isUndefined()) {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass() 
+                    + " to native pointer; does not respond to :to_ptr");
+        }
+        
+        return method;
     }
 
     public static boolean isDirectPointer(IRubyObject parameter) {

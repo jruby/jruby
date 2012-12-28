@@ -17,8 +17,8 @@ final class NilPointerParameterStrategy extends PointerParameterStrategy {
         return NullMemoryIO.INSTANCE;
     }
 
-    private static final class NullMemoryIO extends MemoryIO {
-        public static final MemoryIO INSTANCE = new NullMemoryIO();
+    static final class NullMemoryIO extends MemoryIO {
+        static final MemoryIO INSTANCE = new NullMemoryIO();
 
         private NullMemoryIO() {
             super(true, 0L);

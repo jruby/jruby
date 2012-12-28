@@ -54,9 +54,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
         int nextLocalVar = firstParam + signature.getParameterCount();
         final int heapPointerCountVar = nextLocalVar++;
-        final int firstStrategyVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
         int firstMemoryVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
-        int nextStrategyVar = firstStrategyVar;
         int nextMemoryVar = firstMemoryVar;
         
         // Perform any generic data conversions on the parameters
@@ -142,25 +140,25 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         mv.istore(heapPointerCountVar);
                     }
 
-                    Label haveStrategy = new Label();
+                    Label haveMemoryIO = new Label();
                     switch (parameterType) {
                         case STRING:
-                            mv.invokestatic(p(JITRuntime.class), "stringParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
+                            mv.invokestatic(p(JITRuntime.class), "getStringMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
                             break;
 
                         case TRANSIENT_STRING:
-                            mv.invokestatic(p(JITRuntime.class), "transientStringParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
+                            mv.invokestatic(p(JITRuntime.class), "getTransientStringMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
                             break;
 
                         default:
-                            Label lookupStrategy = new Label();
-                            mv.label(lookupStrategy);
+                            Label lookupMemoryIO = new Label();
+                            mv.label(lookupMemoryIO);
 
                             // First try fast lookup based solely on what java type the parameter is
-                            mv.invokestatic(p(JITRuntime.class), "lookupPointerParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
-                            mv.astore(nextStrategyVar);
-                            mv.aload(nextStrategyVar);
-                            mv.ifnonnull(haveStrategy);
+                            mv.invokestatic(p(JITRuntime.class), "lookupPointerMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
+                            mv.astore(nextMemoryVar);
+                            mv.aload(nextMemoryVar);
+                            mv.ifnonnull(haveMemoryIO);
 
                             // Now call to_ptr on the object and retry the strategy lookup
                             mv.aload(1); // ThreadContext
@@ -170,19 +168,13 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                             mv.invokestatic(p(JITRuntime.class), "to_ptr", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, CachingCallSite.class));
                             mv.astore(paramVar);
                             mv.aload(paramVar);
-                            mv.go_to(lookupStrategy);
+                            mv.go_to(lookupMemoryIO);
                             break;
                     }
                    
-                    mv.astore(nextStrategyVar);
-                    mv.label(haveStrategy);
-
-                    // Retrieve the MemoryIO instance and store it until the call is completed
-                    mv.aload(nextStrategyVar);
-                    mv.aload(paramVar);
-                    mv.invokevirtual(p(PointerParameterStrategy.class), "getMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, Object.class));
                     mv.astore(nextMemoryVar);
-
+                    mv.label(haveMemoryIO);
+                    
                     mv.aload(nextMemoryVar);
                     mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "isDirect", sig(boolean.class));
 
@@ -192,12 +184,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     mv.go_to(next);
 
                     mv.label(direct);
-                    
-                    // Now we have a MemoryIO, get the address from it
                     mv.aload(nextMemoryVar);
                     mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "address", sig(long.class));
                     narrow(mv, long.class, nativeIntType);
-                    nextStrategyVar++;
                     nextMemoryVar++;
                     mv.label(next);
                     break;
@@ -267,8 +256,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     case BUFFER_INOUT:
                     case STRING:
                     case TRANSIENT_STRING:
-                        mv.aload(firstParam + i);
-                        mv.aload(firstStrategyVar + ptrIdx);
+                        mv.aload(firstMemoryVar + ptrIdx);
+                        mv.dup();
+                        mv.invokestatic(p(JITRuntime.class), "getMemoryIOStrategy", sig(PointerParameterStrategy.class, org.jruby.ext.ffi.MemoryIO.class));
                         mv.aload(0);
                         mv.getfield(p(JITNativeInvoker.class), "parameterInfo" + i, ci(ObjectParameterInfo.class));
                         ptrIdx++;
