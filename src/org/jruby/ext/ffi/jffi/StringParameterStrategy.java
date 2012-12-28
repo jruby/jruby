@@ -28,7 +28,7 @@ public final class StringParameterStrategy extends PointerParameterStrategy {
         Object existingHandle = s.getFFIHandle();
         if (existingHandle instanceof NativeStringHandle) {
             NativeStringHandle sh = (NativeStringHandle) existingHandle;
-            if (s.getByteList() == sh.bl) {
+            if (s.getByteList() == sh.bl && sh.memory.isDirect() == isDirect()) {
                 return sh.memory;
             }
         }
