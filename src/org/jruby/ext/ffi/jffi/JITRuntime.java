@@ -467,13 +467,28 @@ public final class JITRuntime {
         MemoryIO memory = lookupPointerMemoryIO(parameter);
         if (memory != null) {
             return memory;
-        
-        } else if (parameter.respondsTo("to_ptr")) {
-            return getPointerMemoryIO(parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr"));
-                    
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            return convertToPointerMemoryIO(parameter);
         }
+    }
+
+    private static MemoryIO convertToPointerMemoryIO(IRubyObject parameter) {
+        IRubyObject obj = parameter;
+        ThreadContext context = parameter.getRuntime().getCurrentContext();
+        for (int depth = 0; depth < 4; depth++) {
+            if (obj.respondsTo("to_ptr")) {
+                obj = obj.callMethod(context, "to_ptr");
+                MemoryIO memory = lookupPointerMemoryIO(obj);
+                if (memory != null) {
+                    return memory;
+                }
+            
+            } else {
+                throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            }
+        }
+
+        throw parameter.getRuntime().newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
     }
 
     public static MemoryIO getStringMemoryIO(IRubyObject parameter) {
@@ -542,23 +557,18 @@ public final class JITRuntime {
             return transientStringParameterStrategy(parameter.convertToString());
         }
     }
-    
-    public static IRubyObject to_ptr(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {
-        DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
-        if (!method.isUndefined()) {
-            return method.call(context, parameter, parameter.getMetaClass(), "call", Block.NULL_BLOCK);
 
-        } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
-                    + " to native pointer; does not respond to :to_ptr");
-        }
+    public static MemoryIO convertToPointerMemoryIO(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {
+        DynamicMethod method = getConversionMethod(parameter, callSite);
+        IRubyObject ptr = method.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
+        return getPointerMemoryIO(ptr);
     }
 
     public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {
         DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
         if (method.isUndefined()) {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass() 
-                    + " to native pointer; does not respond to :to_ptr");
+            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
+                    + " to native pointer; does not respond to :" + callSite.getMethodName());
         }
         
         return method;

@@ -1,9 +1,13 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ext.ffi.MemoryObject;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -160,15 +164,12 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                             mv.aload(nextMemoryVar);
                             mv.ifnonnull(haveMemoryIO);
 
-                            // Now call to_ptr on the object and retry the strategy lookup
+                            // Now coerce the parameter to a pointer, and get the MemoryIO from it
                             mv.aload(1); // ThreadContext
                             mv.aload(paramVar);
                             mv.aload(0);
                             mv.getfield(p(JITNativeInvoker.class), builder.getParameterCallSiteName(i), ci(CachingCallSite.class));
-                            mv.invokestatic(p(JITRuntime.class), "to_ptr", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, CachingCallSite.class));
-                            mv.astore(paramVar);
-                            mv.aload(paramVar);
-                            mv.go_to(lookupMemoryIO);
+                            mv.invokestatic(p(JITRuntime.class), "convertToPointerMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, ThreadContext.class, IRubyObject.class, CachingCallSite.class));
                             break;
                     }
                    
