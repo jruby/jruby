@@ -10,6 +10,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -37,6 +39,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final ObjectParameterInfo parameterInfo3;
     protected final ObjectParameterInfo parameterInfo4;
     protected final ObjectParameterInfo parameterInfo5;
+    protected final CachingCallSite parameterCallSite0;
+    protected final CachingCallSite parameterCallSite1;
+    protected final CachingCallSite parameterCallSite2;
+    protected final CachingCallSite parameterCallSite3;
+    protected final CachingCallSite parameterCallSite4;
+    protected final CachingCallSite parameterCallSite5;
+    protected final CachingCallSite parameterCallSite6;
 
     public JITNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, function, signature);
@@ -60,6 +69,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterInfo3 = getParameterInfo(signature, 3);
         parameterInfo4 = getParameterInfo(signature, 4);
         parameterInfo5 = getParameterInfo(signature, 5);
+        parameterCallSite0 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite1 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite2 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite3 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite4 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite5 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite6 = new FunctionalCachingCallSite("to_ptr");
     }
 
     private static NativeDataConverter getParameterConverter(Signature signature, int i) {

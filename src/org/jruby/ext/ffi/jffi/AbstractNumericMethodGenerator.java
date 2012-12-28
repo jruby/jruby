@@ -4,8 +4,10 @@ import com.kenai.jffi.*;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.objectweb.asm.Label;
 
 import java.util.Arrays;
@@ -140,12 +142,40 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         mv.istore(heapPointerCountVar);
                     }
 
-                    String strategyMethod = parameterType == NativeType.STRING
-                            ? "stringParameterStrategy"
-                            : parameterType == NativeType.TRANSIENT_STRING ? "transientStringParameterStrategy" : "pointerParameterStrategy";
-                    mv.invokestatic(p(JITRuntime.class), strategyMethod,
-                            sig(PointerParameterStrategy.class, IRubyObject.class));
+                    Label haveStrategy = new Label();
+                    switch (parameterType) {
+                        case STRING:
+                            mv.invokestatic(p(JITRuntime.class), "stringParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
+                            break;
+
+                        case TRANSIENT_STRING:
+                            mv.invokestatic(p(JITRuntime.class), "transientStringParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
+                            break;
+
+                        default:
+                            Label lookupStrategy = new Label();
+                            mv.label(lookupStrategy);
+
+                            // First try fast lookup based solely on what java type the parameter is
+                            mv.invokestatic(p(JITRuntime.class), "lookupPointerParameterStrategy", sig(PointerParameterStrategy.class, IRubyObject.class));
+                            mv.astore(nextStrategyVar);
+                            mv.aload(nextStrategyVar);
+                            mv.ifnonnull(haveStrategy);
+
+                            // Now call to_ptr on the object and retry the strategy lookup
+                            mv.aload(1); // ThreadContext
+                            mv.aload(paramVar);
+                            mv.aload(0);
+                            mv.getfield(p(JITNativeInvoker.class), builder.getParameterCallSiteName(i), ci(CachingCallSite.class));
+                            mv.invokestatic(p(JITRuntime.class), "to_ptr", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, CachingCallSite.class));
+                            mv.astore(paramVar);
+                            mv.aload(paramVar);
+                            mv.go_to(lookupStrategy);
+                            break;
+                    }
+                   
                     mv.astore(nextStrategyVar);
+                    mv.label(haveStrategy);
 
                     // Retrieve the MemoryIO instance and store it until the call is completed
                     mv.aload(nextStrategyVar);

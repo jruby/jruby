@@ -128,6 +128,10 @@ final class AsmClassBuilder {
         return "parameterConverter" + i;
     }
 
+    final String getParameterCallSiteName(int i) {
+        return "parameterCallSite" + i;
+    }
+
     final String getFallbackInvokerFieldName() {
         return "fallbackInvoker";
     }

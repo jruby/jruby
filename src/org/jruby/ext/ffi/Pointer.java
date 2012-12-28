@@ -9,8 +9,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.runtime.Visibility.*;
@@ -36,7 +37,10 @@ public class Pointer extends AbstractMemory {
                 runtime.getRuntimeError().getAllocator());
 
         // Add Pointer::NULL as a constant
-        result.setConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
+        Pointer nullPointer = new Pointer(runtime, result, new NullMemoryIO(runtime));
+        result.setConstant("NULL", nullPointer);
+        
+        runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer));
 
         return result;
     }
@@ -182,4 +186,29 @@ public class Pointer extends AbstractMemory {
         return new Pointer(runtime, getPointerClass(runtime), getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
     }
 
+    private static final class NilToPointerMethod extends DynamicMethod {
+        private static final Arity ARITY = Arity.NO_ARGUMENTS;
+        private final Pointer nullPointer;
+
+        private NilToPointerMethod(RubyModule implementationClass, Pointer nullPointer) {
+            super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+            this.nullPointer = nullPointer;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            ARITY.checkArity(context.runtime, args);
+            return nullPointer;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+            return nullPointer;
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            return this;
+        }
+    }
 }

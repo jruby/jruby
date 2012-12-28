@@ -2,8 +2,11 @@ package org.jruby.ext.ffi.jffi;
 
 import org.jruby.*;
 import org.jruby.ext.ffi.*;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
@@ -428,7 +431,7 @@ public final class JITRuntime {
     private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(false, true);
     private static final PointerParameterStrategy DIRECT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(true, true);
 
-    public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
+    public static PointerParameterStrategy lookupPointerParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof MemoryObject) {
             return ((MemoryObject) parameter).getMemoryIO().isDirect() ? DIRECT_MEMORY_OBJECT : HEAP_MEMORY_OBJECT;
 
@@ -438,6 +441,16 @@ public final class JITRuntime {
         } else if (parameter instanceof RubyString) {
             return HEAP_STRING_POINTER_STRATEGY;
 
+        }
+        
+        return null;
+    }
+    
+    public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
+        PointerParameterStrategy strategy = lookupPointerParameterStrategy(parameter);
+        if (strategy != null) {
+            return strategy;
+        
         } else if (parameter.respondsTo("to_ptr")) {
             IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
 
@@ -469,6 +482,16 @@ public final class JITRuntime {
 
         } else {
             return transientStringParameterStrategy(parameter.convertToString());
+        }
+    }
+    
+    public static IRubyObject to_ptr(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {
+        DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
+        if (!method.isUndefined()) {
+            return method.call(context, parameter, parameter.getMetaClass(), "call", Block.NULL_BLOCK);
+
+        } else {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
         }
     }
 
