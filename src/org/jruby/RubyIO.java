@@ -4215,30 +4215,28 @@ public class RubyIO extends RubyObject {
     }
 
     private static long transfer(FileChannel from, WritableByteChannel to) throws IOException {
+        
+
+        // handle large files on 32-bit JVMs
+        long chunkSize = 128 * 1024 * 1024;
         long size = from.size();
-
-        // handle large files on 32-bit JVMs (JRUBY-4913)
-        try {
-            from.transferTo(from.position(), size, to);
-        } catch (IOException ioe) {
-            // if the failure is "Cannot allocate memory", do the transfer in 100MB max chunks
-            if (ioe.getMessage().equals("Cannot allocate memory")) {
-                long _100M = 100 * 1024 * 1024;
-                while (size > 0) {
-                    if (size > _100M) {
-                        from.transferTo(from.position(), _100M, to);
-                        size -= _100M;
-                    } else {
-                        from.transferTo(from.position(), size, to);
-                        break;
-                    }
-                }
-            } else {
-                throw ioe;
+        long remaining = size;
+        long position = from.position();
+        long transferred = 0;
+        
+        while (remaining > 0) {
+            long count = Math.min(remaining, chunkSize);
+            long n = from.transferTo(position, count, to);
+            if (n == 0) {
+                break;
             }
+            
+            position += n;
+            remaining -= n;
+            transferred += n;
         }
-
-        return size;
+        
+        return transferred;
     }
 
     @JRubyMethod(name = "try_convert", meta = true, compat = RUBY1_9)
