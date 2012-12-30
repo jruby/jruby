@@ -4197,16 +4197,6 @@ public class RubyIO extends RubyObject {
             }
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
-        } finally {
-            try {
-                if (io1 != null) {
-                    io1.close();
-                }
-            } finally {
-                if (io2 != null) {
-                    io2.close();
-                }
-            }
         }
     }
 
