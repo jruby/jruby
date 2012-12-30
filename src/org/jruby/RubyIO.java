@@ -4189,6 +4189,7 @@ public class RubyIO extends RubyObject {
                     WritableByteChannel to = (WritableByteChannel)d2.getChannel();
 
                     size = transfer(from, to);
+                    from.position(from.position() + size);
                 }
 
                 return context.runtime.newFixnum(size);

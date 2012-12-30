@@ -1,5 +1,4 @@
 fails:IO.copy_stream from an IO does not change the IO offset when an offset is specified
-fails:IO.copy_stream from an IO does change the IO offset when an offset is not specified
 fails:IO.copy_stream from an IO to a file name copies only length bytes when specified
 fails:IO.copy_stream from an IO to a file name copies only length bytes from the offset
 fails:IO.copy_stream from an IO to an IO starts writing at the destination IO's current position
