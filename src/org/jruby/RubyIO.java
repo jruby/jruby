@@ -4167,11 +4167,11 @@ public class RubyIO extends RubyObject {
                 throw runtime.newTypeError("Should be String or IO");
             }
 
+            if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
+            if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
+
             ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
             ChannelDescriptor d2 = io2.openFile.getMainStreamSafe().getDescriptor();
-
-            if (!d1.isReadable()) throw runtime.newIOError("from IO is not readable");
-            if (!d2.isWritable()) throw runtime.newIOError("from IO is not writable");
 
             try {
                 long size = 0;
