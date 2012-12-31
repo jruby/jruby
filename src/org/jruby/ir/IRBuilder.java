@@ -795,6 +795,54 @@ public class IRBuilder {
         return UnexecutableNil.U_NIL;
     }
 
+    // These two methods could have been DRY-ed out if we had closures.
+    // For now, just duplicating code.
+    protected void catchUncaughtBreakInLambdas(IRClosure s) {
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label rescueLabel = s.getNewLabel();
+
+        // protect the entire body as it exists now with the global ensure block
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
+        s.addInstr(new LabelInstr(rescueLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
+        s.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
+    }
+
+    private void handleNonlocalReturnInMethod(IRScope s) {
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label gebLabel    = s.getNewLabel();
+
+        // protect the entire body as it exists now with the global ensure block
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel, gebLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
+        s.addInstr(new LabelInstr(gebLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new RuntimeHelperCall(ret, "handleNonlocalReturn", new Operand[]{exc} ));
+        s.addInstr(new ReturnInstr(ret));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
+    }
+
     // Wrap call in a rescue handler that catches the IRBreakJump
     private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr) {
         // Check if we have to handle a break
@@ -1641,6 +1689,11 @@ public class IRBuilder {
             method.addInstr(new ReturnInstr(manager.getNil()));
         }
 
+        // If the method can receive non-local returns
+        if (method.canReceiveNonlocalReturns()) {
+            handleNonlocalReturnInMethod(method);
+        }
+
         return method;
     }
 
@@ -2077,6 +2130,8 @@ public class IRBuilder {
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
 
+        // No need to add "catchUncaughtBreakInLambdas" since this closure cannot be a lambda!
+
         return new WrappedIRClosure(closure);
     }
 
@@ -2230,6 +2285,10 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
+
+        // SSS FIXME: We can skip this if the closure has no calls
+        // since breaks can never get here in that case.
+        catchUncaughtBreakInLambdas(closure);
 
         return new WrappedIRClosure(closure);
     }

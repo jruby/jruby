@@ -64,6 +64,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
@@ -557,19 +558,7 @@ public class Interpreter {
                 if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
 
                 if (ipc == -1) {
-                    // SSS FIXME: Modify instruction stream to eliminate these two cases
-                    // of special handling of uncaught break-jumps and local-returns
-                    //
-                    // Add global-ensure-block to handle these scenarios:
-                    // -> for break jumps,      needed in closures only
-                    // -> for nonlocal returns, needed in methods only
-                    if (t instanceof IRBreakJump) {
-                        // Should always throw an exception
-                        throw IRRuntimeHelpers.propagateBreak(context, scope, (IRBreakJump)t, blockType);
-                    } else {
-                        // No ensure block here, propagate the return, if necessary
-                        return IRRuntimeHelpers.handleNonlocalReturn(scope, t, blockType);
-                    }
+                    UnsafeFactory.getUnsafe().throwException((Throwable)t);
                 } else {
                     exception = t;
                 }

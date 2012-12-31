@@ -395,6 +395,8 @@ public class IRBuilder19 extends IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) closure.addInstr(new ReturnInstr(closureRetVal));
 
+        catchUncaughtBreakInLambdas(closure);
+
         Variable lambda = s.getNewTemporaryVariable();
         s.addInstr(new BuildLambdaInstr(lambda, closure, node.getPosition()));
         return lambda;

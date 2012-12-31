@@ -224,7 +224,7 @@ public abstract class IRScope {
     protected boolean hasNonlocalReturns;
 
     /** Can this scope receive a non-local return? */
-    protected boolean canReceiveNonlocalReturns;
+    public boolean canReceiveNonlocalReturns;
 
     /** Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope,
      * this is an useful flag to compute. */
@@ -361,6 +361,10 @@ public abstract class IRScope {
 
     public Instr getLastInstr() {
         return instrList.get(instrList.size() - 1);
+    }
+
+    public void addInstrAtBeginning(Instr i) {
+        instrList.add(0, i);
     }
 
     public void addInstr(Instr i) {
@@ -541,6 +545,20 @@ public abstract class IRScope {
 
     public boolean canCaptureCallersBinding() {
         return canCaptureCallersBinding;
+    }
+
+    public boolean canReceiveNonlocalReturns() {
+        if (this.canReceiveNonlocalReturns) {
+            return true;
+        }
+
+        boolean canReceiveNonlocalReturns = false;
+        for (IRClosure cl : getClosures()) {
+            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns()) {
+                canReceiveNonlocalReturns = true;
+            }
+        }
+        return canReceiveNonlocalReturns;
     }
 
     public CFG buildCFG() {

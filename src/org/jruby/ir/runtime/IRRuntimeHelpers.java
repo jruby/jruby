@@ -113,13 +113,13 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static RuntimeException propagateBreak(ThreadContext context, IRScope scope, IRBreakJump bj, Block.Type blockType) {
-        if (inNonMethodBodyLambda(scope, blockType)) {
+    public static void catchUncaughtBreakInLambdas(ThreadContext context, IRScope scope, Object exc, Block.Type blockType) throws RuntimeException {
+        if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            return IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else {
             // Propagate
-            return bj;
+            UnsafeFactory.getUnsafe().throwException((Throwable)exc);
         }
     }
 
