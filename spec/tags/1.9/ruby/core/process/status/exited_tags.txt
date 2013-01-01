@@ -1,2 +1,0 @@
-fails(JRUBY-5658):Process::Status#exited? for a child that exited normally returns true
-fails(JRUBY-5658):Process::Status#exited? for a terminated child returns false
