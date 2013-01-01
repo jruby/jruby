@@ -637,7 +637,7 @@ public abstract class IRScope {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
-        
+
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the
@@ -651,7 +651,15 @@ public abstract class IRScope {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation() {
+    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        if (isLambda) {
+            // Add a global ensure block to catch uncaught breaks
+            // and throw a LocalJumpError.
+            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+                this.relinearizeCFG = true;
+            }
+        }
+
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
@@ -668,6 +676,17 @@ public abstract class IRScope {
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
+
+        // Add this always since we dont re-JIT a previously
+        // JIT-ted closure.  But, check if there are other
+        // smarts available to us and eliminate adding this
+        // code to every closure there is.
+        //
+        // Add a global ensure block to catch uncaught breaks
+        // and throw a LocalJumpError.
+        if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+            this.relinearizeCFG = true;
+        }
 
         try {
             buildLinearization(); // FIXME: compiler passes should have done this

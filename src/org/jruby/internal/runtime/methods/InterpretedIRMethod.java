@@ -66,7 +66,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
+        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation(false);
 
         if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.

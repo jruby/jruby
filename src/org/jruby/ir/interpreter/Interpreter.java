@@ -98,7 +98,7 @@ public class Interpreter {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager(), is_1_9).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
-        evalScript.prepareForInterpretation();
+        evalScript.prepareForInterpretation(false);
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext();
         runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
@@ -120,7 +120,7 @@ public class Interpreter {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation();
+            b.prepareForInterpretation(false);
             Block blk = (Block)(new WrappedIRClosure(b)).retrieve(context, self, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -339,7 +339,7 @@ public class Interpreter {
         Instr[] instrs = scope.getInstrsForInterpretation();
 
         // The base IR may not have been processed yet
-        if (instrs == null) instrs = scope.prepareForInterpretation();
+        if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
 
         int temporaryVariablesSize = scope.getTemporaryVariableSize();
         Object[] temp = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;

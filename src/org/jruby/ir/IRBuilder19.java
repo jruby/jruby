@@ -375,6 +375,35 @@ public class IRBuilder19 extends IRBuilder {
         return ret;
     }
 
+/* ------------------------------------------------------------------
+ * This code is added on demand at runtime in the interpreter code.
+ * For JIT, this may have to be added always!
+
+    // These two methods could have been DRY-ed out if we had closures.
+    // For now, just duplicating code.
+    private void catchUncaughtBreakInLambdas(IRClosure s) {
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label rescueLabel = s.getNewLabel();
+
+        // protect the entire body as it exists now with the global ensure block
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
+        s.addInstr(new LabelInstr(rescueLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
+        s.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
+    }
+ * ------------------------------------------------------------------ */
+
     public Operand buildLambda(LambdaNode node, IRScope s) {
         IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
         s.addClosure(closure);
@@ -395,7 +424,8 @@ public class IRBuilder19 extends IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) closure.addInstr(new ReturnInstr(closureRetVal));
 
-        catchUncaughtBreakInLambdas(closure);
+        // Added as part of 'prepareForInterpretation' code.
+        // catchUncaughtBreakInLambdas(closure);
 
         Variable lambda = s.getNewTemporaryVariable();
         s.addInstr(new BuildLambdaInstr(lambda, closure, node.getPosition()));
