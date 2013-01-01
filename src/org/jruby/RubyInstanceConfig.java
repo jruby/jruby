@@ -1186,6 +1186,20 @@ public class RubyInstanceConfig {
         return profileMaxMethods;
     }
     
+    /**
+     * Set whether Kernel#gsub should be defined
+     */
+    public void setKernelGsubDefined(boolean setDefineKernelGsub) {
+        this.kernelGsubDefined = setDefineKernelGsub;
+    }
+    
+    /**
+     * Get Kernel#gsub is defined or not
+     */
+    public boolean getKernelGsubDefined() {
+        return kernelGsubDefined;
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1269,6 +1283,7 @@ public class RubyInstanceConfig {
     private boolean hardExit = false;
     private boolean disableGems = false;
     private boolean updateNativeENVEnabled = true;
+    private boolean kernelGsubDefined;
 
     private String jrubyHome;
     

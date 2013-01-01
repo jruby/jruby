@@ -240,10 +240,12 @@ public class ArgumentProcessor {
                     break;
                 case 'n':
                     config.setAssumeLoop(true);
+                    config.setKernelGsubDefined(true);
                     break;
                 case 'p':
                     config.setAssumePrinting(true);
                     config.setAssumeLoop(true);
+                    config.setKernelGsubDefined(true);
                     break;
                 case 'r':
                     config.getRequiredLibraries().add(grabValue(getArgumentError("-r must be followed by a package to require")));
