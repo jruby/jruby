@@ -250,6 +250,20 @@ ruby_debug(void)
     return rb_gv_get("$DEBUG");
 }
 
+const char* ruby_sourcefile = "unknown";
+
+RUBY_DLLSPEC const char *
+rb_sourcefile(void)
+{
+    return "unknown";
+}
+
+RUBY_DLLSPEC int 
+rb_sourceline(void)
+{
+    return -1;
+}
+
 #define M(x) rb_m##x = getConstModule(env, #x)
 #define C(x) rb_c##x = getConstClass(env, #x)
 #define E(x) rb_e##x = getConstClass(env, #x)
