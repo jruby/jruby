@@ -499,17 +499,15 @@ public final class JITRuntime {
         } else if (parameter instanceof RubyNil) {
             return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
 
-        } else if (callSite != null && !(conversionMethod = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method).isUndefined()) {
+        } else if (!(conversionMethod = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method).isUndefined()) {
             IRubyObject convertedParameter = conversionMethod.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
-            if (!context.runtime.getString().isInstance(convertedParameter)) {
-                throw context.runtime.newTypeError(parameter.getMetaClass() + "#" + callSite.getMethodName() + " should return String");
+            if (convertedParameter instanceof RubyString) {
+                return StringParameterStrategy.getMemoryIO((RubyString) convertedParameter, isDirect, checkStringSafety);
             }
-
-            return StringParameterStrategy.getMemoryIO((RubyString) convertedParameter, isDirect, checkStringSafety);
-
-        } else {
-            return StringParameterStrategy.getMemoryIO(parameter.convertToString(), isDirect, checkStringSafety);
+            // Fall through to the default conversion which will raise an error if the converted value is not of the correct type.
         }
+        
+        return StringParameterStrategy.getMemoryIO(parameter.convertToString(), isDirect, checkStringSafety);
     } 
 
     public static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite) {
