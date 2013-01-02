@@ -467,7 +467,7 @@ public final class JITRuntime {
             return NIL_POINTER_STRATEGY;
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            return stringParameterStrategy(parameter.convertToString());
         }
     }
 
@@ -480,7 +480,7 @@ public final class JITRuntime {
             return NIL_POINTER_STRATEGY;
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            return transientStringParameterStrategy(parameter.convertToString());
         }
     }
 
