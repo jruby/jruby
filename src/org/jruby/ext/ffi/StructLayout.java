@@ -49,6 +49,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -1171,6 +1172,7 @@ public final class StructLayout extends Type {
         public static final FieldIO INSTANCE = new PointerFieldIO();
         
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
+            DynamicMethod conversionMethod;
             if (value instanceof Pointer) {
                 ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
@@ -1183,15 +1185,17 @@ public final class StructLayout extends Type {
 
             } else if (value instanceof RubyInteger) {
                 ptr.getMemoryIO().putAddress(m.offset, Util.int64Value(ptr));
-            } else if (value.respondsTo("to_ptr")) {
-                IRubyObject addr = value.callMethod(context, "to_ptr");
+
+            } else if (value.isNil()) {
+                ptr.getMemoryIO().putAddress(m.offset, 0L);
+
+            } else if (!(conversionMethod = value.getMetaClass().searchMethod("to_ptr")).isUndefined()) {
+                IRubyObject addr = conversionMethod.call(context, value, value.getMetaClass(), "to_ptr");
                 if (addr instanceof Pointer) {
                     ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) addr).getMemoryIO());
                 } else {
                     throw context.runtime.newArgumentError("Invalid pointer value");
                 }
-            } else if (value.isNil()) {
-                ptr.getMemoryIO().putAddress(m.offset, 0L);
             } else {
                 throw context.runtime.newArgumentError("Invalid pointer value");
             }

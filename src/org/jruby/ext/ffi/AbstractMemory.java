@@ -41,6 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -82,11 +83,12 @@ abstract public class AbstractMemory extends MemoryObject {
             return ((Type) sizeArg).getNativeSize();
 
         } else {
+            DynamicMethod sizeMethod;
             if (sizeArg instanceof RubyClass && Struct.isStruct(context.runtime, (RubyClass) sizeArg)) {
                 return Struct.getStructSize(context.runtime, sizeArg);
 
-            } else if (sizeArg.respondsTo("size")) {
-                return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
+            } else if (!(sizeMethod = sizeArg.getMetaClass().searchMethod("size")).isUndefined()) {
+                return (int) RubyFixnum.num2long(sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
 
             } else {
                 throw context.runtime.newArgumentError("Invalid size argument");
@@ -1901,12 +1903,17 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private void putPointer(ThreadContext context, long offset, IRubyObject value) {
+        DynamicMethod conversionMethod;
+        
         if (value instanceof Pointer) {
             putPointer(context, offset, (Pointer) value);
+        
         } else if (value.isNil()) {
             getMemoryIO().putAddress(offset, 0L);
-        } else if (value.respondsTo("to_ptr")) {
-            putPointer(context, offset, value.callMethod(context, "to_ptr"));
+        
+        } else if (!(conversionMethod = value.getMetaClass().searchMethod("to_ptr")).isUndefined()) {
+            putPointer(context, offset, conversionMethod.call(context, value, value.getMetaClass(), "to_ptr"));
+        
         } else {
             throw context.runtime.newTypeError(value, context.runtime.getFFI().pointerClass);
         }
