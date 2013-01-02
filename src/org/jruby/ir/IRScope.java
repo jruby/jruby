@@ -684,7 +684,7 @@ public abstract class IRScope {
         //
         // Add a global ensure block to catch uncaught breaks
         // and throw a LocalJumpError.
-        if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+        if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
             this.relinearizeCFG = true;
         }
 
