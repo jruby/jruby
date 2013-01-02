@@ -1339,6 +1339,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         if (pathOrFile instanceof RubyFile) {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
+        } else if (pathOrFile instanceof RubyIO) {
+            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
             String path = pathStr.asJavaString();
