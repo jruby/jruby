@@ -411,7 +411,11 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
-            double div = big2dbl(this) / ((RubyFloat) other).getDoubleValue();
+            double otherFloatValue = ((RubyFloat) other).getDoubleValue();
+            if (runtime.is2_0()) {
+                if (otherFloatValue == 0.0) throw runtime.newZeroDivisionError();
+            }
+            double div = big2dbl(this) / otherFloatValue;
             if (slash) {
                 return RubyFloat.newFloat(runtime, div);
             } else {
