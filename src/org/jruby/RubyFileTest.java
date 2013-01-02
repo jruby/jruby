@@ -45,6 +45,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.TypeConverter;
 
 @JRubyModule(name = "FileTest")
 public class RubyFileTest {
@@ -276,7 +277,11 @@ public class RubyFileTest {
     public static IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         if (!(filename instanceof RubyFile)) {
-            filename = get_path(context, filename);
+            if (filename.respondsTo("to_io")) {
+                filename = (RubyIO) TypeConverter.convertToType(filename, runtime.getIO(), "to_io");
+            } else {
+                filename = get_path(context, filename);
+            }
         }
         
         ZipEntry entry = file_in_archive(filename);
@@ -301,7 +306,11 @@ public class RubyFileTest {
     public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
-            filename = get_path(context, filename);
+            if (filename.respondsTo("to_io")) {
+                filename = (RubyIO) TypeConverter.convertToType(filename, runtime.getIO(), "to_io");
+            } else {
+                filename = get_path(context, filename);
+            }
         }
         
         ZipEntry entry = file_in_archive(filename);
