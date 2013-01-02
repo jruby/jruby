@@ -147,17 +147,17 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     Label haveMemoryIO = new Label();
                     switch (parameterType) {
                         case STRING:
-                            mv.invokestatic(p(JITRuntime.class), "getStringMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
+                        case TRANSIENT_STRING:
+                            mv.aload(1); // ThreadContext
+                            mv.aload(0);
+                            mv.getfield(p(JITNativeInvoker.class), builder.getParameterCallSiteName(i), ci(CachingCallSite.class));
+                            mv.invokestatic(p(JITRuntime.class), 
+                                    parameterType == NativeType.STRING ? "convertToStringMemoryIO" : "convertToTransientStringMemoryIO", 
+                                    sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class, ThreadContext.class, CachingCallSite.class));
                             break;
 
-                        case TRANSIENT_STRING:
-                            mv.invokestatic(p(JITRuntime.class), "getTransientStringMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
-                            break;
 
                         default:
-                            Label lookupMemoryIO = new Label();
-                            mv.label(lookupMemoryIO);
-
                             // First try fast lookup based solely on what java type the parameter is
                             mv.invokestatic(p(JITRuntime.class), "lookupPointerMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
                             mv.astore(nextMemoryVar);

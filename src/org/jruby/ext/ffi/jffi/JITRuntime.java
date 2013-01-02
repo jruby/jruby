@@ -7,7 +7,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 
@@ -490,29 +489,35 @@ public final class JITRuntime {
 
         throw parameter.getRuntime().newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
     }
-
-    public static MemoryIO getStringMemoryIO(IRubyObject parameter) {
+    
+    private static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite,
+                                                    boolean isDirect, boolean checkStringSafety) {
+        DynamicMethod conversionMethod;
         if (parameter instanceof RubyString) {
-            return StringParameterStrategy.getMemoryIO((RubyString) parameter, true, true);
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, isDirect, checkStringSafety);
 
         } else if (parameter instanceof RubyNil) {
             return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
 
+        } else if (callSite != null && !(conversionMethod = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method).isUndefined()) {
+            IRubyObject convertedParameter = conversionMethod.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
+            if (!context.runtime.getString().isInstance(convertedParameter)) {
+                throw context.runtime.newTypeError(parameter.getMetaClass() + "#" + callSite.getMethodName() + " should return String");
+            }
+
+            return StringParameterStrategy.getMemoryIO((RubyString) convertedParameter, isDirect, checkStringSafety);
+
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native string");
-        } 
+            return StringParameterStrategy.getMemoryIO(parameter.convertToString(), isDirect, checkStringSafety);
+        }
+    } 
+
+    public static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite) {
+        return convertToStringMemoryIO(parameter, context, callSite, true, true); 
     }
 
-    public static MemoryIO getTransientStringMemoryIO(IRubyObject parameter) {
-        if (parameter instanceof RubyString) {
-            return StringParameterStrategy.getMemoryIO((RubyString) parameter, false, true);
-
-        } else if (parameter instanceof RubyNil) {
-            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
-
-        } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native string");
-        }
+    public static MemoryIO convertToTransientStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite) {
+        return convertToStringMemoryIO(parameter, context, callSite, false, true);
     }
 
     public static PointerParameterStrategy getMemoryIOStrategy(MemoryIO memory) {

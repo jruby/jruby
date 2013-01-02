@@ -69,13 +69,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterInfo3 = getParameterInfo(signature, 3);
         parameterInfo4 = getParameterInfo(signature, 4);
         parameterInfo5 = getParameterInfo(signature, 5);
-        parameterCallSite0 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite1 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite2 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite3 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite4 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite5 = new FunctionalCachingCallSite("to_ptr");
-        parameterCallSite6 = new FunctionalCachingCallSite("to_ptr");
+        parameterCallSite0 = getParameterCallSite(signature, 0);
+        parameterCallSite1 = getParameterCallSite(signature, 1);
+        parameterCallSite2 = getParameterCallSite(signature, 2);
+        parameterCallSite3 = getParameterCallSite(signature, 3);
+        parameterCallSite4 = getParameterCallSite(signature, 4);
+        parameterCallSite5 = getParameterCallSite(signature, 5);
+        parameterCallSite6 = getParameterCallSite(signature, 6);
     }
 
     private static NativeDataConverter getParameterConverter(Signature signature, int i) {
@@ -114,6 +114,30 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         }
 
         return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
+    }
+    private static CachingCallSite getParameterCallSite(Signature signature, int parameterIndex) {
+        if (signature.getParameterCount() <= parameterIndex) {
+            return null;
+        }
+
+        Type type = signature.getParameterType(parameterIndex);
+        NativeType nativeType  = type instanceof MappedType
+                ? ((MappedType) type).getRealType().getNativeType() : type.getNativeType();
+
+        switch (nativeType) {
+            case STRING:
+            case TRANSIENT_STRING:
+                return new FunctionalCachingCallSite("to_str");
+
+            case POINTER:
+            case BUFFER_IN:
+            case BUFFER_OUT:
+            case BUFFER_INOUT:
+                return new FunctionalCachingCallSite("to_ptr");
+
+            default:
+                return null;
+        }
     }
 
     Signature getSignature() {
