@@ -251,7 +251,7 @@ public class StringTerm extends StrTerm {
                 default:
                     if (regexp) {
                         src.unread(c);
-                        parseEscapeIntoBuffer(src, buffer);
+                        parseEscapeIntoBuffer(lexer, encoding, src, buffer);
 
                         if (hasNonAscii && buffer.getEncoding() != encoding) {
                             mixedEscape(lexer, buffer.getEncoding(), encoding);
@@ -272,14 +272,8 @@ public class StringTerm extends StrTerm {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
-                c = src.readCodepoint(c, encoding);
-                if (c == -2) { // FIXME: Hack
-                    throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
-                            null, "invalid multibyte char (" + encoding + ")");
-                }
-
-                // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
-                if (lexer.tokenAddMBC(c, buffer) == RubyYaccLexer.EOF) return RubyYaccLexer.EOF;
+                
+                if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyYaccLexer.EOF) return RubyYaccLexer.EOF;
 
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
@@ -306,12 +300,12 @@ public class StringTerm extends StrTerm {
     }
 
     // Was a goto in original ruby lexer
-    private void escaped(LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void escaped(RubyYaccLexer lexer, Encoding encoding, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
         switch (c = src.read()) {
         case '\\':
-            parseEscapeIntoBuffer(src, buffer);
+            parseEscapeIntoBuffer(lexer, encoding, src, buffer);
             break;
         case RubyYaccLexer.EOF:
             throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
@@ -321,7 +315,7 @@ public class StringTerm extends StrTerm {
         }
     }
 
-    private void parseEscapeIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void parseEscapeIntoBuffer(RubyYaccLexer lexer, Encoding encoding, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
         switch (c = src.read()) {
@@ -372,7 +366,7 @@ public class StringTerm extends StrTerm {
                         src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
-            escaped(src, buffer);
+            escaped(lexer, encoding, src, buffer);
             break;
         case 'C':
             if ((c = src.read()) != '-') {
@@ -380,20 +374,35 @@ public class StringTerm extends StrTerm {
                         src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
-            escaped(src, buffer);
+            escaped(lexer, encoding, src, buffer);
             break;
         case 'c':
             buffer.append(new byte[] { '\\', 'c' });
-            escaped(src, buffer);
+            escaped(lexer, encoding, src, buffer);
             break;
         case RubyYaccLexer.EOF:
             throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
                     src.getCurrentLine(), "Invalid escape character syntax");
         default:
-            if (c != '\\' || c != end) {
-                buffer.append('\\');
+            if (!lexer.isOneEight() && !Encoding.isAscii((byte) c)) {
+                addNonAsciiToBuffer(c, src, encoding, lexer, buffer);
+            } else {
+                if (c != '\\' || c != end) buffer.append('\\');
+
+                buffer.append(c);
             }
-            buffer.append(c);
         }
+    }
+
+    private int addNonAsciiToBuffer(int c, LexerSource src, Encoding encoding, RubyYaccLexer lexer, ByteList buffer) throws SyntaxException, IOException {
+        c = src.readCodepoint(c, encoding);
+
+        if (c == -2) { // FIXME: Hack
+            throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
+                    null, "invalid multibyte char (" + encoding + ")");
+        }
+
+        // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
+        return lexer.tokenAddMBC(c, buffer);
     }
 }
