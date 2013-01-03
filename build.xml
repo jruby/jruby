@@ -596,7 +596,10 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                  classpath="${build.lib.dir}/jarjar-1.0.jar"/>
         <jarjar destfile="${dest.lib.dir}/${filename}">
-            <fileset dir="${jruby.classes.dir}"/>
+            <fileset dir="${jruby.classes.dir}">
+                <exclude name="**/*openssl*/**/*"/>
+                <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
+            </fileset>
             <fileset dir="${build.dir}/jar-complete"/>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
 
@@ -608,7 +611,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
                 <attribute name="Main-Class" value="${mainclass}"/>
             </manifest>
             <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-            <rule pattern="org.bouncycastle.**" result="org.jruby.org.bouncycastle.@1"/>
         </jarjar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby-complete.bnd"/>
