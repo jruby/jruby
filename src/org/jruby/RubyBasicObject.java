@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jruby.anno.JRubyMethod;
@@ -67,6 +68,9 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.unsafe.UnsafeHolder;
+
+import sun.print.resources.serviceui;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
@@ -114,7 +118,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected int flags;
 
     // variable table, lazily allocated as needed (if needed)
-    private transient volatile Object[] varTable;
+    private transient Object[] varTable;
+    
+    // locking stamp for Unsafe ops updating the vartable
+    private transient volatile int varTableStamp;
+    
+    private static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
 
     /**
      * The error message used when some one tries to modify an
@@ -1186,12 +1195,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return varTable;
     }
 
-    private static final AtomicReferenceFieldUpdater VARTABLE_UPDATER;
+    private static final AtomicIntegerFieldUpdater STAMP_UPDATER;
 
     static {
-        AtomicReferenceFieldUpdater updater = null;
+        AtomicIntegerFieldUpdater updater = null;
         try {
-            updater = AtomicReferenceFieldUpdater.newUpdater(RubyBasicObject.class, Object[].class, "varTable");
+            updater = AtomicIntegerFieldUpdater.newUpdater(RubyBasicObject.class, "varTableStamp");
         } catch (RuntimeException re) {
             if (re.getCause() instanceof AccessControlException) {
                 // security prevented creation; fall back on synchronized assignment
@@ -1199,78 +1208,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 throw re;
             }
         }
-        VARTABLE_UPDATER = updater;
+        STAMP_UPDATER = updater;
     }
 
 
-    /**
-     * Get variable table for write purposes. Initializes if uninitialized, and
-     * resizes if necessary.
-     */
-    protected final Object[] getVariableTableForWrite(int index) {
-        if (VARTABLE_UPDATER == null) {
-            return getVariableTableForWriteSynchronized(index);
-        } else {
-            return getVariableTableForWriteAtomic(index);
-        }
-    }
-
-    /**
-     * Get the variable table for write. If it is not set or not of the right size,
-     * synchronize against the object and prepare it accordingly.
-     *
-     * @param index the index of the value soon to be set
-     * @return the var table, ready for setting
-     */
-    private Object[] getVariableTableForWriteSynchronized(int index) {
-        Object[] myVarTable = varTable;
-        if (myVarTable == null || myVarTable.length <= index) {
-            synchronized (this) {
-                myVarTable = varTable;
-
-                if (myVarTable == null) {
-                    return varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                } else if (myVarTable.length <= index) {
-                    Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                    System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
-                    return varTable = newTable;
-                } else {
-                    return myVarTable;
-                }
-            }
-        }
-
-        return varTable;
-    }
-
-
-    /**
-     * Get the variable table for write. If it is not set or not of the right size,
-     * atomically update it with an appropriate value.
-     *
-     * @param index the index of the value soon to be set
-     * @return the var table, ready for setting
-     */
-    private Object[] getVariableTableForWriteAtomic(int index) {
-        while (true) {
-            Object[] myVarTable = varTable;
-            Object[] newTable;
-
-            if (myVarTable == null) {
-                newTable = new Object[metaClass.getRealClass().getVariableTableSizeWithExtras()];
-            } else if (myVarTable.length <= index) {
-                newTable = new Object[metaClass.getRealClass().getVariableTableSizeWithExtras()];
-                System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
-            } else {
-                return myVarTable;
-            }
-
-            // proceed with atomic update of table, or retry
-            if (VARTABLE_UPDATER.compareAndSet(this, myVarTable, newTable)) {
-                return newTable;
-            }
-        }
-    }
 
     public Object getVariable(int index) {
 		Object[] ivarTable;
@@ -1278,18 +1219,87 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (ivarTable.length > index) return ivarTable[index];
         return null;
     }
-
+    
     public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
         if (index < 0) return;
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
+        setVariableInternal(index, value);
     }
+    
+    protected final void setVariableInternal(int index, Object value) {
+        if(UnsafeHolder.U == null)
+            setVariableSynchronized(index,value);
+        else
+            setVariableStamped(index,value);
+    }
+
+    private void setVariableSynchronized(int index, Object value) {
+        synchronized (this) {
+            Object[] currentTable = varTable;
+
+            if (currentTable == null) {
+                varTable = currentTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+            } else if (currentTable.length <= index) {
+                Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
+                varTable = newTable;
+            }
+            
+            varTable[index] = value;
+        }
+    }
+    
+    private void setVariableStamped(int index, Object value) {
+        
+        for(;;) {
+            int currentStamp = varTableStamp;
+            // spin-wait if odd
+            if((currentStamp & 0x01) == 1)
+               continue;
+            
+            Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET);
+            
+            if(currentTable == null || index >= currentTable.length)
+            {
+                // try to acquire exclusive access to the varTable field
+                if(!STAMP_UPDATER.compareAndSet(this, currentStamp, ++currentStamp))
+                    continue;
+                
+                Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                if(currentTable != null)
+                    System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
+                newTable[index] = value;
+                UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, newTable);
+                
+                // release exclusive access
+                STAMP_UPDATER.set(this, ++currentStamp);
+            } else {
+                // shared access to varTable field.
+                
+                if(UnsafeHolder.SUPPORTS_FENCES) {
+                    currentTable[index] = value;
+                    UnsafeHolder.storeFence();                    
+                } else {
+                    // TODO: maybe optimize by read and checking current value before setting
+                    UnsafeHolder.U.putObjectVolatile(currentTable, sun.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET + sun.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE * index, value);
+                }
+                
+                // validate stamp. redo on concurrent modification
+                if(STAMP_UPDATER.get(this) != currentStamp)
+                    continue;
+                
+            }
+            
+            break;
+        }
+        
+        
+    }
+    
 
     private void setObjectId(int index, long value) {
         if (index < 0) return;
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
+        setVariableInternal(index, value);
     }
     
     public final Object getNativeHandle() {
@@ -1298,8 +1308,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final void setNativeHandle(Object value) {
         int index = getMetaClass().getRealClass().getNativeHandleAccessorField().getVariableAccessorForWrite().getIndex();
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
+        setVariableInternal(index, value);
     }
 
     public final Object getFFIHandle() {
@@ -1308,8 +1317,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final void setFFIHandle(Object value) {
         int index = getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForWrite().getIndex();
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
+        setVariableInternal(index, value);
     }
 
     //
@@ -1460,7 +1468,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         assert !IdUtil.isRubyVariable(name);
         return variableTableRemove(name);
     }
-
+    
     /**
      * Sync one this object's variables with other's - this is used to make
      * rbClone work correctly.
@@ -1471,17 +1479,36 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         boolean sameTable = otherRealClass == realClass;
 
         if (sameTable) {
-            RubyClass.VariableAccessor objIdAccessor = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead();
+            int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
+            
+            
             Object[] otherVars = ((RubyBasicObject) other).varTable;
-            int otherLength = otherVars.length;
-            Object[] myVars = getVariableTableForWrite(otherLength - 1);
-            System.arraycopy(otherVars, 0, myVars, 0, otherLength);
+            
+            if(UnsafeHolder.U == null)
+            {
+                synchronized (this) {
+                    varTable = makeSyncedTable(otherVars, idIndex);
+                }
+            } else {
+                for(;;) {
+                    int oldStamp = varTableStamp;
+                    // wait for read mode
+                    if((oldStamp & 0x01) == 1)
+                        continue;
+                    // acquire exclusive write mode
+                    if(!STAMP_UPDATER.compareAndSet(this, oldStamp, ++oldStamp))
+                        continue;
+                    
+                    UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, makeSyncedTable(otherVars, idIndex));
+                    
+                    // release write mode
+                    STAMP_UPDATER.set(this, ++oldStamp);
+                    break;
+                }
 
-            // null out object ID so we don't share it
-            int objIdIndex = objIdAccessor.getIndex();
-            if (objIdIndex > 0 && objIdIndex < myVars.length) {
-                myVars[objIdIndex] = null;
+                
             }
+
         } else {
             for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
                 RubyClass.VariableAccessor accessor = entry.getValue();
@@ -1498,7 +1525,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
-
+    private Object[] makeSyncedTable(Object[] otherTable, int objectIdIdx) {
+        Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET); 
+        
+        if(currentTable == null || currentTable.length < otherTable.length)
+            currentTable = otherTable.clone();
+        else
+            System.arraycopy(otherTable, 0, currentTable, 0, otherTable.length);
+    
+        // null out object ID so we don't share it
+        if (objectIdIdx > 0 && objectIdIdx < currentTable.length) {
+            currentTable[objectIdIdx] = null;
+        }
+        
+        return currentTable;
+    }
+    
     //
     // INSTANCE VARIABLE API METHODS
     //
