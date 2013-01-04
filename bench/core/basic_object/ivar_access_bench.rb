@@ -10,13 +10,44 @@ default_object.instance_variable_set(:@foo,2)
 
 disposable_objects = (0..10).map{Class.new.new}
 
-simple_reader = proc{|o| result = nil;SIMPLE_TIMES.times{ result = o.instance_variable_get(:@foo)};result}
-simple_writer = proc{|o| SIMPLE_TIMES.times{o.instance_variable_set(:@foo,1)}}
+simple_reader = proc do |o|
+  result = nil;
+  for i in (0..SIMPLE_TIMES)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+    result = o.instance_variable_get(:@foo)
+  end
+  result
+end
 
+simple_writer = proc do |o|
+  for i in (0..SIMPLE_TIMES)
+    o.instance_variable_set(:@foo,0)
+    o.instance_variable_set(:@foo,1)
+    o.instance_variable_set(:@foo,2)
+    o.instance_variable_set(:@foo,3)
+    o.instance_variable_set(:@foo,4)
+    o.instance_variable_set(:@foo,5)
+    o.instance_variable_set(:@foo,6)
+    o.instance_variable_set(:@foo,7)
+    o.instance_variable_set(:@foo,8)
+    o.instance_variable_set(:@foo,9)
+  end
+end
 
 Benchmark.bmbm do |b|
   b.report "baseline x#{SIMPLE_TIMES}" do
-    SIMPLE_TIMES.times{1}
+    for i in (0..SIMPLE_TIMES)
+      1
+    end
   end
 
   b.report "single threaded reads x#{SIMPLE_TIMES}" do
