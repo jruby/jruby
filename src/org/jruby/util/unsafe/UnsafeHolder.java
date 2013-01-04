@@ -89,29 +89,35 @@ public final class UnsafeHolder {
     }
     
     public static void fullFence() {
+        U.fullFence();
+        /*
         try {
             fullFence.invokeExact(U);
         } catch (Throwable e) {
             e.printStackTrace();
-        }
+        }*/
     }
     
     public static void loadFence() {
+        U.loadFence();
+        /*
         try {
             loadFence.invokeExact(U);
         } catch (Throwable e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
     }
     
     public static void storeFence() {
+        U.storeFence();
+        /*
         try {
             storeFence.invokeExact(U);
         } catch (Throwable e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
     }
 
 
