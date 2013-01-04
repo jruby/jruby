@@ -124,6 +124,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private transient volatile int varTableStamp;
     
     private static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
+    private static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
 
     /**
      * The error message used when some one tries to modify an
@@ -1195,24 +1196,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return varTable;
     }
 
-    private static final AtomicIntegerFieldUpdater STAMP_UPDATER;
-
-    static {
-        AtomicIntegerFieldUpdater updater = null;
-        try {
-            updater = AtomicIntegerFieldUpdater.newUpdater(RubyBasicObject.class, "varTableStamp");
-        } catch (RuntimeException re) {
-            if (re.getCause() instanceof AccessControlException) {
-                // security prevented creation; fall back on synchronized assignment
-            } else {
-                throw re;
-            }
-        }
-        STAMP_UPDATER = updater;
-    }
-
-
-
     public Object getVariable(int index) {
 		Object[] ivarTable;
         if (index < 0 || (ivarTable = getVariableTableForRead()) == null) return null;
@@ -1254,7 +1237,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for(;;) {
             int currentStamp = varTableStamp;
             // spin-wait if odd
-            if((currentStamp & 0x01) == 1)
+            if((currentStamp & 0x01) != 0)
                continue;
             
             Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET);
@@ -1262,7 +1245,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if(currentTable == null || index >= currentTable.length)
             {
                 // try to acquire exclusive access to the varTable field
-                if(!STAMP_UPDATER.compareAndSet(this, currentStamp, ++currentStamp))
+                if(!UnsafeHolder.U.compareAndSwapInt(this, STAMP_OFFSET, currentStamp, ++currentStamp))
                     continue;
                 
                 Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
@@ -1272,7 +1255,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, newTable);
                 
                 // release exclusive access
-                STAMP_UPDATER.set(this, ++currentStamp);
+                varTableStamp = currentStamp + 1;
             } else {
                 // shared access to varTable field.
                 
@@ -1285,7 +1268,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 }
                 
                 // validate stamp. redo on concurrent modification
-                if(STAMP_UPDATER.get(this) != currentStamp)
+                if(varTableStamp != currentStamp)
                     continue;
                 
             }
@@ -1496,13 +1479,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     if((oldStamp & 0x01) == 1)
                         continue;
                     // acquire exclusive write mode
-                    if(!STAMP_UPDATER.compareAndSet(this, oldStamp, ++oldStamp))
+                    if(!UnsafeHolder.U.compareAndSwapInt(this, STAMP_OFFSET, oldStamp, ++oldStamp))
                         continue;
                     
                     UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, makeSyncedTable(otherVars, idIndex));
                     
                     // release write mode
-                    STAMP_UPDATER.set(this, ++oldStamp);
+                    varTableStamp = oldStamp+1;
                     break;
                 }
 
@@ -2925,7 +2908,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.inspect                             #=> "#<Fred:0x401b3da8 @a=\"dog\", @b=99, @c=\"cat\">"
      */
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
-        ensureInstanceVariablesSettable();
+        // no need to check for ensureInstanceVariablesSettable() here, that'll happen downstream in setVariable
         return (IRubyObject)variableTableStore(validateInstanceVariable(name.asJavaString()), value);
     }
 
