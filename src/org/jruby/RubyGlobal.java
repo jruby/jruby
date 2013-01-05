@@ -59,6 +59,8 @@ import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,7 +82,7 @@ public class RubyGlobal {
             ((RubyArray)runtime.getObject().getConstant("ARGV")).replace(argvArray);
         } else {
             runtime.getObject().setConstantQuiet("ARGV", argvArray);
-            runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray));
+            runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray), GLOBAL);
         }
     }
 
@@ -97,8 +99,8 @@ public class RubyGlobal {
 
         IAccessor d = new ValueAccessor(runtime.newString(
                 runtime.getInstanceConfig().displayedFileName()));
-        globals.define("$PROGRAM_NAME", d);
-        globals.define("$0", d);
+        globals.define("$PROGRAM_NAME", d, GLOBAL);
+        globals.define("$0", d, GLOBAL);
 
         // Version information:
         IRubyObject version = null;
@@ -147,7 +149,7 @@ public class RubyGlobal {
             runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY1_9_REVISION));
             
             RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
-            runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity));
+            runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
         }
 
         final GlobalVariable kcodeGV; 
@@ -157,27 +159,27 @@ public class RubyGlobal {
             kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
         }
 
-        runtime.defineVariable(kcodeGV);
-        runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV));
+        runtime.defineVariable(kcodeGV, GLOBAL);
+        runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
         IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
-        runtime.defineVariable(rs);
+        runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()));
+        runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()), GLOBAL);
+        runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
 
-        runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."));
-        runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"));
-        runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"));
+        runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
+        runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
+        runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"), THREAD);
 
-        runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()));
-        runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()));
+        runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()), THREAD);
+        runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
+            runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())));
+            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
         
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
@@ -189,67 +191,70 @@ public class RubyGlobal {
         } else {
             verboseValue = runtime.getFalse();
         }
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue));
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue));
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue));
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue), GLOBAL);
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue), GLOBAL);
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue), GLOBAL);
         
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug));
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug));
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
 
-        runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"));
+        runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
-        runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"));
+        runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
         IRubyObject stdin = new RubyIO(runtime, STDIO.IN);
         IRubyObject stdout = new RubyIO(runtime, STDIO.OUT);
         IRubyObject stderr = new RubyIO(runtime, STDIO.ERR);
 
-        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin));
+        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
 
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
         globals.alias("$>", "$stdout");
         if (!runtime.is1_9()) globals.alias("$defout", "$stdout");
 
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
         if (!runtime.is1_9()) globals.alias("$deferr", "$stderr");
 
         runtime.defineGlobalConstant("STDIN", stdin);
         runtime.defineGlobalConstant("STDOUT", stdout);
         runtime.defineGlobalConstant("STDERR", stderr);
 
-        runtime.defineVariable(new LoadedFeatures(runtime, "$\""));
-        runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"));
+        runtime.defineVariable(new LoadedFeatures(runtime, "$\""), GLOBAL);
+        runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"), GLOBAL);
 
-        runtime.defineVariable(new LoadPath(runtime, "$:"));
-        runtime.defineVariable(new LoadPath(runtime, "$-I"));
-        runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"));
+        runtime.defineVariable(new LoadPath(runtime, "$:"), GLOBAL);
+        runtime.defineVariable(new LoadPath(runtime, "$-I"), GLOBAL);
+        runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"), GLOBAL);
         
-        runtime.defineVariable(new MatchMatchGlobalVariable(runtime, "$&"));
-        runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"));
-        runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"));
-        runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"));
-        runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"));
+        runtime.defineVariable(new MatchMatchGlobalVariable(runtime, "$&"), FRAME);
+        runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"), FRAME);
+        runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"), FRAME);
+        runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"), FRAME);
+        runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"), FRAME);
 
         // On platforms without a c-library accessable through JNA, getpid will return hashCode 
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
-        globals.defineReadonly("$$", new PidAccessor(runtime));
+        globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
         
         // Fixme: Do we need the check or does Main.java not call this...they should consolidate 
         if (globals.get("$*").isNil()) {
-            globals.defineReadonly("$*", new ValueAccessor(runtime.newArray()));
+            globals.defineReadonly("$*", new ValueAccessor(runtime.newArray()), GLOBAL);
         }
         
         globals.defineReadonly("$-p",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
+                GLOBAL);
         globals.defineReadonly("$-a",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
+                GLOBAL);
         globals.defineReadonly("$-l",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds())));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds())),
+                GLOBAL);
 
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);

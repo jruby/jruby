@@ -1,5 +1,6 @@
 package org.jruby.runtime.invokedynamic;
 
+import java.lang.invoke.MethodHandle;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.common.IRubyWarnings;
@@ -13,6 +14,7 @@ public class GlobalSite extends MutableCallSite {
     public final String name;
     private final String file;
     private final int line;
+    private volatile int failures;
 
     public GlobalSite(MethodType type, String name, String file, int line) {
         super(type);
@@ -27,5 +29,18 @@ public class GlobalSite extends MutableCallSite {
 
     public int line() {
         return line;
+    }
+    
+    public void setTarget(MethodHandle target) {
+        super.setTarget(target);
+        incrementFailures();
+    }
+    
+    public int failures() {
+        return failures;
+    }
+    
+    public void incrementFailures() {
+        failures += 1;
     }
 }

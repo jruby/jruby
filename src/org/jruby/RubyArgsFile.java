@@ -46,6 +46,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import static org.jruby.CompatVersion.*;
+import org.jruby.internal.runtime.GlobalVariable;
 
 public class RubyArgsFile {
     private static final class ArgsFileData {
@@ -80,7 +81,7 @@ public class RubyArgsFile {
                     RubyString filename = (RubyString)((RubyObject)arg).to_s();
                     ByteList filenameBytes = filename.getByteList();
                     if (!filename.op_equal(context, (RubyString) runtime.getGlobalVariables().get("$FILENAME")).isTrue()) {
-                        runtime.defineReadonlyVariable("$FILENAME", filename);
+                        runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
                     }
 
                     if (filenameBytes.length() == 1 && filenameBytes.get(0) == '-') {
@@ -105,7 +106,7 @@ public class RubyArgsFile {
             } else if (next_p == -1) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
                 if(!runtime.getGlobalVariables().get("$FILENAME").asJavaString().equals("-")) {
-                    runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"));
+                    runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
                 }
             }
 
@@ -194,12 +195,12 @@ public class RubyArgsFile {
             public IRubyObject setValue(IRubyObject newValue) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
-        });
+        }, GlobalVariable.Scope.GLOBAL);
         runtime.defineGlobalConstant("ARGF", argsFile);
         
         RubyClass argfClass = argsFile.getMetaClass();
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
-        runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"));
+        runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
     }
 
     @JRubyMethod(name = {"fileno", "to_i"})

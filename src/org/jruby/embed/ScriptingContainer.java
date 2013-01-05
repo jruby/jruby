@@ -60,6 +60,7 @@ import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1641,7 +1642,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, istream);
         io.getOpenFile().getMainStream().setSync(true);
-        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", io));
+        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", io), GlobalVariable.Scope.GLOBAL);
         runtime.getObject().storeConstant("STDIN", io);
     }
 
@@ -1699,7 +1700,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, pstream);
         io.getOpenFile().getMainStream().setSync(true);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
         runtime.getObject().storeConstant("STDOUT", io);
         runtime.getGlobalVariables().alias("$>", "$stdout");
         runtime.getGlobalVariables().alias("$defout", "$stdout");
@@ -1764,7 +1765,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, error);
         io.getOpenFile().getMainStream().setSync(true);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
         runtime.getObject().storeConstant("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
     }

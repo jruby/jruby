@@ -38,29 +38,37 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.util.cli.Options;
 
 /**
  * 
  * @author jpetersen
  */
 public final class GlobalVariable {
+    public enum Scope { GLOBAL, THREAD, FRAME }
     private IAccessor accessor;
     private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
-    private Invalidator invalidator = OptoFactory.newConstantInvalidator();
+    private Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
+    private final Scope scope;
 
-    public GlobalVariable(IAccessor accessor) {
+    public GlobalVariable(IAccessor accessor, Scope scope) {
         this.accessor = accessor;
+        this.scope = scope;
     }
     
     public static GlobalVariable newUndefined(Ruby runtime, String name) {
-        GlobalVariable variable = new GlobalVariable(null);
+        GlobalVariable variable = new GlobalVariable(null, Scope.GLOBAL);
         variable.setAccessor(new UndefinedAccessor(runtime, variable, name));
         return variable;
     }
 
     public IAccessor getAccessor() {
         return accessor;
+    }
+    
+    public Scope getScope() {
+        return scope;
     }
 
     public ArrayList getTraces() {

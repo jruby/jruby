@@ -54,20 +54,20 @@ public class GlobalVariables {
         this.runtime = runtime;
     }
 
-    public void define(String name, IAccessor accessor) {
+    public void define(String name, IAccessor accessor, GlobalVariable.Scope scope) {
         assert name != null;
         assert accessor != null;
         assert name.startsWith("$");
 
-        globalVariables.put(name, new GlobalVariable(accessor));
+        globalVariables.put(name, new GlobalVariable(accessor, scope));
     }
     
-    public void defineReadonly(String name, IAccessor accessor) {
+    public void defineReadonly(String name, IAccessor accessor, GlobalVariable.Scope scope) {
         assert name != null;
         assert accessor != null;
         assert name.startsWith("$");
 
-        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(name, accessor)));
+        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(name, accessor), scope));
     }
 
     public boolean isDefined(String name) {

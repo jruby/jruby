@@ -64,6 +64,7 @@ import static java.lang.invoke.MethodType.*;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
@@ -592,6 +593,17 @@ public class InvokeDynamicSupport {
     public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
         GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        
+        if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
+                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+            // use uncached logic forever
+            MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
+            uncached = uncached.bindTo(variable);
+            uncached = dropArguments(uncached, 0, ThreadContext.class);
+            site.setTarget(uncached);
+            return (IRubyObject)uncached.invokeWithArguments(context);
+        }
+        
         Invalidator invalidator = variable.getInvalidator();
         IRubyObject value = variable.getAccessor().getValue();
         
@@ -607,9 +619,24 @@ public class InvokeDynamicSupport {
         return value;
     }
     
+    public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
+        return variable.getAccessor().getValue();
+    }
+    
     public static boolean getGlobalBooleanFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
         GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        
+        if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
+                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+            // use uncached logic forever
+            MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalBooleanUncached", methodType(boolean.class, GlobalVariable.class));
+            uncached = uncached.bindTo(variable);
+            uncached = dropArguments(uncached, 0, ThreadContext.class);
+            site.setTarget(uncached);
+            return (Boolean)uncached.invokeWithArguments(context);
+        }
+        
         Invalidator invalidator = variable.getInvalidator();
         boolean value = variable.getAccessor().getValue().isTrue();
         
@@ -623,6 +650,10 @@ public class InvokeDynamicSupport {
         site.setTarget(target);
         
         return value;
+    }
+    
+    public static boolean getGlobalBooleanUncached(GlobalVariable variable) throws Throwable {
+        return variable.getAccessor().getValue().isTrue();
     }
 
     public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {

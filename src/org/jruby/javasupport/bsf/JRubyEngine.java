@@ -119,11 +119,12 @@ public class JRubyEngine extends BSFEngineImpl {
         for (int i = 0, size = someDeclaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.elementAt(i);
             runtime.getGlobalVariables().define(
-                GlobalVariable.variableName(bean.name),
-                new BeanGlobalVariable(runtime, bean));
+                    GlobalVariable.variableName(bean.name),
+                    new BeanGlobalVariable(runtime, bean),
+                    org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
         }
 
-        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)));
+        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)), org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
     }
     
     private List getClassPath(BSFManager manager) {
@@ -133,8 +134,9 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         runtime.getGlobalVariables().define(
-            GlobalVariable.variableName(bean.name),
-            new BeanGlobalVariable(runtime, bean));
+                GlobalVariable.variableName(bean.name),
+                new BeanGlobalVariable(runtime, bean),
+                org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
     }
 
     @Override

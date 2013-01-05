@@ -54,6 +54,7 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
@@ -154,8 +155,8 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
         Ruby runtime = container.getProvider().getRuntime();
         IAccessor d = new ValueAccessor(RubyString.newString(runtime, filename));
-        runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
-        runtime.getGlobalVariables().define("$0", d);
+        runtime.getGlobalVariables().define("$PROGRAM_NAME", d, GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().define("$0", d, GlobalVariable.Scope.GLOBAL);
 
         int line = 0;
         if (lines != null && lines.length > 0) {

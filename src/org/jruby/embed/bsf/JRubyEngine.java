@@ -59,6 +59,7 @@ import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
@@ -162,7 +163,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 setVariable(bean);
             }
         }
-        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)));
+        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)), GlobalVariable.Scope.GLOBAL);
     }
 
     private void setVariable(BSFDeclaredBean bean) {

@@ -31,6 +31,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.GlobalVariable;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -43,7 +44,7 @@ public class RubyClassPathVariable extends RubyObject {
     public static void createClassPathVariable(Ruby runtime) {
         RubyClassPathVariable self = new RubyClassPathVariable(runtime);
         runtime.getEnumerable().extend_object(self);
-        runtime.defineReadonlyVariable("$CLASSPATH", self);
+        runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
         self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
     }
 

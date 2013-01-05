@@ -40,6 +40,7 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyKernel;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.NormalizedFile;
@@ -83,13 +84,13 @@ public class RubyTestCase extends TestCase {
                 EMPTY_ARRAY,
                 EMPTY_ARRAY.getClass());
 
-        runtime.defineReadonlyVariable("$-p", runtime.getNil());
-        runtime.defineReadonlyVariable("$-n", runtime.getNil());
-        runtime.defineReadonlyVariable("$-a", runtime.getNil());
-        runtime.defineReadonlyVariable("$-l", runtime.getNil());
-        runtime.defineReadonlyVariable("$\"", empty);
-        runtime.defineReadonlyVariable("$*", empty);
-        runtime.defineReadonlyVariable("$:", empty);
+        runtime.defineReadonlyVariable("$-p", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-n", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-a", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-l", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$\"", empty, GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$*", empty, GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$:", empty, GlobalVariable.Scope.GLOBAL);
         runtime.defineGlobalConstant("ARGV", empty);
     }
 }

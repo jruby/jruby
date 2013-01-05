@@ -85,6 +85,19 @@ public class OptoFactory {
         return new ObjectIdentityInvalidator();
     }
     
+    public static Invalidator newGlobalInvalidator(int maxFailures) {
+        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+            try {
+                Class failoverInvalidator = Class.forName("org.jruby.runtime.opto.FailoverSwitchPointInvalidator");
+                Constructor constructor = failoverInvalidator.getConstructor(int.class);
+                return (Invalidator)constructor.newInstance(maxFailures);
+            } catch (Throwable t) {
+                // ignore
+            }
+        }
+        return new ObjectIdentityInvalidator();
+    }
+    
     public static Invalidator newMethodInvalidator(RubyModule module) {
         if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
             try {

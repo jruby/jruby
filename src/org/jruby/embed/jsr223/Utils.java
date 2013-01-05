@@ -47,6 +47,7 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.variable.TransientLocalVariable;
 import org.jruby.embed.variable.VariableInterceptor;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.util.io.BadDescriptorException;
 
 /**
@@ -147,7 +148,7 @@ public class Utils {
         
         Ruby runtime = container.getProvider().getRuntime();
         RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
         runtime.getObject().storeConstant("STDOUT", io);
         runtime.getGlobalVariables().alias("$>", "$stdout");
         runtime.getGlobalVariables().alias("$defout", "$stdout");
@@ -168,7 +169,7 @@ public class Utils {
         
         Ruby runtime = container.getProvider().getRuntime();
         RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope. GLOBAL);
         runtime.getObject().storeConstant("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
     }

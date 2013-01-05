@@ -156,6 +156,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
+import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
  * JRuby supports spawning multiple instances in the same JVM. Generally, objects
@@ -478,8 +480,8 @@ public final class Ruby {
      */
     public void runFromMain(InputStream inputStream, String filename) {
         IAccessor d = new ValueAccessor(newString(filename));
-        getGlobalVariables().define("$PROGRAM_NAME", d);
-        getGlobalVariables().define("$0", d);
+        getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
+        getGlobalVariables().define("$0", d, GLOBAL);
 
         for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry) i.next();
@@ -2434,7 +2436,7 @@ public final class Ruby {
 
     /** Defines a global variable
      */
-    public void defineVariable(final GlobalVariable variable) {
+    public void defineVariable(final GlobalVariable variable, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
         globalVariables.define(variable.name(), new IAccessor() {
             public IRubyObject getValue() {
                 return variable.get();
@@ -2443,14 +2445,14 @@ public final class Ruby {
             public IRubyObject setValue(IRubyObject newValue) {
                 return variable.set(newValue);
             }
-        });
+        }, scope);
     }
 
     /** defines a readonly global variable
      *
      */
-    public void defineReadonlyVariable(String name, IRubyObject value) {
-        globalVariables.defineReadonly(name, new ValueAccessor(value));
+    public void defineReadonlyVariable(String name, IRubyObject value, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
+        globalVariables.defineReadonly(name, new ValueAccessor(value), scope);
     }
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
