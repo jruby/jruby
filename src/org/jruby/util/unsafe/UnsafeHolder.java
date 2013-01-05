@@ -26,9 +26,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.unsafe;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public final class UnsafeHolder {
     
@@ -39,11 +38,7 @@ public final class UnsafeHolder {
      */
     public static final sun.misc.Unsafe U = loadUnsafe();
     
-    private static final java.lang.invoke.MethodHandle fullFence = loadFenceHandle("fullFence");
-    private static final java.lang.invoke.MethodHandle loadFence = loadFenceHandle("loadFence");
-    private static final java.lang.invoke.MethodHandle storeFence = loadFenceHandle("storeFence");
-    
-    public static final boolean SUPPORTS_FENCES = fullFence != null && loadFence != null && storeFence != null;
+    public static final boolean SUPPORTS_FENCES = supportsFences();
     
     private static sun.misc.Unsafe loadUnsafe() {
         try {
@@ -57,24 +52,17 @@ public final class UnsafeHolder {
         }
     }
     
-    private static java.lang.invoke.MethodHandle loadFenceHandle(String name) {
+    private static boolean supportsFences() {
         if(U == null)
-            return null;
-        
+            return false;
         try {
-            // check if this JRE supports method handles
-            Class clazz = Class.forName("java.lang.invoke.MethodHandles");
-
-            MethodType mt = MethodType.methodType(void.class);
-            MethodHandles.Lookup lookups = MethodHandles.lookup();
-            
-            return lookups.findVirtual(U.getClass(), name, mt);
-
+            Method m = U.getClass().getDeclaredMethod("fullFence");
+            if(m != null)
+                return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
-        
+        return false;
     }
     
     public static long fieldOffset(Class clazz, String name) {
@@ -88,36 +76,18 @@ public final class UnsafeHolder {
         }
     }
     
+    //// The following methods are Java8 only. They will throw undefined method errors if invoked without checking for fence support 
+    
     public static void fullFence() {
         U.fullFence();
-        /*
-        try {
-            fullFence.invokeExact(U);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }*/
     }
     
     public static void loadFence() {
         U.loadFence();
-        /*
-        try {
-            loadFence.invokeExact(U);
-        } catch (Throwable e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
     }
     
     public static void storeFence() {
         U.storeFence();
-        /*
-        try {
-            storeFence.invokeExact(U);
-        } catch (Throwable e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
     }
 
 
