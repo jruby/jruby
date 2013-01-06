@@ -4,7 +4,7 @@ describe 'Accessing instance variables' do
   it 'should not lose concurrent writes under growth operations' do
     lost_writes = false  
   
-    (0..100).each do |i|
+    (0..1000).each do |i|
       clazz = Class.new
       object = clazz.new
       
