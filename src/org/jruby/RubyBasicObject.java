@@ -1256,7 +1256,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 
                 if(UnsafeHolder.SUPPORTS_FENCES) {
                     currentTable[index] = value;
-                    UnsafeHolder.storeFence();                    
+                    UnsafeHolder.fullFence();
                 } else {
                     // TODO: maybe optimize by read and checking current value before setting
                     UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
