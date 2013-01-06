@@ -1465,7 +1465,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if(UnsafeHolder.U == null)
             {
                 synchronized (this) {
-                    varTable = makeSyncedTable(otherVars, idIndex);
+                    varTable = makeSyncedTable(varTable, otherVars, idIndex);
                 }
             } else {
                 for(;;) {
@@ -1477,7 +1477,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     if(!UnsafeHolder.U.compareAndSwapInt(this, STAMP_OFFSET, oldStamp, ++oldStamp))
                         continue;
                     
-                    UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, makeSyncedTable(otherVars, idIndex));
+                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET);
+                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
+                    
+                    UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, newTable);
                     
                     // release write mode
                     varTableStamp = oldStamp+1;
@@ -1503,9 +1506,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
-    private Object[] makeSyncedTable(Object[] otherTable, int objectIdIdx) {
-        Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET); 
-        
+    private static Object[] makeSyncedTable(Object[] currentTable, Object[] otherTable, int objectIdIdx) {
         if(currentTable == null || currentTable.length < otherTable.length)
             currentTable = otherTable.clone();
         else
