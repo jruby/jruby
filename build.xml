@@ -291,6 +291,7 @@
             <compilerarg line="-XDignore.symbol.file=true"/>
             <compilerarg line="-J-Dfile.encoding=UTF-8"/>
             <compilerarg line="-J-Duser.language=en"/>
+            <compilerarg line="-J-Xbootclasspath/p:build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
             <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
         </javac>
 
