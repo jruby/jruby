@@ -49,7 +49,6 @@ public final class UnsafeHolder {
             f.setAccessible(true);
             return (sun.misc.Unsafe) f.get(null);
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -74,7 +73,6 @@ public final class UnsafeHolder {
             if(m != null)
                 return true;
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return false;
     }
@@ -85,7 +83,6 @@ public final class UnsafeHolder {
         try {
             return U.objectFieldOffset(clazz.getDeclaredField(name));
         } catch (Exception e) {
-            e.printStackTrace();
             return sun.misc.Unsafe.INVALID_FIELD_OFFSET;
         }
     }
