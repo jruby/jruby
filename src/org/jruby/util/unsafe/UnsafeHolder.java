@@ -39,6 +39,8 @@ public final class UnsafeHolder {
     public static final sun.misc.Unsafe U = loadUnsafe();
     
     public static final boolean SUPPORTS_FENCES = supportsFences();
+    public static final long    ARRAY_OBJECT_BASE_OFFSET = arrayObjectBaseOffset();
+    public static final long    ARRAY_OBJECT_INDEX_SCALE = arrayObjectIndexScale();
     
     private static sun.misc.Unsafe loadUnsafe() {
         try {
@@ -50,6 +52,18 @@ public final class UnsafeHolder {
             e.printStackTrace();
             return null;
         }
+    }
+    
+    private static long arrayObjectBaseOffset() {
+        if(U == null)
+            return 0;
+        return U.arrayBaseOffset(Object[].class);
+    }
+    
+    private static long arrayObjectIndexScale() {
+        if(U == null)
+            return 0;
+        return U.arrayIndexScale(Object[].class);
     }
     
     private static boolean supportsFences() {

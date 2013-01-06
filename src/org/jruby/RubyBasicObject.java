@@ -1259,7 +1259,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     UnsafeHolder.storeFence();                    
                 } else {
                     // TODO: maybe optimize by read and checking current value before setting
-                    UnsafeHolder.U.putObjectVolatile(currentTable, sun.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET + sun.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE * index, value);
+                    UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
                 }
                 
                 // validate stamp. redo on concurrent modification
