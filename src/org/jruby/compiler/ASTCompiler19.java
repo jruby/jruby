@@ -102,13 +102,13 @@ public class ASTCompiler19 extends ASTCompiler {
     }
 
     @Override
-    public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
+    public void compileAssignment(Node node, BodyCompiler context) {
         switch (node.getNodeType()) {
             case MULTIPLEASGN19NODE:
-                compileMultipleAsgn19Assignment(node, context, expr);
+                compileMultipleAsgn19Assignment(node, context, false);
                 break;
             default:
-                super.compileAssignment(node, context, expr);
+                super.compileAssignment(node, context);
         }
     }
 
@@ -195,7 +195,7 @@ public class ASTCompiler19 extends ASTCompiler {
             public void nextValue(BodyCompiler context, Object object, int index) {
                     OptArgNode optArg = (OptArgNode)((ListNode) object).get(index);
 
-                    compileAssignment(optArg.getValue(), context, false);
+                    compileAssignment(optArg.getValue(), context);
                 }
             };
             optionalNotGiven = new ArrayCallback() {
@@ -368,7 +368,7 @@ public class ASTCompiler19 extends ASTCompiler {
                             }
                             context.reverseValues(size);
                             for (Node asgn : multipleAsgn19Node.getPre().childNodes()) {
-                                compileAssignment(asgn, context, false);
+                                compileAssignment(asgn, context);
                             }
                             return;
                         }
@@ -399,7 +399,7 @@ public class ASTCompiler19 extends ASTCompiler {
                         Node assignNode = nodes.get(index);
 
                         // perform assignment for the next node
-                        compileAssignment(assignNode, context, false);
+                        compileAssignment(assignNode, context);
                     }
                 };
 
@@ -412,7 +412,7 @@ public class ASTCompiler19 extends ASTCompiler {
                             context.consumeCurrentValue();
                         } else {
                             // assign to appropriate variable
-                            compileAssignment(argsNode, context, false);
+                            compileAssignment(argsNode, context);
                         }
                     }
                 };

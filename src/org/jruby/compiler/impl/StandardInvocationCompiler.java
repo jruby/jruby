@@ -84,7 +84,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         };
         
-        invokeAttrAssign(name, receiverCallback, newArgumentsCallback, selfCall, true);
+        invokeAttrAssign(name, receiverCallback, newArgumentsCallback, selfCall, false);
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean isSelf, boolean expr) {
