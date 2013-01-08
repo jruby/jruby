@@ -29,7 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.parser;
+package org.jruby.ext.ripper;
 
 import java.io.IOException;
 
@@ -41,8 +41,11 @@ import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
+import org.jruby.parser.ParserConfiguration;
+import org.jruby.parser.ParserState;
+import org.jruby.parser.ParserSupport;
 
-public class Ripper19Parser implements RubyParser {
+public class Ripper19Parser {
     protected RipperSupport support;
     protected RubyYaccLexer lexer;
 
@@ -61,7 +64,7 @@ public class Ripper19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 65 "-"
+					// line 68 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -650,8 +653,8 @@ public class Ripper19Parser implements RubyParser {
      0,     0,     0,   117,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,
     };
-    protected static final short[] yyTable = Ripper19YyTables.yyTable();
-    protected static final short[] yyCheck = Ripper19YyTables.yyCheck();
+    protected static final short[] yyTable = YyTables.yyTable();
+    protected static final short[] yyCheck = YyTables.yyCheck();
 
   /** maps symbol value to printable name.
       @see #yyExpecting
@@ -4306,12 +4309,12 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 2095 "Ripper19Parser.y"
+					// line 2098 "Ripper19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RipperParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         
@@ -4335,7 +4338,7 @@ states[267] = new ParserState() {
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
         yyparse(lexer, debugger);
         
-        return support.getResult();
+        return ((RipperSupport) support).getRipperResult();
     }
 }
-					// line 8339 "-"
+					// line 8342 "-"

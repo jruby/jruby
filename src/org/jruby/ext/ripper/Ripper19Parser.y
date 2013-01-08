@@ -26,7 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.parser;
+package org.jruby.ext.ripper;
 
 import java.io.IOException;
 
@@ -38,8 +38,11 @@ import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
+import org.jruby.parser.ParserConfiguration;
+import org.jruby.parser.ParserState;
+import org.jruby.parser.ParserSupport;
 
-public class Ripper19Parser implements RubyParser {
+public class Ripper19Parser {
     protected RipperSupport support;
     protected RubyYaccLexer lexer;
 
@@ -2096,7 +2099,7 @@ none_block_pass : /* none */ {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RipperParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         
@@ -2120,6 +2123,6 @@ none_block_pass : /* none */ {
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
         yyparse(lexer, debugger);
         
-        return support.getResult();
+        return ((RipperSupport) support).getRipperResult();
     }
 }
