@@ -157,6 +157,9 @@ import java.util.regex.Pattern;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.Visibility;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1245,8 +1248,26 @@ public final class Ruby {
         objectClass.setConstant("Module", moduleClass);
 
         // Initialize Kernel and include into Object
-        RubyKernel.createKernelModule(this);
+        RubyModule kernel = RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
+        
+        // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
+        if (oneNine && config.getKernelGsubDefined()) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    switch (args.length) {
+                        case 1:
+                            return RubyKernel.gsub(context, self, args[0], block);
+                        case 2:
+                            return RubyKernel.gsub(context, self, args[0], args[1], block);
+                        default:
+                            throw newArgumentError(String.format("wrong number of arguments %d for 1..2", args.length));
+                    }
+                }
+            });
+        }
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
