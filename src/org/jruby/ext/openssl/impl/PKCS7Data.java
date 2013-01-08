@@ -31,7 +31,6 @@ import java.security.cert.X509CRL;
 import java.util.Collection;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEREncodable;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
 /**
@@ -141,7 +140,7 @@ public abstract class PKCS7Data {
         throw new PKCS7Exception(PKCS7.F_PKCS7_ADD_CRL,PKCS7.R_WRONG_CONTENT_TYPE);
     }
 
-    public static PKCS7Data fromASN1(Integer nid, DEREncodable content) throws PKCS7Exception {
+    public static PKCS7Data fromASN1(Integer nid, ASN1Encodable content) throws PKCS7Exception {
         switch(nid) {
         case ASN1Registry.NID_pkcs7_data:
             return PKCS7DataData.fromASN1(content);

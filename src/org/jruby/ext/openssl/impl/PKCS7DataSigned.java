@@ -30,7 +30,6 @@ package org.jruby.ext.openssl.impl;
 import java.security.cert.X509CRL;
 import java.util.Collection;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DEREncodable;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
 /**
@@ -123,7 +122,7 @@ public class PKCS7DataSigned extends PKCS7Data {
         return this.sign.toString();
     }
 
-    public static PKCS7DataSigned fromASN1(DEREncodable content) throws PKCS7Exception {
+    public static PKCS7DataSigned fromASN1(ASN1Encodable content) throws PKCS7Exception {
         return new PKCS7DataSigned(Signed.fromASN1(content));
     }
 

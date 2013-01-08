@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -45,16 +44,12 @@ import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-
 import javax.crypto.spec.DHParameterSpec;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
-import org.jruby.util.ByteList;
+import org.bouncycastle.asn1.DLSequence;
 
 /**
  *
@@ -69,23 +64,23 @@ public class PKey {
         KeySpec privSpec = null;
         ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
         if (type.equals("RSA")) {
-            DERInteger mod = (DERInteger) seq.getObjectAt(1);
-            DERInteger pubExp = (DERInteger) seq.getObjectAt(2);
-            DERInteger privExp = (DERInteger) seq.getObjectAt(3);
-            DERInteger p1 = (DERInteger) seq.getObjectAt(4);
-            DERInteger p2 = (DERInteger) seq.getObjectAt(5);
-            DERInteger exp1 = (DERInteger) seq.getObjectAt(6);
-            DERInteger exp2 = (DERInteger) seq.getObjectAt(7);
-            DERInteger crtCoef = (DERInteger) seq.getObjectAt(8);
+            ASN1Integer mod = (ASN1Integer) seq.getObjectAt(1);
+            ASN1Integer pubExp = (ASN1Integer) seq.getObjectAt(2);
+            ASN1Integer privExp = (ASN1Integer) seq.getObjectAt(3);
+            ASN1Integer p1 = (ASN1Integer) seq.getObjectAt(4);
+            ASN1Integer p2 = (ASN1Integer) seq.getObjectAt(5);
+            ASN1Integer exp1 = (ASN1Integer) seq.getObjectAt(6);
+            ASN1Integer exp2 = (ASN1Integer) seq.getObjectAt(7);
+            ASN1Integer crtCoef = (ASN1Integer) seq.getObjectAt(8);
             pubSpec = new RSAPublicKeySpec(mod.getValue(), pubExp.getValue());
             privSpec = new RSAPrivateCrtKeySpec(mod.getValue(), pubExp.getValue(), privExp.getValue(), p1.getValue(), p2.getValue(), exp1.getValue(),
                     exp2.getValue(), crtCoef.getValue());
         } else { // assume "DSA" for now.
-            DERInteger p = (DERInteger) seq.getObjectAt(1);
-            DERInteger q = (DERInteger) seq.getObjectAt(2);
-            DERInteger g = (DERInteger) seq.getObjectAt(3);
-            DERInteger y = (DERInteger) seq.getObjectAt(4);
-            DERInteger x = (DERInteger) seq.getObjectAt(5);
+            ASN1Integer p = (ASN1Integer) seq.getObjectAt(1);
+            ASN1Integer q = (ASN1Integer) seq.getObjectAt(2);
+            ASN1Integer g = (ASN1Integer) seq.getObjectAt(3);
+            ASN1Integer y = (ASN1Integer) seq.getObjectAt(4);
+            ASN1Integer x = (ASN1Integer) seq.getObjectAt(5);
             privSpec = new DSAPrivateKeySpec(x.getValue(), p.getValue(), q.getValue(), g.getValue());
             pubSpec = new DSAPublicKeySpec(y.getValue(), p.getValue(), q.getValue(), g.getValue());
         }
@@ -132,16 +127,16 @@ public class PKey {
     // d2i_RSAPrivateKey_bio
     public static KeyPair readRSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("RSA");
-        DERSequence seq = (DERSequence) (new ASN1InputStream(input).readObject());
+        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 9) {
-            BigInteger mod = ((DERInteger) seq.getObjectAt(1)).getValue();
-            BigInteger pubexp = ((DERInteger) seq.getObjectAt(2)).getValue();
-            BigInteger privexp = ((DERInteger) seq.getObjectAt(3)).getValue();
-            BigInteger primep = ((DERInteger) seq.getObjectAt(4)).getValue();
-            BigInteger primeq = ((DERInteger) seq.getObjectAt(5)).getValue();
-            BigInteger primeep = ((DERInteger) seq.getObjectAt(6)).getValue();
-            BigInteger primeeq = ((DERInteger) seq.getObjectAt(7)).getValue();
-            BigInteger crtcoeff = ((DERInteger) seq.getObjectAt(8)).getValue();
+            BigInteger mod = ((ASN1Integer) seq.getObjectAt(1)).getValue();
+            BigInteger pubexp = ((ASN1Integer) seq.getObjectAt(2)).getValue();
+            BigInteger privexp = ((ASN1Integer) seq.getObjectAt(3)).getValue();
+            BigInteger primep = ((ASN1Integer) seq.getObjectAt(4)).getValue();
+            BigInteger primeq = ((ASN1Integer) seq.getObjectAt(5)).getValue();
+            BigInteger primeep = ((ASN1Integer) seq.getObjectAt(6)).getValue();
+            BigInteger primeeq = ((ASN1Integer) seq.getObjectAt(7)).getValue();
+            BigInteger crtcoeff = ((ASN1Integer) seq.getObjectAt(8)).getValue();
             PrivateKey priv = fact.generatePrivate(new RSAPrivateCrtKeySpec(mod, pubexp, privexp, primep, primeq, primeep, primeeq, crtcoeff));
             PublicKey pub = fact.generatePublic(new RSAPublicKeySpec(mod, pubexp));
             return new KeyPair(pub, priv);
@@ -153,10 +148,10 @@ public class PKey {
     // d2i_RSAPublicKey_bio
     public static PublicKey readRSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("RSA");
-        DERSequence seq = (DERSequence) (new ASN1InputStream(input).readObject());
+        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 2) {
-            BigInteger mod = ((DERInteger) seq.getObjectAt(0)).getValue();
-            BigInteger pubexp = ((DERInteger) seq.getObjectAt(1)).getValue();
+            BigInteger mod = ((ASN1Integer) seq.getObjectAt(0)).getValue();
+            BigInteger pubexp = ((ASN1Integer) seq.getObjectAt(1)).getValue();
             return fact.generatePublic(new RSAPublicKeySpec(mod, pubexp));
         } else {
             return null;
@@ -166,13 +161,13 @@ public class PKey {
     // d2i_DSAPrivateKey_bio
     public static KeyPair readDSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("DSA");
-        DERSequence seq = (DERSequence) (new ASN1InputStream(input).readObject());
+        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 6) {
-            BigInteger p = ((DERInteger) seq.getObjectAt(1)).getValue();
-            BigInteger q = ((DERInteger) seq.getObjectAt(2)).getValue();
-            BigInteger g = ((DERInteger) seq.getObjectAt(3)).getValue();
-            BigInteger y = ((DERInteger) seq.getObjectAt(4)).getValue();
-            BigInteger x = ((DERInteger) seq.getObjectAt(5)).getValue();
+            BigInteger p = ((ASN1Integer) seq.getObjectAt(1)).getValue();
+            BigInteger q = ((ASN1Integer) seq.getObjectAt(2)).getValue();
+            BigInteger g = ((ASN1Integer) seq.getObjectAt(3)).getValue();
+            BigInteger y = ((ASN1Integer) seq.getObjectAt(4)).getValue();
+            BigInteger x = ((ASN1Integer) seq.getObjectAt(5)).getValue();
             PrivateKey priv = fact.generatePrivate(new DSAPrivateKeySpec(x, p, q, g));
             PublicKey pub = fact.generatePublic(new DSAPublicKeySpec(y, p, q, g));
             return new KeyPair(pub, priv);
@@ -184,12 +179,12 @@ public class PKey {
     // d2i_DSA_PUBKEY_bio
     public static PublicKey readDSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("RSA");
-        DERSequence seq = (DERSequence) (new ASN1InputStream(input).readObject());
+        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 4) {
-            BigInteger y = ((DERInteger) seq.getObjectAt(0)).getValue();
-            BigInteger p = ((DERInteger) seq.getObjectAt(1)).getValue();
-            BigInteger q = ((DERInteger) seq.getObjectAt(2)).getValue();
-            BigInteger g = ((DERInteger) seq.getObjectAt(3)).getValue();
+            BigInteger y = ((ASN1Integer) seq.getObjectAt(0)).getValue();
+            BigInteger p = ((ASN1Integer) seq.getObjectAt(1)).getValue();
+            BigInteger q = ((ASN1Integer) seq.getObjectAt(2)).getValue();
+            BigInteger g = ((ASN1Integer) seq.getObjectAt(3)).getValue();
             return fact.generatePublic(new DSAPublicKeySpec(y, p, q, g));
         } else {
             return null;
@@ -200,28 +195,28 @@ public class PKey {
     public static DHParameterSpec readDHParameter(byte[] input) throws IOException {
         ASN1InputStream aIn = new ASN1InputStream(input);
         ASN1Sequence seq = (ASN1Sequence) aIn.readObject();
-        BigInteger p = ((DERInteger) seq.getObjectAt(0)).getValue();
-        BigInteger g = ((DERInteger) seq.getObjectAt(1)).getValue();
+        BigInteger p = ((ASN1Integer) seq.getObjectAt(0)).getValue();
+        BigInteger g = ((ASN1Integer) seq.getObjectAt(1)).getValue();
         return new DHParameterSpec(p, g);
     }
 
     public static byte[] toDerRSAKey(RSAPublicKey pubKey, RSAPrivateCrtKey privKey) throws IOException {
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         if (pubKey != null && privKey == null) {
-            v1.add(new DERInteger(pubKey.getModulus()));
-            v1.add(new DERInteger(pubKey.getPublicExponent()));
+            v1.add(new ASN1Integer(pubKey.getModulus()));
+            v1.add(new ASN1Integer(pubKey.getPublicExponent()));
         } else {
-            v1.add(new DERInteger(0));
-            v1.add(new DERInteger(privKey.getModulus()));
-            v1.add(new DERInteger(privKey.getPublicExponent()));
-            v1.add(new DERInteger(privKey.getPrivateExponent()));
-            v1.add(new DERInteger(privKey.getPrimeP()));
-            v1.add(new DERInteger(privKey.getPrimeQ()));
-            v1.add(new DERInteger(privKey.getPrimeExponentP()));
-            v1.add(new DERInteger(privKey.getPrimeExponentQ()));
-            v1.add(new DERInteger(privKey.getCrtCoefficient()));
+            v1.add(new ASN1Integer(0));
+            v1.add(new ASN1Integer(privKey.getModulus()));
+            v1.add(new ASN1Integer(privKey.getPublicExponent()));
+            v1.add(new ASN1Integer(privKey.getPrivateExponent()));
+            v1.add(new ASN1Integer(privKey.getPrimeP()));
+            v1.add(new ASN1Integer(privKey.getPrimeQ()));
+            v1.add(new ASN1Integer(privKey.getPrimeExponentP()));
+            v1.add(new ASN1Integer(privKey.getPrimeExponentQ()));
+            v1.add(new ASN1Integer(privKey.getCrtCoefficient()));
         }
-        return new DERSequence(v1).getEncoded();
+        return new DLSequence(v1).getEncoded();
     }
 
     public static byte[] toDerDSAKey(DSAPublicKey pubKey, DSAPrivateKey privKey) throws IOException {
@@ -230,13 +225,13 @@ public class PKey {
         } else if (privKey != null && pubKey != null) {
             DSAParams params = privKey.getParams();
             ASN1EncodableVector v1 = new ASN1EncodableVector();
-            v1.add(new DERInteger(0));
-            v1.add(new DERInteger(params.getP()));
-            v1.add(new DERInteger(params.getQ()));
-            v1.add(new DERInteger(params.getG()));
-            v1.add(new DERInteger(pubKey.getY()));
-            v1.add(new DERInteger(privKey.getX()));
-            return new DERSequence(v1).getEncoded();
+            v1.add(new ASN1Integer(0));
+            v1.add(new ASN1Integer(params.getP()));
+            v1.add(new ASN1Integer(params.getQ()));
+            v1.add(new ASN1Integer(params.getG()));
+            v1.add(new ASN1Integer(pubKey.getY()));
+            v1.add(new ASN1Integer(privKey.getX()));
+            return new DLSequence(v1).getEncoded();
         } else {
             return privKey.getEncoded();
         }
@@ -245,12 +240,12 @@ public class PKey {
     public static byte[] toDerDHKey(BigInteger p, BigInteger g) throws IOException {
         ASN1EncodableVector v = new ASN1EncodableVector();
         if (p != null) {
-            v.add(new DERInteger(p));
+            v.add(new ASN1Integer(p));
         }
         if (g != null) {
-            v.add(new DERInteger(g));
+            v.add(new ASN1Integer(g));
         }
-        return new DERSequence(v).getEncoded();
+        return new DLSequence(v).getEncoded();
     }
 }
 

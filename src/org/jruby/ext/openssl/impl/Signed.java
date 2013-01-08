@@ -40,9 +40,9 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -197,7 +197,7 @@ public class Signed {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new DERInteger(version));
+        vector.add(new ASN1Integer(version));
         vector.add(digestAlgorithmsToASN1Set());
         vector.add(contents.asASN1());
         if (cert != null && cert.size() > 0) {
@@ -214,13 +214,13 @@ public class Signed {
             vector.add(new DERTaggedObject(false, 1, crlsToASN1Set()));
         }
         vector.add(signerInfosToASN1Set());
-        return new DERSequence(vector);
+        return new DLSequence(vector);
     }
 
     private ASN1Set digestAlgorithmsToASN1Set() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
         for(AlgorithmIdentifier ai : mdAlgs) {
-            vector.add(ai.toASN1Object());
+            vector.add(ai.getAlgorithm());
         }
         return new DERSet(vector);
     }
@@ -238,10 +238,10 @@ public class Signed {
         }
     }
 
-    private DERSequence firstCertificatesToASN1() {
+    private ASN1Sequence firstCertificatesToASN1() {
         try {
             X509AuxCertificate c = cert.iterator().next();
-            return (DERSequence) (new ASN1InputStream(new ByteArrayInputStream(c.getEncoded())).readObject());
+            return (ASN1Sequence) (new ASN1InputStream(new ByteArrayInputStream(c.getEncoded())).readObject());
         } catch (Exception e) {}
         return null;
     }
@@ -273,25 +273,25 @@ public class Signed {
      *
      * SignerInfos ::= SET OF SignerInfo
      */
-    public static Signed fromASN1(DEREncodable content) throws PKCS7Exception{
+    public static Signed fromASN1(ASN1Encodable content) throws PKCS7Exception{
         ASN1Sequence sequence = (ASN1Sequence)content;
-        DERInteger version = (DERInteger)sequence.getObjectAt(0);
+        ASN1Integer version = (ASN1Integer)sequence.getObjectAt(0);
         ASN1Set digestAlgos = (ASN1Set)sequence.getObjectAt(1);
-        DEREncodable contentInfo = sequence.getObjectAt(2);
+        ASN1Encodable contentInfo = sequence.getObjectAt(2);
 
-        DEREncodable certificates = null;
-        DEREncodable crls = null;
+        ASN1Encodable certificates = null;
+        ASN1Encodable crls = null;
 
         int index = 3;
-        DEREncodable tmp = sequence.getObjectAt(index);
-        if((tmp instanceof DERTaggedObject) && ((DERTaggedObject)tmp).getTagNo() == 0) {
-            certificates = ((DERTaggedObject)tmp).getObject();
+        ASN1Encodable tmp = sequence.getObjectAt(index);
+        if((tmp instanceof ASN1TaggedObject) && ((ASN1TaggedObject)tmp).getTagNo() == 0) {
+            certificates = ((ASN1TaggedObject)tmp).getObject();
             index++;
         }
 
         tmp = sequence.getObjectAt(index);
-        if((tmp instanceof DERTaggedObject) && ((DERTaggedObject)tmp).getTagNo() == 1) {
-            crls = ((DERTaggedObject)tmp).getObject();
+        if((tmp instanceof ASN1TaggedObject) && ((ASN1TaggedObject)tmp).getTagNo() == 1) {
+            crls = ((ASN1TaggedObject)tmp).getObject();
             index++;
         }
 
@@ -312,21 +312,21 @@ public class Signed {
         return signed;
     }
 
-    private static Collection<X509AuxCertificate> certificatesFromASN1Set(DEREncodable content) throws PKCS7Exception {
+    private static Collection<X509AuxCertificate> certificatesFromASN1Set(ASN1Encodable content) throws PKCS7Exception {
         Collection<X509AuxCertificate> result = new ArrayList<X509AuxCertificate>();
-        if (content instanceof DERSequence) {
+        if (content instanceof ASN1Sequence) {
             try {
-                for (Enumeration<?> enm = ((DERSequence) content).getObjects(); enm.hasMoreElements();) {
-                    DEREncodable current = (DEREncodable) enm.nextElement();
+                for (Enumeration<?> enm = ((ASN1Sequence) content).getObjects(); enm.hasMoreElements();) {
+                    ASN1Encodable current = (ASN1Encodable) enm.nextElement();
                     result.add(certificateFromASN1(current));
                 }
             } catch (IllegalArgumentException iae) {
                 result.add(certificateFromASN1(content));
             }
-        } else if (content instanceof DERSet) {
+        } else if (content instanceof ASN1Set) {
             // EXPLICIT Set shouldn't apper here but keep this for backward compatibility.
-            for (Enumeration<?> enm = ((DERSet) content).getObjects(); enm.hasMoreElements();) {
-                DEREncodable current = (DEREncodable) enm.nextElement();
+            for (Enumeration<?> enm = ((ASN1Set) content).getObjects(); enm.hasMoreElements();) {
+                ASN1Encodable current = (ASN1Encodable) enm.nextElement();
                 result.add(certificateFromASN1(current));
             }
         } else {
@@ -335,7 +335,7 @@ public class Signed {
         return result;
     }
 
-    private static X509AuxCertificate certificateFromASN1(DEREncodable current) throws PKCS7Exception {
+    private static X509AuxCertificate certificateFromASN1(ASN1Encodable current) throws PKCS7Exception {
         X509CertificateStructure struct = X509CertificateStructure.getInstance(current);
         try {
             return new X509AuxCertificate(new X509CertificateObject(struct));
@@ -344,7 +344,7 @@ public class Signed {
         }
     }
 
-    private static Set<AlgorithmIdentifier> algorithmIdentifiersFromASN1Set(DEREncodable content) {
+    private static Set<AlgorithmIdentifier> algorithmIdentifiersFromASN1Set(ASN1Encodable content) {
         ASN1Set set = (ASN1Set)content;
         Set<AlgorithmIdentifier> result = new HashSet<AlgorithmIdentifier>();
         for(Enumeration<?> e = set.getObjects(); e.hasMoreElements();) {
@@ -353,7 +353,7 @@ public class Signed {
         return result;
     }
 
-    private static Collection<SignerInfoWithPkey> signerInfosFromASN1Set(DEREncodable content) {
+    private static Collection<SignerInfoWithPkey> signerInfosFromASN1Set(ASN1Encodable content) {
         ASN1Set set = (ASN1Set)content;
         Collection<SignerInfoWithPkey> result = new ArrayList<SignerInfoWithPkey>();
         for(Enumeration<?> e = set.getObjects(); e.hasMoreElements();) {

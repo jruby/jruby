@@ -48,9 +48,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -466,7 +467,7 @@ public class X509Cert extends RubyObject {
         } catch (NoSuchProviderException nspe) {
             throw newCertificateError(getRuntime(), nspe);
         } catch (SignatureException se) {
-            throw newCertificateError(getRuntime(), se);
+            return getRuntime().getFalse();
         } catch(InvalidKeyException e) {
             return getRuntime().getFalse();
         }
@@ -497,12 +498,12 @@ public class X509Cert extends RubyObject {
     @JRubyMethod
     public IRubyObject add_extension(IRubyObject arg) {
         changed = true;
-        DERObjectIdentifier oid = ((X509Extensions.Extension)arg).getRealOid();
-        if(oid.equals(new DERObjectIdentifier("2.5.29.17"))) {
+        ASN1ObjectIdentifier oid = ((X509Extensions.Extension)arg).getRealOid();
+        if(oid.equals(new ASN1ObjectIdentifier("2.5.29.17"))) {
             boolean one = true;
             for(Iterator<IRubyObject> iter = extensions.iterator();iter.hasNext();) {
                 X509Extensions.Extension ag = (X509Extensions.Extension)iter.next();
-                if(ag.getRealOid().equals(new DERObjectIdentifier("2.5.29.17"))) {
+                if(ag.getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.17"))) {
                     ASN1EncodableVector v1 = new ASN1EncodableVector();
 
                     try {
@@ -515,11 +516,11 @@ public class X509Cert extends RubyObject {
                         for(int i=0;i<n2.length;i++) {
                             v1.add(n2[i]);
                         }
+                        
+                        ag.setRealValue(new String(ByteList.plain(GeneralNames.getInstance(new DLSequence(v1)).getEncoded(ASN1Encoding.DER))));
                     } catch (IOException ex) {
                         throw getRuntime().newIOErrorFromException(ex);
                     }
-
-                    ag.setRealValue(new String(ByteList.plain(new GeneralNames(new DERSequence(v1)).getDEREncoded())));
                     one = false;
                     break;
                 }

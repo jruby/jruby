@@ -385,8 +385,8 @@ module PKCS7Test
 
     def create_signer_info_with_algo(algo)
       md5 = AlgorithmIdentifier.new(ASN1Registry.nid2obj(4))
-      SignerInfoWithPkey.new(DERInteger.new(BigInteger::ONE), 
-                     IssuerAndSerialNumber.new(X509Name.new("C=SE"), DERInteger.new(BigInteger::ONE)), 
+      SignerInfoWithPkey.new(ASN1Integer.new(BigInteger::ONE), 
+                     IssuerAndSerialNumber.new(X509Name.new("C=SE"), ASN1Integer.new(BigInteger::ONE)), 
                      algo, 
                      DERSet.new, 
                      md5, 

@@ -41,9 +41,9 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROutputStream;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
@@ -119,18 +119,18 @@ public class PKCS10CertificationRequestExt extends PKCS10CertificationRequest {
             v1.add(seq.getObjectAt(i));
         }
         v1.add(new DERTaggedObject(0,attrs));
-        this.reqInfo = new CertificationRequestInfo(new DERSequence(v1));
+        this.reqInfo = new CertificationRequestInfo(new DLSequence(v1));
     }
 
     public void setVersion(int v) {
-        DERInteger nVersion = new DERInteger(v);
+        ASN1Integer nVersion = new ASN1Integer(v);
         ASN1Sequence seq = (ASN1Sequence)this.reqInfo.toASN1Object();
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         v1.add(nVersion);
         for(int i=1;i<seq.size();i++) {
             v1.add(seq.getObjectAt(i));
         }
-        this.reqInfo = new CertificationRequestInfo(new DERSequence(v1));
+        this.reqInfo = new CertificationRequestInfo(new DLSequence(v1));
     }
 
     public int getVersion() {

@@ -34,8 +34,9 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
 import org.jruby.Ruby;
@@ -153,14 +154,14 @@ public class NetscapeSPKI extends RubyObject {
     }
 
     private byte[] internalToDer() throws IOException {
-        DERSequence b = (DERSequence)cert.toASN1Object();
-        DERObjectIdentifier encType = null;
+        ASN1Sequence b = (ASN1Sequence)cert.toASN1Primitive();
+        ASN1ObjectIdentifier encType = null;
         DERBitString publicKey = new DERBitString(((PKey)public_key).to_der().convertToString().getBytes());
         DERIA5String encodedChallenge = new DERIA5String(this.challenge.toString());
-        DERObjectIdentifier sigAlg = null;
+        ASN1ObjectIdentifier sigAlg = null;
         DERBitString sig = null;
-        encType = (DERObjectIdentifier)((DERSequence)((DERSequence)((DERSequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
-        sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getObjectId();
+        encType = (ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)((ASN1Sequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
+        sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getAlgorithm();
         sig = (DERBitString)b.getObjectAt(2);
 
         ASN1EncodableVector v1 = new ASN1EncodableVector();
@@ -170,16 +171,16 @@ public class NetscapeSPKI extends RubyObject {
         ASN1EncodableVector v4 = new ASN1EncodableVector();
         v4.add(encType);
         v4.add(new DERNull());
-        v3.add(new DERSequence(v4));
+        v3.add(new DLSequence(v4));
         v3.add(publicKey);
-        v2.add(new DERSequence(v3));
+        v2.add(new DLSequence(v3));
         v2.add(encodedChallenge);
-        v1.add(new DERSequence(v2));
+        v1.add(new DLSequence(v2));
         v1_2.add(sigAlg);
         v1_2.add(new DERNull());
-        v1.add(new DERSequence(v1_2));
+        v1.add(new DLSequence(v1_2));
         v1.add(sig);
-        return new DERSequence(v1).getEncoded();
+        return new DLSequence(v1).getEncoded();
     }
 
     @JRubyMethod
@@ -203,7 +204,7 @@ public class NetscapeSPKI extends RubyObject {
     public IRubyObject sign(final IRubyObject key, IRubyObject digest) {
         String keyAlg = ((PKey) key).getAlgorithm();
         String digAlg = ((Digest) digest).getShortAlgorithm();
-        final DERObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get(keyAlg.toLowerCase() + "-" + digAlg.toLowerCase());
+        final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get(keyAlg.toLowerCase() + "-" + digAlg.toLowerCase());
         try {
             // NetscapeCertRequest requires "BC" provider.
             OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {

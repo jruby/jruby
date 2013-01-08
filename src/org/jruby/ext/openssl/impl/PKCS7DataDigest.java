@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.ASN1Encodable;
 
 /**
  *
@@ -58,7 +58,7 @@ public class PKCS7DataDigest extends PKCS7Data  {
         this.digest.setContents(p7);
     }
 
-    public static PKCS7DataDigest fromASN1(DEREncodable content) {
+    public static PKCS7DataDigest fromASN1(ASN1Encodable content) {
         throw new UnsupportedOperationException("TODO: can't create DataDigest from ASN1 yet");
     }
 }// PKCS7DataDigest

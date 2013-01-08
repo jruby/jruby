@@ -39,15 +39,14 @@ import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.Attribute;
@@ -62,8 +61,8 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 @SuppressWarnings("deprecation")
-public class SignerInfoWithPkey extends ASN1Encodable {
-    private DERInteger              version;
+public class SignerInfoWithPkey implements ASN1Encodable {
+    private ASN1Integer              version;
     private IssuerAndSerialNumber   issuerAndSerialNumber;
     private AlgorithmIdentifier     digAlgorithm;
     private ASN1Set                 authenticatedAttributes;
@@ -96,7 +95,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
     SignerInfoWithPkey() {        
     }
 
-    public SignerInfoWithPkey(DERInteger              version,
+    public SignerInfoWithPkey(ASN1Integer              version,
         IssuerAndSerialNumber   issuerAndSerialNumber,
         AlgorithmIdentifier     digAlgorithm,
         ASN1Set                 authenticatedAttributes,
@@ -115,7 +114,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
     public SignerInfoWithPkey(ASN1Sequence seq) {
         Enumeration     e = seq.getObjects();
 
-        version = (DERInteger)e.nextElement();
+        version = (ASN1Integer)e.nextElement();
         issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(e.nextElement());
         digAlgorithm = AlgorithmIdentifier.getInstance(e.nextElement());
 
@@ -141,7 +140,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
         }
     }
 
-    public DERInteger getVersion() {
+    public ASN1Integer getVersion() {
         return version;
     }
 
@@ -177,7 +176,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
             (pkey instanceof DSAPrivateKey) || 
             (pkey instanceof ECPrivateKey);
 
-        version = new DERInteger(1);
+        version = new ASN1Integer(1);
 
         try {
             X509Name issuer = X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(x509.getIssuerX500Principal().getEncoded())).readObject());
@@ -224,7 +223,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
      *  DigestEncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
      * </pre>
      */
-    public DERObject toASN1Object() {
+    public ASN1Encodable toASN1Object() {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(version);
@@ -242,7 +241,7 @@ public class SignerInfoWithPkey extends ASN1Encodable {
             v.add(new DERTaggedObject(false, 1, unauthenticatedAttributes));
         }
 
-        return new DERSequence(v);
+        return new DLSequence(v);
     }
 
     /**
@@ -283,23 +282,23 @@ public class SignerInfoWithPkey extends ASN1Encodable {
     /** c: PKCS7_get_signed_attribute
      *
      */
-    public DEREncodable getSignedAttribute(int nid) {
+    public ASN1Encodable getSignedAttribute(int nid) {
         return getAttribute(this.authenticatedAttributes, nid);
     }
 
     /** c: PKCS7_get_attribute
      *
      */
-    public DEREncodable getAttribute(int nid) {
+    public ASN1Encodable getAttribute(int nid) {
         return getAttribute(this.unauthenticatedAttributes, nid);
     }
 
     /** c: static get_attribute
      *
      */
-    public static DEREncodable getAttribute(ASN1Set sk, int nid) {
+    public static ASN1Encodable getAttribute(ASN1Set sk, int nid) {
         Attribute xa = null;
-        DERObjectIdentifier o = ASN1Registry.nid2obj(nid);
+        ASN1ObjectIdentifier o = ASN1Registry.nid2obj(nid);
 
         if(null == o || null == sk) {
             return null;
@@ -327,21 +326,21 @@ public class SignerInfoWithPkey extends ASN1Encodable {
     /** c: PKCS7_add_signed_attribute
      *
      */
-    public void addSignedAttribute(int atrType, DEREncodable value) {
+    public void addSignedAttribute(int atrType, ASN1Encodable value) {
         this.authenticatedAttributes = addAttribute(this.authenticatedAttributes, atrType, value);
     }
 
     /** c: PKCS7_add_attribute
      *
      */
-    public void addAttribute(int atrType, DEREncodable value) {
+    public void addAttribute(int atrType, ASN1Encodable value) {
         this.unauthenticatedAttributes = addAttribute(this.unauthenticatedAttributes, atrType, value);
     }
 
     /** c: static add_attribute
      *
      */
-    private ASN1Set addAttribute(ASN1Set base, int atrType, DEREncodable value) {
+    private ASN1Set addAttribute(ASN1Set base, int atrType, ASN1Encodable value) {
         ASN1EncodableVector vector = new ASN1EncodableVector();
         if(base == null) {
             base = new DERSet();
@@ -358,8 +357,14 @@ public class SignerInfoWithPkey extends ASN1Encodable {
                 vector.add(attr);
             }
         }
-        attr = new Attribute(ASN1Registry.nid2obj(atrType), new DERSet(value));
+        ASN1ObjectIdentifier ident = ASN1Registry.nid2obj(atrType);
+        attr = new org.bouncycastle.asn1.pkcs.Attribute(ident, new DERSet(value));
         vector.add(attr);
         return new DERSet(vector);
+    }
+
+    @Override
+    public ASN1Primitive toASN1Primitive() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }// SignerInfoWithPkey

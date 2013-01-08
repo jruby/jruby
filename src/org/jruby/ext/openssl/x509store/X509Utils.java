@@ -32,9 +32,9 @@ import java.util.Arrays;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -216,9 +216,9 @@ public abstract class X509Utils {
             ASN1Sequence seq = (ASN1Sequence)key;
             AuthorityKeyIdentifier sakid = null;
             if(seq.size() == 1 && (seq.getObjectAt(0) instanceof ASN1OctetString)) {
-                sakid = new AuthorityKeyIdentifier(new DERSequence(new DERTaggedObject(0, seq.getObjectAt(0))));
+                sakid = AuthorityKeyIdentifier.getInstance(new DLSequence(new DERTaggedObject(0, seq.getObjectAt(0))));
             } else {
-                sakid = new AuthorityKeyIdentifier(seq);
+                sakid = AuthorityKeyIdentifier.getInstance(seq);
             }
 
             if(sakid.getKeyIdentifier() != null) {
@@ -227,7 +227,7 @@ public abstract class X509Utils {
                     if(der.getOctets().length > 20) {
                         der = (DEROctetString)get(der.getOctets());
                     }
-                    SubjectKeyIdentifier iskid = new SubjectKeyIdentifier(der);
+                    SubjectKeyIdentifier iskid = SubjectKeyIdentifier.getInstance(der);
                     if(iskid.getKeyIdentifier() != null) {
                         if(!Arrays.equals(sakid.getKeyIdentifier(),iskid.getKeyIdentifier())) {
                             return V_ERR_AKID_SKID_MISMATCH;
@@ -240,14 +240,14 @@ public abstract class X509Utils {
             }
             if(sakid.getAuthorityCertIssuer() != null) {
                 GeneralName[] gens = sakid.getAuthorityCertIssuer().getNames();
-                org.bouncycastle.asn1.x509.X509Name nm = null;
+                org.bouncycastle.asn1.x500.X500Name nm = null;
                 for(int i=0;i<gens.length;i++) {
                     if(gens[i].getTagNo() == GeneralName.directoryName) {
-                        DEREncodable nameTmp = gens[i].getName();
-                        if (nameTmp instanceof org.bouncycastle.asn1.x509.X509Name) {
-                            nm = (org.bouncycastle.asn1.x509.X509Name)nameTmp;
-                        } else if (nameTmp instanceof DERSequence) {
-                            nm = new org.bouncycastle.asn1.x509.X509Name((DERSequence)nameTmp);
+                        ASN1Encodable nameTmp = gens[i].getName();
+                        if (nameTmp instanceof org.bouncycastle.asn1.x500.X500Name) {
+                            nm = (org.bouncycastle.asn1.x500.X500Name)nameTmp;
+                        } else if (nameTmp instanceof ASN1Sequence) {
+                            nm = org.bouncycastle.asn1.x500.X500Name.getInstance((ASN1Sequence)nameTmp);
                         } else {
                             throw new RuntimeException("unknown name type in X509Utils: " + nameTmp);
                         }

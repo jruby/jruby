@@ -30,13 +30,13 @@ package org.jruby.ext.openssl.impl;
 import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.jruby.util.ByteList;
 
@@ -140,7 +140,7 @@ public class EncContent {
 
     @Override
     public String toString() {
-        return "#<EncContent contentType="+contentType+" algorithm="+(algorithm == null ? "null" : ASN1Registry.o2a(algorithm.getObjectId()))+" content="+encData+">";
+        return "#<EncContent contentType="+contentType+" algorithm="+(algorithm == null ? "null" : ASN1Registry.o2a(algorithm.getAlgorithm()))+" content="+encData+">";
     }
 
     /**
@@ -151,16 +151,16 @@ public class EncContent {
      *
      * EncryptedContent ::= OCTET STRING
      */
-    public static EncContent fromASN1(DEREncodable content) {
+    public static EncContent fromASN1(ASN1Encodable content) {
         ASN1Sequence sequence = (ASN1Sequence)content;
-        DERObjectIdentifier contentType = (DERObjectIdentifier)(sequence.getObjectAt(0));
+        ASN1ObjectIdentifier contentType = (ASN1ObjectIdentifier)(sequence.getObjectAt(0));
         int nid = ASN1Registry.obj2nid(contentType);
 
         EncContent ec = new EncContent();
         ec.setContentType(nid);
         ec.setAlgorithm(AlgorithmIdentifier.getInstance(sequence.getObjectAt(1)));
-        if(sequence.size() > 2 && sequence.getObjectAt(2) instanceof DERTaggedObject && ((DERTaggedObject)(sequence.getObjectAt(2))).getTagNo() == 0) {
-            DEREncodable ee = ((DERTaggedObject)(sequence.getObjectAt(2))).getObject();
+        if(sequence.size() > 2 && sequence.getObjectAt(2) instanceof ASN1TaggedObject && ((ASN1TaggedObject)(sequence.getObjectAt(2))).getTagNo() == 0) {
+            ASN1Encodable ee = ((ASN1TaggedObject)(sequence.getObjectAt(2))).getObject();
             if(ee instanceof ASN1Sequence && ((ASN1Sequence)ee).size() > 0) {
                 ByteList combinedOctets = new ByteList();
                 Enumeration enm = ((ASN1Sequence)ee).getObjects();
@@ -178,11 +178,11 @@ public class EncContent {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(ASN1Registry.nid2obj(contentType).toASN1Object());
-        vector.add(algorithm.toASN1Object());
+        vector.add(ASN1Registry.nid2obj(contentType).toASN1Primitive());
+        vector.add(algorithm.toASN1Primitive());
         if(encData != null) {
             vector.add(new DERTaggedObject(false, 0, encData));
         }
-        return new DERSequence(vector);
+        return new DLSequence(vector);
    }
 }// EncContent

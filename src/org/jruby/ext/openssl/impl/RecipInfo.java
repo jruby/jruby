@@ -33,10 +33,10 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
@@ -224,10 +224,10 @@ public class RecipInfo {
      * 
      * EncryptedKey ::= OCTET STRING
      */
-    public static RecipInfo fromASN1(DEREncodable content) {
-        DERSequence sequence = (DERSequence)content;
+    public static RecipInfo fromASN1(ASN1Encodable content) {
+        ASN1Sequence sequence = (ASN1Sequence)content;
         RecipInfo ri = new RecipInfo();
-        ri.setVersion(((DERInteger)sequence.getObjectAt(0)).getValue().intValue());
+        ri.setVersion(((ASN1Integer)sequence.getObjectAt(0)).getValue().intValue());
         ri.setIssuerAndSerial(IssuerAndSerialNumber.getInstance(sequence.getObjectAt(1)));
         ri.setKeyEncAlgor(AlgorithmIdentifier.getInstance(sequence.getObjectAt(2)));
         ri.setEncKey((ASN1OctetString)sequence.getObjectAt(3));
@@ -236,10 +236,10 @@ public class RecipInfo {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new DERInteger(getVersion()));
-        vector.add(issuerAndSerial.toASN1Object()); 
-        vector.add(keyEncAlgor.toASN1Object());
-        vector.add(encKey.toASN1Object());
-        return new DERSequence(vector);
+        vector.add(new ASN1Integer(getVersion()));
+        vector.add(issuerAndSerial.toASN1Primitive()); 
+        vector.add(keyEncAlgor.toASN1Primitive());
+        vector.add(encKey.toASN1Primitive());
+        return new DLSequence(vector);
     }
 }// RecipInfo

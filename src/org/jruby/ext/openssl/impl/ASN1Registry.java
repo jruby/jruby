@@ -29,7 +29,7 @@ package org.jruby.ext.openssl.impl;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
  *
@@ -38,31 +38,31 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 @SuppressWarnings("deprecation")
 public class ASN1Registry {
     @SuppressWarnings("unchecked")
-    private static Map<String, DERObjectIdentifier> SYM_TO_OID = new HashMap<String, DERObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
+    private static Map<String, ASN1ObjectIdentifier> SYM_TO_OID = new HashMap<String, ASN1ObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
     @SuppressWarnings("unchecked")
-    private static Map<DERObjectIdentifier, String> OID_TO_SYM = new HashMap<DERObjectIdentifier, String>(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
-    private static Map<DERObjectIdentifier, Integer> OID_TO_NID = new HashMap<DERObjectIdentifier, Integer>();
-    private static Map<Integer, DERObjectIdentifier> NID_TO_OID = new HashMap<Integer, DERObjectIdentifier>();
+    private static Map<ASN1ObjectIdentifier, String> OID_TO_SYM = new HashMap<ASN1ObjectIdentifier, String>(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
+    private static Map<ASN1ObjectIdentifier, Integer> OID_TO_NID = new HashMap<ASN1ObjectIdentifier, Integer>();
+    private static Map<Integer, ASN1ObjectIdentifier> NID_TO_OID = new HashMap<Integer, ASN1ObjectIdentifier>();
     private static Map<Integer, String> NID_TO_SN = new HashMap<Integer, String>();
     private static Map<Integer, String> NID_TO_LN = new HashMap<Integer, String>();
     
     public static Integer obj2nid(String oid) {
-        return obj2nid(new DERObjectIdentifier(oid));
+        return obj2nid(new ASN1ObjectIdentifier(oid));
     }
 
     public static String ln2oid(String ln) {
         return SYM_TO_OID.get(ln.toLowerCase()).getId();
     }
 
-    public static Integer obj2nid(DERObjectIdentifier oid) {
+    public static Integer obj2nid(ASN1ObjectIdentifier oid) {
         return OID_TO_NID.get(oid);
     }
 
     public static String o2a(String oid) {
-        return o2a(new DERObjectIdentifier(oid));        
+        return o2a(new ASN1ObjectIdentifier(oid));        
     }
     
-    public static String o2a(DERObjectIdentifier obj) {
+    public static String o2a(ASN1ObjectIdentifier obj) {
         Integer nid = obj2nid(obj);
         String one = NID_TO_LN.get(nid);
         if(one == null) {
@@ -71,7 +71,7 @@ public class ASN1Registry {
         return one;
     }
 
-    public static DERObjectIdentifier sym2oid(String name) {
+    public static ASN1ObjectIdentifier sym2oid(String name) {
         return SYM_TO_OID.get(name.toLowerCase());
     }
 
@@ -83,7 +83,7 @@ public class ASN1Registry {
         return nid2ln(Integer.valueOf(nid));
     }
 
-    public static DERObjectIdentifier nid2obj(int nid) {
+    public static ASN1ObjectIdentifier nid2obj(int nid) {
         return NID_TO_OID.get(nid);
     }
 
@@ -93,7 +93,7 @@ public class ASN1Registry {
 
     static void addObject(int nid, String sn, String ln, String oid) {
         if(null != oid && oid.length() > 2 && (null != sn || null != ln)) {
-            DERObjectIdentifier ident = new DERObjectIdentifier(oid);
+            ASN1ObjectIdentifier ident = new ASN1ObjectIdentifier(oid);
             if(sn != null) {
                 SYM_TO_OID.put(sn.toLowerCase(),ident);
             }

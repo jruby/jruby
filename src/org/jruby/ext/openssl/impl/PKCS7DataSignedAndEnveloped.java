@@ -29,7 +29,7 @@ package org.jruby.ext.openssl.impl;
 
 import java.security.cert.X509CRL;
 import java.util.Collection;
-import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
 /**
@@ -91,7 +91,7 @@ public class PKCS7DataSignedAndEnveloped extends PKCS7Data  {
         this.signedAndEnveloped.getCrl().add(crl);
     }
 
-    public static PKCS7DataSignedAndEnveloped fromASN1(DEREncodable content) {
+    public static PKCS7DataSignedAndEnveloped fromASN1(ASN1Encodable content) {
         throw new UnsupportedOperationException("TODO: can't create DataSignedAndEnveloped from ASN1 yet");
     }
 }// PKCS7DataSignedAndEnveloped

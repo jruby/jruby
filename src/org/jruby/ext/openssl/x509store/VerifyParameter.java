@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * c: X509_VERIFY_PARAM
@@ -48,7 +48,7 @@ public class VerifyParameter {
     public int purpose;
     public int trust;
     public int depth;
-    public List<DERObject> policies;
+    public List<ASN1Primitive> policies;
 
     /**
      * c: X509_VERIFY_PARAM_new
@@ -57,7 +57,7 @@ public class VerifyParameter {
         zero();
     }
 
-    public VerifyParameter(String n, long t, long i_f, long f, int p, int trs, int d, List<DERObject> pol) {
+    public VerifyParameter(String n, long t, long i_f, long f, int p, int trs, int d, List<ASN1Primitive> pol) {
         this.name = n;
         this.checkTime = new Date(t);
         this.inheritFlags = i_f;
@@ -214,9 +214,9 @@ public class VerifyParameter {
     /**
      * c: X509_VERIFY_PARAM_add0_policy
      */
-    public int addPolicy(DERObject policy) { 
+    public int addPolicy(ASN1Primitive policy) { 
         if(policies == null) {
-            policies = new ArrayList<DERObject>();
+            policies = new ArrayList<ASN1Primitive>();
         }
         policies.add(policy);
         return 1;
@@ -225,12 +225,12 @@ public class VerifyParameter {
     /**
      * c: X509_VERIFY_PARAM_set1_policies
      */
-    public int setPolicies(List<DERObject> policies) { 
+    public int setPolicies(List<ASN1Primitive> policies) { 
         if(policies == null) {
             this.policies = null;
             return 1;
         }
-        this.policies = new ArrayList<DERObject>();
+        this.policies = new ArrayList<ASN1Primitive>();
         this.policies.addAll(policies);
         this.flags |= X509Utils.V_FLAG_POLICY_CHECK;
         return 1;

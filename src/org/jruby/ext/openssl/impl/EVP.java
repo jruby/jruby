@@ -36,7 +36,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
  *
@@ -53,7 +53,7 @@ public class EVP {
     /* c: EVP_get_cipherbyobj
      *
      */
-    public static Cipher getCipher(DERObjectIdentifier oid) throws GeneralSecurityException {
+    public static Cipher getCipher(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
         String algorithm = getAlgorithmName(oid);
         String[] cipher = org.jruby.ext.openssl.Cipher.Algorithm.osslToJsse(algorithm);
         String realName = cipher[3];
@@ -70,7 +70,7 @@ public class EVP {
     /* c: EVP_get_digestbyobj
      *
      */
-    public static MessageDigest getDigest(DERObjectIdentifier oid) throws GeneralSecurityException {
+    public static MessageDigest getDigest(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
         String algorithm = getAlgorithmName(oid);
         return MessageDigest.getInstance(algorithm);
     }
@@ -95,7 +95,7 @@ public class EVP {
 
     public static int type(MessageDigest digest) {
         String name = digest.getAlgorithm();
-        DERObjectIdentifier obj = ASN1Registry.sym2oid(name);
+        ASN1ObjectIdentifier obj = ASN1Registry.sym2oid(name);
         if(obj == null) {
             name = name.toLowerCase().replace("sha-", "sha");
             obj = ASN1Registry.sym2oid(name);
@@ -136,7 +136,7 @@ public class EVP {
         return decrypt(input, 0, input.length, key);
     }
 
-    private static String getAlgorithmName(DERObjectIdentifier oid) {
+    private static String getAlgorithmName(ASN1ObjectIdentifier oid) {
         String algorithm = ASN1Registry.o2a(oid);
         if (algorithm != null) {
             return algorithm.toUpperCase();

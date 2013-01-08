@@ -33,7 +33,7 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * c: X509_NAME
@@ -42,17 +42,17 @@ import org.bouncycastle.asn1.x509.X509Name;
  */
 @SuppressWarnings("deprecation")
 public class Name {
-    public X509Name name;
+    public X500Name name;
 
     public Name(X500Principal nm) {
         try {
-            this.name = new X509Name((ASN1Sequence)new ASN1InputStream(nm.getEncoded()).readObject());
+            this.name = X500Name.getInstance((ASN1Sequence)new ASN1InputStream(nm.getEncoded()).readObject());
         } catch(Exception e) {
             this.name = null;
         }
     }
 
-    public Name(X509Name nm) {
+    public Name(X500Name nm) {
         this.name = nm;
     }
 

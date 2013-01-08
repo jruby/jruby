@@ -29,7 +29,7 @@ package org.jruby.ext.openssl.x509store;
 
 import java.util.List;
 import java.util.ArrayList;
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -39,5 +39,5 @@ public class X509Aux {
     public List<String> reject = new ArrayList<String>(); // String of OID's /* rejected uses */
     public String alias; /* "friendly name" */
     public byte[] keyid; /* key id of private key */
-    public List<DERObject> other = new ArrayList<DERObject>(); /* String of OID's of sigAlgs, other unspecified info */
+    public List<ASN1Primitive> other = new ArrayList<ASN1Primitive>(); /* String of OID's of sigAlgs, other unspecified info */
 }// X509_AUX

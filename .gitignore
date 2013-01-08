@@ -55,6 +55,6 @@ build_graph.png
 /.idea/
 /.rbx/
 *.sw[mnop]
-lib/ruby/shared/bcmail-jdk15-146.jar
-lib/ruby/shared/bcprov-jdk15-146.jar
+lib/ruby/shared/bcpkix-jdk15on-147.jar
+lib/ruby/shared/bcprov-jdk15on-147.jar
 lib/ruby/shared/jopenssl.jar

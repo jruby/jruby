@@ -32,12 +32,11 @@ import java.util.Collection;
 import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DLSequence;
 
 /** PKCS7_ENVELOPE
  *
@@ -126,11 +125,11 @@ public class Envelope {
      * RecipientInfos ::= SET OF RecipientInfo
      *
      */
-    public static Envelope fromASN1(DEREncodable content) {
+    public static Envelope fromASN1(ASN1Encodable content) {
         ASN1Sequence sequence = (ASN1Sequence)content;
-        DERInteger version = (DERInteger)sequence.getObjectAt(0);
+        ASN1Integer version = (ASN1Integer)sequence.getObjectAt(0);
         ASN1Set recipients = (ASN1Set)sequence.getObjectAt(1);
-        DEREncodable encContent = sequence.getObjectAt(2);        
+        ASN1Encodable encContent = sequence.getObjectAt(2);        
 
         Envelope envelope = new Envelope();
         envelope.setVersion(version.getValue().intValue());
@@ -142,10 +141,10 @@ public class Envelope {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new DERInteger(version));
+        vector.add(new ASN1Integer(version));
         vector.add(receipientInfosToASN1Set());
         vector.add(encData.asASN1());
-        return new DERSequence(vector);
+        return new DLSequence(vector);
     }
 
     private ASN1Set receipientInfosToASN1Set() {
@@ -156,11 +155,11 @@ public class Envelope {
         return new DERSet(vector);
     }
 
-    private static Collection<RecipInfo> recipientInfosFromASN1Set(DEREncodable content) {
+    private static Collection<RecipInfo> recipientInfosFromASN1Set(ASN1Encodable content) {
         ASN1Set set = (ASN1Set)content;
         Collection<RecipInfo> result = new ArrayList<RecipInfo>();
         for(Enumeration<?> e = set.getObjects(); e.hasMoreElements();) {
-            result.add(RecipInfo.fromASN1((DEREncodable)e.nextElement()));
+            result.add(RecipInfo.fromASN1((ASN1Encodable)e.nextElement()));
         }
         return result;
     }

@@ -40,16 +40,16 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
-
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBoolean;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -100,7 +100,7 @@ public class X509CRL extends RubyObject {
     private org.bouncycastle.x509.X509V2CRLGenerator generator = new org.bouncycastle.x509.X509V2CRLGenerator();
     private java.security.cert.X509CRL crl;
 
-    private DERObject crl_v;
+    private ASN1Primitive crl_v;
 
     java.security.cert.X509CRL getCRL() {
         return crl;
@@ -139,9 +139,9 @@ public class X509CRL extends RubyObject {
             throw newX509CRLError(getRuntime(), ioe.getMessage());
         }
 
-        DEREncodable v0 = ((DERSequence)(((DERSequence)crl_v).getObjectAt(0))).getObjectAt(0);
-        if(v0 instanceof DERInteger) {
-            set_version(getRuntime().newFixnum(((DERInteger)v0).getValue().intValue()));
+        ASN1Encodable v0 = ((ASN1Sequence)(((ASN1Sequence)crl_v).getObjectAt(0))).getObjectAt(0);
+        if(v0 instanceof ASN1Integer) {
+            set_version(getRuntime().newFixnum(((ASN1Integer)v0).getValue().intValue()));
         } else {
             set_version(getRuntime().newFixnum(2));
         }
@@ -152,14 +152,14 @@ public class X509CRL extends RubyObject {
 
         revoked = getRuntime().newArray();
 
-        DERSequence seqa = (DERSequence)((DERSequence)crl_v).getObjectAt(0);
-        DERObject maybe_ext = (DERObject)seqa.getObjectAt(seqa.size()-1);
-        if(maybe_ext instanceof DERTaggedObject && ((DERTaggedObject)maybe_ext).getTagNo() == 0) {
-            DERSequence exts = (DERSequence)((DERTaggedObject)maybe_ext).getObject();
+        ASN1Sequence seqa = (ASN1Sequence)((ASN1Sequence)crl_v).getObjectAt(0);
+        ASN1Primitive maybe_ext = (ASN1Primitive)seqa.getObjectAt(seqa.size()-1);
+        if(maybe_ext instanceof ASN1TaggedObject && ((ASN1TaggedObject)maybe_ext).getTagNo() == 0) {
+            ASN1Sequence exts = (ASN1Sequence)((ASN1TaggedObject)maybe_ext).getObject();
             for(int i=0;i<exts.size();i++) {
-                DERSequence seq2 = (DERSequence)exts.getObjectAt(i);
+                ASN1Sequence seq2 = (ASN1Sequence)exts.getObjectAt(i);
                 boolean critical = false;
-                String oid = ((DERObjectIdentifier)seq2.getObjectAt(0)).getId();
+                String oid = ((ASN1ObjectIdentifier)seq2.getObjectAt(0)).getId();
                 if(seq2.getObjectAt(1) == DERBoolean.TRUE) {
                     critical = true;
                 }
@@ -222,11 +222,11 @@ public class X509CRL extends RubyObject {
     private static final DateFormat ASN_DATE = new SimpleDateFormat("MMM dd HH:mm:ss yyyy zzz");
     @JRubyMethod
     public IRubyObject to_text() {
-        StringBuffer sbe = new StringBuffer();
+        StringBuilder sbe = new StringBuilder();
         sbe.append("Certificate Revocation List (CRL):\n");
         sbe.append(IND8).append("Version ").append(RubyNumeric.fix2int(version)+1).append(" (0x");
         sbe.append(Integer.toString(RubyNumeric.fix2int(version),16)).append(")\n");
-        sbe.append(IND8).append("Signature Algorithm: ").append(ASN1.nid2ln(getRuntime(),ASN1.obj2nid(getRuntime(),((DERObjectIdentifier)((DERSequence)((DERSequence)crl_v).getObjectAt(1)).getObjectAt(0))))).append("\n");
+        sbe.append(IND8).append("Signature Algorithm: ").append(ASN1.nid2ln(getRuntime(),ASN1.obj2nid(getRuntime(),((ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)crl_v).getObjectAt(1)).getObjectAt(0))))).append("\n");
         sbe.append(IND8).append("Issuer: ").append(issuer()).append("\n");
         sbe.append(IND8).append("Last Update: ").append(ASN_DATE.format(((RubyTime)last_update()).getJavaDate())).append("\n");
         if(!next_update().isNil()) {
@@ -238,7 +238,7 @@ public class X509CRL extends RubyObject {
             sbe.append(IND8).append("CRL extensions\n");
             for(Iterator<IRubyObject> iter = extensions.iterator();iter.hasNext();) {
                 X509Extensions.Extension ext = (X509Extensions.Extension)iter.next();
-                DERObjectIdentifier oiden = ext.getRealOid();
+                ASN1ObjectIdentifier oiden = ext.getRealOid();
                 sbe.append(IND12).append(ASN1.o2a(getRuntime(),oiden)).append(": ");
                 if(ext.getRealCritical()) {
                     sbe.append("critical");
@@ -423,21 +423,21 @@ public class X509CRL extends RubyObject {
         } catch (IOException ioe) {
             throw newX509CRLError(getRuntime(), ioe.getMessage());
         }
-        DERSequence v1 = (DERSequence)(((DERSequence)crl_v).getObjectAt(0));
+        ASN1Sequence v1 = (ASN1Sequence)(((ASN1Sequence)crl_v).getObjectAt(0));
         ASN1EncodableVector build1 = new ASN1EncodableVector();
         int copyIndex = 0;
-        if(v1.getObjectAt(0) instanceof DERInteger) {
+        if(v1.getObjectAt(0) instanceof ASN1Integer) {
             copyIndex++;
         }
-        build1.add(new DERInteger(new java.math.BigInteger(version.toString())));
+        build1.add(new ASN1Integer(new java.math.BigInteger(version.toString())));
         while(copyIndex < v1.size()) {
             build1.add(v1.getObjectAt(copyIndex++));
         }
         ASN1EncodableVector build2 = new ASN1EncodableVector();
-        build2.add(new DERSequence(build1));
-        build2.add(((DERSequence)crl_v).getObjectAt(1));
-        build2.add(((DERSequence)crl_v).getObjectAt(2));
-        crl_v = new DERSequence(build2);
+        build2.add(new DLSequence(build1));
+        build2.add(((ASN1Sequence)crl_v).getObjectAt(1));
+        build2.add(((ASN1Sequence)crl_v).getObjectAt(2));
+        crl_v = new DLSequence(build2);
         changed = false;
         return this;
     }

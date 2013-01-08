@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.ASN1Encodable;
 
 /**
  *
@@ -55,7 +55,7 @@ public class PKCS7DataEncrypted extends PKCS7Data {
         return true;
     }
 
-    public static PKCS7DataEncrypted fromASN1(DEREncodable content) {
+    public static PKCS7DataEncrypted fromASN1(ASN1Encodable content) {
         throw new UnsupportedOperationException("TODO: can't create DataEncrypted from ASN1 yet");
     }
 }// PKCS7DataEncrypted

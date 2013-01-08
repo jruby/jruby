@@ -62,13 +62,13 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
@@ -115,6 +115,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.jruby.ext.openssl.Cipher.CipherModule;
@@ -299,15 +301,15 @@ public class PEMInputOutput {
                 try {
                     byte[] bytes = readBytes(_in, BEF_E + PEM_STRING_PKCS8INF);
                     PrivateKeyInfo info = new PrivateKeyInfo((ASN1Sequence) new ASN1InputStream(bytes).readObject());
-                    String type = getPrivateKeyTypeFromObjectId(info.getAlgorithmId().getObjectId());
-                    return org.jruby.ext.openssl.impl.PKey.readPrivateKey(info.getPrivateKey().getDEREncoded(), type);
+                    String type = getPrivateKeyTypeFromObjectId(info.getPrivateKeyAlgorithm().getAlgorithm());
+                    return org.jruby.ext.openssl.impl.PKey.readPrivateKey(info.getPrivateKey().getEncoded(ASN1Encoding.DER), type);
                 } catch (Exception e) {
                     throw new IOException("problem creating private key: " + e.toString());
                 }
             } else if (line.indexOf(BEF_G + PEM_STRING_PKCS8) != -1) {
                 try {
                     byte[] bytes = readBytes(_in, BEF_E + PEM_STRING_PKCS8);
-                    org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn = new org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo(
+                    org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn = org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo.getInstance(
                             (ASN1Sequence) new ASN1InputStream(bytes).readObject());
                     AlgorithmIdentifier algId = eIn.getEncryptionAlgorithm();
                     PrivateKey privKey;
@@ -327,7 +329,7 @@ public class PEMInputOutput {
 
     private static PrivateKey derivePrivateKeyPBES1(org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
             throws GeneralSecurityException {
-        PKCS12PBEParams pkcs12Params = new PKCS12PBEParams((ASN1Sequence) algId.getParameters());
+        PKCS12PBEParams pkcs12Params = PKCS12PBEParams.getInstance((ASN1Sequence) algId.getParameters());
         PBEParameterSpec pbeParams = new PBEParameterSpec(pkcs12Params.getIV(), pkcs12Params.getIterations().intValue());
 
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
@@ -350,7 +352,7 @@ public class PEMInputOutput {
         EncryptionScheme scheme = pbeParams.getEncryptionScheme();
         BufferedBlockCipher cipher;
         if (scheme.getAlgorithm().equals(PKCSObjectIdentifiers.RC2_CBC)) {
-            RC2CBCParameter rc2Params = new RC2CBCParameter((ASN1Sequence) scheme.getObject());
+            RC2CBCParameter rc2Params = RC2CBCParameter.getInstance((ASN1Sequence) scheme.getObject());
             byte[] iv = rc2Params.getIV();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new RC2Engine()));
@@ -642,7 +644,7 @@ public class PEMInputOutput {
 
     private static byte[] getEncoded(ASN1Encodable obj) throws IOException {
         if (obj != null) {
-            return obj.getEncoded();
+            return obj.toASN1Primitive().getEncoded();
         }
         return new byte[] { '0', 0 };
     }
@@ -752,16 +754,16 @@ public class PEMInputOutput {
                 if(aux.trust.size()>0) {
                     ASN1EncodableVector a2 = new ASN1EncodableVector();
                     for(String trust : aux.trust) {
-                        a2.add(new DERObjectIdentifier(trust));
+                        a2.add(new ASN1ObjectIdentifier(trust));
                     }
-                    a1.add(new DERSequence(a2));
+                    a1.add(new DLSequence(a2));
                 }
                 if(aux.reject.size()>0) {
                     ASN1EncodableVector a2 = new ASN1EncodableVector();
                     for(String reject : aux.reject) {
-                        a2.add(new DERObjectIdentifier(reject));
+                        a2.add(new ASN1ObjectIdentifier(reject));
                     }
-                    a1.add(new DERTaggedObject(0,new DERSequence(a2)));
+                    a1.add(new DERTaggedObject(0,new DLSequence(a2)));
                 }
                 if(aux.alias != null) {
                     a1.add(new DERUTF8String(aux.alias));
@@ -771,12 +773,12 @@ public class PEMInputOutput {
                 }
                 if(aux.other.size()>0) {
                     ASN1EncodableVector a2 = new ASN1EncodableVector();
-                    for(DERObject other : aux.other) {
+                    for(ASN1Primitive other : aux.other) {
                         a2.add(other);
                     }
-                    a1.add(new DERTaggedObject(1,new DERSequence(a2)));
+                    a1.add(new DERTaggedObject(1,new DLSequence(a2)));
                 }
-                ymp = new DERSequence(a1).getEncoded();
+                ymp = new DLSequence(a1).getEncoded();
                 baos.write(ymp,0,ymp.length);
                 encoding = baos.toByteArray();
             }
@@ -828,18 +830,18 @@ public class PEMInputOutput {
 
         DSAParameter p = DSAParameter.getInstance(info.getAlgorithmId().getParameters());
         ASN1EncodableVector v = new ASN1EncodableVector();
-        v.add(new DERInteger(0));
-        v.add(new DERInteger(p.getP()));
-        v.add(new DERInteger(p.getQ()));
-        v.add(new DERInteger(p.getG()));
+        v.add(new ASN1Integer(0));
+        v.add(new ASN1Integer(p.getP()));
+        v.add(new ASN1Integer(p.getQ()));
+        v.add(new ASN1Integer(p.getG()));
 
         BigInteger x = obj.getX();
         BigInteger y = p.getG().modPow(x, p.getP());
 
-        v.add(new DERInteger(y));
-        v.add(new DERInteger(x));
+        v.add(new ASN1Integer(y));
+        v.add(new ASN1Integer(x));
 
-        aOut.writeObject(new DERSequence(v));
+        aOut.writeObject(new DLSequence(v));
         byte[] encoding = bOut.toByteArray();
 
         if (cipher != null && passwd != null) {
@@ -916,13 +918,13 @@ public class PEMInputOutput {
 
         BigInteger value;
         if ((value = params.getP()) != null) {
-            v.add(new DERInteger(value));
+            v.add(new ASN1Integer(value));
         }
         if ((value = params.getG()) != null) {
-            v.add(new DERInteger(value));
+            v.add(new ASN1Integer(value));
         }
 
-        aOut.writeObject(new DERSequence(v));
+        aOut.writeObject(new DLSequence(v));
         byte[] encoding = bOut.toByteArray();
 
         out.write(BEF_G + PEM_STRING_DHPARAMS + AFT);
@@ -933,7 +935,7 @@ public class PEMInputOutput {
         out.flush();
     }
 
-    private static String getPrivateKeyTypeFromObjectId(DERObjectIdentifier oid) {
+    private static String getPrivateKeyTypeFromObjectId(ASN1ObjectIdentifier oid) {
         if (ASN1Registry.obj2nid(oid) == ASN1Registry.NID_rsaEncryption) {
             return "RSA";
         } else {
@@ -1016,7 +1018,7 @@ public class PEMInputOutput {
         boolean isEncrypted = false;
         String line = null;
         String dekInfo = null;
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         while ((line = _in.readLine()) != null) {
             if (line.startsWith("Proc-Type: 4,ENCRYPTED")) {
@@ -1076,7 +1078,7 @@ public class PEMInputOutput {
      */
     private static X509Certificate readCertificate(BufferedReader in, String endMarker) throws IOException {
         String line;
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
@@ -1100,7 +1102,7 @@ public class PEMInputOutput {
 
     private static X509AuxCertificate readAuxCertificate(BufferedReader in,String  endMarker) throws IOException {
         String          line;
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder    buf = new StringBuilder();
   
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
@@ -1119,21 +1121,21 @@ public class PEMInputOutput {
         try {
             CertificateFactory certFact = CertificateFactory.getInstance("X.509");
             X509Certificate bCert = (X509Certificate)certFact.generateCertificate(bIn);
-            DERSequence aux = (DERSequence)try1.readObject();
+            ASN1Sequence aux = (ASN1Sequence)try1.readObject();
             X509Aux ax = null;
             if(aux != null) {
                 ax = new X509Aux();
                 int ix = 0;
-                if(aux.size() > ix && aux.getObjectAt(ix) instanceof DERSequence) {
-                    DERSequence trust = (DERSequence)aux.getObjectAt(ix++);
+                if(aux.size() > ix && aux.getObjectAt(ix) instanceof ASN1Sequence) {
+                    ASN1Sequence trust = (ASN1Sequence)aux.getObjectAt(ix++);
                     for(int i=0;i<trust.size();i++) {
-                        ax.trust.add(((DERObjectIdentifier)trust.getObjectAt(i)).getId());
+                        ax.trust.add(((ASN1ObjectIdentifier)trust.getObjectAt(i)).getId());
                     }
                 }
-                if(aux.size() > ix && aux.getObjectAt(ix) instanceof DERTaggedObject && ((DERTaggedObject)aux.getObjectAt(ix)).getTagNo() == 0) {
-                    DERSequence reject = (DERSequence)((DERTaggedObject)aux.getObjectAt(ix++)).getObject();
+                if(aux.size() > ix && aux.getObjectAt(ix) instanceof ASN1TaggedObject && ((ASN1TaggedObject)aux.getObjectAt(ix)).getTagNo() == 0) {
+                    ASN1Sequence reject = (ASN1Sequence)((ASN1TaggedObject)aux.getObjectAt(ix++)).getObject();
                     for(int i=0;i<reject.size();i++) {
-                        ax.reject.add(((DERObjectIdentifier)reject.getObjectAt(i)).getId());
+                        ax.reject.add(((ASN1ObjectIdentifier)reject.getObjectAt(i)).getId());
                     }
                 }
                 if(aux.size()>ix && aux.getObjectAt(ix) instanceof DERUTF8String) {
@@ -1142,10 +1144,10 @@ public class PEMInputOutput {
                 if(aux.size()>ix && aux.getObjectAt(ix) instanceof DEROctetString) {
                     ax.keyid = ((DEROctetString)aux.getObjectAt(ix++)).getOctets();
                 }
-                if(aux.size() > ix && aux.getObjectAt(ix) instanceof DERTaggedObject && ((DERTaggedObject)aux.getObjectAt(ix)).getTagNo() == 1) {
-                    DERSequence other = (DERSequence)((DERTaggedObject)aux.getObjectAt(ix++)).getObject();
+                if(aux.size() > ix && aux.getObjectAt(ix) instanceof ASN1TaggedObject && ((ASN1TaggedObject)aux.getObjectAt(ix)).getTagNo() == 1) {
+                    ASN1Sequence other = (ASN1Sequence)((ASN1TaggedObject)aux.getObjectAt(ix++)).getObject();
                     for(int i=0;i<other.size();i++) {
-                        ax.other.add((DERObject)(other.getObjectAt(i)));
+                        ax.other.add((ASN1Primitive)(other.getObjectAt(i)));
                     }
                 }
             }
@@ -1163,7 +1165,7 @@ public class PEMInputOutput {
      */
     private static X509CRL readCRL(BufferedReader in, String endMarker) throws IOException {
         String line;
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
@@ -1193,7 +1195,7 @@ public class PEMInputOutput {
      */
     private static PKCS10CertificationRequestExt readCertificateRequest(BufferedReader in, String endMarker) throws IOException {
         String line;
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
@@ -1247,7 +1249,7 @@ public class PEMInputOutput {
      */
     private static CMSSignedData readPKCS7(BufferedReader in, char[] p, String endMarker) throws IOException {
         String line;
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         while ((line = in.readLine()) != null) {

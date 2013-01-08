@@ -41,8 +41,9 @@ import java.util.Set;
 import java.util.HashSet;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 
 /**
  * c: X509_STORE_CTX
@@ -970,9 +971,9 @@ public class StoreContext {
             }
 
             if(x.getExtensionValue("1.3.6.1.5.5.7.1.14") != null) {
-                DERSequence pci = (DERSequence)new ASN1InputStream(x.getExtensionValue("1.3.6.1.5.5.7.1.14")).readObject();
-                if(pci.size() > 0 && pci.getObjectAt(0) instanceof DERInteger) {
-                    int pcpathlen = ((DERInteger)pci.getObjectAt(0)).getValue().intValue();
+                ASN1Sequence pci = (ASN1Sequence)new ASN1InputStream(x.getExtensionValue("1.3.6.1.5.5.7.1.14")).readObject();
+                if(pci.size() > 0 && pci.getObjectAt(0) instanceof ASN1Integer) {
+                    int pcpathlen = ((ASN1Integer)pci.getObjectAt(0)).getValue().intValue();
                     if(i > pcpathlen) {
                         error = X509Utils.V_ERR_PROXY_PATH_LENGTH_EXCEEDED;
                         errorDepth = i;

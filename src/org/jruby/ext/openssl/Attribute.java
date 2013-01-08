@@ -28,9 +28,9 @@
 package org.jruby.ext.openssl;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -68,16 +68,16 @@ public class Attribute extends RubyObject {
     private IRubyObject oid;
     private IRubyObject value;
 
-    private DERObjectIdentifier getObjectIdentifier(String nameOrOid) {
+    private ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
         Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
         if(null != val1) {
-            return (DERObjectIdentifier)val1;
+            return (ASN1ObjectIdentifier)val1;
         }
-        DERObjectIdentifier val2 = new DERObjectIdentifier(nameOrOid);
+        ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
         return val2;
     }
 
-    DERObject toASN1() {
+    ASN1Primitive toASN1() {
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         v1.add(getObjectIdentifier(oid.toString()));
         if(value instanceof ASN1.ASN1Constructive) {
@@ -87,7 +87,7 @@ public class Attribute extends RubyObject {
             v2.add(((ASN1.ASN1Data)value).toASN1());
             v1.add(new DERSet(v2));
         }
-        return new DERSequence(v1);
+        return new DLSequence(v1);
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1)
