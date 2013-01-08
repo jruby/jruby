@@ -515,6 +515,21 @@ ary
     result.should == 42
   end
   
+  it "clears $! when doing a hard return from a method-level rescue" do
+    result = compile_and_run <<-EOC
+      $! = nil
+      def foo
+        raise
+      rescue RuntimeError
+        return
+      end
+      foo
+      $!
+    EOC
+    
+    result.should == nil
+  end
+  
   it "does a bunch of other stuff" do
     silence_warnings {
       # bug 1305, no values yielded to single-arg block assigns a null into the arg
