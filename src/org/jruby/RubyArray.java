@@ -67,7 +67,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.argsCat;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.java.util.ArrayUtils;
