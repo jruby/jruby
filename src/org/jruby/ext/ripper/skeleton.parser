@@ -107,7 +107,7 @@ t
 .      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
 .      @return result of the last reduction, if any.
 .    */
-.  public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
+.  public Object yyparse (RipperLexer yyLex, Object ayydebug)
 .				throws java.io.IOException {
 t    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
 .    return yyparse(yyLex);
@@ -134,7 +134,7 @@ t    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
 .      @param yyLex scanner.
 .      @return result of the last reduction, if any.
 .    */
-.  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException {
+.  public Object yyparse (RipperLexer yyLex) throws java.io.IOException {
 .    if (yyMax <= 0) yyMax = 256;			// initial size
 .    int yyState = 0, yyStates[] = new int[yyMax];	// state stack
 .    Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
@@ -182,7 +182,7 @@ t              yydebug.shift(yyState, yyTable[yyN], yyErrorFlag-1);
 .            switch (yyErrorFlag) {
 .  
 .            case 0:
-.              support.yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
+.              yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
 t              if (yydebug != null) yydebug.error("syntax error");
 .  
 .            case 1: case 2:
@@ -200,12 +200,12 @@ t                    yydebug.shift(yyStates[yyTop], yyTable[yyN], 3);
 t                if (yydebug != null) yydebug.pop(yyStates[yyTop]);
 .              } while (-- yyTop >= 0);
 t              if (yydebug != null) yydebug.reject();
-.              support.yyerror("irrecoverable syntax error");
+.              yyerror("irrecoverable syntax error");
 .  
 .            case 3:
 .              if (yyToken == 0) {
 t                if (yydebug != null) yydebug.reject();
-.                support.yyerror("irrecoverable syntax error at end-of-file");
+.                yyerror("irrecoverable syntax error at end-of-file");
 .              }
 t              if (yydebug != null)
 t                yydebug.discard(yyState, yyToken, yyName(yyToken),
@@ -217,11 +217,11 @@ t  							yyLex.value());
 .        int yyV = yyTop + 1-yyLen[yyN];
 t        if (yydebug != null)
 t          yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]);
-.        ParserState state = states[yyN];
+.        RipperParserState state = states[yyN];
 .        if (state == null) {
 .            yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
 .        } else {
-.            yyVal = state.execute(support, lexer, yyVal, yyVals, yyTop);
+.            yyVal = state.execute(this, yyVal, yyVals, yyTop);
 .        }
 .//        switch (yyN) {
 .// ACTIONS_BEGIN

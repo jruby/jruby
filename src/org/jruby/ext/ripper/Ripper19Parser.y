@@ -28,39 +28,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import java.io.IOException;
-
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.lexer.yacc.RubyYaccLexer;
-import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.parser.ParserConfiguration;
-import org.jruby.parser.ParserState;
-import org.jruby.parser.ParserSupport;
+import org.jruby.ext.ripper.RipperLexer.LexState;
 
-public class Ripper19Parser {
-    protected RipperSupport support;
-    protected RubyYaccLexer lexer;
-
-    public Ripper19Parser() {
-        this(new RipperSupport());
-    }
-
-    public Ripper19Parser(RipperSupport support) {
-        this.support = support;
-        lexer = new RubyYaccLexer(false);
-        lexer.setParserSupport(support);
-        support.setLexer(lexer);
-    }
-
-    public void setWarnings(IRubyWarnings warnings) {
-        support.setWarnings(warnings);
-        lexer.setWarnings(warnings);
-    }
+public class Ripper19Parser extends RipperParser {
 %}
 
 // We need to make sure we have same tokens in the same order and up
@@ -209,9 +183,9 @@ public class Ripper19Parser {
 
 %%
 program       : {
-                  lexer.setState(LexState.EXPR_BEG);
+                  p.setState(LexState.EXPR_BEG);
               } top_compstmt {
-                  support.setRipperResult(support.dispatch("on_program", $2));
+                  p.setRipperResult(p.dispatch("on_program", $2));
               }
 
 top_compstmt  : top_stmts opt_terms {
@@ -219,17 +193,17 @@ top_compstmt  : top_stmts opt_terms {
               }
 
 top_stmts     : none {
-                  $$ = support.dispatch("on_stmts_add", 
-                                        support.dispatch("on_stmts_new"), 
-                                        support.dispatch("on_void_stmt"));
+                  $$ = p.dispatch("on_stmts_add", 
+                                        p.dispatch("on_stmts_new"), 
+                                        p.dispatch("on_void_stmt"));
               }
               | top_stmt {
-                  $$ = support.dispatch("on_stmts_add", 
-                                        support.dispatch("on_stmts_new"), 
+                  $$ = p.dispatch("on_stmts_add", 
+                                        p.dispatch("on_stmts_new"), 
                                         $1);
               }
               | top_stmts terms top_stmt {
-                  $$ = support.dispatch("on_stmts_add", $1, $3);
+                  $$ = p.dispatch("on_stmts_add", $1, $3);
               }
               | error top_stmt {
                   $$ = $2;
@@ -237,19 +211,19 @@ top_stmts     : none {
 
 top_stmt      : stmt
               | klBEGIN {
-                  if (support.isInDef() || support.isInSingle()) {
-                      support.yyerror("BEGIN in method");
+                  if (p.isInDef() || p.isInSingle()) {
+                      p.yyerror("BEGIN in method");
                   }
               } tLCURLY top_compstmt tRCURLY {
-                  $$ = support.dispatch("on_BEGIN", $4);
+                  $$ = p.dispatch("on_BEGIN", $4);
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  $$ = support.dispatch("on_bodystmt", 
-                                        support.escape($1),
-                                        support.escape($2),
-                                        support.escape($3),
-                                        support.escape($4));
+                  $$ = p.dispatch("on_bodystmt", 
+                                        p.escape($1),
+                                        p.escape($2),
+                                        p.escape($3),
+                                        p.escape($4));
                 }
 
 compstmt        : stmts opt_terms {
@@ -257,148 +231,148 @@ compstmt        : stmts opt_terms {
                 }
 
  stmts          : none {
-                    $$ = support.dispatch("on_stmts_add", 
-                                          support.dispatch("on_stmts_new"),
-                                          support.dispatch("on_void_stmt"));
+                    $$ = p.dispatch("on_stmts_add", 
+                                          p.dispatch("on_stmts_new"),
+                                          p.dispatch("on_void_stmt"));
                 }
                 | stmt {
-                    $$ = support.dispatch("on_stmts_add",
-                                          support.dispatch("on_stmts_new"), 
+                    $$ = p.dispatch("on_stmts_add",
+                                          p.dispatch("on_stmts_new"), 
                                           $1);
                 }
                 | stmts terms stmt {
-                    $$ = support.dispatch("on_stmts_add", $1, $3);
+                    $$ = p.dispatch("on_stmts_add", $1, $3);
                 }
                 | error stmt {
                     $$ = $2;
                 }
 
 stmt            : kALIAS fitem {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    p.setState(LexState.EXPR_FNAME);
                 } fitem {
-                    $$ = support.dispatch("on_alias", $2, $4);
+                    $$ = p.dispatch("on_alias", $2, $4);
                 }
                 | kALIAS tGVAR tGVAR {
-                    $$ = support.dispatch("on_var_alias", $2, $3);
+                    $$ = p.dispatch("on_var_alias", $2, $3);
                 }
                 | kALIAS tGVAR tBACK_REF {
-                    $$ = support.dispatch("on_var_alias", $2, $3);
+                    $$ = p.dispatch("on_var_alias", $2, $3);
                 }
                 | kALIAS tGVAR tNTH_REF {
-                    $$ = support.dispatch("on_alias_error", 
-                                          support.dispatch("on_var_alias", $2, $3));
+                    $$ = p.dispatch("on_alias_error", 
+                                          p.dispatch("on_var_alias", $2, $3));
                 }
                 | kUNDEF undef_list {
-                    $$ = support.dispatch("on_undef", $2);
+                    $$ = p.dispatch("on_undef", $2);
                 }
                 | stmt kIF_MOD expr_value {
-                    $$ = support.dispatch("on_if_mod", $3, $1);
+                    $$ = p.dispatch("on_if_mod", $3, $1);
                 }
                 | stmt kUNLESS_MOD expr_value {
-                    $$ = support.dispatch("on_unless_mod", $3, $1);
+                    $$ = p.dispatch("on_unless_mod", $3, $1);
                 }
                 | stmt kWHILE_MOD expr_value {
-                    $$ = support.dispatch("on_while_mod", $3, $1);
+                    $$ = p.dispatch("on_while_mod", $3, $1);
                 }
                 | stmt kUNTIL_MOD expr_value {
-                    $$ = support.dispatch("on_until_mod", $3, $1);
+                    $$ = p.dispatch("on_until_mod", $3, $1);
                 }
                 | stmt kRESCUE_MOD stmt {
-                    $$ = support.dispatch("on_rescue_mod", $1, $3);
+                    $$ = p.dispatch("on_rescue_mod", $1, $3);
                 }
                 | klEND tLCURLY compstmt tRCURLY {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.warn(ID.END_IN_METHOD, lexer.getPosition(), "END in method; use at_exit");
+                    if (p.isInDef() || p.isInSingle()) {
+                        p.warn(ID.END_IN_METHOD, p.getPosition(), "END in method; use at_exit");
                     }
-                    $$ = support.dispatch("on_END", $3);
+                    $$ = p.dispatch("on_END", $3);
                 }
                 | command_asgn
                 | mlhs '=' command_call {
-                    $$ = support.dispatch("on_massign", $1, $3);
+                    $$ = p.dispatch("on_massign", $1, $3);
                 }
                 | var_lhs tOP_ASGN command_call {
-                    $$ = support.dispatch("on_opassign", $1, $2, $3);
+                    $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_aref_field", 
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_aref_field", 
                                                            $1, 
-                                                           support.escape($3)),
+                                                           p.escape($3)),
                                           $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field", 
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field", 
                                                            $1, 
-                                                           support.intern("."),
+                                                           p.intern("."),
                                                            $3), 
                                           $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field",
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field",
                                                            $1,
-                                                           support.intern("."),
+                                                           p.intern("."),
                                                            $3),
                                           $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_opassign", 
-                                                           support.dispatch("on_const_path_field", $1, $3), 
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_opassign", 
+                                                           p.dispatch("on_const_path_field", $1, $3), 
                                                            $4, $5));
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field", 
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field", 
                                                            $1, 
-                                                           support.intern("::"),
+                                                           p.intern("::"),
                                                            $3), 
                                           $4, $5);
                 }
                 | backref tOP_ASGN command_call {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_assign", 
-                                                           support.dispatch("on_var_field", $1), 
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_assign", 
+                                                           p.dispatch("on_var_field", $1), 
                                                            $3));
                }
                 | lhs '=' mrhs {
-                    $$ = support.dispatch("on_assign", $1, $3);
+                    $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | mlhs '=' arg_value {
-                    $$ = support.dispatch("on_assign", $1, $3);
+                    $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | mlhs '=' mrhs {
-                    $$ = support.dispatch("on_massign", $1, $3);
+                    $$ = p.dispatch("on_massign", $1, $3);
                 }
                 | expr
 
 command_asgn    : lhs '=' command_call {
-                    $$ = support.dispatch("on_assign", $1, $3);
+                    $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' command_asgn {
-                    $$ = support.dispatch("on_assign", $1, $3);
+                    $$ = p.dispatch("on_assign", $1, $3);
                 }
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr kAND expr {
-                    $$ = support.dispatch("on_binary",
+                    $$ = p.dispatch("on_binary",
                                           $1,
-                                          support.intern("and"),
+                                          p.intern("and"),
                                           $3);
                 }
                 | expr kOR expr {
-                    $$ = support.dispatch("on_binary",
+                    $$ = p.dispatch("on_binary",
                                           $1,
-                                          support.intern("or"),
+                                          p.intern("or"),
                                           $3);
                 }
                 | kNOT opt_nl expr {
-                    $$ = support.dispatch("on_unary", support.intern("not"), $3);
+                    $$ = p.dispatch("on_unary", p.intern("not"), $3);
                 }
                 | tBANG command_call {
-                    $$ = support.dispatch("on_unary", support.intern("!"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("!"), $2);
                 }
                 | arg
 
@@ -414,90 +388,90 @@ command_call    : command
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
                 | block_call tDOT operation2 command_args {
-                    $$ = support.dispatch("on_method_add_arg", 
-                                          support.dispatch("on_call",
+                    $$ = p.dispatch("on_method_add_arg", 
+                                          p.dispatch("on_call",
                                                            $1,
-                                                           support.intern("."),
+                                                           p.intern("."),
                                                            $3),
                                           $4);
                 }
                 | block_call tCOLON2 operation2 command_args {
-                    $$ = support.dispatch("on_method_add_arg", 
-                                          support.dispatch("on_call",
+                    $$ = p.dispatch("on_method_add_arg", 
+                                          p.dispatch("on_call",
                                                            $1,
-                                                           support.intern("::"),
+                                                           p.intern("::"),
                                                            $3),
                                           $4);
                 }
 
 // :brace_block - [!null]
 cmd_brace_block : tLBRACE_ARG {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = support.dispatch("on_brace_block", support.escape($3), $4);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_brace_block", p.escape($3), $4);
+                    p.popCurrentScope();
                 }
 
 // Node:command - fcall/call/yield/super [!null]
 command        : operation command_args %prec tLOWEST {
-                    $$ = support.dispatch("on_command", $1, $2);
+                    $$ = p.dispatch("on_command", $1, $2);
                 }
                 | operation command_args cmd_brace_block {
-                    $$ = support.dispatch("on_method_add_block",
-                                          support.dispatch("on_command", 
+                    $$ = p.dispatch("on_method_add_block",
+                                          p.dispatch("on_command", 
                                                            $1,
                                                            $2),
                                           $3);
                 }
                 | primary_value tDOT operation2 command_args %prec tLOWEST {
-                    $$ = support.dispatch("on_command_call", $1, support.intern("."), $3, $4);
+                    $$ = p.dispatch("on_command_call", $1, p.intern("."), $3, $4);
                 }
                 | primary_value tDOT operation2 command_args cmd_brace_block {
-                    $$ = support.dispatch("on_method_add_block",
-                                          support.dispatch("on_command_call",
+                    $$ = p.dispatch("on_method_add_block",
+                                          p.dispatch("on_command_call",
                                                            $1,
-                                                           support.intern("."),
+                                                           p.intern("."),
                                                            $3, $4),
                                           $5); 
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
-                    $$ = support.dispatch("on_command_call", $1, support.intern("::"), $3, $4);
+                    $$ = p.dispatch("on_command_call", $1, p.intern("::"), $3, $4);
                 }
                 | primary_value tCOLON2 operation2 command_args cmd_brace_block {
-                    $$ = support.dispatch("on_method_add_block",
-                                          support.dispatch("on_command_call",
+                    $$ = p.dispatch("on_method_add_block",
+                                          p.dispatch("on_command_call",
                                                            $1,
-                                                           support.intern("::"),
+                                                           p.intern("::"),
                                                            $3, $4),
                                           $5);
                 }
                 | kSUPER command_args {
-                    $$ = support.dispatch("on_super", $2);
+                    $$ = p.dispatch("on_super", $2);
                 }
                 | kYIELD command_args {
-                    $$ = support.dispatch("on_yield", $2);
+                    $$ = p.dispatch("on_yield", $2);
                 }
                 | kRETURN call_args {
-                    $$ = support.dispatch("on_areturn", $2);
+                    $$ = p.dispatch("on_areturn", $2);
                 }
 		| kBREAK call_args {
-                    $$ = support.dispatch("on_abreak", $2);
+                    $$ = p.dispatch("on_abreak", $2);
                 }
 		| kNEXT call_args {
-                    $$ = support.dispatch("on_next", $2);
+                    $$ = p.dispatch("on_next", $2);
                 }
 
 
 // MultipleAssig19Node:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
-                    $$ = support.dispatch("on_mlhs_paren", $2);
+                    $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
 // MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
-                    $$ = support.dispatch("on_mlhs_paren", $2);
+                    $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
 // MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
@@ -505,177 +479,177 @@ mlhs_basic      : mlhs_head {
                     $$ = $1;
                 }
                 | mlhs_head mlhs_item {
-                    $$ = support.dispatch("on_mlhs_add", $1, $2);
+                    $$ = p.dispatch("on_mlhs_add", $1, $2);
                 }
                 | mlhs_head tSTAR mlhs_node {
-                    $$ = support.dispatch("on_mlhs_add_star", $1, $3);
+                    $$ = p.dispatch("on_mlhs_add_star", $1, $3);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_add_star",
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_add_star",
                                                            $1,
                                                            $3),
                                           $5);
                 }
                 | mlhs_head tSTAR {
-                    $$ = support.dispatch("on_mlhs_add_star", $1, null);
+                    $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_add_star",
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_add_star",
                                                            $1,
                                                            null),
                                           $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = support.dispatch("on_mlhs_add_star",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                          p.dispatch("on_mlhs_new"),
                                           $2);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_add_star",
-                                                           support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_add_star",
+                                                           p.dispatch("on_mlhs_new"),
                                                            $2),
                                           $4);
                 }
                 | tSTAR {
-                    $$ = support.dispatch("on_mlhs_add_star",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                          p.dispatch("on_mlhs_new"),
                                           null);
                 }
                 | tSTAR ',' mlhs_post {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_add_star",
-                                                           support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_add_star",
+                                                           p.dispatch("on_mlhs_new"),
                                                            null),
                                           $3);
                 }
 
 mlhs_item       : mlhs_node
                 | tLPAREN mlhs_inner rparen {
-                    $$ = support.dispatch("on_mlhs_paren", $2);
+                    $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
 mlhs_head       : mlhs_item ',' {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_new"),
                                           $1);
                 }
                 | mlhs_head mlhs_item ',' {
-                    $$ = support.dispatch("on_mlhs_add", $1, $2);
+                    $$ = p.dispatch("on_mlhs_add", $1, $2);
                 }
 
 // Set of mlhs terms at end of mlhs (a, *b, d, e = arr  # d,e is post)
 mlhs_post       : mlhs_item {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_new"),
                                           $1);
                 }
                 | mlhs_post ',' mlhs_item {
-                    $$ = support.dispatch("on_mlhs_add", $1, $3);
+                    $$ = p.dispatch("on_mlhs_add", $1, $3);
                 }
 
 mlhs_node       : user_variable {
-                    $$ = support.assignable($1, null);
+                    $$ = p.assignable($1, null);
                 }
 		| keyword_variable {
-                    $$ = support.assignable($1, null);
+                    $$ = p.assignable($1, null);
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = support.dispatch("on_aref_field", $1, support.escape($3));
+                    $$ = p.dispatch("on_aref_field", $1, p.escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
-                    $$ = support.dispatch("on_field", $1, support.intern("."), $3);
+                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
                     
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.dispatch("on_const_path_field", $1, $3);
+                    $$ = p.dispatch("on_const_path_field", $1, $3);
                 }
                 | primary_value tDOT tCONSTANT {
-		    $$ = support.dispatch("on_field", $1, support.intern("."), $3);
+		    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("dynamic constant assignment");
+                    if (p.isInDef() || p.isInSingle()) {
+                        p.yyerror("dynamic constant assignment");
                     }
 
-                    $$ = support.dispatch("on_const_path_field", $1, $3);
+                    $$ = p.dispatch("on_const_path_field", $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = support.dispatch("on_top_const_field", $2);
+                    $$ = p.dispatch("on_top_const_field", $2);
                 }
                 | backref {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_var_field", $1));
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_var_field", $1));
                 }
 
 lhs             : user_variable {
-                    $$ = support.dispatch("on_var_field", 
-                                          support.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", 
+                                          p.assignable($1, null));
                 }
 		| keyword_variable {
-                    $$ = support.dispatch("on_var_field", 
-                                          support.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", 
+                                          p.assignable($1, null));
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = support.dispatch("on_aref_field", $1, support.escape($3));
+                    $$ = p.dispatch("on_aref_field", $1, p.escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
-                    $$ = support.dispatch("on_field", $1, support.intern("."), $3);
+                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.dispatch("on_field", $1, support.intern("::"), $3);
+                    $$ = p.dispatch("on_field", $1, p.intern("::"), $3);
                 }
                 | primary_value tDOT tCONSTANT {
-                    $$ = support.dispatch("on_field", $1, support.intern("."), $3);
+                    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    IRubyObject val = support.dispatch("on_const_path_field", $1, $3);
+                    IRubyObject val = p.dispatch("on_const_path_field", $1, $3);
 
-                    if (support.isInDef() || support.isInSingle()) {
-                        val = support.dispatch("on_assign_error", val);
+                    if (p.isInDef() || p.isInSingle()) {
+                        val = p.dispatch("on_assign_error", val);
                     }
 
                     $$ = val;
                 }
                 | tCOLON3 tCONSTANT {
-                    IRubyObject val = support.dispatch("on_top_const_field", $2);
+                    IRubyObject val = p.dispatch("on_top_const_field", $2);
 
-                    if (support.isInDef() || support.isInSingle()) {
-                        val = support.dispatch("on_assign_error", val);
+                    if (p.isInDef() || p.isInSingle()) {
+                        val = p.dispatch("on_assign_error", val);
                     }
 
                     $$ = val;
                 }
                 | backref {
-                    $$ = support.dispatch("on_assign_error", $1);
+                    $$ = p.dispatch("on_assign_error", $1);
                 }
 
 cname           : tIDENTIFIER {
-                    $$ = support.dispatch("on_class_name_error", $1);
+                    $$ = p.dispatch("on_class_name_error", $1);
                 }
                 | tCONSTANT
 
 cpath           : tCOLON3 cname {
-                    $$ = support.dispatch("on_top_const_ref", $2);
+                    $$ = p.dispatch("on_top_const_ref", $2);
                 }
                 | cname {
-                    $$ = support.dispatch("on_const_ref", $1);
+                    $$ = p.dispatch("on_const_ref", $1);
                 }
                 | primary_value tCOLON2 cname {
-                    $$ = support.dispatch("on_const_path_ref", $1, $3);
+                    $$ = p.dispatch("on_const_path_ref", $1, $3);
                 }
 
 // Token:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   p.setState(LexState.EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   lexer.setState(LexState.EXPR_ENDFN);
+                   p.setState(LexState.EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -689,17 +663,17 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
 
 // Node:fitem
 fitem           : fsym {
-                   $$ = support.dispatch("on_symbol_literal", $1);
+                   $$ = p.dispatch("on_symbol_literal", $1);
                 }
                 | dsym {
                    $$ = $1;
                 }
 
 undef_list      : fitem {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | undef_list ',' {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    p.setState(LexState.EXPR_FNAME);
                 } fitem {
                     $$ = $1.append($4);
                 }
@@ -720,182 +694,182 @@ reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
                 | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg             : lhs '=' arg {
-                    $$ = support.dispatch("on_assign", $1, $3);
+                    $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    $$ = support.dispatch("on_assign", $1, 
-                                          support.dispatch("on_rescue_mod", 
+                    $$ = p.dispatch("on_assign", $1, 
+                                          p.dispatch("on_rescue_mod", 
                                                            $3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
-                    $$ = support.dispatch("on_opassign", $1, $2, $3);
+                    $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
-                    $$ = support.dispatch("on_opassign", $1, $2,
-                                          support.dispatch("on_rescue_mod", 
+                    $$ = p.dispatch("on_opassign", $1, $2,
+                                          p.dispatch("on_rescue_mod", 
                                                            $3, $5));
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_aref_field", 
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_aref_field", 
                                                            $1, 
-                                                           support.escape($3)),
+                                                           p.escape($3)),
                                           $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field", $1, 
-                                                           support.intern("."),
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field", $1, 
+                                                           p.intern("."),
                                                            $3),
                                           $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN arg {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field", 
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field", 
                                                            $1, 
-                                                           support.intern("."),
+                                                           p.intern("."),
                                                            $3),
                                           $4, $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
-                    $$ = support.dispatch("on_opassign", 
-                                          support.dispatch("on_field",
+                    $$ = p.dispatch("on_opassign", 
+                                          p.dispatch("on_field",
                                                            $1,
-                                                           support.intern("::"),
+                                                           p.intern("::"),
                                                            $3),
                                           $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_opassign", 
-                                                           support.dispatch("on_const_path_field",
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_opassign", 
+                                                           p.dispatch("on_const_path_field",
                                                                             $1,
                                                                             $3),
                                                            $4, $5));
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_opassign", 
-                                                           support.dispatch("on_top_const_field",
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_opassign", 
+                                                           p.dispatch("on_top_const_field",
                                                                             $2),
                                                            $3,
                                                            $4));
                 }
                 | backref tOP_ASGN arg {
-                    $$ = support.dispatch("on_assign_error", 
-                                          support.dispatch("on_opassign",
-                                                           support.dispatch("on_var_field",
+                    $$ = p.dispatch("on_assign_error", 
+                                          p.dispatch("on_opassign",
+                                                           p.dispatch("on_var_field",
                                                                             $1),
                                                            $2, $3));
                 }
                 | arg tDOT2 arg {
-                    $$ = support.dispatch("on_dot2", $1, $3);
+                    $$ = p.dispatch("on_dot2", $1, $3);
                 }
                 | arg tDOT3 arg {
-                    $$ = support.dispatch("on_dot3", $1, $3);
+                    $$ = p.dispatch("on_dot3", $1, $3);
                 }
                 | arg tPLUS arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("+"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("+"), $3);
                 }
                 | arg tMINUS arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("-"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("-"), $3);
                 }
                 | arg tSTAR2 arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("*"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("*"), $3);
                 }
                 | arg tDIVIDE arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("/"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("/"), $3);
                 }
                 | arg tPERCENT arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("%"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("%"), $3);
                 }
                 | arg tPOW arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("**"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("**"), $3);
                 }
                 | tUMINUS_NUM tINTEGER tPOW arg {
-                    $$ = support.dispatch("on_unary", 
-                                          support.intern("-@"), 
-                                          support.dispatch("on_binary", 
+                    $$ = p.dispatch("on_unary", 
+                                          p.intern("-@"), 
+                                          p.dispatch("on_binary", 
                                                            $2, 
-                                                           support.intern("**"),
+                                                           p.intern("**"),
                                                            $4));
                 }
                 | tUMINUS_NUM tFLOAT tPOW arg {
-                    $$ = support.dispatch("on_unary", 
-                                          support.intern("-@"), 
-                                          support.dispatch("on_binary", 
+                    $$ = p.dispatch("on_unary", 
+                                          p.intern("-@"), 
+                                          p.dispatch("on_binary", 
                                                            $2, 
-                                                           support.intern("**"),
+                                                           p.intern("**"),
                                                            $4));
                 }
                 | tUPLUS arg {
-                    $$ = support.dispatch("on_unary", support.intern("+@"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("+@"), $2);
                 }
                 | tUMINUS arg {
-                    $$ = support.dispatch("on_unary", support.intern("-@"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("-@"), $2);
                 }
                 | arg tPIPE arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("|"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("|"), $3);
                 }
                 | arg tCARET arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("^"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("^"), $3);
                 }
                 | arg tAMPER2 arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("&"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("&"), $3);
                 }
                 | arg tCMP arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("<=>"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("<=>"), $3);
                 }
                 | arg tGT arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern(">"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
                 }
                 | arg tGEQ arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("<="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("<="), $3);
                 }
                 | arg tLT arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("<"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("<"), $3);
                 }
                 | arg tLEQ arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("<="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("<="), $3);
                 }
                 | arg tEQ arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("=="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("=="), $3);
                 }
                 | arg tEQQ arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("==="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("==="), $3);
                 }
                 | arg tNEQ arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("!="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("!="), $3);
                 }
                 | arg tMATCH arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("=~"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("=~"), $3);
                 }
                 | arg tNMATCH arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("!~"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("!~"), $3);
                 }
                 | tBANG arg {
-                    $$ = support.dispatch("on_unary", support.intern("!"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("!"), $2);
                 }
                 | tTILDE arg {
-                    $$ = support.dispatch("on_unary", support.intern("~"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("~"), $2);
                 }
                 | arg tLSHFT arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("<<"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("<<"), $3);
                 }
                 | arg tRSHFT arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern(">>"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern(">>"), $3);
                 }
                 | arg tANDOP arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("&&"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("&&"), $3);
                 }
                 | arg tOROP arg {
-                    $$ = support.dispatch("on_binary", $1, support.intern("||"), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("||"), $3);
                 }
                 | kDEFINED opt_nl arg {
-                    $$ = support.dispatch("on_defined", $3);
+                    $$ = p.dispatch("on_defined", $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
-                    $$ = support.dispatch("on_ifop", $1, $3, $6);
+                    $$ = p.dispatch("on_ifop", $1, $3, $6);
                 }
                 | primary {
                     $$ = $1;
@@ -910,20 +884,20 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.dispatch("on_args_add", 
+                    $$ = p.dispatch("on_args_add", 
                                           $1,
-                                          support.dispatch("on_bare_assoc_hash",
+                                          p.dispatch("on_bare_assoc_hash",
                                                            $3));
                 }
                 | assocs trailer {
-                    $$ = support.dispatch("on_args_add", 
-                                          support.dispatch("on_args_new"),
-                                          support.dispatch("on_bare_assoc_hash",
+                    $$ = p.dispatch("on_args_add", 
+                                          p.dispatch("on_args_new"),
+                                          p.dispatch("on_bare_assoc_hash",
                                                            $1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
-                    $$ = support.dispatch("on_arg_paren", support.escape($2));
+                    $$ = p.dispatch("on_arg_paren", p.escape($2));
                 }
 
 opt_paren_args  : none | paren_args
@@ -934,51 +908,51 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = support.dispatch("on_args_add", 
+                    $$ = p.dispatch("on_args_add", 
                                           $1,
-                                          support.dispatch("on_bare_assoc_hash",
+                                          p.dispatch("on_bare_assoc_hash",
                                                            $3));
                 }
                 | assocs ',' {
-                    $$ = support.dispatch("on_args_add", 
-                                          support.dispatch("on_args_new"),
-                                          support.dispatch("on_bare_assoc_hash",
+                    $$ = p.dispatch("on_args_add", 
+                                          p.dispatch("on_args_new"),
+                                          p.dispatch("on_bare_assoc_hash",
                                                            $1));
                 }
 
 // [!null]
 call_args       : command {
-                    $$ = support.dispatch("on_args_add", 
-                                          support.dispatch("on_args_new"),
+                    $$ = p.dispatch("on_args_add", 
+                                          p.dispatch("on_args_new"),
                                           $1);
                 }
                 | args opt_block_arg {
-                    $$ = support.arg_add_optblock($1, $2);
+                    $$ = p.arg_add_optblock($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ =  support.arg_add_optblock(support.dispatch("on_args_add", 
-                                                                    support.dispatch("on_args_new"),
-                                                                    support.dispatch("on_bare_assoc_hash",
+                    $$ =  p.arg_add_optblock(p.dispatch("on_args_add", 
+                                                                    p.dispatch("on_args_new"),
+                                                                    p.dispatch("on_bare_assoc_hash",
                                                                                      $1)),
                                                    $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_add_optblock(support.dispatch("on_args_add", 
+                    $$ = p.arg_add_optblock(p.dispatch("on_args_add", 
                                                                    $1,
-                                                                   support.dispatch("on_bare_assoc_hash",
+                                                                   p.dispatch("on_bare_assoc_hash",
                                                                                     $3)),
                                                   $4);
                 }
                 | block_arg {
-                    $$ = support.dispatch("on_args_add_block", 
-                                          support.dispatch("on_args_new"),
+                    $$ = p.dispatch("on_args_add_block", 
+                                          p.dispatch("on_args_new"),
                                           $1);
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(p.getCmdArgumentState().begin());
                 } call_args {
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                    p.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
                 }
 
@@ -993,37 +967,37 @@ opt_block_arg   : ',' block_arg {
 
 // [!null]
 args            : arg_value {
-                    $$ = support.dispatch("on_args_add",
-                                          support.dispatch("on_args_new"),
+                    $$ = p.dispatch("on_args_add",
+                                          p.dispatch("on_args_new"),
                                           $1);
                 }
                 | tSTAR arg_value {
-                    $$ = support.dispatch("on_args_add_star", 
-                                          support.dispatch("on_args_new"),
+                    $$ = p.dispatch("on_args_add_star", 
+                                          p.dispatch("on_args_new"),
                                           $2);
                 }
                 | args ',' arg_value {
-                    $$ = support.dispatch("on_args_add", $1, $3);
+                    $$ = p.dispatch("on_args_add", $1, $3);
                 }
                 | args ',' tSTAR arg_value {
-                    $$ = support.dispatch("on_arg_add_star", $1, $4);
+                    $$ = p.dispatch("on_arg_add_star", $1, $4);
                 }
 
 mrhs            : args ',' arg_value {
-                    $$ = support.dispatch("on_mrhs_add", 
-                                          support.dispatch("on_mrhs_new_from_args",
+                    $$ = p.dispatch("on_mrhs_add", 
+                                          p.dispatch("on_mrhs_new_from_args",
                                                            $1), 
                                           $3);
                 }
                 | args ',' tSTAR arg_value {
-                    $$ = support.dispatch("on_mrhs_add_star",
-                                          support.dispatch("on_mrhs_new_from_args",
+                    $$ = p.dispatch("on_mrhs_add_star",
+                                          p.dispatch("on_mrhs_new_from_args",
                                                            $1),
                                           $4);
                 }
                 | tSTAR arg_value {
-                    $$ = support.dispatch("on_mrhs_add_star",
-                                          support.dispatch("on_mrhs_new"),
+                    $$ = p.dispatch("on_mrhs_add_star",
+                                          p.dispatch("on_mrhs_new"),
                                           $2);
                 }
 
@@ -1036,171 +1010,171 @@ primary         : literal
                 | var_ref
                 | backref
                 | tFID {
-                    $$ = support.dispatch("on_method_add_arg", 
-                                          support.dispatch("on_fcall", $1), 
-                                          support.dispatch("on_args_new"));
+                    $$ = p.dispatch("on_method_add_arg", 
+                                          p.dispatch("on_fcall", $1), 
+                                          p.dispatch("on_args_new"));
                 }
                 | kBEGIN bodystmt kEND {
-                    $$ = support.dispatch("on_begin", $3);
+                    $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG expr {
-                    lexer.setState(LexState.EXPR_ENDARG); 
+                    p.setState(LexState.EXPR_ENDARG); 
                 } rparen {
-                    support.warning(ID.GROUPED_EXPRESSION, lexer.getPosition(), "(...) interpreted as grouped expression");
-                    $$ = support.dispatch("on_paren", $2);
+                    p.warning(ID.GROUPED_EXPRESSION, p.getPosition(), "(...) interpreted as grouped expression");
+                    $$ = p.dispatch("on_paren", $2);
                 }
                 | tLPAREN compstmt tRPAREN {
-                    $$ = support.dispatch("on_paren", $2);
+                    $$ = p.dispatch("on_paren", $2);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    $$ = support.dispatch("on_const_path_ref", $1, $3);
+                    $$ = p.dispatch("on_const_path_ref", $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = support.dispatch("on_top_const_ref", $2);
+                    $$ = p.dispatch("on_top_const_ref", $2);
                 }
                 | tLBRACK aref_args tRBRACK {
-                    $$ = support.dispatch("on_array", support.escape($2));
+                    $$ = p.dispatch("on_array", p.escape($2));
                 }
                 | tLBRACE assoc_list tRCURLY {
-                    $$ = support.dispatch("on_hash", support.escape($2));
+                    $$ = p.dispatch("on_hash", p.escape($2));
                 }
                 | kRETURN {
-                    $$ = support.dispatch("on_return0");
+                    $$ = p.dispatch("on_return0");
                 }
                 | kYIELD tLPAREN2 call_args rparen {
-                    $$ = support.dispatch("on_yield", 
-                                          support.dispatch("on_paren", $3));
+                    $$ = p.dispatch("on_yield", 
+                                          p.dispatch("on_paren", $3));
                 }
                 | kYIELD tLPAREN2 rparen {
-                    $$ = support.dispatch("on_yield", 
-                                          support.dispatch("on_paren", 
-                                                           support.dispatch("on_args_new")));
+                    $$ = p.dispatch("on_yield", 
+                                          p.dispatch("on_paren", 
+                                                           p.dispatch("on_args_new")));
                 }
                 | kYIELD {
-                    $$ = support.dispatch("on_yield0");
+                    $$ = p.dispatch("on_yield0");
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
-                    $$ = support.dispatch("on_defined", $5);
+                    $$ = p.dispatch("on_defined", $5);
                 }
                 | kNOT tLPAREN2 expr rparen {
-                    $$ = support.dispatch("on_unary", support.intern("not"), $3);
+                    $$ = p.dispatch("on_unary", p.intern("not"), $3);
                 }
                 | kNOT tLPAREN2 rparen {
-                    $$ = support.dispatch("on_unary", support.intern("not"), null); //FIXME: null should be nil
+                    $$ = p.dispatch("on_unary", p.intern("not"), null); //FIXME: null should be nil
                 }
                 | operation brace_block {
-                    $$ = support.dispatch("on_method_add_block",
-                                          support.dispatch("on_method_add_arg", 
-                                                           support.dispatch("on_fcall", $1), 
-                                                           support.dispatch("on_args_new")), 
+                    $$ = p.dispatch("on_method_add_block",
+                                          p.dispatch("on_method_add_arg", 
+                                                           p.dispatch("on_fcall", $1), 
+                                                           p.dispatch("on_args_new")), 
                                           $2);
                 }
                 | method_call
                 | method_call brace_block {
-                    $$ = support.dispatch("on_method_add_block", $1, $2);
+                    $$ = p.dispatch("on_method_add_block", $1, $2);
                 }
                 | tLAMBDA lambda {
                     $$ = $2;
                 }
                 | kIF expr_value then compstmt if_tail kEND {
-                    $$ = support.dispatch("on_if", $2, $4, support.escape($5));
+                    $$ = p.dispatch("on_if", $2, $4, p.escape($5));
                 }
                 | kUNLESS expr_value then compstmt opt_else kEND {
-                    $$ = support.dispatch("on_unless", $2, $4, support.escape($5));
+                    $$ = p.dispatch("on_unless", $2, $4, p.escape($5));
                 }
                 | kWHILE {
-                    lexer.getConditionState().begin();
+                    p.getConditionState().begin();
                 } expr_value do {
-                    lexer.getConditionState().end();
+                    p.getConditionState().end();
                 } compstmt kEND {
-                    $$ = support.dispatch("on_while", $3, $6);
+                    $$ = p.dispatch("on_while", $3, $6);
                 }
                 | kUNTIL {
-                  lexer.getConditionState().begin();
+                  p.getConditionState().begin();
                 } expr_value do {
-                  lexer.getConditionState().end();
+                  p.getConditionState().end();
                 } compstmt kEND {
-                    $$ = support.dispatch("on_until", $3, $6);
+                    $$ = p.dispatch("on_until", $3, $6);
                 }
                 | kCASE expr_value opt_terms case_body kEND {
-                    $$ = support.dispatch("on_case", $2, $4);
+                    $$ = p.dispatch("on_case", $2, $4);
                 }
                 | kCASE opt_terms case_body kEND {
-                    $$ = support.dispatch("on_case", null, $4);
+                    $$ = p.dispatch("on_case", null, $4);
                 }
                 | kFOR for_var kIN {
-                    lexer.getConditionState().begin();
+                    p.getConditionState().begin();
                 } expr_value do {
-                    lexer.getConditionState().end();
+                    p.getConditionState().end();
                 } compstmt kEND {
-                    $$ = support.dispatch("on_for", $2, $5, $8);
+                    $$ = p.dispatch("on_for", $2, $5, $8);
                 }
                 | kCLASS cpath superclass {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("class definition in method body");
+                    if (p.isInDef() || p.isInSingle()) {
+                        p.yyerror("class definition in method body");
                     }
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                 } bodystmt kEND {
-                    $$ = support.dispatch("on_class", $2, $3, $5);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_class", $2, $3, $5);
+                    p.popCurrentScope();
                 }
                 | kCLASS tLSHFT expr {
-                    $$ = Boolean.valueOf(support.isInDef());
-                    support.setInDef(false);
+                    $$ = Boolean.valueOf(p.isInDef());
+                    p.setInDef(false);
                 } term {
-                    $$ = Integer.valueOf(support.getInSingle());
-                    support.setInSingle(0);
-                    support.pushLocalScope();
+                    $$ = Integer.valueOf(p.getInSingle());
+                    p.setInSingle(0);
+                    p.pushLocalScope();
                 } bodystmt kEND {
-                    $$ = support.dispatch("on_sclass", $3, $7);
+                    $$ = p.dispatch("on_sclass", $3, $7);
 
-                    support.popCurrentScope();
-                    support.setInDef($<Boolean>4.booleanValue());
-                    support.setInSingle($<Integer>6.intValue());
+                    p.popCurrentScope();
+                    p.setInDef($<Boolean>4.booleanValue());
+                    p.setInSingle($<Integer>6.intValue());
                 }
                 | kMODULE cpath {
-                    if (support.isInDef() || support.isInSingle()) { 
-                        support.yyerror("module definition in method body");
+                    if (p.isInDef() || p.isInSingle()) { 
+                        p.yyerror("module definition in method body");
                     }
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                 } bodystmt kEND {
-                    $$ = support.dispatch("on_module", $2, $4);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_module", $2, $4);
+                    p.popCurrentScope();
                 }
                 | kDEF fname {
-                    support.setInDef(true);
-                    support.pushLocalScope();
+                    p.setInDef(true);
+                    p.pushLocalScope();
                 } f_arglist bodystmt kEND {
-                    $$ = support.dispatch("on_def", $2, $4, $5);
+                    $$ = p.dispatch("on_def", $2, $4, $5);
 
-                    support.popCurrentScope();
-                    support.setInDef(false);
+                    p.popCurrentScope();
+                    p.setInDef(false);
                 }
                 | kDEF singleton dot_or_colon {
-                    lexer.setState(LexState.EXPR_FNAME);
+                    p.setState(LexState.EXPR_FNAME);
                 } fname {
-                    support.setInSingle(support.getInSingle() + 1);
-                    support.pushLocalScope();
-                    lexer.setState(LexState.EXPR_ENDFN); /* force for args */
+                    p.setInSingle(p.getInSingle() + 1);
+                    p.pushLocalScope();
+                    p.setState(LexState.EXPR_ENDFN); /* force for args */
                 } f_arglist bodystmt kEND {
-                    $$ = support.dispatch("on_defs", $2, $3, $5, $7, $8);
+                    $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
-                    support.popCurrentScope();
-                    support.setInSingle(support.getInSingle() - 1);
+                    p.popCurrentScope();
+                    p.setInSingle(p.getInSingle() - 1);
                 }
                 | kBREAK {
-                    $$ = support.dispatch("on_break",
-                                          support.dispatch("on_args_new"));
+                    $$ = p.dispatch("on_break",
+                                          p.dispatch("on_args_new"));
                 }
                 | kNEXT {
-                    $$ = support.dispatch("on_next",
-                                          support.dispatch("on_args_new"));
+                    $$ = p.dispatch("on_next",
+                                          p.dispatch("on_args_new"));
                 }
                 | kREDO {
-                    $$ = support.dispatch("on_redo");
+                    $$ = p.dispatch("on_redo");
                 }
                 | kRETRY {
-                    $$ = support.dispatch("on_retry");
+                    $$ = p.dispatch("on_retry");
                 }
 
 primary_value   : primary {
@@ -1222,12 +1196,12 @@ do              : term {
 
 if_tail         : opt_else
                 | kELSIF expr_value then compstmt if_tail {
-                    $$ = support.dispatch("on_elsif", $2, $4, support.escape($5));
+                    $$ = p.dispatch("on_elsif", $2, $4, p.escape($5));
                 }
 
 opt_else        : none
                 | kELSE compstmt {
-                    $$ = support.dispatch("on_else", $2);
+                    $$ = p.dispatch("on_else", $2);
                 }
 
 for_var         : lhs
@@ -1235,107 +1209,107 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                    $$ = support.dispatch("on_mlhs_paren", 
-                                          support.assignable($1, null));
+                    $$ = p.dispatch("on_mlhs_paren", 
+                                          p.assignable($1, null));
                 }
                 | tLPAREN f_margs rparen {
-                    $$ = support.dispatch("on_mlhs_paren", $2);
+                    $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
 // [!null]
 f_marg_list     : f_marg {
-                    $$ = support.dispatch("on_mlhs_add",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add",
+                                          p.dispatch("on_mlhs_new"),
                                           $1);
                 }
                 | f_marg_list ',' f_marg {
-                    $$ = support.dispatch("on_mlhs_add", $1, $3);
+                    $$ = p.dispatch("on_mlhs_add", $1, $3);
                 }
 
 f_margs         : f_marg_list {
                     $$ = $1;
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = support.dispatch("on_mlhs_add_star",
+                    $$ = p.dispatch("on_mlhs_add_star",
                                           $1, 
-                                          support.assignable($4, null));
+                                          p.assignable($4, null));
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = support.dispatch("on_mlhs_add_star", 
+                    $$ = p.dispatch("on_mlhs_add_star", 
                                           $1, 
-                                          support.assignable($4, null));
+                                          p.assignable($4, null));
                 }
                 | f_marg_list ',' tSTAR {
-                    $$ = support.dispatch("on_mlhs_add_star", $1, null);
+                    $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = support.dispatch("on_mlhs_add_star", $1, $5);
+                    $$ = p.dispatch("on_mlhs_add_star", $1, $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = support.dispatch("on_mlhs_add_star", 
-                                          support.dispatch("on_mlhs_new"),
-                                          support.assignable($2, null));
+                    $$ = p.dispatch("on_mlhs_add_star", 
+                                          p.dispatch("on_mlhs_new"),
+                                          p.assignable($2, null));
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = support.dispatch("on_mlhs_add_star", 
-                                          support.assignable($2, null),
+                    $$ = p.dispatch("on_mlhs_add_star", 
+                                          p.assignable($2, null),
                                           $4);
                 }
                 | tSTAR {
-                    $$ = support.dispatch("on_mlhs_add_star",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                          p.dispatch("on_mlhs_new"),
                                           null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = support.dispatch("on_mlhs_add_star",
-                                          support.dispatch("on_mlhs_new"),
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                          p.dispatch("on_mlhs_new"),
                                           null);
                 }
 
 // [!null]
 block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           $5,
                                           null,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           $5,
                                           $7,
-                                          support.escape($8));
+                                          p.escape($8));
                 }
                 | f_arg ',' f_block_optarg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           null,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_arg ',' f_block_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           null,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           $3,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_arg ',' {
-                    $$ = support.dispatch("on_excessed_comma", 
-                                          support.dispatch("on_params", 
+                    $$ = p.dispatch("on_excessed_comma", 
+                                          p.dispatch("on_params", 
                                                            $1, 
                                                            null,
                                                            null,
@@ -1343,71 +1317,71 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
                                                            null));
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           $3,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           null,
                                           null,
-                                          support.escape($2));
+                                          p.escape($2));
                 }
                 | f_block_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           $3,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_block_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params", 
+                    $$ = p.dispatch("on_params", 
                                           null,
                                           $1,
                                           $3,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_block_optarg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           null,
                                           null,
-                                          support.escape($2));
+                                          p.escape($2));
                 }
                 | f_block_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           null,
                                           $3,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           $1,
                                           null,
-                                          support.escape($2));     
+                                          p.escape($2));     
                 }
                 | f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           $1,
                                           $3,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           null,
@@ -1417,22 +1391,22 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
 
 opt_block_param : none 
                 | block_param_def {
-                    lexer.commandStart = true;
+                    p.setCommandStart(true);
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
-                    $$ = support.dispatch("on_block_var", 
-                                          support.dispatch("on_params", 
+                    $$ = p.dispatch("on_block_var", 
+                                          p.dispatch("on_params", 
                                                            null,
                                                            null,
                                                            null,
                                                            null,
                                                            null), 
-                                         support.escape($2));
+                                         p.escape($2));
                 }
                 | tOROP {
-                    $$ = support.dispatch("on_block_var", 
-                                          support.dispatch("on_params_new", 
+                    $$ = p.dispatch("on_block_var", 
+                                          p.dispatch("on_params_new", 
                                                            null,
                                                            null,
                                                            null,
@@ -1441,9 +1415,9 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
                                          null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
-                    $$ = support.dispatch("on_blockvar_new",
-                                          support.escape($2),
-                                          support.escape($3));
+                    $$ = p.dispatch("on_blockvar_new",
+                                          p.escape($2),
+                                          p.escape($3));
                 }
 
 // shadowed block variables....
@@ -1454,27 +1428,27 @@ opt_bv_decl     : none
 
 // ENEBO: This is confusing...
 bv_decls        : bvar {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | bv_decls ',' bvar {
                     $$ = $1.append($3);
                 }
 
 bvar            : tIDENTIFIER {
-                    $$ = support.new_bv($1);
+                    $$ = p.new_bv($1);
                 }
                 | f_bad_arg {
                     $$ = null;
                 }
 
 lambda          : /* none */  {
-                    support.pushBlockScope();
-                    $$ = lexer.getLeftParenBegin();
-                    lexer.setLeftParenBegin(lexer.incrementParenNest());
+                    p.pushBlockScope();
+                    $$ = p.getLeftParenBegin();
+                    p.setLeftParenBegin(p.incrementParenNest());
                 } f_larglist lambda_body {
-                    $$ = support.dispatch("on_lambda", $2, $3);
-                    support.popCurrentScope();
-                    lexer.setLeftParenBegin($<Integer>1);
+                    $$ = p.dispatch("on_lambda", $2, $3);
+                    p.popCurrentScope();
+                    p.setLeftParenBegin($<Integer>1);
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
@@ -1492,108 +1466,108 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
                 }
 
 do_block        : kDO_BLOCK {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } opt_block_param compstmt kEND {
-                    $$ = support.dispatch("on_do_block", support.escape($3), $4);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_do_block", p.escape($3), $4);
+                    p.popCurrentScope();
                 }
 
 block_call      : command do_block {
-                    $$ = support.dispatch("on_method_add_block", $1, $2);
+                    $$ = p.dispatch("on_method_add_block", $1, $2);
                 }
                 | block_call tDOT operation2 opt_paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call", 
+                    $$ = p.method_optarg(p.dispatch("on_call", 
                                                                 $1,
-                                                                support.intern("."),
+                                                                p.intern("."),
                                                                 $3),
                                                $4);
                 }
                 | block_call tCOLON2 operation2 opt_paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call", 
+                    $$ = p.method_optarg(p.dispatch("on_call", 
                                                                 $1,
-                                                                support.intern("::"),
+                                                                p.intern("::"),
                                                                 $3),
                                                $4);
                 }
 
 // [!null]
 method_call     : operation paren_args {
-                    $$ = support.dispatch("on_method_add_arg",
-                                          support.dispatch("on_fcall", $1),
+                    $$ = p.dispatch("on_method_add_arg",
+                                          p.dispatch("on_fcall", $1),
                                           $2);
                 }
                 | primary_value tDOT operation2 opt_paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call", 
+                    $$ = p.method_optarg(p.dispatch("on_call", 
                                                                 $1,
-                                                                support.intern("."),
+                                                                p.intern("."),
                                                                 $3),
                                                $4);
                 }
                 | primary_value tCOLON2 operation2 paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call",
+                    $$ = p.method_optarg(p.dispatch("on_call",
                                                                 $1,
-                                                                support.intern("."),
+                                                                p.intern("."),
                                                                 $3),
                                                $4);
                 }
                 | primary_value tCOLON2 operation3 {
-                    $$ = support.dispatch("on_call", $1, support.intern("::"), $3);
+                    $$ = p.dispatch("on_call", $1, p.intern("::"), $3);
                 }
                 | primary_value tDOT paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call",
+                    $$ = p.method_optarg(p.dispatch("on_call",
                                                                 $1,
-                                                                support.intern("."),
-                                                                support.intern("call")),
+                                                                p.intern("."),
+                                                                p.intern("call")),
                                                $3);
                 }
                 | primary_value tCOLON2 paren_args {
-                    $$ = support.method_optarg(support.dispatch("on_call",
+                    $$ = p.method_optarg(p.dispatch("on_call",
                                                                 $1,
-                                                                support.intern("::"),
-                                                                support.intern("call")),
+                                                                p.intern("::"),
+                                                                p.intern("call")),
                                                $3);
                 }
                 | kSUPER paren_args {
-                    $$ = support.dispatch("on_super", $2);
+                    $$ = p.dispatch("on_super", $2);
                 }
                 | kSUPER {
-                    $$ = support.dispatch("on_zsuper");
+                    $$ = p.dispatch("on_zsuper");
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = support.dispatch("on_aref", $1, support.escape($3));
+                    $$ = p.dispatch("on_aref", $1, p.escape($3));
                 }
 
 brace_block     : tLCURLY {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = support.dispatch("on_brace_block", support.escape($3), $4);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_brace_block", p.escape($3), $4);
+                    p.popCurrentScope();
                 }
                 | kDO {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } opt_block_param compstmt kEND {
-                    $$ = support.dispatch("on_do_block", support.escape($3), $4);
-                    support.popCurrentScope();
+                    $$ = p.dispatch("on_do_block", p.escape($3), $4);
+                    p.popCurrentScope();
                 }
 
 case_body       : kWHEN args then compstmt cases {
-                    $$ = support.dispatch("on_when", $2, $4, support.escape($5));
+                    $$ = p.dispatch("on_when", $2, $4, p.escape($5));
 
                 }
 
 cases           : opt_else | case_body
 
 opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
-                    $$ = support.dispatch("on_rescue",
-                                          support.escape($2),
-                                          support.escape($3),
-                                          support.escape($5),
-                                          support.escape($6));
+                    $$ = p.dispatch("on_rescue",
+                                          p.escape($2),
+                                          p.escape($3),
+                                          p.escape($5),
+                                          p.escape($6));
                 }
                 | none
 
 exc_list        : arg_value {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | mrhs {
                     $$ = $1;
@@ -1606,13 +1580,13 @@ exc_var         : tASSOC lhs {
                 | none
 
 opt_ensure      : kENSURE compstmt {
-                    $$ = support.dispatch("on_ensure", $2);
+                    $$ = p.dispatch("on_ensure", $2);
                 }
                 | none
 
 literal         : numeric
                 | symbol {
-                    $$ = support.dispatch("on_symbol_literal", $1);
+                    $$ = p.dispatch("on_symbol_literal", $1);
                 }
                 | dsym
 
@@ -1624,126 +1598,126 @@ strings         : string {
 string          : tCHAR 
                 | string1
                 | string string1 {
-                    $$ = support.dispatch("on_string_concat", $1, $2);
+                    $$ = p.dispatch("on_string_concat", $1, $2);
                 }
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
-                    $$ = support.dispatch("on_string_literal", $2);
+                    $$ = p.dispatch("on_string_literal", $2);
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
-                    $$ = support.dispatch("on_xstring_literal", $2);
+                    $$ = p.dispatch("on_xstring_literal", $2);
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = support.dispatch("on_regexp_literal", $2, $3);
+                    $$ = p.dispatch("on_regexp_literal", $2, $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = support.dispatch("on_array", 
-                                          support.dispatch("on_words_new"));
+                    $$ = p.dispatch("on_array", 
+                                          p.dispatch("on_words_new"));
                 }
                 | tWORDS_BEG word_list tSTRING_END {
-                    $$ = support.dispatch("on_array", $2);
+                    $$ = p.dispatch("on_array", $2);
                 }
 
 word_list       : /* none */ {
-                    $$ = support.dispatch("on_words_new");
+                    $$ = p.dispatch("on_words_new");
                 }
                 | word_list word ' ' {
-                    $$ = support.dispatch("on_words_add", $1, $2);
+                    $$ = p.dispatch("on_words_add", $1, $2);
                 }
 
  word            : string_content {
-                    $$ = support.dispatch("on_word_add",
-                                          support.dispatch("on_word_new"),
+                    $$ = p.dispatch("on_word_add",
+                                          p.dispatch("on_word_new"),
                                           $1);
                  }
                 | word string_content {
-                    $$ = support.dispatch("on_word_add", $1, $2);
+                    $$ = p.dispatch("on_word_add", $1, $2);
                 }
 
 qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                    $$ = support.dispatch("on_array", 
-                                          support.dispatch("on_qwords_new"));
+                    $$ = p.dispatch("on_array", 
+                                          p.dispatch("on_qwords_new"));
                 }
                 | tQWORDS_BEG qword_list tSTRING_END {
-                    $$ = support.dispatch("on_array", $2);
+                    $$ = p.dispatch("on_array", $2);
                 }
 
 qword_list      : /* none */ {
-                    $$ = support.dispatch("on_qwords_new");
+                    $$ = p.dispatch("on_qwords_new");
                 }
                 | qword_list tSTRING_CONTENT ' ' {
-                    $$ = support.dispatch("on_qwords_add", $1, $2);
+                    $$ = p.dispatch("on_qwords_add", $1, $2);
                 }
 
 string_contents : /* none */ {
-                    $$ = support.dispatch("on_string_content");
+                    $$ = p.dispatch("on_string_content");
                 }
                 | string_contents string_content {
-                    $$ = support.dispatch("on_string_add", $1, $2);
+                    $$ = p.dispatch("on_string_add", $1, $2);
                 }
 
 xstring_contents: /* none */ {
-                    $$ = support.dispatch("on_xstring_new");
+                    $$ = p.dispatch("on_xstring_new");
                 }
                 | xstring_contents string_content {
-                    $$ = support.dispatch("on_xstring_add", $1, $2);
+                    $$ = p.dispatch("on_xstring_add", $1, $2);
                 }
 
 regexp_contents: /* none */ {
-                    $$ = support.dispatch("on_regexp_new");
+                    $$ = p.dispatch("on_regexp_new");
                 }
                 | regexp_contents string_content {
-                    $$ = support.dispatch("on_regexp_add", $1, $2);
+                    $$ = p.dispatch("on_regexp_add", $1, $2);
                 }
 
 string_content  : tSTRING_CONTENT
                 | tSTRING_DVAR {
-                    $$ = lexer.getStrTerm();
-                    lexer.setStrTerm(null);
-                    lexer.setState(LexState.EXPR_BEG);
+                    $$ = p.getStrTerm();
+                    p.setStrTerm(null);
+                    p.setState(LexState.EXPR_BEG);
                 } string_dvar {
-                    lexer.setStrTerm($<StrTerm>2);
-                    $$ = support.dispatch("on_string_dvar", $3);
+                    p.setStrTerm($<StrTerm>2);
+                    $$ = p.dispatch("on_string_dvar", $3);
                 }
                 | tSTRING_DBEG {
-                   $$ = lexer.getStrTerm();
-                   lexer.getConditionState().stop();
-                   lexer.getCmdArgumentState().stop();
-                   lexer.setStrTerm(null);
-                   lexer.setState(LexState.EXPR_BEG);
+                   $$ = p.getStrTerm();
+                   p.getConditionState().stop();
+                   p.getCmdArgumentState().stop();
+                   p.setStrTerm(null);
+                   p.setState(LexState.EXPR_BEG);
                 } compstmt tRCURLY {
-                   lexer.getConditionState().restart();
-                   lexer.getCmdArgumentState().restart();
-                   lexer.setStrTerm($<StrTerm>2);
-                   $$ = support.dispatch("on_string_embexpr", $4);
+                   p.getConditionState().restart();
+                   p.getCmdArgumentState().restart();
+                   p.setStrTerm($<StrTerm>2);
+                   $$ = p.dispatch("on_string_embexpr", $4);
                 }
 
 string_dvar     : tGVAR {
-                   $$ = support.dispatch("on_var_ref", $1);
+                   $$ = p.dispatch("on_var_ref", $1);
                 }
                 | tIVAR {
-                   $$ = support.dispatch("on_var_ref", $1);
+                   $$ = p.dispatch("on_var_ref", $1);
                 }
                 | tCVAR {
-                   $$ = support.dispatch("on_var_ref", $1);
+                   $$ = p.dispatch("on_var_ref", $1);
                 }
                 | backref
 
 // Token:symbol
 symbol          : tSYMBEG sym {
-                     lexer.setState(LexState.EXPR_END);
-                     $$ = support.dispatch("on_symbol", $2);
+                     p.setState(LexState.EXPR_END);
+                     $$ = p.dispatch("on_symbol", $2);
                 }
 
 // Token:symbol
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     lexer.setState(LexState.EXPR_END);
-                     $$ = support.dispatch("on_dyna_symbol", $2);
+                     p.setState(LexState.EXPR_END);
+                     $$ = p.dispatch("on_dyna_symbol", $2);
                 }
 
 numeric         : tINTEGER {
@@ -1753,10 +1727,10 @@ numeric         : tINTEGER {
                     $$ = $1;
                 }
                 | tUMINUS_NUM tINTEGER %prec tLOWEST {
-                    $$ = support.dispatch("on_unary", support.intern("-@"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("-@"), $2);
                 }
                 | tUMINUS_NUM tFLOAT %prec tLOWEST {
-                    $$ = support.dispatch("on_unary", support.intern("-@"), $2);
+                    $$ = p.dispatch("on_unary", p.intern("-@"), $2);
                 }
 
 user_variable	: tIDENTIFIER
@@ -1776,24 +1750,24 @@ keyword_variable : kNIL
 
 // [!null]
 var_ref         : user_variable {
-                    if (support.is_id_var($1)) {
-                        $$ = support.dispatch("on_var_ref", $1);
+                    if (p.is_id_var($1)) {
+                        $$ = p.dispatch("on_var_ref", $1);
                     } else {
-                        $$ = support.dispatch("on_vcall", $1);
+                        $$ = p.dispatch("on_vcall", $1);
                     }
                 }
                 | keyword_variable {
-                    $$ = support.dispatch("on_var_ref", $1);
+                    $$ = p.dispatch("on_var_ref", $1);
                 }
 
 // [!null]
 var_lhs         : user_variable {
-                    $$ = support.dispatch("on_var_field", 
-                                          support.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", 
+                                          p.assignable($1, null));
                 }
                 | keyword_variable {
-                    $$ = support.dispatch("on_var_field", 
-                                          support.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", 
+                                          p.assignable($1, null));
                 }
 
 // [!null]
@@ -1804,7 +1778,7 @@ superclass      : term {
                     $$ = null;
                 }
                 | tLT {
-                   lexer.setState(LexState.EXPR_BEG);
+                   p.setState(LexState.EXPR_BEG);
                 } expr_value term {
                     $$ = $3;
                 }
@@ -1816,7 +1790,7 @@ superclass      : term {
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
-                    lexer.setState(LexState.EXPR_BEG);
+                    p.setState(LexState.EXPR_BEG);
                 }
                 | f_args term {
                     $$ = $1;
@@ -1824,111 +1798,111 @@ f_arglist       : tLPAREN2 f_args rparen {
 
 // [!null]
 f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           $5,
                                           null,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           $5,
                                           $7,
-                                          support.escape($8));
+                                          p.escape($8));
                 }
                 | f_arg ',' f_optarg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           null,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_arg ',' f_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           $3,
                                           null,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           $3,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           $3,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           $1,
                                           null,
                                           null,
                                           null,
-                                          support.escape($2));
+                                          p.escape($2));
                 }
                 | f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           $3,
                                           null,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           $3,
                                           $5,
-                                          support.escape($6));
+                                          p.escape($6));
                 }
                 | f_optarg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           null,
                                           null,
-                                          support.escape($2));
+                                          p.escape($2));
                 }
                 | f_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           $1,
                                           null,
                                           $3,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_rest_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           $1,
                                           null,
-                                          support.escape($2));
+                                          p.escape($2));
                 }
                 | f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           $1,
                                           $3,
-                                          support.escape($4));
+                                          p.escape($4));
                 }
                 | f_block_arg {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           null,
@@ -1936,7 +1910,7 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                                           $1);
                 }
                 | /* none */ {
-                    $$ = support.dispatch("on_params",
+                    $$ = p.dispatch("on_params",
                                           null,
                                           null,
                                           null,
@@ -1945,59 +1919,59 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                 }
 
 f_bad_arg       : tCONSTANT {
-                    $$ = support.dispatch("on_param_error", $1);
+                    $$ = p.dispatch("on_param_error", $1);
                 }
                 | tIVAR {
-                    $$ = support.dispatch("on_param_error", $1);
+                    $$ = p.dispatch("on_param_error", $1);
                 }
                 | tGVAR {
-                    $$ = support.dispatch("on_param_error", $1);
+                    $$ = p.dispatch("on_param_error", $1);
                 }
                 | tCVAR {
-                    $$ = support.dispatch("on_param_error", $1);
+                    $$ = p.dispatch("on_param_error", $1);
                 }
 
 // Token:f_norm_arg [!null]
 f_norm_arg      : f_bad_arg
                 | tIDENTIFIER {
-                    $$ = support.formal_argument($1);
+                    $$ = p.formal_argument($1);
                 }
 
 f_arg_item      : f_norm_arg {
-                    $$ = support.arg_var($1);
+                    $$ = p.arg_var($1);
                 }
                 | tLPAREN f_margs rparen {
-                    $$ = support.dispatch("on_mlhs_paren", $2);
+                    $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
 // [!null]
 f_arg           : f_arg_item {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | f_arg ',' f_arg_item {
                     $$ = $1.append($3);
                 }
 
 f_opt           : tIDENTIFIER '=' arg_value {
-                    support.arg_var(support.formal_argument($1));
-                    $$ = support.new_assoc(support.assignable($1, $3), $3);
+                    p.arg_var(p.formal_argument($1));
+                    $$ = p.new_assoc(p.assignable($1, $3), $3);
 
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {
-                    support.arg_var(support.formal_argument($1));
-                    $$ = support.new_assoc(support.assignable($1, $3), $3);
+                    p.arg_var(p.formal_argument($1));
+                    $$ = p.new_assoc(p.assignable($1, $3), $3);
                 }
 
 f_block_optarg  : f_block_opt {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | f_block_optarg ',' f_block_opt {
                     $$ = $1.append($3);
                 }
 
 f_optarg        : f_opt {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | f_optarg ',' f_opt {
                     $$ = $1.append($3);
@@ -2007,11 +1981,11 @@ restarg_mark    : tSTAR2 | tSTAR
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    support.arg_var(support.shadowing_lvar($2));
-                    $$ = support.dispatch("on_rest_param", $2);
+                    p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.dispatch("on_rest_param", $2);
                 }
                 | restarg_mark {
-                    $$ = support.dispatch("on_rest_param", null);
+                    $$ = p.dispatch("on_rest_param", null);
                 }
 
 // [!null]
@@ -2019,8 +1993,8 @@ blkarg_mark     : tAMPER2 | tAMPER
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    support.arg_var(support.shadowing_lvar($2));
-                    $$ = support.dispatch("on_blockarg", $2);
+                    p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.dispatch("on_blockarg", $2);
                 }
 
 opt_f_block_arg : ',' f_block_arg {
@@ -2034,20 +2008,20 @@ singleton       : var_ref {
                     $$ = $1;
                 }
                 | tLPAREN2 {
-                    lexer.setState(LexState.EXPR_BEG);
+                    p.setState(LexState.EXPR_BEG);
                 } expr rparen {
-                    $$ = support.dispatch("on_paren", $3);
+                    $$ = p.dispatch("on_paren", $3);
                 }
 
 // [!null]
 assoc_list      : none
                 | assocs trailer {
-                    $$ = support.dispatch("on_assoclist_from_args", $1);
+                    $$ = p.dispatch("on_assoclist_from_args", $1);
                 }
 
 // [!null]
 assocs          : assoc {
-                    $$ = support.new_array($1);
+                    $$ = p.new_array($1);
                 }
                 | assocs ',' assoc {
                     $$ = $1.append($3);
@@ -2055,10 +2029,10 @@ assocs          : assoc {
 
 // [!null]
 assoc           : arg_value tASSOC arg_value {
-                    $$ = support.dispatch("on_assoc_new", $1, $3);
+                    $$ = p.dispatch("on_assoc_new", $1, $3);
                 }
                 | tLABEL arg_value {
-                    $$ = support.dispatch("on_assoc_new", $1, $2);
+                    $$ = p.dispatch("on_assoc_new", $1, $2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
@@ -2095,34 +2069,4 @@ none_block_pass : /* none */ {
                 }
 
 %%
-
-    /** The parse method use an lexer stream and parse it to an AST node 
-     * structure
-     */
-    public RipperParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
-        support.reset();
-        support.setConfiguration(configuration);
-        
-        lexer.reset();
-        lexer.setSource(source);
-        lexer.setEncoding(configuration.getDefaultEncoding());
-
-        Object debugger = null;
-        if (configuration.isDebug()) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-                // ignore, no debugger present
-            } catch (InstantiationException ie) {
-                // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-                // ignore, no debugger present
-            }
-        }
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
-        
-        return ((RipperSupport) support).getRipperResult();
-    }
 }
