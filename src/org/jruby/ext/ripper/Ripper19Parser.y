@@ -101,6 +101,8 @@ public class Ripper19Parser extends RipperParser {
 %token <IRubyObject> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER
 %token <IRubyObject> tFLOAT  
 %token <IRubyObject>  tREGEXP_END
+%token <IRubyObject> tIGNORED_NL, tCOMMENT, tEMBDOC_BEG, tEMBDOC, tEMBDOC_END
+%token <IRubyObject> tSP, tHEREDOC_BEG, tHEREDOC_END
 %type <IRubyObject> f_rest_arg 
 %type <IRubyObject> singleton strings string string1 xstring regexp
 %type <IRubyObject> string_contents xstring_contents string_content method_call

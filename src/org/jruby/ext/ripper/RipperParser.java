@@ -1,6 +1,8 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
@@ -8,12 +10,18 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.ParserConfiguration;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  *
  */
 public class RipperParser {
+
+    static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     IRubyWarnings warnings;
     
     
@@ -233,6 +241,18 @@ public class RipperParser {
     }
 
     Integer incrementParenNest() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    RipperParserConfiguration getConfiguration() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    StaticScope getCurrentScope() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    Ruby getRuntime() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

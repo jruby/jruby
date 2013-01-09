@@ -164,7 +164,15 @@ public class Ripper19Parser extends RipperParser {
   public static final int tINTEGER = 378;
   public static final int tFLOAT = 379;
   public static final int tREGEXP_END = 380;
-  public static final int tLOWEST = 381;
+  public static final int tIGNORED_NL = 381;
+  public static final int tCOMMENT = 382;
+  public static final int tEMBDOC_BEG = 383;
+  public static final int tEMBDOC = 384;
+  public static final int tEMBDOC_END = 385;
+  public static final int tSP = 386;
+  public static final int tHEREDOC_BEG = 387;
+  public static final int tHEREDOC_END = 388;
+  public static final int tLOWEST = 389;
   public static final int yyErrorCode = 256;
 
   /** number of final state.
@@ -671,7 +679,8 @@ public class Ripper19Parser extends RipperParser {
     "tSTRING_BEG","tXSTRING_BEG","tREGEXP_BEG","tWORDS_BEG","tQWORDS_BEG",
     "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","tLAMBDA","tLAMBEG",
     "tNTH_REF","tBACK_REF","tSTRING_CONTENT","tINTEGER","tFLOAT",
-    "tREGEXP_END","tLOWEST",
+    "tREGEXP_END","tIGNORED_NL","tCOMMENT","tEMBDOC_BEG","tEMBDOC",
+    "tEMBDOC_END","tSP","tHEREDOC_BEG","tHEREDOC_END","tLOWEST",
     };
 
   /** printable rules for debugging.
@@ -4283,6 +4292,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2072 "Ripper19Parser.y"
+					// line 2074 "Ripper19Parser.y"
 }
-					// line 8286 "-"
+					// line 8295 "-"

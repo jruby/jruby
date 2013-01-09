@@ -4,13 +4,14 @@
  */
 package org.jruby.ext.ripper;
 
+import org.jruby.runtime.encoding.EncodingService;
+
 /**
  *
  * @author enebo
  */
-public class RipperParserResult {
-
-    void setEndOffset(int offset) {
+class RipperParserConfiguration {
+    public EncodingService getEncodingService() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

@@ -50,8 +50,6 @@ import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
-import org.jruby.parser.ParserSupport;
-import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
@@ -218,7 +216,7 @@ public class RipperLexer {
     private LexerSource src;
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
-    private ParserSupport parserSupport = null;
+    private RipperParser parser = null;
 
     // What handles warnings
     private IRubyWarnings warnings;
@@ -352,12 +350,12 @@ public class RipperLexer {
      * 
      * @param parserSupport
      */
-    public void setParserSupport(ParserSupport parserSupport) {
-        this.parserSupport = parserSupport;
+    public void setParser(RipperParser parserSupport) {
+        this.parser = parserSupport;
     }
 
     private void setEncoding(ByteList name) {
-        Encoding newEncoding = parserSupport.getConfiguration().getEncodingService().loadEncoding(name);
+        Encoding newEncoding = parser.getConfiguration().getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) {
             throw new SyntaxException(SyntaxException.PID.UNKNOWN_ENCODING, getPosition(),
@@ -516,7 +514,7 @@ public class RipperLexer {
                 // Do nothing like MRI
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
-                codeRange = ParserSupport.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
+                codeRange = RipperParser.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
             }
         }
 
@@ -772,23 +770,26 @@ public class RipperLexer {
      * 
      * @return something or eof value
      */
+    // FIXME: This will not properly return on EOF condition.
     protected int readComment() throws IOException {
         // 1.9 - first line comment handling
+        ByteList commentBuf = new ByteList();
         ByteList commentLine;
         boolean handledMagicComment = false;
         if (src.getLine() == 0 && token == 0) {
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
             if (src.peek('!')) {
-                int c = src.skipUntil('\n');
+                commentBuf = src.readUntil('\n');
 
                 // TODO: Eat whitespace
                 
-                if (!src.peek('#')) return c; // Next line better also be a comment
+                if (!src.peek('#')) return '\n'; // Next line better also be a comment
             }
 
             commentLine = src.readUntil('\n');
             if (commentLine != null) {
+                commentBuf.append(commentLine);
                 handledMagicComment = parseMagicComment(commentLine);
                 if (!handledMagicComment) {
                     handleFileEncodingComment(commentLine);
@@ -796,8 +797,13 @@ public class RipperLexer {
             }
             return 0;
         }
+        commentLine = src.readUntil('\n');
         
-        return src.skipUntil('\n');
+        commentBuf.append(commentLine);
+        
+        dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
+        
+        return '\n';
     }
     
     /*
@@ -938,7 +944,24 @@ public class RipperLexer {
             default: System.err.print("'" + (char)token + "',"); break;
         }
     }
-
+    
+    private void dispatchScanEvent(int token, ByteList value) {
+        yaccValue = scanEventValue(token, value);
+    }
+    
+    private Object scanEventValue(int token, ByteList value) {
+        // FIXME: Create string and dispatch to 
+        return parser.dispatch(tokenToEventId(token), parser.getRuntime().newString(value));
+    }
+    
+    private String tokenToEventId(int token) {
+        switch(token) {
+            case Tokens.tSP: return "sp";
+        }
+        
+        throw new RuntimeException("No such eventid: " + token);
+    }
+    
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
         int currentToken = yylex2();
@@ -972,6 +995,7 @@ public class RipperLexer {
         commandStart = false;
 
         loop: for(;;) {
+            boolean fallthru = false;
             c = src.read();
             switch(c) {
             case '\000': /* NUL */
@@ -982,13 +1006,30 @@ public class RipperLexer {
            
                 /* white spaces */
             case ' ': case '\t': case '\f': case '\r':
-            case '\13': /* '\v' */
+            case '\13': /* '\v' */ {
+                ByteList whitespaceBuf = new ByteList(); // FIXME: bytelist encoding hookedup
+                boolean looping = true;
                 getPosition();
                 spaceSeen = true;
+                while (looping && (c = src.read()) != EOF) {
+                    switch (c) {
+                        case ' ': case '\t': case '\f': case '\r':
+                        case '\13': /* '\v' */
+                            whitespaceBuf.append(c);
+                            break;
+                        default:
+                            looping = false;
+                            break;
+                    }
+                }
+                src.unread(c);
+                dispatchScanEvent(Tokens.tSP, whitespaceBuf);
                 continue;
+            }
             case '#':		/* it's a comment */
                 if (readComment() == EOF) return EOF;
                     
+                fallthru = true;
                 /* fall through */
             case '\n':
                 switch (lex_state) {
@@ -997,6 +1038,12 @@ public class RipperLexer {
                     case EXPR_DOT:
                     case EXPR_CLASS:
                     case EXPR_VALUE:
+                        if (!fallthru) {
+                            // FIXME: use same bl
+                            ByteList buf = new ByteList();
+                            buf.append('\n');
+                            dispatchScanEvent(Tokens.tIGNORED_NL, buf);
+                        }
                         continue loop;
                 }
 
@@ -1172,7 +1219,7 @@ public class RipperLexer {
                 return at();
             case '_':
                 if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false, true)) {
-                	parserSupport.getResult().setEndOffset(src.getOffset());
+                	parser.getRipperResult().setEndOffset(src.getOffset());
                     return EOF;
                 }
                 return identifier(c, commandState);
@@ -1185,7 +1232,7 @@ public class RipperLexer {
     private int identifierToken(LexState last_state, int result, String value) {
 
         if (result == Tokens.tIDENTIFIER && last_state != LexState.EXPR_DOT &&
-                parserSupport.getCurrentScope().isDefined(value) >= 0) {
+                parser.getCurrentScope().isDefined(value) >= 0) {
             setState(LexState.EXPR_END);
         }
 
