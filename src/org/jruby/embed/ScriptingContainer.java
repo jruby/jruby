@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2013 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -165,7 +165,7 @@ import org.jruby.util.cli.OutputStrings;
  *     message: That's the way you are.</pre>
  *
  * See more details at project's 
- * {@see <a href="http://kenai.com/projects/jruby/pages/RedBridge">Wiki</a>}
+ * {@see <a href="https://github.com/jruby/jruby/wiki/RedBridge">Wiki</a>}
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
