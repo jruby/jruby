@@ -68,52 +68,52 @@ public class RipperLexer {
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
-    private static final HashMap<String, org.jruby.lexer.yacc.RubyYaccLexer.Keyword> map;
+    private static final HashMap<String, Keyword> map;
 
     static {
-        map = new HashMap<String, org.jruby.lexer.yacc.RubyYaccLexer.Keyword>();
+        map = new HashMap<String, Keyword>();
 
-        map.put("end", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.END);
-        map.put("else", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.ELSE);
-        map.put("case", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.CASE);
-        map.put("ensure", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.ENSURE);
-        map.put("module", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.MODULE);
-        map.put("elsif", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.ELSIF);
-        map.put("def", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.DEF);
-        map.put("rescue", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.RESCUE);
-        map.put("not", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.NOT);
-        map.put("then", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.THEN);
-        map.put("yield", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.YIELD);
-        map.put("for", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.FOR);
-        map.put("self", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.SELF);
-        map.put("false", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.FALSE);
-        map.put("retry", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.RETRY);
-        map.put("return", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.RETURN);
-        map.put("true", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.TRUE);
-        map.put("if", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.IF);
-        map.put("defined?", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.DEFINED_P);
-        map.put("super", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.SUPER);
-        map.put("undef", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.UNDEF);
-        map.put("break", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.BREAK);
-        map.put("in", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.IN);
-        map.put("do", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.DO);
-        map.put("nil", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.NIL);
-        map.put("until", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.UNTIL);
-        map.put("unless", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.UNLESS);
-        map.put("or", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.OR);
-        map.put("next", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.NEXT);
-        map.put("when", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.WHEN);
-        map.put("redo", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.REDO);
-        map.put("and", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.AND);
-        map.put("begin", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.BEGIN);
-        map.put("__LINE__", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.__LINE__);
-        map.put("class", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.CLASS);
-        map.put("__FILE__", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.__FILE__);
-        map.put("END", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.LEND);
-        map.put("BEGIN", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.LBEGIN);
-        map.put("while", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.WHILE);
-        map.put("alias", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.ALIAS);
-        map.put("__ENCODING__", org.jruby.lexer.yacc.RubyYaccLexer.Keyword.__ENCODING__);
+        map.put("end", Keyword.END);
+        map.put("else", Keyword.ELSE);
+        map.put("case", Keyword.CASE);
+        map.put("ensure", Keyword.ENSURE);
+        map.put("module", Keyword.MODULE);
+        map.put("elsif", Keyword.ELSIF);
+        map.put("def", Keyword.DEF);
+        map.put("rescue", Keyword.RESCUE);
+        map.put("not", Keyword.NOT);
+        map.put("then", Keyword.THEN);
+        map.put("yield", Keyword.YIELD);
+        map.put("for", Keyword.FOR);
+        map.put("self", Keyword.SELF);
+        map.put("false", Keyword.FALSE);
+        map.put("retry", Keyword.RETRY);
+        map.put("return", Keyword.RETURN);
+        map.put("true", Keyword.TRUE);
+        map.put("if", Keyword.IF);
+        map.put("defined?", Keyword.DEFINED_P);
+        map.put("super", Keyword.SUPER);
+        map.put("undef", Keyword.UNDEF);
+        map.put("break", Keyword.BREAK);
+        map.put("in", Keyword.IN);
+        map.put("do", Keyword.DO);
+        map.put("nil", Keyword.NIL);
+        map.put("until", Keyword.UNTIL);
+        map.put("unless", Keyword.UNLESS);
+        map.put("or", Keyword.OR);
+        map.put("next", Keyword.NEXT);
+        map.put("when", Keyword.WHEN);
+        map.put("redo", Keyword.REDO);
+        map.put("and", Keyword.AND);
+        map.put("begin", Keyword.BEGIN);
+        map.put("__LINE__", Keyword.__LINE__);
+        map.put("class", Keyword.CLASS);
+        map.put("__FILE__", Keyword.__FILE__);
+        map.put("END", Keyword.LEND);
+        map.put("BEGIN", Keyword.LBEGIN);
+        map.put("while", Keyword.WHILE);
+        map.put("alias", Keyword.ALIAS);
+        map.put("__ENCODING__", Keyword.__ENCODING__);
     }
 
     private Encoding encoding;
@@ -144,54 +144,54 @@ public class RipperLexer {
     }
     
     public enum Keyword {
-        END ("end", Tokens.kEND, Tokens.kEND, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        ELSE ("else", Tokens.kELSE, Tokens.kELSE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        CASE ("case", Tokens.kCASE, Tokens.kCASE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        ENSURE ("ensure", Tokens.kENSURE, Tokens.kENSURE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        MODULE ("module", Tokens.kMODULE, Tokens.kMODULE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        ELSIF ("elsif", Tokens.kELSIF, Tokens.kELSIF, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        DEF ("def", Tokens.kDEF, Tokens.kDEF, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME),
-        RESCUE ("rescue", Tokens.kRESCUE, Tokens.kRESCUE_MOD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_MID),
-        NOT ("not", Tokens.kNOT, Tokens.kNOT, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        THEN ("then", Tokens.kTHEN, Tokens.kTHEN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        YIELD ("yield", Tokens.kYIELD, Tokens.kYIELD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG),
-        FOR ("for", Tokens.kFOR, Tokens.kFOR, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        SELF ("self", Tokens.kSELF, Tokens.kSELF, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        FALSE ("false", Tokens.kFALSE, Tokens.kFALSE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        RETRY ("retry", Tokens.kRETRY, Tokens.kRETRY, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        RETURN ("return", Tokens.kRETURN, Tokens.kRETURN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_MID),
-        TRUE ("true", Tokens.kTRUE, Tokens.kTRUE, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        IF ("if", Tokens.kIF, Tokens.kIF_MOD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG),
-        SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME),
-        BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_MID),
-        IN ("in", Tokens.kIN, Tokens.kIN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        DO ("do", Tokens.kDO, Tokens.kDO, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        NIL ("nil", Tokens.kNIL, Tokens.kNIL, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        UNTIL ("until", Tokens.kUNTIL, Tokens.kUNTIL_MOD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        UNLESS ("unless", Tokens.kUNLESS, Tokens.kUNLESS_MOD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        OR ("or", Tokens.kOR, Tokens.kOR, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        NEXT ("next", Tokens.kNEXT, Tokens.kNEXT, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_MID),
-        WHEN ("when", Tokens.kWHEN, Tokens.kWHEN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        REDO ("redo", Tokens.kREDO, Tokens.kREDO, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        AND ("and", Tokens.kAND, Tokens.kAND, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        BEGIN ("begin", Tokens.kBEGIN, Tokens.kBEGIN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        __LINE__ ("__LINE__", Tokens.k__LINE__, Tokens.k__LINE__, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        CLASS ("class", Tokens.kCLASS, Tokens.kCLASS, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CLASS),
-        __FILE__("__FILE__", Tokens.k__FILE__, Tokens.k__FILE__, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        LEND ("END", Tokens.klEND, Tokens.klEND, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END),
-        WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME),
-        __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+        END ("end", Tokens.kEND, Tokens.kEND, LexState.EXPR_END),
+        ELSE ("else", Tokens.kELSE, Tokens.kELSE, LexState.EXPR_BEG),
+        CASE ("case", Tokens.kCASE, Tokens.kCASE, LexState.EXPR_BEG),
+        ENSURE ("ensure", Tokens.kENSURE, Tokens.kENSURE, LexState.EXPR_BEG),
+        MODULE ("module", Tokens.kMODULE, Tokens.kMODULE, LexState.EXPR_BEG),
+        ELSIF ("elsif", Tokens.kELSIF, Tokens.kELSIF, LexState.EXPR_BEG),
+        DEF ("def", Tokens.kDEF, Tokens.kDEF, LexState.EXPR_FNAME),
+        RESCUE ("rescue", Tokens.kRESCUE, Tokens.kRESCUE_MOD, LexState.EXPR_MID),
+        NOT ("not", Tokens.kNOT, Tokens.kNOT, LexState.EXPR_BEG),
+        THEN ("then", Tokens.kTHEN, Tokens.kTHEN, LexState.EXPR_BEG),
+        YIELD ("yield", Tokens.kYIELD, Tokens.kYIELD, LexState.EXPR_ARG),
+        FOR ("for", Tokens.kFOR, Tokens.kFOR, LexState.EXPR_BEG),
+        SELF ("self", Tokens.kSELF, Tokens.kSELF, LexState.EXPR_END),
+        FALSE ("false", Tokens.kFALSE, Tokens.kFALSE, LexState.EXPR_END),
+        RETRY ("retry", Tokens.kRETRY, Tokens.kRETRY, LexState.EXPR_END),
+        RETURN ("return", Tokens.kRETURN, Tokens.kRETURN, LexState.EXPR_MID),
+        TRUE ("true", Tokens.kTRUE, Tokens.kTRUE, LexState.EXPR_END),
+        IF ("if", Tokens.kIF, Tokens.kIF_MOD, LexState.EXPR_BEG),
+        DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, LexState.EXPR_ARG),
+        SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, LexState.EXPR_ARG),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, LexState.EXPR_FNAME),
+        BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, LexState.EXPR_MID),
+        IN ("in", Tokens.kIN, Tokens.kIN, LexState.EXPR_BEG),
+        DO ("do", Tokens.kDO, Tokens.kDO, LexState.EXPR_BEG),
+        NIL ("nil", Tokens.kNIL, Tokens.kNIL, LexState.EXPR_END),
+        UNTIL ("until", Tokens.kUNTIL, Tokens.kUNTIL_MOD, LexState.EXPR_BEG),
+        UNLESS ("unless", Tokens.kUNLESS, Tokens.kUNLESS_MOD, LexState.EXPR_BEG),
+        OR ("or", Tokens.kOR, Tokens.kOR, LexState.EXPR_BEG),
+        NEXT ("next", Tokens.kNEXT, Tokens.kNEXT, LexState.EXPR_MID),
+        WHEN ("when", Tokens.kWHEN, Tokens.kWHEN, LexState.EXPR_BEG),
+        REDO ("redo", Tokens.kREDO, Tokens.kREDO, LexState.EXPR_END),
+        AND ("and", Tokens.kAND, Tokens.kAND, LexState.EXPR_BEG),
+        BEGIN ("begin", Tokens.kBEGIN, Tokens.kBEGIN, LexState.EXPR_BEG),
+        __LINE__ ("__LINE__", Tokens.k__LINE__, Tokens.k__LINE__, LexState.EXPR_END),
+        CLASS ("class", Tokens.kCLASS, Tokens.kCLASS, LexState.EXPR_CLASS),
+        __FILE__("__FILE__", Tokens.k__FILE__, Tokens.k__FILE__, LexState.EXPR_END),
+        LEND ("END", Tokens.klEND, Tokens.klEND, LexState.EXPR_END),
+        LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, LexState.EXPR_END),
+        WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, LexState.EXPR_BEG),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, LexState.EXPR_FNAME),
+        __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, LexState.EXPR_END);
         
         public final String name;
         public final int id0;
         public final int id1;
-        public final org.jruby.lexer.yacc.RubyYaccLexer.LexState state;
+        public final LexState state;
         
-        Keyword(String name, int id0, int id1, org.jruby.lexer.yacc.RubyYaccLexer.LexState state) {
+        Keyword(String name, int id0, int id1, LexState state) {
             this.name = name;
             this.id0 = id0;
             this.id1 = id1;
@@ -204,8 +204,8 @@ public class RipperLexer {
         EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN
     }
     
-    public static org.jruby.lexer.yacc.RubyYaccLexer.Keyword getKeyword(String str) {
-        return (org.jruby.lexer.yacc.RubyYaccLexer.Keyword) map.get(str);
+    public static Keyword getKeyword(String str) {
+        return (Keyword) map.get(str);
     }
 
     // Last token read via yylex().
@@ -225,7 +225,7 @@ public class RipperLexer {
 
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
-    private org.jruby.lexer.yacc.RubyYaccLexer.LexState lex_state;
+    private LexState lex_state;
     
     // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
     // this before use.
@@ -255,8 +255,6 @@ public class RipperLexer {
     private static final int str_ssym   = STR_FUNC_SYMBOL;
     private static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
 
-    // Are we lexing Ruby 1.8 or 1.9+ syntax
-    private boolean isOneEight;
     // Count of nested parentheses (1.9 only)
     private int parenNest = 0;
     // 1.9 only
@@ -277,12 +275,7 @@ public class RipperLexer {
     }
 
     public RipperLexer() {
-    	this(true);
-    }
-    
-    public RipperLexer(boolean isOneEight) {
     	reset();
-        this.isOneEight = isOneEight;
     }
     
     public final void reset() {
@@ -417,17 +410,13 @@ public class RipperLexer {
         }
     }
 
-    public void setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState state) {
+    public void setState(LexState state) {
         this.lex_state = state;
 //        printState();
     }
 
     public StackState getCmdArgumentState() {
         return cmdArgumentState;
-    }
-
-    public boolean isOneEight() {
-        return isOneEight;
     }
 
     public StackState getConditionState() {
@@ -446,26 +435,26 @@ public class RipperLexer {
     }
 
     private boolean isBEG() {
-        return lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_MID ||
-                lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CLASS || (!isOneEight && lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_VALUE);
+        return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
+                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE;
     }
     
     private boolean isEND() {
-        return lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDARG ||
-                (!isOneEight && lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN);
+        return lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG ||
+                lex_state == LexState.EXPR_ENDFN;
     }
 
     private boolean isARG() {
-        return lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG;
+        return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
     }
 
     private void determineExpressionState() {
         switch (lex_state) {
         case EXPR_FNAME: case EXPR_DOT:
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+            setState(LexState.EXPR_ARG);
             break;
         default:
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             break;
         }
     }
@@ -525,9 +514,9 @@ public class RipperLexer {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
             if (codeRange == StringSupport.CR_7BIT) {
                 // Do nothing like MRI
-            } else if (getEncoding() == org.jruby.lexer.yacc.RubyYaccLexer.USASCII_ENCODING &&
-                    bufferEncoding != org.jruby.lexer.yacc.RubyYaccLexer.UTF8_ENCODING) {
-                codeRange = ParserSupport.associateEncoding(buffer, org.jruby.lexer.yacc.RubyYaccLexer.ASCII8BIT_ENCODING, codeRange);
+            } else if (getEncoding() == USASCII_ENCODING &&
+                    bufferEncoding != UTF8_ENCODING) {
+                codeRange = ParserSupport.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
             }
         }
 
@@ -609,7 +598,7 @@ public class RipperLexer {
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME);
+            setState(LexState.EXPR_FNAME);
             yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tSYMBEG;
 
@@ -787,7 +776,7 @@ public class RipperLexer {
         // 1.9 - first line comment handling
         ByteList commentLine;
         boolean handledMagicComment = false;
-        if (!isOneEight() && src.getLine() == 0 && token == 0) {
+        if (src.getLine() == 0 && token == 0) {
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
             if (src.peek('!')) {
@@ -973,7 +962,7 @@ public class RipperLexer {
             int tok = lex_strterm.parseString(this, src);
             if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
                 lex_strterm = null;
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+                setState(LexState.EXPR_END);
             }
 
             return tok;
@@ -1002,21 +991,25 @@ public class RipperLexer {
                     
                 /* fall through */
             case '\n':
-                if (isOneEight) {             	// Replace a string of newlines with a single one
-                    while((c = src.read()) == '\n') {}
-                } else {
-                    switch (lex_state) {
-                    case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
-                    case EXPR_CLASS: case EXPR_VALUE:
+                switch (lex_state) {
+                    case EXPR_BEG:
+                    case EXPR_FNAME:
+                    case EXPR_DOT:
+                    case EXPR_CLASS:
+                    case EXPR_VALUE:
                         continue loop;
-                    }
+                }
 
-                    boolean done = false;
-                    while(!done) {
-                        c = src.read();
+                boolean done = false;
+                while (!done) {
+                    c = src.read();
 
-                        switch (c) {
-                        case ' ': case '\t': case '\f': case '\r': case '\13': /* '\v' */
+                    switch (c) {
+                        case ' ':
+                        case '\t':
+                        case '\f':
+                        case '\r':
+                        case '\13': /* '\v' */
                             spaceSeen = true;
                             continue;
                         case '.': {
@@ -1030,9 +1023,9 @@ public class RipperLexer {
                         default:
                         case -1:		// EOF (ENEBO: After default?
                             done = true;
-                        }
                     }
                 }
+
 
                 if (c == -1) return EOF;
 
@@ -1045,7 +1038,7 @@ public class RipperLexer {
                 }
 
                 commandStart = true;
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 return '\n';
             case '*':
                 return star(spaceSeen);
@@ -1149,11 +1142,9 @@ public class RipperLexer {
                 return caret();
             case ';':
                 commandStart = true;
-                if (!isOneEight) {
-                    setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
-                    yaccValue = new Token(";", getPosition());
-                    return ';';
-                }
+                setState(LexState.EXPR_BEG);
+                yaccValue = new Token(";", getPosition());
+                return ';';
             case ',':
                 return comma(c);
             case '~':
@@ -1191,11 +1182,11 @@ public class RipperLexer {
         }
     }
 
-    private int identifierToken(org.jruby.lexer.yacc.RubyYaccLexer.LexState last_state, int result, String value) {
+    private int identifierToken(LexState last_state, int result, String value) {
 
-        if (result == Tokens.tIDENTIFIER && last_state != org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT &&
+        if (result == Tokens.tIDENTIFIER && last_state != LexState.EXPR_DOT &&
                 parserSupport.getCurrentScope().isDefined(value) >= 0) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+            setState(LexState.EXPR_END);
         }
 
         yaccValue = new Token(value, result, getPosition());
@@ -1226,10 +1217,10 @@ public class RipperLexer {
         
         switch (c) {
         case '&':
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
                 yaccValue = new Token("&&", getPosition());
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
@@ -1237,7 +1228,7 @@ public class RipperLexer {
             return Tokens.tANDOP;
         case '=':
             yaccValue = new Token("&", getPosition());
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
@@ -1291,8 +1282,8 @@ public class RipperLexer {
 
         getIdentifier(c);
 
-        org.jruby.lexer.yacc.RubyYaccLexer.LexState last_state = lex_state;
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+        LexState last_state = lex_state;
+        setState(LexState.EXPR_END);
 
         return identifierToken(last_state, result, tokenBuffer.toString().intern());
     }
@@ -1302,11 +1293,11 @@ public class RipperLexer {
 
         switch (lex_state) {
         case EXPR_FNAME:
-            setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN);
+            setState(LexState.EXPR_ENDFN);
             
             return Tokens.tBACK_REF2;
         case EXPR_DOT:
-            setState(commandState ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+            setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
 
             return Tokens.tBACK_REF2;
         default:
@@ -1319,14 +1310,14 @@ public class RipperLexer {
     private int bang() throws IOException {
         int c = src.read();
 
-        if (!isOneEight && (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT)) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+            setState(LexState.EXPR_ARG);
             if (c == '@') {
                 yaccValue = new Token("!",getPosition());
                 return Tokens.tBANG;
             }
         } else {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
         }
         
         switch (c) {
@@ -1349,7 +1340,7 @@ public class RipperLexer {
     private int caret() throws IOException {
         int c = src.read();
         if (c == '=') {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("^", getPosition());
             return Tokens.tOP_ASGN;
         }
@@ -1365,19 +1356,19 @@ public class RipperLexer {
         int c = src.read();
         
         if (c == ':') {
-            if (isBEG() || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
+                setState(LexState.EXPR_BEG);
                 yaccValue = new Token("::", getPosition());
                 return Tokens.tCOLON3;
             }
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT);
+            setState(LexState.EXPR_DOT);
             yaccValue = new Token(":",getPosition());
             return Tokens.tCOLON2;
         }
 
         if (isEND() || Character.isWhitespace(c)) {
             src.unread(c);
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token(":",getPosition());
             return ':';
         }
@@ -1394,22 +1385,22 @@ public class RipperLexer {
             break;
         }
         
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME);
+        setState(LexState.EXPR_FNAME);
         yaccValue = new Token(":", getPosition());
         return Tokens.tSYMBEG;
     }
 
     private int comma(int c) throws IOException {
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         yaccValue = new Token(",", getPosition());
         
         return c;
     }
 
-    private int doKeyword(org.jruby.lexer.yacc.RubyYaccLexer.LexState state) {
+    private int doKeyword(LexState state) {
         commandStart = true;
 
-        if (!isOneEight && leftParenBegin > 0 && leftParenBegin == parenNest) {
+        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             leftParenBegin = 0;
             parenNest--;
             return Tokens.kDO_LAMBDA;
@@ -1417,18 +1408,18 @@ public class RipperLexer {
 
         if (conditionState.isInState()) return Tokens.kDO_COND;
 
-        if (state != org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
+        if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
             return Tokens.kDO_BLOCK;
         }
-        if (state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDARG || (!isOneEight && state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG)) {
+        if (state == LexState.EXPR_ENDARG || state == LexState.EXPR_BEG) {
             return Tokens.kDO_BLOCK;
         }
         return Tokens.kDO;
     }
     
     private int dollar() throws IOException {
-        org.jruby.lexer.yacc.RubyYaccLexer.LexState last_state = lex_state;
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+        LexState last_state = lex_state;
+        setState(LexState.EXPR_END);
         int c = src.read();
         
         switch (c) {
@@ -1439,7 +1430,7 @@ public class RipperLexer {
                 tokenBuffer.append("$_");
                 getIdentifier(c);
                 last_state = lex_state;
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+                setState(LexState.EXPR_END);
 
                 return identifierToken(last_state, Tokens.tGVAR, tokenBuffer.toString().intern());
             }
@@ -1485,7 +1476,7 @@ public class RipperLexer {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            if (last_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME) {
+            if (last_state == LexState.EXPR_FNAME) {
                 yaccValue = new Token("$" + (char) c, Tokens.tGVAR, getPosition());
                 return Tokens.tGVAR;
             }
@@ -1502,7 +1493,7 @@ public class RipperLexer {
                 c = src.read();
             } while (Character.isDigit(c));
             src.unread(c);
-            if (last_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME) {
+            if (last_state == LexState.EXPR_FNAME) {
                 yaccValue = new Token(tokenBuffer.toString(), Tokens.tGVAR, getPosition());
                 return Tokens.tGVAR;
             }
@@ -1510,7 +1501,7 @@ public class RipperLexer {
             yaccValue = new NthRefNode(getPosition(), Integer.parseInt(tokenBuffer.substring(1)));
             return Tokens.tNTH_REF;
         case '0':
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+            setState(LexState.EXPR_END);
 
             return identifierToken(last_state, Tokens.tGVAR, ("$" + (char) c).intern());
         default:
@@ -1525,7 +1516,7 @@ public class RipperLexer {
             tokenBuffer.append('$');
             getIdentifier(c);
             last_state = lex_state;
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+            setState(LexState.EXPR_END);
 
             return identifierToken(last_state, Tokens.tGVAR, tokenBuffer.toString().intern());
         }
@@ -1534,7 +1525,7 @@ public class RipperLexer {
     private int dot() throws IOException {
         int c;
         
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         if ((c = src.read()) == '.') {
             if ((c = src.read()) == '.') {
                 yaccValue = new Token("...", getPosition());
@@ -1551,7 +1542,7 @@ public class RipperLexer {
                     "no .<digit> floating literal anymore; put 0 before dot");
         }
         
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT);
+        setState(LexState.EXPR_DOT);
         yaccValue = new Token(".", getPosition());
         return Tokens.tDOT;
     }
@@ -1575,7 +1566,7 @@ public class RipperLexer {
             return Tokens.tGEQ;
         case '>':
             if ((c = src.read()) == '=') {
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 yaccValue = new Token(">>", getPosition());
                 return Tokens.tOP_ASGN;
             }
@@ -1616,11 +1607,11 @@ public class RipperLexer {
         
         int result = 0;
 
-        org.jruby.lexer.yacc.RubyYaccLexer.LexState last_state = lex_state;
+        LexState last_state = lex_state;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
         } else {
-            if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME) {
+            if (lex_state == LexState.EXPR_FNAME) {
                 if ((c = src.read()) == '=') { 
                     int c2 = src.read();
 
@@ -1646,12 +1637,12 @@ public class RipperLexer {
 
         String tempVal = tokenBuffer.toString().intern();
 
-	    if (!isOneEight && ((lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG && !commandState) ||
-                lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG)) {
+	    if ((lex_state == LexState.EXPR_BEG && !commandState) ||
+                lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
                 src.unread(c2);
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 src.read();
                 yaccValue = new Token(tempVal, Tokens.tLABEL, getPosition());
                 return Tokens.tLABEL;
@@ -1659,38 +1650,38 @@ public class RipperLexer {
             src.unread(c2);
         }
 
-        if (lex_state != org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT) {
-            org.jruby.lexer.yacc.RubyYaccLexer.Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
+        if (lex_state != LexState.EXPR_DOT) {
+            Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
 
-            if (keyword != null && (keyword != org.jruby.lexer.yacc.RubyYaccLexer.Keyword.__ENCODING__ || !isOneEight)) {
-                org.jruby.lexer.yacc.RubyYaccLexer.LexState state = lex_state; // Save state at time keyword is encountered
+            if (keyword != null) {
+                LexState state = lex_state; // Save state at time keyword is encountered
 
-                if (!isOneEight && keyword == org.jruby.lexer.yacc.RubyYaccLexer.Keyword.NOT) {
-                    setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+                if (keyword == Keyword.NOT) {
+                    setState(LexState.EXPR_ARG);
                 } else {
                     setState(keyword.state);
                 }
-                if (state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME) {
+                if (state == LexState.EXPR_FNAME) {
                     yaccValue = new Token(keyword.name, getPosition());
                 } else {
                     yaccValue = new Token(tempVal, getPosition());
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
-                if (state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG || (!isOneEight && state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_VALUE)) return keyword.id0;
+                if (state == LexState.EXPR_BEG || state == LexState.EXPR_VALUE) return keyword.id0;
 
-                if (keyword.id0 != keyword.id1) setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                if (keyword.id0 != keyword.id1) setState(LexState.EXPR_BEG);
 
                 return keyword.id1;
             }
         }
 
-        if (isBEG() || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT || isARG()) {
-            setState(commandState ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
-        } else if (!isOneEight && lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN);
+        if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
+            setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
+        } else if (lex_state == LexState.EXPR_ENDFN) {
+            setState(LexState.EXPR_ENDFN);
         } else {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+            setState(LexState.EXPR_END);
         }
         
         return identifierToken(last_state, result, tempVal);
@@ -1699,8 +1690,8 @@ public class RipperLexer {
     private int leftBracket(boolean spaceSeen) throws IOException {
         parenNest++;
         int c = '[';
-        if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+            setState(LexState.EXPR_ARG);
             
             if ((c = src.read()) == ']') {
                 if (src.peek('=')) {
@@ -1718,7 +1709,7 @@ public class RipperLexer {
             c = Tokens.tLBRACK;
         }
 
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         conditionState.stop();
         cmdArgumentState.stop();
         yaccValue = new Token("[", getPosition());
@@ -1726,8 +1717,8 @@ public class RipperLexer {
     }
     
     private int leftCurly() {
-        if (!isOneEight && leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
+            setState(LexState.EXPR_BEG);
             leftParenBegin = 0;
             parenNest--;
             conditionState.stop();
@@ -1737,9 +1728,9 @@ public class RipperLexer {
         }
 
         char c;
-        if (isARG() || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END || (!isOneEight && lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN)) { // block (primary)
+        if (isARG() || lex_state == LexState.EXPR_END || (lex_state == LexState.EXPR_ENDFN)) { // block (primary)
             c = Tokens.tLCURLY;
-        } else if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDARG) { // block (expr)
+        } else if (lex_state == LexState.EXPR_ENDARG) { // block (expr)
             c = Tokens.tLBRACE_ARG;
         } else { // hash
             c = Tokens.tLBRACE;
@@ -1747,37 +1738,30 @@ public class RipperLexer {
 
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         
         yaccValue = new Token("{", getPosition());
-        if (!isOneEight && c != Tokens.tLBRACE) commandStart = true;
+        if (c != Tokens.tLBRACE) commandStart = true;
         return c;
     }
 
     private int leftParen(boolean spaceSeen) throws IOException {
-        if (isOneEight) commandStart = true;
-
         int result = Tokens.tLPAREN2;
         if (isBEG()) {
             result = Tokens.tLPAREN;
         } else if (spaceSeen) {
             // ENEBO: 1.9 is IS_ARG, but we need to break apart for 1.8 support.
-            if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CMDARG) {
+            if (lex_state == LexState.EXPR_CMDARG) {
                 result = Tokens.tLPAREN_ARG;
-            } else if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG) {
-                if (isOneEight) {
-                    warnings.warn(IRubyWarnings.ID.ARGUMENT_EXTRA_SPACE, getPosition(), "don't put space before argument parentheses");
-                    result = Tokens.tLPAREN2;
-                } else {
-                    result = Tokens.tLPAREN_ARG;
-                }
+            } else if (lex_state == LexState.EXPR_ARG) {
+                result = Tokens.tLPAREN_ARG;
             }
         }
 
         parenNest++;
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         
         yaccValue = new Token("(", getPosition());
         return result;
@@ -1785,7 +1769,7 @@ public class RipperLexer {
     
     private int lessThan(boolean spaceSeen) throws IOException {
         int c = src.read();
-        if (c == '<' && lex_state != org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT && lex_state != org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_CLASS &&
+        if (c == '<' && lex_state != LexState.EXPR_DOT && lex_state != LexState.EXPR_CLASS &&
                 !isEND() && (!isARG() || spaceSeen)) {
             int tok = hereDocumentIdentifier();
             
@@ -1805,7 +1789,7 @@ public class RipperLexer {
             return Tokens.tLEQ;
         case '<':
             if ((c = src.read()) == '=') {
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 yaccValue = new Token("<<", getPosition());
                 return Tokens.tOP_ASGN;
             }
@@ -1822,8 +1806,8 @@ public class RipperLexer {
     private int minus(boolean spaceSeen) throws IOException {
         int c = src.read();
         
-        if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+            setState(LexState.EXPR_ARG);
             if (c == '@') {
                 yaccValue = new Token("-@", getPosition());
                 return Tokens.tUMINUS;
@@ -1833,18 +1817,18 @@ public class RipperLexer {
             return Tokens.tMINUS;
         }
         if (c == '=') {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("-", getPosition());
             return Tokens.tOP_ASGN;
         }
-        if (!isOneEight && c == '>') {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+        if (c == '>') {
+            setState(LexState.EXPR_ARG);
             yaccValue = new Token("->", getPosition());
             return Tokens.tLAMBDA;
         }
         if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
             if (isARG()) arg_ambiguous();
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             src.unread(c);
             yaccValue = new Token("-", getPosition());
             if (Character.isDigit(c)) {
@@ -1852,7 +1836,7 @@ public class RipperLexer {
             }
             return Tokens.tUMINUS;
         }
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         src.unread(c);
         yaccValue = new Token("-", getPosition());
         return Tokens.tMINUS;
@@ -1864,7 +1848,7 @@ public class RipperLexer {
         int c = src.read();
 
         if (c == '=') {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("%", getPosition());
             return Tokens.tOP_ASGN;
         }
@@ -1883,9 +1867,9 @@ public class RipperLexer {
         
         switch (c) {
         case '|':
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 yaccValue = new Token("||", getPosition());
                 return Tokens.tOP_ASGN;
             }
@@ -1893,7 +1877,7 @@ public class RipperLexer {
             yaccValue = new Token("||", getPosition());
             return Tokens.tOROP;
         case '=':
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("|", getPosition());
             return Tokens.tOP_ASGN;
         default:
@@ -1907,8 +1891,8 @@ public class RipperLexer {
     
     private int plus(boolean spaceSeen) throws IOException {
         int c = src.read();
-        if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT) {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+            setState(LexState.EXPR_ARG);
             if (c == '@') {
                 yaccValue = new Token("+@", getPosition());
                 return Tokens.tUPLUS;
@@ -1919,14 +1903,14 @@ public class RipperLexer {
         }
         
         if (c == '=') {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("+", getPosition());
             return Tokens.tOP_ASGN;
         }
         
         if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
             if (isARG()) arg_ambiguous();
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             src.unread(c);
             if (Character.isDigit(c)) {
                 c = '+';
@@ -1936,7 +1920,7 @@ public class RipperLexer {
             return Tokens.tUPLUS;
         }
         
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+        setState(LexState.EXPR_BEG);
         src.unread(c);
         yaccValue = new Token("+", getPosition());
         return Tokens.tPLUS;
@@ -1946,7 +1930,7 @@ public class RipperLexer {
         int c;
         
         if (isEND()) {
-            setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_VALUE);
+            setState(LexState.EXPR_VALUE);
             yaccValue = new Token("?",getPosition());
             return '?';
         }
@@ -1985,7 +1969,7 @@ public class RipperLexer {
                 }
             }
             src.unread(c);
-            setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_VALUE);
+            setState(LexState.EXPR_VALUE);
             yaccValue = new Token("?", getPosition());
             return '?';
             /*} else if (ismbchar(c)) { // ruby - we don't support them either?
@@ -1995,11 +1979,11 @@ public class RipperLexer {
                 return '?';*/
         } else if (isIdentifierChar(c) && !src.peek('\n') && isNext_identchar()) {
             src.unread(c);
-            setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_VALUE);
+            setState(LexState.EXPR_VALUE);
             yaccValue = new Token("?", getPosition());
             return '?';
         } else if (c == '\\') {
-            if (!isOneEight && src.peek('u')) {
+            if (src.peek('u')) {
                 src.read(); // Eat 'u'
                 c = readUTFEscape(null /* Not String literal so no buffer setting */, false, false);
             } else {
@@ -2007,16 +1991,11 @@ public class RipperLexer {
             }
         }
         
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
-        if (isOneEight) {
-            c &= 0xff;
-            yaccValue = new FixnumNode(getPosition(), c);
-        } else {
-            // TODO: this isn't handling multibyte yet
-            ByteList oneCharBL = new ByteList(1);
-            oneCharBL.append(c);
-            yaccValue = new StrNode(getPosition(), oneCharBL);
-        }
+        setState(LexState.EXPR_END);
+        // TODO: this isn't handling multibyte yet
+        ByteList oneCharBL = new ByteList(1);
+        oneCharBL.append(c);
+        yaccValue = new StrNode(getPosition(), oneCharBL);
         // TODO: This should be something else like a tCHAR
         return Tokens.tINTEGER;
     }
@@ -2025,7 +2004,7 @@ public class RipperLexer {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDARG);
+        setState(LexState.EXPR_ENDARG);
         yaccValue = new Token(")", getPosition());
         return Tokens.tRBRACK;
     }
@@ -2033,7 +2012,7 @@ public class RipperLexer {
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDARG);
+        setState(LexState.EXPR_ENDARG);
         yaccValue = new Token("}",getPosition());
         return Tokens.tRCURLY;
     }
@@ -2042,7 +2021,7 @@ public class RipperLexer {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(isOneEight ? org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END : org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ENDFN);
+        setState(LexState.EXPR_ENDFN);
         yaccValue = new Token(")", getPosition());
         return Tokens.tRPAREN;
     }
@@ -2065,7 +2044,7 @@ public class RipperLexer {
         
         if (c == '=') {
             yaccValue = new Token("/", getPosition());
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
@@ -2090,7 +2069,7 @@ public class RipperLexer {
         switch (c) {
         case '*':
             if ((c = src.read()) == '=') {
-                setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+                setState(LexState.EXPR_BEG);
                 yaccValue = new Token("**", getPosition());
                 return Tokens.tOP_ASGN;
             }
@@ -2099,7 +2078,7 @@ public class RipperLexer {
             c = Tokens.tPOW;
             break;
         case '=':
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
             yaccValue = new Token("*", getPosition());
             return Tokens.tOP_ASGN;
         default:
@@ -2122,11 +2101,11 @@ public class RipperLexer {
     private int tilde() throws IOException {
         int c;
         
-        if (lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_FNAME || lex_state == org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_DOT) {
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             if ((c = src.read()) != '@') src.unread(c);
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_ARG);
+            setState(LexState.EXPR_ARG);
         } else {
-            setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_BEG);
+            setState(LexState.EXPR_BEG);
         }
         
         yaccValue = new Token("~", getPosition());
@@ -2140,7 +2119,7 @@ public class RipperLexer {
      *@return A int constant wich represents a token.
      */
     private int parseNumber(int c) throws IOException {
-        setState(org.jruby.lexer.yacc.RubyYaccLexer.LexState.EXPR_END);
+        setState(LexState.EXPR_END);
 
         tokenBuffer.setLength(0);
 
