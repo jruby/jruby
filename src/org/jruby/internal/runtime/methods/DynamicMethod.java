@@ -30,6 +30,7 @@
 
 package org.jruby.internal.runtime.methods;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -439,6 +440,19 @@ public abstract class DynamicMethod {
 
         public boolean hasBlock() {
             return nativeSignature.length > 0 && nativeSignature[nativeSignature.length - 1] == Block.class;
+        }
+        
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall
+         * 
+         * @return the reflected method corresponding to this NativeCall
+         */
+        public Method getMethod() {
+            try {
+                return nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override

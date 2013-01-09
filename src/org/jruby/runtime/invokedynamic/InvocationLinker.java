@@ -60,6 +60,10 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static java.lang.invoke.MethodType.methodType;
+import java.lang.reflect.Method;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
+import org.jruby.runtime.Arity;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 
@@ -437,6 +441,16 @@ public class InvocationLinker {
         
         return guardWithTest;
     }
+
+    private static int getNativeArgCount(DynamicMethod method, NativeCall nativeCall) {
+        // if non-Java, must:
+        // * exactly match arities or both are [] boxed
+        // * 3 or fewer arguments
+        int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
+                ? getRubyArgCount(nativeCall.getNativeSignature())
+                : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+        return nativeArgCount;
+    }
     
     private static class IndirectBindingException extends RuntimeException {
         public IndirectBindingException(String reason) {
@@ -531,13 +545,8 @@ public class InvocationLinker {
                     throw new IndirectBindingException("Java call arity mismatch or > 3 args");
                 }
             } else {
-                // if non-Java, must:
-                // * exactly match arities or both are [] boxed
-                // * 3 or fewer arguments
 
-                int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
-                        ? getRubyArgCount(nativeCall.getNativeSignature())
-                        : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+                int nativeArgCount = getNativeArgCount(method, nativeCall);
 
                 // arity must match or both be [] args
                 if (nativeArgCount != siteArgCount) {
@@ -581,6 +590,8 @@ public class InvocationLinker {
     private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = null;
         
+        boolean checkArity = false;
+        
         if (method instanceof AttrReaderMethod) {
             // Ruby to attr reader
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
@@ -605,15 +616,17 @@ public class InvocationLinker {
                 // Ruby to Ruby
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method " + logMethod(method) + ": " + nativeCall);
                 nativeTarget = createRubyHandle(site, method, name);
+                checkArity = true;
             } else {
                 // Ruby to Core
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method " + logMethod(method) + ": " + nativeCall);
                 nativeTarget = createNativeHandle(site, method, name);
+                checkArity = true;
             }
         }
                         
-        // add NULL_BLOCK if needed
         if (nativeTarget != null) {
+            // add NULL_BLOCK if needed
             if (
                     site.type().parameterCount() > 0
                     && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
@@ -628,9 +641,42 @@ public class InvocationLinker {
                 // drop block if not used
                 nativeTarget = dropArguments(nativeTarget, nativeTarget.type().parameterCount(), Block.class);
             }
+            
+            // add arity check if needed
+            if (checkArity) {
+                int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+                int siteArgCount = getSiteCount(site.type().parameterArray());
+                
+                if (nativeArgCount == 4 && siteArgCount == 4) {
+                    // Arity does not give us enough information about min/max
+                    // so we must go to the annotation
+                    Method reflected = method.getNativeCall().getMethod();
+                    JRubyMethod annotation = reflected.getAnnotation(JRubyMethod.class);
+                    
+                    int required = annotation.required();
+                    int optional = annotation.optional();
+                    boolean rest = annotation.rest();
+                    
+                    if (required > 0 || !rest) {
+                        MethodHandle arityCheck = Binder
+                                .from(site.type().changeReturnType(void.class))
+                                .insert(0, new Class[]{int.class, int.class, boolean.class}, required, optional, rest)
+                                .invokeStaticQuiet(site.lookup(), InvocationLinker.class, "checkArity");
+                        nativeTarget = foldArguments(nativeTarget, arityCheck);
+                    }
+                }
+            }
         }
         
         return nativeTarget;
+    }
+    
+    public static void checkArity(int required, int optional, boolean rest, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context.runtime, args, required, rest ? -1 : required + optional);
+    }
+    
+    public static void checkArity(int required, int optional, boolean rest, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+        checkArity(required, optional, rest, context, caller, self, args);
     }
 
     public static boolean testGeneration(int token, IRubyObject self) {
