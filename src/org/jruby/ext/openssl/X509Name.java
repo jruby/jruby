@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -149,11 +150,11 @@ public class X509Name extends RubyObject {
         types = new ArrayList<Object>();
         if (seq != null) {
             for (Enumeration enumRdn = seq.getObjects(); enumRdn.hasMoreElements();) {
-                Object element = enumRdn.nextElement();
+                ASN1Object element = (ASN1Object) enumRdn.nextElement();
                 if (element instanceof RDN) {
                     fromRDNElement(element);
                 } else if (element instanceof ASN1Sequence) {
-                   fromASN1Sequence(element);
+                    fromASN1Sequence(element);
                 } else {
                     fromASN1Set(element);
                 }

@@ -31,7 +31,7 @@ import java.security.MessageDigest;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
 
@@ -46,7 +46,7 @@ public class Name {
 
     public Name(X500Principal nm) {
         try {
-            this.name = X500Name.getInstance((ASN1Sequence)new ASN1InputStream(nm.getEncoded()).readObject());
+            this.name = X500Name.getInstance(nm.getEncoded());
         } catch(Exception e) {
             this.name = null;
         }
@@ -78,7 +78,7 @@ public class Name {
 
     public boolean isEqual(X500Principal oname) {
         try {
-            return new X500Principal(name.getEncoded()).equals(oname);
+            return new X500Principal(name.getEncoded(ASN1Encoding.DER)).equals(oname);
         } catch(Exception e) {
             return false;
         }

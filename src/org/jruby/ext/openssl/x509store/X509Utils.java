@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * Contains most of the functionality that beings with X509 in
@@ -240,14 +241,14 @@ public abstract class X509Utils {
             }
             if(sakid.getAuthorityCertIssuer() != null) {
                 GeneralName[] gens = sakid.getAuthorityCertIssuer().getNames();
-                org.bouncycastle.asn1.x500.X500Name nm = null;
+                X500Name nm = null;
                 for(int i=0;i<gens.length;i++) {
                     if(gens[i].getTagNo() == GeneralName.directoryName) {
                         ASN1Encodable nameTmp = gens[i].getName();
-                        if (nameTmp instanceof org.bouncycastle.asn1.x500.X500Name) {
-                            nm = (org.bouncycastle.asn1.x500.X500Name)nameTmp;
+                        if (nameTmp instanceof X500Name) {
+                            nm = (X500Name)nameTmp;
                         } else if (nameTmp instanceof ASN1Sequence) {
-                            nm = org.bouncycastle.asn1.x500.X500Name.getInstance((ASN1Sequence)nameTmp);
+                            nm = X500Name.getInstance((ASN1Sequence)nameTmp);
                         } else {
                             throw new RuntimeException("unknown name type in X509Utils: " + nameTmp);
                         }

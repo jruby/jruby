@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
-import org.bouncycastle.asn1.ASN1Encodable;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -143,21 +142,31 @@ public class Request extends RubyObject {
                 RubyFixnum typef = getRuntime().newFixnum(ASN1.idForClass(tv.getValue().getClass())); //TODO correct?
                 ((X509Name)subject).addEntry(oid,val,typef);
             }
-
         }
         
-        
-        // Attributes ::= SET OF Attribute
         ASN1Set in_attrs = req.getCertificationRequestInfo().getAttributes();
         try {
             for(Enumeration enm = in_attrs.getObjects();enm.hasMoreElements();) {
-                // Attribute ::= SEQUENCE { type, values SET SIZE(1..MAX) }
-                ASN1Sequence val = (ASN1Sequence)enm.nextElement();
-                ASN1ObjectIdentifier v0 = (ASN1ObjectIdentifier)val.getObjectAt(0);
-                ASN1Primitive v1 = (ASN1Primitive)val.getObjectAt(1);
-                IRubyObject a1 = getRuntime().newString(ASN1.getSymLookup(getRuntime()).get(v0));
-                IRubyObject a2 = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), RubyString.newString(getRuntime(), v1.getEncoded(ASN1Encoding.DER)));
-                add_attribute(Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Attribute", new IRubyObject[] { a1, a2 }));
+                Enumeration enm2;
+                Object next = enm.nextElement();
+                if (next instanceof ASN1Set) {
+                    enm2 = ((ASN1Set)next).getObjects();
+                    while(enm2.hasMoreElements()) {
+                        ASN1Sequence val = (ASN1Sequence)enm2.nextElement();
+                        ASN1ObjectIdentifier v0 = (ASN1ObjectIdentifier)val.getObjectAt(0);
+                        ASN1Primitive v1 = (ASN1Primitive)val.getObjectAt(1);
+                        IRubyObject a1 = getRuntime().newString(ASN1.getSymLookup(getRuntime()).get(v0));
+                        IRubyObject a2 = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), RubyString.newString(getRuntime(), v1.getEncoded(ASN1Encoding.DER)));
+                        add_attribute(Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Attribute", new IRubyObject[] { a1, a2 }));
+                    }
+                } else if (next instanceof ASN1Sequence) {
+                    ASN1Sequence val = (ASN1Sequence)next;
+                    ASN1ObjectIdentifier v0 = (ASN1ObjectIdentifier)val.getObjectAt(0);
+                    ASN1Primitive v1 = (ASN1Primitive)val.getObjectAt(1);
+                    IRubyObject a1 = getRuntime().newString(ASN1.getSymLookup(getRuntime()).get(v0));
+                    IRubyObject a2 = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), RubyString.newString(getRuntime(), v1.getEncoded(ASN1Encoding.DER)));
+                    add_attribute(Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Attribute", new IRubyObject[] { a1, a2 }));
+                }
             }
             this.valid = true;
             return this;
