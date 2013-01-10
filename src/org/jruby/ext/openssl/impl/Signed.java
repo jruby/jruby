@@ -223,7 +223,7 @@ public class Signed {
     private ASN1Set digestAlgorithmsToASN1Set() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
         for(AlgorithmIdentifier ai : mdAlgs) {
-            vector.add(ai.getAlgorithm());
+            vector.add(ai.toASN1Object());
         }
         return new DERSet(vector);
     }
