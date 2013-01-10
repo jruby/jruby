@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.description = File.read('README.txt').split(/\n{2,}/)[3...4].join("\n\n")
   s.rubyforge_project = 'jruby/jruby'
   s.files = FileList['[A-Z]*', 'lib/**/*', 'test/**/*'].to_a
-  s.add_dependency('bouncy-castle-java', '>= 1.5.0146.1')
+  s.add_dependency('bouncy-castle-java', '>= 1.5.0147')
   # s.changes = File.read('History.txt').split(/\n{2,}/)[0..1].join("\n\n")
   s.require_paths = ['lib/shared']
 end
