@@ -118,6 +118,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.jruby.ext.openssl.Cipher.CipherModule;
 import org.jruby.ext.openssl.impl.ASN1Registry;
@@ -309,8 +310,7 @@ public class PEMInputOutput {
             } else if (line.indexOf(BEF_G + PEM_STRING_PKCS8) != -1) {
                 try {
                     byte[] bytes = readBytes(_in, BEF_E + PEM_STRING_PKCS8);
-                    org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn = org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo.getInstance(
-                            (ASN1Sequence) new ASN1InputStream(bytes).readObject());
+                    EncryptedPrivateKeyInfo eIn = EncryptedPrivateKeyInfo.getInstance(bytes);
                     AlgorithmIdentifier algId = eIn.getEncryptionAlgorithm();
                     PrivateKey privKey;
                     if (algId.getAlgorithm().toString().equals("1.2.840.113549.1.5.13")) { // PBES2
@@ -327,24 +327,44 @@ public class PEMInputOutput {
         return null;
     }
 
-    private static PrivateKey derivePrivateKeyPBES1(org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
-            throws GeneralSecurityException {
-        PKCS12PBEParams pkcs12Params = PKCS12PBEParams.getInstance((ASN1Sequence) algId.getParameters());
-        PBEParameterSpec pbeParams = new PBEParameterSpec(pkcs12Params.getIV(), pkcs12Params.getIterations().intValue());
-
+    private static PrivateKey derivePrivateKeyPBES1(EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
+            throws GeneralSecurityException, IOException {
+        // From BC's PEMReader
+        PKCS12PBEParams pkcs12Params = PKCS12PBEParams.getInstance(algId.getParameters());
+        PBEKeySpec pbeSpec = new PBEKeySpec(password);
+        PBEParameterSpec pbeParams = new PBEParameterSpec(
+          pkcs12Params.getIV(), pkcs12Params.getIterations().intValue()
+        );
+        
+        //String algorithm = algId.getAlgorithm().getId();
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
         algorithm = (algorithm.split("-"))[0];
-        Cipher cipher = OpenSSLReal.getCipherBC(algorithm); // need to use BC for PBEParameterSpec.
 
-        SecretKeyFactory fact = OpenSSLReal.getSecretKeyFactoryBC(algorithm); // need to use BC for PKCS12PBEParams.
-        SecretKey key = fact.generateSecret(new PBEKeySpec(password));
+        SecretKeyFactory secKeyFact = SecretKeyFactory.getInstance(algorithm);
 
-        cipher.init(Cipher.UNWRAP_MODE, key, pbeParams);
-        // wrappedKeyAlgorithm is unknown ("")
-        return (PrivateKey) cipher.unwrap(eIn.getEncryptedData(), "", Cipher.PRIVATE_KEY);
+        Cipher cipher = Cipher.getInstance(algorithm);
+
+        cipher.init(Cipher.DECRYPT_MODE, secKeyFact.generateSecret(pbeSpec), pbeParams);
+
+        PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(
+          ASN1Primitive.fromByteArray(cipher.doFinal(eIn.getEncryptedData()))
+        );
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pInfo.getEncoded());
+
+        String keyFactAlg = ASN1Registry.o2a(pInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+        // TODO: Can we just set it to RSA as in derivePrivateKeyPBES2?
+        KeyFactory keyFact;
+        if (keyFactAlg.startsWith("dsa")) {
+          keyFact = KeyFactory.getInstance("DSA");
+        } else {
+          keyFact = KeyFactory.getInstance("RSA");
+        }
+
+        return keyFact.generatePrivate(keySpec);
     }
 
-    private static PrivateKey derivePrivateKeyPBES2(org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
+    private static PrivateKey derivePrivateKeyPBES2(EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
             throws GeneralSecurityException, InvalidCipherTextException {
         PBES2Parameters pbeParams = new PBES2Parameters((ASN1Sequence) algId.getParameters());
         CipherParameters cipherParams = extractPBES2CipherParams(password, pbeParams);
