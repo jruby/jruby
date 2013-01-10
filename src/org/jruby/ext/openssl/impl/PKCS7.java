@@ -48,6 +48,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -104,6 +105,12 @@ public class PKCS7 {
 
     private void initiateWith(Integer nid, ASN1Encodable content) throws PKCS7Exception {
         this.data = PKCS7Data.fromASN1(nid, content);
+    }
+
+    public static PKCS7 newEmpty() {
+        PKCS7 p7 = new PKCS7();
+        p7.data = new PKCS7DataData();
+        return p7;
     }
 
     /**

@@ -199,6 +199,9 @@ public class Signed {
         ASN1EncodableVector vector = new ASN1EncodableVector();
         vector.add(new ASN1Integer(version));
         vector.add(digestAlgorithmsToASN1Set());
+        if (contents == null) {
+            contents = PKCS7.newEmpty();
+        }
         vector.add(contents.asASN1());
         if (cert != null && cert.size() > 0) {
             if (cert.size() > 1) {
