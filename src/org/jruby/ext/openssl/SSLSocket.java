@@ -386,10 +386,7 @@ public class SSLSocket extends RubyObject {
             // if not blocking, raise EAGAIN
             if (!blocking && !ready) {
                 Ruby runtime = getRuntime();
-
-                throw runtime.is1_9() ?
-                        runtime.newErrnoEAGAINWritableError("Resource temporarily unavailable") :
-                        runtime.newErrnoEAGAINError("Resource temporarily unavailable");
+                throw runtime.newErrnoEAGAINError("Resource temporarily unavailable");
             }
 
             // otherwise, proceed as before
