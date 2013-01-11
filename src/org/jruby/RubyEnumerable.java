@@ -1566,7 +1566,7 @@ public class RubyEnumerable {
         return array;
     }
     
-    private static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
+    public static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         
         if (arg.isNil()) {
