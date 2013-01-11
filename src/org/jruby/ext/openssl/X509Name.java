@@ -55,6 +55,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.Name;
@@ -67,6 +68,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @SuppressWarnings("deprecation")
+@JRubyClass(name="X509Name", include="Comparable")
 public class X509Name extends RubyObject {
     private static final long serialVersionUID = -226196051911335103L;
 
@@ -99,6 +101,8 @@ public class X509Name extends RubyObject {
         hash.op_aset(runtime.getCurrentContext(), runtime.newString("domainComponent"),runtime.newFixnum(DERTags.IA5_STRING));
         hash.op_aset(runtime.getCurrentContext(), runtime.newString("emailAddress"),runtime.newFixnum(DERTags.IA5_STRING));
         cX509Name.setConstant("OBJECT_TYPE_TEMPLATE", hash);
+
+        cX509Name.includeModule(runtime.getComparable());
     }
 
     public static final int COMPAT = 0;
