@@ -405,15 +405,9 @@ public class X509CRL extends RubyObject {
             throw newX509CRLError(getRuntime(), ioe.getMessage());
         }
         try {
-            // X509V2CRLGenerator(generator) depends BC.
-            OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {
-
-                public void run() throws GeneralSecurityException {
-                    crl = generator.generate(((PKey) key).getPrivateKey(), "BC");
-                }
-            });
-        } catch (GeneralSecurityException gse) {
-            throw newX509CRLError(getRuntime(), gse.getMessage());
+            crl = generator.generate(((PKey) key).getPrivateKey());
+        } catch (Exception e) {
+            throw newX509CRLError(getRuntime(), e.getMessage());
         }
 
         try {

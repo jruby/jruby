@@ -430,15 +430,9 @@ public class X509Cert extends RubyObject {
             lazyInitializePublicKey();
         }
         try {
-            // X509V3CertificateGenerator depends BC.
-            OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {
-
-                public void run() throws GeneralSecurityException {
-                    cert = generator.generate(((PKey) key).getPrivateKey(), "BC");
-                }
-            });
-        } catch (GeneralSecurityException gse) {
-            throw newCertificateError(getRuntime(), gse.getMessage());
+            cert = generator.generate(((PKey) key).getPrivateKey());
+        } catch (Exception e) {
+            throw newCertificateError(getRuntime(), e.getMessage());
         }
         if (cert == null) {
             throw newCertificateError(runtime, (String) null);

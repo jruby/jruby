@@ -183,6 +183,7 @@ public class PKCS10Request {
 
     // statics 
 
+    // Have to obey some artificial constraints of the OpenSSL implementation. Stupid.
     public static boolean algorithmMismatch(String keyAlg, String digAlg, String digName) {
         if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) || 
            ("RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(digName)) ||
