@@ -35,7 +35,7 @@ final class JITHandle {
         return compilationFailed;
     }
 
-    final NativeInvoker compile(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
+    final NativeInvoker compile(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature, String methodName) {
         if (compilationFailed || (counter.incrementAndGet() < THRESHOLD && !"force".equalsIgnoreCase(Options.COMPILE_MODE.load()))) {
             return null;
         }
@@ -43,7 +43,7 @@ final class JITHandle {
         Class<? extends NativeInvoker> compiledClass;
         synchronized (this) {
             if (compiledClassRef == null || (compiledClass = compiledClassRef.get()) == null) {
-                compiledClass = newInvokerClass(jitSignature);
+                compiledClass = newInvokerClass(jitSignature, methodName);
                 if (compiledClass == null) {
                     compilationFailed = true;
                     return null;
@@ -61,7 +61,7 @@ final class JITHandle {
         }
     }
 
-    Class<? extends NativeInvoker> newInvokerClass(JITSignature jitSignature) {
+    Class<? extends NativeInvoker> newInvokerClass(JITSignature jitSignature, String methodName) {
 
         JITMethodGenerator generator = null;
         JITMethodGenerator[] generators = {
@@ -80,6 +80,6 @@ final class JITHandle {
             return null;
         }
 
-        return new AsmClassBuilder(generator, jitSignature).build();
+        return new AsmClassBuilder(generator, jitSignature, methodName).build();
     }
 }

@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallContext;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
-import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -16,6 +15,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
 public class DefaultMethod extends DynamicMethod implements CacheableMethod {
+    public static final boolean DEBUG = Options.FFI_COMPILE_DUMP.load() || Options.COMPILE_DUMP.load();
+    public static final boolean REIFY = Options.FFI_COMPILE_REIFY.load();
     protected final Signature signature;
     private final NativeInvoker defaultInvoker;
     private volatile NativeInvoker compiledInvoker;
@@ -70,7 +71,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
 
     private synchronized JITHandle getJITHandle() {
         if (jitHandle == null) {
-            jitHandle = JITCompiler.getInstance().getHandle(signature);
+            jitHandle = JITCompiler.getInstance().getHandle(signature, REIFY);
         }
         return jitHandle;
     }
@@ -81,8 +82,9 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
             return compiledInvoker;
         }
 
-        NativeInvoker invoker = getJITHandle().compile(getImplementationClass(), function, signature);
+        NativeInvoker invoker = getJITHandle().compile(getImplementationClass(), function, signature, getName());
         if (invoker != null) {
+            invoker.setName(getName());
             compiledInvoker = invoker;
             getImplementationClass().invalidateCacheDescendants();
             return compiledInvoker;
@@ -113,7 +115,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
 
     public final NativeInvoker forceCompilation() {
         NativeInvoker invoker = null;
-        while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(getImplementationClass(), function, signature)) == null)
+        while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(getImplementationClass(), function, signature, getName())) == null)
             ;
         return invoker;
     }
