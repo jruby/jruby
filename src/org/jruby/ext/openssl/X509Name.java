@@ -416,6 +416,10 @@ else
         return new org.bouncycastle.asn1.x509.X509Name(new Vector<Object>(oids),new Vector<Object>(values));
     }
 
+    X500Name getX500Name() {
+        return X500Name.getInstance(getRealName().toASN1Primitive());
+    }
+
     @Override
     @JRubyMethod(name="eql?")
     public IRubyObject eql_p(IRubyObject other) {
@@ -431,8 +435,7 @@ else
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        org.bouncycastle.asn1.x509.X509Name nm = new org.bouncycastle.asn1.x509.X509Name(new Vector<Object>(oids),new Vector<Object>(values));
-        Name name = new Name(X500Name.getInstance(nm.toASN1Primitive()));
+        Name name = new Name( getX500Name() );
         return getRuntime().newFixnum(name.hash());
     }
 

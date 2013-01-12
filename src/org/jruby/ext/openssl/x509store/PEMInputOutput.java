@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
 import javax.crypto.spec.DHParameterSpec;
 
 import org.jruby.ext.openssl.OpenSSLReal;
-import org.jruby.ext.openssl.PKCS10CertificationRequestExt;
+import org.jruby.ext.openssl.impl.PKCS10Request;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -94,6 +94,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -617,7 +618,7 @@ public class PEMInputOutput {
         }
         return null;
     }
-    public static PKCS10CertificationRequestExt readX509Request(Reader in, char[] f) throws IOException {
+    public static PKCS10Request readX509Request(Reader in, char[] f) throws IOException {
         BufferedReader _in = makeBuffered(in);
         String  line;
         while ((line = _in.readLine()) != null) {
@@ -822,9 +823,9 @@ public class PEMInputOutput {
         out.newLine();
         out.flush();
     }
-    public static void writeX509Request(Writer _out, PKCS10CertificationRequestExt obj) throws IOException {
+    public static void writeX509Request(Writer _out, PKCS10Request obj) throws IOException {
         BufferedWriter out = makeBuffered(_out);
-        byte[] encoding = getEncoded(obj);
+        byte[] encoding = getEncoded(obj.toASN1Structure());
         out.write(BEF_G + PEM_STRING_X509_REQ + AFT);
         out.newLine();
         writeEncoded(out,encoding);
@@ -1213,7 +1214,7 @@ public class PEMInputOutput {
      * @return the certificate request.
      * @throws IOException if an I/O error occured
      */
-    private static PKCS10CertificationRequestExt readCertificateRequest(BufferedReader in, String endMarker) throws IOException {
+    private static PKCS10Request readCertificateRequest(BufferedReader in, String endMarker) throws IOException {
         String line;
         StringBuilder buf = new StringBuilder();
 
@@ -1229,7 +1230,7 @@ public class PEMInputOutput {
         }
 
         try {
-            return new PKCS10CertificationRequestExt(Base64.decode(buf.toString()));
+            return new PKCS10Request(Base64.decode(buf.toString()));
         } catch (Exception e) {
             throw new IOException("problem parsing cert: " + e.toString());
         }
