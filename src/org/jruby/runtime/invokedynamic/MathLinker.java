@@ -286,7 +286,7 @@ public class MathLinker {
     
     public static IRubyObject floatOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, double value) throws Throwable {
         String operator = site.name();
-        String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
+        String opMethod = MethodIndex.getFastFloatOpsMethod(operator);
         String name = "float_" + opMethod;
         MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         MethodHandle target = null;

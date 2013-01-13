@@ -4570,8 +4570,8 @@ public final class Ruby {
     private final AtomicInteger warningCount = new AtomicInteger();
     
     private Invalidator 
-            fixnumInvalidator = OptoFactory.newConstantInvalidator(),
-            floatInvalidator = OptoFactory.newConstantInvalidator();
+            fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
+            floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
     
     private volatile boolean booting = true;
