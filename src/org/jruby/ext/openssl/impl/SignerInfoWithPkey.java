@@ -53,14 +53,13 @@ import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.pkcs.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
 /**
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class SignerInfoWithPkey implements ASN1Encodable {
     private ASN1Integer              version;
     private IssuerAndSerialNumber   issuerAndSerialNumber;
@@ -178,13 +177,9 @@ public class SignerInfoWithPkey implements ASN1Encodable {
 
         version = new ASN1Integer(1);
 
-        try {
-            X509Name issuer = X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(x509.getIssuerX500Principal().getEncoded())).readObject());
-            BigInteger serial = x509.getSerialNumber();
-            issuerAndSerialNumber = new IssuerAndSerialNumber(issuer, serial);
-        } catch(IOException e) {
-            throw new PKCS7Exception(-1, -1, e);
-        }
+        X500Name issuer = X500Name.getInstance(x509.getIssuerX500Principal().getEncoded());
+        BigInteger serial = x509.getSerialNumber();
+        issuerAndSerialNumber = new IssuerAndSerialNumber(issuer, serial);
 
         this.pkey = pkey;
         

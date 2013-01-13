@@ -80,7 +80,6 @@ import org.jruby.util.ByteList;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class ASN1 {
     private static Map<Ruby, Map<String, ASN1ObjectIdentifier>> SYM_TO_OID = new IdentityHashMap<Ruby, Map<String, ASN1ObjectIdentifier>>();
     private static Map<Ruby, Map<ASN1ObjectIdentifier, String>> OID_TO_SYM = new IdentityHashMap<Ruby, Map<ASN1ObjectIdentifier, String>>();

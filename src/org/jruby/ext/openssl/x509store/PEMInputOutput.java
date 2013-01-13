@@ -57,6 +57,7 @@ import org.jruby.ext.openssl.OpenSSLReal;
 import org.jruby.ext.openssl.impl.PKCS10Request;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
@@ -77,8 +78,6 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
-import org.bouncycastle.asn1.pkcs.RSAPrivateKeyStructure;
-import org.bouncycastle.asn1.x509.RSAPublicKeyStructure;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -130,7 +129,6 @@ import org.jruby.ext.openssl.impl.CipherSpec;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class PEMInputOutput {
     public static final String BEF = "-----";
     public static final String AFT = "-----";
@@ -302,9 +300,9 @@ public class PEMInputOutput {
             } else if (line.indexOf(BEF_G + PEM_STRING_PKCS8INF) != -1) {
                 try {
                     byte[] bytes = readBytes(_in, BEF_E + PEM_STRING_PKCS8INF);
-                    PrivateKeyInfo info = new PrivateKeyInfo((ASN1Sequence) new ASN1InputStream(bytes).readObject());
+                    PrivateKeyInfo info = PrivateKeyInfo.getInstance(bytes);
                     String type = getPrivateKeyTypeFromObjectId(info.getPrivateKeyAlgorithm().getAlgorithm());
-                    return org.jruby.ext.openssl.impl.PKey.readPrivateKey(info.getPrivateKey().getEncoded(ASN1Encoding.DER), type);
+                    return org.jruby.ext.openssl.impl.PKey.readPrivateKey(((ASN1Object) info.parsePrivateKey()).getEncoded(ASN1Encoding.DER), type);
                 } catch (Exception e) {
                     throw new IOException("problem creating private key: " + e.toString());
                 }
@@ -849,7 +847,7 @@ public class PEMInputOutput {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ASN1OutputStream aOut = new ASN1OutputStream(bOut);
 
-        DSAParameter p = DSAParameter.getInstance(info.getAlgorithmId().getParameters());
+        DSAParameter p = DSAParameter.getInstance(info.getPrivateKeyAlgorithm().getParameters());
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(new ASN1Integer(0));
         v.add(new ASN1Integer(p.getP()));
@@ -875,19 +873,13 @@ public class PEMInputOutput {
     public static void writeRSAPrivateKey(Writer _out, RSAPrivateCrtKey obj, CipherSpec cipher, char[] passwd) throws IOException {
         assert (obj != null);
         BufferedWriter out = makeBuffered(_out);
-        RSAPrivateKeyStructure keyStruct = new RSAPrivateKeyStructure(obj.getModulus(), obj.getPublicExponent(), obj.getPrivateExponent(), obj.getPrimeP(),
+        org.bouncycastle.asn1.pkcs.RSAPrivateKey keyStruct = new org.bouncycastle.asn1.pkcs.RSAPrivateKey(obj.getModulus(), obj.getPublicExponent(), obj.getPrivateExponent(), obj.getPrimeP(),
                 obj.getPrimeQ(), obj.getPrimeExponentP(), obj.getPrimeExponentQ(), obj.getCrtCoefficient());
 
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = new ASN1OutputStream(bOut);
-        aOut.writeObject(keyStruct);
-        aOut.close();
-        byte[] encoding = bOut.toByteArray();
-
         if (cipher != null && passwd != null) {
-            writePemEncrypted(out, PEM_STRING_RSA, encoding, cipher, passwd);
+            writePemEncrypted(out, PEM_STRING_RSA, keyStruct.getEncoded(), cipher, passwd);
         } else {
-            writePemPlain(out, PEM_STRING_RSA, encoding);
+            writePemPlain(out, PEM_STRING_RSA, keyStruct.getEncoded());
         }
     }
 
@@ -985,7 +977,7 @@ public class PEMInputOutput {
     private static RSAPublicKey readRSAPublicKey(BufferedReader in, String endMarker) throws IOException {
         Object asnObject = new ASN1InputStream(readBytes(in, endMarker)).readObject();
         ASN1Sequence sequence = (ASN1Sequence) asnObject;
-        RSAPublicKeyStructure rsaPubStructure = new RSAPublicKeyStructure(sequence);
+        org.bouncycastle.asn1.pkcs.RSAPublicKey rsaPubStructure = org.bouncycastle.asn1.pkcs.RSAPublicKey.getInstance(sequence);
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(
                     rsaPubStructure.getModulus(), 
                     rsaPubStructure.getPublicExponent());

@@ -39,7 +39,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
@@ -47,7 +47,6 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class RecipInfo {
     private int version;
     private IssuerAndSerialNumber issuerAndSerial;
@@ -64,16 +63,12 @@ public class RecipInfo {
      */
     public void set(X509AuxCertificate cert) throws PKCS7Exception {
         version = 0;
-        try {
-            X509Name issuer = X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(cert.getIssuerX500Principal().getEncoded())).readObject());
-            BigInteger serial = cert.getSerialNumber();
-            issuerAndSerial = new IssuerAndSerialNumber(issuer, serial);
-            String algo = addEncryptionIfNeeded(cert.getPublicKey().getAlgorithm());
-            keyEncAlgor = new AlgorithmIdentifier(ASN1Registry.sym2oid(algo));
-            this.cert = cert;
-        } catch(IOException e) {
-            throw new PKCS7Exception(-1, -1, e);
-        }
+        X500Name issuer = X500Name.getInstance(cert.getIssuerX500Principal().getEncoded());
+        BigInteger serial = cert.getSerialNumber();
+        issuerAndSerial = new IssuerAndSerialNumber(issuer, serial);
+        String algo = addEncryptionIfNeeded(cert.getPublicKey().getAlgorithm());
+        keyEncAlgor = new AlgorithmIdentifier(ASN1Registry.sym2oid(algo));
+        this.cert = cert;
     }
 
     private String addEncryptionIfNeeded(String input) {
@@ -112,7 +107,7 @@ public class RecipInfo {
 
     @Override
     public String toString() {
-        return "#<Recipient version="+version+" issuerAndSerial=["+issuerAndSerial.getName()+","+issuerAndSerial.getCertificateSerialNumber()+"] keyEncAlgor="+ASN1Registry.o2a(keyEncAlgor.getObjectId())+" encKey="+encKey+">";
+        return "#<Recipient version="+version+" issuerAndSerial=["+issuerAndSerial.getName()+","+issuerAndSerial.getCertificateSerialNumber()+"] keyEncAlgor="+ASN1Registry.o2a(keyEncAlgor.getAlgorithm())+" encKey="+encKey+">";
     }
 
     /**

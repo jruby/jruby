@@ -77,7 +77,6 @@ import org.jruby.ext.openssl.x509store.X509Utils;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class PKCS7 {
     // OpenSSL behavior: PKCS#7 ObjectId for "ITU-T" + "0"
     private static final String EMPTY_PKCS7_OID = "0.0";
@@ -249,7 +248,7 @@ public class PKCS7 {
             throw new PKCS7Exception(F_PKCS7_SIGNATUREVERIFY, R_WRONG_PKCS7_TYPE);
         }
 
-        int md_type = ASN1Registry.obj2nid(si.getDigestAlgorithm().getObjectId()).intValue();
+        int md_type = ASN1Registry.obj2nid(si.getDigestAlgorithm().getAlgorithm()).intValue();
         BIO btmp = bio;
         MessageDigest mdc = null;
 
@@ -994,7 +993,7 @@ public class PKCS7 {
                 if(si.getPkey() == null) {
                     continue;
                 }
-                int j = ASN1Registry.obj2nid(si.getDigestAlgorithm().getObjectId());
+                int j = ASN1Registry.obj2nid(si.getDigestAlgorithm().getAlgorithm());
                 btmp = bio;
                 MessageDigest[] _mdc = new MessageDigest[] {mdc};
                 btmp = findDigest(_mdc, btmp, j);
@@ -1042,7 +1041,7 @@ public class PKCS7 {
                 }
             }
         } else if(i == ASN1Registry.NID_pkcs7_digest) {
-            int nid = ASN1Registry.obj2nid(getDigest().getMd().getObjectId());
+            int nid = ASN1Registry.obj2nid(getDigest().getMd().getAlgorithm());
             MessageDigest[] _mdc = new MessageDigest[] {mdc};
             bio = findDigest(_mdc, bio, nid);
             mdc = _mdc[0];

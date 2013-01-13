@@ -75,7 +75,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class X509Name extends RubyObject {
     private static final long serialVersionUID = -226196051911335103L;
 
@@ -138,12 +137,6 @@ public class X509Name extends RubyObject {
         return name;
     }
     
-    public static X509Name create(Ruby runtime, org.bouncycastle.asn1.x509.X509Name realName) {
-        X509Name name = new X509Name(runtime, Utils.getClassFromPath(runtime, "OpenSSL::X509::Name"));
-        name.fromASN1Sequence((ASN1Sequence)realName.toASN1Primitive());
-        return name;
-    }
-
     void fromASN1Sequence(ASN1Sequence seq) {
         oids = new ArrayList<Object>();
         values = new ArrayList<Object>();

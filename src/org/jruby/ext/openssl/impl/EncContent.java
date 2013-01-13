@@ -44,7 +44,6 @@ import org.jruby.util.ByteList;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class EncContent {
     /**
      * Describe contentType here.

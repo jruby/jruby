@@ -53,7 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class NetscapeSPKI extends RubyObject {
     private static final long serialVersionUID = 3211242351810109432L;
 

@@ -28,7 +28,8 @@
 package org.jruby.ext.openssl.impl;
 
 import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateParsingException;
+import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,7 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
@@ -223,7 +224,7 @@ public class Signed {
     private ASN1Set digestAlgorithmsToASN1Set() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
         for(AlgorithmIdentifier ai : mdAlgs) {
-            vector.add(ai.toASN1Object());
+            vector.add(ai.toASN1Primitive());
         }
         return new DERSet(vector);
     }
@@ -339,11 +340,13 @@ public class Signed {
     }
 
     private static X509AuxCertificate certificateFromASN1(ASN1Encodable current) throws PKCS7Exception {
-        X509CertificateStructure struct = X509CertificateStructure.getInstance(current);
+        Certificate struct = Certificate.getInstance(current);
         try {
-            return new X509AuxCertificate(new X509CertificateObject(struct));
-        } catch (CertificateParsingException cpe) {
-            throw new PKCS7Exception(PKCS7.F_B64_READ_PKCS7, PKCS7.R_CERTIFICATE_VERIFY_ERROR, cpe);
+            return new X509AuxCertificate(struct);
+        } catch (IOException e) {
+            throw new PKCS7Exception(PKCS7.F_B64_READ_PKCS7, PKCS7.R_CERTIFICATE_VERIFY_ERROR, e);
+        } catch (CertificateException e) {
+            throw new PKCS7Exception(PKCS7.F_B64_READ_PKCS7, PKCS7.R_CERTIFICATE_VERIFY_ERROR, e);
         }
     }
 

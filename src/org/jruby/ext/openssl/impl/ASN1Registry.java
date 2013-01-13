@@ -35,7 +35,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class ASN1Registry {
     @SuppressWarnings("unchecked")
     private static Map<String, ASN1ObjectIdentifier> SYM_TO_OID = new HashMap<String, ASN1ObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);

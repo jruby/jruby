@@ -40,7 +40,6 @@ import org.bouncycastle.asn1.x500.X500Name;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class Name {
     public X500Name name;
 

@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl.x509store;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 
 import java.security.Principal;
@@ -42,6 +43,8 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import org.bouncycastle.asn1.x509.Certificate;
 
 import java.util.Date;
 import java.util.Collection;
@@ -60,7 +63,6 @@ import org.bouncycastle.asn1.DEROctetString;
  * 
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class X509AuxCertificate extends X509Certificate {
     private static final long serialVersionUID = -909543379295427515L;
     private final X509Certificate wrap;
@@ -69,6 +71,14 @@ public class X509AuxCertificate extends X509Certificate {
     private boolean valid = false;
     private int ex_flags = 0;
     
+    public X509AuxCertificate(Certificate wrap) throws IOException, CertificateException {
+        super();
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        ByteArrayInputStream bis = new ByteArrayInputStream(wrap.getEncoded());
+        this.wrap = (X509Certificate) cf.generateCertificate(bis);
+        this.aux = null;
+    }
+
     public X509AuxCertificate(X509Certificate wrap) {
         this(wrap,null);
     }
