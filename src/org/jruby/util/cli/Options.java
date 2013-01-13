@@ -63,38 +63,60 @@ public class Options {
 
     private static final boolean INVOKEDYNAMIC_DEFAULT;
     static {
-        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotspot =
-                vmName.contains("hotspot") ||
-                        vmName.toLowerCase().contains("openjdk");
-
-        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
         String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        int version;
-        try {
-            version = Integer.parseInt(vmVersionString.substring(0, 2));
-        } catch (NumberFormatException nfe) {
-            version = -1;
-        }
+        int java7 = new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7"));
 
-        if (isHotspot) {
-            if (version < 24) {
-                // if on HotSpot version prior to 24, off by default unless turned on
-                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                INVOKEDYNAMIC_DEFAULT = false;
+        if (java7 > 0) {        // Greater than 1.7
+            INVOKEDYNAMIC_DEFAULT = true;
+        } else if (java7 < 0) { // Less than 1.7
+            INVOKEDYNAMIC_DEFAULT = false;
+        } else {                // Java 1.7
+            // Invokedymanic is in Java 1.7 specification, but some
+            // implementations have issues. Try to avoid known issues.
+            String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
+
+            // Hotspot (aka OpenJDK) needs to be 24 or better
+            if (vmName.contains("hotspot") || vmName.contains("openjdk")) {
+                String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+                int version;
+                try {
+                    version = Integer.parseInt(vmVersionString.substring(0, 2));
+                } catch (NumberFormatException nfe) {
+                    version = -1;
+                }
+                if (version < 24) {
+                    // if on HotSpot version prior to 24, off by default
+                    // due to the lack of 100% working OpenJDK7 indy support
+                    INVOKEDYNAMIC_DEFAULT = false;
+                } else {
+                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                    INVOKEDYNAMIC_DEFAULT = true;
+                }
+            } else if (vmName.contains("ibm j9 vm")) {
+                // IBM J9 VM
+                String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+                int dash = runtimeVersion.indexOf('-');
+                int dateStamp;
+                try {
+                    // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                    dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+                } catch (Exception e) {
+                    dateStamp = -1;
+                }
+                // The initial release and first few service releases had a crash issue.
+                // Narrow range so unexpected data will tend to default to invokedynamic on.
+                if (dateStamp > 20110731 && dateStamp < 20121101) {
+                    INVOKEDYNAMIC_DEFAULT = false;
+                } else {        // SR4 and beyond include APAR IV34500: crash fix
+                    INVOKEDYNAMIC_DEFAULT = true;
+                }
             } else {
-                // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                // Java 1.7 and unrecognized VM: go with the specification: indy on
                 INVOKEDYNAMIC_DEFAULT = true;
             }
-        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-            // if not on HotSpot, on if specification version supports indy
-            INVOKEDYNAMIC_DEFAULT = true;
-        } else {
-            // on only if forced
-            INVOKEDYNAMIC_DEFAULT = false;
         }
     }
-    
+
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output in the order they are constructed here.
     public static final Option<String> COMPILE_MODE = string(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF", "OFFIR"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
