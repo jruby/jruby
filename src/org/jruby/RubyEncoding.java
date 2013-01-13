@@ -474,7 +474,7 @@ public class RubyEncoding extends RubyObject {
         Ruby runtime = recv.getRuntime();
         EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
-            recv.getRuntime().newArgumentError("default_internal can not be nil");
+            throw recv.getRuntime().newArgumentError("default_internal can not be nil");
         }
         recv.getRuntime().setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
         return encoding;
