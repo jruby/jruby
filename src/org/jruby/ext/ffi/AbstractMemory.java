@@ -2013,6 +2013,11 @@ abstract public class AbstractMemory extends MemoryObject {
         return order(context.runtime, Util.parseByteOrder(context.runtime, byte_order));
     }
 
+    @JRubyMethod(name = "to_ptr")
+    public final IRubyObject to_ptr(ThreadContext context) {
+        return this;
+    }
+
     abstract public AbstractMemory order(Ruby runtime, ByteOrder order);
     abstract protected AbstractMemory slice(Ruby runtime, long offset);
     abstract protected AbstractMemory slice(Ruby runtime, long offset, long size);
