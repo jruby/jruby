@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008-2009 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
