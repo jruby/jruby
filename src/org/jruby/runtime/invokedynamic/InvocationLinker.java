@@ -31,7 +31,6 @@ package org.jruby.runtime.invokedynamic;
 import java.lang.invoke.*;
 
 import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -39,10 +38,6 @@ import java.util.Arrays;
 import com.headius.invokebinder.Binder;
 import org.jruby.*;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
-import org.jruby.ext.ffi.jffi.JITNativeInvoker;
-import org.jruby.ext.ffi.jffi.NativeInvoker;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -61,11 +56,16 @@ import org.jruby.util.log.LoggerFactory;
 
 import static java.lang.invoke.MethodType.methodType;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.runtime.Arity;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
-import static org.jruby.util.CodegenUtils.p;
 
 /**
  * Bootstrapping logic for invokedynamic-based invocation.
@@ -1329,32 +1329,31 @@ public class InvocationLinker {
         }
 
         int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
-        MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
+        Signature fullSig = site.fullSignature();
+        Signature target;
 
-        int[] permute;
-        MethodType convert;
         if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class) {
             if (nativeSig[nativeSig.length - 1] == Block.class) {
-                convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
-                permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
+                target = isStatic ?
+                        fullSig.permute("context", "self", "arg*", "block") :
+                        fullSig.permute("self", "context", "arg*", "block");
             } else {
-                convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
-                permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
+                target = isStatic ?
+                        fullSig.permute("context", "self", "arg*") :
+                        fullSig.permute("self", "context", "arg*");
             }
         } else {
             if (nativeSig.length > 0 && nativeSig[nativeSig.length - 1] == Block.class) {
-                convert = TARGET_SELF_ARGS_BLOCK[argCount];
-                permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
+                target = fullSig.permute("self", "arg*", "block");
             } else {
-                convert = TARGET_SELF_ARGS[argCount];
-                permute = SELF_ARGS_PERMUTES[argCount];
+                target = fullSig.permute("self", "arg*");
             }
         }
 
-        nativeTarget = explicitCastArguments(nativeTarget, convert);
-        nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
+        nativeTarget = explicitCastArguments(nativeTarget, target.methodType());
+        nativeTarget = permuteArguments(nativeTarget, fullSig.methodType(), fullSig.to(target));
 
-        nativeTarget = wrapWithFraming(method, name, nativeTarget, null, argCount);
+        nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, null, argCount);
 
         method.setHandle(nativeTarget);
 
@@ -1473,13 +1472,14 @@ public class InvocationLinker {
 
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());
 
+            Signature fullSig = site.fullSignature();
             nativeTarget = Binder
-                    .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)])
-                    .permute(TC_SELF_ARGS_BLOCK_PERMUTES[Math.abs(argCount)])
+                    .from(fullSig.methodType())
+                    .permute(fullSig.to("context", "self", "arg*", "block"))
                     .insert(0, scriptObject)
                     .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
 
-            nativeTarget = wrapWithFraming(method, name, nativeTarget, scope, argCount);
+            nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, scope, argCount);
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1488,11 +1488,11 @@ public class InvocationLinker {
         }
     }
 
-    private static MethodHandle wrapWithFraming(DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope, int argCount) {
-        MethodHandle framePre = getFramePre(method, name, argCount, scope);
+    private static MethodHandle wrapWithFraming(Signature signature, DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope, int argCount) {
+        MethodHandle framePre = getFramePre(signature, method, name, argCount, scope);
 
         if (framePre != null) {
-            MethodHandle framePost = getFramePost(method, argCount);
+            MethodHandle framePost = getFramePost(signature, method, argCount);
 
             // break, return, redo handling
             CallConfiguration callConfig = method.getCallConfig();
@@ -1555,15 +1555,17 @@ public class InvocationLinker {
         throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
     }
 
-    private static MethodHandle getFramePre(DynamicMethod method, String name, int argCount, StaticScope scope) {
+    private static MethodHandle getFramePre(Signature signature, DynamicMethod method, String name, int argCount, StaticScope scope) {
         MethodHandle framePre = null;
+        Signature inbound = signature.changeReturn(void.class);
+        final Binder binder = Binder
+                           .from(inbound.methodType());
 
         switch (method.getCallConfig()) {
             case FrameFullScopeFull:
                 // before logic
-                framePre = Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                framePre = binder
+                        .permute(inbound.to("context", "self", "block"))
                         .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .insert(5, new Class[]{StaticScope.class}, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope");
@@ -1572,9 +1574,8 @@ public class InvocationLinker {
 
             case FrameFullScopeDummy:
                 // before logic
-                framePre = Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                framePre = binder
+                        .permute(inbound.to("context", "self", "block"))
                         .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .insert(5, new Class[]{StaticScope.class}, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope");
@@ -1583,9 +1584,8 @@ public class InvocationLinker {
 
             case FrameFullScopeNone:
                 // before logic
-                framePre = Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                framePre = binder
+                        .permute(inbound.to("context", "self", "block"))
                         .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameOnly");
 
@@ -1593,9 +1593,8 @@ public class InvocationLinker {
 
             case FrameNoneScopeFull:
                 // before logic
-                framePre = Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                framePre = binder
+                        .permute(inbound.to("context"))
                         .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
                         .invokeVirtualQuiet(lookup(), "preMethodScopeOnly");
 
@@ -1603,9 +1602,8 @@ public class InvocationLinker {
 
             case FrameNoneScopeDummy:
                 // before logic
-                framePre = Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                framePre = binder
+                        .permute(inbound.to("context"))
                         .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
                         .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope");
 
@@ -1616,41 +1614,36 @@ public class InvocationLinker {
         return framePre;
     }
 
-    private static MethodHandle getFramePost(DynamicMethod method, int argCount) {
+    private static MethodHandle getFramePost(Signature signature, DynamicMethod method, int argCount) {
+        Signature inbound = signature.changeReturn(void.class);
+        Binder binder = Binder
+                               .from(inbound.methodType())
+                               .permute(inbound.to("context"));
+        
         switch (method.getCallConfig()) {
             case FrameFullScopeFull:
                 // finally logic
-                return Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                return binder
                         .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
 
             case FrameFullScopeDummy:
                 // finally logic
-                return Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                return binder
                         .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
 
             case FrameFullScopeNone:
                 // finally logic
-                return Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                return binder
                         .invokeVirtualQuiet(lookup(), "postMethodFrameOnly");
 
             case FrameNoneScopeFull:
                 // finally logic
-                return Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                return binder
                         .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
 
             case FrameNoneScopeDummy:
                 // finally logic
-                return Binder
-                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
-                        .permute(0)
+                return binder
                         .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
 
         }
@@ -2030,209 +2023,5 @@ public class InvocationLinker {
         FAIL_2_B,
         FAIL_3_B,
         FAIL_N_B
-    };
-    
-    ////////////////////////////////////////////////////////////////////////////
-    // Support method types and permutations
-    ////////////////////////////////////////////////////////////////////////////
-    
-    private static final MethodType STANDARD_NATIVE_TYPE = methodType(
-            IRubyObject.class, // return value
-            ThreadContext.class, //context
-            IRubyObject.class, // caller
-            IRubyObject.class // self
-            );
-    private static final MethodType STANDARD_NATIVE_TYPE_1ARG = STANDARD_NATIVE_TYPE.appendParameterTypes(IRubyObject.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_2ARG = STANDARD_NATIVE_TYPE_1ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_3ARG = STANDARD_NATIVE_TYPE_2ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_NARG = STANDARD_NATIVE_TYPE.appendParameterTypes(IRubyObject[].class);
-    private static final MethodType[] STANDARD_NATIVE_TYPES = {
-        STANDARD_NATIVE_TYPE,
-        STANDARD_NATIVE_TYPE_1ARG,
-        STANDARD_NATIVE_TYPE_2ARG,
-        STANDARD_NATIVE_TYPE_3ARG,
-        STANDARD_NATIVE_TYPE_NARG,
-    };
-    
-    private static final MethodType STANDARD_NATIVE_TYPE_BLOCK = STANDARD_NATIVE_TYPE.appendParameterTypes(Block.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_1ARG_BLOCK = STANDARD_NATIVE_TYPE_1ARG.appendParameterTypes(Block.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_2ARG_BLOCK = STANDARD_NATIVE_TYPE_2ARG.appendParameterTypes(Block.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_3ARG_BLOCK = STANDARD_NATIVE_TYPE_3ARG.appendParameterTypes(Block.class);
-    private static final MethodType STANDARD_NATIVE_TYPE_NARG_BLOCK = STANDARD_NATIVE_TYPE_NARG.appendParameterTypes(Block.class);
-    private static final MethodType[] STANDARD_NATIVE_TYPES_BLOCK = {
-        STANDARD_NATIVE_TYPE_BLOCK,
-        STANDARD_NATIVE_TYPE_1ARG_BLOCK,
-        STANDARD_NATIVE_TYPE_2ARG_BLOCK,
-        STANDARD_NATIVE_TYPE_3ARG_BLOCK,
-        STANDARD_NATIVE_TYPE_NARG_BLOCK,
-    };
-    
-    private static final MethodType TARGET_SELF = methodType(
-            IRubyObject.class, // return value
-            IRubyObject.class // self
-            );
-    private static final MethodType TARGET_SELF_1ARG = TARGET_SELF.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_2ARG = TARGET_SELF_1ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_3ARG = TARGET_SELF_2ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_NARG = TARGET_SELF.appendParameterTypes(IRubyObject[].class);
-    private static final MethodType[] TARGET_SELF_ARGS = {
-        TARGET_SELF,
-        TARGET_SELF_1ARG,
-        TARGET_SELF_2ARG,
-        TARGET_SELF_3ARG,
-        TARGET_SELF_NARG,
-    };
-    
-    private static final MethodType TARGET_SELF_BLOCK = TARGET_SELF.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_1ARG_BLOCK = TARGET_SELF_1ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_2ARG_BLOCK = TARGET_SELF_2ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_3ARG_BLOCK = TARGET_SELF_3ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_NARG_BLOCK = TARGET_SELF_NARG.appendParameterTypes(Block.class);
-    private static final MethodType[] TARGET_SELF_ARGS_BLOCK = {
-        TARGET_SELF_BLOCK,
-        TARGET_SELF_1ARG_BLOCK,
-        TARGET_SELF_2ARG_BLOCK,
-        TARGET_SELF_3ARG_BLOCK,
-        TARGET_SELF_NARG_BLOCK,
-    };
-    
-    private static final MethodType TARGET_SELF_TC = TARGET_SELF.appendParameterTypes(ThreadContext.class);
-    private static final MethodType TARGET_SELF_TC_1ARG = TARGET_SELF_TC.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_TC_2ARG = TARGET_SELF_TC_1ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_TC_3ARG = TARGET_SELF_TC_2ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_SELF_TC_NARG = TARGET_SELF_TC.appendParameterTypes(IRubyObject[].class);
-    private static final MethodType[] TARGET_SELF_TC_ARGS = {
-        TARGET_SELF_TC,
-        TARGET_SELF_TC_1ARG,
-        TARGET_SELF_TC_2ARG,
-        TARGET_SELF_TC_3ARG,
-        TARGET_SELF_TC_NARG,
-    };
-    
-    private static final MethodType TARGET_SELF_TC_BLOCK = TARGET_SELF_TC.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_TC_1ARG_BLOCK = TARGET_SELF_TC_1ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_TC_2ARG_BLOCK = TARGET_SELF_TC_2ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_TC_3ARG_BLOCK = TARGET_SELF_TC_3ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_SELF_TC_NARG_BLOCK = TARGET_SELF_TC_NARG.appendParameterTypes(Block.class);
-    private static final MethodType[] TARGET_SELF_TC_ARGS_BLOCK = {
-        TARGET_SELF_TC_BLOCK,
-        TARGET_SELF_TC_1ARG_BLOCK,
-        TARGET_SELF_TC_2ARG_BLOCK,
-        TARGET_SELF_TC_3ARG_BLOCK,
-        TARGET_SELF_TC_NARG_BLOCK,
-    };
-    
-    private static final MethodType TARGET_TC_SELF = methodType(
-            IRubyObject.class, // return value
-            ThreadContext.class, //context
-            IRubyObject.class // self
-            );
-    private static final MethodType TARGET_TC_SELF_1ARG = TARGET_TC_SELF.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_TC_SELF_2ARG = TARGET_TC_SELF_1ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_TC_SELF_3ARG = TARGET_TC_SELF_2ARG.appendParameterTypes(IRubyObject.class);
-    private static final MethodType TARGET_TC_SELF_NARG = TARGET_TC_SELF.appendParameterTypes(IRubyObject[].class);
-    private static final MethodType[] TARGET_TC_SELF_ARGS = {
-        TARGET_TC_SELF,
-        TARGET_TC_SELF_1ARG,
-        TARGET_TC_SELF_2ARG,
-        TARGET_TC_SELF_3ARG,
-        TARGET_TC_SELF_NARG,
-    };
-    
-    private static final MethodType TARGET_TC_SELF_BLOCK = TARGET_TC_SELF.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_TC_SELF_1ARG_BLOCK = TARGET_TC_SELF_1ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_TC_SELF_2ARG_BLOCK = TARGET_TC_SELF_2ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_TC_SELF_3ARG_BLOCK = TARGET_TC_SELF_3ARG.appendParameterTypes(Block.class);
-    private static final MethodType TARGET_TC_SELF_NARG_BLOCK = TARGET_TC_SELF_NARG.appendParameterTypes(Block.class);
-    private static final MethodType[] TARGET_TC_SELF_ARGS_BLOCK = {
-        TARGET_TC_SELF_BLOCK,
-        TARGET_TC_SELF_1ARG_BLOCK,
-        TARGET_TC_SELF_2ARG_BLOCK,
-        TARGET_TC_SELF_3ARG_BLOCK,
-        TARGET_TC_SELF_NARG_BLOCK
-    };
-    
-    private static final int[] SELF_TC_PERMUTE = {2, 0};
-    private static final int[] SELF_TC_1ARG_PERMUTE = {2, 0, 3};
-    private static final int[] SELF_TC_2ARG_PERMUTE = {2, 0, 3, 4};
-    private static final int[] SELF_TC_3ARG_PERMUTE = {2, 0, 3, 4, 5};
-    private static final int[] SELF_TC_NARG_PERMUTE = {2, 0, 3};
-    private static final int[][] SELF_TC_ARGS_PERMUTES = {
-        SELF_TC_PERMUTE,
-        SELF_TC_1ARG_PERMUTE,
-        SELF_TC_2ARG_PERMUTE,
-        SELF_TC_3ARG_PERMUTE,
-        SELF_TC_NARG_PERMUTE
-    };
-    private static final int[] SELF_PERMUTE = {2};
-    private static final int[] SELF_1ARG_PERMUTE = {2, 3};
-    private static final int[] SELF_2ARG_PERMUTE = {2, 3, 4};
-    private static final int[] SELF_3ARG_PERMUTE = {2, 3, 4, 5};
-    private static final int[] SELF_NARG_PERMUTE = {2, 3};
-    private static final int[][] SELF_ARGS_PERMUTES = {
-        SELF_PERMUTE,
-        SELF_1ARG_PERMUTE,
-        SELF_2ARG_PERMUTE,
-        SELF_3ARG_PERMUTE,
-        SELF_NARG_PERMUTE
-    };
-    private static final int[] SELF_TC_BLOCK_PERMUTE = {2, 0, 3};
-    private static final int[] SELF_TC_1ARG_BLOCK_PERMUTE = {2, 0, 3, 4};
-    private static final int[] SELF_TC_2ARG_BLOCK_PERMUTE = {2, 0, 3, 4, 5};
-    private static final int[] SELF_TC_3ARG_BLOCK_PERMUTE = {2, 0, 3, 4, 5, 6};
-    private static final int[] SELF_TC_NARG_BLOCK_PERMUTE = {2, 0, 3, 4};
-    private static final int[][] SELF_TC_ARGS_BLOCK_PERMUTES = {
-        SELF_TC_BLOCK_PERMUTE,
-        SELF_TC_1ARG_BLOCK_PERMUTE,
-        SELF_TC_2ARG_BLOCK_PERMUTE,
-        SELF_TC_3ARG_BLOCK_PERMUTE,
-        SELF_TC_NARG_BLOCK_PERMUTE
-    };
-    private static final int[] SELF_BLOCK_PERMUTE = {2, 3};
-    private static final int[] SELF_1ARG_BLOCK_PERMUTE = {2, 3, 4};
-    private static final int[] SELF_2ARG_BLOCK_PERMUTE = {2, 3, 4, 5};
-    private static final int[] SELF_3ARG_BLOCK_PERMUTE = {2, 3, 4, 5, 6};
-    private static final int[] SELF_NARG_BLOCK_PERMUTE = {2, 3, 4};
-    private static final int[][] SELF_ARGS_BLOCK_PERMUTES = {
-        SELF_BLOCK_PERMUTE,
-        SELF_1ARG_BLOCK_PERMUTE,
-        SELF_2ARG_BLOCK_PERMUTE,
-        SELF_3ARG_BLOCK_PERMUTE,
-        SELF_NARG_BLOCK_PERMUTE
-    };
-    private static final int[] TC_SELF_PERMUTE = {0, 2};
-    private static final int[] TC_SELF_1ARG_PERMUTE = {0, 2, 3};
-    private static final int[] TC_SELF_2ARG_PERMUTE = {0, 2, 3, 4};
-    private static final int[] TC_SELF_3ARG_PERMUTE = {0, 2, 3, 4, 5};
-    private static final int[] TC_SELF_NARG_PERMUTE = {0, 2, 3};
-    private static final int[][] TC_SELF_ARGS_PERMUTES = {
-        TC_SELF_PERMUTE,
-        TC_SELF_1ARG_PERMUTE,
-        TC_SELF_2ARG_PERMUTE,
-        TC_SELF_3ARG_PERMUTE,
-        TC_SELF_NARG_PERMUTE,
-    };
-    private static final int[] TC_SELF_BLOCK_PERMUTE = {0, 2, 3};
-    private static final int[] TC_SELF_1ARG_BLOCK_PERMUTE = {0, 2, 3, 4};
-    private static final int[] TC_SELF_2ARG_BLOCK_PERMUTE = {0, 2, 3, 4, 5};
-    private static final int[] TC_SELF_3ARG_BLOCK_PERMUTE = {0, 2, 3, 4, 5, 6};
-    private static final int[] TC_SELF_NARG_BLOCK_PERMUTE = {0, 2, 3, 4};
-    private static final int[][] TC_SELF_ARGS_BLOCK_PERMUTES = {
-        TC_SELF_BLOCK_PERMUTE,
-        TC_SELF_1ARG_BLOCK_PERMUTE,
-        TC_SELF_2ARG_BLOCK_PERMUTE,
-        TC_SELF_3ARG_BLOCK_PERMUTE,
-        TC_SELF_NARG_BLOCK_PERMUTE,
-    };
-    private static final int[] TC_SELF_BLOCK_PERMUTE_1 = {0, 2, 4};
-    private static final int[] TC_SELF_BLOCK_PERMUTE_2 = {0, 2, 5};
-    private static final int[] TC_SELF_BLOCK_PERMUTE_3 = {0, 2, 6};
-    private static final int[] TC_SELF_BLOCK_PERMUTE_N = {0, 2, 4};
-    private static final int[][] TC_SELF_BLOCK_PERMUTES = {
-            TC_SELF_BLOCK_PERMUTE,
-            TC_SELF_BLOCK_PERMUTE_1,
-            TC_SELF_BLOCK_PERMUTE_2,
-            TC_SELF_BLOCK_PERMUTE_3,
-            TC_SELF_BLOCK_PERMUTE_N,
     };
 }

@@ -35,8 +35,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jruby.runtime.Block;
 
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
 public class JRubyCallSite extends MutableCallSite {
@@ -54,6 +57,8 @@ public class JRubyCallSite extends MutableCallSite {
     private final String file;
     private final int line;
     private boolean boundOnce = false;
+    private final Signature signature;
+    private final Signature fullSignature;
 
     public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
@@ -65,6 +70,49 @@ public class JRubyCallSite extends MutableCallSite {
         this.name = name;
         this.file = file;
         this.line = line;
+        
+        // all signatures have (context, caller, self), so length, block, and arg before block indicates signature
+        int arity = -1;
+        if (type.parameterType(type.parameterCount() - 1) == Block.class) {
+            switch (type.parameterCount()) {
+                case 4:
+                    arity = 0;
+                    break;
+                case 5:
+                    arity = (type.parameterType(3) == IRubyObject[].class) ? 4 : 1;
+                    break;
+                case 6:
+                    arity = 2;
+                    break;
+                case 7:
+                    arity = 3;
+                    break;
+                default:
+                    throw new RuntimeException("unknown incoming signature: " + type);
+            }
+
+            fullSignature = signature = STANDARD_SITE_SIGS_BLOCK[arity];
+        } else {
+            switch (type.parameterCount()) {
+                case 3:
+                    arity = 0;
+                    break;
+                case 4:
+                    arity = (type.parameterType(3) == IRubyObject[].class) ? 4 : 1;
+                    break;
+                case 5:
+                    arity = 2;
+                    break;
+                case 6:
+                    arity = 3;
+                    break;
+                default:
+                    throw new RuntimeException("unknown incoming signature: " + type);
+            }
+
+            signature = STANDARD_SITE_SIGS[arity];
+            fullSignature = STANDARD_SITE_SIGS_BLOCK[arity];
+        }
     }
     
     public Lookup lookup() {
@@ -141,4 +189,59 @@ public class JRubyCallSite extends MutableCallSite {
     public void setInitialTarget(MethodHandle target) {
         super.setTarget(target);
     }
+    
+    /**
+     * Get the actual incoming Signature for this call site.
+     * 
+     * This represents the actual argument list.
+     * 
+     * @return the actual Signature at the call site
+     */
+    public Signature signature() {
+        return signature;
+    }
+    
+    /**
+     * Get the "full" signature equivalent to this call site.
+     * 
+     * The "full" signature always guarantees context, caller, and block args
+     * are provided. It could also be considered the standard intermediate
+     * signature all calls eventually pass through.
+     * 
+     * @return the "full" intermediate signature
+     */
+    public Signature fullSignature() {
+        return fullSignature;
+    }
+    
+    public static final Signature STANDARD_SITE_SIG = Signature
+            .thatReturns(IRubyObject.class)
+            .withArgument("context", ThreadContext.class)
+            .withArgument("caller", IRubyObject.class)
+            .withArgument("self", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_1ARG = STANDARD_SITE_SIG.withArgument("arg0", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_2ARG = STANDARD_SITE_SIG_1ARG.withArgument("arg1", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_3ARG = STANDARD_SITE_SIG_2ARG.withArgument("arg2", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_NARG = STANDARD_SITE_SIG.withArgument("args", IRubyObject[].class);
+    
+    public static final Signature[] STANDARD_SITE_SIGS = {
+        STANDARD_SITE_SIG,
+        STANDARD_SITE_SIG_1ARG,
+        STANDARD_SITE_SIG_2ARG,
+        STANDARD_SITE_SIG_3ARG,
+        STANDARD_SITE_SIG_NARG,
+    };
+    
+    public static final Signature STANDARD_SITE_SIG_BLOCK = STANDARD_SITE_SIG.withArgument("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_1ARG_BLOCK = STANDARD_SITE_SIG_1ARG.withArgument("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_2ARG_BLOCK = STANDARD_SITE_SIG_2ARG.withArgument("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_3ARG_BLOCK = STANDARD_SITE_SIG_3ARG.withArgument("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_NARG_BLOCK = STANDARD_SITE_SIG_NARG.withArgument("block", Block.class);
+    public static final Signature[] STANDARD_SITE_SIGS_BLOCK = {
+        STANDARD_SITE_SIG_BLOCK,
+        STANDARD_SITE_SIG_1ARG_BLOCK,
+        STANDARD_SITE_SIG_2ARG_BLOCK,
+        STANDARD_SITE_SIG_3ARG_BLOCK,
+        STANDARD_SITE_SIG_NARG_BLOCK,
+    };
 }
