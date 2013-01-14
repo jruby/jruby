@@ -44,7 +44,7 @@ public class Signature {
     }
 
     Signature(MethodType methodType, String... argNames) {
-        assert methodType.parameterCount() == 0 : "no arg names specified but parameter count > 0";
+        assert methodType.parameterCount() == argNames.length : "arg name count " + argNames.length + " does not match parameter count " + methodType.parameterCount();
         this.methodType = methodType;
         this.argNames = argNames;
     }
