@@ -596,7 +596,10 @@ public class InvokeDynamicSupport {
         
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
                 variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+            
             // use uncached logic forever
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+            
             MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);
             uncached = dropArguments(uncached, 0, ThreadContext.class);
@@ -616,6 +619,8 @@ public class InvokeDynamicSupport {
         
         site.setTarget(target);
         
+        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") cached");
+        
         return value;
     }
     
@@ -629,7 +634,10 @@ public class InvokeDynamicSupport {
         
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
                 variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+            
             // use uncached logic forever
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+
             MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalBooleanUncached", methodType(boolean.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);
             uncached = dropArguments(uncached, 0, ThreadContext.class);
@@ -648,6 +656,8 @@ public class InvokeDynamicSupport {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
         
         site.setTarget(target);
+        
+        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") cached as boolean");
         
         return value;
     }
