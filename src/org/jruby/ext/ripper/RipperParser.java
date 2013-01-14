@@ -37,7 +37,6 @@ import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
-import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -47,6 +46,10 @@ import org.jruby.util.ByteList;
  */
 public class RipperParser {
 
+    public RipperParser(LexerSource source) {
+        this.lexer = new RipperLexer(source);
+    }
+    
     static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -74,15 +77,13 @@ public class RipperParser {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RipperParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RipperParserResult parse(boolean isDebug) throws IOException {
         reset();
-        //setConfiguration(configuration);
         
-        //setSource(source);
         //setEncoding(configuration.getDefaultEncoding());
 
         Object debugger = null;
-        if (configuration.isDebug()) {
+        if (isDebug) {
             try {
                 Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
                 debugger = yyDebugAdapterClass.newInstance();
@@ -95,7 +96,7 @@ public class RipperParser {
             }
         }
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(new RipperLexer(source), debugger);
+        yyparse(lexer, debugger);
         
         return getRipperResult();
     }    
@@ -172,6 +173,18 @@ public class RipperParser {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
+    public void popCurrentScope() {
+        currentScope = currentScope.getEnclosingScope();
+    }
+    
+    public void pushBlockScope() {
+        currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope);
+    }
+    
+    public void pushLocalScope() {
+        currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
+    }
+    
     public void setCommandStart(boolean value) {
         
     }
@@ -218,21 +231,9 @@ public class RipperParser {
     
     void yyerror(String begiN_in_method, String[] b, String c) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }    
-
-    void pushBlockScope() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     Object getLeftParenBegin() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    void pushLocalScope() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    void popCurrentScope() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -257,7 +258,7 @@ public class RipperParser {
     }
 
     void setState(LexState lexState) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        lexer.setState(lexState);
     }
 
     void warning(ID iD, ISourcePosition position, String _interpreted_as_grouped_expression) {
@@ -272,11 +273,23 @@ public class RipperParser {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    
     StaticScope getCurrentScope() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    Ruby getRuntime() {
+    public Ruby getRuntime() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    public long getColumn() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public long getLineno() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }    
+    
+    protected RipperLexer lexer;
+    protected StaticScope currentScope;
 }

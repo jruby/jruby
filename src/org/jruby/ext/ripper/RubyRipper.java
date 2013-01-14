@@ -57,11 +57,6 @@ public class RubyRipper extends RubyObject {
     }
     
     @JRubyMethod
-    public IRubyObject parse(ThreadContext context) {
-        return null;
-    }
-    
-    @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src) {
         return initialize(context, src, null, null);
     }
@@ -74,29 +69,22 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
         String stringSource = sourceAsString(context, src);
-        IRubyObject filename = filenameAsString(context, file);
+        filename = filenameAsString(context, file);
         int lineno = lineAsInt(context, line);
         ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
         LexerSource source = new InputStreamLexerSource(filename.asJavaString(), bos, null, lineno, true);
-        RipperLexer lexer = new RipperLexer(source);
-        
-        parser = new RipperParser();
+        parser = new Ripper19Parser(source);
          
         return context.runtime.getNil();
     }
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
-        return null;
+        return context.runtime.newFixnum(parser.getColumn());
     }
 
     @JRubyMethod
-    public IRubyObject filename(ThreadContext context) {
-        return null;
-    }
-
-    @JRubyMethod
-    public IRubyObject lineno(ThreadContext context) {
+    public IRubyObject encoding(ThreadContext context) {
         return null;
     }
 
@@ -104,11 +92,26 @@ public class RubyRipper extends RubyObject {
     public IRubyObject end_seen_p(ThreadContext context) {
         return null;
     }
+    
+    @JRubyMethod
+    public IRubyObject filename(ThreadContext context) {
+        return filename;
+    }
 
     @JRubyMethod
-    public IRubyObject encoding(ThreadContext context) {
-        return null;
+    public IRubyObject lineno(ThreadContext context) {
+        return context.runtime.newFixnum(parser.getLineno());
     }
+    
+    @JRubyMethod
+    public IRubyObject parse(ThreadContext context) {
+        try {
+            parser.parse(true);
+        } catch (IOException e) {
+            System.out.println("ERRROR: " + e);
+        }
+        return null;
+    }    
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
@@ -141,4 +144,5 @@ public class RubyRipper extends RubyObject {
     }
     
     private RipperParser parser = null;
+    private IRubyObject filename = null;
 }

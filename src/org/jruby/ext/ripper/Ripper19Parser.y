@@ -31,10 +31,14 @@ package org.jruby.ext.ripper;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 
 public class Ripper19Parser extends RipperParser {
+    public Ripper19Parser(LexerSource source) {
+        super(source);
+    }
 %}
 
 // We need to make sure we have same tokens in the same order and up

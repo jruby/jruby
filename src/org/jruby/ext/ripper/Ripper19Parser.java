@@ -15,7 +15,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008-2009 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,11 +34,15 @@ package org.jruby.ext.ripper;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 
 public class Ripper19Parser extends RipperParser {
-					// line 42 "-"
+    public Ripper19Parser(LexerSource source) {
+        super(source);
+    }
+					// line 46 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4292,6 +4296,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2074 "Ripper19Parser.y"
+					// line 2078 "Ripper19Parser.y"
 }
-					// line 8295 "-"
+					// line 8299 "-"
