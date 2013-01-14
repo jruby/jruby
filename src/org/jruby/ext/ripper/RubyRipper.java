@@ -27,10 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.lexer.yacc.InputStreamLexerSource;
+import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,19 +63,28 @@ public class RubyRipper extends RubyObject {
     
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src) {
-        return null;
+        return initialize(context, src, null, null);
     }
 
     @JRubyMethod
-    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject filename) {
-        return null;
+    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject file) {
+        return initialize(context, src, file, null);
     }
     
     @JRubyMethod
-    public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject filename, IRubyObject lineno) {
-        return null;
+    public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
+        String stringSource = sourceAsString(context, src);
+        IRubyObject filename = filenameAsString(context, file);
+        int lineno = lineAsInt(context, line);
+        ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
+        LexerSource source = new InputStreamLexerSource(filename.asJavaString(), bos, null, lineno, true);
+        RipperLexer lexer = new RipperLexer(source);
+        
+        parser = new RipperParser();
+         
+        return context.runtime.getNil();
     }
-    
+
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
         return null;
@@ -104,5 +118,27 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod(name = "yydebug=")
     public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg0) {
         return null;
-    }    
+    }
+    
+    private String sourceAsString(ThreadContext context, IRubyObject src) {
+        // FIXME: WTF...respondsTo is true? for a string
+        System.out.println("RESPONDS_TO: " + src + "SC:"+ src.getClass()  +", RS: " + src.respondsTo("gets"));
+/*        if (!src.respondsTo("gets"))*/ return src.convertToString().asJavaString();
+
+/*        return src.callMethod(context, "gets").asJavaString();*/
+    }
+    
+    private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {
+        if (filename == null || filename.isNil()) return context.runtime.newString("(ripper)");
+        
+        return filename.convertToString();
+    }
+    
+    private int lineAsInt(ThreadContext context, IRubyObject line) {
+        if (line == null || line.isNil()) return 0;
+        
+        return RubyNumeric.fix2int(line.convertToInteger());
+    }
+    
+    private RipperParser parser = null;
 }

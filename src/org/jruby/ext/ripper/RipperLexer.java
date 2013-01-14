@@ -272,14 +272,10 @@ public class RipperLexer {
         leftParenBegin = value;
     }
 
-    public RipperLexer() {
-    	reset();
-    }
-    
-    public final void reset() {
+    public RipperLexer(LexerSource src) {
     	token = 0;
     	yaccValue = null;
-    	src = null;
+    	this.src = src;
         setState(null);
         resetStacks();
         lex_strterm = null;
@@ -355,7 +351,7 @@ public class RipperLexer {
     }
 
     private void setEncoding(ByteList name) {
-        Encoding newEncoding = parser.getConfiguration().getEncodingService().loadEncoding(name);
+        Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) {
             throw new SyntaxException(SyntaxException.PID.UNKNOWN_ENCODING, getPosition(),
@@ -372,15 +368,6 @@ public class RipperLexer {
 
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
-    }
-
-    /**
-     * Allow the parser to set the source for its lexer.
-     * 
-     * @param source where the lexer gets raw data
-     */
-    public void setSource(LexerSource source) {
-        this.src = source;
     }
 
     public StrTerm getStrTerm() {

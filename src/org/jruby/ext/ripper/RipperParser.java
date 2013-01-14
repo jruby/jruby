@@ -95,7 +95,7 @@ public class RipperParser {
             }
         }
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(new RipperLexer(), debugger);
+        yyparse(new RipperLexer(source), debugger);
         
         return getRipperResult();
     }    
@@ -269,10 +269,6 @@ public class RipperParser {
     }
 
     Integer incrementParenNest() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    RipperParserConfiguration getConfiguration() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
