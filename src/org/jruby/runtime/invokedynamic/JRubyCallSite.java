@@ -216,13 +216,13 @@ public class JRubyCallSite extends MutableCallSite {
     
     public static final Signature STANDARD_SITE_SIG = Signature
             .thatReturns(IRubyObject.class)
-            .withArgument("context", ThreadContext.class)
-            .withArgument("caller", IRubyObject.class)
-            .withArgument("self", IRubyObject.class);
-    public static final Signature STANDARD_SITE_SIG_1ARG = STANDARD_SITE_SIG.withArgument("arg0", IRubyObject.class);
-    public static final Signature STANDARD_SITE_SIG_2ARG = STANDARD_SITE_SIG_1ARG.withArgument("arg1", IRubyObject.class);
-    public static final Signature STANDARD_SITE_SIG_3ARG = STANDARD_SITE_SIG_2ARG.withArgument("arg2", IRubyObject.class);
-    public static final Signature STANDARD_SITE_SIG_NARG = STANDARD_SITE_SIG.withArgument("args", IRubyObject[].class);
+            .appendArg("context", ThreadContext.class)
+            .appendArg("caller", IRubyObject.class)
+            .appendArg("self", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_1ARG = STANDARD_SITE_SIG.appendArg("arg0", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_2ARG = STANDARD_SITE_SIG_1ARG.appendArg("arg1", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_3ARG = STANDARD_SITE_SIG_2ARG.appendArg("arg2", IRubyObject.class);
+    public static final Signature STANDARD_SITE_SIG_NARG = STANDARD_SITE_SIG.appendArg("args", IRubyObject[].class);
     
     public static final Signature[] STANDARD_SITE_SIGS = {
         STANDARD_SITE_SIG,
@@ -232,11 +232,11 @@ public class JRubyCallSite extends MutableCallSite {
         STANDARD_SITE_SIG_NARG,
     };
     
-    public static final Signature STANDARD_SITE_SIG_BLOCK = STANDARD_SITE_SIG.withArgument("block", Block.class);
-    public static final Signature STANDARD_SITE_SIG_1ARG_BLOCK = STANDARD_SITE_SIG_1ARG.withArgument("block", Block.class);
-    public static final Signature STANDARD_SITE_SIG_2ARG_BLOCK = STANDARD_SITE_SIG_2ARG.withArgument("block", Block.class);
-    public static final Signature STANDARD_SITE_SIG_3ARG_BLOCK = STANDARD_SITE_SIG_3ARG.withArgument("block", Block.class);
-    public static final Signature STANDARD_SITE_SIG_NARG_BLOCK = STANDARD_SITE_SIG_NARG.withArgument("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_BLOCK = STANDARD_SITE_SIG.appendArg("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_1ARG_BLOCK = STANDARD_SITE_SIG_1ARG.appendArg("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_2ARG_BLOCK = STANDARD_SITE_SIG_2ARG.appendArg("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_3ARG_BLOCK = STANDARD_SITE_SIG_3ARG.appendArg("block", Block.class);
+    public static final Signature STANDARD_SITE_SIG_NARG_BLOCK = STANDARD_SITE_SIG_NARG.appendArg("block", Block.class);
     public static final Signature[] STANDARD_SITE_SIGS_BLOCK = {
         STANDARD_SITE_SIG_BLOCK,
         STANDARD_SITE_SIG_1ARG_BLOCK,

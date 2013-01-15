@@ -869,7 +869,7 @@ public class InvokeDynamicSupport {
 
     public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
-        RubyClass selfType = self.getMetaClass();
+        RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
         return selfType;
     }
 

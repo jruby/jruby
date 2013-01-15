@@ -4,6 +4,8 @@
  */
 package org.jruby.runtime.invokedynamic;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,11 +72,19 @@ public class Signature {
         return new Signature(methodType.changeReturnType(retval), argNames);
     }
 
-    public Signature withArgument(String name, Class type) {
+    public Signature appendArg(String name, Class type) {
         String[] newArgNames = new String[argNames.length + 1];
         System.arraycopy(argNames, 0, newArgNames, 0, argNames.length);
         newArgNames[argNames.length] = name;
         MethodType newMethodType = methodType.appendParameterTypes(type);
+        return new Signature(newMethodType, newArgNames);
+    }
+    
+    public Signature prependArg(String name, Class type) {
+        String[] newArgNames = new String[argNames.length + 1];
+        System.arraycopy(argNames, 0, newArgNames, 1, argNames.length);
+        newArgNames[0] = name;
+        MethodType newMethodType = methodType.insertParameterTypes(0, type);
         return new Signature(newMethodType, newArgNames);
     }
 
@@ -102,6 +112,10 @@ public class Signature {
             }
         }
         return new Signature(MethodType.methodType(methodType.returnType(), types.toArray(new Class[0])), names.toArray(new String[0]));
+    }
+    
+    public MethodHandle permute(MethodHandle target, String... permuteArgs) {
+        return MethodHandles.permuteArguments(target, methodType, to(permute(permuteArgs)));
     }
 
     public int[] to(Signature other) {

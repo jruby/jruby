@@ -1751,21 +1751,8 @@ public class InvocationLinker {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
-    private static final MethodHandle GETMETHOD;
-    static {
-        MethodHandle getMethod = findStatic(InvocationLinker.class, "getMethod", methodType(DynamicMethod.class, CacheEntry.class));
-        getMethod = dropArguments(getMethod, 0, RubyClass.class);
-        getMethod = dropArguments(getMethod, 2, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-        GETMETHOD = getMethod;
-    }
-
-    public static DynamicMethod getMethod(CacheEntry entry) {
-        return entry.method;
-    }
-
     private static final MethodHandle PGC = Binder
-                    .from(RubyClass.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
-                    .permute(1, 3)
+                    .from(RubyClass.class, ThreadContext.class, IRubyObject.class)
                     .invokeStaticQuiet(lookup(), InvokeDynamicSupport.class, "pollAndGetClass");
 
     private static final MethodHandle TEST_GENERATION = Binder
@@ -1784,43 +1771,6 @@ public class InvocationLinker {
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)
             .invokeStaticQuiet(lookup(), InvocationLinker.class, "testClass");
-
-    private static MethodHandle dropNameAndArgs(MethodHandle original, int index, int count, boolean block) {
-        switch (count) {
-        case -1:
-            if (block) {
-                return dropArguments(original, index, String.class, IRubyObject[].class, Block.class);
-            } else {
-                return dropArguments(original, index, String.class, IRubyObject[].class);
-            }
-        case 0:
-            if (block) {
-                return dropArguments(original, index, String.class, Block.class);
-            } else {
-                return dropArguments(original, index, String.class);
-            }
-        case 1:
-            if (block) {
-                return dropArguments(original, index, String.class, IRubyObject.class, Block.class);
-            } else {
-                return dropArguments(original, index, String.class, IRubyObject.class);
-            }
-        case 2:
-            if (block) {
-                return dropArguments(original, index, String.class, IRubyObject.class, IRubyObject.class, Block.class);
-            } else {
-                return dropArguments(original, index, String.class, IRubyObject.class, IRubyObject.class);
-            }
-        case 3:
-            if (block) {
-                return dropArguments(original, index, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
-            } else {
-                return dropArguments(original, index, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
-            }
-        default:
-            throw new RuntimeException("Invalid arg count (" + count + ") while preparing method handle:\n\t" + original);
-        }
-    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Support handles for DynamicMethod.call paths
@@ -1829,108 +1779,77 @@ public class InvocationLinker {
     // Signatures for DynamicMethod.call methods
     private static final Signature DYNAMIC_CALL_SIG = Signature
             .thatReturns(IRubyObject.class)
-            .withArgument("method", DynamicMethod.class)
-            .withArgument("context", ThreadContext.class)
-            .withArgument("self", IRubyObject.class)
-            .withArgument("selfClass", RubyModule.class)
-            .withArgument("name", String.class);
-    private static final Signature DYNAMIC_CALL_SIG_1ARG = DYNAMIC_CALL_SIG.withArgument("arg0", IRubyObject.class);
-    private static final Signature DYNAMIC_CALL_SIG_2ARG = DYNAMIC_CALL_SIG_1ARG.withArgument("arg1", IRubyObject.class);
-    private static final Signature DYNAMIC_CALL_SIG_3ARG = DYNAMIC_CALL_SIG_2ARG.withArgument("arg2", IRubyObject.class);
-    private static final Signature DYNAMIC_CALL_SIG_NARG = DYNAMIC_CALL_SIG.withArgument("args", IRubyObject[].class);
+            .appendArg("method", DynamicMethod.class)
+            .appendArg("context", ThreadContext.class)
+            .appendArg("caller", IRubyObject.class)
+            .appendArg("self", IRubyObject.class)
+            .appendArg("name", String.class);
+    private static final Signature DYNAMIC_CALL_SIG_1ARG = DYNAMIC_CALL_SIG.appendArg("arg0", IRubyObject.class);
+    private static final Signature DYNAMIC_CALL_SIG_2ARG = DYNAMIC_CALL_SIG_1ARG.appendArg("arg1", IRubyObject.class);
+    private static final Signature DYNAMIC_CALL_SIG_3ARG = DYNAMIC_CALL_SIG_2ARG.appendArg("arg2", IRubyObject.class);
+    private static final Signature DYNAMIC_CALL_SIG_NARG = DYNAMIC_CALL_SIG.appendArg("args", IRubyObject[].class);
     
-    private static final Signature DYNAMIC_CALL_SIG_BLOCK = DYNAMIC_CALL_SIG.withArgument("block", Block.class);
-    private static final Signature DYNAMIC_CALL_SIG_1ARG_BLOCK = DYNAMIC_CALL_SIG_1ARG.withArgument("block", Block.class);
-    private static final Signature DYNAMIC_CALL_SIG_2ARG_BLOCK = DYNAMIC_CALL_SIG_2ARG.withArgument("block", Block.class);
-    private static final Signature DYNAMIC_CALL_SIG_3ARG_BLOCK = DYNAMIC_CALL_SIG_3ARG.withArgument("block", Block.class);
-    private static final Signature DYNAMIC_CALL_SIG_NARG_BLOCK = DYNAMIC_CALL_SIG_NARG.withArgument("block", Block.class);
+    private static final Signature DYNAMIC_CALL_SIG_BLOCK = DYNAMIC_CALL_SIG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_CALL_SIG_1ARG_BLOCK = DYNAMIC_CALL_SIG_1ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_CALL_SIG_2ARG_BLOCK = DYNAMIC_CALL_SIG_2ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_CALL_SIG_3ARG_BLOCK = DYNAMIC_CALL_SIG_3ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_CALL_SIG_NARG_BLOCK = DYNAMIC_CALL_SIG_NARG.appendArg("block", Block.class);
+
+    // Incoming args for DynamicMethod.call
+    private static final Signature DYNAMIC_METHOD_SIG = Signature
+            .thatReturns(IRubyObject.class)
+            .appendArg("method", DynamicMethod.class)
+            .appendArg("context", ThreadContext.class)
+            .appendArg("self", IRubyObject.class)
+            .appendArg("selfClass", RubyModule.class)
+            .appendArg("name", String.class);
+    private static final Signature DYNAMIC_METHOD_SIG_1ARG = DYNAMIC_METHOD_SIG.appendArg("arg0", IRubyObject.class);
+    private static final Signature DYNAMIC_METHOD_SIG_2ARG = DYNAMIC_METHOD_SIG_1ARG.appendArg("arg1", IRubyObject.class);
+    private static final Signature DYNAMIC_METHOD_SIG_3ARG = DYNAMIC_METHOD_SIG_2ARG.appendArg("arg2", IRubyObject.class);
+    private static final Signature DYNAMIC_METHOD_SIG_NARG = DYNAMIC_METHOD_SIG.appendArg("args", IRubyObject[].class);
     
-    private static final MethodHandle TARGET_0 = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class)
-            .fold(dropNameAndArgs(PGC, 4, 0, false))
-            .permute(1, 2, 4, 0, 5)
-            .cast(DYNAMIC_CALL_SIG.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
+    private static final Signature DYNAMIC_METHOD_SIG_BLOCK = DYNAMIC_METHOD_SIG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_METHOD_SIG_1ARG_BLOCK = DYNAMIC_METHOD_SIG_1ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_METHOD_SIG_2ARG_BLOCK = DYNAMIC_METHOD_SIG_2ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_METHOD_SIG_3ARG_BLOCK = DYNAMIC_METHOD_SIG_3ARG.appendArg("block", Block.class);
+    private static final Signature DYNAMIC_METHOD_SIG_NARG_BLOCK = DYNAMIC_METHOD_SIG_NARG.appendArg("block", Block.class);
+    
+    private static MethodHandle dynamicCallTarget(Signature from, Signature to) {
+        return Binder
+                .from(from.methodType())
+                .fold(from.changeReturn(RubyClass.class).permute(PGC, "context", "self"))
+                .permute(from.prependArg("selfClass", RubyClass.class).to(to))
+                .cast(to.methodType())
+                .invokeVirtualQuiet(lookup(), "call");
+    }
 
-    private static final MethodHandle TARGET_1 = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class)
-            .fold(dropNameAndArgs(PGC, 4, 1, false))
-            .permute(1, 2, 4, 0, 5, 6)
-            .cast(DYNAMIC_CALL_SIG_1ARG.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_2 = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class)
-            .fold(dropNameAndArgs(PGC, 4, 2, false))
-            .permute(1, 2, 4, 0, 5, 6, 7)
-            .cast(DYNAMIC_CALL_SIG_2ARG.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_3 = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
-            .fold(dropNameAndArgs(PGC, 4, 3, false))
-            .permute(1, 2, 4, 0, 5, 6, 7, 8)
-            .cast(DYNAMIC_CALL_SIG_3ARG.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_N = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class)
-            .fold(dropNameAndArgs(PGC, 4, -1, false))
-            .permute(1, 2, 4, 0, 5, 6)
-            .cast(DYNAMIC_CALL_SIG_NARG.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_0_B = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class)
-            .fold(dropNameAndArgs(PGC, 4, 0, true))
-            .permute(1, 2, 4, 0, 5, 6)
-            .cast(DYNAMIC_CALL_SIG_BLOCK.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_1_B = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class)
-            .fold(dropNameAndArgs(PGC, 4, 1, true))
-            .permute(1, 2, 4, 0, 5, 6, 7)
-            .cast(DYNAMIC_CALL_SIG_1ARG_BLOCK.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_2_B = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class)
-            .fold(dropNameAndArgs(PGC, 4, 2, true))
-            .permute(1, 2, 4, 0, 5, 6, 7, 8)
-            .cast(DYNAMIC_CALL_SIG_2ARG_BLOCK.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_3_B = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class)
-            .fold(dropNameAndArgs(PGC, 4, 3, true))
-            .permute(1, 2, 4, 0, 5, 6, 7, 8, 9)
-            .cast(DYNAMIC_CALL_SIG_3ARG_BLOCK.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
-
-    private static final MethodHandle TARGET_N_B = Binder
-            .from(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)
-            .fold(dropNameAndArgs(PGC, 4, -1, true))
-            .permute(1, 2, 4, 0, 5, 6, 7)
-            .cast(DYNAMIC_CALL_SIG_NARG_BLOCK.methodType())
-            .invokeVirtualQuiet(lookup(), "call");
+    private static final MethodHandle TARGET_0 = dynamicCallTarget(DYNAMIC_CALL_SIG, DYNAMIC_METHOD_SIG);
+    private static final MethodHandle TARGET_1 = dynamicCallTarget(DYNAMIC_CALL_SIG_1ARG, DYNAMIC_METHOD_SIG_1ARG);
+    private static final MethodHandle TARGET_2 = dynamicCallTarget(DYNAMIC_CALL_SIG_2ARG, DYNAMIC_METHOD_SIG_2ARG);
+    private static final MethodHandle TARGET_3 = dynamicCallTarget(DYNAMIC_CALL_SIG_3ARG, DYNAMIC_METHOD_SIG_3ARG);
+    private static final MethodHandle TARGET_N = dynamicCallTarget(DYNAMIC_CALL_SIG_NARG, DYNAMIC_METHOD_SIG_NARG);
+    private static final MethodHandle TARGET_0_B = dynamicCallTarget(DYNAMIC_CALL_SIG_BLOCK, DYNAMIC_METHOD_SIG_BLOCK);
+    private static final MethodHandle TARGET_1_B = dynamicCallTarget(DYNAMIC_CALL_SIG_1ARG_BLOCK, DYNAMIC_METHOD_SIG_1ARG_BLOCK);
+    private static final MethodHandle TARGET_2_B = dynamicCallTarget(DYNAMIC_CALL_SIG_2ARG_BLOCK, DYNAMIC_METHOD_SIG_2ARG_BLOCK);
+    private static final MethodHandle TARGET_3_B = dynamicCallTarget(DYNAMIC_CALL_SIG_3ARG_BLOCK, DYNAMIC_METHOD_SIG_3ARG_BLOCK);
+    private static final MethodHandle TARGET_N_B = dynamicCallTarget(DYNAMIC_CALL_SIG_NARG_BLOCK, DYNAMIC_METHOD_SIG_NARG_BLOCK);
     
     private static final Signature FALLBACK_SIG = Signature
             .thatReturns(IRubyObject.class)
-            .withArgument("site", JRubyCallSite.class)
-            .withArgument("context", ThreadContext.class)
-            .withArgument("caller", IRubyObject.class)
-            .withArgument("self", IRubyObject.class);
-    private static final Signature FALLBACK_SIG_1ARG = FALLBACK_SIG.withArgument("arg0", IRubyObject.class);
-    private static final Signature FALLBACK_SIG_2ARG = FALLBACK_SIG_1ARG.withArgument("arg1", IRubyObject.class);
-    private static final Signature FALLBACK_SIG_3ARG = FALLBACK_SIG_2ARG.withArgument("arg2", IRubyObject.class);
-    private static final Signature FALLBACK_SIG_NARG = FALLBACK_SIG.withArgument("args", IRubyObject[].class);
+            .appendArg("site", JRubyCallSite.class)
+            .appendArg("context", ThreadContext.class)
+            .appendArg("caller", IRubyObject.class)
+            .appendArg("self", IRubyObject.class);
+    private static final Signature FALLBACK_SIG_1ARG = FALLBACK_SIG.appendArg("arg0", IRubyObject.class);
+    private static final Signature FALLBACK_SIG_2ARG = FALLBACK_SIG_1ARG.appendArg("arg1", IRubyObject.class);
+    private static final Signature FALLBACK_SIG_3ARG = FALLBACK_SIG_2ARG.appendArg("arg2", IRubyObject.class);
+    private static final Signature FALLBACK_SIG_NARG = FALLBACK_SIG.appendArg("args", IRubyObject[].class);
     
-    private static final Signature FALLBACK_SIG_BLOCK = FALLBACK_SIG.withArgument("block", Block.class);
-    private static final Signature FALLBACK_SIG_1ARG_BLOCK = FALLBACK_SIG_1ARG.withArgument("block", Block.class);
-    private static final Signature FALLBACK_SIG_2ARG_BLOCK = FALLBACK_SIG_2ARG.withArgument("block", Block.class);
-    private static final Signature FALLBACK_SIG_3ARG_BLOCK = FALLBACK_SIG_3ARG.withArgument("block", Block.class);
-    private static final Signature FALLBACK_SIG_NARG_BLOCK = FALLBACK_SIG_NARG.withArgument("block", Block.class);
+    private static final Signature FALLBACK_SIG_BLOCK = FALLBACK_SIG.appendArg("block", Block.class);
+    private static final Signature FALLBACK_SIG_1ARG_BLOCK = FALLBACK_SIG_1ARG.appendArg("block", Block.class);
+    private static final Signature FALLBACK_SIG_2ARG_BLOCK = FALLBACK_SIG_2ARG.appendArg("block", Block.class);
+    private static final Signature FALLBACK_SIG_3ARG_BLOCK = FALLBACK_SIG_3ARG.appendArg("block", Block.class);
+    private static final Signature FALLBACK_SIG_NARG_BLOCK = FALLBACK_SIG_NARG.appendArg("block", Block.class);
     
     private static final MethodHandle FALLBACK_0 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG.methodType());
     private static final MethodHandle FALLBACK_1 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_1ARG.methodType());
