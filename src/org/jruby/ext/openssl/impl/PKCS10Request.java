@@ -48,16 +48,23 @@ import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.pkcs.Attribute;
 
-import org.bouncycastle.pkcs.PKCSException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.DSAParameters;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.DSAPublicKeySpec;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.KeyFactory;
-import java.security.spec.X509EncodedKeySpec;
+
+import org.bouncycastle.pkcs.PKCSException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPublicKeySpec;
-import org.bouncycastle.asn1.pkcs.RSAPublicKey;
+
 import java.security.Signature;
 import java.security.SignatureException;
 import org.bouncycastle.operator.ContentSigner;
@@ -217,44 +224,36 @@ public class PKCS10Request {
     }
     
     public PublicKey getPublicKey() throws IOException {
-        ASN1Sequence keySeq = ASN1Sequence.getInstance( 
-            publicKeyInfo.parsePublicKey()
-        );
+        
+        AsymmetricKeyParameter keyParams = PublicKeyFactory.createKey(publicKeyInfo);
 
-        ASN1Encodable firstObj = keySeq.getObjectAt(0);
+        KeySpec keySpec = null;
+        KeyFactory keyFact = null;
 
-        /*
-            RSAPublicKey ::= SEQUENCE {
-                modulus           INTEGER,  -- n
-                publicExponent    INTEGER   -- e
+        try {
+            if (keyParams instanceof RSAKeyParameters) {
+                RSAKeyParameters rsa = (RSAKeyParameters) keyParams;
+                keySpec = new RSAPublicKeySpec(
+                    rsa.getModulus(), rsa.getExponent()
+                );
+                keyFact = KeyFactory.getInstance("RSA");
+
+            } else if (keyParams instanceof DSAPublicKeyParameters) {
+                DSAPublicKeyParameters dsa = (DSAPublicKeyParameters) keyParams;
+                DSAParameters params = dsa.getParameters();
+                keySpec = new DSAPublicKeySpec(
+                    dsa.getY(), params.getP(), params.getQ(), params.getG()
+                );
+                keyFact = KeyFactory.getInstance("DSA");
             }
-        */
-        if (firstObj instanceof ASN1Integer) {
-            RSAPublicKey rsaPub = RSAPublicKey.getInstance(keySeq);
-            RSAPublicKeySpec keySpec = new RSAPublicKeySpec(
-                rsaPub.getModulus(),
-                rsaPub.getPublicExponent()
-            );
-            try {
-                KeyFactory keyFact = KeyFactory.getInstance("RSA");
+
+            if (keySpec != null && keyFact != null) {
                 return keyFact.generatePublic(keySpec);
             }
-            catch (NoSuchAlgorithmException e) { } 
-            catch (InvalidKeySpecException e) { } 
-
-        // Public Key
-        } else {
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keySeq.getEncoded());
-            for (String alg : new String[]{"RSA", "DSA"}) {
-                try {
-                    KeyFactory keyFact = KeyFactory.getInstance(alg);
-                    return keyFact.generatePublic(keySpec);
-                } 
-                catch (NoSuchAlgorithmException e) { } 
-                catch (InvalidKeySpecException e) { } 
-            }
-        } 
-
+        }
+        catch (NoSuchAlgorithmException e) { } 
+        catch (InvalidKeySpecException e) { } 
+        
         throw new IOException("Could not read public key");
     }
 
