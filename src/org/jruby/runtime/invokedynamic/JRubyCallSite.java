@@ -215,7 +215,7 @@ public class JRubyCallSite extends MutableCallSite {
     }
     
     public static final Signature STANDARD_SITE_SIG = Signature
-            .thatReturns(IRubyObject.class)
+            .returning(IRubyObject.class)
             .appendArg("context", ThreadContext.class)
             .appendArg("caller", IRubyObject.class)
             .appendArg("self", IRubyObject.class);

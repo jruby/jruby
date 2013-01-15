@@ -1353,7 +1353,7 @@ public class InvocationLinker {
         nativeTarget = explicitCastArguments(nativeTarget, target.methodType());
         nativeTarget = permuteArguments(nativeTarget, fullSig.methodType(), fullSig.to(target));
 
-        nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, null, argCount);
+        nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, null);
 
         method.setHandle(nativeTarget);
 
@@ -1479,7 +1479,7 @@ public class InvocationLinker {
                     .insert(0, scriptObject)
                     .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
 
-            nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, scope, argCount);
+            nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, scope);
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1488,11 +1488,11 @@ public class InvocationLinker {
         }
     }
 
-    private static MethodHandle wrapWithFraming(Signature signature, DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope, int argCount) {
-        MethodHandle framePre = getFramePre(signature, method, name, argCount, scope);
+    private static MethodHandle wrapWithFraming(Signature signature, DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope) {
+        MethodHandle framePre = getFramePre(signature, method, name, scope);
 
         if (framePre != null) {
-            MethodHandle framePost = getFramePost(signature, method, argCount);
+            MethodHandle framePost = getFramePost(signature, method);
 
             // break, return, redo handling
             CallConfiguration callConfig = method.getCallConfig();
@@ -1554,97 +1554,100 @@ public class InvocationLinker {
     public static IRubyObject handleRedo(JumpException.RedoJump rj, ThreadContext context) {
         throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
     }
+    
+    private static <T> T[] arrayOf(T... values) {
+        return values;
+    }
 
-    private static MethodHandle getFramePre(Signature signature, DynamicMethod method, String name, int argCount, StaticScope scope) {
-        MethodHandle framePre = null;
-        Signature inbound = signature.changeReturn(void.class);
-        final Binder binder = Binder
-                           .from(inbound.methodType());
+    private static MethodHandle getFramePre(Signature signature, DynamicMethod method, String name, StaticScope scope) {
+        Signature inbound = signature.asFold(void.class);
+        SmartBinder binder = SmartBinder
+                           .from(inbound);
 
         switch (method.getCallConfig()) {
             case FrameFullScopeFull:
                 // before logic
-                framePre = binder
-                        .permute(inbound.to("context", "self", "block"))
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
-                        .insert(5, new Class[]{StaticScope.class}, scope)
-                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope");
-
-                break;
+                return binder
+                        .permute("context", "self", "block")
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .insert(5, arrayOf("scope"), arrayOf(StaticScope.class), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope")
+                        .handle();
 
             case FrameFullScopeDummy:
                 // before logic
-                framePre = binder
-                        .permute(inbound.to("context", "self", "block"))
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
-                        .insert(5, new Class[]{StaticScope.class}, scope)
-                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope");
-
-                break;
+                return binder
+                        .permute("context", "self", "block")
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .insert(5, arrayOf("scope"), arrayOf(StaticScope.class), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope")
+                        .handle();
 
             case FrameFullScopeNone:
                 // before logic
-                framePre = binder
-                        .permute(inbound.to("context", "self", "block"))
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
-                        .invokeVirtualQuiet(lookup(), "preMethodFrameOnly");
-
-                break;
+                return binder
+                        .permute("context", "self", "block")
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameOnly")
+                        .handle();
 
             case FrameNoneScopeFull:
                 // before logic
-                framePre = binder
-                        .permute(inbound.to("context"))
-                        .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
-                        .invokeVirtualQuiet(lookup(), "preMethodScopeOnly");
-
-                break;
+                return binder
+                        .permute("context")
+                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), method.getImplementationClass(), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodScopeOnly")
+                        .handle();
 
             case FrameNoneScopeDummy:
                 // before logic
-                framePre = binder
-                        .permute(inbound.to("context"))
-                        .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
-                        .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope");
-
-                break;
+                return binder
+                        .permute("context")
+                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), method.getImplementationClass(), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope")
+                        .handle();
 
         }
-
-        return framePre;
+        
+        return null;
     }
 
-    private static MethodHandle getFramePost(Signature signature, DynamicMethod method, int argCount) {
-        Signature inbound = signature.changeReturn(void.class);
-        Binder binder = Binder
-                               .from(inbound.methodType())
-                               .permute(inbound.to("context"));
+    private static MethodHandle getFramePost(Signature signature, DynamicMethod method) {
+        Signature inbound = signature.asFold(void.class);
+        SmartBinder binder = SmartBinder
+                               .from(inbound)
+                               .permute("context");
         
         switch (method.getCallConfig()) {
             case FrameFullScopeFull:
                 // finally logic
                 return binder
-                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope")
+                        .handle();
 
             case FrameFullScopeDummy:
                 // finally logic
                 return binder
-                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope")
+                        .handle();
 
             case FrameFullScopeNone:
                 // finally logic
                 return binder
-                        .invokeVirtualQuiet(lookup(), "postMethodFrameOnly");
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameOnly")
+                        .handle();
 
             case FrameNoneScopeFull:
                 // finally logic
                 return binder
-                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
+                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly")
+                        .handle();
 
             case FrameNoneScopeDummy:
                 // finally logic
                 return binder
-                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
+                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly")
+                        .handle();
 
         }
 
@@ -1778,7 +1781,7 @@ public class InvocationLinker {
 
     // Signatures for DynamicMethod.call methods
     private static final Signature DYNAMIC_CALL_SIG = Signature
-            .thatReturns(IRubyObject.class)
+            .returning(IRubyObject.class)
             .appendArg("method", DynamicMethod.class)
             .appendArg("context", ThreadContext.class)
             .appendArg("caller", IRubyObject.class)
@@ -1797,7 +1800,7 @@ public class InvocationLinker {
 
     // Incoming args for DynamicMethod.call
     private static final Signature DYNAMIC_METHOD_SIG = Signature
-            .thatReturns(IRubyObject.class)
+            .returning(IRubyObject.class)
             .appendArg("method", DynamicMethod.class)
             .appendArg("context", ThreadContext.class)
             .appendArg("self", IRubyObject.class)
@@ -1815,12 +1818,13 @@ public class InvocationLinker {
     private static final Signature DYNAMIC_METHOD_SIG_NARG_BLOCK = DYNAMIC_METHOD_SIG_NARG.appendArg("block", Block.class);
     
     private static MethodHandle dynamicCallTarget(Signature from, Signature to) {
-        return Binder
-                .from(from.methodType())
-                .fold(from.changeReturn(RubyClass.class).permute(PGC, "context", "self"))
-                .permute(from.prependArg("selfClass", RubyClass.class).to(to))
-                .cast(to.methodType())
-                .invokeVirtualQuiet(lookup(), "call");
+        return SmartBinder
+                .from(from)
+                .fold("selfClass", from.asFold(RubyClass.class).permuteTo(PGC, "context", "self"))
+                .permute(to)
+                .cast(to)
+                .invokeVirtualQuiet(lookup(), "call")
+                .handle();
     }
 
     private static final MethodHandle TARGET_0 = dynamicCallTarget(DYNAMIC_CALL_SIG, DYNAMIC_METHOD_SIG);
@@ -1835,7 +1839,7 @@ public class InvocationLinker {
     private static final MethodHandle TARGET_N_B = dynamicCallTarget(DYNAMIC_CALL_SIG_NARG_BLOCK, DYNAMIC_METHOD_SIG_NARG_BLOCK);
     
     private static final Signature FALLBACK_SIG = Signature
-            .thatReturns(IRubyObject.class)
+            .returning(IRubyObject.class)
             .appendArg("site", JRubyCallSite.class)
             .appendArg("context", ThreadContext.class)
             .appendArg("caller", IRubyObject.class)

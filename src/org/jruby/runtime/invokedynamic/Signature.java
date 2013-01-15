@@ -63,12 +63,12 @@ public class Signature {
         return sb.toString();
     }
 
-    public static Signature thatReturns(Class retval) {
+    public static Signature returning(Class retval) {
         Signature sig = new Signature(retval);
         return sig;
     }
 
-    public Signature changeReturn(Class retval) {
+    public Signature asFold(Class retval) {
         return new Signature(methodType.changeReturnType(retval), argNames);
     }
 
@@ -85,6 +85,23 @@ public class Signature {
         System.arraycopy(argNames, 0, newArgNames, 1, argNames.length);
         newArgNames[0] = name;
         MethodType newMethodType = methodType.insertParameterTypes(0, type);
+        return new Signature(newMethodType, newArgNames);
+    }
+    
+    public Signature insertArg(int index, String name, Class type) {
+        return insertArgs(index, new String[]{name}, new Class[]{type});
+    }
+    
+    public Signature insertArgs(int index, String[] names, Class[] types) {
+        assert names.length == types.length : "names and types must be of the same length";
+        
+        String[] newArgNames = new String[argNames.length + names.length];
+        System.arraycopy(names, 0, newArgNames, index, names.length);
+        if (index != 0) System.arraycopy(argNames, 0, newArgNames, 0, index);
+        if (argNames.length - index != 0) System.arraycopy(argNames, index, newArgNames, index + names.length, argNames.length - index);
+        
+        MethodType newMethodType = methodType.insertParameterTypes(0, types);
+        
         return new Signature(newMethodType, newArgNames);
     }
 
@@ -114,7 +131,7 @@ public class Signature {
         return new Signature(MethodType.methodType(methodType.returnType(), types.toArray(new Class[0])), names.toArray(new String[0]));
     }
     
-    public MethodHandle permute(MethodHandle target, String... permuteArgs) {
+    public MethodHandle permuteTo(MethodHandle target, String... permuteArgs) {
         return MethodHandles.permuteArguments(target, methodType, to(permute(permuteArgs)));
     }
 
