@@ -100,7 +100,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         return stringIOClass;
     }
 
-    @JRubyMethod(optional = 2, meta = true)
+    @JRubyMethod(meta = true, rest = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;
