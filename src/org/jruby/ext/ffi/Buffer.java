@@ -33,7 +33,6 @@ public final class Buffer extends AbstractMemory {
                 BufferAllocator.INSTANCE);
         result.defineAnnotatedMethods(Buffer.class);
         result.defineAnnotatedConstants(Buffer.class);
-//        result.getSingletonClass().addMethod("new", new NewInstanceMethod(result.getRealClass()));
 
         return result;
     }
@@ -43,85 +42,6 @@ public final class Buffer extends AbstractMemory {
 
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             return new Buffer(runtime, klazz);
-        }
-    }
-
-    private static final class NewInstanceMethod extends DynamicMethod {
-        private final NativeCall new1, new2, new3;
-        private NewInstanceMethod(RubyModule implementationClass) {
-            super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
-
-            new1 = new NativeCall(Buffer.class, "newInstance", IRubyObject.class,
-                    new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class }, true, false);
-            new2 = new NativeCall(Buffer.class, "newInstance", IRubyObject.class,
-                    new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class }, true, false);
-            new3 = new NativeCall(Buffer.class, "newInstance", IRubyObject.class,
-                    new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class }, true, false);
-        }
-
-        @Override
-        public DynamicMethod dup() {
-            return this;
-        }
-
-        @Override
-        public Arity getArity() {
-            return Arity.fixed(1);
-        }
-
-        @Override
-        public NativeCall getNativeCall() {
-            return new1;
-        }
-
-        @Override
-        public void setHandle(Object handle) {}
-
-        @Override
-        public NativeCall getNativeCall(int args, boolean block) {
-            switch (args) {
-                case 1:
-                    return new1;
-                case 2:
-                    return new2;
-                case 3:
-                    return new3;
-            }
-            return super.getNativeCall(args, block);    //To change body of overridden methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            switch (args.length) {
-                case 1:
-                    return call(context, self, clazz, name, args[0]);
-
-                case 2:
-                case 3:
-                    return call(context, self, clazz, name, args[0], args[1]);
-
-                default:
-                    return ((RubyClass) self).newInstance(context, args, block);
-            }
-        }
-
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
-                                IRubyObject arg0) {
-            return Buffer.newInstance(context, self, arg0);
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
-                                IRubyObject arg0, IRubyObject arg1) {
-            return Buffer.newInstance(context, self, arg0, arg1);
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
-                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            return Buffer.newInstance(context, self, arg0, arg1);
         }
     }
 
@@ -164,58 +84,6 @@ public final class Buffer extends AbstractMemory {
 
         return this;
     }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg) {
-        if (klass == context.runtime.getFFI().bufferClass) {
-            return allocate(context, klass, sizeArg, 1, IN | OUT);
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg,
-                                          IRubyObject countArg) {
-
-        if (klass == context.runtime.getFFI().bufferClass) {
-            return allocate(context, klass, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, countArg, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg,
-                                          IRubyObject countArg, IRubyObject clear) {
-        if (klass == context.runtime.getFFI().bufferClass) {
-            return allocate(context, klass, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, countArg, clear, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true, rest = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
-        if (klass == context.runtime.getFFI().bufferClass) {
-            switch (args.length) {
-                case 1:
-                    return newInstance(context, klass, args[0]);
-                case 2:
-                case 3:
-                    return newInstance(context, klass, args[0], args[1]);
-
-                default:
-                    return ((RubyClass) klass).newInstance(context, args, Block.NULL_BLOCK);
-            }
-        } else {
-            return ((RubyClass) klass).newInstance(context, args, Block.NULL_BLOCK);
-        }
-    }
-
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg) {
