@@ -91,7 +91,7 @@ public class PKCS10Request {
         List<Attribute> attrs)
     {
         this.subject        = subject;
-        this.publicKeyInfo  = parsePublicKeyInfo(publicKey);
+        this.publicKeyInfo  = makePublicKeyInfo(publicKey);
 
         resetBuilder();
         setAttributes(attrs);
@@ -170,15 +170,11 @@ public class PKCS10Request {
         return valid;
     }
 
-    private SubjectPublicKeyInfo parsePublicKeyInfo(PublicKey publicKey) {
-        if (publicKey == null) return null;
-
-        return new SubjectPublicKeyInfo(
-            AlgorithmIdentifier.getInstance(
-                ASN1Registry.sym2oid(publicKey.getAlgorithm())
-            ),
-            publicKey.getEncoded()
-        );
+    private SubjectPublicKeyInfo makePublicKeyInfo(PublicKey publicKey) {
+        if (publicKey == null) 
+            return null;
+        else
+            return SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
     }
 
     // statics 
@@ -216,7 +212,7 @@ public class PKCS10Request {
     }
 
     public void setPublicKey(PublicKey publicKey) {
-        this.publicKeyInfo = parsePublicKeyInfo(publicKey);
+        this.publicKeyInfo = makePublicKeyInfo(publicKey);
         resetBuilder();
     }
     
