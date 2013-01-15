@@ -8,7 +8,11 @@
 # For details of Ruby License, see ruby/COPYING.
 #
 
-require 'ripper.so'
+if RUBY_ENGINE == 'jruby'
+  require 'ripper.jar'
+else
+  require 'ripper.so'
+end
 
 class Ripper
 

@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.LexerSource;
@@ -37,8 +37,8 @@ import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 
 public class Ripper19Parser extends RipperParser {
-    public Ripper19Parser(LexerSource source, Ruby runtime) {
-        super(source, runtime);
+    public Ripper19Parser(ThreadContext context, IRubyObject ripper, LexerSource source) {
+        super(context, ripper, source);
     }
 %}
 

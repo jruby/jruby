@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
@@ -49,9 +50,122 @@ public class RubyRipper extends RubyObject {
             }
         });
         
+        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
+        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
+        
         ripper.defineAnnotatedMethods(RubyRipper.class);
     }
+    
+    private static IRubyObject createScannerEventTable(Ruby runtime, RubyClass ripper) {
+        RubyHash hash = new RubyHash(runtime);
+        
+        hash.fastASet(runtime.newString("CHAR"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("__end__"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("backref"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("backtick"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("comma"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("comment"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("const"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("cvar"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embdoc"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embdoc_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embdoc_end"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embexpr_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embexpr_end"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("embvar"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("float"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("gvar"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("heredoc_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("heredoc_end"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("ident"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("ignored_nl"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("int"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("ivar"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("kw"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("label"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("lbrace"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("lbracket"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("lparen"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("nl"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("op"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("period"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("qwords_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("rbrace"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("rbracket"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("regexp_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("regexp_end"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("rparen"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("semicolon"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("sp"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("symbeg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("tlambda"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("tlambeg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("tstring_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("tstring_content"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("tstring_end"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("words_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newString("words_sep"), runtime.newFixnum(1));
+        
+        return hash;
+    }
+    
+    private static IRubyObject createParserEventTable(Ruby runtime, RubyClass ripper) {
+        IRubyObject idBackref = runtime.newString("on_backref");
+        IRubyObject idBacktick = runtime.newString("on_backtick");
+        IRubyObject idComma = runtime.newString("on_comma");
+        IRubyObject idConst = runtime.newString("on_const");
+        IRubyObject idCvar = runtime.newString("on_cvar");
+        IRubyObject idEmbexpBeg = runtime.newString("on_embexpr_beg");
+        IRubyObject idEmbexpEnd = runtime.newString("on_embexpr_end");
+        IRubyObject idEmbvar = runtime.newString("on_embvar");
+        IRubyObject idFloat = runtime.newString("on_float");
+        IRubyObject idGvar = runtime.newString("on_gvar");
+        IRubyObject idIndent = runtime.newString("on_indent");
+        IRubyObject idInt = runtime.newString("on_int");
+        IRubyObject idIvar = runtime.newString("on_ivar");
+        IRubyObject idKw = runtime.newString("on_kw");
+        IRubyObject idLbrace = runtime.newString("on_lbrace");
+        IRubyObject idLbracket = runtime.newString("on_lbracket");
+        IRubyObject idLparen = runtime.newString("on_lparen");
+        IRubyObject idNl = runtime.newString("on_nl");
+        IRubyObject idOp = runtime.newString("on_op");
+        IRubyObject idPeriod = runtime.newString("on_period");
+        IRubyObject idRbrace = runtime.newString("on_rbrace");
+        IRubyObject idRbracket = runtime.newString("on_rbracket");
+        IRubyObject idRparen = runtime.newString("on_rparen");
+        IRubyObject idSemicolon = runtime.newString("on_semicolon");
+        IRubyObject idSymbeg = runtime.newString("on_symbeg");
+        IRubyObject idTstringBeg = runtime.newString("on_tstring_beg");
+        IRubyObject idTstringContent = runtime.newString("on_tstring_content");
+        IRubyObject idTstringEnd = runtime.newString("on_tstring_end");
+        IRubyObject idWordsBeg = runtime.newString("on_words_beg");
+        IRubyObject idQwordsBeg = runtime.newString("on_qwords_beg");
+        IRubyObject idWordsSep = runtime.newString("on_words_sep");
+        IRubyObject idRegexpBeg = runtime.newString("on_regexp_beg");
+        IRubyObject idRegexpEnd = runtime.newString("on_regexp_end");
+        IRubyObject idLabel = runtime.newString("on_label");
+        IRubyObject idTlambda = runtime.newString("on_tlambda");
+        IRubyObject idTlambeg = runtime.newString("on_tlambeg");
+        IRubyObject idIgnoredNL = runtime.newString("on_ignored_nl");
+        IRubyObject idComment = runtime.newString("on_comment");
+        IRubyObject idEmbdocBeg = runtime.newString("on_embdoc_beg");
+        IRubyObject idEmbdoc = runtime.newString("on_embdoc");
+        IRubyObject idEmbdocEnd = runtime.newString("on_embdoc_end");
+        IRubyObject idSp = runtime.newString("on_sp");
+        IRubyObject idHeredocBeg = runtime.newString("on_heredoc_beg");
+        IRubyObject idHeredocEnd = runtime.newString("on_heredoc_end");
+        IRubyObject id__end__ = runtime.newString("on___end__");
+        IRubyObject id_CHAR = runtime.newString("on_CHAR");
+                                                                                                        
+        
+        RubyHash hash = new RubyHash(runtime);
+//        hash.fastASet(runtime.newFixnum(' '), idWordsSep);
+//        hash.fastASet(runtime.newFixnum('+'), idOp);
 
+
+        return hash;
+    }
+    
     private RubyRipper(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
     }
@@ -73,7 +187,7 @@ public class RubyRipper extends RubyObject {
         int lineno = lineAsInt(context, line);
         ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
         LexerSource source = new InputStreamLexerSource(filename.asJavaString(), bos, null, lineno, true);
-        parser = new Ripper19Parser(source, context.runtime);
+        parser = new Ripper19Parser(context, this, source);
          
         return context.runtime.getNil();
     }

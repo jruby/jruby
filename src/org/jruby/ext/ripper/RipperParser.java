@@ -34,10 +34,12 @@ import org.jruby.Ruby;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -45,9 +47,9 @@ import org.jruby.util.ByteList;
  *
  */
 public class RipperParser {
-
-    public RipperParser(LexerSource source, Ruby runtime) {
-        this.runtime = runtime;
+    public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
+        this.context = context;
+        this.ripper = ripper;
         this.lexer = new RipperLexer(this, source);
     }
     
@@ -119,27 +121,27 @@ public class RipperParser {
     }
     
     public IRubyObject dispatch(String method_name) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name);
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name, arg1);
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2);
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3);
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3, arg4);
     }    
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3, arg4, arg5);
     }
     
     public IRubyObject escape(IRubyObject arg) {
@@ -276,11 +278,11 @@ public class RipperParser {
 
     
     StaticScope getCurrentScope() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return currentScope;
     }
 
     public Ruby getRuntime() {
-        return runtime;
+        return context.runtime;
     }
     
     public long getColumn() {
@@ -288,10 +290,11 @@ public class RipperParser {
     }
 
     public long getLineno() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return lexer.getPosition().getLine();
     }    
     
-    protected Ruby runtime;
+    protected IRubyObject ripper;
+    protected ThreadContext context;
     protected RipperLexer lexer;
     protected StaticScope currentScope;
 }

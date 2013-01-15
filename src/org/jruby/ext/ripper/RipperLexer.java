@@ -943,7 +943,7 @@ public class RipperLexer {
     
     private String tokenToEventId(int token) {
         switch(token) {
-            case Tokens.tSP: return "sp";
+            case Tokens.tSP: return "on_sp";
         }
         
         throw new RuntimeException("No such eventid: " + token);
