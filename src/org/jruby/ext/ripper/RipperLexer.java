@@ -38,9 +38,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
+import org.jruby.RubyBignum;
 import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.StrNode;
@@ -133,12 +132,12 @@ public class RipperLexer {
         return Tokens.tFLOAT;
     }
 
-    private Object newBignumNode(String value, int radix) {
-        return new BignumNode(getPosition(), new BigInteger(value, radix));
+    private Object newBignum(String value, int radix) {
+        return RubyBignum.newBignum(parser.getRuntime(), new BigInteger(value, radix));
     }
 
-    private Object newFixnumNode(String value, int radix) throws NumberFormatException {
-        return new FixnumNode(getPosition(), Long.parseLong(value, radix));
+    private Object newFixnum(String value, int radix) throws NumberFormatException {
+        return parser.getRuntime().newFixnum(Long.parseLong(value, radix));
     }
     
     public enum Keyword {
@@ -272,7 +271,8 @@ public class RipperLexer {
         leftParenBegin = value;
     }
 
-    public RipperLexer(LexerSource src) {
+    public RipperLexer(RipperParser parser, LexerSource src) {
+        this.parser = parser;
     	token = 0;
     	yaccValue = null;
     	this.src = src;
@@ -446,9 +446,9 @@ public class RipperLexer {
 
     private Object getInteger(String value, int radix) {
         try {
-            return newFixnumNode(value, radix);
+            return newFixnum(value, radix);
         } catch (NumberFormatException e) {
-            return newBignumNode(value, radix);
+            return newBignum(value, radix);
         }
     }
 
@@ -2291,7 +2291,7 @@ public class RipperLexer {
                     break;
                 default :
                     src.unread(c);
-                    yaccValue = new FixnumNode(getPosition(), 0);
+                    yaccValue = parser.getRuntime().newFixnum(0);
                     return Tokens.tINTEGER;
             }
         }

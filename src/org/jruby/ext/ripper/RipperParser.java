@@ -46,8 +46,9 @@ import org.jruby.util.ByteList;
  */
 public class RipperParser {
 
-    public RipperParser(LexerSource source) {
-        this.lexer = new RipperLexer(source);
+    public RipperParser(LexerSource source, Ruby runtime) {
+        this.runtime = runtime;
+        this.lexer = new RipperLexer(this, source);
     }
     
     static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
@@ -279,7 +280,7 @@ public class RipperParser {
     }
 
     public Ruby getRuntime() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return runtime;
     }
     
     public long getColumn() {
@@ -290,6 +291,7 @@ public class RipperParser {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }    
     
+    protected Ruby runtime;
     protected RipperLexer lexer;
     protected StaticScope currentScope;
 }

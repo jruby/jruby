@@ -73,7 +73,7 @@ public class RubyRipper extends RubyObject {
         int lineno = lineAsInt(context, line);
         ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
         LexerSource source = new InputStreamLexerSource(filename.asJavaString(), bos, null, lineno, true);
-        parser = new Ripper19Parser(source);
+        parser = new Ripper19Parser(source, context.runtime);
          
         return context.runtime.getNil();
     }
