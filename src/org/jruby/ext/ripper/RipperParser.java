@@ -80,7 +80,7 @@ public class RipperParser {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RipperParserResult parse(boolean isDebug) throws IOException {
+    public IRubyObject parse(boolean isDebug) throws IOException {
         reset();
         
         //setEncoding(configuration.getDefaultEncoding());
@@ -99,15 +99,10 @@ public class RipperParser {
             }
         }
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
         
-        return getRipperResult();
+        return (IRubyObject) yyparse(lexer, debugger);
     }    
     
-    public RipperParserResult getRipperResult() {
-        return null;
-    }
-
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
@@ -145,7 +140,7 @@ public class RipperParser {
     }
     
     public IRubyObject escape(IRubyObject arg) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return arg == null ? context.runtime.getNil() : arg;
     }
     
     public IRubyObject formal_argument(IRubyObject identifier) {
@@ -157,7 +152,7 @@ public class RipperParser {
     }
     
     public IRubyObject intern(String value) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
+        return context.runtime.newSymbol(value);
     }
     
     public IRubyObject method_optarg(IRubyObject arg1, IRubyObject arg2) {
@@ -193,7 +188,7 @@ public class RipperParser {
     }
     
     public void setRipperResult(IRubyObject top) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
     public IRubyObject shadowing_lvar(IRubyObject identifier) {
@@ -286,7 +281,7 @@ public class RipperParser {
     }
     
     public long getColumn() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return 0; // FIXME: Implement
     }
 
     public long getLineno() {

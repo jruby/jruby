@@ -1206,7 +1206,6 @@ public class RipperLexer {
                 return at();
             case '_':
                 if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false, true)) {
-                	parser.getRipperResult().setEndOffset(src.getOffset());
                     return EOF;
                 }
                 return identifier(c, commandState);

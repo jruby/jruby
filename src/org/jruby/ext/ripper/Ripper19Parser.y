@@ -157,6 +157,7 @@ public class Ripper19Parser extends RipperParser {
 %type <IRubyObject> top_compstmt top_stmts top_stmt
 
 %type <IRubyObject> do then
+%type <IRubyObject> program
 
 /*
  *    precedence table
@@ -192,7 +193,7 @@ public class Ripper19Parser extends RipperParser {
 program       : {
                   p.setState(LexState.EXPR_BEG);
               } top_compstmt {
-                  p.setRipperResult(p.dispatch("on_program", $2));
+                  $$ = p.dispatch("on_program", $2);
               }
 
 top_compstmt  : top_stmts opt_terms {
