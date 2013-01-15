@@ -361,25 +361,32 @@ public class InvocationLinker {
 
             site.addType(selfClass.id);
             
-            Ruby runtime = selfClass.getRuntime();
-            MethodHandle test;
+            SmartHandle test;
+            SmartBinder selfTest = SmartBinder
+                                          .from(site.signature().asFold(boolean.class))
+                                          .permute("self");
+            
             if (self instanceof RubySymbol ||
                     self instanceof RubyFixnum ||
                     self instanceof RubyFloat ||
                     self instanceof RubyNil ||
                     self instanceof RubyBoolean.True ||
                     self instanceof RubyBoolean.False) {
-                test = Binder
-                        .from(site.type().changeReturnType(boolean.class))
-                        .permute(2)
-                        .insert(1, self.getClass())
+                
+                test = selfTest
+                        .insert(1, "selfJavaType", self.getClass())
                         .cast(boolean.class, Object.class, Class.class)
                         .invoke(TEST_CLASS);
+                
             } else {
-                test = Binder
-                        .from(site.type().changeReturnType(boolean.class))
-                        .permute(2)
-                        .insert(0, RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ? selfClass : entry.token)
+                
+                if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+                    selfTest = selfTest.insert(0, "selfClass", selfClass);
+                } else {
+                    selfTest = selfTest.insert(0, "token", entry.token);
+                }
+                
+                test = selfTest
                         .cast(boolean.class, RubyClass.class, IRubyObject.class)
                         .invoke(TEST);
             }
@@ -435,9 +442,9 @@ public class InvocationLinker {
         return myFail;
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
+    private static MethodHandle createGWT(SmartHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
         MethodHandle myFallback = curryFallback ? insertArguments(fallback, 0, site) : fallback;
-        MethodHandle guardWithTest = guardWithTest(test, target, myFallback);
+        MethodHandle guardWithTest = test.guard(target, myFallback);
         
         return guardWithTest;
     }
