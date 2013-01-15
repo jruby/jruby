@@ -554,7 +554,7 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "home", optional = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length > 0) return getHomeDirectoryPath(context, args[0].toString());
+        if (args.length > 0 && !args[0].isNil()) return getHomeDirectoryPath(context, args[0].toString());
 
         return getHomeDirectoryPath(context);
     }
