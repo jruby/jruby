@@ -164,7 +164,12 @@ public class PKeyRSA extends PKey {
     private static void rsaGenerate(PKeyRSA rsa, int keysize, BigInteger exp) throws RaiseException {
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-            gen.initialize(new RSAKeyGenParameterSpec(keysize, exp), new SecureRandom());
+            if (gen.getProvider().getName().equals("IBMJCEFIPS")) {
+                // IBMJCEFIPS does not support parameters
+                gen.initialize(keysize);
+            } else {
+                gen.initialize(new RSAKeyGenParameterSpec(keysize, exp), new SecureRandom());
+            }
             KeyPair pair = gen.generateKeyPair();
             rsa.privKey = (RSAPrivateCrtKey) (pair.getPrivate());
             rsa.pubKey = (RSAPublicKey) (pair.getPublic());
