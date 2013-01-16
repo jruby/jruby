@@ -53,7 +53,12 @@ public class JavaArrayUtilities {
     }
     
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject bytes_to_ruby_string(IRubyObject recv, IRubyObject wrappedObject) {
+    public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject) {
+        return bytes_to_ruby_string(context, recv, wrappedObject, context.nil);
+    }
+    
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject, IRubyObject encoding) {
         Ruby runtime = recv.getRuntime();
         byte[] bytes = null;
         
@@ -75,7 +80,13 @@ public class JavaArrayUtilities {
                     " (expected byte[])");
         }
 
-        return runtime.newString(new ByteList(bytes, true));
+        RubyString string = runtime.newString(new ByteList(bytes, true));
+        
+        if (!encoding.isNil()) {
+            string.force_encoding(context, encoding);
+        }
+        
+        return string;
     }
     
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
