@@ -299,15 +299,6 @@ public class RubyYaccLexer {
         lex_strterm = null;
         commandStart = true;
     }
-    
-    /**
-     * How the parser advances to the next token.
-     * 
-     * @return true if not at end of file (EOF).
-     */
-    public boolean advance() throws IOException {
-        return (token = yylex()) != EOF;
-    }
 
     public int nextToken() throws IOException {
         token = yylex();
