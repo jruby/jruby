@@ -2022,7 +2022,7 @@ public class RubyYaccLexer {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(isOneEight ? LexState.EXPR_END : LexState.EXPR_ENDARG);
-        yaccValue = new Token(")", getPosition());
+        yaccValue = new Token("]", getPosition());
         return Tokens.tRBRACK;
     }
 
