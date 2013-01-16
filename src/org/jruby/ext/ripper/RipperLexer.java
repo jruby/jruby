@@ -49,6 +49,7 @@ import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
@@ -281,20 +282,15 @@ public class RipperLexer {
         lex_strterm = null;
         commandStart = true;
     }
-    
-    /**
-     * How the parser advances to the next token.
-     * 
-     * @return true if not at end of file (EOF).
-     */
-    public boolean advance() throws IOException {
-        return (token = yylex()) != EOF;
-    }
 
     public int nextToken() throws IOException {
         token = yylex();
+        
+        if (token == EOF) return 0;
+        
+        dispatchScanEvent(token, yaccValue);
 
-        return token == EOF ? 0 : token;
+        return token;
     }
     
     /**
@@ -642,6 +638,8 @@ public class RipperLexer {
 
         ByteList lastLine = src.readLineBytes();
         lastLine.append('\n');
+        dispatchScanEvent(Tokens.tHEREDOC_BEG, lastLine);
+
         lex_strterm = new HeredocTerm(markerValue, func, lastLine);
 
         if (term == '`') {
@@ -798,155 +796,165 @@ public class RipperLexer {
      * grammar and lexing problems.
      *
      */
-    private void printToken(int token) {
+    private String printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
         switch (token) {
-            case Tokens.yyErrorCode: System.err.print("yyErrorCode,"); break;
-            case Tokens.kCLASS: System.err.print("kClass,"); break;
-            case Tokens.kMODULE: System.err.print("kModule,"); break;
-            case Tokens.kDEF: System.err.print("kDEF,"); break;
-            case Tokens.kUNDEF: System.err.print("kUNDEF,"); break;
-            case Tokens.kBEGIN: System.err.print("kBEGIN,"); break;
-            case Tokens.kRESCUE: System.err.print("kRESCUE,"); break;
-            case Tokens.kENSURE: System.err.print("kENSURE,"); break;
-            case Tokens.kEND: System.err.print("kEND,"); break;
-            case Tokens.kIF: System.err.print("kIF,"); break;
-            case Tokens.kUNLESS: System.err.print("kUNLESS,"); break;
-            case Tokens.kTHEN: System.err.print("kTHEN,"); break;
-            case Tokens.kELSIF: System.err.print("kELSIF,"); break;
-            case Tokens.kELSE: System.err.print("kELSE,"); break;
-            case Tokens.kCASE: System.err.print("kCASE,"); break;
-            case Tokens.kWHEN: System.err.print("kWHEN,"); break;
-            case Tokens.kWHILE: System.err.print("kWHILE,"); break;
-            case Tokens.kUNTIL: System.err.print("kUNTIL,"); break;
-            case Tokens.kFOR: System.err.print("kFOR,"); break;
-            case Tokens.kBREAK: System.err.print("kBREAK,"); break;
-            case Tokens.kNEXT: System.err.print("kNEXT,"); break;
-            case Tokens.kREDO: System.err.print("kREDO,"); break;
-            case Tokens.kRETRY: System.err.print("kRETRY,"); break;
-            case Tokens.kIN: System.err.print("kIN,"); break;
-            case Tokens.kDO: System.err.print("kDO,"); break;
-            case Tokens.kDO_COND: System.err.print("kDO_COND,"); break;
-            case Tokens.kDO_BLOCK: System.err.print("kDO_BLOCK,"); break;
-            case Tokens.kRETURN: System.err.print("kRETURN,"); break;
-            case Tokens.kYIELD: System.err.print("kYIELD,"); break;
-            case Tokens.kSUPER: System.err.print("kSUPER,"); break;
-            case Tokens.kSELF: System.err.print("kSELF,"); break;
-            case Tokens.kNIL: System.err.print("kNIL,"); break;
-            case Tokens.kTRUE: System.err.print("kTRUE,"); break;
-            case Tokens.kFALSE: System.err.print("kFALSE,"); break;
-            case Tokens.kAND: System.err.print("kAND,"); break;
-            case Tokens.kOR: System.err.print("kOR,"); break;
-            case Tokens.kNOT: System.err.print("kNOT,"); break;
-            case Tokens.kIF_MOD: System.err.print("kIF_MOD,"); break;
-            case Tokens.kUNLESS_MOD: System.err.print("kUNLESS_MOD,"); break;
-            case Tokens.kWHILE_MOD: System.err.print("kWHILE_MOD,"); break;
-            case Tokens.kUNTIL_MOD: System.err.print("kUNTIL_MOD,"); break;
-            case Tokens.kRESCUE_MOD: System.err.print("kRESCUE_MOD,"); break;
-            case Tokens.kALIAS: System.err.print("kALIAS,"); break;
-            case Tokens.kDEFINED: System.err.print("kDEFINED,"); break;
-            case Tokens.klBEGIN: System.err.print("klBEGIN,"); break;
-            case Tokens.klEND: System.err.print("klEND,"); break;
-            case Tokens.k__LINE__: System.err.print("k__LINE__,"); break;
-            case Tokens.k__FILE__: System.err.print("k__FILE__,"); break;
-            case Tokens.k__ENCODING__: System.err.print("k__ENCODING__,"); break;
-            case Tokens.kDO_LAMBDA: System.err.print("kDO_LAMBDA,"); break;
-            case Tokens.tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
-            case Tokens.tFID: System.err.print("tFID[" + value() + "],"); break;
-            case Tokens.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
-            case Tokens.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
-            case Tokens.tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
-            case Tokens.tCVAR: System.err.print("tCVAR,"); break;
-            case Tokens.tINTEGER: System.err.print("tINTEGER,"); break;
-            case Tokens.tFLOAT: System.err.print("tFLOAT,"); break;
-            case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue().toString() + "],"); break;
-            case Tokens.tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
-            case Tokens.tSTRING_END: System.err.print("tSTRING_END,"); break;
-            case Tokens.tSTRING_DBEG: System.err.print("tSTRING_DBEG,"); break;
-            case Tokens.tSTRING_DVAR: System.err.print("tSTRING_DVAR,"); break;
-            case Tokens.tXSTRING_BEG: System.err.print("tXSTRING_BEG,"); break;
-            case Tokens.tREGEXP_BEG: System.err.print("tREGEXP_BEG,"); break;
-            case Tokens.tREGEXP_END: System.err.print("tREGEXP_END,"); break;
-            case Tokens.tWORDS_BEG: System.err.print("tWORDS_BEG,"); break;
-            case Tokens.tQWORDS_BEG: System.err.print("tQWORDS_BEG,"); break;
-            case Tokens.tBACK_REF: System.err.print("tBACK_REF,"); break;
-            case Tokens.tBACK_REF2: System.err.print("tBACK_REF2,"); break;
-            case Tokens.tNTH_REF: System.err.print("tNTH_REF,"); break;
-            case Tokens.tUPLUS: System.err.print("tUPLUS"); break;
-            case Tokens.tUMINUS: System.err.print("tUMINUS,"); break;
-            case Tokens.tPOW: System.err.print("tPOW,"); break;
-            case Tokens.tCMP: System.err.print("tCMP,"); break;
-            case Tokens.tEQ: System.err.print("tEQ,"); break;
-            case Tokens.tEQQ: System.err.print("tEQQ,"); break;
-            case Tokens.tNEQ: System.err.print("tNEQ,"); break;
-            case Tokens.tGEQ: System.err.print("tGEQ,"); break;
-            case Tokens.tLEQ: System.err.print("tLEQ,"); break;
-            case Tokens.tANDOP: System.err.print("tANDOP,"); break;
-            case Tokens.tOROP: System.err.print("tOROP,"); break;
-            case Tokens.tMATCH: System.err.print("tMATCH,"); break;
-            case Tokens.tNMATCH: System.err.print("tNMATCH,"); break;
-            case Tokens.tDOT: System.err.print("tDOT,"); break;
-            case Tokens.tDOT2: System.err.print("tDOT2,"); break;
-            case Tokens.tDOT3: System.err.print("tDOT3,"); break;
-            case Tokens.tAREF: System.err.print("tAREF,"); break;
-            case Tokens.tASET: System.err.print("tASET,"); break;
-            case Tokens.tLSHFT: System.err.print("tLSHFT,"); break;
-            case Tokens.tRSHFT: System.err.print("tRSHFT,"); break;
-            case Tokens.tCOLON2: System.err.print("tCOLON2,"); break;
-            case Tokens.tCOLON3: System.err.print("tCOLON3,"); break;
-            case Tokens.tOP_ASGN: System.err.print("tOP_ASGN,"); break;
-            case Tokens.tASSOC: System.err.print("tASSOC,"); break;
-            case Tokens.tLPAREN: System.err.print("tLPAREN,"); break;
-            case Tokens.tLPAREN2: System.err.print("tLPAREN2,"); break;
-            case Tokens.tLPAREN_ARG: System.err.print("tLPAREN_ARG,"); break;
-            case Tokens.tLBRACK: System.err.print("tLBRACK,"); break;
-            case Tokens.tRBRACK: System.err.print("tRBRACK,"); break;
-            case Tokens.tLBRACE: System.err.print("tLBRACE,"); break;
-            case Tokens.tLBRACE_ARG: System.err.print("tLBRACE_ARG,"); break;
-            case Tokens.tSTAR: System.err.print("tSTAR,"); break;
-            case Tokens.tSTAR2: System.err.print("tSTAR2,"); break;
-            case Tokens.tAMPER: System.err.print("tAMPER,"); break;
-            case Tokens.tAMPER2: System.err.print("tAMPER2,"); break;
-            case Tokens.tSYMBEG: System.err.print("tSYMBEG,"); break;
-            case Tokens.tTILDE: System.err.print("tTILDE,"); break;
-            case Tokens.tPERCENT: System.err.print("tPERCENT,"); break;
-            case Tokens.tDIVIDE: System.err.print("tDIVIDE,"); break;
-            case Tokens.tPLUS: System.err.print("tPLUS,"); break;
-            case Tokens.tMINUS: System.err.print("tMINUS,"); break;
-            case Tokens.tLT: System.err.print("tLT,"); break;
-            case Tokens.tGT: System.err.print("tGT,"); break;
-            case Tokens.tCARET: System.err.print("tCARET,"); break;
-            case Tokens.tBANG: System.err.print("tBANG,"); break;
-            case Tokens.tLCURLY: System.err.print("tTLCURLY,"); break;
-            case Tokens.tRCURLY: System.err.print("tRCURLY,"); break;
-            case Tokens.tPIPE: System.err.print("tTPIPE,"); break;
-            case Tokens.tLAMBDA: System.err.print("tLAMBDA,"); break;
-            case Tokens.tLAMBEG: System.err.print("tLAMBEG,"); break;
-            case Tokens.tRPAREN: System.err.print("tRPAREN,"); break;
-            case Tokens.tLABEL: System.err.print("tLABEL("+
-                    ((Token) value()).getValue() +":),"); break;
-            case '\n': System.err.println("NL"); break;
-            case EOF: System.out.println("EOF"); break;
-            default: System.err.print("'" + (char)token + "',"); break;
+            case Tokens.yyErrorCode: return "yyErrorCode,";
+            case Tokens.kCLASS: return "kClass,";
+            case Tokens.kMODULE: return "kModule,";
+            case Tokens.kDEF: return "kDEF,";
+            case Tokens.kUNDEF: return "kUNDEF,";
+            case Tokens.kBEGIN: return "kBEGIN,";
+            case Tokens.kRESCUE: return "kRESCUE,";
+            case Tokens.kENSURE: return "kENSURE,";
+            case Tokens.kEND: return "kEND,";
+            case Tokens.kIF: return "kIF,";
+            case Tokens.kUNLESS: return "kUNLESS,";
+            case Tokens.kTHEN: return "kTHEN,";
+            case Tokens.kELSIF: return "kELSIF,";
+            case Tokens.kELSE: return "kELSE,";
+            case Tokens.kCASE: return "kCASE,";
+            case Tokens.kWHEN: return "kWHEN,";
+            case Tokens.kWHILE: return "kWHILE,";
+            case Tokens.kUNTIL: return "kUNTIL,";
+            case Tokens.kFOR: return "kFOR,";
+            case Tokens.kBREAK: return "kBREAK,";
+            case Tokens.kNEXT: return "kNEXT,";
+            case Tokens.kREDO: return "kREDO,";
+            case Tokens.kRETRY: return "kRETRY,";
+            case Tokens.kIN: return "kIN,";
+            case Tokens.kDO: return "kDO,";
+            case Tokens.kDO_COND: return "kDO_COND,";
+            case Tokens.kDO_BLOCK: return "kDO_BLOCK,";
+            case Tokens.kRETURN: return "kRETURN,";
+            case Tokens.kYIELD: return "kYIELD,";
+            case Tokens.kSUPER: return "kSUPER,";
+            case Tokens.kSELF: return "kSELF,";
+            case Tokens.kNIL: return "kNIL,";
+            case Tokens.kTRUE: return "kTRUE,";
+            case Tokens.kFALSE: return "kFALSE,";
+            case Tokens.kAND: return "kAND,";
+            case Tokens.kOR: return "kOR,";
+            case Tokens.kNOT: return "kNOT,";
+            case Tokens.kIF_MOD: return "kIF_MOD,";
+            case Tokens.kUNLESS_MOD: return "kUNLESS_MOD,";
+            case Tokens.kWHILE_MOD: return "kWHILE_MOD,";
+            case Tokens.kUNTIL_MOD: return "kUNTIL_MOD,";
+            case Tokens.kRESCUE_MOD: return "kRESCUE_MOD,";
+            case Tokens.kALIAS: return "kALIAS,";
+            case Tokens.kDEFINED: return "kDEFINED,";
+            case Tokens.klBEGIN: return "klBEGIN,";
+            case Tokens.klEND: return "klEND,";
+            case Tokens.k__LINE__: return "k__LINE__,";
+            case Tokens.k__FILE__: return "k__FILE__,";
+            case Tokens.k__ENCODING__: return "k__ENCODING__,";
+            case Tokens.kDO_LAMBDA: return "kDO_LAMBDA,";
+            case Tokens.tIDENTIFIER: return "tIDENTIFIER["+ value() + "],";
+            case Tokens.tFID: return "tFID[" + value() + "],";
+            case Tokens.tGVAR: return "tGVAR[" + value() + "],";
+            case Tokens.tIVAR: return "tIVAR[" + value() +"],";
+            case Tokens.tCONSTANT: return "tCONSTANT["+ value() +"],";
+            case Tokens.tCVAR: return "tCVAR,";
+            case Tokens.tINTEGER: return "tINTEGER,";
+            case Tokens.tFLOAT: return "tFLOAT,";
+            case Tokens.tSTRING_CONTENT: return "tSTRING_CONTENT[" + ((StrNode) value()).getValue().toString() + "],";
+            case Tokens.tSTRING_BEG: return "tSTRING_BEG,";
+            case Tokens.tSTRING_END: return "tSTRING_END,";
+            case Tokens.tSTRING_DBEG: return "tSTRING_DBEG,";
+            case Tokens.tSTRING_DVAR: return "tSTRING_DVAR,";
+            case Tokens.tXSTRING_BEG: return "tXSTRING_BEG,";
+            case Tokens.tREGEXP_BEG: return "tREGEXP_BEG,";
+            case Tokens.tREGEXP_END: return "tREGEXP_END,";
+            case Tokens.tWORDS_BEG: return "tWORDS_BEG,";
+            case Tokens.tQWORDS_BEG: return "tQWORDS_BEG,";
+            case Tokens.tBACK_REF: return "tBACK_REF,";
+            case Tokens.tBACK_REF2: return "tBACK_REF2,";
+            case Tokens.tNTH_REF: return "tNTH_REF,";
+            case Tokens.tUPLUS: return "tUPLUS";
+            case Tokens.tUMINUS: return "tUMINUS,";
+            case Tokens.tPOW: return "tPOW,";
+            case Tokens.tCMP: return "tCMP,";
+            case Tokens.tEQ: return "tEQ,";
+            case Tokens.tEQQ: return "tEQQ,";
+            case Tokens.tNEQ: return "tNEQ,";
+            case Tokens.tGEQ: return "tGEQ,";
+            case Tokens.tLEQ: return "tLEQ,";
+            case Tokens.tANDOP: return "tANDOP,";
+            case Tokens.tOROP: return "tOROP,";
+            case Tokens.tMATCH: return "tMATCH,";
+            case Tokens.tNMATCH: return "tNMATCH,";
+            case Tokens.tDOT: return "tDOT,";
+            case Tokens.tDOT2: return "tDOT2,";
+            case Tokens.tDOT3: return "tDOT3,";
+            case Tokens.tAREF: return "tAREF,";
+            case Tokens.tASET: return "tASET,";
+            case Tokens.tLSHFT: return "tLSHFT,";
+            case Tokens.tRSHFT: return "tRSHFT,";
+            case Tokens.tCOLON2: return "tCOLON2,";
+            case Tokens.tCOLON3: return "tCOLON3,";
+            case Tokens.tOP_ASGN: return "tOP_ASGN,";
+            case Tokens.tASSOC: return "tASSOC,";
+            case Tokens.tLPAREN: return "tLPAREN,";
+            case Tokens.tLPAREN2: return "tLPAREN2,";
+            case Tokens.tLPAREN_ARG: return "tLPAREN_ARG,";
+            case Tokens.tLBRACK: return "tLBRACK,";
+            case Tokens.tRBRACK: return "tRBRACK,";
+            case Tokens.tLBRACE: return "tLBRACE,";
+            case Tokens.tLBRACE_ARG: return "tLBRACE_ARG,";
+            case Tokens.tSTAR: return "tSTAR,";
+            case Tokens.tSTAR2: return "tSTAR2,";
+            case Tokens.tAMPER: return "tAMPER,";
+            case Tokens.tAMPER2: return "tAMPER2,";
+            case Tokens.tSYMBEG: return "tSYMBEG,";
+            case Tokens.tTILDE: return "tTILDE,";
+            case Tokens.tPERCENT: return "tPERCENT,";
+            case Tokens.tDIVIDE: return "tDIVIDE,";
+            case Tokens.tPLUS: return "tPLUS,";
+            case Tokens.tMINUS: return "tMINUS,";
+            case Tokens.tLT: return "tLT,";
+            case Tokens.tGT: return "tGT,";
+            case Tokens.tCARET: return "tCARET,";
+            case Tokens.tBANG: return "tBANG,";
+            case Tokens.tLCURLY: return "tTLCURLY,";
+            case Tokens.tRCURLY: return "tRCURLY,";
+            case Tokens.tPIPE: return "tTPIPE,";
+            case Tokens.tLAMBDA: return "tLAMBDA,";
+            case Tokens.tLAMBEG: return "tLAMBEG,";
+            case Tokens.tRPAREN: return "tRPAREN,";
+            case Tokens.tLABEL: return "tLABEL("+ ((Token) value()).getValue() +":),";
+            case '\n': return "NL";
+            case EOF: return "EOF";
+            default: return "'" + (char)token + "',";
         }
     }
     
-    private void dispatchScanEvent(int token, ByteList value) {
+    private void dispatchScanEvent(int token, Object value) {
         yaccValue = scanEventValue(token, value);
     }
     
-    private Object scanEventValue(int token, ByteList value) {
+    private Object scanEventValue(int token, Object value) {
+        IRubyObject arg;
         // FIXME: Create string and dispatch to 
-        return parser.dispatch(tokenToEventId(token), parser.getRuntime().newString(value));
+        if (!(value instanceof ByteList)) {
+            if (value instanceof IRubyObject) {
+                arg = ((IRubyObject) value).asString();
+            } else {
+                arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
+            }
+        } else {
+            arg = parser.getRuntime().newString((ByteList) value);
+        }
+        return parser.dispatch(tokenToEventId(token), arg);
     }
     
     private String tokenToEventId(int token) {
         switch(token) {
             case Tokens.tSP: return "on_sp";
+            case Tokens.tINTEGER: return "on_int";
         }
         
-        throw new RuntimeException("No such eventid: " + token);
+        throw new RuntimeException("No such eventid: " + printToken(token));
     }
     
     // DEBUGGING HELP 
