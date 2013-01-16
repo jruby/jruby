@@ -285,7 +285,7 @@ public class RipperParser {
     }
 
     public long getLineno() {
-        return lexer.getPosition().getLine();
+        return lexer.getPosition().getLine() + 1; //position is zero-based
     }    
     
     protected IRubyObject ripper;

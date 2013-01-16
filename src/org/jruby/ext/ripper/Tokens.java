@@ -162,6 +162,7 @@ public interface Tokens {
     int tLAMBDA     = Ripper19Parser.tLAMBDA;
     int tLAMBEG     = Ripper19Parser.tLAMBEG;
     int tLABEL      = Ripper19Parser.tLABEL;
+    int tCHAR       = Ripper19Parser.tCHAR;
     
     int tIGNORED_NL = Ripper19Parser.tIGNORED_NL;
     int tCOMMENT = Ripper19Parser.tCOMMENT;
