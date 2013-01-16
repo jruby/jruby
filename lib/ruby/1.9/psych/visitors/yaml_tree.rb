@@ -148,7 +148,7 @@ module Psych
 
         {
           'message'   => private_iv_get(o, 'mesg') || o.message,
-          'backtrace' => private_iv_get(o, 'backtrace' || o.backtrace),
+          'backtrace' => private_iv_get(o, 'backtrace') || o.backtrace,
         }.each do |k,v|
           next unless v
           @emitter.scalar k, nil, nil, true, false, Nodes::Scalar::ANY
