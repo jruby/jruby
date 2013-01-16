@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
@@ -147,8 +148,18 @@ public class RipperParser {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
+    // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        String name = lexer.getIdent();
+        char c = name.charAt(0);
+        
+        switch(c) {
+            case '$': case '@': return true;
+            default:
+                if (Character.toUpperCase(c) == c) return true;
+        }
+        
+        return false;
     }
     
     public IRubyObject intern(String value) {

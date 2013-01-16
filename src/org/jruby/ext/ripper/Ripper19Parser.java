@@ -1614,6 +1614,7 @@ states[269] = new RipperParserState() {
 states[1] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                   p.setState(LexState.EXPR_BEG);
+                  p.pushLocalScope();
     return yyVal;
   }
 };
@@ -1682,6 +1683,7 @@ states[471] = new RipperParserState() {
 states[2] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = p.dispatch("on_program", ((IRubyObject)yyVals[0+yyTop]));
+                  p.popCurrentScope();
     return yyVal;
   }
 };
@@ -4297,6 +4299,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2080 "Ripper19Parser.y"
+					// line 2082 "Ripper19Parser.y"
 }
-					// line 8300 "-"
+					// line 8302 "-"

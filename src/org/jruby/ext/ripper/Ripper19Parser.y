@@ -192,8 +192,10 @@ public class Ripper19Parser extends RipperParser {
 %%
 program       : {
                   p.setState(LexState.EXPR_BEG);
+                  p.pushLocalScope();
               } top_compstmt {
                   $$ = p.dispatch("on_program", $2);
+                  p.popCurrentScope();
               }
 
 top_compstmt  : top_stmts opt_terms {

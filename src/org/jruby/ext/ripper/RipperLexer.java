@@ -211,6 +211,12 @@ public class RipperLexer {
     
     // Value of last token which had a value associated with it.
     Object yaccValue;
+    
+    // MRI can directly seek source but we do not so we store all idents
+    // here so the parser can then look at it on-demand to check things like
+    // whether it is a valid identifier.  This should be safe to be a single
+    // field since all ident logic should hit sequentially.
+    String identValue;
 
     // Stream of data that yylex() examines.
     private LexerSource src;
@@ -281,6 +287,7 @@ public class RipperLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
+        encoding = USASCII_ENCODING;
     }
 
     public int nextToken() throws IOException {
@@ -291,6 +298,10 @@ public class RipperLexer {
         dispatchScanEvent(token, yaccValue);
 
         return token;
+    }
+    
+    public String getIdent() {
+        return identValue;
     }
     
     /**
@@ -1374,7 +1385,8 @@ public class RipperLexer {
             setState(LexState.EXPR_END);
         }
 
-        yaccValue = new Token(value, result, getPosition());
+        yaccValue = parser.getRuntime().newString(value);
+        identValue = value;
         return result;
     }
 
