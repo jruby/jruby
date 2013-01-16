@@ -112,54 +112,6 @@ public class RubyRipper extends RubyObject {
     
     // Creates mapping table of token to arity for on_* method calls for the parser support    
     private static IRubyObject createParserEventTable(Ruby runtime, RubyClass ripper) {
-        IRubyObject idBackref = runtime.newString("on_backref");
-        IRubyObject idBacktick = runtime.newString("on_backtick");
-        IRubyObject idComma = runtime.newString("on_comma");
-        IRubyObject idConst = runtime.newString("on_const");
-        IRubyObject idCvar = runtime.newString("on_cvar");
-        IRubyObject idEmbexpBeg = runtime.newString("on_embexpr_beg");
-        IRubyObject idEmbexpEnd = runtime.newString("on_embexpr_end");
-        IRubyObject idEmbvar = runtime.newString("on_embvar");
-        IRubyObject idFloat = runtime.newString("on_float");
-        IRubyObject idGvar = runtime.newString("on_gvar");
-        IRubyObject idIndent = runtime.newString("on_indent");
-        IRubyObject idInt = runtime.newString("on_int");
-        IRubyObject idIvar = runtime.newString("on_ivar");
-        IRubyObject idKw = runtime.newString("on_kw");
-        IRubyObject idLbrace = runtime.newString("on_lbrace");
-        IRubyObject idLbracket = runtime.newString("on_lbracket");
-        IRubyObject idLparen = runtime.newString("on_lparen");
-        IRubyObject idNl = runtime.newString("on_nl");
-        IRubyObject idOp = runtime.newString("on_op");
-        IRubyObject idPeriod = runtime.newString("on_period");
-        IRubyObject idRbrace = runtime.newString("on_rbrace");
-        IRubyObject idRbracket = runtime.newString("on_rbracket");
-        IRubyObject idRparen = runtime.newString("on_rparen");
-        IRubyObject idSemicolon = runtime.newString("on_semicolon");
-        IRubyObject idSymbeg = runtime.newString("on_symbeg");
-        IRubyObject idTstringBeg = runtime.newString("on_tstring_beg");
-        IRubyObject idTstringContent = runtime.newString("on_tstring_content");
-        IRubyObject idTstringEnd = runtime.newString("on_tstring_end");
-        IRubyObject idWordsBeg = runtime.newString("on_words_beg");
-        IRubyObject idQwordsBeg = runtime.newString("on_qwords_beg");
-        IRubyObject idWordsSep = runtime.newString("on_words_sep");
-        IRubyObject idRegexpBeg = runtime.newString("on_regexp_beg");
-        IRubyObject idRegexpEnd = runtime.newString("on_regexp_end");
-        IRubyObject idLabel = runtime.newString("on_label");
-        IRubyObject idTlambda = runtime.newString("on_tlambda");
-        IRubyObject idTlambeg = runtime.newString("on_tlambeg");
-        IRubyObject idIgnoredNL = runtime.newString("on_ignored_nl");
-        IRubyObject idComment = runtime.newString("on_comment");
-        IRubyObject idEmbdocBeg = runtime.newString("on_embdoc_beg");
-        IRubyObject idEmbdoc = runtime.newString("on_embdoc");
-        IRubyObject idEmbdocEnd = runtime.newString("on_embdoc_end");
-        IRubyObject idSp = runtime.newString("on_sp");
-        IRubyObject idHeredocBeg = runtime.newString("on_heredoc_beg");
-        IRubyObject idHeredocEnd = runtime.newString("on_heredoc_end");
-        IRubyObject id__end__ = runtime.newString("on___end__");
-        IRubyObject id_CHAR = runtime.newString("on_CHAR");
-                                                                                                        
-        
         RubyHash hash = new RubyHash(runtime);
 
         hash.fastASet(runtime.newSymbol("BEGIN"), runtime.newFixnum(1));
