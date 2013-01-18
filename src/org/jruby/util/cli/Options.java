@@ -63,35 +63,46 @@ public class Options {
 
     private static final boolean INVOKEDYNAMIC_DEFAULT;
     static {
+        boolean hotspot24 = false;
+        
         String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotspot =
-                vmName.contains("hotspot") ||
-                        vmName.toLowerCase().contains("openjdk");
+        if (!vmName.equals("") && 
+                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"))) {
 
-        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        int version;
-        try {
-            version = Integer.parseInt(vmVersionString.substring(0, 2));
-        } catch (NumberFormatException nfe) {
-            version = -1;
+            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+            if (vmVersionString.equals("")) {
+                // can't get VM version for whatever reason, assume LCD.
+                hotspot24 = false;
+            } else {
+                int version;
+                try {
+                    version = Integer.parseInt(vmVersionString.substring(0, 2));
+                } catch (NumberFormatException nfe) {
+                    version = -1;
+                }
+
+                if (version < 24) {
+                    // if on HotSpot version prior to 24, off by default unless turned on
+                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                    hotspot24 = false;
+                } else {
+                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                    hotspot24 = true;
+                }
+            }
         }
 
-        if (isHotspot) {
-            if (version < 24) {
-                // if on HotSpot version prior to 24, off by default unless turned on
-                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                INVOKEDYNAMIC_DEFAULT = false;
-            } else {
-                // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                INVOKEDYNAMIC_DEFAULT = true;
-            }
-        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-            // if not on HotSpot, on if specification version supports indy
+        if (hotspot24) {
             INVOKEDYNAMIC_DEFAULT = true;
         } else {
-            // on only if forced
-            INVOKEDYNAMIC_DEFAULT = false;
+            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+                // if not on HotSpot, on if specification version supports indy
+                INVOKEDYNAMIC_DEFAULT = true;
+            } else {
+                // on only if forced
+                INVOKEDYNAMIC_DEFAULT = false;
+            }
         }
     }
     

@@ -1166,7 +1166,16 @@ public final class Ruby {
         initBuiltins();
 
         // load JRuby internals, which loads Java support
-        if (!RubyInstanceConfig.DEBUG_PARSER) {
+        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
+        boolean reflectionWorks;
+        try {
+            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
+            reflectionWorks = true;
+        } catch (Exception e) {
+            reflectionWorks = false;
+        }
+        
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
             loadService.require("jruby");
         }
 
@@ -1642,8 +1651,6 @@ public final class Ruby {
                 runtime.getLoadService().require("jruby/win32ole/stub");
             }
         });
-        
-        RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
     
     private void initRubyKernel() {
