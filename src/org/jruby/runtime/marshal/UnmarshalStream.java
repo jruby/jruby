@@ -389,9 +389,10 @@ public class UnmarshalStream extends InputStream {
                         }
                         continue;
                     } else if (key.asJavaString().equals("encoding")) {
-                        // read off " byte for the string
-                        read();
-                        ByteList encodingName = unmarshalString();
+                        IRubyObject encodingNameObj = unmarshalObject(false);
+                        String encodingNameStr = encodingNameObj.asJavaString();
+                        ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
+
                         Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
                         if (entry == null) {
                             throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
