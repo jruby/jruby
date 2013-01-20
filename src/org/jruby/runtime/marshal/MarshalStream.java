@@ -437,9 +437,8 @@ public class MarshalStream extends FilterOutputStream {
             writeObjectData(runtime.getTrue());
         } else {
             writeAndRegisterSymbol(SYMBOL_ENCODING);
-            byte[] name = encoding.getName();
-            write('"');
-            writeString(new ByteList(name, false));
+            RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
+            writeObjectData(encodingString);
         }
     }
     
