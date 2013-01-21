@@ -4192,16 +4192,20 @@ public class RubyIO extends RubyObject {
                     if (!d2.isSeekable()) {
                         throw context.runtime.newTypeError("only supports to file or from file copy");
                     } else {
-                        ReadableByteChannel from = (ReadableByteChannel)d1.getChannel();
-                        FileChannel to = (FileChannel)d2.getChannel();
+                        ReadableByteChannel from = (ReadableByteChannel) d1.getChannel();
+                        FileChannel to = (FileChannel) d2.getChannel();
 
                         size = transfer(from, to);
                     }
                 } else {
-                    FileChannel from = (FileChannel)d1.getChannel();
-                    WritableByteChannel to = (WritableByteChannel)d2.getChannel();
+                    FileChannel from = (FileChannel) d1.getChannel();
+                    WritableByteChannel to = (WritableByteChannel) d2.getChannel();
+                    long remaining = length == null ? from.size() : length.getLongValue();
+                    long position = offset == null? from.position() : offset.getLongValue();                    
 
-                    size = transfer(from, to, length, offset);
+                    size = transfer(from, to, remaining, position);
+                    
+                    if (offset == null) from.position(from.position() + size);
                 }
 
                 return context.runtime.newFixnum(size);
@@ -4223,11 +4227,9 @@ public class RubyIO extends RubyObject {
         return transferred;
     }
 
-    private static long transfer(FileChannel from, WritableByteChannel to, RubyInteger length, RubyInteger offset) throws IOException {
+    private static long transfer(FileChannel from, WritableByteChannel to, long remaining, long position) throws IOException {
         // handle large files on 32-bit JVMs
         long chunkSize = 128 * 1024 * 1024;
-        long remaining = length == null ? from.size() : length.getLongValue();
-        long position = offset == null? from.position() : offset.getLongValue();
         long transferred = 0;
         
         while (remaining > 0) {
@@ -4242,10 +4244,6 @@ public class RubyIO extends RubyObject {
             transferred += n;
         }
 
-        if (offset == null) {
-            from.position(from.position() + transferred);
-        }
-        
         return transferred;
     }
 
