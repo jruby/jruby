@@ -121,23 +121,23 @@ public class RipperParser {
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, arg1);
+        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2);
+        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3);
+        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3, arg4);
+        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4));
     }    
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, arg1, arg2, arg3, arg4, arg5);
+        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4), escape(arg5));
     }
     
     public IRubyObject escape(IRubyObject arg) {
@@ -150,16 +150,9 @@ public class RipperParser {
     
     // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
-        String name = lexer.getIdent();
-        char c = name.charAt(0);
+        char c = lexer.getIdent().charAt(0);
         
-        switch(c) {
-            case '$': case '@': return true;
-            default:
-                if (Character.toUpperCase(c) == c) return true;
-        }
-        
-        return false;
+        return c == '$' || c == '@' || Character.toUpperCase(c) == c;
     }
     
     public IRubyObject intern(String value) {
@@ -250,20 +243,16 @@ public class RipperParser {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    void setInDef(boolean b) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setInDef(boolean inDefinition) {
+        this.inDefinition = inDefinition;
     }
 
-    void setInSingle(int i) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setInSingle(int inSingleton) {
+        this.inSingleton = inSingleton;
     }
 
-    int getInSingle() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    void setInSingle(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public int getInSingle() {
+        return inSingleton;
     }
 
     void setState(LexState lexState) {
@@ -303,4 +292,8 @@ public class RipperParser {
     protected ThreadContext context;
     protected RipperLexer lexer;
     protected StaticScope currentScope;
+    protected boolean inDefinition;
+
+    // Is the parser current within a singleton (value is number of nested singletons)
+    protected int inSingleton;
 }
