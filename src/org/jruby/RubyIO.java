@@ -4136,36 +4136,55 @@ public class RubyIO extends RubyObject {
         return pipe19(context, recv, modes);
     }
     
-    @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "copy_stream", required = 2, optional = 2, meta = true, compat = RUBY1_9)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
-            IRubyObject arg1, IRubyObject arg2) {
+            IRubyObject[] args) {
         Ruby runtime = context.runtime;
+
+        IRubyObject arg1 = args[0];
+        IRubyObject arg2 = args[1];
+
+        RubyInteger length = null;
+        RubyInteger offset = null;
 
         RubyIO io1 = null;
         RubyIO io2 = null;
+
+        if (args.length >= 3) {
+            length = args[2].convertToInteger();
+            if (args.length == 4) {
+                offset = args[3].convertToInteger();
+            }
+        }
 
         try {
             if (arg1 instanceof RubyString) {
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
+            } else if (arg1.respondsTo("to_path")) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
+                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path}, Block.NULL_BLOCK);
             } else {
-                throw runtime.newTypeError("Should be String or IO");
+                throw runtime.newArgumentError("Should be String or IO");
             }
 
             if (arg2 instanceof RubyString) {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
+            } else if (arg2.respondsTo("to_path")) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
+                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path, runtime.newString("w")}, Block.NULL_BLOCK);
             } else {
-                throw runtime.newTypeError("Should be String or IO");
+                throw runtime.newArgumentError("Should be String or IO");
             }
+
+            if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
+            if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
 
             ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
             ChannelDescriptor d2 = io2.openFile.getMainStreamSafe().getDescriptor();
-
-            if (!d1.isReadable()) throw runtime.newIOError("from IO is not readable");
-            if (!d2.isWritable()) throw runtime.newIOError("from IO is not writable");
 
             try {
                 long size = 0;
@@ -4182,7 +4201,7 @@ public class RubyIO extends RubyObject {
                     FileChannel from = (FileChannel)d1.getChannel();
                     WritableByteChannel to = (WritableByteChannel)d2.getChannel();
 
-                    size = transfer(from, to);
+                    size = transfer(from, to, length, offset);
                 }
 
                 return context.runtime.newFixnum(size);
@@ -4191,16 +4210,6 @@ public class RubyIO extends RubyObject {
             }
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
-        } finally {
-            try {
-                if (io1 != null) {
-                    io1.close();
-                }
-            } finally {
-                if (io2 != null) {
-                    io2.close();
-                }
-            }
         }
     }
 
@@ -4214,14 +4223,11 @@ public class RubyIO extends RubyObject {
         return transferred;
     }
 
-    private static long transfer(FileChannel from, WritableByteChannel to) throws IOException {
-        
-
+    private static long transfer(FileChannel from, WritableByteChannel to, RubyInteger length, RubyInteger offset) throws IOException {
         // handle large files on 32-bit JVMs
         long chunkSize = 128 * 1024 * 1024;
-        long size = from.size();
-        long remaining = size;
-        long position = from.position();
+        long remaining = length == null ? from.size() : length.getLongValue();
+        long position = offset == null? from.position() : offset.getLongValue();
         long transferred = 0;
         
         while (remaining > 0) {
@@ -4234,6 +4240,10 @@ public class RubyIO extends RubyObject {
             position += n;
             remaining -= n;
             transferred += n;
+        }
+
+        if (offset == null) {
+            from.position(from.position() + transferred);
         }
         
         return transferred;
