@@ -556,42 +556,35 @@ public class RipperLexer {
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
-            yaccValue = new Token("%"+ (shortHand ? (""+end) : ("" + c + begin)), getPosition());
             return Tokens.tSTRING_BEG;
 
         case 'q':
             lex_strterm = new StringTerm(str_squote, begin, end);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tSTRING_BEG;
 
         case 'W':
             lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tWORDS_BEG;
 
         case 'w':
             lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tQWORDS_BEG;
 
         case 'x':
             lex_strterm = new StringTerm(str_xquote, begin, end);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tXSTRING_BEG;
 
         case 'r':
             lex_strterm = new StringTerm(str_regexp, begin, end);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tREGEXP_BEG;
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
             setState(LexState.EXPR_FNAME);
-            yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tSYMBEG;
 
         default:
@@ -653,12 +646,8 @@ public class RipperLexer {
 
         lex_strterm = new HeredocTerm(markerValue, func, lastLine);
 
-        if (term == '`') {
-            yaccValue = new Token("`", getPosition());
-            return Tokens.tXSTRING_BEG;
-        }
+        if (term == '`') return Tokens.tXSTRING_BEG;
         
-        yaccValue = new Token("\"", getPosition());
         // Hacky: Advance position to eat newline here....
         getPosition();
         return Tokens.tSTRING_BEG;
@@ -1281,23 +1270,17 @@ public class RipperLexer {
                 c = src.read();
                 if (c == '=') {
                     c = src.read();
-                    if (c == '=') {
-                        yaccValue = new Token("===", getPosition());
-                        return Tokens.tEQQ;
-                    }
+                    if (c == '=') return Tokens.tEQQ;
+
                     src.unread(c);
-                    yaccValue = new Token("==", getPosition());
                     return Tokens.tEQ;
                 }
                 if (c == '~') {
-                    yaccValue = new Token("=~", getPosition());
                     return Tokens.tMATCH;
                 } else if (c == '>') {
-                    yaccValue = new Token("=>", getPosition());
                     return Tokens.tASSOC;
                 }
                 src.unread(c);
-                yaccValue = new Token("=", getPosition());
                 return '=';
                 
             case '<':
@@ -1340,7 +1323,6 @@ public class RipperLexer {
             case ';':
                 commandStart = true;
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token(";", getPosition());
                 return ';';
             case ',':
                 return comma(c);
@@ -1359,7 +1341,6 @@ public class RipperLexer {
                     continue;
                 }
                 src.unread(c);
-                yaccValue = new Token("\\", getPosition());
                 return '\\';
             case '%':
                 return percent(spaceSeen);
@@ -1416,15 +1397,12 @@ public class RipperLexer {
         case '&':
             setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
-                yaccValue = new Token("&&", getPosition());
                 setState(LexState.EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
-            yaccValue = new Token("&&", getPosition());
             return Tokens.tANDOP;
         case '=':
-            yaccValue = new Token("&", getPosition());
             setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
@@ -1445,7 +1423,6 @@ public class RipperLexer {
         
         determineExpressionState();
         
-        yaccValue = new Token("&", tmpPosition);
         return c;
     }
     
@@ -1473,7 +1450,6 @@ public class RipperLexer {
         
         if (!isIdentifierChar(c)) {
             src.unread(c);
-            yaccValue = new Token("@", getPosition());
             return '@';
         }
 
@@ -1486,8 +1462,6 @@ public class RipperLexer {
     }
     
     private int backtick(boolean commandState) throws IOException {
-        yaccValue = new Token("`", getPosition());
-
         switch (lex_state) {
         case EXPR_FNAME:
             setState(LexState.EXPR_ENDFN);
@@ -1509,27 +1483,18 @@ public class RipperLexer {
 
         if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             setState(LexState.EXPR_ARG);
-            if (c == '@') {
-                yaccValue = new Token("!",getPosition());
-                return Tokens.tBANG;
-            }
+            if (c == '@') return Tokens.tBANG;
         } else {
             setState(LexState.EXPR_BEG);
         }
         
         switch (c) {
         case '=':
-            yaccValue = new Token("!=",getPosition());
-            
             return Tokens.tNEQ;
         case '~':
-            yaccValue = new Token("!~",getPosition());
-            
             return Tokens.tNMATCH;
         default: // Just a plain bang
             src.unread(c);
-            yaccValue = new Token("!",getPosition());
-            
             return Tokens.tBANG;
         }
     }
@@ -1538,14 +1503,12 @@ public class RipperLexer {
         int c = src.read();
         if (c == '=') {
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("^", getPosition());
             return Tokens.tOP_ASGN;
         }
         
         determineExpressionState();
         
         src.unread(c);
-        yaccValue = new Token("^", getPosition());
         return Tokens.tCARET;
     }
 
@@ -1555,18 +1518,15 @@ public class RipperLexer {
         if (c == ':') {
             if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token("::", getPosition());
                 return Tokens.tCOLON3;
             }
             setState(LexState.EXPR_DOT);
-            yaccValue = new Token(":",getPosition());
             return Tokens.tCOLON2;
         }
 
         if (isEND() || Character.isWhitespace(c)) {
             src.unread(c);
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token(":",getPosition());
             return ':';
         }
         
@@ -1583,14 +1543,11 @@ public class RipperLexer {
         }
         
         setState(LexState.EXPR_FNAME);
-        yaccValue = new Token(":", getPosition());
         return Tokens.tSYMBEG;
     }
 
     private int comma(int c) throws IOException {
         setState(LexState.EXPR_BEG);
-        yaccValue = new Token(",", getPosition());
-        
         return c;
     }
 
@@ -1724,12 +1681,9 @@ public class RipperLexer {
         
         setState(LexState.EXPR_BEG);
         if ((c = src.read()) == '.') {
-            if ((c = src.read()) == '.') {
-                yaccValue = new Token("...", getPosition());
-                return Tokens.tDOT3;
-            }
+            if ((c = src.read()) == '.') return Tokens.tDOT3;
+
             src.unread(c);
-            yaccValue = new Token("..", getPosition());
             return Tokens.tDOT2;
         }
         
@@ -1740,13 +1694,11 @@ public class RipperLexer {
         }
         
         setState(LexState.EXPR_DOT);
-        yaccValue = new Token(".", getPosition());
         return Tokens.tDOT;
     }
     
     private int doubleQuote() throws IOException {
         lex_strterm = new StringTerm(str_dquote, '\0', '"');
-        yaccValue = new Token("\"", getPosition());
 
         return Tokens.tSTRING_BEG;
     }
@@ -1758,22 +1710,18 @@ public class RipperLexer {
 
         switch (c) {
         case '=':
-            yaccValue = new Token(">=", getPosition());
-            
             return Tokens.tGEQ;
         case '>':
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token(">>", getPosition());
+
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
             
-            yaccValue = new Token(">>", getPosition());
             return Tokens.tRSHFT;
         default:
             src.unread(c);
-            yaccValue = new Token(">", getPosition());
             return Tokens.tGT;
         }
     }
@@ -1841,7 +1789,7 @@ public class RipperLexer {
                 src.unread(c2);
                 setState(LexState.EXPR_BEG);
                 src.read();
-                yaccValue = new Token(tempVal, Tokens.tLABEL, getPosition());
+                yaccValue = parser.context.runtime.newString(tempVal);
                 return Tokens.tLABEL;
             }
             src.unread(c2);
@@ -1859,9 +1807,9 @@ public class RipperLexer {
                     setState(keyword.state);
                 }
                 if (state == LexState.EXPR_FNAME) {
-                    yaccValue = new Token(keyword.name, getPosition());
+                    yaccValue = parser.context.runtime.newString(keyword.name);
                 } else {
-                    yaccValue = new Token(tempVal, getPosition());
+                    yaccValue = parser.context.runtime.newString(tempVal);
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
@@ -1893,14 +1841,11 @@ public class RipperLexer {
             if ((c = src.read()) == ']') {
                 if (src.peek('=')) {
                     c = src.read();
-                    yaccValue = new Token("[]=", getPosition());
                     return Tokens.tASET;
                 }
-                yaccValue = new Token("[]", getPosition());
                 return Tokens.tAREF;
             }
             src.unread(c);
-            yaccValue = new Token("[", getPosition());
             return '[';
         } else if (isBEG() || (isARG() && spaceSeen)) {
             c = Tokens.tLBRACK;
@@ -1909,7 +1854,6 @@ public class RipperLexer {
         setState(LexState.EXPR_BEG);
         conditionState.stop();
         cmdArgumentState.stop();
-        yaccValue = new Token("[", getPosition());
         return c;
     }
     
@@ -1920,7 +1864,6 @@ public class RipperLexer {
             parenNest--;
             conditionState.stop();
             cmdArgumentState.stop();
-            yaccValue = new Token("{", getPosition());
             return Tokens.tLAMBEG;
         }
 
@@ -1937,7 +1880,6 @@ public class RipperLexer {
         cmdArgumentState.stop();
         setState(LexState.EXPR_BEG);
         
-        yaccValue = new Token("{", getPosition());
         if (c != Tokens.tLBRACE) commandStart = true;
         return c;
     }
@@ -1960,7 +1902,6 @@ public class RipperLexer {
         cmdArgumentState.stop();
         setState(LexState.EXPR_BEG);
         
-        yaccValue = new Token("(", getPosition());
         return result;
     }
     
@@ -1978,23 +1919,18 @@ public class RipperLexer {
         switch (c) {
         case '=':
             if ((c = src.read()) == '>') {
-                yaccValue = new Token("<=>", getPosition());
                 return Tokens.tCMP;
             }
             src.unread(c);
-            yaccValue = new Token("<=", getPosition());
             return Tokens.tLEQ;
         case '<':
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token("<<", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
-            yaccValue = new Token("<<", getPosition());
             return Tokens.tLSHFT;
         default:
-            yaccValue = new Token("<", getPosition());
             src.unread(c);
             return Tokens.tLT;
         }
@@ -2006,28 +1942,23 @@ public class RipperLexer {
         if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             setState(LexState.EXPR_ARG);
             if (c == '@') {
-                yaccValue = new Token("-@", getPosition());
                 return Tokens.tUMINUS;
             }
             src.unread(c);
-            yaccValue = new Token("-", getPosition());
             return Tokens.tMINUS;
         }
         if (c == '=') {
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("-", getPosition());
             return Tokens.tOP_ASGN;
         }
         if (c == '>') {
             setState(LexState.EXPR_ARG);
-            yaccValue = new Token("->", getPosition());
             return Tokens.tLAMBDA;
         }
         if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
             if (isARG()) arg_ambiguous();
             setState(LexState.EXPR_BEG);
             src.unread(c);
-            yaccValue = new Token("-", getPosition());
             if (Character.isDigit(c)) {
                 return Tokens.tUMINUS_NUM;
             }
@@ -2035,7 +1966,6 @@ public class RipperLexer {
         }
         setState(LexState.EXPR_BEG);
         src.unread(c);
-        yaccValue = new Token("-", getPosition());
         return Tokens.tMINUS;
     }
 
@@ -2046,7 +1976,7 @@ public class RipperLexer {
 
         if (c == '=') {
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("%", getPosition());
+
             return Tokens.tOP_ASGN;
         }
         
@@ -2055,7 +1985,6 @@ public class RipperLexer {
         determineExpressionState();
         
         src.unread(c);
-        yaccValue = new Token("%", getPosition());
         return Tokens.tPERCENT;
     }
 
@@ -2067,21 +1996,17 @@ public class RipperLexer {
             setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token("||", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
-            yaccValue = new Token("||", getPosition());
             return Tokens.tOROP;
         case '=':
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("|", getPosition());
             return Tokens.tOP_ASGN;
         default:
             determineExpressionState();
             
             src.unread(c);
-            yaccValue = new Token("|", getPosition());
             return Tokens.tPIPE;
         }
     }
@@ -2090,18 +2015,16 @@ public class RipperLexer {
         int c = src.read();
         if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             setState(LexState.EXPR_ARG);
-            if (c == '@') {
-                yaccValue = new Token("+@", getPosition());
-                return Tokens.tUPLUS;
-            }
+            if (c == '@') return Tokens.tUPLUS;
+
             src.unread(c);
-            yaccValue = new Token("+", getPosition());
+
             return Tokens.tPLUS;
         }
         
         if (c == '=') {
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("+", getPosition());
+
             return Tokens.tOP_ASGN;
         }
         
@@ -2113,13 +2036,13 @@ public class RipperLexer {
                 c = '+';
                 return parseNumber(c);
             }
-            yaccValue = new Token("+", getPosition());
+
             return Tokens.tUPLUS;
         }
         
         setState(LexState.EXPR_BEG);
         src.unread(c);
-        yaccValue = new Token("+", getPosition());
+
         return Tokens.tPLUS;
     }
     
@@ -2128,7 +2051,7 @@ public class RipperLexer {
         
         if (isEND()) {
             setState(LexState.EXPR_VALUE);
-            yaccValue = new Token("?",getPosition());
+
             return '?';
         }
         
@@ -2167,7 +2090,7 @@ public class RipperLexer {
             }
             src.unread(c);
             setState(LexState.EXPR_VALUE);
-            yaccValue = new Token("?", getPosition());
+
             return '?';
             /*} else if (ismbchar(c)) { // ruby - we don't support them either?
                 rb_warn("multibyte character literal not supported yet; use ?\\" + c);
@@ -2177,7 +2100,7 @@ public class RipperLexer {
         } else if (isIdentifierChar(c) && !src.peek('\n') && isNext_identchar()) {
             src.unread(c);
             setState(LexState.EXPR_VALUE);
-            yaccValue = new Token("?", getPosition());
+
             return '?';
         } else if (c == '\\') {
             if (src.peek('u')) {
@@ -2192,7 +2115,7 @@ public class RipperLexer {
         // TODO: this isn't handling multibyte yet
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = new StrNode(getPosition(), oneCharBL);
+        yaccValue = parser.context.runtime.newString(oneCharBL);
         return Tokens.tCHAR;
     }
     
@@ -2201,7 +2124,6 @@ public class RipperLexer {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
-        yaccValue = new Token(")", getPosition());
         return Tokens.tRBRACK;
     }
 
@@ -2209,7 +2131,6 @@ public class RipperLexer {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
-        yaccValue = new Token("}",getPosition());
         return Tokens.tRCURLY;
     }
 
@@ -2218,13 +2139,11 @@ public class RipperLexer {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDFN);
-        yaccValue = new Token(")", getPosition());
         return Tokens.tRPAREN;
     }
     
     private int singleQuote() throws IOException {
         lex_strterm = new StringTerm(str_squote, '\0', '\'');
-        yaccValue = new Token("'", getPosition());
 
         return Tokens.tSTRING_BEG;
     }
@@ -2232,14 +2151,13 @@ public class RipperLexer {
     private int slash(boolean spaceSeen) throws IOException {
         if (isBEG()) {
             lex_strterm = new StringTerm(str_regexp, '\0', '/');
-            yaccValue = new Token("/",getPosition());
+
             return Tokens.tREGEXP_BEG;
         }
         
         int c = src.read();
         
         if (c == '=') {
-            yaccValue = new Token("/", getPosition());
             setState(LexState.EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
@@ -2248,14 +2166,12 @@ public class RipperLexer {
             if (!Character.isWhitespace(c)) {
                 arg_ambiguous();
                 lex_strterm = new StringTerm(str_regexp, '\0', '/');
-                yaccValue = new Token("/",getPosition());
                 return Tokens.tREGEXP_BEG;
             }
         }
         
         determineExpressionState();
         
-        yaccValue = new Token("/", getPosition());
         return Tokens.tDIVIDE;
     }
 
@@ -2266,16 +2182,13 @@ public class RipperLexer {
         case '*':
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token("**", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
-            yaccValue = new Token("**", getPosition());
             c = Tokens.tPOW;
             break;
         case '=':
             setState(LexState.EXPR_BEG);
-            yaccValue = new Token("*", getPosition());
             return Tokens.tOP_ASGN;
         default:
             src.unread(c);
