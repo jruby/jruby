@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
@@ -39,6 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.lexer.yacc.Token;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -128,7 +130,7 @@ public class RipperParser {
         return identifier;
     }
     
-    public IRubyObject assignable(IRubyObject name, IRubyObject value) {
+    public IRubyObject assignable(IRubyObject name) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
@@ -164,6 +166,11 @@ public class RipperParser {
         return shadowing_lvar(identifier);
     }
     
+    protected void getterIdentifierError(ISourcePosition position, String identifier) {
+        throw new SyntaxException(SyntaxException.PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
+                "identifier " + identifier + " is not valid", identifier);
+    }    
+    
     // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
         String ident = lexer.getIdent();
@@ -176,24 +183,38 @@ public class RipperParser {
         return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
     }
     
+    public boolean is_local_id(String identifier) {
+        return lexer.isIdentifierChar(identifier.charAt(0));
+    }    
+    
     public IRubyObject intern(String value) {
         return context.runtime.newSymbol(value);
     }
     
-    public IRubyObject method_optarg(IRubyObject arg1, IRubyObject arg2) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    public IRubyObject method_optarg(IRubyObject method, IRubyObject arg) {
+        if (arg == null) return method;
+
+        return dispatch("on_method_add_arg", method, arg);
     }
     
     public IRubyObject new_array(IRubyObject arg) {
         return context.runtime.newArray(arg);
     }
     
-    public IRubyObject new_assoc(IRubyObject arg1, IRubyObject arg2) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    public IRubyObject new_assoc(IRubyObject key, IRubyObject value) {
+        RubyHash hash = RubyHash.newHash(context.runtime);
+        
+        hash.fastASet(value, value);
+        
+        return hash;
     }    
     
     public IRubyObject new_bv(IRubyObject identifier) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        String ident = lexer.getIdent();
+        
+        if (!is_local_id(ident)) getterIdentifierError(lexer.getPosition(), ident);
+
+        return arg_var(shadowing_lvar(identifier));
     }
     
     public void popCurrentScope() {

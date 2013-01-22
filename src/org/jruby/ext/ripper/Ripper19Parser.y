@@ -33,7 +33,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 
 public class Ripper19Parser extends RipperParser {
@@ -562,10 +561,10 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : user_variable {
-                    $$ = p.assignable($1, null);
+                    $$ = p.assignable($1);
                 }
 		| keyword_variable {
-                    $$ = p.assignable($1, null);
+                    $$ = p.assignable($1);
                 }
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, p.escape($3));
@@ -596,12 +595,10 @@ mlhs_node       : user_variable {
                 }
 
 lhs             : user_variable {
-                    $$ = p.dispatch("on_var_field", 
-                                          p.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
 		| keyword_variable {
-                    $$ = p.dispatch("on_var_field", 
-                                          p.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, p.escape($3));
@@ -1219,8 +1216,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_paren", 
-                                          p.assignable($1, null));
+                    $$ = p.dispatch("on_mlhs_paren", p.assignable($1));
                 }
                 | tLPAREN f_margs rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
@@ -1240,14 +1236,10 @@ f_margs         : f_marg_list {
                     $$ = $1;
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_add_star",
-                                          $1, 
-                                          p.assignable($4, null));
+                    $$ = p.dispatch("on_mlhs_add_star", $1, p.assignable($4));
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", 
-                                          $1, 
-                                          p.assignable($4, null));
+                    $$ = p.dispatch("on_mlhs_add_star", $1, p.assignable($4));
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
@@ -1258,12 +1250,10 @@ f_margs         : f_marg_list {
                 | tSTAR f_norm_arg {
                     $$ = p.dispatch("on_mlhs_add_star", 
                                           p.dispatch("on_mlhs_new"),
-                                          p.assignable($2, null));
+                                          p.assignable($2));
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", 
-                                          p.assignable($2, null),
-                                          $4);
+                    $$ = p.dispatch("on_mlhs_add_star", p.assignable($2), $4);
                 }
                 | tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star",
@@ -1772,12 +1762,10 @@ var_ref         : user_variable {
 
 // [!null]
 var_lhs         : user_variable {
-                    $$ = p.dispatch("on_var_field", 
-                                          p.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
                 | keyword_variable {
-                    $$ = p.dispatch("on_var_field", 
-                                          p.assignable($1, null));
+                    $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
 
 // [!null]
@@ -1964,13 +1952,13 @@ f_arg           : f_arg_item {
 
 f_opt           : tIDENTIFIER '=' arg_value {
                     p.arg_var(p.formal_argument($1));
-                    $$ = p.new_assoc(p.assignable($1, $3), $3);
+                    $$ = p.new_assoc(p.assignable($1), $3);
 
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {
                     p.arg_var(p.formal_argument($1));
-                    $$ = p.new_assoc(p.assignable($1, $3), $3);
+                    $$ = p.new_assoc(p.assignable($1), $3);
                 }
 
 f_block_optarg  : f_block_opt {
