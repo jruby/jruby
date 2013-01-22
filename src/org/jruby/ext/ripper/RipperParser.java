@@ -38,6 +38,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -108,7 +109,20 @@ public class RipperParser {
     }
 
     public IRubyObject arg_var(IRubyObject identifier) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        String name = lexer.getIdent();
+        StaticScope current = getCurrentScope();
+
+        // Multiple _ arguments are allowed.  To not screw with tons of arity
+        // issues in our runtime we will allocate unnamed bogus vars so things
+        // still work. MRI does not use name as intern'd value so they don't
+        // have this issue.
+        if (name == "_") {
+            int count = 0;
+            while (current.exists(name) >= 0) {
+                name = "_$" + count++;
+            }
+        }
+        return identifier;
     }
     
     public IRubyObject assignable(IRubyObject name, IRubyObject value) {
@@ -144,14 +158,19 @@ public class RipperParser {
     }
     
     public IRubyObject formal_argument(IRubyObject identifier) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        return shadowing_lvar(identifier);
     }
     
     // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
-        char c = lexer.getIdent().charAt(0);
+        String ident = lexer.getIdent();
+        ident.intern();
+        char c = ident.charAt(0);
         
-        return c == '$' || c == '@' || Character.toUpperCase(c) == c;
+        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return false;
+
+        System.out.println("WHOA: " + ident + ", " + getCurrentScope());
+        return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
     }
     
     public IRubyObject intern(String value) {
@@ -162,8 +181,8 @@ public class RipperParser {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
-    public IRubyObject new_array(IRubyObject elt1) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    public IRubyObject new_array(IRubyObject arg) {
+        return context.runtime.newArray(arg);
     }
     
     public IRubyObject new_assoc(IRubyObject arg1, IRubyObject arg2) {
@@ -191,7 +210,23 @@ public class RipperParser {
     }
     
     public IRubyObject shadowing_lvar(IRubyObject identifier) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
+       String name = lexer.getIdent();
+
+        if (name == "_") return identifier;
+
+        StaticScope current = getCurrentScope();
+        if (current.isBlockScope()) {
+            if (current.exists(name) >= 0) yyerror("duplicated argument name");
+
+            if (warnings.isVerbose() && current.isDefined(name) >= 0) {
+                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
+                        "shadowing outer local variable - " + name);
+            }
+        } else if (current.exists(name) >= 0) {
+            yyerror("duplicated argument name");
+        }
+
+        return identifier;
     }    
 
     public StackState getConditionState() {
@@ -222,20 +257,22 @@ public class RipperParser {
         return lexer.getCmdArgumentState();
     }
 
-    void yyerror(String begiN_in_method) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void yyerror(String message) {
+        throw new SyntaxException(SyntaxException.PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), message);
     }
     
-    void yyerror(String begiN_in_method, String[] b, String c) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void yyerror(String message, String[] expected, String found) {
+        String text = message + ", unexpected " + found + "\n";
+        
+        throw new SyntaxException(SyntaxException.PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), text, found);
     }
 
-    Object getLeftParenBegin() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Integer getLeftParenBegin() {
+        return lexer.getLeftParenBegin();
     }
 
-    void setLeftParenBegin(Integer integer) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setLeftParenBegin(Integer integer) {
+        lexer.setLeftParenBegin(integer);
     }
 
     public void setInDef(boolean inDefinition) {
@@ -250,24 +287,24 @@ public class RipperParser {
         return inSingleton;
     }
 
-    void setState(LexState lexState) {
+    public void setState(LexState lexState) {
         lexer.setState(lexState);
     }
 
-    void warning(ID iD, ISourcePosition position, String _interpreted_as_grouped_expression) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void warning(ID id, ISourcePosition position, String message) {
+        if (warnings.isVerbose()) warnings.warning(id, position, message);
     }
 
-    void warn(ID iD, ISourcePosition position, String enD_in_method_use_at_exit) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void warn(ID id, ISourcePosition position, String message) {
+        warnings.warn(id, position, message);
     }
 
-    Integer incrementParenNest() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Integer incrementParenNest() {
+        return lexer.incrementParenNest();
     }
 
     
-    StaticScope getCurrentScope() {
+    public StaticScope getCurrentScope() {
         return currentScope;
     }
 

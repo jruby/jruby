@@ -1393,9 +1393,7 @@ public class ParserSupport {
     }
 
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) {
-            warnings.warning(id, position, message);
-        }
+        if (warnings.isVerbose()) warnings.warning(id, position, message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
