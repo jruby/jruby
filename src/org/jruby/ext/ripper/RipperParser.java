@@ -58,13 +58,6 @@ public class RipperParser {
     static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    IRubyWarnings warnings;
-    
-    
-    public void setWarnings(IRubyWarnings warnings) {
-        this.warnings = warnings;
-//        lexer.setWarnings(warnings);
-    }
     
     public void reset() {
 //        inSingleton = 0;
@@ -244,6 +237,8 @@ public class RipperParser {
         StaticScope current = getCurrentScope();
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
+            
+            IRubyWarnings warnings = context.runtime.getWarnings();
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0) {
                 warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
@@ -319,10 +314,14 @@ public class RipperParser {
     }
 
     public void warning(ID id, ISourcePosition position, String message) {
+        IRubyWarnings warnings = context.runtime.getWarnings();
+        
         if (warnings.isVerbose()) warnings.warning(id, position, message);
     }
 
     public void warn(ID id, ISourcePosition position, String message) {
+        IRubyWarnings warnings = context.runtime.getWarnings();
+        
         warnings.warn(id, position, message);
     }
 
@@ -340,7 +339,7 @@ public class RipperParser {
     }
     
     public long getColumn() {
-        return 0; // FIXME: Implement
+        return 0;
     }
 
     public long getLineno() {
@@ -352,7 +351,7 @@ public class RipperParser {
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
-
+    
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;
 }

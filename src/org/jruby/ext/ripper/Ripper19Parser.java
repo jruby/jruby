@@ -1711,7 +1711,7 @@ states[438] = new RipperParserState() {
 };
 states[371] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_blockvar_new",
+                    yyVal = p.dispatch("on_block_var",
                                           p.escape(((IRubyObject)yyVals[-2+yyTop])),
                                           p.escape(((IRubyObject)yyVals[-1+yyTop])));
     return yyVal;

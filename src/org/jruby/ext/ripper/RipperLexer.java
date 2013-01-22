@@ -125,6 +125,7 @@ public class RipperLexer {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
+            IRubyWarnings warnings = parser.context.runtime.getWarnings();
             warnings.warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
@@ -223,9 +224,6 @@ public class RipperLexer {
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
     private RipperParser parser = null;
-
-    // What handles warnings
-    private IRubyWarnings warnings;
 
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
@@ -390,10 +388,6 @@ public class RipperLexer {
         cmdArgumentState.reset();
     }
     
-    public void setWarnings(IRubyWarnings warnings) {
-        this.warnings = warnings;
-    }
-
     private void printState() {
         if (lex_state == null) {
             System.out.println("NULL");
@@ -654,6 +648,7 @@ public class RipperLexer {
     }
     
     private void arg_ambiguous() {
+        IRubyWarnings warnings = parser.context.runtime.getWarnings();
         if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
     }
 
@@ -968,6 +963,7 @@ public class RipperLexer {
             case ':': return "on_op";
             case ',': return "on_comma";
             case '.': return "on_period";
+            case Tokens.tDOT: return "on_period";
             case ';': return "on_semicolon";
             case Tokens.tBACK_REF2: return "on_backtick";
             case '\n': return "on_nl";
@@ -1413,6 +1409,7 @@ public class RipperLexer {
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
         if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
+            IRubyWarnings warnings = parser.context.runtime.getWarnings();
             if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
@@ -2085,6 +2082,7 @@ public class RipperLexer {
                     break;
                 }
                 if (c2 != 0) {
+                    IRubyWarnings warnings = parser.context.runtime.getWarnings();
                     warnings.warn(IRubyWarnings.ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
                 }
             }
@@ -2193,6 +2191,8 @@ public class RipperLexer {
         default:
             src.unread(c);
             if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
+                IRubyWarnings warnings = parser.context.runtime.getWarnings();
+                
                 if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {

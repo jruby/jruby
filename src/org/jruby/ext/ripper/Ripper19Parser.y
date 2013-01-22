@@ -1415,7 +1415,7 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
                                          null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
-                    $$ = p.dispatch("on_blockvar_new",
+                    $$ = p.dispatch("on_block_var",
                                           p.escape($2),
                                           p.escape($3));
                 }
