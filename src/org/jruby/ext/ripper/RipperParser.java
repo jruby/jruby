@@ -31,7 +31,6 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
@@ -188,43 +187,39 @@ public class RipperParser {
     }
     
     public void setCommandStart(boolean value) {
-        
-    }
-    
-    public void setRipperResult(IRubyObject top) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        lexer.commandStart = value;
     }
     
     public IRubyObject shadowing_lvar(IRubyObject identifier) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");        
     }    
 
-    StackState getConditionState() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public StackState getConditionState() {
+        return lexer.getConditionState();
     }
     
     public ISourcePosition getPosition() {
         return null;
     }
 
-    boolean isInDef() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isInDef() {
+        return inDefinition;
     }
 
-    boolean isInSingle() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isInSingle() {
+        return inSingleton != 0;
     }
 
-    Object getStrTerm() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public StrTerm getStrTerm() {
+        return lexer.getStrTerm();
     }
 
-    void setStrTerm(Object object) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setStrTerm(StrTerm object) {
+        lexer.setStrTerm(object);
     }
 
-    StackState getCmdArgumentState() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public StackState getCmdArgumentState() {
+        return lexer.getCmdArgumentState();
     }
 
     void yyerror(String begiN_in_method) {
