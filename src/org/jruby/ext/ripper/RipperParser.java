@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.Token;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -89,7 +88,7 @@ public class RipperParser {
         //setEncoding(configuration.getDefaultEncoding());
 
         Object debugger = null;
-        if (isDebug) {
+        if (false) {
             try {
                 Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
                 debugger = yyDebugAdapterClass.newInstance();
@@ -107,7 +106,9 @@ public class RipperParser {
     }    
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        if (arg2 == null) return arg1;
+        
+        return dispatch("on_args_add_block", arg1, arg2);
     }
 
     public IRubyObject arg_var(IRubyObject identifier) {
@@ -131,7 +132,10 @@ public class RipperParser {
     }
     
     public IRubyObject assignable(IRubyObject name) {
-        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+        // FIXME: Some grammar-level arg checking is here to prevent __ENCODING__ = 1 + other checks.
+        // We lose the plot here since we are not passing tokens around anymore.  We might be able to
+        // store arg type or in cases of __ENCODING__ just see if it is called __ENCODING__.
+        return name;
     }
     
     public IRubyObject dispatch(String method_name) {
@@ -179,7 +183,6 @@ public class RipperParser {
         
         if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return false;
 
-        System.out.println("WHOA: " + ident + ", " + getCurrentScope());
         return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
     }
     
