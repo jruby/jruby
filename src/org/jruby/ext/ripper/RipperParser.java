@@ -122,6 +122,9 @@ public class RipperParser {
                 name = "_$" + count++;
             }
         }
+        
+        current.addVariableThisScope(name);
+                
         return identifier;
     }
     

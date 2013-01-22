@@ -1436,8 +1436,8 @@ public class ParserSupport {
                 name = "_$" + count++;
             }
         }
-        return new ArgumentNode(identifier.getPosition(), name,
-                getCurrentScope().addVariableThisScope(name));
+        
+        return new ArgumentNode(identifier.getPosition(), name, current.addVariableThisScope(name));
     }
 
     public Token formal_argument(Token identifier) {
