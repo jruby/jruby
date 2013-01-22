@@ -1262,7 +1262,7 @@ public class RubyKernel {
 
     private static final Uncaught uncaught18 = new Uncaught() {
         public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
-            return runtime.newNameError(message, tag);
+            return runtime.newNameErrorObject(message, tag);
         }
     };
 

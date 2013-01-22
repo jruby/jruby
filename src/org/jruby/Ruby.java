@@ -3490,7 +3490,8 @@ public final class Ruby {
         return newNameError(message, name, null);
     }
     
-    public RaiseException newNameError(String message, IRubyObject name) {
+    // This name sucks and should be replaced by newNameErrorfor 9k.
+    public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
         return new RaiseException(error, false);
