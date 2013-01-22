@@ -2674,7 +2674,7 @@ public class RubyModule extends RubyObject {
             name = rubyName.asJavaString();
         }
 
-        throw runtime.newNameError("uninitialized constant " + name, name);
+        throw runtime.newNameError("uninitialized constant " + name, runtime.newSymbol(name));
     }
 
     @JRubyMethod(name = "constants", compat = RUBY1_8)
