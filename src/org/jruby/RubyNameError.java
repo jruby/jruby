@@ -158,12 +158,17 @@ public class RubyNameError extends RubyException {
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message) {
-        this(runtime, exceptionClass, message, null);
+        this(runtime, exceptionClass, message, (String) null);
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, String name) {
         super(runtime, exceptionClass, message);
         this.name = name == null ? runtime.getNil() : runtime.newString(name);
+    }
+    
+    public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
+        super(runtime, exceptionClass, message);
+        this.name = name;
     }
 
     @JRubyMethod(name = "exception", rest = true, meta = true)

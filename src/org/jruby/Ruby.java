@@ -3489,7 +3489,13 @@ public final class Ruby {
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null);
     }
+    
+    public RaiseException newNameError(String message, IRubyObject name) {
+        RubyException error = new RubyNameError(this, getNameError(), message, name);
 
+        return new RaiseException(error, false);
+    }
+    
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
     }
