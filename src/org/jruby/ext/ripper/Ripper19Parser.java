@@ -1512,7 +1512,7 @@ states[201] = new RipperParserState() {
 };
 states[67] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_abreak", ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.dispatch("on_break", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4261,7 +4261,7 @@ states[200] = new RipperParserState() {
 };
 states[66] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_areturn", ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.dispatch("on_return", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };

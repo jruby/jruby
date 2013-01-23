@@ -461,10 +461,10 @@ command        : operation command_args %prec tLOWEST {
                     $$ = p.dispatch("on_yield", $2);
                 }
                 | kRETURN call_args {
-                    $$ = p.dispatch("on_areturn", $2);
+                    $$ = p.dispatch("on_return", $2);
                 }
 		| kBREAK call_args {
-                    $$ = p.dispatch("on_abreak", $2);
+                    $$ = p.dispatch("on_break", $2);
                 }
 		| kNEXT call_args {
                     $$ = p.dispatch("on_next", $2);
