@@ -39,10 +39,6 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.RubyBignum;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
@@ -130,7 +126,7 @@ public class RipperLexer {
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        yaccValue = new FloatNode(getPosition(), d);
+        yaccValue = parser.context.runtime.newFloat(d);
         return Tokens.tFLOAT;
     }
 
@@ -492,7 +488,7 @@ public class RipperLexer {
     }
 
     // STR_NEW3/parser_str_new
-    public StrNode createStrNode(ISourcePosition position, ByteList buffer, int flags) {
+    public IRubyObject createStrNode(ISourcePosition position, ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
@@ -506,7 +502,7 @@ public class RipperLexer {
             }
         }
 
-        return new StrNode(position, buffer, codeRange);
+        return parser.context.runtime.newString(buffer);
     }
     
     /**
@@ -853,7 +849,7 @@ public class RipperLexer {
             case Tokens.tCVAR: return "tCVAR,";
             case Tokens.tINTEGER: return "tINTEGER,";
             case Tokens.tFLOAT: return "tFLOAT,";
-            case Tokens.tSTRING_CONTENT: return "tSTRING_CONTENT[" + ((StrNode) value()).getValue().toString() + "],";
+            case Tokens.tSTRING_CONTENT: return "tSTRING_CONTENT[" + value() + "],";
             case Tokens.tSTRING_BEG: return "tSTRING_BEG,";
             case Tokens.tSTRING_END: return "tSTRING_END,";
             case Tokens.tSTRING_DBEG: return "tSTRING_DBEG,";
@@ -935,7 +931,13 @@ public class RipperLexer {
             if (value instanceof IRubyObject) {
                 arg = ((IRubyObject) value).asString();
             } else {
-                arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
+                // FIXME: HEH...totally broken
+                if (value == null) {
+                    System.out.println("Token: " + printToken(token) + " has a null value");
+                    return parser.getRuntime().getNil();
+                } else {
+                    arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
+                }
             }
         } else {
             arg = parser.getRuntime().newString((ByteList) value);
@@ -1627,14 +1629,10 @@ public class RipperLexer {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            if (last_state == LexState.EXPR_FNAME) {
-                yaccValue = new Token("$" + (char) c, Tokens.tGVAR, getPosition());
-                return Tokens.tGVAR;
-            }
-            
-            yaccValue = new BackRefNode(getPosition(), c);
-            return Tokens.tBACK_REF;
+            yaccValue = parser.context.runtime.newString("$" + (char) c);
+            if (last_state == LexState.EXPR_FNAME) return Tokens.tGVAR;
 
+            return Tokens.tBACK_REF;
         case '1': case '2': case '3': case '4': case '5': case '6':
         case '7': case '8': case '9':
             tokenBuffer.setLength(0);
@@ -1649,7 +1647,7 @@ public class RipperLexer {
                 return Tokens.tGVAR;
             }
             
-            yaccValue = new NthRefNode(getPosition(), Integer.parseInt(tokenBuffer.substring(1)));
+            yaccValue = parser.context.runtime.newString(tokenBuffer.toString());
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);

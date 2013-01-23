@@ -1396,28 +1396,16 @@ opt_block_param : none
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
                     $$ = p.dispatch("on_block_var", 
-                                          p.dispatch("on_params", 
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null), 
-                                         p.escape($2));
+                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    p.escape($2));
                 }
                 | tOROP {
                     $$ = p.dispatch("on_block_var", 
-                                          p.dispatch("on_params_new", 
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null), 
-                                         null);
+                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
-                    $$ = p.dispatch("on_block_var",
-                                          p.escape($2),
-                                          p.escape($3));
+                    $$ = p.dispatch("on_block_var", p.escape($2), p.escape($3));
                 }
 
 // shadowed block variables....

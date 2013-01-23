@@ -1540,13 +1540,8 @@ states[436] = new RipperParserState() {
 states[369] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_block_var", 
-                                          p.dispatch("on_params", 
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null), 
-                                         p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    p.escape(((IRubyObject)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -1632,13 +1627,8 @@ states[437] = new RipperParserState() {
 states[370] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_block_var", 
-                                          p.dispatch("on_params_new", 
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           null), 
-                                         null);
+                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    null);
     return yyVal;
   }
 };
@@ -1711,9 +1701,7 @@ states[438] = new RipperParserState() {
 };
 states[371] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_block_var",
-                                          p.escape(((IRubyObject)yyVals[-2+yyTop])),
-                                          p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_block_var", p.escape(((IRubyObject)yyVals[-2+yyTop])), p.escape(((IRubyObject)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4287,6 +4275,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2070 "Ripper19Parser.y"
+					// line 2058 "Ripper19Parser.y"
 }
-					// line 8290 "-"
+					// line 8278 "-"
