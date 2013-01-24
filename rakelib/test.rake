@@ -63,6 +63,7 @@ namespace :test do
     Rake::TestTask.new('test:tracing') do |t|
       t.pattern = 'test/tracing/test_*.rb'
       t.verbose = true
+      t.ruby_opts << '-J-ea'
       t.ruby_opts << '--debug'
       t.ruby_opts << '--1.8'
     end
@@ -89,6 +90,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-I test/externals/ruby1.9'
     t.ruby_opts << '-I test/externals/ruby1.9/ruby'
@@ -107,6 +109,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '--1.8'
   end
 
@@ -121,6 +124,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.9'
   end
@@ -136,6 +140,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.8'
   end
@@ -151,6 +156,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-X+O'
@@ -167,6 +173,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
@@ -183,6 +190,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.8'
   end
@@ -198,6 +206,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
@@ -227,7 +236,11 @@ namespace :test do
     
     desc "Run the main JUnit test suite"
     task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite"
+      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '512M' do
+        env :key => "JRUBY_OPTS", :value => "--1.8"
+        sysproperty :key => 'jruby.compat.version', :value => '1.8'
+        jvmarg :line => '-ea'
+      end
     end
   end
 end
