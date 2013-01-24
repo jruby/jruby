@@ -39,6 +39,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -172,10 +173,54 @@ public class Digest extends RubyObject {
     public IRubyObject digest_length() {
         return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
     }
+    
+    // from http://www.win.tue.nl/pinpasjc/docs/apis/jc222/javacard/security/MessageDigest.html
+    private enum BlockLength {
+        DUMMY(-1),
+        SHA(64),
+        MD5(64),
+        SHA_256(64),
+        SHA_384(128),
+        SHA_512(128);
+        
+        public static BlockLength forAlgorithm(String algorithm) {
+            if (algorithm.equalsIgnoreCase("SHA-1")) {
+                return SHA;
+            } else if (algorithm.equalsIgnoreCase("MD5")) {
+                return MD5;
+            } else if (algorithm.equalsIgnoreCase("SHA-256")) {
+                return SHA_256;
+            } else if (algorithm.equalsIgnoreCase("SHA-384")) {
+                return SHA_384;
+            } else if (algorithm.equalsIgnoreCase("SHA-512")) {
+                return SHA_512;
+            }
+            
+            return DUMMY;
+        }
+        
+        public int getLength() {
+            return length;
+        }
+        
+        private BlockLength(int length) {
+            this.length = length;
+        }
+        
+        private final int length;
+    }
 
     @JRubyMethod()
-    public IRubyObject block_length() {
-        // TODO: ruby-openssl supports it.
+    public IRubyObject block_length(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        
+        BlockLength bl = BlockLength.forAlgorithm(algo.getAlgorithm());
+        
+        if (bl.getLength() != -1) {
+            return runtime.newFixnum(bl.getLength());
+        }
+        
+        // TODO: All algorithms should be supported here?
         throw getRuntime().newRuntimeError(
                 this.getMetaClass() + " doesn't implement block_length()");
     }
