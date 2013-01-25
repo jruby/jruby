@@ -987,7 +987,7 @@ args            : arg_value {
                     $$ = p.dispatch("on_args_add", $1, $3);
                 }
                 | args ',' tSTAR arg_value {
-                    $$ = p.dispatch("on_arg_add_star", $1, $4);
+                    $$ = p.dispatch("on_args_add_star", $1, $4);
                 }
 
 mrhs            : args ',' arg_value {
