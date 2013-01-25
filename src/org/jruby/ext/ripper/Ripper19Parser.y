@@ -1022,7 +1022,7 @@ primary         : literal
                                           p.dispatch("on_args_new"));
                 }
                 | kBEGIN bodystmt kEND {
-                    $$ = p.dispatch("on_begin", $3);
+                    $$ = p.dispatch("on_begin", $2);
                 }
                 | tLPAREN_ARG expr {
                     p.setState(LexState.EXPR_ENDARG); 
@@ -1546,11 +1546,8 @@ case_body       : kWHEN args then compstmt cases {
 cases           : opt_else | case_body
 
 opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
-                    $$ = p.dispatch("on_rescue",
-                                          p.escape($2),
-                                          p.escape($3),
-                                          p.escape($5),
-                                          p.escape($6));
+                    $$ = p.dispatch("on_rescue", p.escape($2),
+                                    p.escape($3), p.escape($5), p.escape($6));
                 }
                 | none
 

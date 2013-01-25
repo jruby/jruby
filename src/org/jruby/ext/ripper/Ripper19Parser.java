@@ -1742,11 +1742,8 @@ states[472] = new RipperParserState() {
 };
 states[405] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_rescue",
-                                          p.escape(((IRubyObject)yyVals[-4+yyTop])),
-                                          p.escape(((IRubyObject)yyVals[-3+yyTop])),
-                                          p.escape(((IRubyObject)yyVals[-1+yyTop])),
-                                          p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_rescue", p.escape(((IRubyObject)yyVals[-4+yyTop])),
+                                    p.escape(((IRubyObject)yyVals[-3+yyTop])), p.escape(((IRubyObject)yyVals[-1+yyTop])), p.escape(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -2406,7 +2403,7 @@ states[78] = new RipperParserState() {
 };
 states[279] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_begin", ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.dispatch("on_begin", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -4275,6 +4272,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2058 "Ripper19Parser.y"
+					// line 2055 "Ripper19Parser.y"
 }
-					// line 8278 "-"
+					// line 8275 "-"

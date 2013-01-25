@@ -648,8 +648,7 @@ public class RipperLexer {
     }
     
     private void arg_ambiguous() {
-        IRubyWarnings warnings = getRuntime().getWarnings();
-        if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        parser.dispatch("on_arg_ambiguous");
     }
 
 

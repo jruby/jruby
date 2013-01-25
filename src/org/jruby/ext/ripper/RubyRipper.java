@@ -35,10 +35,12 @@ import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.InputStreamLexerSource;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyRipper extends RubyObject {
@@ -316,11 +318,14 @@ public class RubyRipper extends RubyObject {
     }
     
     private String sourceAsString(ThreadContext context, IRubyObject src) {
-        // FIXME: WTF...respondsTo is true? for a string
-        System.out.println("RESPONDS_TO: " + src + "SC:"+ src.getClass()  +", RS: " + src.respondsTo("gets"));
-/*        if (!src.respondsTo("gets"))*/ return src.convertToString().asJavaString();
+        // FIXME: respond_to? returns private methods
+        DynamicMethod method = src.getMetaClass().searchMethod("gets");
+        
+        if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
+            return src.convertToString().asJavaString();
+        }
 
-/*        return src.callMethod(context, "gets").asJavaString();*/
+        return src.callMethod(context, "gets").asJavaString();
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {
