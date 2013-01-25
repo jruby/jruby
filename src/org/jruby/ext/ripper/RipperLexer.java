@@ -38,6 +38,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -121,12 +122,12 @@ public class RipperLexer {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            IRubyWarnings warnings = parser.context.runtime.getWarnings();
+            IRubyWarnings warnings = getRuntime().getWarnings();
             warnings.warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        yaccValue = parser.context.runtime.newFloat(d);
+        yaccValue = getRuntime().newFloat(d);
         return Tokens.tFLOAT;
     }
 
@@ -321,15 +322,18 @@ public class RipperLexer {
     }
     
     /**
-     * Get position information for Token/Node that follows node represented by startPosition 
-     * and current lexer location.
+     * Get position information and current lexer location.
      * 
-     * @param startPosition previous node/token
-     * @param inclusive include previous node into position information of current node
+     * @param startPosition previous position
+     * @param inclusive include previous position into position information at current locaiton
      * @return a new position
      */
     public ISourcePosition getPosition(ISourcePosition startPosition) {
     	return src.getPosition(startPosition); 
+    }
+    
+    public Ruby getRuntime() {
+        return parser.context.getRuntime();
     }
     
     public ISourcePosition getPosition() {
@@ -488,7 +492,7 @@ public class RipperLexer {
     }
 
     // STR_NEW3/parser_str_new
-    public IRubyObject createStrNode(ISourcePosition position, ByteList buffer, int flags) {
+    public IRubyObject createStr(ISourcePosition position, ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
@@ -502,7 +506,7 @@ public class RipperLexer {
             }
         }
 
-        return parser.context.runtime.newString(buffer);
+        return getRuntime().newString(buffer);
     }
     
     /**
@@ -644,7 +648,7 @@ public class RipperLexer {
     }
     
     private void arg_ambiguous() {
-        IRubyWarnings warnings = parser.context.runtime.getWarnings();
+        IRubyWarnings warnings = getRuntime().getWarnings();
         if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
     }
 
@@ -1411,7 +1415,7 @@ public class RipperLexer {
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
         if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
-            IRubyWarnings warnings = parser.context.runtime.getWarnings();
+            IRubyWarnings warnings = getRuntime().getWarnings();
             if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
@@ -1629,7 +1633,7 @@ public class RipperLexer {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            yaccValue = parser.context.runtime.newString("$" + (char) c);
+            yaccValue = getRuntime().newString("$" + (char) c);
             if (last_state == LexState.EXPR_FNAME) return Tokens.tGVAR;
 
             return Tokens.tBACK_REF;
@@ -1647,7 +1651,7 @@ public class RipperLexer {
                 return Tokens.tGVAR;
             }
             
-            yaccValue = parser.context.runtime.newString(tokenBuffer.toString());
+            yaccValue = getRuntime().newString(tokenBuffer.toString());
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);
@@ -1784,7 +1788,7 @@ public class RipperLexer {
                 src.unread(c2);
                 setState(LexState.EXPR_BEG);
                 src.read();
-                yaccValue = parser.context.runtime.newString(tempVal);
+                yaccValue = getRuntime().newString(tempVal);
                 return Tokens.tLABEL;
             }
             src.unread(c2);
@@ -1802,9 +1806,9 @@ public class RipperLexer {
                     setState(keyword.state);
                 }
                 if (state == LexState.EXPR_FNAME) {
-                    yaccValue = parser.context.runtime.newString(keyword.name);
+                    yaccValue = getRuntime().newString(keyword.name);
                 } else {
-                    yaccValue = parser.context.runtime.newString(tempVal);
+                    yaccValue = getRuntime().newString(tempVal);
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
@@ -2080,7 +2084,7 @@ public class RipperLexer {
                     break;
                 }
                 if (c2 != 0) {
-                    IRubyWarnings warnings = parser.context.runtime.getWarnings();
+                    IRubyWarnings warnings = getRuntime().getWarnings();
                     warnings.warn(IRubyWarnings.ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
                 }
             }
@@ -2111,7 +2115,7 @@ public class RipperLexer {
         // TODO: this isn't handling multibyte yet
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = parser.context.runtime.newString(oneCharBL);
+        yaccValue = getRuntime().newString(oneCharBL);
         return Tokens.tCHAR;
     }
     
@@ -2189,7 +2193,7 @@ public class RipperLexer {
         default:
             src.unread(c);
             if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
-                IRubyWarnings warnings = parser.context.runtime.getWarnings();
+                IRubyWarnings warnings = getRuntime().getWarnings();
                 
                 if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;

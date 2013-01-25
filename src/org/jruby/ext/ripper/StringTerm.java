@@ -29,15 +29,12 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
-import org.jruby.util.RegexpOptions;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
@@ -71,10 +68,10 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(src);
+                String options = parseRegexpFlags(src);
                 ByteList regexpBytelist = ByteList.create("");
 
-                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, options));
+                lexer.setValue(lexer.getRuntime().newString(options));
                 return Tokens.tREGEXP_END;
             }
 
@@ -131,44 +128,22 @@ public class StringTerm extends StrTerm {
                     src.getCurrentLine(), "unterminated string meets end of file");
         }
 
-        lexer.setValue(lexer.createStrNode(lexer.getPosition(), buffer, flags));
+        lexer.setValue(lexer.createStr(lexer.getPosition(), buffer, flags));
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(LexerSource src) throws IOException {
-        RegexpOptions options = new RegexpOptions();
+    private String parseRegexpFlags(LexerSource src) throws IOException {
+        StringBuilder buf = new StringBuilder("/");
+
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
         for (c = src.read(); c != RipperLexer.EOF
                 && Character.isLetter(c); c = src.read()) {
             switch (c) {
-            case 'i':
-                options.setIgnorecase(true);
-                break;
-            case 'x':
-                options.setExtended(true);
-                break;
-            case 'm':
-                options.setMultiline(true);
-                break;
-            case 'o':
-                options.setOnce(true);
-                break;
-            case 'n':
-                options.setExplicitKCode(KCode.NONE);
-                break;
-            case 'e':
-                options.setExplicitKCode(KCode.EUC);
-                break;
-            case 's':
-                options.setExplicitKCode(KCode.SJIS);
-                break;
-            case 'u':
-                options.setExplicitKCode(KCode.UTF8);
-                break;
-            case 'j':
-                options.setJava(true);
+                case 'i': case 'x': case 'm': case 'o': case 'n':
+                case 'e': case 's': case 'u':
+                    buf.append((char) c);
                 break;
             default:
                 unknownFlags.append((char) c);
@@ -181,7 +156,7 @@ public class StringTerm extends StrTerm {
                     + (unknownFlags.length() > 1 ? "s" : "") + " - "
                     + unknownFlags.toString(), unknownFlags.toString());
         }
-        return options;
+        return buf.toString();
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

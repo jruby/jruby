@@ -122,7 +122,7 @@ public class HeredocTerm extends StrTerm {
                     syntaxError(src);
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = lexer.createStrNode(lexer.getPosition(), str, 0);
+                    lexer.yaccValue = lexer.createStr(lexer.getPosition(), str, 0);
                     return Tokens.tSTRING_CONTENT;
                 }
                 str.append(src.read());
@@ -134,7 +134,7 @@ public class HeredocTerm extends StrTerm {
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = lexer.createStrNode(position, str, 0);
+        lexer.yaccValue = lexer.createStr(position, str, 0);
         return Tokens.tSTRING_CONTENT;
     }
     
