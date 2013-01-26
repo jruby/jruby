@@ -40,7 +40,7 @@ public class BNEInstr extends BranchInstr {
         Object value2 = getArg2().retrieve(context, self, currDynScope, temp);
         boolean eql = getArg2() == context.getRuntime().getIRManager().getNil() || getArg2() == UndefinedValue.UNDEFINED ?
                 value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
-        return !eql ? getJumpTarget().getTargetPC() : ipc+1;
+        return !eql ? getJumpTarget().getTargetPC() : ipc;
     }
 
     @Override

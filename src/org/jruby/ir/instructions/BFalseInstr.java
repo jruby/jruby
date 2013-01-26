@@ -32,6 +32,6 @@ public class BFalseInstr extends BranchInstr {
     @Override
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
         Object value1 = getArg1().retrieve(context, self, currDynScope, temp);
-        return !((IRubyObject)value1).isTrue() ? getJumpTarget().getTargetPC() : ipc+1;
+        return !((IRubyObject)value1).isTrue() ? getJumpTarget().getTargetPC() : ipc;
     }
 }

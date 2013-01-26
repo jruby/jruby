@@ -363,6 +363,7 @@ public class Interpreter {
         // Enter the looooop!
         while (ipc < n) {
             instr = instrs[ipc];
+            ipc++;
             Operation operation = instr.getOperation();
 
             if (debug) {
@@ -401,7 +402,6 @@ public class Interpreter {
                     int argIndex = ra.getArgIndex();
                     result = (argIndex < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
                     resultVar = ra.getResult();
-                    ipc++;
                     break;
                 }
                 case RECV_POST_REQD_ARG: {
@@ -409,34 +409,29 @@ public class Interpreter {
                     result = ra.receivePostReqdArg(args);
                     if (result == null) result = context.nil; // For blocks
                     resultVar = ra.getResult();
-                    ipc++;
                     break;
                 }
                 case RECV_OPT_ARG: {
                     ReceiveOptArgBase ra = (ReceiveOptArgBase)instr;
                     result = ra.receiveOptArg(args);
                     resultVar = ra.getResult();
-                    ipc++;
                     break;
                 }
                 case RECV_REST_ARG: {
                     ReceiveRestArgBase ra = (ReceiveRestArgBase)instr;
                     result = ra.receiveRestArg(runtime, args);
                     resultVar = ra.getResult();
-                    ipc++;
                     break;
                 }
                 case RECV_CLOSURE: {
-                    result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(Block.Type.PROC, block);
+                    result = (block == Block.NULL_BLOCK) ? context.nil : runtime.newProc(Block.Type.PROC, block);
                     resultVar = ((ResultInstr)instr).getResult();
-                    ipc++;
                     break;
                 }
                 case RECV_EXCEPTION: {
                     ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
                     result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
                     resultVar = rei.getResult();
-                    ipc++;
                     break;
                 }
 
@@ -464,13 +459,11 @@ public class Interpreter {
                 // --------- Bookkeeping instructions --------
                 case CHECK_ARITY: {
                     ((CheckArityInstr)instr).checkArity(runtime, args.length);
-                    ipc++;
                     break;
                 }
                 case PUSH_FRAME: {
                     context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
                     context.setCurrentVisibility(visibility);
-                    ipc++;
                     break;
                 }
                 case PUSH_BINDING: {
@@ -480,18 +473,15 @@ public class Interpreter {
                     // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                     currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                     context.pushScope(currDynScope);
-                    ipc++;
                     break;
                 }
                 case POP_FRAME: {
                     context.popFrame();
                     context.popRubyClass();
-                    ipc++;
                     break;
                 }
                 case POP_BINDING: {
                     context.popScope();
-                    ipc++;
                     break;
                 }
                 case THREAD_POLL: {
@@ -503,16 +493,13 @@ public class Interpreter {
                         // if (globalThreadPollCount % 10000 == 0) analyzeProfile(); //outputProfileStats();
                     }
                     context.callThreadPoll();
-                    ipc++;
                     break;
                 }
                 case LINE_NUM: {
                     context.setLine(((LineNumberInstr)instr).lineNumber);
-                    ipc++;
                     break;
                 }
                 case RUNTIME_HELPER: {
-                    ipc++;
                     resultVar = ((ResultInstr)instr).getResult();
                     result = ((RuntimeHelperCall)instr).callHelper(context, currDynScope, self, temp, scope, blockType);
                     break;
@@ -523,13 +510,11 @@ public class Interpreter {
                     CopyInstr c = (CopyInstr)instr;
                     result = c.getSource().retrieve(context, self, currDynScope, temp);
                     resultVar = ((ResultInstr)instr).getResult();
-                    ipc++;
                     break;
                 }
 
                 // ---------- All the rest ---------
                 default:
-                    ipc++;
                     if (instr instanceof ResultInstr) resultVar = ((ResultInstr)instr).getResult();
                     result = instr.interpret(context, currDynScope, self, temp, block);
                     break;
