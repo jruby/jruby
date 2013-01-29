@@ -1666,8 +1666,7 @@ public class RubyYaccLexer {
 
         String tempVal = tokenBuffer.toString().intern();
 
-	    if (!isOneEight && ((lex_state == LexState.EXPR_BEG && !commandState) ||
-                lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG)) {
+	    if (!isOneEight && (lex_state == LexState.EXPR_BEG && !commandState) || isARG()) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
                 src.unread(c2);
