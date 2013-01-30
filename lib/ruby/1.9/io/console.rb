@@ -114,7 +114,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       def winsize
         ws = LibC::Winsize.new
         if LibC.ioctl(fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TOCGWINSZ)", FFI.errno)
+          raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
         end
         [ ws[:ws_row], ws[:ws_col] ]
       end
@@ -122,13 +122,13 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       def winsize=(size)
         ws = LibC::Winsize.new
         if LibC.ioctl(fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TOCGWINSZ)", FFI.errno)
+          raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
         end
 
         ws[:ws_row] = size[0]
         ws[:ws_col] = size[1]
         if LibC.ioctl(fileno, LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TOCSWINSZ)", FFI.errno)
+          raise SystemCallError.new("ioctl(TIOCSWINSZ)", FFI.errno)
         end
       end
 
