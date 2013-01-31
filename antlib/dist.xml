@@ -185,10 +185,12 @@
             </tarfileset>
             <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
                 <patternset refid="dist.src.files"/>
+            </tarfileset>
+            <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
                 <patternset refid="dist.nailgun.files"/>
-                <include name="spi/**"/>
             </tarfileset>
             <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
+                <include name="spi/**"/>
                 <include name="tool/nailgun/configure"/>
                 <include name="test/testapp/testapp"/>
                 <include name="test/testapp/testapp.exe"/>
@@ -204,10 +206,12 @@
             </zipfileset>
             <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
                 <patternset refid="dist.src.files"/>
+            </zipfileset>
+            <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
                 <patternset refid="dist.nailgun.files"/>
-                <include name="spi/**"/>
             </zipfileset>
             <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
+                <include name="spi/**"/>
                 <include name="tool/nailgun/configure"/>
                 <include name="test/testapp/testapp"/>
                 <include name="test/testapp/testapp.exe"/>
