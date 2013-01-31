@@ -545,7 +545,7 @@ void usage(int exitcode) {
   cleanUpAndExit(exitcode);
 }
 
-int nailgunClientMain(int argc, char *argv[], char *env[]) {
+int main(int argc, char *argv[], char *env[]) {
   int i;
   struct sockaddr_in server_addr;
   char *nailgun_server;        /* server as specified by user */
