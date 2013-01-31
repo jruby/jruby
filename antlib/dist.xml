@@ -32,6 +32,8 @@
         <include name="README"/>
         <exclude name="lib/ruby/**"/>
         <exclude name="dist/**"/>
+        <!-- test/prawn is 37M -->
+        <exclude name="test/prawn/**"/>
     </patternset>
 
     <patternset id="dist.bin.files">
