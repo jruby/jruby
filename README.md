@@ -22,13 +22,13 @@ in Java.
 
 The Java version is tightly integrated with Java to allow both to script
 any Java class and to embed the interpreter into any Java application. 
-See the 'docs' directory for more information.
+See the `docs` directory for more information.
 
 ## Run
 
     bin/jruby rubyfile.rb
 
-interprets the file 'rubyfile.rb'.
+interprets the file `rubyfile.rb`.
 
 If you checked out from the repository or downloaded the source distribution,
 see the next section to build JRuby first.
@@ -44,14 +44,15 @@ To compile, just type:
 
     ant
 
-This will create a jruby.jar file in the projects 'lib' directory.
+This will create a `jruby.jar` file in the projects `lib` directory.
+Add `bin` to your `$PATH`, and invoke `jruby`.
 
 ## Testing
 
-In order to run the unit tests, copy the build_lib/junit.jar file to either
-$ANT_HOME/lib/junit.jar or ~/.ant/lib/junit.jar.
+In order to run the unit tests, copy the `build_lib/junit.jar` file to either
+`$ANT_HOME/lib/junit.jar` or `~/.ant/lib/junit.jar`.
 
-See 'docs/README.test' for more information.
+See `docs/README.test` for more information.
 
 ## More Information
 
@@ -59,4 +60,4 @@ Visit http://jruby.org for more information.
 
 ## License
 
-Read the COPYING file.
+Read the `COPYING` file.
