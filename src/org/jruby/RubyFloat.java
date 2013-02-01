@@ -828,6 +828,10 @@ public class RubyFloat extends RubyNumeric {
         double magnifier = Math.pow(10.0, Math.abs(digits));
         double number = value;
         
+        if (Double.isInfinite(value)) {
+            return this;
+        }
+        
         if (Double.isInfinite(magnifier)) {
             if (digits < 0) number = 0;
         } else {
