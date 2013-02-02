@@ -993,7 +993,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         KCode kcode = null;
         IRubyObject kcode_re = runtime.getNil();
-        RubyString source = runtime.newString();
+        RubyString source = RubyString.newEmptyString(runtime);
 
         for (int i = 0; i < realArgs.length; i++) {
             if (0 < i) source.cat((byte)'|');
@@ -1051,7 +1051,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return !re.isNil() ? re : newRegexp(runtime, ((RubyString)quote19(context, recv, args[0])).getByteList());
         } else {
             boolean hasAsciiOnly = false;
-            RubyString source = runtime.newString();
+            RubyString source = RubyString.newEmptyString(runtime);
             Encoding hasAsciiCompatFixed = null;
             Encoding hasAsciiIncompat = null;
 

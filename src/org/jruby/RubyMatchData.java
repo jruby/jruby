@@ -308,7 +308,7 @@ public class RubyMatchData extends RubyObject {
         if (str == null) return anyToString();
 
         Ruby runtime = getRuntime();
-        RubyString result = runtime.newString();
+        RubyString result = RubyString.newEmptyString(runtime);
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 

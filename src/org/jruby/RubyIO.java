@@ -3268,7 +3268,7 @@ public class RubyIO extends RubyObject {
         while(!(ch = getc()).isNil()) {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
-            RubyString str = runtime.newString();
+            RubyString str = RubyString.newEmptyString(runtime);
             if (runtime.is1_9()) str.setEncoding(getReadEncoding(runtime));
             str.setTaint(true);
             str.cat(c);
