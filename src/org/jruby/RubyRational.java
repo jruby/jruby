@@ -975,13 +975,10 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        RubyString str = context.runtime.newString();
+        RubyString str = RubyString.newEmptyString(context.getRuntime());
         str.append(f_to_s(context, num));
         str.cat((byte)'/');
         str.append(f_to_s(context, den));
-        // a Rational does not contain non-ASCII characters, so
-        // it is OK to force US-ASCII here.
-        if (getRuntime().is1_9()) str.setEncoding(USASCIIEncoding.INSTANCE);
         return str;
     }
 
@@ -990,7 +987,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        RubyString str = context.runtime.newString();
+        RubyString str = RubyString.newEmptyString(context.getRuntime());
         str.cat((byte)'(');
         str.append(f_inspect(context, num));
         str.cat((byte)'/');
