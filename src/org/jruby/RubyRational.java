@@ -58,6 +58,7 @@ import static org.jruby.util.Numeric.ldexp;
 import static org.jruby.util.Numeric.nurat_rationalize_internal;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
@@ -978,6 +979,9 @@ public class RubyRational extends RubyNumeric {
         str.append(f_to_s(context, num));
         str.cat((byte)'/');
         str.append(f_to_s(context, den));
+        // a Rational does not contain non-ASCII characters, so
+        // it is OK to force US-ASCII here.
+        if (getRuntime().is1_9()) str.setEncoding(USASCIIEncoding.INSTANCE);
         return str;
     }
 
