@@ -202,7 +202,6 @@ describe "A Java primitive Array of type" do
 ###
 
 # Test hash coercion
-    pending 'fails on Travis' do
     if RUBY_VERSION =~ /1\.9/
       class MyHash
         def initialize(hash)
@@ -242,7 +241,6 @@ describe "A Java primitive Array of type" do
       x.replace(MyHash.new(sub2))
       test_equal(10, x[:a])
       test_equal(20, x[:b])
-    end
     end
 
     class H1 < java.util.HashMap
