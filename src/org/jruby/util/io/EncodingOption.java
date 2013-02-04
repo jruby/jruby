@@ -52,7 +52,7 @@ public class EncodingOption {
         IRubyObject externalOpt = opts.fastARef(runtime.newSymbol("external_encoding"));
         IRubyObject internalOpt = opts.fastARef(runtime.newSymbol("internal_encoding"));
         
-        if ((externalOpt != null || internalOpt != null) && !encodingOpt.isNil()) {
+        if ((externalOpt != null || internalOpt != null) && encodingOpt != null && !encodingOpt.isNil()) {
                 runtime.getWarnings().warn("Ignoring encoding parameter '" + encodingOpt + "': " + 
                         (externalOpt == null ? "internal" : "external") + "_encoding is used");
                 encodingOpt = null;
