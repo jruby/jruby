@@ -161,6 +161,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     @Override
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+        Ruby runtime = getRuntime();
         RubyHash options = null;
 
         // check for trailing hash
@@ -171,11 +172,54 @@ public class Tempfile extends org.jruby.RubyTempfile {
             }
         }
 
-        initialize(args, block);
+        IOOptions ioOptions = newIOOptions(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
 
-        if (options != null) EncodingOption.getEncodingOptionFromObject(context, this, options);
+        if (options != null) {
+            ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
+            EncodingOption.getEncodingOptionFromObject(context, this, options);
+            
+        }
+        
+        IRubyObject basename = args[0];
+        IRubyObject dir = defaultTmpDir(runtime, args);
 
-        return this;
+        File tmp;
+        synchronized(tmpFileLock) {
+            while (true) {
+                try {
+                    if (counter == -1) {
+                        counter = RND.nextInt() & 0xffff;
+                    }
+                    counter++;
+
+                    // We do this b/c make_tmpname might be overridden
+                    IRubyObject tmpname = callMethod(runtime.getCurrentContext(),
+                                                     "make_tmpname", new IRubyObject[] {basename, runtime.newFixnum(counter)});
+                    tmp = JRubyFile.create(getRuntime().getCurrentDirectory(),
+                                           new File(dir.convertToString().toString(), tmpname.convertToString().toString()).getPath());
+                    if (tmp.createNewFile()) {
+                        tmpFile = tmp;
+                        path = tmp.getPath();
+                        try {
+                            tmpFile.deleteOnExit();
+                        } catch (NullPointerException npe) {
+                            // See JRUBY-4624.
+                            // Due to JDK bug, NPE could be thrown
+                            // when shutdown is in progress.
+                            // Do nothing.
+                        } catch (IllegalStateException ise) {
+                            // do nothing, shutdown in progress
+                        }
+                        runtime.getPosix().chmod(path, 0600);
+                        sysopenInternal(path, ioOptions.getModeFlags(), 0600);
+                        referenceSet.put(reaper = new Reaper(this, runtime, tmpFile, openFile), Boolean.TRUE);
+                        return this;
+                    }
+                } catch (IOException e) {
+                    throw runtime.newIOErrorFromException(e);
+                }
+            }
+        }
     }
 
     private IRubyObject defaultTmpDir(Ruby runtime, IRubyObject[] args) {

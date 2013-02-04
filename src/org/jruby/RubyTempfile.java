@@ -51,6 +51,7 @@ public abstract class RubyTempfile extends RubyFile {
         super(runtime, type);
     }
 
+    @Override
     public abstract IRubyObject initialize(IRubyObject[] args, Block block);
     public abstract IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block);
     public abstract IRubyObject open();
@@ -58,6 +59,7 @@ public abstract class RubyTempfile extends RubyFile {
     public abstract IRubyObject close(ThreadContext context, IRubyObject[] args, Block block);
     public abstract IRubyObject close_bang(ThreadContext context);
     public abstract IRubyObject unlink(ThreadContext context);
+    @Override
     public abstract IRubyObject size(ThreadContext context);
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return Tempfile.open(context, recv, args, block);
