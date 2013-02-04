@@ -79,6 +79,7 @@ public class RubyGzipFile extends RubyObject {
     }
     protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
 
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyGzipFile(runtime, klass);
         }
@@ -94,18 +95,7 @@ public class RubyGzipFile extends RubyObject {
 
         return result;
     }
-    protected boolean closed = false;
-    protected boolean finished = false;
-    protected byte osCode = Zlib.OS_UNKNOWN;
-    protected int level = -1;
-    protected RubyString nullFreeOrigName;
-    protected RubyString nullFreeComment;
-    protected IRubyObject realIo;
-    protected RubyTime mtime;
-    protected Encoding readEncoding;    // enc
-    protected Encoding writeEncoding;   // enc2
-    protected boolean sync = false;
-
+    
     public RubyGzipFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
         mtime = RubyTime.newTime(runtime, new DateTime());
@@ -206,4 +196,18 @@ public class RubyGzipFile extends RubyObject {
         sync = ((RubyBoolean) arg).isTrue();
         return sync ? getRuntime().getTrue() : getRuntime().getFalse();
     }
+    
+    protected boolean closed = false;
+    protected boolean finished = false;
+    protected byte osCode = Zlib.OS_UNKNOWN;
+    protected int level = -1;
+    protected RubyString nullFreeOrigName;
+    protected RubyString nullFreeComment;
+    protected IRubyObject realIo;
+    protected RubyTime mtime;
+    protected Encoding readEncoding;    // enc
+    protected Encoding writeEncoding;   // enc2
+    protected boolean sync = false;
+    protected CharsetTranscoder readTranscoder = null;
+    protected CharsetTranscoder writeTranscoder = null;    
 }
