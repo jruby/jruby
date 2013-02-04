@@ -277,7 +277,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     public IRubyObject open() {
         if (!isClosed()) close();
 
-        openInternal(path, "r+");
+        openInternal(path, openFile.getModeAsString(getRuntime()));
 
         return this;
     }
