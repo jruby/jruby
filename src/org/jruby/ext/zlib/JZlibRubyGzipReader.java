@@ -108,11 +108,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (args.length > 1) {
             IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
             if (!opt.isNil()) {
-                EncodingOption enc = EncodingOption.getEncodingOptionFromObject(opt);
-                if (enc != null) {
-                    readEncoding = enc.getExternalEncoding();
-                    writeEncoding = enc.getInternalEncoding();
-                }
+                EncodingOption.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
             }
         }
         if (realIo.respondsTo("path")) {
@@ -616,5 +612,5 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     private int line = 0;
     private long position = 0;
     private com.jcraft.jzlib.GZIPInputStream io;
-    private InputStream bufferedStream;    
+    private InputStream bufferedStream;
 }

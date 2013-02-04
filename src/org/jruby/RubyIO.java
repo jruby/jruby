@@ -188,7 +188,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         super(runtime, cls);
 
         ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), (RubyHash) options, ioOptions);
-        setEncodingFromOptions(ioOptions.getEncodingOption());
 
         openFile = new OpenFile();
         
@@ -899,7 +898,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             ioOptions = updateIOOptionsFromOptions(context, (RubyHash) options, ioOptions);
-            setEncodingFromOptions(ioOptions.getEncodingOption());
 
             if (ioOptions == null) ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
 
@@ -1084,7 +1082,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
         if (!internal.isNil()) {
             Encoding enc;
-            Encoding enc2 = getEncodingCommon(context, external);
+            Encoding enc2 = EncodingOption.toEncoding(context, external);
             
             if (internal instanceof RubyString) {
                 RubyString internalAsString = (RubyString) internal;
@@ -1094,8 +1092,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc = enc2;
                     enc2 = null;
                 } else {
-                    EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, internalAsString.asJavaString());
-                    enc = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
+                    enc = EncodingOption.toEncoding(context, internalAsString);
                 }
                 
                 if (enc == enc2) {
@@ -1104,8 +1101,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc2 = null;
                 }
             } else {
-                enc = getEncodingCommon(context, internal);
+                enc = EncodingOption.toEncoding(context, internal);
 
+                // FIXME: missing rb_econv_prepare_options
                 if (enc2 == enc) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
                             enc2 + ": it is identical to external encoding " + enc);
@@ -1113,8 +1111,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
             transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);            
-            EncodingOption.setupReadWriteEncodings(context, this, enc, enc2);            
-            
         } else {
             if (external.isNil()) {
                 EncodingOption.setupReadWriteEncodings(context, this, null, null);
@@ -1122,10 +1118,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if (external instanceof RubyString) {
                     RubyString externalAsString = (RubyString) external;
                     
-                    // FIXME: I think this can handle a:b syntax and I didn't (also BOM)
-                    setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString()));
+                    EncodingOption.parseModeEncoding(context, this, externalAsString.asJavaString());
+                    // FIXME: missing rb_econv_prepare_options
                 } else {
-                    Encoding enc = getEncodingCommon(context, external);
+                    Encoding enc = EncodingOption.toEncoding(context, external);
+                    
                     EncodingOption.setupReadWriteEncodings(context, this, null, enc);
                 }
                 transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
@@ -1164,13 +1161,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         setEncoding(context, encodingString, internalEncoding, options);
 
         return context.runtime.getNil();
-    }
-
-
-    private static Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
-        if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
-
-        return context.runtime.getEncodingService().getEncodingFromObject(encoding);
     }
 
     @JRubyMethod(required = 1, rest = true, meta = true)
@@ -4117,7 +4107,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             Pipe pipe = Pipe.open();
 
             RubyIO source = new RubyIO(runtime, pipe.source());
-            source.setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(runtime, modes.toString()));
+            EncodingOption.parseModeEncoding(context, source, modes.toString());
             RubyIO sink = new RubyIO(runtime, pipe.sink());
 
 //            Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
@@ -4382,29 +4372,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
-        if (encodingOption != null) {
-            ioOptions.setEncodingOption(encodingOption);
-        }
+        EncodingOption.getEncodingOptionFromObject(context, this, options);
 
         return ioOptions;
-    }
-
-    public void setEncodingFromOptions(EncodingOption option) {
-        Encoding internal = null;
-
-        Encoding external;
-        if (option.hasBom()) {
-            external = encodingFromBOM();
-        } else if (option.getExternalEncoding() != null) {
-            external = option.getExternalEncoding();
-        } else {
-            external = null;
-        }
-
-        if (option.getInternalEncoding() != null) internal = option.getInternalEncoding();
-
-        EncodingOption.setupReadWriteEncodings(getRuntime().getCurrentContext(), this, internal, external);
     }
 
     // io_strip_bom
@@ -4623,7 +4593,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public static IOOptions newIOOptions(Ruby runtime, ModeFlags modeFlags) {
-        return new IOOptions(modeFlags, EncodingOption.getEncodingNoOption(runtime, modeFlags));
+        return new IOOptions(modeFlags);
     }
 
     public static IOOptions newIOOptions(Ruby runtime, long mode) {
@@ -4633,7 +4603,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IOOptions newIOOptions(Ruby runtime, int mode) {
         try {
             ModeFlags modeFlags = new ModeFlags(mode);
-            return new IOOptions(modeFlags, EncodingOption.getEncodingNoOption(runtime, modeFlags));
+            return new IOOptions(modeFlags);
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError();
         }
@@ -4650,7 +4620,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public static IOOptions newIOOptions(Ruby runtime, IOOptions oldFlags, int orOflags) {
         try {
-            return new IOOptions(new ModeFlags(oldFlags.getModeFlags().getFlags() | orOflags), oldFlags.getEncodingOption());
+            return new IOOptions(new ModeFlags(oldFlags.getModeFlags().getFlags() | orOflags));
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError();
         }
@@ -4771,6 +4741,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public void setReadEncoding(Encoding readEncoding) {
         this.readEncoding = readEncoding;
     }
+    
+    @Override
+    public void setBOM(boolean bom) {
+        this.hasBom = bom;
+    }
 
     // MRI: rb_io_ascii8bit_binmode
     protected void setAscii8bitBinmode() {
@@ -4816,4 +4791,5 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * when we close the stream.
      */
     protected boolean popenSpecial;
+    protected boolean hasBom = false;
 }

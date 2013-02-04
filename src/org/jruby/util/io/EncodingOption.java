@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -31,7 +32,64 @@ public class EncodingOption {
         return bom;
     }
     
-        // MRI: rb_io_ext_int_to_encs
+    //FIXME: Temporary...
+    public static Encoding toEncoding(ThreadContext context, IRubyObject object) {
+        if (object instanceof RubyEncoding) return ((RubyEncoding) object).getEncoding();
+        
+        return context.runtime.getEncodingService().getEncodingFromObject(object);
+    }
+
+    // c: rb_io_extract_encoding_option
+    public static boolean getEncodingOptionFromObject(ThreadContext context, IOEncodable ioEncodable, IRubyObject options) {
+        if (options == null || options.isNil() || !(options instanceof RubyHash)) return false;
+
+        RubyHash opts = (RubyHash) options;        
+        boolean extracted = false;
+        Encoding externalEncoding = null;
+        
+        Ruby runtime = options.getRuntime();
+        IRubyObject encodingOpt = opts.fastARef(runtime.newSymbol("encoding"));
+        IRubyObject externalOpt = opts.fastARef(runtime.newSymbol("external_encoding"));
+        IRubyObject internalOpt = opts.fastARef(runtime.newSymbol("internal_encoding"));
+        
+        if ((externalOpt != null || internalOpt != null) && !encodingOpt.isNil()) {
+                runtime.getWarnings().warn("Ignoring encoding parameter '" + encodingOpt + "': " + 
+                        (externalOpt == null ? "internal" : "external") + "_encoding is used");
+                encodingOpt = null;
+        }
+        
+        if (externalOpt != null && !externalOpt.isNil()) externalEncoding = toEncoding(context, externalOpt);
+
+        Encoding internalEncoding = null;
+
+        if (internalOpt != null) {
+            if (internalOpt.isNil() || internalOpt.asString().toString().equals("-")) {
+                internalEncoding = null;
+            } else {
+                internalEncoding = toEncoding(context, options);
+            }
+            
+            if (externalEncoding == internalEncoding) internalEncoding = null;
+        }
+        
+        if (encodingOpt != null && !encodingOpt.isNil()) {
+            extracted = true;
+            
+            IRubyObject tmp = encodingOpt.checkStringType19();
+            if (!tmp.isNil()) {
+                parseModeEncoding(context, ioEncodable, tmp.convertToString().toString());
+            } else {
+                setupReadWriteEncodings(context, ioEncodable, toEncoding(context, tmp), null);
+            }
+        } else if (externalOpt != null || internalEncoding != null) {
+            extracted = true;
+            setupReadWriteEncodings(context, ioEncodable, externalEncoding, internalEncoding);
+        }
+        
+        return extracted;
+    }
+    
+    // MRI: rb_io_ext_int_to_encs
     public static void setupReadWriteEncodings(ThreadContext context, IOEncodable encodable, 
             Encoding internal, Encoding external) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
@@ -53,89 +111,16 @@ public class EncodingOption {
             encodable.setReadEncoding(internal);
             encodable.setWriteEncoding(external);
         }
-    }
-
-    // c: rb_io_extract_encoding_option
-    public static EncodingOption getEncodingOptionFromObject(IRubyObject options) {
-        if (options == null || options.isNil() || !(options instanceof RubyHash)) return null;
-
-        RubyHash opts = (RubyHash) options;
-
-        Ruby runtime = options.getRuntime();
-        IRubyObject encOption = opts.fastARef(runtime.newSymbol("encoding"));
-        IRubyObject extOption = opts.fastARef(runtime.newSymbol("external_encoding"));
-        IRubyObject intOption = opts.fastARef(runtime.newSymbol("internal_encoding"));
-        if (encOption != null && !encOption.isNil()) {
-            if (extOption != null || intOption != null) {
-                runtime.getWarnings().warn("Ignoring encoding parameter '" + encOption + "': " + 
-                        (extOption == null ? "internal" : "external") + "_encoding is used");
-            } else {
-                IRubyObject tmp = encOption.checkStringType19();
-                if (!tmp.isNil()) {
-                    return getEncodingOptionFromString(runtime, tmp.convertToString().toString());
-                }
-                return createEncodingOption(runtime, runtime.getEncodingService()
-                        .getEncodingFromObject(encOption), null, false);
-            }
-        }
-        boolean set = false;
-        Encoding extEncoding = null;
-        Encoding intEncoding = null;
-
-        if (extOption != null) {
-            set = true;
-            if (!extOption.isNil()) {
-                extEncoding = runtime.getEncodingService().getEncodingFromObject(extOption);
-            }
-        }
-        if (intOption != null) {
-            set = true;
-            if (intOption.isNil()) {
-                // null;
-            } else if (intOption.asString().toString().equals("-")) {
-                // null;
-            } else {
-                intEncoding = runtime.getEncodingService().getEncodingFromObject(intOption);
-            }
-        }
-        if (!set)
-            return null;
-
-        return createEncodingOption(runtime, extEncoding, intEncoding, false);
-    }
-
-    // c: rb_io_ext_int_to_encs
-    private static EncodingOption createEncodingOption(Ruby runtime, Encoding extEncoding,
-                                                       Encoding intEncoding, boolean isBom) {
-        boolean defaultExt = false;
-        if (extEncoding == null) {
-            extEncoding = runtime.getDefaultExternalEncoding();
-            defaultExt = true;
-        }
-        if (intEncoding == null && extEncoding != ASCIIEncoding.INSTANCE) {
-            /* If external is ASCII-8BIT, no default transcoding */
-            intEncoding = runtime.getDefaultInternalEncoding();
-        }
-        if (intEncoding == null || intEncoding == extEncoding) {
-            /* No internal encoding => use external + no transcoding */
-            // JRuby passes extEncoding instead of null for external, since we use this for final encoding of strings
-            return new EncodingOption(
-                    extEncoding,
-                    (defaultExt && intEncoding != extEncoding) ? null : extEncoding,
-                    isBom);
-        } else {
-            return new EncodingOption(
-                    extEncoding,
-                    intEncoding,
-                    isBom);
-        }
-    }
+    }    
 
     // c: parse_mode_enc
-    public static EncodingOption getEncodingOptionFromString(Ruby runtime, String option) {
+    public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option) {
+        Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
         Encoding intEncoding = null;
         boolean isBom = false;
+        
+        // FIXME: Did not mark BOM
 
         String[] encs = option.split(":", 2);
 
@@ -154,17 +139,7 @@ public class EncodingOption {
             }
         }
 
-        // Duplicating some rb_io_ext_int_to_encs logic here, which is also in RubyIO#setupReadWriteEncodings.
-
-        if (extEncoding == null) {
-            extEncoding = runtime.getDefaultExternalEncoding();
-        }
-
-        if (intEncoding == null && extEncoding != ASCIIEncoding.INSTANCE) {
-            intEncoding = runtime.getDefaultInternalEncoding();
-        }
-
-        return new EncodingOption(extEncoding, intEncoding, isBom);
+        setupReadWriteEncodings(context, ioEncodable, intEncoding, extEncoding);
     }
 
     // c: parse_mode_enc

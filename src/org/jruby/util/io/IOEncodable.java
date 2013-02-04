@@ -8,4 +8,5 @@ import org.jcodings.Encoding;
 public interface IOEncodable {
     public void setReadEncoding(Encoding readEncoding);
     public void setWriteEncoding(Encoding writeEncoding);
+    public void setBOM(boolean bom);
 }

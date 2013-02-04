@@ -54,7 +54,6 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.PhantomReferenceReaper;
 import org.jruby.util.io.EncodingOption;
 import org.jruby.util.io.IOOptions;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
@@ -70,6 +69,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     private transient volatile Reaper reaper;
 
     private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new Tempfile(runtime, klass);
 
@@ -120,7 +120,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
         IRubyObject basename = args[0];
         IRubyObject dir = defaultTmpDir(runtime, args);
 
-        File tmp = null;
+        File tmp;
         synchronized(tmpFileLock) {
             while (true) {
                 try {
@@ -173,18 +173,13 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
         initialize(args, block);
 
-        if (options != null) {
-            EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
-            if (encodingOption != null) {
-                setEncodingFromOptions(encodingOption);
-            }
-        }
+        if (options != null) EncodingOption.getEncodingOptionFromObject(context, this, options);
 
         return this;
     }
 
     private IRubyObject defaultTmpDir(Ruby runtime, IRubyObject[] args) {
-        IRubyObject dir = null;
+        IRubyObject dir;
         if (args.length == 2) {
             dir = args[1];
         } else {
@@ -208,6 +203,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
      * Compatibility with Tempfile#make_tmpname(basename, n) in MRI
      */
     @JRubyMethod(visibility = PRIVATE)
+    @Override
     public IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject[] newargs = new IRubyObject[5];
@@ -233,6 +229,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     }
 
     @JRubyMethod(visibility = PUBLIC)
+    @Override
     public IRubyObject open() {
         if (!isClosed()) close();
 
@@ -242,17 +239,20 @@ public class Tempfile extends org.jruby.RubyTempfile {
     }
 
     @JRubyMethod(visibility = PROTECTED)
+    @Override
     public IRubyObject _close(ThreadContext context) {
         return !isClosed() ? super.close() : context.runtime.getNil();
     }
 
     @JRubyMethod(optional = 1, visibility = PUBLIC)
+    @Override
     public IRubyObject close(ThreadContext context, IRubyObject[] args, Block block) {
         boolean unlink = args.length == 1 ? args[0].isTrue() : false;
         return unlink ? close_bang(context) : _close(context);
     }
 
     @JRubyMethod(name = "close!", visibility = PUBLIC)
+    @Override
     public IRubyObject close_bang(ThreadContext context) {
          referenceSet.remove(reaper);
          reaper.released = true;
@@ -262,6 +262,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     }
 
     @JRubyMethod(name = {"unlink", "delete"})
+    @Override
     public IRubyObject unlink(ThreadContext context) {
         // JRUBY-6688: delete when closed, warn otherwise
         if (isClosed()) {
@@ -279,6 +280,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
     }
 
     @JRubyMethod(name = {"size", "length"})
+    @Override
     public IRubyObject size(ThreadContext context) {
         if (!isClosed()) {
             flush();
@@ -351,6 +353,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
             this.openFile = openFile;
         }
 
+        @Override
         public final void run() {
             referenceSet.remove(this);
             release();

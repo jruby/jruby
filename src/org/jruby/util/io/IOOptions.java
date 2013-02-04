@@ -40,16 +40,12 @@ import org.jruby.Ruby;
  */
 public class IOOptions implements Cloneable {
     private ModeFlags modeFlags;
-
-    private EncodingOption encodingOption;
     
     /**
      * Construct a new IOOptions object with ModeFlags and EncodingOption
      */
-    public IOOptions(ModeFlags modeFlags, EncodingOption encodingOption) {
-        assert encodingOption != null;
+    public IOOptions(ModeFlags modeFlags) {
         this.modeFlags = modeFlags;
-        this.encodingOption = encodingOption;
     }
 
     /**
@@ -68,10 +64,8 @@ public class IOOptions implements Cloneable {
         int colonIndex = modeString.indexOf(':');
         if (colonIndex == -1) {
             modeFlags = new ModeFlags(modeString);
-            encodingOption = EncodingOption.getEncodingNoOption(runtime, modeFlags);
         } else {
             modeFlags = new ModeFlags(modeString.substring(0, colonIndex));
-            encodingOption = EncodingOption.getEncodingOptionFromString(runtime, modeString.substring(colonIndex + 1));
         }
     }
 
@@ -82,25 +76,10 @@ public class IOOptions implements Cloneable {
     public void setModeFlags(ModeFlags modeFlags) {
         this.modeFlags = modeFlags;
     }
-
-    /**
-     * The encoding options for this ModeFlags
-     */
-    public EncodingOption getEncodingOption() {
-        return encodingOption;
-    }
-
-    /**
-     * Set the encoding options for this ModeFlags
-     */
-    public void setEncodingOption(EncodingOption encodingOption) {
-        assert encodingOption != null;
-        this.encodingOption = encodingOption;
-    }
     
     @Override
     public String toString() {
         // TODO: Make this more intelligible value
-        return "[ModeFlags: " + modeFlags + ", EncodingOption: " + encodingOption;
+        return "[ModeFlags: " + modeFlags;
     }
 }

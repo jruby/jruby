@@ -61,7 +61,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -174,6 +173,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new RubyFile(runtime, klass);
 
@@ -203,6 +203,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     //     Converting a reader back into an InputStream doesn't generally work.
     public RubyFile(Ruby runtime, String path, final Reader reader) {
         this(runtime, path, new InputStream() {
+            @Override
             public int read() throws IOException {
                 return reader.read();
             }
@@ -1095,10 +1096,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
 
+    @Override
     public Encoding getEncoding() {
         return null;
     }
 
+    @Override
     public void setEncoding(Encoding encoding) {
         // :)
     }
@@ -1176,8 +1179,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
 
         sysopenInternal(path, ioOptions.getModeFlags(), perm);
-
-        setEncodingFromOptions(ioOptions.getEncodingOption());
     }
 
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
@@ -1198,8 +1199,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
 
         openInternal(path, ioOptions.getModeFlags());
-
-        setEncodingFromOptions(ioOptions.getEncodingOption());
     }
 
     protected void openInternal(String path, ModeFlags modes) {
@@ -1501,7 +1500,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         String relativePath = get_path(context, args[0]).getUnicodeValue();
         String[] uriParts = splitURI(relativePath);
-        String cwd = null;
+        String cwd;
 
         // Handle ~user paths
         if (expandUser) {
