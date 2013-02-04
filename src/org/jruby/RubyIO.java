@@ -104,13 +104,14 @@ import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.io.IOEncodable;
 
 /**
  * 
  * @author jpetersen
  */
 @JRubyClass(name="IO", include="Enumerable")
-public class RubyIO extends RubyObject {
+public class RubyIO extends RubyObject implements IOEncodable {
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
     public RubyIO(Ruby runtime, RubyClass type) {
@@ -286,6 +287,7 @@ public class RubyIO extends RubyObject {
     }
     
     private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIO(runtime, klass);
         }
@@ -1111,11 +1113,11 @@ public class RubyIO extends RubyObject {
                 }
             }
             transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);            
-            setupReadWriteEncodings(context, enc, enc2);            
+            EncodingOption.setupReadWriteEncodings(context, this, enc, enc2);            
             
         } else {
             if (external.isNil()) {
-                setupReadWriteEncodings(context, null, null);
+                EncodingOption.setupReadWriteEncodings(context, this, null, null);
             } else {
                 if (external instanceof RubyString) {
                     RubyString externalAsString = (RubyString) external;
@@ -1124,7 +1126,7 @@ public class RubyIO extends RubyObject {
                     setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString()));
                 } else {
                     Encoding enc = getEncodingCommon(context, external);
-                    setupReadWriteEncodings(context, null, enc);
+                    EncodingOption.setupReadWriteEncodings(context, this, null, enc);
                 }
                 transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
             }
@@ -4402,7 +4404,7 @@ public class RubyIO extends RubyObject {
 
         if (option.getInternalEncoding() != null) internal = option.getInternalEncoding();
 
-        setupReadWriteEncodings(getRuntime().getCurrentContext(), internal, external);
+        EncodingOption.setupReadWriteEncodings(getRuntime().getCurrentContext(), this, internal, external);
     }
 
     // io_strip_bom
@@ -4760,27 +4762,14 @@ public class RubyIO extends RubyObject {
         writeTranscoder = null;
     }
     
-    // MRI: rb_io_ext_int_to_encs
-    private void setupReadWriteEncodings(ThreadContext context, Encoding internal, Encoding external) {
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-        boolean defaultExternal = false;
-        
-        if (external == null) {
-            external = context.runtime.getDefaultExternalEncoding();
-            defaultExternal = true;
-        }
-        
-        if (internal == null && external != ascii8bit) {
-            internal = context.runtime.getDefaultInternalEncoding();
-        }
-        
-        if (internal == null || internal == external) { // missing internal == nil?
-            readEncoding = (defaultExternal && internal != external) ? null : external;
-            writeEncoding = null;
-        } else {
-            readEncoding = internal;
-            writeEncoding = external;
-        }
+    @Override
+    public void setWriteEncoding(Encoding writeEncoding) {
+        this.writeEncoding = writeEncoding;
+    }
+    
+    @Override
+    public void setReadEncoding(Encoding readEncoding) {
+        this.readEncoding = readEncoding;
     }
 
     // MRI: rb_io_ascii8bit_binmode
