@@ -30,9 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -53,6 +50,7 @@ public abstract class RubyStringIO extends RubyObject {
     }
 
     public abstract IRubyObject initialize(IRubyObject[] args, Block unusedBlock);
+    @Override
     public abstract IRubyObject initialize_copy(IRubyObject other);
     public abstract IRubyObject append(ThreadContext context, IRubyObject arg);
     public abstract IRubyObject binmode();
@@ -118,5 +116,6 @@ public abstract class RubyStringIO extends RubyObject {
     public abstract IRubyObject set_encoding(ThreadContext context, IRubyObject enc);
     public abstract IRubyObject external_encoding(ThreadContext context);
     public abstract IRubyObject internal_encoding(ThreadContext context);
+    @Override
     public abstract void checkFrozen();
 }
