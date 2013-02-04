@@ -202,46 +202,46 @@ describe "A Java primitive Array of type" do
 ###
 
 # Test hash coercion
-    if RUBY_VERSION =~ /1\.9/
-      class MyHash
-        def initialize(hash)
-          @hash = hash
-        end
-
-        def to_hash
-          @hash
-        end
-      end
-
-      class SubHash < Hash
-      end
-
-      x = java.util.HashMap.new
-      x.put(:a, 1); x.put(:b, 2)
-      x.update(MyHash.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.update(MyHash.new(4)) }
-
-      x.put(:a, 1); x.put(:b, 2)
-      sub2 = SubHash.new()
-      sub2[:a] = 10
-      sub2[:b] = 20
-      x.update(MyHash.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(MyHash.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.replace(MyHash.new(4)) }
-
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(MyHash.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-    end
+#    if RUBY_VERSION =~ /1\.9/
+#      class MyHash
+#        def initialize(hash)
+#          @hash = hash
+#        end
+#
+#        def to_hash
+#          @hash
+#        end
+#      end
+#
+#      class SubHash < Hash
+#      end
+#
+#      x = java.util.HashMap.new
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.update(MyHash.new({:a => 10, :b => 20}))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#      test_exception(TypeError) { x.update(MyHash.new(4)) }
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      sub2 = SubHash.new()
+#      sub2[:a] = 10
+#      sub2[:b] = 20
+#      x.update(MyHash.new(sub2))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.replace(MyHash.new({:a => 10, :b => 20}))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#      test_exception(TypeError) { x.replace(MyHash.new(4)) }
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.replace(MyHash.new(sub2))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#    end
 
     class H1 < java.util.HashMap
     end
