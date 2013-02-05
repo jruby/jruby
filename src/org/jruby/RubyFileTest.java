@@ -35,7 +35,6 @@ import static org.jruby.RubyFile.file;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 import org.jruby.anno.JRubyMethod;
