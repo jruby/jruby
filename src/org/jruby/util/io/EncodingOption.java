@@ -66,7 +66,7 @@ public class EncodingOption {
             if (internalOpt.isNil() || internalOpt.asString().toString().equals("-")) {
                 internalEncoding = null;
             } else {
-                internalEncoding = toEncoding(context, options);
+                internalEncoding = toEncoding(context, internalOpt);
             }
             
             if (externalEncoding == internalEncoding) internalEncoding = null;
@@ -83,7 +83,7 @@ public class EncodingOption {
             }
         } else if (externalOpt != null || internalEncoding != null) {
             extracted = true;
-            setupReadWriteEncodings(context, ioEncodable, externalEncoding, internalEncoding);
+            setupReadWriteEncodings(context, ioEncodable, internalEncoding, externalEncoding);
         }
         
         return extracted;
