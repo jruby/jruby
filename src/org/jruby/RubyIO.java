@@ -900,7 +900,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.setMode(modes.getOpenFileFlags());
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
+            throw context.runtime.newErrnoEBADFError();
         }
 
         return this;
@@ -4572,12 +4572,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
+    @Deprecated
     public static ModeFlags newModeFlags(Ruby runtime, String mode) {
         try {
             return new ModeFlags(mode);
         } catch (InvalidValueException ive) {
             // This is used by File and StringIO, which seem to want an ArgumentError instead of EINVAL
-            throw runtime.newArgumentError("illegal access mode " + mode);
+            throw runtime.newArgumentError("illegal access mode " + mode);       
         }
     }
 

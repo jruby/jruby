@@ -70,7 +70,8 @@ public class EncodingOption {
     
     // mri: rb_io_extract_modeenc
     public static ModeFlags extractModeEncoding(ThreadContext context, 
-            IOEncodable ioEncodable, IRubyObject vmode, IRubyObject[] vperm, IRubyObject options, boolean secondTime) {
+            IOEncodable ioEncodable, IRubyObject vmode, IRubyObject[] vperm, IRubyObject options, 
+            boolean secondTime) {
         int fmode;
         boolean hasEncoding = false;
         int oflags = 0;
@@ -91,13 +92,13 @@ public class EncodingOption {
             } else {
                 String p = vmode.convertToString().asJavaString();
                 int colonSplit = p.indexOf(":");
+                String mode = colonSplit == -1 ? p : p.substring(0, colonSplit);
                 try {
-                    oflags = ModeFlags.getOFlagsFromString(colonSplit == -1 ? p : p.substring(0, colonSplit));
-                    fmode = ModeFlags.getOpenFileFlagsFor(oflags);
+                    oflags = ModeFlags.getOFlagsFromString(mode);
                 } catch (InvalidValueException e) {
-                    fmode = 0;
-                    // FIXME: Raise something
+                    throw context.runtime.newArgumentError("illegal access mode " + mode);
                 }
+                fmode = ModeFlags.getOpenFileFlagsFor(oflags);
                 
                 if (colonSplit != -1) {
                     hasEncoding = true;
