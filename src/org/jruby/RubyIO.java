@@ -3419,7 +3419,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 break;
             case 2:
                 if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename, args[1] }, Block.NULL_BLOCK);
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingOption.openArgsToArgs(runtime, filename, (RubyHash) args[1]), Block.NULL_BLOCK);
                     args = new IRubyObject[]{args[0]};
                 } else {
                     io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
@@ -3427,7 +3427,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 break;
             case 3:
                 if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename, args[2] }, Block.NULL_BLOCK);
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingOption.openArgsToArgs(runtime, filename, (RubyHash) args[2]), Block.NULL_BLOCK);
                     args = new IRubyObject[]{args[0], args[1]};
                 } else {
                     io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);

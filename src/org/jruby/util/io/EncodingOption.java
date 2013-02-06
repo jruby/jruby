@@ -1,8 +1,8 @@
 package org.jruby.util.io;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
@@ -38,6 +38,24 @@ public class EncodingOption {
         if (object instanceof RubyEncoding) return ((RubyEncoding) object).getEncoding();
         
         return context.runtime.getEncodingService().getEncodingFromObject(object);
+    }
+    
+    public static IRubyObject[] openArgsToArgs(Ruby runtime, IRubyObject firstElement, RubyHash options) {
+        IRubyObject value = hashARef(runtime, options, "open_args");
+        
+        if (value.isNil()) return new IRubyObject[] { firstElement, options };
+        
+        RubyArray array = value.convertToArray();
+        
+        IRubyObject[] openArgs = new IRubyObject[array.size()];
+        value.convertToArray().toArray(openArgs);
+        IRubyObject[] args = new IRubyObject[openArgs.length + 1];
+        
+        args[0] = firstElement;
+        
+        System.arraycopy(openArgs, 0, args, 1, openArgs.length);
+        
+        return args;
     }
 
     // FIXME: This could be smarter amount determining whether optionsArg is a RubyHash and !null (invariant)
