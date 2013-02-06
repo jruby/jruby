@@ -83,6 +83,7 @@ import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.io.EncodingOption;
 
 /**
  * Ruby File class equivalent in java.
@@ -1106,39 +1107,57 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // :)
     }
 
+    // mri: rb_scan_open_args
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
-        String modeString = "r";
-        IOOptions modes = newIOOptions(runtime, modeString);
+        IRubyObject vmode = null;
+        IRubyObject[] vperm = new IRubyObject[]{null};
         RubyHash options = null;
-        int perm = 0;
-
-        if (args.length > 1) {
-            if (args[1] instanceof RubyHash) {
-                options = (RubyHash)args[1];
-            } else {
-                modes = parseIOOptions19(args[1]);
-            }
+        
+        switch(args.length) {
+            case 1:
+                break;
+            case 2:
+                if (args[1] instanceof RubyHash) {
+                    options = (RubyHash) args[1];
+                } else {
+                    vmode = args[1];
+                }
+                break;
+            case 3:
+                if (args[2] instanceof RubyHash) {
+                    options = (RubyHash) args[2];
+                    vmode = args[1];
+                } else {
+                    vperm[0] = args[2];
+                    vmode = args[1];
+                }
+                break;
+            case 4:
+                if (!(args[3] instanceof RubyHash)) throw runtime.newArgumentError("FIXME:...not a hash");
+                
+                options = (RubyHash) args[3];
+                vperm[0] = args[2];
+                vmode = args[1];
+                break;
+        }
+        
+        int perm;
+        ModeFlags modes = EncodingOption.extractModeEncoding(context, this, vmode, vperm, options, false);
+        if (vperm[0] != null && !vperm[0].isNil()) {
+            perm = RubyNumeric.num2int(vperm[0]);
         } else {
-            modes = parseIOOptions19(RubyString.newString(runtime, modeString));
+            perm = 0666;
         }
-
-        if (args.length > 2 && !args[2].isNil()) {
-            if (args[2] instanceof RubyHash) {
-                options = (RubyHash)args[2];
-            } else {
-                perm = getFilePermissions(args);
-            }
-        }
-
+        
         if (perm > 0) {
-            sysopenInternal19(context, path, options, modes, perm);
+            sysopenInternal(path, modes, perm);
         } else {
-            openInternal19(context, path, options, modes);
+            openInternal(path, modes);
         }
 
         return this;
@@ -1175,12 +1194,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
-    protected void sysopenInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions, int perm) {
-        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-
-        sysopenInternal(path, ioOptions.getModeFlags(), perm);
-    }
-
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
         openFile = new OpenFile();
 
@@ -1193,12 +1206,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
-    }
-
-    protected void openInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions) {
-        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-
-        openInternal(path, ioOptions.getModeFlags());
     }
 
     protected void openInternal(String path, ModeFlags modes) {

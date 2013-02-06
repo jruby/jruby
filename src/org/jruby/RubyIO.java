@@ -880,7 +880,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return klass.newInstance(context, args, block);
     }
 
-    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject options, IOOptions ioOptions) {
+    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmode, IRubyObject options) {
         Ruby runtime = context.runtime;
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
@@ -888,27 +888,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (descriptor == null) throw runtime.newErrnoEBADFError();
 
             descriptor.checkOpen();
+            
+            IRubyObject[] vperm = new IRubyObject[] { runtime.newFixnum(0) };
+            ModeFlags modes = EncodingOption.extractModeEncoding(context, this, vmode, vperm, options, false);
 
-            if (options != null && !(options instanceof RubyHash)) {
-                throw context.runtime.newTypeError(options, runtime.getHash());
-            }
+//            if (ioOptions == null) ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
 
-            if (ioOptions == null) {
-                ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
-            }
+            // JRUBY-4650: Make sure we clean up the old data, if it's present.
+            if (openFile.isOpen()) openFile.cleanup(runtime, false);
 
-            ioOptions = updateIOOptionsFromOptions(context, (RubyHash) options, ioOptions);
-
-            if (ioOptions == null) ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
-
-            if (openFile.isOpen()) {
-                // JRUBY-4650: Make sure we clean up the old data,
-                // if it's present.
-                openFile.cleanup(runtime, false);
-            }
-
-            openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
-            openFile.setMainStream(fdopen(descriptor, ioOptions.getModeFlags()));
+            openFile.setMode(modes.getOpenFileFlags());
+            openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
             throw getRuntime().newErrnoEBADFError();
         }
@@ -924,23 +914,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        IOOptions ioOptions = null;
+        IRubyObject vmode = null;
         RubyHash options = null;
         if (second instanceof RubyHash) {
             options = (RubyHash)second;
         } else {
-            ioOptions = parseIOOptions19(second);
+            vmode = second;
         }
 
-        return initializeCommon19(context, fileno, options, ioOptions);
+        return initializeCommon19(context, fileno, vmode, options);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        IOOptions ioOptions = parseIOOptions19(modeValue);
 
-        return initializeCommon19(context, fileno, options, ioOptions);
+        return initializeCommon19(context, fileno, modeValue, options);
     }
 
     // No encoding processing
