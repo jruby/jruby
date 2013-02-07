@@ -1027,7 +1027,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int elen = -1;
         int end = begin + alen;
         for (int i = begin; i < end; i++) {
-            tmp = elt(i).convertToArray();
+            tmp = elt(i - begin).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
                 result = new RubyArray(runtime, elen);
