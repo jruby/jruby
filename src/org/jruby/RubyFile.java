@@ -1200,6 +1200,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
 
+        if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
 
