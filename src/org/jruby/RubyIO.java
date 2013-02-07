@@ -1060,7 +1060,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc = null;
                 }
             }
-            transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);            
+            transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
+            setReadEncoding(enc);
+            setWriteEncoding(enc2);
         } else {
             if (external.isNil()) {
                 EncodingOption.setupReadWriteEncodings(context, this, null, null);
@@ -4105,7 +4107,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_9)
     public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
-        return pipe(context, recv);
+        return pipe19(context, recv, null);
     }
 
     @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_9)
@@ -4115,11 +4117,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             Pipe pipe = Pipe.open();
 
             RubyIO source = new RubyIO(runtime, pipe.source());
-            EncodingOption.parseModeEncoding(context, source, modes.toString());
+            source.setEncoding(context, modes == null ? context.runtime.getNil() : modes, context.runtime.getNil(), null);
             RubyIO sink = new RubyIO(runtime, pipe.sink());
-
-            Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-            EncodingOption.setupReadWriteEncodings(context, sink, ascii8bit, ascii8bit);
 
             sink.openFile.getMainStreamSafe().setSync(true);
             return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
