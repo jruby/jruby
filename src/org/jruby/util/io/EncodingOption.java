@@ -210,7 +210,7 @@ public class EncodingOption {
             if (!tmp.isNil()) {
                 parseModeEncoding(context, ioEncodable, tmp.convertToString().toString());
             } else {
-                setupReadWriteEncodings(context, ioEncodable, toEncoding(context, tmp), null);
+                setupReadWriteEncodings(context, ioEncodable, toEncoding(context, encodingOpt), null);
             }
         } else if (externalOpt != null || internalEncoding != null) {
             extracted = true;
