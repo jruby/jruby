@@ -1456,7 +1456,8 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     private static Stream maybeWrapWithLineEndingWrapper(Stream stream, ModeFlags modes) {
-        if (Platform.IS_WINDOWS && stream.getDescriptor().getChannel() instanceof FileChannel && !modes.isBinary()) {
+        if (modes.isText() || // FIXME: Remove this one textmode is part of transcoding.
+                (Platform.IS_WINDOWS && stream.getDescriptor().getChannel() instanceof FileChannel && !modes.isBinary())) {
             return new CRLFStreamWrapper(stream);
         }
         return stream;

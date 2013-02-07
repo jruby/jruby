@@ -1131,16 +1131,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 3:
                 if (args[2] instanceof RubyHash) {
                     options = (RubyHash) args[2];
-                    vmode = args[1];
                 } else {
                     vperm[0] = args[2];
-                    vmode = args[1];
                 }
+                vmode = args[1];                
                 break;
             case 4:
-                if (!(args[3] instanceof RubyHash)) throw runtime.newArgumentError("FIXME:...not a hash");
-                
-                options = (RubyHash) args[3];
+                options = args[3].convertToHash();
                 vperm[0] = args[2];
                 vmode = args[1];
                 break;
@@ -1206,6 +1203,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
+        if (hasBom) {
+            setWriteEncoding(encodingFromBOM());
+        }
     }
 
     protected void openInternal(String path, ModeFlags modes) {

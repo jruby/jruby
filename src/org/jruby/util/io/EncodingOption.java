@@ -131,7 +131,9 @@ public class EncodingOption {
         if (options == null || options.isNil()) {
             // FIXME: Set up ecflags
         } else {
+            // FIXME: Seeing this does not set it up 
             fmode = extractBinmode(context.runtime, options, fmode);
+
             // FIXME: What is DEFAULT_TEXTMODE
             
             if (!secondTime) {

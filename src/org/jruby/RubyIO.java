@@ -4118,8 +4118,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             EncodingOption.parseModeEncoding(context, source, modes.toString());
             RubyIO sink = new RubyIO(runtime, pipe.sink());
 
-//            Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-//            sink.setupReadWriteEncodings(context, ascii8bit, ascii8bit);
+            Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+            EncodingOption.setupReadWriteEncodings(context, sink, ascii8bit, ascii8bit);
 
             sink.openFile.getMainStreamSafe().setSync(true);
             return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
@@ -4385,7 +4385,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return ioOptions;
     }
 
-    // io_strip_bom
+    // mri: io_strip_bom
     public Encoding encodingFromBOM() {
         int b1, b2, b3, b4;
 

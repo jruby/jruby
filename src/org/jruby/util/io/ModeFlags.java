@@ -64,8 +64,10 @@ public class ModeFlags implements Cloneable {
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
     /** binary flag, to ensure no encoding changes are made while writing */
     public static final int BINARY = OpenFlags.O_BINARY.intValue();
-    /** textmode flag, for normalizing newline characters to \n */
-    public static final int TEXT = 0x00001000; // from ruby.h
+    /** textmode flag, MRI has no equivalent but we use ModeFlags currently
+     * to also capture what are oflags.
+     */
+    public static final int TEXT = 0x10000000; 
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
@@ -131,7 +133,7 @@ public class ModeFlags implements Cloneable {
                     modes = (modes & ~ACCMODE) | RDWR;
                     break;
                 case 't' :
-                    // TODO: impl text mode
+                    modes |= TEXT;
                     break;
                 case ':':
                     break ModifierLoop;
@@ -163,7 +165,7 @@ public class ModeFlags implements Cloneable {
      * 
      * @return true if read-only, false otherwise
      */
-    public boolean isReadOnly() {
+    public final boolean isReadOnly() {
         return ((flags & WRONLY) == 0) && ((flags & RDWR) == 0);
     }
     
@@ -288,7 +290,7 @@ public class ModeFlags implements Cloneable {
 
     // MRI: rb_io_oflags_fmode
     public static int getOpenFileFlagsFor(int flags) {
-        int openFileFlags = 0;
+        int openFileFlags;
 
         int readWrite = flags & 3;
         if (readWrite == RDONLY) {
