@@ -242,7 +242,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
         t.status.should == false
       end
     end
-    if type == :blocked && RbConfig::CONFIG['host_os'] !~ /mingw|mswin/ 
+    if type == :blocked && RbConfig::CONFIG['host_os'] !~ /mingw|mswin|darwin/ 
       value.should == 3
       t.status.should == false
     end
