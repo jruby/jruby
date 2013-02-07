@@ -310,6 +310,11 @@ public class ModeFlags implements Cloneable {
         if ((flags & BINARY) == BINARY) {
             openFileFlags |= OpenFile.BINMODE;
         }
+
+        // This is unique to us to keep bridge betweeen mode_flags and oflags
+        if ((flags & TEXT) == TEXT) {
+            openFileFlags |= OpenFile.TEXTMODE;
+        }
         
         return openFileFlags;
     }

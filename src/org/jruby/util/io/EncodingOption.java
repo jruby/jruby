@@ -61,15 +61,15 @@ public class EncodingOption {
     // FIXME: This could be smarter amount determining whether optionsArg is a RubyHash and !null (invariant)
     // mri: extract_binmode
     public static int extractBinmode(Ruby runtime, IRubyObject optionsArg, int fmode) {
-        IRubyObject v = hashARef(runtime, optionsArg, "text_mode");
+        IRubyObject v = hashARef(runtime, optionsArg, "textmode");
         if (!v.isNil()) fmode |= ModeFlags.TEXT;
         
-        v = hashARef(runtime, optionsArg, "bin_mode");
+        v = hashARef(runtime, optionsArg, "binmode");
         if (!v.isNil()) fmode |= ModeFlags.BINARY;
 
-//        if ((fmode & ModeFlags.BINARY) != 0 && (fmode & ModeFlags.TEXT) != 0) {
-//            throw runtime.newArgumentError("both textmode and binmode specified");
-//        }
+        if ((fmode & ModeFlags.BINARY) != 0 && (fmode & ModeFlags.TEXT) != 0) {
+            throw runtime.newArgumentError("both textmode and binmode specified");
+        }
         
         return fmode;
     }
@@ -131,8 +131,8 @@ public class EncodingOption {
         if (options == null || options.isNil()) {
             // FIXME: Set up ecflags
         } else {
-            // FIXME: Seeing this does not set it up 
             fmode = extractBinmode(context.runtime, options, fmode);
+            oflags |= ModeFlags.getOpenFileFlagsFor(fmode);
 
             // FIXME: What is DEFAULT_TEXTMODE
             
