@@ -123,7 +123,7 @@ public class EncodingOption {
                     parseModeEncoding(context, ioEncodable, p.substring(colonSplit + 1));
                 } else {
                     Encoding e = (fmode & ModeFlags.BINARY) != 0 ? ascii8bitEncoding(context.runtime) : null;
-                    setupReadWriteEncodings(context, ioEncodable, e, null);
+                    setupReadWriteEncodings(context, ioEncodable, null, e);
                 }
             }
         }
