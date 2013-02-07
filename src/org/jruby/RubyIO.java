@@ -3737,7 +3737,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
             }
 
-            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, ioOptions);
+            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, ioOptions.getModeFlags());
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
             // "ready" when we get it back from Runtime#exec, so we try to give it a
