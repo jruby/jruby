@@ -261,8 +261,18 @@ public class ModeFlags implements Cloneable {
     
     @Override
     public String toString() {
-        // TODO: Make this more intelligible value
-        return ""+flags;
+        StringBuilder buf = new StringBuilder("ModeFlags: ");
+        
+        if (isAppendable()) buf.append("APPENDABLE ");
+        if (isBinary()) buf.append("BINARY ");
+        if (isCreate()) buf.append("CREATE ");
+        if (isExclusive()) buf.append("EXCLUSIVE ");
+        if (isReadOnly()) buf.append("READONLY ");
+        if (isText()) buf.append("TEXT ");
+        if (isTruncate()) buf.append("TRUNCATE ");
+        if (isWritable()) buf.append("WRITABLE ");
+        
+        return buf.toString();
     }
 
     /**
