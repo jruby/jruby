@@ -104,6 +104,7 @@ import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.io.IOEncodable;
 
 /**
@@ -183,7 +184,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
         this(runtime, runtime.getIO(), process, null, ioOptions);
     }
-
+    
+    @Deprecated
     public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
         super(runtime, cls);
 
@@ -191,49 +193,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         openFile = new OpenFile();
         
-        openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags() | OpenFile.SYNC);
-        openFile.setProcess(process);
-
-        try {
-            if (openFile.isReadable()) {
-                Channel inChannel;
-                if (process.getInput() != null) {
-                    // NIO-based
-                    inChannel = process.getInput();
-                } else {
-                    // Stream-based
-                    inChannel = Channels.newChannel(process.getInputStream());
-                }
-                
-                ChannelDescriptor main = new ChannelDescriptor(
-                        inChannel);
-                main.setCanBeSeekable(false);
-                
-                openFile.setMainStream(ChannelStream.open(getRuntime(), main));
-            }
-            
-            if (openFile.isWritable() && process.hasOutput()) {
-                Channel outChannel;
-                if (process.getOutput() != null) {
-                    // NIO-based
-                    outChannel = process.getOutput();
-                } else {
-                    outChannel = Channels.newChannel(process.getOutputStream());
-                }
-
-                ChannelDescriptor pipe = new ChannelDescriptor(
-                        outChannel);
-                pipe.setCanBeSeekable(false);
-                
-                if (openFile.getMainStream() != null) {
-                    openFile.setPipeStream(ChannelStream.open(getRuntime(), pipe));
-                } else {
-                    openFile.setMainStream(ChannelStream.open(getRuntime(), pipe));
-                }
-            }
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
+        setupPopen(ioOptions.getModeFlags(), process);
     }
     
     public RubyIO(Ruby runtime, STDIO stdio) {
@@ -3752,7 +3712,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        int mode;
 
         IRubyObject cmdObj;
         if (Platform.IS_WINDOWS) {
@@ -3809,6 +3768,52 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return io;
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
+        }
+    }
+
+    private void setupPopen(ModeFlags modes, POpenProcess process) throws RaiseException {
+        openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
+        openFile.setProcess(process);
+
+        try {
+            if (openFile.isReadable()) {
+                Channel inChannel;
+                if (process.getInput() != null) {
+                    // NIO-based
+                    inChannel = process.getInput();
+                } else {
+                    // Stream-based
+                    inChannel = Channels.newChannel(process.getInputStream());
+                }
+                
+                ChannelDescriptor main = new ChannelDescriptor(
+                        inChannel);
+                main.setCanBeSeekable(false);
+                
+                openFile.setMainStream(ChannelStream.open(getRuntime(), main));
+            }
+            
+            if (openFile.isWritable() && process.hasOutput()) {
+                Channel outChannel;
+                if (process.getOutput() != null) {
+                    // NIO-based
+                    outChannel = process.getOutput();
+                } else {
+                    outChannel = Channels.newChannel(process.getOutputStream());
+                }
+
+                ChannelDescriptor pipe = new ChannelDescriptor(
+                        outChannel);
+                pipe.setCanBeSeekable(false);
+                
+                if (openFile.getMainStream() != null) {
+                    openFile.setPipeStream(ChannelStream.open(getRuntime(), pipe));
+                } else {
+                    openFile.setMainStream(ChannelStream.open(getRuntime(), pipe));
+                }
+            }
+        } catch (InvalidValueException e) {
+            throw getRuntime().newErrnoEINVALError();
         }
     }
 
@@ -3880,10 +3885,32 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "popen", required = 1, optional = 2, meta = true, compat = RUBY1_9)
     public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        int mode;
-        // yes, I know it's not used. See JRUBY-5942
-        RubyHash options = null;
 
+        IRubyObject pmode = null;
+        RubyHash options = null;
+        
+        
+        switch(args.length) {
+            case 1:
+                break;
+            case 2:
+                if (args[1] instanceof RubyHash) {
+                    options = (RubyHash) args[1];
+                } else {
+                    pmode = args[1];
+                }
+                break;
+            case 3:
+                options = args[2].convertToHash();
+                pmode = args[1];
+                break;
+        }
+        
+        RubyIO io = new RubyIO(runtime, runtime.getIO());
+        IRubyObject[] vperm = new IRubyObject[] { runtime.newFixnum(0) };
+        ModeFlags modes = EncodingOption.extractModeEncoding(context, io, pmode, vperm, options, false);
+
+        // FIXME: Reprocessing logic twice for now...
         // for 1.9 mode, strip off the trailing options hash, if there
         if (args.length > 1 && args[args.length - 1] instanceof RubyHash) {
             options = (RubyHash)args[args.length - 1];
@@ -3892,27 +3919,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
             args = newArgs;
         }
         
-        Ruby19POpen r19Popen = new Ruby19POpen(runtime, args);
-
+        Ruby19POpen r19Popen = new Ruby19POpen(runtime, args);        
+        
         if ("-".equals(r19Popen.cmd.toString())) {
             throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
         }
 
         try {
-            IOOptions ioOptions;
-            if (args.length == 1) {
-                ioOptions = newIOOptions(runtime, ModeFlags.RDONLY);
-            } else if (args[1] instanceof RubyFixnum) {
-                ioOptions = newIOOptions(runtime, RubyFixnum.num2int(args[1]));
-            } else {
-                ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
-            }
-
             ShellLauncher.POpenProcess process;
             if (r19Popen.cmdPlusArgs == null) {
-                process = ShellLauncher.popen(runtime, r19Popen.cmd, ioOptions);
+                process = ShellLauncher.popen(runtime, r19Popen.cmd, modes);
             } else {
-                process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, ioOptions);
+                process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, modes);
             }
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
@@ -3929,7 +3947,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             checkPopenOptions(options);
 
-            RubyIO io = new RubyIO(runtime, (RubyClass)recv, process, options, ioOptions);
+            io.setupPopen(modes, process);
 
             if (block.isGiven()) {
                 try {

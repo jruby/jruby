@@ -69,6 +69,7 @@ import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.IOOptions;
+import org.jruby.util.io.ModeFlags;
 
 /**
  * This mess of a class is what happens when all Java gives you is
@@ -689,10 +690,20 @@ public class ShellLauncher {
         return run(runtime, new IRubyObject[] {string}, false);
     }
 
+    public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
+    }
+
+    public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes) throws IOException {
+        return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
+    }
+    
+    @Deprecated
     public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
     }
 
+    @Deprecated
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
     }
@@ -816,10 +827,15 @@ public class ShellLauncher {
         private Pumper inputPumper;
         private Pumper inerrPumper;
 
+        @Deprecated
         public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
+            this(child, runtime, modes.getModeFlags());
+        }
+        
+        public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
 
-            if (modes.getModeFlags().isWritable()) {
+            if (modes.isWritable()) {
                 this.waitForChild = true;
                 prepareOutput(child);
             } else {
@@ -830,13 +846,13 @@ public class ShellLauncher {
                 try {child.getOutputStream().close();} catch (IOException ioe) {}
             }
 
-            if (modes.getModeFlags().isReadable()) {
+            if (modes.isReadable()) {
                 prepareInput(child);
             } else {
                 pumpInput(child, runtime);
             }
 
-            pumpInerr(child, runtime);
+            pumpInerr(child, runtime);            
         }
 
         public POpenProcess(Process child) {
