@@ -9,8 +9,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Wrapper around Stream that packs and unpacks LF <=> CRLF.
@@ -18,12 +18,15 @@ import org.jruby.util.StringSupport;
  */
 public class CRLFStreamWrapper implements Stream {
     private final Stream stream;
+    private final boolean isWindows;
     private boolean binmode = false;
     private static final int CR = 13;
     private static final int LF = 10;
 
     public CRLFStreamWrapper(Stream stream) {
         this.stream = stream;
+        // To differentiate between textmode and windows in how we handle crlf.
+        this.isWindows = Platform.IS_WINDOWS;
     }
 
     public ChannelDescriptor getDescriptor() {
@@ -118,7 +121,9 @@ public class CRLFStreamWrapper implements Stream {
     }
 
     public int fwrite(ByteList string) throws IOException, BadDescriptorException {
-        return stream.fwrite(convertLFToCRLF(string));
+        if (isWindows) return stream.fwrite(convertLFToCRLF(string));
+        
+        return stream.fwrite(convertCRLFToLF(string));
     }
 
     public int fgetc() throws IOException, BadDescriptorException, EOFException {
