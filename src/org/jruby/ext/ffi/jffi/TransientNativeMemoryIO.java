@@ -31,10 +31,11 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.PageManager;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.util.WeakReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,7 +62,7 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO {
 
         Reference<Magazine> magazineReference = currentMagazine.get();
         Magazine magazine = magazineReference != null ? magazineReference.get() : null;
-        Object sentinel = magazine != null ? magazine.get() : null;
+        Object sentinel = magazine != null ? magazine.sentinel() : null;
         long address;
 
         if (sentinel == null || (address = magazine.allocate(size, align)) == 0) {
@@ -99,7 +100,8 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO {
     /**
      * Holder for a group of memory allocations.
      */
-    private static final class Magazine extends WeakReferenceReaper<Object> implements Runnable {
+    private static final class Magazine extends PhantomReferenceReaper<Object> implements Runnable {
+        private final WeakReference<Object> weakref;
         private final PageManager pm;
         private final long page;
         private final long end;
@@ -108,10 +110,15 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO {
 
         Magazine(Object sentinel, PageManager pm, long page, int pageCount) {
             super(sentinel);
+            this.weakref = new WeakReference<Object>(sentinel);
             this.pm = pm;
             this.memory = this.page = page;
             this.pageCount = pageCount;
             this.end = this.memory + (pm.pageSize() * pageCount);
+        }
+        
+        Object sentinel() {
+            return weakref.get();
         }
 
         long allocate(int size, int align) {
