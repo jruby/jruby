@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2011-2012 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2011-2013 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -569,17 +569,25 @@ public class BiVariableMapTest {
         */
     }
 
-
     /**
      * Test of clear method, of class BiVariableMap.
      */
-    //@Test
+    @Test
     public void testClear() {
         logger1.info("clear");
-        /* add more clear test later
-        BiVariableMap instance = null;
-        instance.clear();
-        */
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
+        container.clear();
+        assertNull(container.runScriptlet(""));
+
+        container.runScriptlet("$a = 1");
+        container.getVarMap().get("$a");
+        container.clear();
+        assertNull(container.getVarMap().get("$a"));
+
+        container.runScriptlet("$a = 1");
+        container.runScriptlet("$a");
+        container.clear();
+        assertNull(container.runScriptlet("$a"));
     }
 
     /**
