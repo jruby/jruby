@@ -114,7 +114,7 @@ public class EncodingOption {
                 try {
                     oflags = ModeFlags.getOFlagsFromString(mode);
                 } catch (InvalidValueException e) {
-                    throw context.runtime.newArgumentError("illegal access mode " + mode);
+                    throw context.runtime.newArgumentError("illegal access mode " + vmode);
                 }
                 fmode = ModeFlags.getOpenFileFlagsFor(oflags);
                 
@@ -174,7 +174,10 @@ public class EncodingOption {
 
     // mri: rb_io_extract_encoding_option
     public static boolean getEncodingOptionFromObject(ThreadContext context, IOEncodable ioEncodable, IRubyObject options) {
-        if (options == null || options.isNil() || !(options instanceof RubyHash)) return false;
+        if (options == null || options.isNil()) return false;
+        // FIXME: This arity checking in MRI happens higher in the chain but we do things different...when we rearrange arity remove this
+        if (!(options instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (3 for 1..2)");
+
 
         RubyHash opts = (RubyHash) options;        
         boolean extracted = false;

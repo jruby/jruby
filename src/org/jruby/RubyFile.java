@@ -1192,6 +1192,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
+        if (path.startsWith("jar:")) path = path.substring(4);
+        
         openFile = new OpenFile();
 
         openFile.setPath(path);
@@ -1220,9 +1222,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     protected void openInternal(String path, ModeFlags modes) {
-        if (path.startsWith("jar:")) {
-            path = path.substring(4);
-        }
+        if (path.startsWith("jar:")) path = path.substring(4);
+
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
