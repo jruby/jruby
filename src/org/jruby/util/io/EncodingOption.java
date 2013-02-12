@@ -122,7 +122,7 @@ public class EncodingOption {
                     hasEncoding = true;
                     parseModeEncoding(context, ioEncodable, p.substring(colonSplit + 1));
                 } else {
-                    Encoding e = (fmode & ModeFlags.BINARY) != 0 ? ascii8bitEncoding(context.runtime) : null;
+                    Encoding e = (oflags & OpenFile.BINMODE) != 0 ? ascii8bitEncoding(context.runtime) : null;
                     setupReadWriteEncodings(context, ioEncodable, null, e);
                 }
             }

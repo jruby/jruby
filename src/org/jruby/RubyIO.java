@@ -734,6 +734,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private Encoding getInputEncoding(Ruby runtime) {
         return writeEncoding != null ? writeEncoding : getReadEncoding(runtime);
     }
+    
+    protected Encoding getInternalEncoding(Ruby runtime) {
+        if (writeEncoding == null) return null;
+        
+        return getReadEncoding(runtime);
+    }
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
         ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
@@ -1029,7 +1035,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     // mri: io_encoding_set
-    private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
+    protected void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
         if (!internal.isNil()) {
             Encoding enc;
             Encoding enc2 = EncodingOption.toEncoding(context, external);
@@ -4682,14 +4688,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // MRI: NEED_READCONF (FIXME: Windows has slightly different version)
     private boolean needsReadConversion() {
-        return writeEncoding != null || openFile.isTextMode();
+        return writeEncoding != null; //FIXME: Ucomment once crlf is in transcoding layer || openFile.isTextMode();
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
     private boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
-        return (readEncoding != null && readEncoding != ascii8bit) || openFile.isTextMode();
+        return (readEncoding != null && readEncoding != ascii8bit); //FIXME: Ucomment once crlf is in transcoding layer  || openFile.isTextMode();
         // This is basically from MRI and until I understand it better I am leaving it out
         // ||  ((ecflags & (DECORATOR_MASK|STATEFUL_DECORATOR_MASK)) != 0);
     }

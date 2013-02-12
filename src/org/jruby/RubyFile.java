@@ -1197,6 +1197,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
 
+        // FIXME: This is liberal license.  Not the same as MRI
         if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
@@ -1204,7 +1205,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
         if (hasBom) {
-            setWriteEncoding(encodingFromBOM());
+            // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
+            Ruby runtime = getRuntime();
+            Encoding bomEncoding = encodingFromBOM();
+            if (bomEncoding != null) {
+                IRubyObject theBom = runtime.getEncodingService().getEncoding(bomEncoding);
+                Encoding internalEncoding = getInternalEncoding(getRuntime());
+                IRubyObject theInternal = internalEncoding == null ? 
+                        runtime.getNil() : runtime.getEncodingService().getEncoding(internalEncoding);
+
+                setEncoding(runtime.getCurrentContext(), theInternal, theBom, null);
+            }
         }
     }
 
