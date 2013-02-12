@@ -175,7 +175,7 @@ public class EncodingOption {
     // mri: rb_io_extract_encoding_option
     public static boolean getEncodingOptionFromObject(ThreadContext context, IOEncodable ioEncodable, IRubyObject options) {
         if (options == null || options.isNil()) return false;
-        // FIXME: This arity checking in MRI happens higher in the chain but we do things different...when we rearrange arity remove this
+        // FIXME: This is workaround for MRI compat (they do this differently) and I think a bug: http://bugs.ruby-lang.org/issues/7837
         if (!(options instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (3 for 1..2)");
 
 
