@@ -263,7 +263,7 @@ public class ModeFlags implements Cloneable {
     
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("ModeFlags: ");
+        StringBuilder buf = new StringBuilder("ModeFlags(" + flags + "): ");
         
         if (isAppendable()) buf.append("APPENDABLE ");
         if (isBinary()) buf.append("BINARY ");
@@ -272,7 +272,13 @@ public class ModeFlags implements Cloneable {
         if (isReadOnly()) buf.append("READONLY ");
         if (isText()) buf.append("TEXT ");
         if (isTruncate()) buf.append("TRUNCATE ");
-        if (isWritable()) buf.append("WRITABLE ");
+        if (isWritable()) {
+            if (isReadable()) {
+                buf.append("RDWR");
+            } else {
+                buf.append("WRITABLE ");
+            }
+        }
         
         return buf.toString();
     }
