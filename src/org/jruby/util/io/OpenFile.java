@@ -87,6 +87,71 @@ public class OpenFile {
 
         return modeString;
     }
+    
+    public static int getModeFlagsAsIntFrom(int oflags) {
+        int flags = 0;
+        
+        if ((oflags & READABLE) != 0) {
+            if ((oflags & WRITABLE) != 0) {
+                flags |= ModeFlags.RDWR;
+            } else {
+                flags |= ModeFlags.RDONLY;
+            }
+        } else if ((oflags & WRITABLE) != 0) {
+            flags |= ModeFlags.WRONLY;
+        }
+        
+        if ((oflags & APPEND) != 0) flags |= ModeFlags.APPEND;
+        if ((oflags & CREATE) != 0) flags |= ModeFlags.CREAT;
+        if ((oflags & BINMODE) != 0) flags |= ModeFlags.BINARY;
+        if ((oflags & TEXTMODE) != 0) flags |= ModeFlags.TEXT;
+        
+        return flags;
+    }
+    
+    // mri: rb_io_modestr_fmode
+    public static int getFModeFromString(String modesString) throws InvalidValueException {
+        int fmode = 0;
+        int length = modesString.length();
+
+        if (length == 0) {
+            throw new InvalidValueException();
+        }
+
+        switch (modesString.charAt(0)) {
+            case 'r' :
+                fmode |= READABLE;
+                break;
+            case 'w' :
+                fmode |= WRITABLE | TRUNC | CREATE;
+                break;
+            case 'a' :
+                fmode |= WRITABLE | APPEND | CREATE;
+                break;
+            default :
+                throw new InvalidValueException();
+        }
+
+        ModifierLoop: for (int n = 1; n < length; n++) {
+            switch (modesString.charAt(n)) {
+                case 'b':
+                    fmode |= BINMODE;
+                    break;
+                case 't' :
+                    fmode |= TEXTMODE;
+                    break;
+                case '+':
+                    fmode |= READWRITE;
+                    break;
+                case ':':
+                    break ModifierLoop;
+                default:
+                    throw new InvalidValueException();
+            }
+        }
+
+        return fmode;        
+    }    
 
     public static String getStringFromMode(int mode) {
         if ((mode & APPEND) != 0) {

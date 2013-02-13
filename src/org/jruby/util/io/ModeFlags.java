@@ -41,6 +41,8 @@ import jnr.constants.platform.OpenFlags;
  * methods for querying specific flag settings and converting to two other
  * formats: a Java mode string and an OpenFile mode int.
  * 
+ * Note: In MRI these are called oflags.
+ * 
  * @see org.jruby.util.io.ChannelDescriptor
  * @see org.jruby.util.io.Stream
  * @see org.jruby.util.io.OpenFile
@@ -98,10 +100,12 @@ public class ModeFlags implements Cloneable {
         }
     }
 
+    @Deprecated
     public ModeFlags(String flagString) throws InvalidValueException {
         this.flags = getOFlagsFromString(flagString);
     }
-
+    
+    @Deprecated
     public static int getOFlagsFromString(String modesString) throws InvalidValueException {
         int modes = 0;
         int length = modesString.length();
@@ -142,9 +146,9 @@ public class ModeFlags implements Cloneable {
             }
         }
 
-        return modes;
+        return modes;        
     }
-    
+
     /**
      * Produce a Java IO mode string from the flags in this object.
      * 
@@ -295,34 +299,38 @@ public class ModeFlags implements Cloneable {
 
 
     // MRI: rb_io_oflags_fmode
+    /**
+     * With the provided open flags parameter what fmode values should be
+     * set (fmode for us is represented by OpenFile).
+     */
     public static int getOpenFileFlagsFor(int flags) {
-        int openFileFlags;
+        int fmodeFlags;
 
         int readWrite = flags & 3;
         if (readWrite == RDONLY) {
-            openFileFlags = OpenFile.READABLE;
+            fmodeFlags = OpenFile.READABLE;
         } else if (readWrite == WRONLY) {
-            openFileFlags = OpenFile.WRITABLE;
+            fmodeFlags = OpenFile.WRITABLE;
         } else {
-            openFileFlags = OpenFile.READWRITE;
+            fmodeFlags = OpenFile.READWRITE;
         }
 
         if ((flags & APPEND) != 0) {
-            openFileFlags |= OpenFile.APPEND;
+            fmodeFlags |= OpenFile.APPEND;
         }
         if ((flags & CREAT) != 0) {
-            openFileFlags |= OpenFile.CREATE;
+            fmodeFlags |= OpenFile.CREATE;
         }
         if ((flags & BINARY) == BINARY) {
-            openFileFlags |= OpenFile.BINMODE;
+            fmodeFlags |= OpenFile.BINMODE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags
         if ((flags & TEXT) == TEXT) {
-            openFileFlags |= OpenFile.TEXTMODE;
+            fmodeFlags |= OpenFile.TEXTMODE;
         }
         
-        return openFileFlags;
+        return fmodeFlags;
     }
 
     /**

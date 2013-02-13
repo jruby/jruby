@@ -90,9 +90,9 @@ public class EncodingOption {
     public static ModeFlags extractModeEncoding(ThreadContext context, 
             IOEncodable ioEncodable, IRubyObject vmode, IRubyObject[] vperm, IRubyObject options, 
             boolean secondTime) {
-        int fmode;
+        int fmode; // OpenFile
         boolean hasEncoding = false;
-        int oflags = 0;
+        int oflags = 0; // ModeFlags
         
         // Give default encodings
         setupReadWriteEncodings(context, ioEncodable, null, null);
@@ -112,11 +112,11 @@ public class EncodingOption {
                 int colonSplit = p.indexOf(":");
                 String mode = colonSplit == -1 ? p : p.substring(0, colonSplit);
                 try {
-                    oflags = ModeFlags.getOFlagsFromString(mode);
+                    fmode = OpenFile.getFModeFromString(mode);
+                    oflags = OpenFile.getModeFlagsAsIntFrom(fmode);
                 } catch (InvalidValueException e) {
                     throw context.runtime.newArgumentError("illegal access mode " + vmode);
                 }
-                fmode = ModeFlags.getOpenFileFlagsFor(oflags);
                 
                 if (colonSplit != -1) {
                     hasEncoding = true;
@@ -132,7 +132,11 @@ public class EncodingOption {
             // FIXME: Set up ecflags
         } else {
             fmode = extractBinmode(context.runtime, options, fmode);
-            oflags |= ModeFlags.getOpenFileFlagsFor(fmode);
+            
+            if ((fmode & OpenFile.BINMODE) != 0) oflags |= ModeFlags.BINARY;
+            
+            // Differs from MRI but we open with ModeFlags
+            oflags |= OpenFile.getModeFlagsAsIntFrom(fmode);
 
             // FIXME: What is DEFAULT_TEXTMODE
             
