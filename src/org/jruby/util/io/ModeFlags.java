@@ -362,4 +362,12 @@ public class ModeFlags implements Cloneable {
 
         return fcntlFlags;
     }
+    
+    public static ModeFlags createModeFlagss(int oflags) {
+        try {
+            return new ModeFlags(oflags);
+        } catch (InvalidValueException e) {
+            return new ModeFlags();
+        }             
+    }
 }

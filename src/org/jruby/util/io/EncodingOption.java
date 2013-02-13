@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -62,12 +63,12 @@ public class EncodingOption {
     // mri: extract_binmode
     public static int extractBinmode(Ruby runtime, IRubyObject optionsArg, int fmode) {
         IRubyObject v = hashARef(runtime, optionsArg, "textmode");
-        if (!v.isNil()) fmode |= ModeFlags.TEXT;
+        if (!v.isNil()) fmode |= OpenFile.TEXTMODE;
         
         v = hashARef(runtime, optionsArg, "binmode");
-        if (!v.isNil()) fmode |= ModeFlags.BINARY;
+        if (!v.isNil()) fmode |= OpenFile.BINMODE;
 
-        if ((fmode & ModeFlags.BINARY) != 0 && (fmode & ModeFlags.TEXT) != 0) {
+        if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0) {
             throw runtime.newArgumentError("both textmode and binmode specified");
         }
         
@@ -86,10 +87,12 @@ public class EncodingOption {
         return runtime.getEncodingService().getAscii8bitEncoding();   
     }
     
+    public static final int PERM = 0;
+    public static final int VMODE = 1;
+    
     // mri: rb_io_extract_modeenc
-    public static ModeFlags extractModeEncoding(ThreadContext context, 
-            IOEncodable ioEncodable, IRubyObject vmode, IRubyObject[] vperm, IRubyObject options, 
-            boolean secondTime) {
+    public static int extractModeEncoding(ThreadContext context, 
+            IOEncodable ioEncodable, IRubyObject[] pm, IRubyObject options, boolean secondTime) {
         int fmode; // OpenFile
         boolean hasEncoding = false;
         int oflags = 0; // ModeFlags
@@ -97,25 +100,25 @@ public class EncodingOption {
         // Give default encodings
         setupReadWriteEncodings(context, ioEncodable, null, null);
 
-        if (vmode == null || vmode.isNil()) {
+        if (pm[VMODE] == null || pm[VMODE].isNil()) {
             fmode = OpenFile.READABLE;
             oflags = ModeFlags.RDONLY;
         } else {
-            IRubyObject intMode = TypeConverter.checkIntegerType(context.runtime, vmode, "to_int");
+            IRubyObject intMode = TypeConverter.checkIntegerType(context.runtime, pm[VMODE], "to_int");
             
             if (!intMode.isNil()) {
-                vmode = intMode;
+                pm[VMODE] = intMode;
                 oflags = RubyNumeric.num2int(intMode);
                 fmode = ModeFlags.getOpenFileFlagsFor(oflags);
             } else {
-                String p = vmode.convertToString().asJavaString();
+                String p = pm[VMODE].convertToString().asJavaString();
                 int colonSplit = p.indexOf(":");
                 String mode = colonSplit == -1 ? p : p.substring(0, colonSplit);
                 try {
                     fmode = OpenFile.getFModeFromString(mode);
                     oflags = OpenFile.getModeFlagsAsIntFrom(fmode);
                 } catch (InvalidValueException e) {
-                    throw context.runtime.newArgumentError("illegal access mode " + vmode);
+                    throw context.runtime.newArgumentError("illegal access mode " + pm[VMODE]);
                 }
                 
                 if (colonSplit != -1) {
@@ -132,9 +135,6 @@ public class EncodingOption {
             // FIXME: Set up ecflags
         } else {
             fmode = extractBinmode(context.runtime, options, fmode);
-            
-            if ((fmode & OpenFile.BINMODE) != 0) oflags |= ModeFlags.BINARY;
-            
             // Differs from MRI but we open with ModeFlags
             oflags |= OpenFile.getModeFlagsAsIntFrom(fmode);
 
@@ -144,21 +144,21 @@ public class EncodingOption {
                 IRubyObject v = hashARef(context.runtime, options, "mode");
                 
                 if (!v.isNil()) {
-                    if (vmode != null && !vmode.isNil()) {
-                       throw context.runtime.newArgumentError("mode specified twice");
+                    if (pm[VMODE] != null && !pm[VMODE].isNil()) {
+                        throw context.runtime.newArgumentError("mode specified twice");
                     }
                     secondTime = true;
-                    vmode = v;
+                    pm[VMODE] = v;
                   
-                    return extractModeEncoding(context, ioEncodable, vmode, vperm, options, true);
+                    return extractModeEncoding(context, ioEncodable, pm, options, true);
                 }
-            }
+            } 
             IRubyObject v = hashARef(context.runtime, options, "perm");
             if (!v.isNil()) {
-                if (vperm[0] != null) {
-                    if (!vperm[0].isNil()) throw context.runtime.newArgumentError("perm specified twice");
+                if (pm[PERM] != null) {
+                    if (!pm[PERM].isNil()) throw context.runtime.newArgumentError("perm specified twice");
                     
-                    vperm[0] = v;
+                    pm[PERM] = v;
                 }
             }
         
@@ -169,11 +169,7 @@ public class EncodingOption {
             
         }
         
-        try {
-            return new ModeFlags(oflags);
-        } catch (InvalidValueException e) {
-            return new ModeFlags();
-        }
+        return oflags;
     }
 
     // mri: rb_io_extract_encoding_option

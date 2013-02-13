@@ -846,7 +846,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return klass.newInstance(context, args, block);
     }
 
-    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmode, IRubyObject options) {
+    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject options) {
         Ruby runtime = context.runtime;
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
@@ -856,13 +856,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
             descriptor.checkOpen();
 
             // No modes set when setting up...try and inherit from descriptor
-            if (vmode == null) vmode = context.runtime.newFixnum(descriptor.getOriginalModes().getFlags());
+            if (vmodeArg == null) vmodeArg = context.runtime.newFixnum(descriptor.getOriginalModes().getFlags());
             
-            IRubyObject[] vperm = new IRubyObject[] { runtime.newFixnum(0) };
-            ModeFlags modes = EncodingOption.extractModeEncoding(context, this, vmode, vperm, options, false);
+            IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
+            int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
 
             // JRUBY-4650: Make sure we clean up the old data, if it's present.
             if (openFile.isOpen()) openFile.cleanup(runtime, false);
+            
+            ModeFlags modes = ModeFlags.createModeFlagss(oflags);
 
             openFile.setMode(modes.getOpenFileFlags());
             openFile.setMainStream(fdopen(descriptor, modes));
@@ -3897,7 +3899,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject pmode = null;
         RubyHash options = null;
         
-        
         switch(args.length) {
             case 1:
                 break;
@@ -3915,9 +3916,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         RubyIO io = new RubyIO(runtime, runtime.getIO());
-        IRubyObject[] vperm = new IRubyObject[] { runtime.newFixnum(0) };
-        ModeFlags modes = EncodingOption.extractModeEncoding(context, io, pmode, vperm, options, false);
-
+        IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), pmode };
+        int oflags = EncodingOption.extractModeEncoding(context, io, pm, options, false);
+        ModeFlags modes = ModeFlags.createModeFlagss(oflags);
+        
         // FIXME: Reprocessing logic twice for now...
         // for 1.9 mode, strip off the trailing options hash, if there
         if (args.length > 1 && args[args.length - 1] instanceof RubyHash) {

@@ -1114,8 +1114,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
-        IRubyObject vmode = null;
-        IRubyObject[] vperm = new IRubyObject[]{null};
+        IRubyObject[] pm = new IRubyObject[]{null, null};
         RubyHash options = null;
         
         switch(args.length) {
@@ -1125,31 +1124,33 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (args[1] instanceof RubyHash) {
                     options = (RubyHash) args[1];
                 } else {
-                    vmode = args[1];
+                    pm[EncodingOption.VMODE] = args[1];
                 }
                 break;
             case 3:
                 if (args[2] instanceof RubyHash) {
                     options = (RubyHash) args[2];
                 } else {
-                    vperm[0] = args[2];
+                    pm[EncodingOption.PERM] = args[2];
                 }
-                vmode = args[1];                
+                pm[EncodingOption.VMODE] = args[1];                
                 break;
             case 4:
                 options = args[3].convertToHash();
-                vperm[0] = args[2];
-                vmode = args[1];
+                pm[EncodingOption.PERM] = args[2];
+                pm[EncodingOption.VMODE] = args[1];
                 break;
         }
         
         int perm;
-        ModeFlags modes = EncodingOption.extractModeEncoding(context, this, vmode, vperm, options, false);
-        if (vperm[0] != null && !vperm[0].isNil()) {
-            perm = RubyNumeric.num2int(vperm[0]);
+        int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
+        if (pm[EncodingOption.PERM] != null && !pm[EncodingOption.PERM].isNil()) {
+            perm = RubyNumeric.num2int(pm[EncodingOption.PERM]);
         } else {
             perm = 0666;
         }
+        
+        ModeFlags modes = ModeFlags.createModeFlagss(oflags);
         
         if (perm > 0) {
             sysopenInternal(path, modes, perm);
