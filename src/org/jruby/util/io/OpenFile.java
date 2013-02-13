@@ -105,6 +105,7 @@ public class OpenFile {
         if ((oflags & CREATE) != 0) flags |= ModeFlags.CREAT;
         if ((oflags & BINMODE) != 0) flags |= ModeFlags.BINARY;
         if ((oflags & TEXTMODE) != 0) flags |= ModeFlags.TEXT;
+        if ((oflags & TRUNC) != 0) flags |= ModeFlags.TRUNC;
         
         return flags;
     }
