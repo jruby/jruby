@@ -598,7 +598,7 @@ public class RubyEnumerable {
         final long result[] = new long[] {0};
 
         try {
-            callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_ARGUMENT, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
@@ -609,7 +609,7 @@ public class RubyEnumerable {
         } catch (JumpException.SpecialJump sj) {
             return RubyFixnum.newFixnum(runtime, result[0]);
         }
-        
+
         return runtime.getNil();
     }
 
