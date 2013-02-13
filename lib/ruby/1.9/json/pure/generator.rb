@@ -220,17 +220,22 @@ module JSON
         # Configure this State instance with the Hash _opts_, and return
         # itself.
         def configure(opts)
-          @indent         = opts[:indent] if opts.key?(:indent)
-          @space          = opts[:space] if opts.key?(:space)
-          @space_before   = opts[:space_before] if opts.key?(:space_before)
-          @object_nl      = opts[:object_nl] if opts.key?(:object_nl)
-          @array_nl       = opts[:array_nl] if opts.key?(:array_nl)
-          @allow_nan      = !!opts[:allow_nan] if opts.key?(:allow_nan)
-          @ascii_only     = opts[:ascii_only] if opts.key?(:ascii_only)
-          @depth          = opts[:depth] || 0
-          @quirks_mode    = opts[:quirks_mode] if opts.key?(:quirks_mode)
-          if !opts.key?(:max_nesting) # defaults to 19
-            @max_nesting = 19
+          for key, value in opts
+            instance_variable_set "@#{key}", value
+          end
+          @indent                = opts[:indent] if opts.key?(:indent)
+          @space                 = opts[:space] if opts.key?(:space)
+          @space_before          = opts[:space_before] if opts.key?(:space_before)
+          @object_nl             = opts[:object_nl] if opts.key?(:object_nl)
+          @array_nl              = opts[:array_nl] if opts.key?(:array_nl)
+          @allow_nan             = !!opts[:allow_nan] if opts.key?(:allow_nan)
+          @ascii_only            = opts[:ascii_only] if opts.key?(:ascii_only)
+          @depth                 = opts[:depth] || 0
+          @quirks_mode           = opts[:quirks_mode] if opts.key?(:quirks_mode)
+          @buffer_initial_length ||= opts[:buffer_initial_length]
+
+          if !opts.key?(:max_nesting) # defaults to 100
+            @max_nesting = 100
           elsif opts[:max_nesting]
             @max_nesting = opts[:max_nesting]
           else
@@ -244,11 +249,14 @@ module JSON
         # passed to the configure method.
         def to_h
           result = {}
-          for iv in %w[indent space space_before object_nl array_nl allow_nan max_nesting ascii_only quirks_mode buffer_initial_length depth]
-            result[iv.intern] = instance_variable_get("@#{iv}")
+          for iv in instance_variables
+            iv = iv.to_s[1..-1]
+            result[iv.to_sym] = self[iv]
           end
           result
         end
+
+        alias to_hash to_h
 
         # Generates a valid JSON document from object +obj+ and returns the
         # result. If no valid JSON document can be created this method raises a
@@ -267,7 +275,19 @@ module JSON
 
         # Return the value returned by method +name+.
         def [](name)
-          __send__ name
+          if respond_to?(name)
+            __send__(name)
+          else
+            instance_variable_get("@#{name}")
+          end
+        end
+
+        def []=(name, value)
+          if respond_to?(name_writer = "#{name}=")
+            __send__ name_writer, value
+          else
+            instance_variable_set "@#{name}", value
+          end
         end
       end
 
