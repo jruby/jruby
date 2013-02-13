@@ -66,9 +66,9 @@ public class Options {
         boolean hotspot24 = false;
         
         String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        if (!vmName.equals("") && 
-                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"))) {
-
+        boolean isHotSpot = !vmName.equals("") && 
+                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
+        if (isHotSpot) {
             String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
             if (vmVersionString.equals("")) {
                 // can't get VM version for whatever reason, assume LCD.
@@ -94,6 +94,8 @@ public class Options {
 
         if (hotspot24) {
             INVOKEDYNAMIC_DEFAULT = true;
+        } else if (isHotSpot) {
+            INVOKEDYNAMIC_DEFAULT = false;
         } else {
             String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
             if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
