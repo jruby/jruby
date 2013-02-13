@@ -63,10 +63,10 @@ public class EncodingOption {
     // mri: extract_binmode
     public static int extractBinmode(Ruby runtime, IRubyObject optionsArg, int fmode) {
         IRubyObject v = hashARef(runtime, optionsArg, "textmode");
-        if (!v.isNil()) fmode |= OpenFile.TEXTMODE;
+        if (!v.isNil() && v.isTrue()) fmode |= OpenFile.TEXTMODE;
         
         v = hashARef(runtime, optionsArg, "binmode");
-        if (!v.isNil()) fmode |= OpenFile.BINMODE;
+        if (!v.isNil() && v.isTrue()) fmode |= OpenFile.BINMODE;
 
         if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0) {
             throw runtime.newArgumentError("both textmode and binmode specified");
@@ -90,6 +90,13 @@ public class EncodingOption {
     public static final int PERM = 0;
     public static final int VMODE = 1;
     
+    /*
+     * This is a wacky method which is a very near port from MRI.  pm passes in 
+     * a permissions value and a mode value.  As a side-effect mode will get set
+     * if this found any 'mode'-like stuff so the caller can know whether mode 
+     * has been handled yet.   The same story for permission value.  If it has
+     * not been set then we know it needs to default permissions from the caller.
+     */
     // mri: rb_io_extract_modeenc
     public static int extractModeEncoding(ThreadContext context, 
             IOEncodable ioEncodable, IRubyObject[] pm, IRubyObject options, boolean secondTime) {

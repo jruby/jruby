@@ -855,11 +855,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             descriptor.checkOpen();
 
-            // No modes set when setting up...try and inherit from descriptor
-            if (vmodeArg == null) vmodeArg = context.runtime.newFixnum(descriptor.getOriginalModes().getFlags());
-            
             IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
             int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
+            
+            if (pm[EncodingOption.VMODE] == null || pm[EncodingOption.VMODE].isNil()) {
+                oflags = descriptor.getOriginalModes().getFlags();
+            }
 
             // JRUBY-4650: Make sure we clean up the old data, if it's present.
             if (openFile.isOpen()) openFile.cleanup(runtime, false);
