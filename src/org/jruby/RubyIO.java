@@ -866,8 +866,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (openFile.isOpen()) openFile.cleanup(runtime, false);
             
             ModeFlags modes = ModeFlags.createModeFlagss(oflags);
-
+            
             openFile.setMode(modes.getOpenFileFlags());
+            
+            // FIXME: This is liberal license.  Not the same as MRI (Also in sysopenInternal in RubyFile)
+            if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();            
+            
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
             throw context.runtime.newErrnoEBADFError();

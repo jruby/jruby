@@ -1200,7 +1200,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
 
-        // FIXME: This is liberal license.  Not the same as MRI
+        // FIXME: This is liberal license.  Not the same as MRI (Also in initializeCommon19 in RubyIO).
         if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
