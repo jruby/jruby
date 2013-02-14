@@ -1,6 +1,5 @@
 package org.jruby.util.io;
 
-import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;

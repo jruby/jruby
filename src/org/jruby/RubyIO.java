@@ -1070,7 +1070,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if (enc2 == enc) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
                             enc2 + ": it is identical to external encoding " + enc);
-                    enc = null;
+                    enc2 = null;
                 }
             }
             transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
@@ -2347,7 +2347,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = getRuntime();
         
         if (!runtime.is1_9()) return super.inspect();
-        OpenFile openFile = getOpenFile();
         if (openFile == null) return super.inspect();
         
         Stream stream = openFile.getMainStream();
@@ -3920,7 +3919,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 break;
         }
         
-        RubyIO io = new RubyIO(runtime, runtime.getIO());
+        RubyIO io = new RubyIO(runtime, (RubyClass) recv);
         IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), pmode };
         int oflags = EncodingOption.extractModeEncoding(context, io, pm, options, false);
         ModeFlags modes = ModeFlags.createModeFlagss(oflags);
