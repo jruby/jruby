@@ -848,6 +848,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject options) {
         Ruby runtime = context.runtime;
+
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
 
@@ -880,14 +881,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unused) {
         return initializeCommon19(context, RubyNumeric.fix2int(fileNumber), null, null);
     }
-
+    
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
         IRubyObject vmode = null;
         RubyHash options = null;
-        if (second instanceof RubyHash) {
-            options = (RubyHash)second;
+        IRubyObject hashTest = TypeConverter.checkHashType(context.runtime, second);
+        if (hashTest instanceof RubyHash) {
+            options = (RubyHash)hashTest;
         } else {
             vmode = second;
         }
@@ -1214,12 +1216,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.setAutoclose(autoclose);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "autoclose?", compat = RUBY1_9)
     public IRubyObject autoclose(ThreadContext context) {
         return context.runtime.newBoolean(isAutoclose());
     }
 
-    @JRubyMethod(name = "autoclose=")
+    @JRubyMethod(name = "autoclose=", compat = RUBY1_9)
     public IRubyObject autoclose_set(ThreadContext context, IRubyObject autoclose) {
         setAutoclose(autoclose.isTrue());
         return context.nil;

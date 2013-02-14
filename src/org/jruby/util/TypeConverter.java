@@ -34,7 +34,6 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TypeConverter {

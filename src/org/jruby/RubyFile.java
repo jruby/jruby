@@ -322,13 +322,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (args.length > 0 && args.length <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getFixnum(), "to_int");
             if (!fd.isNil()) {
-                args[0] = fd;
                 if (args.length == 1) {
-                    return super.initialize19(context, args[0], block);
+                    return super.initialize19(context, fd, block);
                 } else if (args.length == 2) {
-                    return super.initialize19(context, args[0], args[1], block);
+                    return super.initialize19(context, fd, args[1], block);
                 }
-                return super.initialize19(context, args[0], args[1], args[2], block);
+                return super.initialize19(context, fd, args[1], args[2], block);
             }
         }
 
@@ -1120,21 +1119,25 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         switch(args.length) {
             case 1:
                 break;
-            case 2:
-                if (args[1] instanceof RubyHash) {
-                    options = (RubyHash) args[1];
+            case 2: {
+                IRubyObject test = TypeConverter.checkHashType(runtime, args[1]);
+                if (test instanceof RubyHash) {
+                    options = (RubyHash) test;
                 } else {
                     pm[EncodingOption.VMODE] = args[1];
                 }
                 break;
-            case 3:
-                if (args[2] instanceof RubyHash) {
-                    options = (RubyHash) args[2];
+            }
+            case 3: {
+                IRubyObject test = TypeConverter.checkHashType(runtime, args[2]);
+                if (test instanceof RubyHash) {
+                    options = (RubyHash) test;
                 } else {
                     pm[EncodingOption.PERM] = args[2];
                 }
                 pm[EncodingOption.VMODE] = args[1];                
                 break;
+            }
             case 4:
                 options = args[3].convertToHash();
                 pm[EncodingOption.PERM] = args[2];
@@ -1151,7 +1154,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         ModeFlags modes = ModeFlags.createModeFlags(oflags);
-        
+                
         if (perm > 0) {
             sysopenInternal(path, modes, perm);
         } else {
