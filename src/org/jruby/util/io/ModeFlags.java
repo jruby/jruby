@@ -363,7 +363,7 @@ public class ModeFlags implements Cloneable {
         return fcntlFlags;
     }
     
-    public static ModeFlags createModeFlagss(int oflags) {
+    public static ModeFlags createModeFlags(int oflags) {
         try {
             return new ModeFlags(oflags);
         } catch (InvalidValueException e) {

@@ -1150,7 +1150,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             perm = 0666;
         }
         
-        ModeFlags modes = ModeFlags.createModeFlagss(oflags);
+        ModeFlags modes = ModeFlags.createModeFlags(oflags);
         
         if (perm > 0) {
             sysopenInternal(path, modes, perm);
@@ -1200,8 +1200,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
 
-        // FIXME: This is liberal license.  Not the same as MRI (Also in initializeCommon19 in RubyIO).
-        if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
 

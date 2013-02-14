@@ -865,13 +865,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // JRUBY-4650: Make sure we clean up the old data, if it's present.
             if (openFile.isOpen()) openFile.cleanup(runtime, false);
             
-            ModeFlags modes = ModeFlags.createModeFlagss(oflags);
+            ModeFlags modes = ModeFlags.createModeFlags(oflags);
             
             openFile.setMode(modes.getOpenFileFlags());
-            
-            // FIXME: This is liberal license.  Not the same as MRI (Also in sysopenInternal in RubyFile)
-            if (openFile.isBinmode() && readEncoding == null && writeEncoding == null) setAscii8bitBinmode();            
-            
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
             throw context.runtime.newErrnoEBADFError();
@@ -3922,7 +3918,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = new RubyIO(runtime, (RubyClass) recv);
         IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), pmode };
         int oflags = EncodingOption.extractModeEncoding(context, io, pm, options, false);
-        ModeFlags modes = ModeFlags.createModeFlagss(oflags);
+        ModeFlags modes = ModeFlags.createModeFlags(oflags);
         
         // FIXME: Reprocessing logic twice for now...
         // for 1.9 mode, strip off the trailing options hash, if there
