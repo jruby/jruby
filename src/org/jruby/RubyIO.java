@@ -2153,8 +2153,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         ByteList separator;
         long limit = -1;
-        if (arg instanceof RubyInteger) {
-            limit = RubyInteger.fix2long(arg);
+        IRubyObject test = TypeConverter.checkIntegerType(runtime, arg, "to_int");
+        if (test instanceof RubyInteger) {
+            limit = RubyInteger.fix2long(test);
             separator = separator(runtime);
         } else {
             separator = separator(runtime, arg);
@@ -2170,7 +2171,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
     public IRubyObject gets19(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
         Ruby runtime = context.runtime;
-        long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(limit_arg);
+        long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(TypeConverter.checkIntegerType(runtime, limit_arg, "to_int"));
         IRubyObject result = getline(runtime, separator(runtime, separator), limit);
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
