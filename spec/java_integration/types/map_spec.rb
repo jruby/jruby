@@ -1,6 +1,16 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "A Java primitive Array of type" do
+  if {}.respond_to? :key
+    def key(hash, value)
+      hash.key(value)
+    end
+  else
+    def key(hash, value)
+      hash.index(value)
+    end
+  end
+    
   def test_equal(a, b)
     b.should == a
   end
@@ -136,13 +146,13 @@ describe "A Java primitive Array of type" do
     test_equal(nil, h[k1])
 
     h.put(1, 2); h.put(3, 4);
-    test_equal(1, h.index(2))
-    test_equal(nil, h.index(10))
+    test_equal(1, key(h, 2))
+    test_equal(nil, key(h, 10))
     test_equal(nil, h.default_proc)
     h.default = :hello
     test_equal(nil, h.default_proc)
-    test_equal(1, h.index(2))
-    test_equal(nil, h.index(10))
+    test_equal(1, key(h, 2))
+    test_equal(nil, key(h, 10))
 
 # java.util.HashMap can't have a block as an arg for its constructor
 #h = Hash.new {|h,k| h[k] = k.to_i*10 }
