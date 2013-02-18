@@ -1,1 +1,0 @@
-fails:String#valid_encoding? returns true for all encodings self is valid in

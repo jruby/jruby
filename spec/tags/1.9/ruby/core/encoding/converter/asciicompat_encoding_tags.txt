@@ -4,4 +4,3 @@ fails:Encoding::Converter.asciicompat_encoding accepts an Encoding object as an 
 fails:Encoding::Converter.asciicompat_encoding returns a corresponding ASCII compatible encoding for ASCII-incompatible encodings
 fails:Encoding::Converter.asciicompat_encoding returns nil when the given encoding is ASCII compatible
 fails:Encoding::Converter.asciicompat_encoding handles encoding names who resolve to nil encodings
-fails:Encoding::Converter.asciicompat_encoding returns nil if called with an encoding it returned previously

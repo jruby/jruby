@@ -1,1 +1,0 @@
-fails:Fiber.new raises a SyntaxError when the block contains a retry statement
