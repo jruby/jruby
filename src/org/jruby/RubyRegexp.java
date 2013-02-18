@@ -1274,8 +1274,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return initializeByRegexp19((RubyRegexp)arg0);
         }
         
-        options = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));        
-        return initializeCommon19(arg0.convertToString(), options);
+        return initializeCommon19(arg0.convertToString(), 
+                RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1)));
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
@@ -1284,8 +1284,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
             return initializeByRegexp19((RubyRegexp)arg0);
         }
-        int optionsInt = objectAsJoniOptions(arg1);
-        RegexpOptions newOptions = RegexpOptions.fromJoniOptions(optionsInt);
+
+        RegexpOptions newOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
@@ -2320,6 +2320,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(regexp);
         output.writeString(regexp.str);
-        output.writeByte(regexp.pattern.getOptions() & EMBEDDABLE);
+        
+        int options = regexp.pattern.getOptions() & EMBEDDABLE;
+
+        if (regexp.getOptions().isFixed()) options |= ARG_ENCODING_FIXED;
+        
+        output.writeByte(options);
     }
 }
