@@ -153,7 +153,18 @@ public class RubyTime extends RubyObject {
             return getTimeZone(runtime, tz.toString());
         }
     }
-     
+
+    public static DateTimeZone getTimeZone(Ruby runtime, long seconds) {
+        // append "s" to the offset when looking up the cache
+        String zone = seconds + "s";
+        DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
+
+        if (cachedZone != null) return cachedZone;
+        DateTimeZone dtz = DateTimeZone.forOffsetMillis((int) (seconds * 1000));
+        runtime.getTimezoneCache().put(zone, dtz);
+        return dtz;
+    }
+
     public static DateTimeZone getTimeZone(Ruby runtime, String zone) {
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
 
@@ -1148,6 +1159,9 @@ public class RubyTime extends RubyObject {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
             dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
+        } else if (args.length == 10 && args[9].respondsTo("to_int")) {
+            IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
+            dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
         } else {
             dtz = getLocalTimeZone(runtime);
         }
