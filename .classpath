@@ -32,11 +32,11 @@
 	<classpathentry kind="lib" path="build_lib/joda-time-2.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-unixsocket.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-enxio.jar"/>
-	<classpathentry kind="lib" path="build_lib/bcmail-jdk15-146.jar"/>
-	<classpathentry kind="lib" path="build_lib/bcprov-jdk15-146.jar"/>
 	<classpathentry kind="lib" path="build_lib/jline-2.7.jar"/>
 	<classpathentry kind="lib" path="build_lib/ant.jar"/>
 	<classpathentry kind="lib" path="build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="build_lib/bcprov-jdk15on-147.jar"/>
+	<classpathentry kind="lib" path="build_lib/bcpkix-jdk15on-147.jar"/>
 	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>
