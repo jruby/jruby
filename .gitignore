@@ -58,3 +58,5 @@ build_graph.png
 lib/ruby/shared/bcmail-jdk15-146.jar
 lib/ruby/shared/bcprov-jdk15-146.jar
 lib/ruby/shared/jopenssl.jar
+docs/*
+maven/*
