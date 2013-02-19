@@ -63,6 +63,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 
@@ -70,7 +71,7 @@ import org.jruby.util.ByteList;
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name="Symbol")
-public class RubySymbol extends RubyObject {
+public class RubySymbol extends RubyObject implements MarshalEncoding {
     private final String symbol;
     private final int id;
     private final ByteList symbolBytes;
@@ -898,6 +899,13 @@ public class RubySymbol extends RubyObject {
             symbolTable = newTable;
             return newTable;
         }
-        
+    }
+
+    public boolean shouldMarshalEncoding() {
+        return getMarshalEncoding() != USASCIIEncoding.INSTANCE;
+    }
+
+    public Encoding getMarshalEncoding() {
+        return symbolBytes.getEncoding();
     }
 }

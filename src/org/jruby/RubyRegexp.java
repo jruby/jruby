@@ -68,6 +68,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -79,7 +80,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 @JRubyClass(name="Regexp")
-public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable {
+public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable, MarshalEncoding {
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
@@ -126,6 +127,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public void setEncoding(Encoding encoding) {
         // FIXME: Which encoding should be changed here?  
         // FIXME: transcode?
+    }
+
+    public boolean shouldMarshalEncoding() {
+        return getEncoding() != ASCIIEncoding.INSTANCE;
+    }
+
+    public Encoding getMarshalEncoding() {
+        return getEncoding();
     }
 
     private static final class RegexpCache {
