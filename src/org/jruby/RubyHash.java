@@ -1747,9 +1747,9 @@ public class RubyHash extends RubyObject implements Map {
     private RubyHash replaceCommon19(final ThreadContext context, IRubyObject other, Visitor visitor) {
         final RubyHash otherHash = other.convertToHash();
 
-        rb_clear();
-
         if (this == otherHash) return this;
+
+        rb_clear();
 
         if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
             setComparedByIdentity(true);
