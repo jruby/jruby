@@ -1106,7 +1106,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // :)
     }
 
-    // mri: rb_scan_open_args
+    // mri: rb_open_file + rb_scan_open_args
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
@@ -1145,25 +1145,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 break;
         }
         
-        int perm;
         int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
-        if (pm[EncodingOption.PERM] != null && !pm[EncodingOption.PERM].isNil()) {
-            perm = RubyNumeric.num2int(pm[EncodingOption.PERM]);
-        } else {
-            perm = 0666;
-        }
+        int perm = (pm[EncodingOption.PERM] != null && !pm[EncodingOption.PERM].isNil()) ? 
+                RubyNumeric.num2int(pm[EncodingOption.PERM]) : 0666;
         
-        ModeFlags modes = ModeFlags.createModeFlags(oflags);
-                
-        if (perm > 0) {
-            sysopenInternal(path, modes, perm);
-        } else {
-            openInternal(path, modes);
-        }
+        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm);
 
         return this;
     }
 
+    // 1.8
     private IRubyObject openFile(IRubyObject args[]) {
         Ruby runtime = getRuntime();
         RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
@@ -1195,6 +1186,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
+    // mri: rb_file_open_generic
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
         if (path.startsWith("jar:")) path = path.substring(4);
         
@@ -1223,6 +1215,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
+    @Deprecated
     protected void openInternal(String path, ModeFlags modes) {
         if (path.startsWith("jar:")) path = path.substring(4);
 
