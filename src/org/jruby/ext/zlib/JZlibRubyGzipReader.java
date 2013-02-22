@@ -29,7 +29,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Stream;
 
 /**
@@ -108,7 +108,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (args.length > 1) {
             IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
             if (!opt.isNil()) {
-                EncodingOption.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
+                EncodingUtils.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
             }
         }
         if (realIo.respondsTo("path")) {

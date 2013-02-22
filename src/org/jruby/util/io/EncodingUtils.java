@@ -11,29 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.TypeConverter;
 
-public class EncodingOption {
-    private Encoding externalEncoding;
-    private Encoding internalEncoding;
-    private boolean bom;
-
-    public EncodingOption(Encoding externalEncoding, Encoding internalEncoding, boolean bom) {
-        this.externalEncoding = externalEncoding;
-        this.internalEncoding = internalEncoding;
-        this.bom = bom;
-    }
-
-    public Encoding getExternalEncoding() {
-        return externalEncoding;
-    }
-
-    public Encoding getInternalEncoding() {
-        return internalEncoding;
-    }
-
-    public boolean hasBom() {
-        return bom;
-    }
-    
+public class EncodingUtils {    
     public static Encoding toEncoding(ThreadContext context, IRubyObject object) {
         if (object instanceof RubyEncoding) return ((RubyEncoding) object).getEncoding();
         
@@ -281,10 +259,5 @@ public class EncodingOption {
         }
 
         setupReadWriteEncodings(context, ioEncodable, intEncoding, extEncoding);
-    }
-
-    @Override
-    public String toString() {
-        return "EncodingOption(int:" + internalEncoding + ", ext:" + externalEncoding + ", bom:" + bom + ")";
     }
 }

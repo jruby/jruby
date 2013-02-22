@@ -41,7 +41,7 @@ import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.util.StringSupport;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
@@ -857,9 +857,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             descriptor.checkOpen();
 
             IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
-            int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
+            int oflags = EncodingUtils.extractModeEncoding(context, this, pm, options, false);
             
-            if (pm[EncodingOption.VMODE] == null || pm[EncodingOption.VMODE].isNil()) {
+            if (pm[EncodingUtils.VMODE] == null || pm[EncodingUtils.VMODE].isNil()) {
                 oflags = descriptor.getOriginalModes().getFlags();
             }
 
@@ -1043,7 +1043,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
         if (!internal.isNil()) {
             Encoding enc;
-            Encoding enc2 = EncodingOption.toEncoding(context, external);
+            Encoding enc2 = EncodingUtils.toEncoding(context, external);
             
             if (internal instanceof RubyString) {
                 RubyString internalAsString = (RubyString) internal;
@@ -1053,7 +1053,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc = enc2;
                     enc2 = null;
                 } else {
-                    enc = EncodingOption.toEncoding(context, internalAsString);
+                    enc = EncodingUtils.toEncoding(context, internalAsString);
                 }
                 
                 if (enc == enc2) {
@@ -1062,7 +1062,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc2 = null;
                 }
             } else {
-                enc = EncodingOption.toEncoding(context, internal);
+                enc = EncodingUtils.toEncoding(context, internal);
 
                 // FIXME: missing rb_econv_prepare_options
                 if (enc2 == enc) {
@@ -1076,17 +1076,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
             setWriteEncoding(enc2);
         } else {
             if (external.isNil()) {
-                EncodingOption.setupReadWriteEncodings(context, this, null, null);
+                EncodingUtils.setupReadWriteEncodings(context, this, null, null);
             } else {
                 if (external instanceof RubyString) {
                     RubyString externalAsString = (RubyString) external;
                     
-                    EncodingOption.parseModeEncoding(context, this, externalAsString.asJavaString());
+                    EncodingUtils.parseModeEncoding(context, this, externalAsString.asJavaString());
                     // FIXME: missing rb_econv_prepare_options
                 } else {
-                    Encoding enc = EncodingOption.toEncoding(context, external);
+                    Encoding enc = EncodingUtils.toEncoding(context, external);
                     
-                    EncodingOption.setupReadWriteEncodings(context, this, null, enc);
+                    EncodingUtils.setupReadWriteEncodings(context, this, null, enc);
                 }
                 transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
             }
@@ -3392,7 +3392,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 break;
             case 2:
                 if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingOption.openArgsToArgs(runtime, filename, (RubyHash) args[1]), Block.NULL_BLOCK);
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingUtils.openArgsToArgs(runtime, filename, (RubyHash) args[1]), Block.NULL_BLOCK);
                     args = new IRubyObject[]{args[0]};
                 } else {
                     io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
@@ -3400,7 +3400,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 break;
             case 3:
                 if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingOption.openArgsToArgs(runtime, filename, (RubyHash) args[2]), Block.NULL_BLOCK);
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingUtils.openArgsToArgs(runtime, filename, (RubyHash) args[2]), Block.NULL_BLOCK);
                     args = new IRubyObject[]{args[0], args[1]};
                 } else {
                     io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
@@ -3920,7 +3920,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         RubyIO io = new RubyIO(runtime, (RubyClass) recv);
         IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), pmode };
-        int oflags = EncodingOption.extractModeEncoding(context, io, pm, options, false);
+        int oflags = EncodingUtils.extractModeEncoding(context, io, pm, options, false);
         ModeFlags modes = ModeFlags.createModeFlags(oflags);
         
         // FIXME: Reprocessing logic twice for now...
@@ -4390,7 +4390,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        EncodingOption.getEncodingOptionFromObject(context, this, options);
+        EncodingUtils.getEncodingOptionFromObject(context, this, options);
 
         return ioOptions;
     }

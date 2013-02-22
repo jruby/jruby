@@ -73,7 +73,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 

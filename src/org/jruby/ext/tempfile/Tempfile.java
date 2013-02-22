@@ -52,7 +52,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.PhantomReferenceReaper;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -176,7 +176,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
         if (options != null) {
             ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-            EncodingOption.getEncodingOptionFromObject(context, this, options);
+            EncodingUtils.getEncodingOptionFromObject(context, this, options);
             
         }
         

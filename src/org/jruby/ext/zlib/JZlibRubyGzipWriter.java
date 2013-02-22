@@ -28,7 +28,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  *
@@ -100,7 +100,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         if (args.length > 2) {
             IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
             if (!opt.isNil()) {
-                EncodingOption.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
+                EncodingUtils.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 0, newArgs, 0, args.length - 1);
                 args = newArgs;

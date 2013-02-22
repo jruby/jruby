@@ -83,7 +83,7 @@ import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Ruby File class equivalent in java.
@@ -1124,7 +1124,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (test instanceof RubyHash) {
                     options = (RubyHash) test;
                 } else {
-                    pm[EncodingOption.VMODE] = args[1];
+                    pm[EncodingUtils.VMODE] = args[1];
                 }
                 break;
             }
@@ -1133,21 +1133,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (test instanceof RubyHash) {
                     options = (RubyHash) test;
                 } else {
-                    pm[EncodingOption.PERM] = args[2];
+                    pm[EncodingUtils.PERM] = args[2];
                 }
-                pm[EncodingOption.VMODE] = args[1];                
+                pm[EncodingUtils.VMODE] = args[1];                
                 break;
             }
             case 4:
                 options = args[3].convertToHash();
-                pm[EncodingOption.PERM] = args[2];
-                pm[EncodingOption.VMODE] = args[1];
+                pm[EncodingUtils.PERM] = args[2];
+                pm[EncodingUtils.VMODE] = args[1];
                 break;
         }
         
-        int oflags = EncodingOption.extractModeEncoding(context, this, pm, options, false);
-        int perm = (pm[EncodingOption.PERM] != null && !pm[EncodingOption.PERM].isNil()) ? 
-                RubyNumeric.num2int(pm[EncodingOption.PERM]) : 0666;
+        int oflags = EncodingUtils.extractModeEncoding(context, this, pm, options, false);
+        int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
+                RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
         
         sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm);
 
