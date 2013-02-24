@@ -58,5 +58,3 @@ build_graph.png
 lib/ruby/shared/bcpkix-jdk15on-147.jar
 lib/ruby/shared/bcprov-jdk15on-147.jar
 lib/ruby/shared/jopenssl.jar
-docs/*
-maven/*
