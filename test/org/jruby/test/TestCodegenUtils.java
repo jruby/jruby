@@ -131,8 +131,78 @@ public class TestCodegenUtils extends TestCase {
     assertEquals(expectedEventList, logger.getEventList());
   }
 
-    public void testvisitAnnotationFields_whenArrayOfMixedTypes_visitsArrayAndEachElementAsAppropriate() {
+  public void testvisitAnnotationFields_whenArrayOfMixedTypes_visitsArrayAndEachElementAsAppropriate() {
+    Class<?>[] classes = {SimpleClass.class, Object.class};
+    fields.put("myClass", classes);
+    SimpleEnum[] simpleEnums = {SimpleEnum.FirstValue, SimpleEnum.SecondValue};
+    fields.put("myEnum", simpleEnums);
+    String[] strings = {"hello", "world"};
+    fields.put("string", strings);
 
+    CodegenUtils.visitAnnotationFields(logger, fields);
+
+    assertEquals(12, logger.getEventList().size());
+    List<Event> expectedEventList = Arrays.asList(
+        new VisitArrayEvent("myClass"),
+          new VisitEvent(null, Type.getType(SimpleClass.class)),
+          new VisitEvent(null, Type.getType(Object.class)),
+        new VisitEndEvent(),
+          new VisitArrayEvent("myEnum"),
+          new VisitEnumEvent(null, ci(SimpleEnum.class), SimpleEnum.FirstValue.name()),
+        new VisitEnumEvent(null, ci(SimpleEnum.class), SimpleEnum.SecondValue.name()),
+        new VisitEndEvent(),
+        new VisitArrayEvent("string"),
+          new VisitEvent(null, "hello"),
+          new VisitEvent(null, "world"),
+        new VisitEndEvent());
+
+    assertEquals(expectedEventList, logger.getEventList());
+  }
+
+  private @interface NestedInterface {
+    SimpleEnum myEnum();
+  }
+
+  private @interface SimpleInterface {
+    NestedInterface value();
+  }
+  public void testvisitAnnotationFields_whenNestedAnnotations_visitsAnnotationsRecursivly() {
+    Map<String, Object> nestedInterfaceFields = new LinkedHashMap<String, Object>();
+    nestedInterfaceFields.put("myEnum", SimpleEnum.SecondValue);
+    Map<Class, Map<String,Object>> nestedInterfaceStructure = new LinkedHashMap<Class, Map<String, Object>>();
+
+    nestedInterfaceStructure.put(NestedInterface.class, nestedInterfaceFields);
+
+    fields.put("value", nestedInterfaceStructure);
+
+    CodegenUtils.visitAnnotationFields(logger, fields);
+
+    assertEquals(3, logger.getEventList().size());
+    List<Event> expectedEventList = Arrays.asList(
+        new VisitAnnotationEvent("value", Type.getType(NestedInterface.class).getDescriptor()),
+        new VisitEnumEvent("myEnum", ci(SimpleEnum.class), SimpleEnum.SecondValue.name()),
+        new VisitEndEvent());
+
+    assertEquals(expectedEventList, logger.getEventList());
+  }
+
+
+  public void testvisitAnnotationFields_whenSuppliedInvalidNestedAnnotationMap_throwsError() {
+    Exception thrown = null;
+
+    Map<Class, Object> nestedInterfaceStructure = new LinkedHashMap<Class, Object>();
+    nestedInterfaceStructure.put(NestedInterface.class, SimpleEnum.SecondValue.name());
+
+    fields.put("value", nestedInterfaceStructure);
+
+    try {
+      CodegenUtils.visitAnnotationFields(logger, fields);
+    } catch(RuntimeException e) {
+      thrown = e;
+    }
+
+    assertNotNull(thrown);
+    assertEquals(CodegenUtils.InvalidAnnotationDescriptorException.class, thrown.getClass());
   }
 
   public void testvisitAnnotationFields_whenArrayOfMixedTypes_visitsEachTypeAppropriately() {
@@ -325,6 +395,44 @@ public class TestCodegenUtils extends TestCase {
     }
   }
 
+  private static class VisitAnnotationEvent implements Event {
+    private final String key;
+    private final String value;
+
+    public VisitAnnotationEvent(String key, String value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      VisitAnnotationEvent that = (VisitAnnotationEvent) o;
+
+      if (key != null ? !key.equals(that.key) : that.key != null) return false;
+      if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = key != null ? key.hashCode() : 0;
+      result = 31 * result + (value != null ? value.hashCode() : 0);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return "VisitAnnotationEvent{" +
+          "key='" + key + '\'' +
+          ", value='" + value + '\'' +
+          '}';
+    }
+  }
+
   private static class AnnotationVisitorLogger extends AnnotationVisitor {
     private final List<Event> eventList;
 
@@ -342,7 +450,8 @@ public class TestCodegenUtils extends TestCase {
     }
 
     public AnnotationVisitor visitAnnotation(String s, String s2) {
-      return null;
+      eventList.add(new VisitAnnotationEvent(s, s2));
+      return this;
     }
 
     public AnnotationVisitor visitArray(String s) {
