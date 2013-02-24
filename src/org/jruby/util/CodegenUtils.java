@@ -242,7 +242,6 @@ public class CodegenUtils {
             Object value = fieldEntry.getValue();
           if (value instanceof Map) {
             Map<Class, Map<String, Object>> nestedAnnotationMap = (Map<Class, Map<String, Object>>) value;
-            Map<String, Object> nestedFields = new HashMap<String, Object>();
 
             for (Map.Entry<Class, Map<String, Object>> nestedAnnotation : nestedAnnotationMap.entrySet()) {
               AnnotationVisitor annotationV = visitor.visitAnnotation(fieldEntry.getKey(), Type.getType(nestedAnnotation.getKey()).getDescriptor());
