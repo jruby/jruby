@@ -226,16 +226,6 @@ public class CodegenUtils {
         return typeName + commonClassSuffix;
     }
 
-    @SuppressWarnings("unchecked")
-    public static void visitAnnotation(AnnotationVisitor av, Class<? extends Annotation> annotation, Object object) {
-      //if (object.getClass())
-      annotation.getDeclaredFields();
-      if (object instanceof Map) {
-        Map<String, Object> fields = (Map<String, Object>) object;
-        visitAnnotationFields(av, fields);
-      }
-    }
-
     public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {
       try {
         for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
