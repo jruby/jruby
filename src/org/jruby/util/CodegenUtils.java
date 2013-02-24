@@ -9,12 +9,14 @@
 
 package org.jruby.util;
 
-import java.util.Arrays;
-import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
 import javax.lang.model.element.Name;
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -224,6 +226,16 @@ public class CodegenUtils {
         return typeName + commonClassSuffix;
     }
 
+    @SuppressWarnings("unchecked")
+    public static void visitAnnotation(AnnotationVisitor av, Class<? extends Annotation> annotation, Object object) {
+      //if (object.getClass())
+      annotation.getDeclaredFields();
+      if (object instanceof Map) {
+        Map<String, Object> fields = (Map<String, Object>) object;
+        visitAnnotationFields(av, fields);
+      }
+    }
+
     public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {
         for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
             Object value = fieldEntry.getValue();
@@ -231,13 +243,15 @@ public class CodegenUtils {
                 Object[] values = (Object[]) value;
                 AnnotationVisitor arrayV = visitor.visitArray(fieldEntry.getKey());
                 for (int i = 0; i < values.length; i++) {
-                    arrayV.visit(null, values[i]);
+                  Map<String, Object> map = new HashMap<String, Object>();
+                  map.put(null, values[i]);
+                  visitAnnotationFields(arrayV, map);
                 }
                 arrayV.visitEnd();
             } else if (value.getClass().isEnum()) {
                 visitor.visitEnum(fieldEntry.getKey(), ci(value.getClass()), value.toString());
             } else if (value instanceof Class) {
-                visitor.visit(fieldEntry.getKey(), Type.getType((Class)value));
+                visitor.visit(fieldEntry.getKey(), Type.getType((Class) value));
             } else {
                 visitor.visit(fieldEntry.getKey(), value);
             }
