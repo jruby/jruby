@@ -205,8 +205,43 @@ public class TestCodegenUtils extends TestCase {
     assertEquals(CodegenUtils.InvalidAnnotationDescriptorException.class, thrown.getClass());
   }
 
-  public void testvisitAnnotationFields_whenArrayOfMixedTypes_visitsEachTypeAppropriately() {
+  private @interface ComplexInterface {
+
   }
+  public void testvisitAnnotationFields_whenArrayOfNestedAnnotations_visitsAnnotationsRecursivly() {
+    Map<Class, Map<String, Object>> nestedInterfaceStructure1 = new LinkedHashMap<Class, Map<String, Object>>();
+    Map<Class, Map<String, Object>> nestedInterfaceStructure2 = new LinkedHashMap<Class, Map<String, Object>>();
+
+    Map<String, Object> nestedInterfaceFields = new LinkedHashMap<String, Object>();
+    nestedInterfaceFields.put("myEnum", SimpleEnum.SecondValue);
+
+    Map<String, Object> nestedInterfaceFields2 = new LinkedHashMap<String, Object>();
+    nestedInterfaceFields2.put("myEnum", SimpleEnum.FirstValue);
+
+    nestedInterfaceStructure1.put(NestedInterface.class, nestedInterfaceFields);
+    nestedInterfaceStructure2.put(NestedInterface.class, nestedInterfaceFields2);
+
+    Map[] fieldArray = { nestedInterfaceStructure1, nestedInterfaceStructure2 };
+
+
+    fields.put("value", fieldArray);
+
+    CodegenUtils.visitAnnotationFields(logger, fields);
+
+    assertEquals(8, logger.getEventList().size());
+    List<Event> expectedEventList = Arrays.asList(
+        new VisitArrayEvent("value"),
+          new VisitAnnotationEvent(null, Type.getType(NestedInterface.class).getDescriptor()),
+            new VisitEnumEvent("myEnum", ci(SimpleEnum.class), SimpleEnum.SecondValue.name()),
+          new VisitEndEvent(),
+          new VisitAnnotationEvent(null, Type.getType(NestedInterface.class).getDescriptor()),
+            new VisitEnumEvent("myEnum", ci(SimpleEnum.class), SimpleEnum.FirstValue.name()),
+          new VisitEndEvent(),
+        new VisitEndEvent());
+
+    assertEquals(expectedEventList, logger.getEventList());
+  }
+
 
   // Allows a ruby to follow same java convention for annotations with annotations as value.
   // When specifying an annotation as an array such as:
