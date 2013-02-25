@@ -1145,6 +1145,13 @@ public class ParserSupport {
         return new DStrNode(position);
     }
     
+    public Node asSymbol(ISourcePosition position, Node value) {
+        // FIXME: This might have an encoding issue since toString generally uses iso-8859-1
+        if (value instanceof StrNode) return new SymbolNode(position, ((StrNode) value).getValue().toString());
+        
+        return new DSymbolNode(position, (DStrNode) value);
+    }
+    
     public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
         if (head == null) return tail;
         if (tail == null) return head;

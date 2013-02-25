@@ -1703,7 +1703,7 @@ symbol_list     : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
                 }
                 | symbol_list word ' ' {
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition()).add($2) : $2);
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition()).add($2) : support.asSymbol($1.getPosition(), $2));
                 }
 
 qwords          : tQWORDS_BEG ' ' tSTRING_END {
@@ -1734,7 +1734,7 @@ qsym_list      : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
                 }
                 | qsym_list tSTRING_CONTENT ' ' {
-                    $$ = $1.add($2);
+                    $$ = $1.add(support.asSymbol($1.getPosition(), $2));
                 }
 
 string_contents : /* none */ {

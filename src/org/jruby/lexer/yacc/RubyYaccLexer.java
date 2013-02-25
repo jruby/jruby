@@ -621,10 +621,26 @@ public class RubyYaccLexer {
             setState(LexState.EXPR_FNAME);
             yaccValue = new Token("%"+c+begin, getPosition());
             return Tokens.tSYMBEG;
-
+        
+        case 'I':
+            if (parserSupport.getConfiguration().getVersion().is2_0()) {
+                lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+                do {c = src.read();} while (Character.isWhitespace(c));                
+                src.unread(c);
+                yaccValue = new Token("%" + c + begin, getPosition());
+                return Tokens.tSYMBOLS_BEG;
+            }
+        case 'i':
+            if (parserSupport.getConfiguration().getVersion().is2_0()) {
+                lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end);
+                do {c = src.read();} while (Character.isWhitespace(c));
+                src.unread(c);
+                yaccValue = new Token("%" + c + begin, getPosition());
+                return Tokens.tQSYMBOLS_BEG;
+            }
         default:
-            throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, getPosition(), getCurrentLine(),
-                    "Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
+            throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, 
+                        getPosition(), getCurrentLine(), "unknown type of %string");
         }
     }
     

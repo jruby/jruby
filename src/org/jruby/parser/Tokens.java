@@ -157,7 +157,9 @@ public interface Tokens {
     int tLAMBDA     = DefaultRubyParser.tLAMBDA;
     int tLAMBEG     = DefaultRubyParser.tLAMBEG;
     int tLABEL      = DefaultRubyParser.tLABEL;
-
+    int tSYMBOLS_BEG = Ruby20Parser.tSYMBOLS_BEG;
+    int tQSYMBOLS_BEG = Ruby20Parser.tQSYMBOLS_BEG;
+    
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};
 }
