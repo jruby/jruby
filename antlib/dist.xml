@@ -267,6 +267,6 @@
 
     <target name="dist-clean">
         <delete dir="${dist.dir}"/>
-        <delete dir="gem/jruby-jars/pkg"/>
+        <delete dir="gems/jruby-jars/pkg"/>
     </target>
 </project>
