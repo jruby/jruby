@@ -13,7 +13,7 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.ClosureReturnInstr;
+import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
@@ -171,6 +171,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         IRScope scope = bsp.getScope();
 
         boolean addedStores            = false;
+        boolean isClosure              = scope instanceof IRClosure;
         boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
@@ -257,7 +258,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     dirtyVars = newDirtyVars;
                     instrs.next();
                 }
-            } else if ((i instanceof ClosureReturnInstr) || (i instanceof BreakInstr)) {
+            } else if ((isClosure && (i instanceof ReturnInstr)) || (i instanceof BreakInstr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
                 // we need a binding store on exit only for vars that are both:
                 //

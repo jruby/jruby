@@ -1,6 +1,6 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -34,11 +34,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -1194,12 +1194,20 @@ public class RubyKernel {
         return rbThrowInternal(context, stringOrSymbol(tag), new IRubyObject[] {arg}, block, uncaught18);
     }
 
+    // 1.8: rb_to_id + ID2SYM since we have no id
     private static RubySymbol stringOrSymbol(IRubyObject obj) {
-        if (obj instanceof RubySymbol) {
-            return (RubySymbol)obj;
-        } else {
-            return RubySymbol.newSymbol(obj.getRuntime(), obj.asJavaString().intern());
+        if (obj instanceof RubySymbol) return (RubySymbol) obj;
+        if (obj instanceof RubyString) return RubySymbol.newSymbol(obj.getRuntime(), obj.asJavaString().intern());
+        if (obj instanceof RubyFixnum) {
+            obj.getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "do not use Fixnums as Symbols");
+            
+            throw obj.getRuntime().newArgumentError("" + obj + " is not a symbol");
         }
+
+        IRubyObject strValue = obj.checkStringType();
+        if (!strValue.isNil()) return RubySymbol.newSymbol(obj.getRuntime(), obj.asJavaString().intern());
+
+        throw obj.getRuntime().newTypeError("" + obj + " is not a symbol");
     }
 
     @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
@@ -1224,7 +1232,16 @@ public class RubyKernel {
         }
 
         // No catch active for this throw
-        String message = "uncaught throw `" + tag + "'";
+        String message;
+        if (runtime.is1_9()) {
+            if (tag instanceof RubyString) {
+                message = "uncaught throw `" + tag + "'";
+            } else {
+                message = "uncaught throw " + tag.inspect();
+            }
+        } else {
+            message = "uncaught throw `" + tag + "'";
+        }
         RubyThread currentThread = context.getThread();
 
         if (currentThread == runtime.getThreadService().getMainThread()) {
@@ -1245,7 +1262,7 @@ public class RubyKernel {
 
     private static final Uncaught uncaught18 = new Uncaught() {
         public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
-            return runtime.newNameError(message, tag.toString());
+            return runtime.newNameErrorObject(message, tag);
         }
     };
 

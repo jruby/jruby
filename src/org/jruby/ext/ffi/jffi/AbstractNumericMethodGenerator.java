@@ -1,11 +1,17 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ext.ffi.MemoryObject;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.objectweb.asm.Label;
 
 import java.util.Arrays;
@@ -52,8 +58,8 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
         int nextLocalVar = firstParam + signature.getParameterCount();
         final int heapPointerCountVar = nextLocalVar++;
-        final int firstStrategyVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
-        int nextStrategyVar = firstStrategyVar;
+        int firstMemoryVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
+        int nextMemoryVar = firstMemoryVar;
         
         // Perform any generic data conversions on the parameters
         for (int i = 0; i < signature.getParameterCount(); i++) {
@@ -131,30 +137,58 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 case BUFFER_INOUT:
                 case STRING:
                 case TRANSIENT_STRING:
-                    Label address = new Label();
+                    Label direct = new Label();
                     Label next = new Label();
                     if (pointerCount++ < 1) {
                         mv.pushInt(0);
                         mv.istore(heapPointerCountVar);
                     }
 
-                    String strategyMethod = parameterType == NativeType.STRING
-                            ? "stringParameterStrategy"
-                            : parameterType == NativeType.TRANSIENT_STRING ? "transientStringParameterStrategy" : "pointerParameterStrategy";
-                    mv.invokestatic(p(JITRuntime.class), strategyMethod,
-                            sig(PointerParameterStrategy.class, IRubyObject.class));
-                    mv.astore(nextStrategyVar);
-                    mv.aload(nextStrategyVar);
-                    mv.invokevirtual(p(ObjectParameterStrategy.class), "isDirect", sig(boolean.class));
-                    mv.iftrue(address);
+                    Label haveMemoryIO = new Label();
+                    switch (parameterType) {
+                        case STRING:
+                        case TRANSIENT_STRING:
+                            mv.aload(1); // ThreadContext
+                            mv.aload(0);
+                            mv.getfield(p(JITNativeInvoker.class), builder.getParameterCallSiteName(i), ci(CachingCallSite.class));
+                            mv.invokestatic(p(JITRuntime.class), 
+                                    parameterType == NativeType.STRING ? "convertToStringMemoryIO" : "convertToTransientStringMemoryIO", 
+                                    sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class, ThreadContext.class, CachingCallSite.class));
+                            break;
+
+
+                        default:
+                            // First try fast lookup based solely on what java type the parameter is
+                            mv.invokestatic(p(JITRuntime.class), "lookupPointerMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, IRubyObject.class));
+                            mv.astore(nextMemoryVar);
+                            mv.aload(nextMemoryVar);
+                            mv.ifnonnull(haveMemoryIO);
+
+                            // Now coerce the parameter to a pointer, and get the MemoryIO from it
+                            mv.aload(1); // ThreadContext
+                            mv.aload(paramVar);
+                            mv.aload(0);
+                            mv.getfield(p(JITNativeInvoker.class), builder.getParameterCallSiteName(i), ci(CachingCallSite.class));
+                            mv.invokestatic(p(JITRuntime.class), "convertToPointerMemoryIO", sig(org.jruby.ext.ffi.MemoryIO.class, ThreadContext.class, IRubyObject.class, CachingCallSite.class));
+                            break;
+                    }
+                   
+                    mv.astore(nextMemoryVar);
+                    mv.label(haveMemoryIO);
+                    
+                    mv.aload(nextMemoryVar);
+                    mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "isDirect", sig(boolean.class));
+
+                    mv.iftrue(direct);
                     mv.iinc(heapPointerCountVar, 1);
-                    mv.label(address);
-                    // It is now direct, get the address, and convert to the native int type
-                    mv.aload(nextStrategyVar);
-                    mv.aload(paramVar);
-                    mv.invokevirtual(p(ObjectParameterStrategy.class), "address", sig(long.class, Object.class));
+                    if (int.class == nativeIntType) mv.iconst_0(); else mv.lconst_0();
+                    mv.go_to(next);
+
+                    mv.label(direct);
+                    mv.aload(nextMemoryVar);
+                    mv.invokevirtual(p(org.jruby.ext.ffi.MemoryIO.class), "address", sig(long.class));
                     narrow(mv, long.class, nativeIntType);
-                    nextStrategyVar++;
+                    nextMemoryVar++;
                     mv.label(next);
                     break;
 
@@ -223,8 +257,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     case BUFFER_INOUT:
                     case STRING:
                     case TRANSIENT_STRING:
-                        mv.aload(firstParam + i);
-                        mv.aload(firstStrategyVar + ptrIdx);
+                        mv.aload(firstMemoryVar + ptrIdx);
+                        mv.dup();
+                        mv.invokestatic(p(JITRuntime.class), "getMemoryIOStrategy", sig(PointerParameterStrategy.class, org.jruby.ext.ffi.MemoryIO.class));
                         mv.aload(0);
                         mv.getfield(p(JITNativeInvoker.class), "parameterInfo" + i, ci(ObjectParameterInfo.class));
                         ptrIdx++;

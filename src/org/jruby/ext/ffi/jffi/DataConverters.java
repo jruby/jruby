@@ -5,6 +5,8 @@ import org.jruby.*;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.WeakIdentityHashMap;
 
 import java.util.Collections;
@@ -161,6 +163,7 @@ public class DataConverters {
     }
     
     public static final class CallbackDataConverter extends NativeDataConverter {
+        private final CachingCallSite callSite = new FunctionalCachingCallSite("call");
         private final NativeCallbackFactory callbackFactory;
         private final NativeFunctionInfo functionInfo;
 
@@ -193,7 +196,7 @@ public class DataConverters {
                 return obj;
             
             } else if (obj instanceof RubyObject) {
-                return callbackFactory.getCallback((RubyObject) obj);
+                return callbackFactory.getCallback((RubyObject) obj, callSite);
 
             } else {
                 throw context.runtime.newTypeError("wrong argument type.  Expected callable object");

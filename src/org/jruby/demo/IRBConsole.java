@@ -20,6 +20,7 @@ import javax.swing.JTextPane;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 
 public class IRBConsole extends JFrame {
@@ -75,7 +76,7 @@ public class IRBConsole extends JFrame {
         }};
         final Ruby runtime = Ruby.newInstance(config);
 
-        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))));
+        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))), GlobalVariable.Scope.GLOBAL);
 
         tar.hookIntoRuntime(runtime);
 

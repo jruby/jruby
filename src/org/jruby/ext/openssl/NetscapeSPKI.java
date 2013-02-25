@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
@@ -34,8 +34,9 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
 import org.jruby.Ruby;
@@ -52,7 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class NetscapeSPKI extends RubyObject {
     private static final long serialVersionUID = 3211242351810109432L;
 
@@ -153,14 +153,14 @@ public class NetscapeSPKI extends RubyObject {
     }
 
     private byte[] internalToDer() throws IOException {
-        DERSequence b = (DERSequence)cert.toASN1Object();
-        DERObjectIdentifier encType = null;
+        ASN1Sequence b = (ASN1Sequence)cert.toASN1Primitive();
+        ASN1ObjectIdentifier encType = null;
         DERBitString publicKey = new DERBitString(((PKey)public_key).to_der().convertToString().getBytes());
         DERIA5String encodedChallenge = new DERIA5String(this.challenge.toString());
-        DERObjectIdentifier sigAlg = null;
+        ASN1ObjectIdentifier sigAlg = null;
         DERBitString sig = null;
-        encType = (DERObjectIdentifier)((DERSequence)((DERSequence)((DERSequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
-        sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getObjectId();
+        encType = (ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)((ASN1Sequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
+        sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getAlgorithm();
         sig = (DERBitString)b.getObjectAt(2);
 
         ASN1EncodableVector v1 = new ASN1EncodableVector();
@@ -170,16 +170,16 @@ public class NetscapeSPKI extends RubyObject {
         ASN1EncodableVector v4 = new ASN1EncodableVector();
         v4.add(encType);
         v4.add(new DERNull());
-        v3.add(new DERSequence(v4));
+        v3.add(new DLSequence(v4));
         v3.add(publicKey);
-        v2.add(new DERSequence(v3));
+        v2.add(new DLSequence(v3));
         v2.add(encodedChallenge);
-        v1.add(new DERSequence(v2));
+        v1.add(new DLSequence(v2));
         v1_2.add(sigAlg);
         v1_2.add(new DERNull());
-        v1.add(new DERSequence(v1_2));
+        v1.add(new DLSequence(v1_2));
         v1.add(sig);
-        return new DERSequence(v1).getEncoded();
+        return new DLSequence(v1).getEncoded();
     }
 
     @JRubyMethod
@@ -203,7 +203,7 @@ public class NetscapeSPKI extends RubyObject {
     public IRubyObject sign(final IRubyObject key, IRubyObject digest) {
         String keyAlg = ((PKey) key).getAlgorithm();
         String digAlg = ((Digest) digest).getShortAlgorithm();
-        final DERObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get(keyAlg.toLowerCase() + "-" + digAlg.toLowerCase());
+        final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get(keyAlg.toLowerCase() + "-" + digAlg.toLowerCase());
         try {
             // NetscapeCertRequest requires "BC" provider.
             OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {

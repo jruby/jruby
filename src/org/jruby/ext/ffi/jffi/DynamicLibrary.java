@@ -11,8 +11,8 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -101,7 +101,7 @@ public class DynamicLibrary extends RubyObject {
         private final DynamicLibrary library;
         private final String name;
         
-        public Symbol(Ruby runtime, DynamicLibrary library, String name, DirectMemoryIO io) {
+        public Symbol(Ruby runtime, DynamicLibrary library, String name, MemoryIO io) {
             super(runtime, runtime.getModule("FFI").getClass("DynamicLibrary").getClass("Symbol"),
                     io, Long.MAX_VALUE);
             this.library = library;
@@ -152,26 +152,12 @@ public class DynamicLibrary extends RubyObject {
      * Since the text area of a dynamic library is usually not readable nor writable,
      * wrap the address in a MemoryIO instance that throws an exception on all accesses
      */
-    private static final class TextSymbolMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
+    private static final class TextSymbolMemoryIO extends InvalidMemoryIO {
         private final DynamicLibrary library;
-        private final long address;
 
         public TextSymbolMemoryIO(Ruby runtime, DynamicLibrary library, long address) {
-            super(runtime, "Library text region is inaccessible");
+            super(runtime, true, address, "Library text region is inaccessible");
             this.library = library;
-            this.address = address;
-        }
-
-        public long getAddress() {
-            return address;
-        }
-
-        public boolean isDirect() {
-            return true;
-        }
-
-        public boolean isNull() {
-            return false;
         }
     }
 }

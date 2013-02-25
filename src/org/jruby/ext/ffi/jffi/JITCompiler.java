@@ -59,7 +59,7 @@ class JITCompiler {
     }
     
     
-    JITHandle getHandle(Signature signature) {
+    JITHandle getHandle(Signature signature, boolean unique) {
         
         boolean hasResultConverter = !(signature.getResultType() instanceof Type.Builtin);
         NativeType nativeResultType;
@@ -97,6 +97,10 @@ class JITCompiler {
         JITSignature jitSignature = new JITSignature(nativeResultType, nativeParameterTypes, 
                 hasResultConverter, hasParameterConverter, signature.getCallingConvention(), signature.isIgnoreError());
         
+        if (unique) {
+            return new JITHandle(this, jitSignature, "OFF".equalsIgnoreCase(Options.COMPILE_MODE.load()));
+        }
+
         synchronized (this) {
             cleanup();
             HandleRef ref = handles.get(jitSignature);

@@ -56,16 +56,16 @@ module JSON
       # keys:
       # * *max_nesting*: The maximum depth of nesting allowed in the parsed data
       #   structures. Disable depth checking with :max_nesting => false|nil|0,
-      #   it defaults to 19.
+      #   it defaults to 100.
       # * *allow_nan*: If set to true, allow NaN, Infinity and -Infinity in
       #   defiance of RFC 4627 to be parsed by the Parser. This option defaults
       #   to false.
       # * *symbolize_names*: If set to true, returns symbols for the names
       #   (keys) in a JSON object. Otherwise strings are returned, which is also
       #   the default.
-      # * *create_additions*: If set to false, the Parser doesn't create
-      #   additions even if a matchin class and create_id was found. This option
-      #   defaults to true.
+      # * *create_additions*: If set to true, the Parser creates
+      #   additions when if a matching class and create_id was found. This
+      #   option defaults to false.
       # * *object_class*: Defaults to Hash
       # * *array_class*: Defaults to Array
       # * *quirks_mode*: Enables quirks_mode for parser, that is for example
@@ -76,8 +76,8 @@ module JSON
           source = convert_encoding source
         end
         super source
-        if !opts.key?(:max_nesting) # defaults to 19
-          @max_nesting = 19
+        if !opts.key?(:max_nesting) # defaults to 100
+          @max_nesting = 100
         elsif opts[:max_nesting]
           @max_nesting = opts[:max_nesting]
         else
@@ -88,7 +88,7 @@ module JSON
         if opts.key?(:create_additions)
           @create_additions = !!opts[:create_additions]
         else
-          @create_additions = true
+          @create_additions = false
         end
         @create_id = @create_additions ? JSON.create_id : nil
         @object_class = opts[:object_class] || Hash

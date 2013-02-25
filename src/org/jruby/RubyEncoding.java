@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -17,11 +17,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -116,10 +116,22 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
-        if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
-            Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
-            Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+        Encoding enc1 = null;
+        Encoding enc2 = null;
 
+        if (obj1 instanceof RubyEncoding) {
+          enc1 = ((RubyEncoding)obj1).getEncoding();
+        } else if (obj1 instanceof EncodingCapable) {
+          enc1 = ((EncodingCapable)obj1).getEncoding();
+        }
+
+        if (obj2 instanceof RubyEncoding) {
+          enc2 = ((RubyEncoding)obj2).getEncoding();
+        } else if (obj2 instanceof EncodingCapable) {
+          enc2 = ((EncodingCapable)obj2).getEncoding();
+        }
+
+        if (enc1 != null && enc2 != null) {
             if (enc1 == enc2) return enc1;
 
             if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
@@ -446,7 +458,7 @@ public class RubyEncoding extends RubyObject {
         Ruby runtime = recv.getRuntime();
         EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
-            throw recv.getRuntime().newArgumentError("default_external can not be nil");
+            throw runtime.newArgumentError("default_external can not be nil");
         }
         runtime.setDefaultExternalEncoding(service.getEncodingFromObject(encoding));
         return encoding;
@@ -461,10 +473,7 @@ public class RubyEncoding extends RubyObject {
     public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
         Ruby runtime = recv.getRuntime();
         EncodingService service = runtime.getEncodingService();
-        if (encoding.isNil()) {
-            recv.getRuntime().newArgumentError("default_internal can not be nil");
-        }
-        recv.getRuntime().setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
+        runtime.setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
         return encoding;
     }
 

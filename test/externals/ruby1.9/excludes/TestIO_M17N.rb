@@ -1,7 +1,3 @@
-exclude :test_binmode, "needs investigation"
-exclude :test_binmode2, "needs investigation"
-exclude :test_binmode3, "needs investigation"
-exclude :test_both_textmode_binmode, "needs investigation"
 exclude :test_cbuf, "needs investigation"
 exclude :test_cr_decorator_on_stdout, "needs investigation"
 exclude :test_crlf_decorator_on_stdout, "needs investigation"

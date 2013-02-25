@@ -1,4 +1,0 @@
-failed:IO#gets with ASCII separator returns the separator's character representation
-failed:IO#gets with an empty String separator returns the next paragraph
-fails:IO#gets calls #to_int to convert a single object argument to an Integer limit
-fails:IO#gets calls #to_int to convert the second object argument to an Integer limit

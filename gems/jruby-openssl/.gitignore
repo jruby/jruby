@@ -1,4 +1,2 @@
 pkg
-jruby-openssl.gemspec
-Manifest.txt
 lib/shared/jopenssl.jar

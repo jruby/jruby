@@ -53,7 +53,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>MemoryIO</tt>.
      */
-    public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
+    public MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, 8, clear);
     }
 
@@ -65,15 +65,15 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>MemoryIO</tt>.
      */
-    public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+    public MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, align, clear);
     }
 
-    public DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+    public MemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         return TransientNativeMemoryIO.allocateAligned(runtime, size, align, clear);
     }
 
-    public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
+    public MemoryIO wrapDirectMemory(Ruby runtime, long address) {
         return NativeMemoryIO.wrap(runtime, address);
     }
 

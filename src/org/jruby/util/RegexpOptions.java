@@ -163,6 +163,9 @@ public class RegexpOptions implements Cloneable {
     /**
      * This int value can be used by compiler or any place where we want
      * an integer representation of the state of this object.
+     * 
+     * Note: This is for full representation of state in the JIT.  It is not
+     * to be confused with state of marshalled regexp data.
      */
     public int toEmbeddedOptions() {
         int options = toJoniOptions();
@@ -207,6 +210,7 @@ public class RegexpOptions implements Cloneable {
         options.setMultiline((joniOptions & RubyRegexp.RE_OPTION_MULTILINE) != 0);
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
+        options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
 
         return options;

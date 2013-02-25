@@ -1181,6 +1181,10 @@ RUBY_DLLSPEC extern VALUE rb_eLoadError;
 RUBY_DLLSPEC VALUE ruby_verbose(void);
 RUBY_DLLSPEC VALUE ruby_debug(void);
 
+RUBY_DLLSPEC extern const char* ruby_sourcefile;
+RUBY_DLLSPEC const char *rb_sourcefile(void);
+RUBY_DLLSPEC int rb_sourceline(void);
+
 // TODO: get rjb to use a different #ifdef than "RUBINIUS"
 // #define RUBINIUS 1
 #define HAVE_RB_ERRINFO 1

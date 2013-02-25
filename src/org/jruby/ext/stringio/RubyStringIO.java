@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,11 +22,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.stringio;
 
@@ -81,6 +81,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     StringIOData data;
 
     private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyStringIO(runtime, klass);
         }
@@ -100,7 +101,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         return stringIOClass;
     }
 
-    @JRubyMethod(optional = 2, meta = true)
+    @JRubyMethod(meta = true, rest = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;
@@ -135,6 +136,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @Override
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Object modeArgument = null;
         Ruby runtime = getRuntime();
@@ -175,34 +177,32 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @JRubyMethod(visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject other) {
+        RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(other, 
+                getRuntime().getClass("StringIO"), "to_strio");
 
-        RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
-                other, getRuntime().getClass("StringIO"), "to_strio");
-
-        if (this == otherIO) {
-            return this;
-        }
+        if (this == otherIO) return this;
 
         data = otherIO.data;
-        if (otherIO.isTaint()) {
-            setTaint(true);
-        }
+        if (otherIO.isTaint()) setTaint(true);
 
         return this;
     }
 
     @JRubyMethod(name = "<<", required = 1)
+    @Override
     public IRubyObject append(ThreadContext context, IRubyObject arg) {
         writeInternal(context, arg);
         return this;
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject binmode() {
         return this;
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject close() {
         checkInitialized();
         checkOpen();
@@ -220,12 +220,14 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "closed?")
+    @Override
     public IRubyObject closed_p() {
         checkInitialized();
         return getRuntime().newBoolean(data.closedRead && data.closedWrite);
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject close_read() {
         checkReadable();
         data.closedRead = true;
@@ -234,12 +236,14 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "closed_read?")
+    @Override
     public IRubyObject closed_read_p() {
         checkInitialized();
         return getRuntime().newBoolean(data.closedRead);
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject close_write() {
         checkWritable();
         data.closedWrite = true;
@@ -248,11 +252,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "closed_write?")
+    @Override
     public IRubyObject closed_write_p() {
         checkInitialized();
         return getRuntime().newBoolean(data.closedWrite);
     }
 
+    @Override
     public IRubyObject eachInternal(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject line = getsOnly(context, args);
 
@@ -265,20 +271,24 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "each", optional = 1, writes = FrameField.LASTLINE)
+    @Override
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each", args);
     }
 
     @JRubyMethod(optional = 1)
+    @Override
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
     }
 
     @JRubyMethod(optional = 1)
+    @Override
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "lines", args);
     }
 
+    @Override
     public IRubyObject each_byte(ThreadContext context, Block block) {
         checkReadable();
         Ruby runtime = context.runtime;
@@ -293,15 +303,18 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "each_byte")
+    @Override
     public IRubyObject each_byte19(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject bytes(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "bytes");
     }
 
+    @Override
     public IRubyObject each_charInternal(final ThreadContext context, final Block block) {
         checkReadable();
 
@@ -325,70 +338,81 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject each_char(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.runtime, this, "each_char");
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject chars(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.runtime, this, "chars");
     }
 
     @JRubyMethod(name = {"eof", "eof?"})
+    @Override
     public IRubyObject eof() {
         return getRuntime().newBoolean(isEOF());
     }
 
     private boolean isEOF() {
-        return (data.pos >= data.internal.getByteList().length()) || data.eof;
+        return isEndOfString() || data.eof;
     }
+    
+    private boolean isEndOfString() {
+        return data.pos >= data.internal.getByteList().length();
+    }    
 
     @JRubyMethod(name = "fcntl")
+    @Override
     public IRubyObject fcntl() {
         throw getRuntime().newNotImplementedError("fcntl not implemented");
     }
 
     @JRubyMethod(name = "fileno")
+    @Override
     public IRubyObject fileno() {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "flush")
+    @Override
     public IRubyObject flush() {
         return this;
     }
 
     @JRubyMethod(name = "fsync")
+    @Override
     public IRubyObject fsync() {
         return RubyFixnum.zero(getRuntime());
     }
 
     @JRubyMethod(name = {"getc", "getbyte"})
+    @Override
     public IRubyObject getc() {
         checkReadable();
-        if (data.pos >= data.internal.getByteList().length()) {
-            return getRuntime().getNil();
-        }
+        if (isEndOfString()) return getRuntime().getNil();
+
         return getRuntime().newFixnum(data.internal.getByteList().get((int)data.pos++) & 0xFF);
     }
 
     @JRubyMethod(name = "getc", compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject getc19(ThreadContext context) {
         checkReadable();
-        if (data.pos >= data.internal.getByteList().length()) {
-            return context.runtime.getNil();
-        }
+        if (isEndOfString()) return context.runtime.getNil();
+
         return context.runtime.newString("" + (char) (data.internal.getByteList().get((int) data.pos++) & 0xFF));
     }
 
     private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (data.pos < data.internal.getByteList().getRealSize() && !data.eof) {
+        if (!isEndOfString() && !data.eof) {
             boolean isParagraph = false;
             boolean is19 = runtime.is1_9();
             ByteList sep = ((RubyString)runtime.getGlobalVariables().get("$/")).getByteList();
-            IRubyObject sepArg = null;
+            IRubyObject sepArg;
             int limit = -1;
 
             if (is19) {
@@ -475,6 +499,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_8)
+    @Override
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
         context.getCurrentScope().setLastLine(result);
@@ -483,6 +508,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject gets19(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
         context.getCurrentScope().setLastLine(result);
@@ -490,6 +516,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         return result;
     }
 
+    @Override
     public IRubyObject getsOnly(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
@@ -497,22 +524,26 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = {"tty?", "isatty"})
+    @Override
     public IRubyObject isatty() {
         return getRuntime().getFalse();
     }
 
     @JRubyMethod(name = {"length", "size"})
+    @Override
     public IRubyObject length() {
         checkFinalized();
         return getRuntime().newFixnum(data.internal.getByteList().length());
     }
 
     @JRubyMethod(name = "lineno")
+    @Override
     public IRubyObject lineno() {
         return getRuntime().newFixnum(data.lineno);
     }
 
     @JRubyMethod(name = "lineno=", required = 1)
+    @Override
     public IRubyObject set_lineno(IRubyObject arg) {
         data.lineno = RubyNumeric.fix2int(arg);
 
@@ -520,33 +551,37 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_8)
+    @Override
     public IRubyObject path() {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "pid")
+    @Override
     public IRubyObject pid() {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = {"pos", "tell"})
+    @Override
     public IRubyObject pos() {
         return getRuntime().newFixnum(data.pos);
     }
 
     @JRubyMethod(name = "pos=", required = 1)
+    @Override
     public IRubyObject set_pos(IRubyObject arg) {
         data.pos = RubyNumeric.fix2int(arg);
-        if (data.pos < 0) {
-            throw getRuntime().newErrnoEINVALError("Invalid argument");
-        }
-        if (data.pos < data.internal.getByteList().length()) {
-            data.eof = false;
-        }
+        
+        if (data.pos < 0) throw getRuntime().newErrnoEINVALError("Invalid argument");
+
+        if (!isEndOfString()) data.eof = false;
+
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "print", rest = true)
+    @Override
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         if (args.length != 0) {
@@ -564,6 +599,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "print", rest = true, compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject print19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         if (args.length != 0) {
@@ -581,12 +617,14 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "printf", required = 1, rest = true)
+    @Override
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         append(context, RubyKernel.sprintf(context, this, args));
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "putc", required = 1)
+    @Override
     public IRubyObject putc(IRubyObject obj) {
         checkWritable();
         byte c = RubyNumeric.num2chr(obj);
@@ -598,9 +636,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
             data.pos = bytes.length();
             bytes.append(c);
         } else {
-            if (data.pos >= bytes.length()) {
-                bytes.length((int)data.pos + 1);
-            }
+            if (isEndOfString()) bytes.length((int)data.pos + 1);
 
             bytes.set((int) data.pos, c);
             data.pos++;
@@ -612,6 +648,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     public static final ByteList NEWLINE = ByteList.create("\n");
 
     @JRubyMethod(name = "puts", rest = true)
+    @Override
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
         checkWritable();
 
@@ -680,6 +717,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @SuppressWarnings("fallthrough")
     @JRubyMethod(name = "read", optional = 2)
+    @Override
     public IRubyObject read(IRubyObject[] args) {
         checkReadable();
 
@@ -702,7 +740,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                 if (length < 0) {
                     throw getRuntime().newArgumentError("negative length " + length + " given");
                 }
-                if (length > 0 && data.pos >= data.internal.getByteList().length()) {
+                if (length > 0 && isEndOfString()) {
                     data.eof = true;
                     if (buf != null) buf.setRealSize(0);
                     return getRuntime().getNil();
@@ -780,6 +818,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name="read_nonblock", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
+    @Override
     public IRubyObject read_nonblock(ThreadContext contet, IRubyObject[] args) {
         return sysreadCommon(args);
     }
@@ -789,11 +828,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
      *
      */
     @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
+    @Override
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         return sysreadCommon(args);
     }
 
     @JRubyMethod(name = {"readchar", "readbyte"})
+    @Override
     public IRubyObject readchar() {
         IRubyObject c = getc();
 
@@ -803,6 +844,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "readchar", compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject readchar19(ThreadContext context) {
         IRubyObject c = getc19(context);
 
@@ -812,6 +854,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
+    @Override
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = gets(context, args);
 
@@ -837,6 +880,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "reopen", required = 0, optional = 2)
+    @Override
     public IRubyObject reopen(IRubyObject[] args) {
         if (args.length == 1 && !(args[0] instanceof RubyString)) {
             return initialize_copy(args[0]);
@@ -850,6 +894,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "rewind")
+    @Override
     public IRubyObject rewind() {
         doRewind();
         return RubyFixnum.zero(getRuntime());
@@ -862,6 +907,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(required = 1, optional = 1)
+    @Override
     public IRubyObject seek(IRubyObject[] args) {
         checkOpen();
         checkFinalized();
@@ -890,30 +936,33 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "string=", required = 1)
+    @Override
     public IRubyObject set_string(IRubyObject arg) {
         return reopen(new IRubyObject[] { arg.convertToString() });
     }
 
     @JRubyMethod(name = "sync=", required = 1)
+    @Override
     public IRubyObject set_sync(IRubyObject args) {
         return args;
     }
 
     @JRubyMethod(name = "string")
+    @Override
     public IRubyObject string() {
-        if (data.internal == null) {
-            return getRuntime().getNil();
-        } else {
-            return data.internal;
-        }
+        if (data.internal == null) return getRuntime().getNil();
+
+        return data.internal;
     }
 
     @JRubyMethod(name = "sync")
+    @Override
     public IRubyObject sync() {
         return getRuntime().getTrue();
     }
 
     @JRubyMethod(name = "sysread", optional = 2)
+    @Override
     public IRubyObject sysread(IRubyObject[] args) {
         return sysreadCommon(args);
     }
@@ -928,6 +977,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "truncate", required = 1)
+    @Override
     public IRubyObject truncate(IRubyObject arg) {
         checkWritable();
 
@@ -946,6 +996,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "ungetc", required = 1)
+    @Override
     public IRubyObject ungetc(IRubyObject arg) {
         checkReadable();
 
@@ -956,6 +1007,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(name = "ungetc", compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
         checkReadable();
 
@@ -980,14 +1032,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
         ByteList bytes = data.internal.getByteList();
 
-        if (bytes.length() <= data.pos) {
-            bytes.length((int)data.pos + 1);
-        }
+        if (isEndOfString()) bytes.length((int)data.pos + 1);
 
         bytes.set((int) data.pos, c);
     }
 
     @JRubyMethod(name = {"write", "syswrite"}, required = 1)
+    @Override
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
         return context.runtime.newFixnum(writeInternal(context, arg));
     }
@@ -1016,6 +1067,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
     
     @JRubyMethod(compat = RUBY1_9)
+    @Override
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc) {
         Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         data.internal.setEncoding(encoding);
@@ -1023,11 +1075,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
     
     @JRubyMethod(compat = RUBY1_9)
+    @Override
     public IRubyObject external_encoding(ThreadContext context) {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(data.internal.getEncoding());
     }
     
     @JRubyMethod(compat = RUBY1_9)
+    @Override
     public IRubyObject internal_encoding(ThreadContext context) {
         return context.nil;
     }

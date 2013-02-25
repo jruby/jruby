@@ -2,9 +2,13 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
@@ -39,6 +43,11 @@ public class JumpIndirectInstr extends Instr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpIndirectInstr(ii.getRenamedVariable(target));
+    }
+
+    @Override
+    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
+        return ((Label)getJumpTarget().retrieve(context, self, currDynScope, temp)).getTargetPC();
     }
 
     @Override

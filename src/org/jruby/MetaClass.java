@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,15 +21,13 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
-
-import java.lang.ref.SoftReference;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -39,7 +37,7 @@ public final class MetaClass extends RubyClass {
      */
     public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
-        this.attached = new SoftReference<IRubyObject>(attached);
+        this.attached = attached;
         this.index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
 
@@ -53,14 +51,12 @@ public final class MetaClass extends RubyClass {
     }
 
     public IRubyObject getAttached() {
-        return attached.get();
+        return attached;
     }
 
     public void setAttached(IRubyObject attached) {
-        this.attached = new SoftReference<IRubyObject>(attached);
+        this.attached = attached;
     }
 
-    private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
-
-    private SoftReference<IRubyObject> attached = NULL_SOFT_REF;
+    private IRubyObject attached = null;
 }

@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
 package org.jruby.ext.ffi;
@@ -65,7 +65,7 @@ public abstract class AbstractInvoker extends Pointer {
      * Creates a new <tt>AbstractInvoker</tt> instance.
      * @param arity
      */
-    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, DirectMemoryIO io) {
+    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, MemoryIO io) {
         super(runtime, klass, io, 0);
         this.arity = Arity.fixed(arity);
     }
@@ -80,6 +80,7 @@ public abstract class AbstractInvoker extends Pointer {
     public IRubyObject attach(ThreadContext context, IRubyObject obj, IRubyObject methodName) {
         
         DynamicMethod m = createDynamicMethod(obj.getSingletonClass());
+        m.setName(methodName.asJavaString());
         obj.getSingletonClass().addMethod(methodName.asJavaString(), m);
         if (obj instanceof RubyModule) {
             ((RubyModule) obj).addMethod(methodName.asJavaString(), m);

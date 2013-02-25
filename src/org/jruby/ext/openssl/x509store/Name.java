@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
@@ -31,28 +31,27 @@ import java.security.MessageDigest;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * c: X509_NAME
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class Name {
-    public X509Name name;
+    public X500Name name;
 
     public Name(X500Principal nm) {
         try {
-            this.name = new X509Name((ASN1Sequence)new ASN1InputStream(nm.getEncoded()).readObject());
+            this.name = X500Name.getInstance(nm.getEncoded());
         } catch(Exception e) {
             this.name = null;
         }
     }
 
-    public Name(X509Name nm) {
+    public Name(X500Name nm) {
         this.name = nm;
     }
 
@@ -78,7 +77,7 @@ public class Name {
 
     public boolean isEqual(X500Principal oname) {
         try {
-            return new X500Principal(name.getEncoded()).equals(oname);
+            return new X500Principal(name.getEncoded(ASN1Encoding.DER)).equals(oname);
         } catch(Exception e) {
             return false;
         }

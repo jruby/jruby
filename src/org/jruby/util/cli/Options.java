@@ -1,6 +1,6 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -20,11 +20,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
@@ -63,35 +63,66 @@ public class Options {
 
     private static final boolean INVOKEDYNAMIC_DEFAULT;
     static {
+        boolean hotspot24 = false;
+        
         String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotspot =
-                vmName.contains("hotspot") ||
-                        vmName.toLowerCase().contains("openjdk");
+        boolean isHotSpot = !vmName.equals("") && 
+                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
+        if (isHotSpot) {
+            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+            if (vmVersionString.equals("")) {
+                // can't get VM version for whatever reason, assume LCD.
+                hotspot24 = false;
+            } else {
+                int version;
+                try {
+                    version = Integer.parseInt(vmVersionString.substring(0, 2));
+                } catch (NumberFormatException nfe) {
+                    version = -1;
+                }
 
-        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        int version;
-        try {
-            version = Integer.parseInt(vmVersionString.substring(0, 2));
-        } catch (NumberFormatException nfe) {
-            version = -1;
+                if (version < 24) {
+                    // if on HotSpot version prior to 24, off by default unless turned on
+                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                    hotspot24 = false;
+                } else {
+                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                    hotspot24 = true;
+                }
+            }
         }
 
-        if (isHotspot) {
-            if (version < 24) {
-                // if on HotSpot version prior to 24, off by default unless turned on
-                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                INVOKEDYNAMIC_DEFAULT = false;
-            } else {
-                // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                INVOKEDYNAMIC_DEFAULT = true;
-            }
-        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-            // if not on HotSpot, on if specification version supports indy
+        if (hotspot24) {
             INVOKEDYNAMIC_DEFAULT = true;
-        } else {
-            // on only if forced
+        } else if (isHotSpot) {
             INVOKEDYNAMIC_DEFAULT = false;
+        } else {
+            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+                if (!vmName.contains("ibm j9 vm")) {
+                    // if not on HotSpot or J9, on if specification version supports indy
+                    INVOKEDYNAMIC_DEFAULT = true;
+                } else {        // IBM J9 VM
+                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+                    int dash = runtimeVersion.indexOf('-');
+                    int dateStamp;
+                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+                    } catch (Exception e) {
+                        dateStamp = -1;
+                    }
+                    // The initial release and first few service releases had a crash issue.
+                    // Narrow range so unexpected will tend to default to invokedynamic on.
+                    if (dateStamp > 20110731 && dateStamp < 20121101) {
+                        INVOKEDYNAMIC_DEFAULT = false;
+                    } else {        // SR4 and beyond include APAR IV34500: crash fix
+                        INVOKEDYNAMIC_DEFAULT = true;
+                    }
+                }
+            } else {
+                // on only if forced
+                INVOKEDYNAMIC_DEFAULT = false;
+            }
         }
     }
     
@@ -114,6 +145,7 @@ public class Options {
     public static final Option<Integer> INVOKEDYNAMIC_MAXPOLY = integer(INVOKEDYNAMIC, "invokedynamic.maxpoly", 2, "Maximum polymorphism of PIC binding.");
     public static final Option<Boolean> INVOKEDYNAMIC_LOG_BINDING = bool(INVOKEDYNAMIC, "invokedynamic.log.binding", false, "Log binding of invokedynamic call sites.");
     public static final Option<Boolean> INVOKEDYNAMIC_LOG_CONSTANTS = bool(INVOKEDYNAMIC, "invokedynamic.log.constants", false, "Log invokedynamic-based constant lookups.");
+    public static final Option<Boolean> INVOKEDYNAMIC_LOG_GLOBALS = bool(INVOKEDYNAMIC, "invokedynamic.log.globals", false, "Log invokedynamic-based global lookups.");
     public static final Option<Boolean> INVOKEDYNAMIC_ALL = bool(INVOKEDYNAMIC, "invokedynamic.all", false, "Enable all possible uses of invokedynamic.");
     public static final Option<Boolean> INVOKEDYNAMIC_SAFE = bool(INVOKEDYNAMIC, "invokedynamic.safe", false, "Enable all safe (but maybe not fast) uses of invokedynamic.");
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION = bool(INVOKEDYNAMIC, "invokedynamic.invocation", true, "Enable invokedynamic for method invocations.");
@@ -127,6 +159,7 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_LITERALS = bool(INVOKEDYNAMIC, "invokedynamic.cache.literals", true, "Use invokedynamic to load literals.");
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_IVARS = bool(INVOKEDYNAMIC, "invokedynamic.cache.ivars", true, "Use invokedynamic to get/set instance variables.");
     public static final Option<Boolean> INVOKEDYNAMIC_CLASS_VALUES = bool(INVOKEDYNAMIC, "invokedynamic.class.values", false, "Use ClassValue to store class-specific data.");
+    public static final Option<Integer> INVOKEDYNAMIC_GLOBAL_MAXFAIL = integer(INVOKEDYNAMIC, "invokedynamic.global.maxfail", 100, "Maximum global cache failures after which to use slow path.");
     
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
     public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_METHODS_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
@@ -153,6 +186,7 @@ public class Options {
     public static final Option<Boolean> FFI_COMPILE_DUMP = bool(NATIVE, "ffi.compile.dump", false, "Dump bytecode-generated FFI stubs to console.");
     public static final Option<Integer> FFI_COMPILE_THRESHOLD = integer(NATIVE, "ffi.compile.threshold", 100, "Number of FFI invocations before generating a bytecode stub.");
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
+    public static final Option<Boolean> FFI_COMPILE_REIFY = bool(NATIVE, "ffi.compile.reify", false, "Reify FFI compiled classes.");
     
     public static final Option<Boolean> THREADPOOL_ENABLED = bool(THREADPOOL, "thread.pool.enabled", false, "Enable reuse of native threads via a thread pool.");
     public static final Option<Integer> THREADPOOL_MIN = integer(THREADPOOL, "thread.pool.min", 0, "The minimum number of threads to keep alive in the pool.");

@@ -28,7 +28,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  *
@@ -36,6 +36,7 @@ import org.jruby.util.io.EncodingOption;
 @JRubyClass(name = "Zlib::GzipWriter", parent = "Zlib::GzipFile")
 public class JZlibRubyGzipWriter extends RubyGzipFile {
     protected static final ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new JZlibRubyGzipWriter(runtime, klass);
         }
@@ -99,11 +100,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         if (args.length > 2) {
             IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
             if (!opt.isNil()) {
-                EncodingOption enc = EncodingOption.getEncodingOptionFromObject(opt);
-                if (enc != null) {
-                    readEncoding = enc.getExternalEncoding();
-                    writeEncoding = enc.getInternalEncoding();
-                }
+                EncodingUtils.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 0, newArgs, 0, args.length - 1);
                 args = newArgs;
@@ -115,10 +112,12 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         if (realIo.respondsTo("path")) {
             obj.getSingletonClass().defineMethod("path", new Callback() {
 
+                @Override
                 public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                     return ((JZlibRubyGzipWriter) recv).realIo.callMethod(recv.getRuntime().getCurrentContext(), "path");
                 }
 
+                @Override
                 public Arity getArity() {
                     return Arity.NO_ARGUMENTS;
                 }

@@ -3,48 +3,53 @@ package org.jruby.ext.ffi.jffi;
 
 import java.nio.ByteOrder;
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Util;
+import org.jruby.ext.ffi.*;
 
-class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
+class BoundedNativeMemoryIO extends MemoryIO {
     protected static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
     protected static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
 
     private final Ruby runtime;
-    final long address;
     final long size;
-    final DirectMemoryIO parent; // keep a reference to avoid the memory being freed
+    final MemoryIO parent; // keep a reference to avoid the memory being freed
 
     BoundedNativeMemoryIO(Ruby runtime, long address, int size) {
+        super(true, address);
         this.runtime = runtime;
-        this.address = address;
         this.size = size;
         this.parent = null;
     }
 
     BoundedNativeMemoryIO(BoundedNativeMemoryIO parent, long offset) {
+        super(true, parent.address() + offset);
         this.runtime = parent.runtime;
-        this.address = parent.getAddress() + offset;
         this.size = parent.size - offset;
         this.parent = parent;
     }
 
-    BoundedNativeMemoryIO(Ruby runtime, DirectMemoryIO parent, long offset, long size) {
+    BoundedNativeMemoryIO(Ruby runtime, MemoryIO parent, long offset, long size) {
+        super(true, parent.address() + offset);
         this.runtime = runtime;
-        this.address = parent.getAddress() + offset;
         this.size = size;
         this.parent = parent;
+        if (!parent.isDirect()) throw new IllegalArgumentException("non-direct memory");
     }
 
     private final void checkBounds(long off, long len) {
         Util.checkBounds(runtime, size, off, len);
     }
 
-    public final long getAddress() {
-        return address;
+    public Object array() {
+        throw runtime.newRuntimeError("no array");
+    }
+
+    public int arrayOffset() {
+        throw runtime.newRuntimeError("no array");
+    }
+
+    public int arrayLength() {
+        throw runtime.newRuntimeError("no array");
     }
 
     public BoundedNativeMemoryIO slice(long offset) {
@@ -75,7 +80,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     @Override
     public final boolean equals(Object obj) {
-        return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).getAddress() == address;
+        return (obj instanceof MemoryIO) && ((MemoryIO) obj).address() == address;
     }
 
     @Override
@@ -83,14 +88,6 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         int hash = 5;
         hash = 53 * hash + (int) (this.address ^ (this.address >>> 32));
         return hash;
-    }
-    
-    public final boolean isNull() {
-        return address == 0;
-    }
-    
-    public final boolean isDirect() {
-        return true;
     }
 
     public final ByteOrder order() {
@@ -136,7 +133,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return IO.getAddress(address + offset);
     }
 
-    public final DirectMemoryIO getMemoryIO(long offset) {
+    public final MemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
         return NativeMemoryIO.wrap(runtime, IO.getAddress(address + offset));
     }
@@ -184,7 +181,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public final void putMemoryIO(long offset, MemoryIO value) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        IO.putAddress(address + offset, ((DirectMemoryIO) value).getAddress());
+        IO.putAddress(address + offset, value.address());
     }
 
     public final void get(long offset, byte[] dst, int off, int len) {

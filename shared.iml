@@ -508,7 +508,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/bcmail-jdk15-146.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/bcprov-jdk15on-147.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -517,7 +517,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/bcprov-jdk15-146.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/bcpkix-jdk15on-147.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

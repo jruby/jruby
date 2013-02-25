@@ -1,6 +1,6 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,11 +29,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -57,7 +57,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -66,6 +65,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.java.util.ArrayUtils;
@@ -1027,7 +1027,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int elen = -1;
         int end = begin + alen;
         for (int i = begin; i < end; i++) {
-            tmp = elt(i).convertToArray();
+            tmp = elt(i - begin).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
                 result = new RubyArray(runtime, elen);
@@ -2608,16 +2608,55 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return block.isGiven() ? deleteIf(context, block) : enumeratorize(context.runtime, this, "delete_if");
     }
 
-
     /** rb_ary_zip
      *
      */
     @JRubyMethod(optional = 1, rest = true)
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+        final int aLen = args.length + 1;
+        RubyClass array = runtime.getArray();
 
-        // Array#zip whether 1.8 or 1.9 uses to_ary unlike Enumerable version
-        args = RubyEnumerable.zipCommonConvert(runtime, args, "to_ary");
+        final IRubyObject[] newArgs = new IRubyObject[args.length];
+
+        boolean hasUncoercible = false;
+        for (int i = 0; i < args.length; i++) {
+            newArgs[i] = TypeConverter.convertToType(args[i], array, "to_ary", false);
+            if (newArgs[i].isNil()) {
+                hasUncoercible = true;
+            }
+        }
+
+        // Handle uncoercibles by trying to_enum conversion
+        if (hasUncoercible) {
+            RubySymbol each = runtime.newSymbol("each");
+            for (int i = 0; i < args.length; i++) {
+                newArgs[i] = args[i].callMethod(context, "to_enum", each);
+            }
+        }
+
+        if (hasUncoercible) {
+            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
+                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
+                    return RubyEnumerable.zipEnumNext(ctx, arg);
+                }
+            });
+        } else {
+            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
+                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
+                    return ((RubyArray) arg).elt(i);
+                }
+            });
+        }
+    }
+
+    // This can be shared with RubyEnumerable to clean #zipCommon{Enum,Arg} a little
+    public static interface ArgumentVisitor {
+        IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i);
+    }
+
+    private IRubyObject zipCommon(ThreadContext context, IRubyObject[] args, Block block, ArgumentVisitor visitor) {
+        Ruby runtime = context.runtime;
 
         if (block.isGiven()) {
             for (int i = 0; i < realLength; i++) {
@@ -2626,7 +2665,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 // See JRUBY-5434
                 tmp[0] = safeArrayRef(values, begin + i);
                 for (int j = 0; j < args.length; j++) {
-                    tmp[j + 1] = ((RubyArray) args[j]).elt(i);
+                    tmp[j + 1] = visitor.visit(context, args[j], i);
                 }
                 block.yield(context, newArrayNoCopyLight(runtime, tmp));
             }
@@ -2639,7 +2678,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject[] tmp = new IRubyObject[args.length + 1];
                 tmp[0] = values[begin + i];
                 for (int j = 0; j < args.length; j++) {
-                    tmp[j + 1] = ((RubyArray) args[j]).elt(i);
+                    tmp[j + 1] = visitor.visit(context, args[j], i);
                 }
                 result[i] = newArrayNoCopyLight(runtime, tmp);
             }
@@ -2648,7 +2687,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
         return newArrayNoCopy(runtime, result);
     }
-    
+
     /** rb_ary_cmp
      *
      */

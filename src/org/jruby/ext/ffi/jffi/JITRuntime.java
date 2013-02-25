@@ -1,13 +1,12 @@
 package org.jruby.ext.ffi.jffi;
 
 import org.jruby.*;
-import org.jruby.ext.ffi.AbstractMemory;
-import org.jruby.ext.ffi.Buffer;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.*;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.StringSupport;
+import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
@@ -424,30 +423,110 @@ public final class JITRuntime {
         return RubyFloat.newFloat(runtime, Double.longBitsToDouble(value));
     }
 
-    private static final PointerParameterStrategy DIRECT_POINTER = new DirectPointerParameterStrategy();
-    private static final PointerParameterStrategy DIRECT_STRUCT = new DirectStructParameterStrategy();
-    private static final PointerParameterStrategy HEAP_STRUCT = new HeapStructParameterStrategy();
+    private static final PointerParameterStrategy DIRECT_MEMORY_OBJECT = new MemoryObjectParameterStrategy(true);
+    private static final PointerParameterStrategy HEAP_MEMORY_OBJECT = new MemoryObjectParameterStrategy(false);
+    private static final PointerParameterStrategy DIRECT_MEMORY_IO = new MemoryIOParameterStrategy(true);
+    private static final PointerParameterStrategy HEAP_MEMORY_IO = new MemoryIOParameterStrategy(false);
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
-    private static final PointerParameterStrategy HEAP_POINTER_STRATEGY = new HeapPointerParameterStrategy();
-    private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new TransientStringParameterStrategy();
-    private static final PointerParameterStrategy DIRECT_STRING_POINTER_STRATEGY = new ConstStringPointerParameterStrategy();
+    private static final PointerParameterStrategy HEAP_STRING_POINTER_STRATEGY = new StringParameterStrategy(false, false);
+    private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(false, true);
+    private static final PointerParameterStrategy DIRECT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(true, true);
 
-    public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof Pointer) {
-            return DIRECT_POINTER;
+    public static PointerParameterStrategy lookupPointerParameterStrategy(IRubyObject parameter) {
+        if (parameter instanceof MemoryObject) {
+            return ((MemoryObject) parameter).getMemoryIO().isDirect() ? DIRECT_MEMORY_OBJECT : HEAP_MEMORY_OBJECT;
 
-        } else if (parameter instanceof Buffer) {
-            return ((AbstractMemory) parameter).getMemoryIO().isDirect() ? DIRECT_POINTER : HEAP_POINTER_STRATEGY;
-
-        } else if (parameter instanceof Struct) {
-            return ((Struct) parameter).getMemory().getMemoryIO().isDirect() ? DIRECT_STRUCT : HEAP_STRUCT;
-
-        } else if (parameter.isNil()) {
+        } else if (parameter instanceof RubyNil) {
             return NIL_POINTER_STRATEGY;
 
         } else if (parameter instanceof RubyString) {
-            return TRANSIENT_STRING_PARAMETER_STRATEGY;
+            return HEAP_STRING_POINTER_STRATEGY;
 
+        }
+        
+        return null;
+    }
+
+    public static MemoryIO lookupPointerMemoryIO(IRubyObject parameter) {
+        if (parameter instanceof MemoryObject) {
+            return ((MemoryObject) parameter).getMemoryIO();
+
+        } else if (parameter instanceof RubyNil) {
+            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
+
+        } else if (parameter instanceof RubyString) {
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, false, false);
+
+        }
+
+        return null;
+    }
+
+    public static MemoryIO getPointerMemoryIO(IRubyObject parameter) {
+        MemoryIO memory = lookupPointerMemoryIO(parameter);
+        if (memory != null) {
+            return memory;
+        } else {
+            return convertToPointerMemoryIO(parameter);
+        }
+    }
+
+    private static MemoryIO convertToPointerMemoryIO(IRubyObject parameter) {
+        IRubyObject obj = parameter;
+        ThreadContext context = parameter.getRuntime().getCurrentContext();
+        for (int depth = 0; depth < 4; depth++) {
+            if (obj.respondsTo("to_ptr")) {
+                obj = obj.callMethod(context, "to_ptr");
+                MemoryIO memory = lookupPointerMemoryIO(obj);
+                if (memory != null) {
+                    return memory;
+                }
+            
+            } else {
+                throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            }
+        }
+
+        throw parameter.getRuntime().newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
+    }
+    
+    private static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite,
+                                                    boolean isDirect, boolean checkStringSafety) {
+        DynamicMethod conversionMethod;
+        if (parameter instanceof RubyString) {
+            return StringParameterStrategy.getMemoryIO((RubyString) parameter, isDirect, checkStringSafety);
+
+        } else if (parameter instanceof RubyNil) {
+            return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
+
+        } else if (!(conversionMethod = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method).isUndefined()) {
+            IRubyObject convertedParameter = conversionMethod.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
+            if (convertedParameter instanceof RubyString) {
+                return StringParameterStrategy.getMemoryIO((RubyString) convertedParameter, isDirect, checkStringSafety);
+            }
+            // Fall through to the default conversion which will raise an error if the converted value is not of the correct type.
+        }
+        
+        return StringParameterStrategy.getMemoryIO(parameter.convertToString(), isDirect, checkStringSafety);
+    } 
+
+    public static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite) {
+        return convertToStringMemoryIO(parameter, context, callSite, true, true); 
+    }
+
+    public static MemoryIO convertToTransientStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite) {
+        return convertToStringMemoryIO(parameter, context, callSite, false, true);
+    }
+
+    public static PointerParameterStrategy getMemoryIOStrategy(MemoryIO memory) {
+        return memory.isDirect() ? DIRECT_MEMORY_IO : HEAP_MEMORY_IO;
+    }
+
+    public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
+        PointerParameterStrategy strategy = lookupPointerParameterStrategy(parameter);
+        if (strategy != null) {
+            return strategy;
+        
         } else if (parameter.respondsTo("to_ptr")) {
             IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
 
@@ -460,40 +539,59 @@ public final class JITRuntime {
 
     public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof RubyString) {
-            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
-            return DIRECT_STRING_POINTER_STRATEGY;
+            return DIRECT_STRING_PARAMETER_STRATEGY;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            return stringParameterStrategy(parameter.convertToString());
         }
     }
 
     public static PointerParameterStrategy transientStringParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof RubyString) {
-            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
             return TRANSIENT_STRING_PARAMETER_STRATEGY;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            return transientStringParameterStrategy(parameter.convertToString());
         }
     }
 
+    public static MemoryIO convertToPointerMemoryIO(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {
+        DynamicMethod method = getConversionMethod(parameter, callSite);
+        IRubyObject ptr = method.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
+        if (ptr instanceof AbstractMemory) {
+            return ((AbstractMemory) ptr).getMemoryIO();
+        }
+
+        throw parameter.getRuntime().newTypeError(parameter.getMetaClass() + "#" + callSite.getMethodName() 
+                + " should return " + context.runtime.getFFI().pointerClass);
+    }
+
+    public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {
+        DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
+        if (method.isUndefined()) {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
+                    + " to native pointer; does not respond to :" + callSite.getMethodName());
+        }
+        
+        return method;
+    }
+
     public static boolean isDirectPointer(IRubyObject parameter) {
-        return parameter instanceof Pointer;
+        return parameter instanceof MemoryObject && ((MemoryObject) parameter).getMemoryIO().isDirect();
     }
 
     public static int pointerValue32(IRubyObject parameter) {
-        return (int) pointerParameterStrategy(parameter).address(parameter);
+        return (int) ((MemoryObject) parameter).getMemoryIO().address();
     }
 
     public static long pointerValue64(IRubyObject parameter) {
-        return pointerParameterStrategy(parameter).address(parameter);
+        return ((MemoryObject) parameter).getMemoryIO().address();
     }
 
     public static boolean isTrue(boolean p1) {

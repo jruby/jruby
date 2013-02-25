@@ -7,10 +7,7 @@ require 'test/unit'
 if defined?(OpenSSL)
 
 require 'socket'
-dir = File.expand_path(__FILE__)
-2.times {dir = File.dirname(dir)}
-$:.replace([File.join(dir, "ruby")] | $:)
-require 'ut_eof'
+require File.join(File.dirname(__FILE__), "../ut_eof")
 
 module SSLPair
   def server
@@ -96,6 +93,7 @@ class OpenSSL::TestPair < Test::Unit::TestCase
       read = s1.readpartial(10)
       assert_equal("bcd"[0, read.bytesize], read)
       s1.read(read.bytesize - 3) # drop unread bytes
+
       s2.write "efg"
       read = s1.readpartial(10)
       assert_equal("efg"[0, read.bytesize], read)

@@ -7,7 +7,6 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
-import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -17,7 +16,6 @@ import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.MappedType;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
@@ -657,11 +655,11 @@ public final class DefaultMethodFactory extends MethodFactory {
             }
 
             final MemoryIO io = memory.getMemoryIO();
-            if (io instanceof DirectMemoryIO) {
+            if (io.isDirect()) {
                 if (io.isNull()) {
                     throw context.runtime.newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
                 }
-                buffer.putStruct(((DirectMemoryIO) io).getAddress());
+                buffer.putStruct(io.address());
 
             } else if (io instanceof ArrayMemoryIO) {
                 ArrayMemoryIO aio = (ArrayMemoryIO) io;

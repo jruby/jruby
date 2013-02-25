@@ -10,6 +10,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -37,6 +39,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final ObjectParameterInfo parameterInfo3;
     protected final ObjectParameterInfo parameterInfo4;
     protected final ObjectParameterInfo parameterInfo5;
+    protected final CachingCallSite parameterCallSite0;
+    protected final CachingCallSite parameterCallSite1;
+    protected final CachingCallSite parameterCallSite2;
+    protected final CachingCallSite parameterCallSite3;
+    protected final CachingCallSite parameterCallSite4;
+    protected final CachingCallSite parameterCallSite5;
+    protected final CachingCallSite parameterCallSite6;
 
     public JITNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, function, signature);
@@ -60,6 +69,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterInfo3 = getParameterInfo(signature, 3);
         parameterInfo4 = getParameterInfo(signature, 4);
         parameterInfo5 = getParameterInfo(signature, 5);
+        parameterCallSite0 = getParameterCallSite(signature, 0);
+        parameterCallSite1 = getParameterCallSite(signature, 1);
+        parameterCallSite2 = getParameterCallSite(signature, 2);
+        parameterCallSite3 = getParameterCallSite(signature, 3);
+        parameterCallSite4 = getParameterCallSite(signature, 4);
+        parameterCallSite5 = getParameterCallSite(signature, 5);
+        parameterCallSite6 = getParameterCallSite(signature, 6);
     }
 
     private static NativeDataConverter getParameterConverter(Signature signature, int i) {
@@ -98,6 +114,30 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         }
 
         return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
+    }
+    private static CachingCallSite getParameterCallSite(Signature signature, int parameterIndex) {
+        if (signature.getParameterCount() <= parameterIndex) {
+            return null;
+        }
+
+        Type type = signature.getParameterType(parameterIndex);
+        NativeType nativeType  = type instanceof MappedType
+                ? ((MappedType) type).getRealType().getNativeType() : type.getNativeType();
+
+        switch (nativeType) {
+            case STRING:
+            case TRANSIENT_STRING:
+                return new FunctionalCachingCallSite("to_str");
+
+            case POINTER:
+            case BUFFER_IN:
+            case BUFFER_OUT:
+            case BUFFER_INOUT:
+                return new FunctionalCachingCallSite("to_ptr");
+
+            default:
+                return null;
+        }
     }
 
     Signature getSignature() {

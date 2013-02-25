@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
 package org.jruby.ext.ffi;
@@ -49,10 +49,13 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 import static org.jruby.runtime.Visibility.*;
 
@@ -551,13 +554,15 @@ public final class StructLayout extends Type {
 
     static final class DefaultFieldIO implements FieldIO {
         public static final FieldIO INSTANCE = new DefaultFieldIO();
+        private final CachingCallSite getCallSite = new FunctionalCachingCallSite("get");
+        private final CachingCallSite putCallSite = new FunctionalCachingCallSite("put");
 
         public IRubyObject get(ThreadContext context, Storage cache, Member m, AbstractMemory ptr) {
-            return m.field.callMethod(context, "get", ptr);
+            return getCallSite.call(context, m.field, m.field, ptr);
         }
 
         public void put(ThreadContext context, Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            m.field.callMethod(context, "put", new IRubyObject[] { ptr, value });
+            putCallSite.call(context, m.field, m.field, ptr, value);
         }
 
         public final boolean isCacheable() {
@@ -1167,27 +1172,30 @@ public final class StructLayout extends Type {
         public static final FieldIO INSTANCE = new PointerFieldIO();
         
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
+            DynamicMethod conversionMethod;
             if (value instanceof Pointer) {
                 ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
                 MemoryIO mem = ((Struct) value).getMemoryIO();
 
-                if (!(mem instanceof DirectMemoryIO)) {
+                if (!mem.isDirect()) {
                     throw context.runtime.newArgumentError("Struct memory not backed by a native pointer");
                 }
                 ptr.getMemoryIO().putMemoryIO(m.offset, mem);
 
             } else if (value instanceof RubyInteger) {
                 ptr.getMemoryIO().putAddress(m.offset, Util.int64Value(ptr));
-            } else if (value.respondsTo("to_ptr")) {
-                IRubyObject addr = value.callMethod(context, "to_ptr");
+
+            } else if (value.isNil()) {
+                ptr.getMemoryIO().putAddress(m.offset, 0L);
+
+            } else if (!(conversionMethod = value.getMetaClass().searchMethod("to_ptr")).isUndefined()) {
+                IRubyObject addr = conversionMethod.call(context, value, value.getMetaClass(), "to_ptr");
                 if (addr instanceof Pointer) {
                     ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) addr).getMemoryIO());
                 } else {
                     throw context.runtime.newArgumentError("Invalid pointer value");
                 }
-            } else if (value.isNil()) {
-                ptr.getMemoryIO().putAddress(m.offset, 0L);
             } else {
                 throw context.runtime.newArgumentError("Invalid pointer value");
             }
@@ -1195,7 +1203,7 @@ public final class StructLayout extends Type {
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
-            DirectMemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
+            MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
             IRubyObject old = cache.getCachedValue(m);
             if (old instanceof Pointer) {
                 MemoryIO oldMemory = ((Pointer) old).getMemoryIO();

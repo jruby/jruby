@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.Ruby;
+import org.jruby.runtime.Arity;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -46,6 +48,12 @@ public class CheckArityInstr extends Instr {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new CheckArityInstr(required, opt, rest);
+    }
+
+    public void checkArity(Ruby runtime, int numArgs) {
+        if ((numArgs < this.required) || ((this.rest == -1) && (numArgs > (this.required + this.opt)))) {
+            Arity.raiseArgumentError(runtime, numArgs, this.required, this.required + this.opt);
+        }
     }
 
     @Override

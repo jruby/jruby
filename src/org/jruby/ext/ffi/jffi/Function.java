@@ -10,12 +10,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.AbstractInvoker;
-import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.FreedMemoryIO;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Type;
+import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -42,14 +37,14 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         return result;
     }
     
-    Function(Ruby runtime, RubyClass klass, DirectMemoryIO address,
+    Function(Ruby runtime, RubyClass klass, MemoryIO address,
             Type returnType, Type[] parameterTypes, CallingConvention convention,
             IRubyObject enums, boolean saveError) {
         super(runtime, klass, parameterTypes.length, address);
 
         this.functionInfo = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
-        function = new com.kenai.jffi.Function(address.getAddress(), 
+        function = new com.kenai.jffi.Function(address.address(),
                 functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention, saveError);
         
         this.enums = enums;
@@ -58,13 +53,13 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
 
-    Function(Ruby runtime, RubyClass klass, DirectMemoryIO address,
+    Function(Ruby runtime, RubyClass klass, MemoryIO address,
             NativeFunctionInfo functionInfo, IRubyObject enums) {
         super(runtime, klass, functionInfo.parameterTypes.length, address);
 
         this.functionInfo = functionInfo;
 
-        function = new com.kenai.jffi.Function(address.getAddress(), 
+        function = new com.kenai.jffi.Function(address.address(),
                 functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
         this.enums = enums;
         this.saveError = true;
@@ -74,7 +69,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     
     @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        DirectMemoryIO fptr = null;
+        MemoryIO fptr = null;
         RubyHash options = null;
         Object proc = null;
         int optionsIndex = 2;

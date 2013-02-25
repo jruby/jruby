@@ -13,7 +13,12 @@ public class StringJavaAddons {
     
     @JRubyMethod(meta = true)
     public static IRubyObject from_java_bytes(ThreadContext context, IRubyObject self, IRubyObject bytes) {
-        return JavaArrayUtilities.bytes_to_ruby_string(bytes, bytes);
+        return JavaArrayUtilities.bytes_to_ruby_string(context, bytes, bytes);
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject from_java_bytes(ThreadContext context, IRubyObject self, IRubyObject bytes, IRubyObject encoding) {
+        return JavaArrayUtilities.bytes_to_ruby_string(context, bytes, bytes, encoding);
     }
 
     @JRubyMethod

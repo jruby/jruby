@@ -755,7 +755,7 @@ public class IRBuilder {
         for (Node child : node.childNodes()) {
             retVal = build(child, s);
         }
-        
+
            // Value of the last expression in the block 
         return retVal;
     }
@@ -775,16 +775,87 @@ public class IRBuilder {
             if (s instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-                s.addInstr(new BreakInstr(rv, s.getLexicalParent()));
+                IRScope returnScope = s.getLexicalParent();
+                if (is1_9()) {
+                    // In 1.9 mode, no breaks from evals
+                    if (s instanceof IREvalScript) s.addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                    else s.addInstr(new BreakInstr(rv, returnScope));
+                } else {
+                    // In pre-1.9 mode, breaks from evals are legitimate!
+                    if (s instanceof IREvalScript) returnScope = returnScope.getLexicalParent();
+                    s.addInstr(new BreakInstr(rv, returnScope));
+                }
             } else {
-                // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
-                // Since we know this right now, should we build an exception instruction here?
-                s.addInstr(new BreakInstr(rv, null));
+                // We are not in a closure or a loop => bad break instr!
+                s.addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
             }
         }
 
         // Once the break instruction executes, control exits this scope
         return UnexecutableNil.U_NIL;
+    }
+
+    private void handleNonlocalReturnInMethod(IRScope s) {
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label gebLabel    = s.getNewLabel();
+
+        // protect the entire body as it exists now with the global ensure block
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel, gebLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
+        s.addInstr(new LabelInstr(gebLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new RuntimeHelperCall(ret, "handleNonlocalReturn", new Operand[]{exc} ));
+        s.addInstr(new ReturnInstr(ret));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
+    }
+
+    // Wrap call in a rescue handler that catches the IRBreakJump
+    private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr) {
+        // Check if we have to handle a break
+        if (block != null && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure)block).getClosure();
+            if (!closure.hasBreakInstrs) {
+                // No protection needed -- add the call and return
+                s.addInstr(callInstr);
+                return;
+            }
+        } else {
+            // No protection needed -- add the call and return
+            s.addInstr((Instr)callInstr);
+            return;
+        }
+
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label rescueLabel = s.getNewLabel();
+
+        // Protected region
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstr(callInstr);
+        s.addInstr(new JumpInstr(rEndLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
+        s.addInstr(new LabelInstr(rescueLabel));
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc));
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
+        s.addInstr(new RuntimeHelperCall(callInstr.getResult(), "handlePropagatedBreak", new Operand[]{exc} ));
+
+        // End
+        s.addInstr(new LabelInstr(rEndLabel));
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {
@@ -798,8 +869,8 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
-        s.addInstr(callInstr);
+        CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+        receiveBreakException(s, block, callInstr);
         return callResult;
     }
 
@@ -1103,10 +1174,9 @@ public class IRBuilder {
         } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
             List<Operand> args       = setupCallArgs(null, s);
-            Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
             Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()), 
-                    null, args.toArray(new Operand[args.size()]), block);
+                    null, args.toArray(new Operand[args.size()]), null);
             s.addInstr(callInstr);
             return callResult;
         } else { 
@@ -1595,6 +1665,11 @@ public class IRBuilder {
             method.addInstr(new ReturnInstr(manager.getNil()));
         }
 
+        // If the method can receive non-local returns
+        if (method.canReceiveNonlocalReturns()) {
+            handleNonlocalReturnInMethod(method);
+        }
+
         return method;
     }
 
@@ -1875,8 +1950,8 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
-        s.addInstr(callInstr);
+        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
+        receiveBreakException(s, block, callInstr);
         return callResult;
     }
 
@@ -1991,9 +2066,9 @@ public class IRBuilder {
     public Operand buildFor(ForNode forNode, IRScope s) {
         Variable result = s.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), s);
-        Operand  forBlock = buildForIter(forNode, s);     
-        // SSS FIXME: Really?  Why the internal call?
-        s.addInstr(new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock));
+        Operand  forBlock = buildForIter(forNode, s);
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
+        receiveBreakException(s, forBlock, callInstr);
 
         return result;
     }
@@ -2027,8 +2102,9 @@ public class IRBuilder {
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
-        if (closureRetVal != U_NIL)  // can be null if the node is an if node with returns in both branches.
-            closure.addInstr(new ClosureReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
+            closure.addInstr(new ReturnInstr(closureRetVal));
+        }
 
         return new WrappedIRClosure(closure);
     }
@@ -2180,8 +2256,9 @@ public class IRBuilder {
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : closureBuilder.build(iterNode.getBodyNode(), closure);
-        if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
-            closure.addInstr(new ClosureReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
+            closure.addInstr(new ReturnInstr(closureRetVal));
+        }
 
         return new WrappedIRClosure(closure);
     }
@@ -2353,7 +2430,7 @@ public class IRBuilder {
         } else {
             s.addInstr(new ThreadPollInstr(true));
             // If a closure, the next is simply a return from the closure!
-            if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
+            if (s instanceof IRClosure) s.addInstr(new ReturnInstr(rv));
             else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
         }
 
@@ -2861,13 +2938,13 @@ public class IRBuilder {
             // If this happens to be a module body, the runtime throws a local jump error if
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
-            s.addInstr(new ReturnInstr(retVal, s.getNearestMethod()));
+            s.addInstr(new NonlocalReturnInstr(retVal, s.getNearestMethod()));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else s.addInstr(new ReturnInstr(retVal, sm));
+            else s.addInstr(new NonlocalReturnInstr(retVal, sm));
         } else {
             s.addInstr(new ReturnInstr(retVal));
         }
@@ -2891,7 +2968,7 @@ public class IRBuilder {
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
-        script.addInstr(new ClosureReturnInstr(rval));
+        script.addInstr(new ReturnInstr(rval));
 
         return script;
     }
@@ -2929,22 +3006,24 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
-        MethAddr maddr;
+        CallInstr superInstr;
         Variable ret = s.getNewTemporaryVariable();
         if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
             IRMethod m = (IRMethod)s;
             if (m.isInstanceMethod) {
-                s.addInstr(new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+                superInstr = new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
             } else {
-                s.addInstr(new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+                superInstr = new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            s.addInstr(new UnresolvedSuperInstr(ret, getSelf(s), args, block));
+            superInstr = new UnresolvedSuperInstr(ret, getSelf(s), args, block);
         }
+
+        receiveBreakException(s, block, superInstr);
         return ret;
     }
 
@@ -2952,7 +3031,7 @@ public class IRBuilder {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
         
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
-        Operand  block = setupCallClosure(superNode.getIterNode(), s);
+        Operand block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
@@ -3116,7 +3195,7 @@ public class IRBuilder {
             // receive args from the nearest method the block is embedded in.  But,
             // in the presence of 'define_method', all bets are off.
             Variable ret = s.getNewTemporaryVariable();
-            s.addInstr(new ZSuperInstr(ret, getSelf(s), block));
+            receiveBreakException(s, block, new ZSuperInstr(ret, getSelf(s), block));
             return ret;
         }
     }

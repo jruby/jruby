@@ -21,25 +21,13 @@ final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectM
     private Object proc;
 
     public CallbackMemoryIO(Ruby runtime, Closure.Handle handle, Object proc) {
-        super(runtime);
+        super(runtime, true, handle.getAddress(), "cannot access closure trampoline memory");
         this.handle = handle;
         this.proc = proc;
     }
 
     public CallbackMemoryIO(Ruby runtime, Closure.Handle handle) {
         this(runtime, handle, null);
-    }
-
-    public final long getAddress() {
-        return handle.getAddress();
-    }
-
-    public final boolean isNull() {
-        return false;
-    }
-
-    public final boolean isDirect() {
-        return true;
     }
 
     public synchronized void free() {

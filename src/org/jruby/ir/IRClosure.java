@@ -16,7 +16,10 @@ import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
+import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveRestArgBase;
+import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
@@ -45,6 +48,8 @@ public class IRClosure extends IRScope {
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
 
+    public boolean addedGEBForUncaughtBreaks;
+
     /** Used by cloning code */
     private IRClosure(IRClosure c, IRScope lexicalParent) {
         super(c, lexicalParent);
@@ -54,6 +59,7 @@ public class IRClosure extends IRScope {
         this.endLabel = getNewLabel(getName() + "_END");
         this.body = (c.body instanceof InterpretedIRBlockBody19) ? new InterpretedIRBlockBody19(this, c.body.arity(), c.body.getArgumentType())
                                                                  : new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+        this.addedGEBForUncaughtBreaks = false;
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
@@ -267,5 +273,42 @@ public class IRClosure extends IRScope {
         clonedClosure.setCFG(getCFG().cloneForCloningClosure(clonedClosure, ii));
 
         return clonedClosure;
+    }
+
+    // Add a global-ensure-block to catch uncaught breaks
+    // This is usually required only if this closure is being
+    // used as a lambda, but it is safe to add this for any closure
+
+    protected boolean addGEBForUncaughtBreaks() {
+        // Nothing to do if already done
+        if (addedGEBForUncaughtBreaks) {
+            return false;
+        }
+
+        CFG        cfg = cfg();
+        BasicBlock geb = cfg.getGlobalEnsureBB();
+        if (geb == null) {
+            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            Variable exc = getNewTemporaryVariable();
+            geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
+            // Handle uncaught break using runtime helper
+            // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
+            geb.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+            cfg.addGlobalEnsureBB(geb);
+        } else {
+            // SSS FIXME: Assumptions:
+            //
+            // First instr is a 'ReceiveExceptionInstr'
+            // Last instr is a 'ThrowExceptionInstr'
+
+            List<Instr> instrs = geb.getInstrs();
+            Variable exc = ((ReceiveExceptionInstr)instrs.get(0)).getResult();
+            instrs.set(instrs.size(), new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+        }
+
+        // Update scope
+        addedGEBForUncaughtBreaks = true;
+
+        return true;
     }
 }

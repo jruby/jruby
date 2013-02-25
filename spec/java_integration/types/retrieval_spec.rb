@@ -59,55 +59,55 @@ end
 
 describe "A Java class with inner classes" do
   it "should define constants for constantable classes" do
-    InnerClasses.constants.should include 'CapsInnerClass'
+    InnerClasses.constants.should have_strings_or_symbols 'CapsInnerClass'
     InnerClasses::CapsInnerClass.value.should == 1
     
-    InnerClasses::CapsInnerClass.constants.should include "CapsInnerClass2"
+    InnerClasses::CapsInnerClass.constants.should have_strings_or_symbols "CapsInnerClass2"
     InnerClasses::CapsInnerClass::CapsInnerClass2.value.should == 1
     
-    InnerClasses::CapsInnerClass.constants.should include "CapsInnerInterface2"
+    InnerClasses::CapsInnerClass.constants.should have_strings_or_symbols "CapsInnerInterface2"
     
-    InnerClasses::CapsInnerClass.constants.should_not include 'lowerInnerClass2'
-    InnerClasses::CapsInnerClass.constants.should_not include 'lowerInnerInterface2'
+    InnerClasses::CapsInnerClass.constants.should_not have_strings_or_symbols 'lowerInnerClass2'
+    InnerClasses::CapsInnerClass.constants.should_not have_strings_or_symbols 'lowerInnerInterface2'
 
-    InnerClasses.constants.should include 'CapsInnerInterface'
+    InnerClasses.constants.should have_strings_or_symbols 'CapsInnerInterface'
 
-    InnerClasses::CapsInnerInterface.constants.should include "CapsInnerClass4"
+    InnerClasses::CapsInnerInterface.constants.should have_strings_or_symbols "CapsInnerClass4"
     InnerClasses::CapsInnerInterface::CapsInnerClass4.value.should == 1
 
-    InnerClasses::CapsInnerInterface.constants.should include "CapsInnerInterface4"
+    InnerClasses::CapsInnerInterface.constants.should have_strings_or_symbols "CapsInnerInterface4"
 
-    InnerClasses::CapsInnerInterface.constants.should_not include 'lowerInnerClass4'
-    InnerClasses::CapsInnerInterface.constants.should_not include 'lowerInnerInterface4'
+    InnerClasses::CapsInnerInterface.constants.should_not have_strings_or_symbols 'lowerInnerClass4'
+    InnerClasses::CapsInnerInterface.constants.should_not have_strings_or_symbols 'lowerInnerInterface4'
   end
 
   it "should define methods for lower-case classes" do
-    InnerClasses.methods.should include 'lowerInnerClass'
+    InnerClasses.methods.should have_strings_or_symbols 'lowerInnerClass'
     InnerClasses::lowerInnerClass.value.should == 1
     InnerClasses.lowerInnerClass.value.should == 1
     InnerClasses.lowerInnerClass.should == InnerClasses::lowerInnerClass
 
-    InnerClasses.lowerInnerClass.constants.should include 'CapsInnerClass3'
-    InnerClasses.lowerInnerClass.constants.should include 'CapsInnerInterface3'
+    InnerClasses.lowerInnerClass.constants.should have_strings_or_symbols 'CapsInnerClass3'
+    InnerClasses.lowerInnerClass.constants.should have_strings_or_symbols 'CapsInnerInterface3'
 
     InnerClasses.lowerInnerClass::CapsInnerClass3.value.should == 1
 
-    InnerClasses.lowerInnerClass.methods.should include 'lowerInnerInterface3'
-    InnerClasses.lowerInnerClass.methods.should include 'lowerInnerClass3'
+    InnerClasses.lowerInnerClass.methods.should have_strings_or_symbols 'lowerInnerInterface3'
+    InnerClasses.lowerInnerClass.methods.should have_strings_or_symbols 'lowerInnerClass3'
     
     InnerClasses.lowerInnerClass::lowerInnerClass3.value.should == 1
     InnerClasses.lowerInnerClass.lowerInnerClass3.value.should == 1
 
-    InnerClasses.methods.should include 'lowerInnerInterface'
+    InnerClasses.methods.should have_strings_or_symbols 'lowerInnerInterface'
     InnerClasses.lowerInnerInterface.should == InnerClasses::lowerInnerInterface
 
-    InnerClasses.lowerInnerInterface.constants.should include 'CapsInnerClass5'
-    InnerClasses.lowerInnerInterface.constants.should include 'CapsInnerInterface5'
+    InnerClasses.lowerInnerInterface.constants.should have_strings_or_symbols 'CapsInnerClass5'
+    InnerClasses.lowerInnerInterface.constants.should have_strings_or_symbols 'CapsInnerInterface5'
 
     InnerClasses.lowerInnerInterface::CapsInnerClass5.value.should == 1
     
-    InnerClasses.lowerInnerInterface.methods.should include 'lowerInnerInterface5'
-    InnerClasses.lowerInnerInterface.methods.should include 'lowerInnerClass5'
+    InnerClasses.lowerInnerInterface.methods.should have_strings_or_symbols 'lowerInnerInterface5'
+    InnerClasses.lowerInnerInterface.methods.should have_strings_or_symbols 'lowerInnerClass5'
     
     InnerClasses.lowerInnerInterface::lowerInnerClass5.value.should == 1
     InnerClasses.lowerInnerInterface.lowerInnerClass5.value.should == 1

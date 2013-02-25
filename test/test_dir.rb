@@ -146,7 +146,7 @@ class TestDir < Test::Unit::TestCase
     jar_file = jar_file_with_spaces
 
     ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
-      assert $__glob_value.include?(f)
+      assert $__glob_value.include?(f), "#{f} not found in #{$__glob_value.inspect}"
     end
     ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
       assert $__glob_value2.include?(f)

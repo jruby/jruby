@@ -11,6 +11,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -65,9 +66,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
+        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation(false);
 
-        if (Interpreter.isDebug()) {
+        if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
             LOG.info("Executing '" + realName + "'");

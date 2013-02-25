@@ -10,11 +10,12 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 /**
  * A type which represents a conversion to/from a native type.
@@ -23,8 +24,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class MappedType extends Type {
     private final Type realType;
     private final IRubyObject converter;
-    private final DynamicMethod toNativeMethod, fromNativeMethod;
     private final boolean isReferenceRequired;
+    private final CachingCallSite toNativeCallSite = new FunctionalCachingCallSite("to_native");
+    private final CachingCallSite fromNativeCallSite = new FunctionalCachingCallSite("from_native");
 
     public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
         RubyClass convClass = ffiModule.getClass("Type").defineClassUnder("Mapped", ffiModule.getClass("Type"),
@@ -36,13 +38,10 @@ public final class MappedType extends Type {
         return convClass;
     }
 
-    private MappedType(Ruby runtime, RubyClass klass, Type nativeType, IRubyObject converter,
-            DynamicMethod toNativeMethod, DynamicMethod fromNativeMethod, boolean isRefererenceRequired) {
+    private MappedType(Ruby runtime, RubyClass klass, Type nativeType, IRubyObject converter, boolean isRefererenceRequired) {
         super(runtime, klass, NativeType.MAPPED, nativeType.getNativeSize(), nativeType.getNativeAlignment());
         this.realType = nativeType;
         this.converter = converter;
-        this.toNativeMethod = toNativeMethod;
-        this.fromNativeMethod = fromNativeMethod;
         this.isReferenceRequired = isRefererenceRequired;
     }
 
@@ -50,24 +49,6 @@ public final class MappedType extends Type {
     public static final IRubyObject newMappedType(ThreadContext context, IRubyObject klass, IRubyObject converter) {
         if (!converter.respondsTo("native_type")) {
             throw context.runtime.newNoMethodError("converter needs a native_type method", "native_type", converter.getMetaClass());
-        }
-        
-        DynamicMethod toNativeMethod = converter.getMetaClass().searchMethod("to_native");
-        if (toNativeMethod.isUndefined()) {
-            throw context.runtime.newNoMethodError("converter needs a to_native method", "to_native", converter.getMetaClass());
-        }
-
-        if (toNativeMethod.getArity().required() < 1 || toNativeMethod.getArity().required() > 2) {
-            throw context.runtime.newArgumentError("to_native should accept one or two arguments");
-        }
-
-        DynamicMethod fromNativeMethod = converter.getMetaClass().searchMethod("from_native");
-        if (fromNativeMethod.isUndefined()) {
-            throw context.runtime.newNoMethodError("converter needs a from_native method", "from_native", converter.getMetaClass());
-        }
-
-        if (fromNativeMethod.getArity().required() < 1 || fromNativeMethod.getArity().required() > 2) {
-            throw context.runtime.newArgumentError("from_native should accept one or two arguments");
         }
 
         Type nativeType;
@@ -104,8 +85,8 @@ public final class MappedType extends Type {
                     break;
             }
         }
-        return new MappedType(context.runtime, (RubyClass) klass, nativeType, converter,
-                toNativeMethod, fromNativeMethod, isReferenceRequired);
+
+        return new MappedType(context.runtime, (RubyClass) klass, nativeType, converter, isReferenceRequired);
     }
     
     public final Type getRealType() {
@@ -135,22 +116,11 @@ public final class MappedType extends Type {
         return toNative(context, value);
     }
 
-    private static IRubyObject callConversionMethod(ThreadContext context, DynamicMethod method, IRubyObject converter,
-                                                    String methodName, IRubyObject value) {
-        if (method.getArity().required() == 2) {
-            return method.call(context, converter, converter.getMetaClass(),
-                    methodName, value, context.runtime.getNil());
-        } else {
-            return method.call(context, converter, converter.getMetaClass(),
-                    methodName, value);
-        }
-    }
-
     public final IRubyObject fromNative(ThreadContext context, IRubyObject value) {
-        return callConversionMethod(context, fromNativeMethod, converter, "from_native", value);
+        return fromNativeCallSite.call(context, this, converter, value, context.runtime.getNil());
     }
 
     public final IRubyObject toNative(ThreadContext context, IRubyObject value) {
-        return callConversionMethod(context, toNativeMethod, converter, "to_native", value);
+        return toNativeCallSite.call(context, this, converter, value, context.runtime.getNil());
     }
 }

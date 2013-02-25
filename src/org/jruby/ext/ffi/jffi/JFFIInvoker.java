@@ -9,10 +9,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.AbstractInvoker;
-import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Type;
+import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -42,7 +39,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
                 returnType, parameterTypes, convention, null);
     }
 
-    JFFIInvoker(Ruby runtime, RubyClass klass, DirectMemoryIO fptr,
+    JFFIInvoker(Ruby runtime, RubyClass klass, MemoryIO fptr,
             Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length, fptr);
 
@@ -58,7 +55,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             }
         }
         
-        function = new Function(fptr.getAddress(), jffiReturnType, jffiParamTypes);
+        function = new Function(fptr.address(), jffiReturnType, jffiParamTypes);
         this.parameterTypes = (Type[]) parameterTypes.clone();
         this.returnType = returnType;
         this.convention = convention;
@@ -111,7 +108,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             }
             parameterTypes[i] = (Type) paramTypes.entry(i);
         }
-        DirectMemoryIO fptr = (DirectMemoryIO) ptr.getMemoryIO();
+        MemoryIO fptr = ptr.getMemoryIO();
         return new JFFIInvoker(context.runtime, (RubyClass) recv, fptr,
                 (Type) returnType, parameterTypes, 
                 "stdcall".equals(convention) ? CallingConvention.STDCALL : CallingConvention.DEFAULT,

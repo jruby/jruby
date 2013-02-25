@@ -167,11 +167,7 @@ class TestIO < Test::Unit::TestCase
 
     f = File.open(@file)
     @to_close << f
-    if RUBY_VERSION =~ /1\.9/
-      assert_raises(TypeError) { io = IO.open(f.fileno, "r", :gratuitous) }
-    else
-      assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
-    end
+    assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
     io = IO.open(f.fileno, "r")
     @to_close << io
     assert_equal(f.fileno, io.fileno)

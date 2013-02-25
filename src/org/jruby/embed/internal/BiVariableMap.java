@@ -1,6 +1,6 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2013 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -20,11 +20,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  * **** END LICENSE BLOCK *****
  */
 package org.jruby.embed.internal;
@@ -66,8 +66,8 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  */
 public class BiVariableMap<K, V> implements Map<K, V> {
     private final LocalContextProvider provider;
-    private final List<String> varNames = new ArrayList<String>();
-    private final List<BiVariable> variables = new ArrayList<BiVariable>();
+    private List<String> varNames = null;
+    private List<BiVariable> variables = null;
     private boolean lazy;
 
     /**
@@ -128,6 +128,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the number of key-value mappings in this map
      */
     public int size() {
+        if (varNames == null) return 0;
         return varNames.size();
     }
 
@@ -137,7 +138,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return <tt>true</tt> if this map contains no key-value mappings
      */
     public boolean isEmpty() {
-        return varNames.isEmpty();
+        return varNames == null || varNames.isEmpty();
     }
 
     private void checkKey(Object key) {
@@ -160,6 +161,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return <tt>true</tt> if this map contains a mapping for the specified key
      */
     public boolean containsKey(Object key) {
+        if (varNames == null) return false;
         checkKey(key);
         return varNames.contains((String)key);
     }
@@ -244,6 +246,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         {@code null} if this map contains no mapping for the key
      */
     public BiVariable getVariable(RubyObject receiver, String key) {
+        if (varNames == null) return null;
         for (int i=0; i<varNames.size(); i++) {
             if (key.equals(varNames.get(i))) {
                 BiVariable var = null;
@@ -333,6 +336,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return String array of Ruby's local variable names
      */
     public String[] getLocalVarNames() {
+        if (variables == null) return null;
         List<String> localVarNames = new ArrayList<String>();
         for (BiVariable v : variables) {
             if (v.getType() == BiVariable.Type.LocalVariable) {
@@ -352,6 +356,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return IRubyObject array of Ruby's local variable names.
      */
     public IRubyObject[] getLocalVarValues() {
+        if (variables == null) return null;
         List<IRubyObject> localVarValues = new ArrayList<IRubyObject>();
         for (BiVariable v : variables) {
             if (v.getType() == BiVariable.Type.LocalVariable) {
@@ -404,6 +409,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V remove(Object receiver, Object key) {
+        if (varNames == null) return null;
         checkKey(key);
         RubyObject robj = getReceiverObject(receiver);
         String name = ((String)key).intern();
@@ -454,6 +460,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * names with null value.
      */
     public void clear() {
+        if (varNames == null) return;
         boolean argv_presence = false;
         if (varNames.contains("ARGV")) argv_presence = true;
         varNames.clear();
@@ -469,7 +476,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
             }
         }
         variables.clear();
-        variables.add(argv_object);
+        if (argv_object != null) variables.add(argv_object);
     }
 
     /**
@@ -481,9 +488,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return a set view of the keys contained in this map
      */
     public Set keySet() {
-        if (varNames.isEmpty()) {
-            return null;
-        }
+        if (isEmpty()) return null;
         Set s = new HashSet();
         for (String name : varNames) {
             s.add(name);
@@ -500,9 +505,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return a collection view of the values contained in this map
      */
     public Collection values() {
-        if (varNames.isEmpty()) {
-            return null;
-        }
+        if (isEmpty()) return null;
         List l = new ArrayList();
         for (BiVariable v : variables) {
             l.add(v.getJavaObject());
@@ -519,9 +522,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return an entry set of a map
      */
     public Set entrySet() {
-        if (varNames.isEmpty()) {
-            return null;
-        }
+        if (isEmpty()) return null;
         return getMap().entrySet();
     }
 
@@ -532,6 +533,10 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @param value is BiVariable type object corresponding to the name
      */
     public void update(String name, BiVariable value) {
+        if (varNames == null) {
+            varNames = new ArrayList<String>();
+            variables = new ArrayList<BiVariable>();
+        }
         varNames.add(name);
         variables.add(value);
     }

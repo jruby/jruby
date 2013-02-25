@@ -64,6 +64,10 @@ public final class InvokeDynamic {
         Method invokerMethod;
 
         com.kenai.jffi.InvokeDynamicSupport.Invoker jffiInvoker = com.kenai.jffi.InvokeDynamicSupport.getFastNumericInvoker(callContext, functionAddress);
+        if (jffiInvoker == null || jffiInvoker.getMethod() == null || !(jffiInvoker.getMethodHandle() instanceof MethodHandle)) {
+            return null;
+        }
+
         nativeInvoker = (MethodHandle) jffiInvoker.getMethodHandle();
         invokerMethod = jffiInvoker.getMethod();
 

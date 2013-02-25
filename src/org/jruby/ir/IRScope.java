@@ -11,14 +11,16 @@ import java.util.TreeSet;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.operands.CurrentScope;
@@ -222,7 +224,7 @@ public abstract class IRScope {
     protected boolean hasNonlocalReturns;
 
     /** Can this scope receive a non-local return? */
-    protected boolean canReceiveNonlocalReturns;
+    public boolean canReceiveNonlocalReturns;
 
     /** Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope,
      * this is an useful flag to compute. */
@@ -356,13 +358,23 @@ public abstract class IRScope {
     public void addClosure(IRClosure c) {
         nestedClosures.add(c);
     }
-    
+
     public Instr getLastInstr() {
         return instrList.get(instrList.size() - 1);
     }
-    
+
+    public void addInstrAtBeginning(Instr i) {
+        instrList.add(0, i);
+    }
+
     public void addInstr(Instr i) {
+        // SSS FIXME: If more instructions set these flags, there may be
+        // a better way to do this by encoding flags in its own object
+        // and letting every instruction update it.
         if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
+        else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
+        else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
+        else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         instrList.add(i);
     }
 
@@ -535,6 +547,20 @@ public abstract class IRScope {
         return canCaptureCallersBinding;
     }
 
+    public boolean canReceiveNonlocalReturns() {
+        if (this.canReceiveNonlocalReturns) {
+            return true;
+        }
+
+        boolean canReceiveNonlocalReturns = false;
+        for (IRClosure cl : getClosures()) {
+            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns()) {
+                canReceiveNonlocalReturns = true;
+            }
+        }
+        return canReceiveNonlocalReturns;
+    }
+
     public CFG buildCFG() {
         cfg = new CFG(this);
         cfg.build(instrList);
@@ -611,7 +637,7 @@ public abstract class IRScope {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
-        
+
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the
@@ -625,7 +651,15 @@ public abstract class IRScope {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation() {
+    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        if (isLambda) {
+            // Add a global ensure block to catch uncaught breaks
+            // and throw a LocalJumpError.
+            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+                this.relinearizeCFG = true;
+            }
+        }
+
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
@@ -643,17 +677,15 @@ public abstract class IRScope {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
-        // OPTIMIZATION: dont add to all scopes
-        if (this.canReceiveNonlocalReturns) {
-            // Add a global exception-handler block to check if this scope
-            // is the target of the nonlocal return
-        }
-
-        // OPTIMIZATION: dont add to all scopes
-        if (this.canReceiveBreaks) {
-            // Add try-catch logic around all closure-receiving calls
-            // to check for break jumps and handle them.
-            // Or should this be done in the code generator?
+        // Add this always since we dont re-JIT a previously
+        // JIT-ted closure.  But, check if there are other
+        // smarts available to us and eliminate adding this
+        // code to every closure there is.
+        //
+        // Add a global ensure block to catch uncaught breaks
+        // and throw a LocalJumpError.
+        if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
+            this.relinearizeCFG = true;
         }
 
         try {
@@ -777,11 +809,16 @@ public abstract class IRScope {
             } else if (op == Operation.MATCH || op == Operation.MATCH2 || op == Operation.MATCH3) {
                 this.usesBackrefOrLastline = true;
             } else if (op == Operation.BREAK) {
-                // SSS FIXME: this flag can be set at the time of IR building as well
                 this.hasBreakInstrs = true;
-            } else if ((i instanceof ReturnInstr) && ((ReturnInstr)i).methodToReturnFrom != null) {
-                // SSS FIXME: this flag can be set at the time of IR building as well
+            } else if (i instanceof NonlocalReturnInstr) {
                 this.hasNonlocalReturns = true;
+            } else if (i instanceof DefineMetaClassInstr) {
+                // SSS: Inner-classes are defined with closures and
+                // a return in the closure can force a return from this method
+                // For now conservatively assume that a scope with inner-classes
+                // can receive non-local returns. (Alternatively, have to inspect
+                // all lexically nested scopes, not just closures in computeScopeFlags())
+                this.canReceiveNonlocalReturns = true;
             }
         }
 

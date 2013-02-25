@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
@@ -32,13 +32,14 @@ import java.util.Arrays;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * Contains most of the functionality that beings with X509 in
@@ -46,7 +47,6 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public abstract class X509Utils {
     private X509Utils() {}
 
@@ -216,9 +216,9 @@ public abstract class X509Utils {
             ASN1Sequence seq = (ASN1Sequence)key;
             AuthorityKeyIdentifier sakid = null;
             if(seq.size() == 1 && (seq.getObjectAt(0) instanceof ASN1OctetString)) {
-                sakid = new AuthorityKeyIdentifier(new DERSequence(new DERTaggedObject(0, seq.getObjectAt(0))));
+                sakid = AuthorityKeyIdentifier.getInstance(new DLSequence(new DERTaggedObject(0, seq.getObjectAt(0))));
             } else {
-                sakid = new AuthorityKeyIdentifier(seq);
+                sakid = AuthorityKeyIdentifier.getInstance(seq);
             }
 
             if(sakid.getKeyIdentifier() != null) {
@@ -227,7 +227,7 @@ public abstract class X509Utils {
                     if(der.getOctets().length > 20) {
                         der = (DEROctetString)get(der.getOctets());
                     }
-                    SubjectKeyIdentifier iskid = new SubjectKeyIdentifier(der);
+                    SubjectKeyIdentifier iskid = SubjectKeyIdentifier.getInstance(der);
                     if(iskid.getKeyIdentifier() != null) {
                         if(!Arrays.equals(sakid.getKeyIdentifier(),iskid.getKeyIdentifier())) {
                             return V_ERR_AKID_SKID_MISMATCH;
@@ -240,14 +240,14 @@ public abstract class X509Utils {
             }
             if(sakid.getAuthorityCertIssuer() != null) {
                 GeneralName[] gens = sakid.getAuthorityCertIssuer().getNames();
-                org.bouncycastle.asn1.x509.X509Name nm = null;
+                X500Name nm = null;
                 for(int i=0;i<gens.length;i++) {
                     if(gens[i].getTagNo() == GeneralName.directoryName) {
-                        DEREncodable nameTmp = gens[i].getName();
-                        if (nameTmp instanceof org.bouncycastle.asn1.x509.X509Name) {
-                            nm = (org.bouncycastle.asn1.x509.X509Name)nameTmp;
-                        } else if (nameTmp instanceof DERSequence) {
-                            nm = new org.bouncycastle.asn1.x509.X509Name((DERSequence)nameTmp);
+                        ASN1Encodable nameTmp = gens[i].getName();
+                        if (nameTmp instanceof X500Name) {
+                            nm = (X500Name)nameTmp;
+                        } else if (nameTmp instanceof ASN1Sequence) {
+                            nm = X500Name.getInstance((ASN1Sequence)nameTmp);
                         } else {
                             throw new RuntimeException("unknown name type in X509Utils: " + nameTmp);
                         }

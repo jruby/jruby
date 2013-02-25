@@ -1,6 +1,6 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,11 +31,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -155,6 +155,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
+
+import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.Visibility;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -478,8 +483,8 @@ public final class Ruby {
      */
     public void runFromMain(InputStream inputStream, String filename) {
         IAccessor d = new ValueAccessor(newString(filename));
-        getGlobalVariables().define("$PROGRAM_NAME", d);
-        getGlobalVariables().define("$0", d);
+        getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
+        getGlobalVariables().define("$0", d, GLOBAL);
 
         for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry) i.next();
@@ -1161,7 +1166,16 @@ public final class Ruby {
         initBuiltins();
 
         // load JRuby internals, which loads Java support
-        if (!RubyInstanceConfig.DEBUG_PARSER) {
+        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
+        boolean reflectionWorks;
+        try {
+            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
+            reflectionWorks = true;
+        } catch (Exception e) {
+            reflectionWorks = false;
+        }
+        
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
             loadService.require("jruby");
         }
 
@@ -1243,8 +1257,26 @@ public final class Ruby {
         objectClass.setConstant("Module", moduleClass);
 
         // Initialize Kernel and include into Object
-        RubyKernel.createKernelModule(this);
+        RubyModule kernel = RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
+        
+        // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
+        if (oneNine && config.getKernelGsubDefined()) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    switch (args.length) {
+                        case 1:
+                            return RubyKernel.gsub(context, self, args[0], block);
+                        case 2:
+                            return RubyKernel.gsub(context, self, args[0], args[1], block);
+                        default:
+                            throw newArgumentError(String.format("wrong number of arguments %d for 1..2", args.length));
+                    }
+                }
+            });
+        }
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
@@ -1620,8 +1652,6 @@ public final class Ruby {
                 runtime.getLoadService().require("jruby/win32ole/stub");
             }
         });
-        
-        RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
     
     private void initRubyKernel() {
@@ -2435,7 +2465,7 @@ public final class Ruby {
 
     /** Defines a global variable
      */
-    public void defineVariable(final GlobalVariable variable) {
+    public void defineVariable(final GlobalVariable variable, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
         globalVariables.define(variable.name(), new IAccessor() {
             public IRubyObject getValue() {
                 return variable.get();
@@ -2444,14 +2474,14 @@ public final class Ruby {
             public IRubyObject setValue(IRubyObject newValue) {
                 return variable.set(newValue);
             }
-        });
+        }, scope);
     }
 
     /** defines a readonly global variable
      *
      */
-    public void defineReadonlyVariable(String name, IRubyObject value) {
-        globalVariables.defineReadonly(name, new ValueAccessor(value));
+    public void defineReadonlyVariable(String name, IRubyObject value, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
+        globalVariables.defineReadonly(name, new ValueAccessor(value), scope);
     }
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
@@ -3401,11 +3431,18 @@ public final class Ruby {
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
+		return newErrnoEADDRFromBindException(be, null);
+	}
+
+    public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
         if (msg == null) {
             msg = "bind";
         } else {
             msg = "bind - " + msg;
+        }
+        if (contextMessage != null) {
+            msg = msg + contextMessage;
         }
         // This is ugly, but what can we do, Java provides the same BindingException
         // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
@@ -3460,7 +3497,14 @@ public final class Ruby {
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null);
     }
+    
+    // This name sucks and should be replaced by newNameErrorfor 9k.
+    public RaiseException newNameErrorObject(String message, IRubyObject name) {
+        RubyException error = new RubyNameError(this, getNameError(), message, name);
 
+        return new RaiseException(error, false);
+    }
+    
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
     }
@@ -4548,8 +4592,8 @@ public final class Ruby {
     private final AtomicInteger warningCount = new AtomicInteger();
     
     private Invalidator 
-            fixnumInvalidator = OptoFactory.newConstantInvalidator(),
-            floatInvalidator = OptoFactory.newConstantInvalidator();
+            fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
+            floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
     
     private volatile boolean booting = true;

@@ -3,43 +3,49 @@ package org.jruby.ext.ffi.jffi;
 
 import java.nio.ByteOrder;
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 
-class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
+class NativeMemoryIO extends MemoryIO {
     protected static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     final NativeMemoryIO parent; // keep a reference to avoid the memory being freed
-    final long address;
     private final Ruby runtime;
 
-    static final DirectMemoryIO wrap(Ruby runtime, long address) {
+    static final MemoryIO wrap(Ruby runtime, long address) {
         return address != 0
                 ? new NativeMemoryIO(runtime, address)
                 : runtime.getFFI().getNullMemoryIO();
     }
 
     NativeMemoryIO(Ruby runtime, long address) {
+        super(true, address);
         this.runtime = runtime;
-        this.address = address;
         this.parent = null;
     }
+
     private NativeMemoryIO(NativeMemoryIO parent, long offset) {
+        super(true, parent.address + offset);
         this.parent = parent;
-        this.address = parent.address + offset;
         this.runtime = parent.runtime;
     }
 
-    public final long getAddress() {
-        return address;
+    public Object array() {
+        throw new UnsupportedOperationException("no array");
+    }
+
+    public int arrayOffset() {
+        throw new UnsupportedOperationException("no array");
+    }
+
+    public int arrayLength() {
+        throw new UnsupportedOperationException("no array");
     }
 
     public NativeMemoryIO slice(long offset) {
         return offset == 0 ? this :new NativeMemoryIO(this, offset);
     }
 
-    public DirectMemoryIO slice(long offset, long size) {
+    public MemoryIO slice(long offset, long size) {
         return new BoundedNativeMemoryIO(runtime, this, offset, size);
     }
     
@@ -53,7 +59,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     @Override
     public final boolean equals(Object obj) {
-        return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).getAddress() == address;
+        return (obj instanceof MemoryIO) && ((MemoryIO) obj).address() == address;
     }
 
     @Override
@@ -61,14 +67,6 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         int hash = 5;
         hash = 53 * hash + (int) (this.address ^ (this.address >>> 32));
         return hash;
-    }
-    
-    public final boolean isNull() {
-        return address == 0;
-    }
-    
-    public final boolean isDirect() {
-        return true;
     }
 
     public final ByteOrder order() {
@@ -109,7 +107,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return IO.getAddress(address + offset);
     }
 
-    public final DirectMemoryIO getMemoryIO(long offset) {
+    public final MemoryIO getMemoryIO(long offset) {
         return wrap(runtime, IO.getAddress(address + offset));
     }
 
@@ -148,7 +146,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        IO.putAddress(address + offset, ((DirectMemoryIO) value).getAddress());
+        IO.putAddress(address + offset, value.address());
     }
 
     public final void get(long offset, byte[] dst, int off, int len) {

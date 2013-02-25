@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,11 +23,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
@@ -40,6 +40,7 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyKernel;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.NormalizedFile;
@@ -83,13 +84,13 @@ public class RubyTestCase extends TestCase {
                 EMPTY_ARRAY,
                 EMPTY_ARRAY.getClass());
 
-        runtime.defineReadonlyVariable("$-p", runtime.getNil());
-        runtime.defineReadonlyVariable("$-n", runtime.getNil());
-        runtime.defineReadonlyVariable("$-a", runtime.getNil());
-        runtime.defineReadonlyVariable("$-l", runtime.getNil());
-        runtime.defineReadonlyVariable("$\"", empty);
-        runtime.defineReadonlyVariable("$*", empty);
-        runtime.defineReadonlyVariable("$:", empty);
+        runtime.defineReadonlyVariable("$-p", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-n", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-a", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$-l", runtime.getNil(), GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$\"", empty, GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$*", empty, GlobalVariable.Scope.GLOBAL);
+        runtime.defineReadonlyVariable("$:", empty, GlobalVariable.Scope.GLOBAL);
         runtime.defineGlobalConstant("ARGV", empty);
     }
 }

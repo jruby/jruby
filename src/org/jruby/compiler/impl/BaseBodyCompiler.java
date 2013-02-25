@@ -1889,83 +1889,93 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label catchRetry = new Label();
         Label catchJumps = new Label();
         Label exitRescue = new Label();
+        
+        // because we must handle clearing $! properly for early returns, treat
+        // this method as a "nested" method, and use full exception logic for
+        // return, break, etc.
+        boolean oldInNested = inNestedMethod;
+        inNestedMethod = true;
 
-        // store previous exception for restoration if we rescue something
-        loadThreadContext();
-        invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
-        method.astore(getPreviousExceptionIndex());
+        try {
+            // store previous exception for restoration if we rescue something
+            loadThreadContext();
+            invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
+            method.astore(getPreviousExceptionIndex());
 
-        Label beforeBody = new Label();
-        Label afterBody = new Label();
-        Label rubyCatchBlock = new Label();
-        Label flowCatchBlock = new Label();
-        Label elseLabel = new Label();
+            Label beforeBody = new Label();
+            Label afterBody = new Label();
+            Label rubyCatchBlock = new Label();
+            Label flowCatchBlock = new Label();
+            Label elseLabel = new Label();
 
-        method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
-        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Throwable.class));
+            method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
+            method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Throwable.class));
 
-        method.visitLabel(beforeBody);
-        {
-            regularCode.branch(this);
-        }
-        method.label(afterBody);
-
-        if (rubyElseCode != null) {
-            method.go_to(elseLabel);
-        } else {
-            method.go_to(exitRescue);
-        }
-
-        // Handle Flow exceptions, just propagating them
-        method.label(flowCatchBlock);
-        {
-            // rethrow to outer flow catcher
-            method.athrow();
-        }
-
-        // Handle Ruby exceptions (RaiseException)
-        method.label(rubyCatchBlock);
-        {
-            method.astore(getExceptionIndex());
-
-            rubyCatchCode.branch(this);
-            method.label(afterRubyCatchBody);
-            method.go_to(exitRescue);
-        }
-
-        // retry handling in the rescue blocks
-        if (needsRetry) {
-            method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
-            method.label(catchRetry);
+            method.visitLabel(beforeBody);
             {
-                method.pop();
+                regularCode.branch(this);
             }
-            method.go_to(beforeBody);
-        }
+            method.label(afterBody);
 
-        // and remaining jump exceptions should restore $!
-        method.trycatch(beforeBody, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
-        method.label(catchJumps);
-        {
+            if (rubyElseCode != null) {
+                method.go_to(elseLabel);
+            } else {
+                method.go_to(exitRescue);
+            }
+
+            // Handle Flow exceptions, just propagating them
+            method.label(flowCatchBlock);
+            {
+                // rethrow to outer flow catcher
+                method.athrow();
+            }
+
+            // Handle Ruby exceptions (RaiseException)
+            method.label(rubyCatchBlock);
+            {
+                method.astore(getExceptionIndex());
+
+                rubyCatchCode.branch(this);
+                method.label(afterRubyCatchBody);
+                method.go_to(exitRescue);
+            }
+
+            // retry handling in the rescue blocks
+            if (needsRetry) {
+                method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
+                method.label(catchRetry);
+                {
+                    method.pop();
+                }
+                method.go_to(beforeBody);
+            }
+
+            // and remaining jump exceptions should restore $!
+            method.trycatch(beforeBody, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
+            method.label(catchJumps);
+            {
+                loadThreadContext();
+                method.aload(getPreviousExceptionIndex());
+                invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+                method.pop();
+                method.athrow();
+            }
+
+            if (rubyElseCode != null) {
+                method.label(elseLabel);
+                rubyElseCode.branch(this);
+            }
+
+            method.label(exitRescue);
+
+            // restore the original exception
             loadThreadContext();
             method.aload(getPreviousExceptionIndex());
             invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
             method.pop();
-            method.athrow();
+        } finally {
+            inNestedMethod = oldInNested;
         }
-
-        if (rubyElseCode != null) {
-            method.label(elseLabel);
-            rubyElseCode.branch(this);
-        }
-
-        method.label(exitRescue);
-
-        // restore the original exception
-        loadThreadContext();
-        method.aload(getPreviousExceptionIndex());
-        invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
-        method.pop();
     }
 
     public void wrapJavaException() {

@@ -17,6 +17,7 @@ public class FFI {
     public final RubyClass structClass, functionClass, callbackClass;
     public final RubyClass typeClass;
     public final RubyHash typedefs;
+    public final Pointer nullPointer;
     private final NullMemoryIO nullMemoryIO;
     private final TypeResolver typeResolver;
     
@@ -41,6 +42,7 @@ public class FFI {
         this.typedefs = (RubyHash) ffiModule.getConstant("TypeDefs");
         this.typeResolver = new TypeResolver(this);
         this.nullMemoryIO = new NullMemoryIO(ffiModule.getRuntime());
+        this.nullPointer = (Pointer) pointerClass.getConstant("NULL");
     }
 
     public final TypeResolver getTypeResolver() {

@@ -40,6 +40,10 @@ describe "A Java package" do
     m = Module.new { import 'java.lang' }
     m::System.should respond_to 'getProperty'
   end
+
+  it "supports const_get" do
+    java.util.const_get("Arrays").should respond_to "asList"
+  end
 end
 
 describe "A class in the default package" do

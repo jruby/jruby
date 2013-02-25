@@ -1,5 +1,5 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
@@ -36,7 +36,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
  *
@@ -53,7 +53,7 @@ public class EVP {
     /* c: EVP_get_cipherbyobj
      *
      */
-    public static Cipher getCipher(DERObjectIdentifier oid) throws GeneralSecurityException {
+    public static Cipher getCipher(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
         String algorithm = getAlgorithmName(oid);
         String[] cipher = org.jruby.ext.openssl.Cipher.Algorithm.osslToJsse(algorithm);
         String realName = cipher[3];
@@ -70,7 +70,7 @@ public class EVP {
     /* c: EVP_get_digestbyobj
      *
      */
-    public static MessageDigest getDigest(DERObjectIdentifier oid) throws GeneralSecurityException {
+    public static MessageDigest getDigest(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
         String algorithm = getAlgorithmName(oid);
         return MessageDigest.getInstance(algorithm);
     }
@@ -95,7 +95,7 @@ public class EVP {
 
     public static int type(MessageDigest digest) {
         String name = digest.getAlgorithm();
-        DERObjectIdentifier obj = ASN1Registry.sym2oid(name);
+        ASN1ObjectIdentifier obj = ASN1Registry.sym2oid(name);
         if(obj == null) {
             name = name.toLowerCase().replace("sha-", "sha");
             obj = ASN1Registry.sym2oid(name);
@@ -136,7 +136,7 @@ public class EVP {
         return decrypt(input, 0, input.length, key);
     }
 
-    private static String getAlgorithmName(DERObjectIdentifier oid) {
+    private static String getAlgorithmName(ASN1ObjectIdentifier oid) {
         String algorithm = ASN1Registry.o2a(oid);
         if (algorithm != null) {
             return algorithm.toUpperCase();

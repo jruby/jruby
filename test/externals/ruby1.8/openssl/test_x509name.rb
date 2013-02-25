@@ -6,6 +6,8 @@ require "test/unit"
 
 if defined?(OpenSSL)
 
+require 'digest/md5'
+
 class OpenSSL::TestX509Name < Test::Unit::TestCase
   OpenSSL::ASN1::ObjectId.register(
     "1.2.840.113549.1.9.1", "emailAddress", "emailAddress")
@@ -260,6 +262,28 @@ class OpenSSL::TestX509Name < Test::Unit::TestCase
     assert_equal(OpenSSL::ASN1::UTF8STRING, ary[2][2])
     assert_equal(OpenSSL::ASN1::IA5STRING, ary[3][2])
     assert_equal(OpenSSL::ASN1::PRINTABLESTRING, ary[4][2])
+  end
+
+  def name_hash(name)
+    # OpenSSL 1.0.0 uses SHA1 for canonical encoding (not just a der) of
+    # X509Name for X509_NAME_hash.
+    name.respond_to?(:hash_old) ? name.hash_old : name.hash
+  end
+
+  def calc_hash(d)
+    (d[0] & 0xff) | (d[1] & 0xff) << 8 | (d[2] & 0xff) << 16 | (d[3] & 0xff) << 24
+  end
+
+  def test_hash
+    dn = "/DC=org/DC=ruby-lang/CN=www.ruby-lang.org"
+    name = OpenSSL::X509::Name.parse(dn)
+    d = Digest::MD5.digest(name.to_der)
+    assert_equal(calc_hash(d), name_hash(name))
+    #
+    dn = "/DC=org/DC=ruby-lang/CN=baz.ruby-lang.org"
+    name = OpenSSL::X509::Name.parse(dn)
+    d = Digest::MD5.digest(name.to_der)
+    assert_equal(calc_hash(d), name_hash(name))
   end
 end
 

@@ -128,7 +128,7 @@ public class RuntimeHelpers {
         return invokeEqqForCaseWhen(callSite, context, caller, arg, receiver1, receiver2);
     }
 
-    public static boolean areAnyTrueForCaselessWhen(IRubyObject[] receivers) {
+    public static boolean invokeEqqForCaselessWhen(IRubyObject[] receivers) {
         for (int i = 0; i < receivers.length; i++) {
             if (receivers[i].isTrue()) return true;
         }

@@ -10,15 +10,12 @@ import org.jruby.exceptions.RaiseException;
 /**
  * An implementation of MemoryIO that throws an exception on any access.
  */
-public abstract class InvalidMemoryIO implements MemoryIO {
+public abstract class InvalidMemoryIO extends MemoryIO {
     protected final Ruby runtime;
     private final String message;
     
-    public InvalidMemoryIO(Ruby runtime) {
-        this(runtime, "Invalid memory access");
-
-    }
-    public InvalidMemoryIO(Ruby runtime, String message) {
+    public InvalidMemoryIO(Ruby runtime, boolean isDirect, long address, String message) {
+        super(isDirect, address);
         this.runtime = runtime;
         this.message = message;
     }
@@ -79,7 +76,7 @@ public abstract class InvalidMemoryIO implements MemoryIO {
         throw ex();
     }
 
-    public final DirectMemoryIO getMemoryIO(long offset) {
+    public final MemoryIO getMemoryIO(long offset) {
         throw ex();
     }
 
@@ -197,4 +194,15 @@ public abstract class InvalidMemoryIO implements MemoryIO {
         throw ex();
     }
 
+    public Object array() {
+        throw ex();
+    }
+
+    public int arrayOffset() {
+        throw ex();
+    }
+
+    public int arrayLength() {
+        throw ex();
+    }
 }

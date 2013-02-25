@@ -2,12 +2,7 @@
 package org.jruby.ext.ffi;
 
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -15,7 +10,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.runtime.Visibility.*;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
 public final class MemoryPointer extends Pointer {
@@ -43,7 +39,7 @@ public final class MemoryPointer extends Pointer {
         super(runtime, (RubyClass) klass);
     }
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long total, int typeSize) {
+    private MemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long total, int typeSize) {
         super(runtime, (RubyClass) klass, io, total, typeSize);
     }
 
@@ -74,83 +70,20 @@ public final class MemoryPointer extends Pointer {
     }
 
     static MemoryPointer allocate(Ruby runtime, int typeSize, int count, boolean clear) {
-        return newInstance(runtime, runtime.getFFI().memptrClass, typeSize, count, clear);
-    }
-
-    static MemoryPointer newInstance(Ruby runtime, IRubyObject klass, int typeSize, int count, boolean clear) {
         final int total = typeSize * count;
-        AllocatedDirectMemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
+        MemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", count, typeSize), true);
         }
 
-        return new MemoryPointer(runtime, klass, io, total, typeSize);
-    }
-
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg) {
-        if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.runtime, klass, calculateTypeSize(context, sizeArg), 1, true);
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg,
-                                          IRubyObject countArg) {
-
-        if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.runtime, klass,
-                    calculateTypeSize(context, sizeArg), RubyFixnum.fix2int(countArg), true);
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, countArg, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg,
-                                          IRubyObject countArg, IRubyObject clear) {
-        if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.runtime, klass,
-                    calculateTypeSize(context, sizeArg), RubyFixnum.fix2int(countArg), clear.isTrue());
-
-        } else {
-            return ((RubyClass) klass).newInstance(context, sizeArg, countArg, clear, Block.NULL_BLOCK);
-        }
-    }
-
-    @JRubyMethod(name = "new", meta = true, rest = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
-        if (klass == context.runtime.getFFI().memptrClass) {
-            switch (args.length) {
-                case 1:
-                    return newInstance(context, klass, args[0]);
-
-                case 2:
-                    return newInstance(context, klass, args[0], args[1]);
-
-                case 3:
-                    return newInstance(context, klass, args[0], args[1], args[2]);
-
-                default:
-                    return ((RubyClass) klass).newInstance(context, args, Block.NULL_BLOCK);
-            }
-        } else {
-            return ((RubyClass) klass).newInstance(context, args, Block.NULL_BLOCK);
-        }
+        return new MemoryPointer(runtime, runtime.getFFI().memptrClass, io, total, typeSize);
     }
 
     @JRubyMethod(name = "from_string", meta = true)
     public static IRubyObject from_string(ThreadContext context, IRubyObject klass, IRubyObject s) {
         org.jruby.util.ByteList bl = s.convertToString().getByteList();
-        MemoryPointer ptr = klass == context.runtime.getFFI().memptrClass
-            ? newInstance(context.runtime, klass, 1, bl.length() + 1, false)
-            : (MemoryPointer) newInstance(context, klass, context.runtime.newFixnum(bl.length() + 1));
+        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, context.runtime.newFixnum(bl.length() + 1), Block.NULL_BLOCK);
         ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
 
         return ptr;
