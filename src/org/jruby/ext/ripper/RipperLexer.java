@@ -2541,11 +2541,6 @@ public class RipperLexer {
                     buffer.setEncoding(UTF8_ENCODING);
                     if (stringLiteral) tokenAddMBC(codepoint, buffer);
                 } else if (stringLiteral) {
-                    if (codepoint == 0 && symbolLiteral) {
-                        throw new SyntaxException(SyntaxException.PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "symbol cannot contain '\\u0000'");
-                    }
-
                     buffer.append((char) codepoint);
                 }
             } while (src.peek(' ') || src.peek('\t'));
@@ -2561,11 +2556,6 @@ public class RipperLexer {
                 buffer.setEncoding(UTF8_ENCODING);
                 if (stringLiteral) tokenAddMBC(codepoint, buffer);
             } else if (stringLiteral) {
-                if (codepoint == 0 && symbolLiteral) {
-                    throw new SyntaxException(SyntaxException.PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                        getCurrentLine(), "symbol cannot contain '\\u0000'");
-                }
-
                 buffer.append((char) codepoint);
             }
         }
