@@ -1125,6 +1125,10 @@ public class RipperLexer {
         boolean spaceSeen = false;
         boolean commandState;
         
+        // FIXME: Sucks we do this n times versus one since it is only important at beginning of parse but we need to change
+        // setup of parser differently.
+        if (token == 0 && src.getLine() == 0) detectUTF8BOM();        
+        
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
             if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
@@ -2713,4 +2717,27 @@ public class RipperLexer {
 
         return value;
     }
+    
+    // FIXME: Also sucks that matchMarker will strip off valuable bytes and not work for this (could be a one-liner)
+    private void detectUTF8BOM() throws IOException {
+        int b1 = src.read();
+        if (b1 == 0xef) {
+            int b2 = src.read();
+            if (b2 == 0xbb) {
+                int b3 = src.read();
+                if (b3 == 0xbf) {
+                    setEncoding(UTF8_ENCODING);
+                } else {
+                    src.unread(b3);
+                    src.unread(b2);
+                    src.unread(b1);
+                }
+            } else {
+                src.unread(b2);
+                src.unread(b1);
+            }
+        } else {
+            src.unread(b1);
+        }
+    }    
 }
