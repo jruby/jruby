@@ -877,7 +877,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         boolean impos = tpositive_p(context, image);
-        RubyString str = context.runtime.newString();
+        RubyString str = RubyString.newEmptyString(context.getRuntime());
         str.cat((byte)'(');
         str.cat(f_inspect(context, real).convertToString().getByteList());
         str.cat(impos ? (byte)'+' : (byte)'-');
@@ -985,7 +985,7 @@ public class RubyComplex extends RubyNumeric {
             if (!m.isNil()) {
                 sr = runtime.getNil();
                 si = m.callMethod(context, "[]", RubyFixnum.one(runtime));
-                if (si.isNil()) si = runtime.newString();
+                if (si.isNil()) si = RubyString.newEmptyString(runtime);
                 IRubyObject t = m.callMethod(context, "[]", RubyFixnum.two(runtime));
                 if (t.isNil()) t = runtime.newString(new ByteList(new byte[]{'1'}));
                 si.convertToString().cat(t.convertToString().getByteList());

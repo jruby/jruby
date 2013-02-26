@@ -362,7 +362,7 @@ public class RubyArgsFile {
                 byte c = (byte)RubyNumeric.fix2int(ch);
                 int n = runtime.getKCode().getEncoding().length(c);
                 IRubyObject file = data.currentFile;
-                RubyString str = runtime.newString();
+                RubyString str = RubyString.newEmptyString(runtime);
                 str.setTaint(true);
                 str.cat(c);
 

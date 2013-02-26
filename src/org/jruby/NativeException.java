@@ -55,7 +55,7 @@ public class NativeException extends RubyException {
         super(runtime, rubyClass);
         this.runtime = runtime;
         this.cause   = new Throwable();
-        this.message = runtime.newString();
+        this.message = RubyString.newEmptyString(runtime);
     }
     
     private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
