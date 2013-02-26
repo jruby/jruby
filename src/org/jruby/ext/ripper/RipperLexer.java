@@ -433,6 +433,10 @@ public class RipperLexer {
     private boolean isARG() {
         return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
     }
+    
+    private boolean isSpaceArg(int c, boolean spaceSeen) {
+        return isARG() && spaceSeen && !Character.isWhitespace(c);
+    }
 
     private void determineExpressionState() {
         switch (lex_state) {
@@ -1413,7 +1417,7 @@ public class RipperLexer {
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
-        if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
+        if (isSpaceArg(c, spaceSeen)) {
             IRubyWarnings warnings = getRuntime().getWarnings();
             if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
@@ -1953,7 +1957,7 @@ public class RipperLexer {
             setState(LexState.EXPR_ARG);
             return Tokens.tLAMBDA;
         }
-        if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
+        if (isBEG() || isSpaceArg(c, spaceSeen)) {
             if (isARG()) arg_ambiguous();
             setState(LexState.EXPR_BEG);
             src.unread(c);
@@ -1978,7 +1982,7 @@ public class RipperLexer {
             return Tokens.tOP_ASGN;
         }
         
-        if (isARG() && spaceSeen && !Character.isWhitespace(c)) return parseQuote(c);
+        if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
         
         determineExpressionState();
         
@@ -2026,7 +2030,7 @@ public class RipperLexer {
             return Tokens.tOP_ASGN;
         }
         
-        if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
+        if (isBEG() || isSpaceArg(c, spaceSeen)) {
             if (isARG()) arg_ambiguous();
             setState(LexState.EXPR_BEG);
             src.unread(c);
@@ -2161,12 +2165,10 @@ public class RipperLexer {
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
-        if (isARG() && spaceSeen) {
-            if (!Character.isWhitespace(c)) {
-                arg_ambiguous();
-                lex_strterm = new StringTerm(str_regexp, '\0', '/');
-                return Tokens.tREGEXP_BEG;
-            }
+        if (isSpaceArg(c, spaceSeen)) {
+            arg_ambiguous();
+            lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            return Tokens.tREGEXP_BEG;
         }
         
         determineExpressionState();
@@ -2191,7 +2193,7 @@ public class RipperLexer {
             return Tokens.tOP_ASGN;
         default:
             src.unread(c);
-            if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
+            if (isSpaceArg(c, spaceSeen)) {
                 IRubyWarnings warnings = getRuntime().getWarnings();
                 
                 if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
