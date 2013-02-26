@@ -214,7 +214,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   #   Oracle's build block with > 131072 (2**17)
   # On a Windows 7(64) box:
   #   Oracle's build does not block (use memory till OOMException)
-  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (65536 * 4)
+  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (219463 * 4)
 
   it "should not block for write" do
   100.times do # for acceleration; it failed w/o wait_for_accepted call
