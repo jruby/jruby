@@ -142,8 +142,6 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
             // use the class name
             className = implementationClass.getName();
         }
-        // replace double-colons with dots, to match Java
-        className.replaceAll("::", ".");
         context.runtime.getJITCompiler().tryJIT(this, context, className, name);
         return box.actualMethod;
     }
