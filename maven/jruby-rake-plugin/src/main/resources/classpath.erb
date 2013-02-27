@@ -3,6 +3,7 @@
 #
 # mvn org.jruby.plugins:jruby-rake-plugin:<%= maven["version"] %>:classpath<%= maven["options"] ? maven["options"] : '' %>
 
+
 module Maven
   extend self
   BASEDIR = File.expand_path(<%= basedir.inspect %>, __FILE__)
@@ -14,7 +15,7 @@ module Maven
   }
 
   CLASSPATH = [<% classpath.each do |path| %>
-    "<%= path %>",<% end %>
+    "<%= path.gsub(/\\/, "\\" * 4) %>",<% end %>
   ]
 
   def classpath

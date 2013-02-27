@@ -28,8 +28,19 @@ def make_key(pem)
   end
 end
 
+if $DEBUG
+  def log(s); File.open("ssl-server-debug", "a") {|f| f.puts s}; end
+  File.open("ssl-server-debug", "w") {|f| f << ""}
+  log "server starting"
+else
+  def log(s) end
+end
+
+begin
 ca_cert  = OpenSSL::X509::Certificate.new(get_pem)
+log "got ca cert #{ca_cert.inspect}"
 ssl_cert = OpenSSL::X509::Certificate.new(get_pem)
+log "got ssl cert #{ssl_cert.inspect}"
 ssl_key  = make_key(get_pem)
 port = Integer(ARGV.shift)
 verify_mode = Integer(ARGV.shift)
@@ -49,6 +60,7 @@ Socket.do_not_reverse_lookup = true
 tcps = nil
 100.times{|i|
   begin
+    log "starting server on #{port+i}"
     tcps = TCPServer.new("0.0.0.0", port+i)
     port = port + i
     break
@@ -56,9 +68,11 @@ tcps = nil
     next 
   end
 }
+log "starting ssl server"
 ssls = OpenSSL::SSL::SSLServer.new(tcps, ctx)
 ssls.start_immediately = start_immediately
 
+log("sending pid #{Process.pid}")
 $stdout.sync = true
 $stdout.puts Process.pid
 $stdout.puts port
@@ -78,4 +92,8 @@ loop do
     th.kill if q.empty?
     ssl.close
   }
+end
+rescue
+  log $!
+  log $!.backtrace.join("\n")
 end

@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,16 +24,15 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
 import jnr.constants.platform.OpenFlags;
-import jnr.constants.platform.Fcntl;
 
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
@@ -41,6 +40,8 @@ import jnr.constants.platform.Fcntl;
  * well as flags for create, truncate, and others. In addition, it provides
  * methods for querying specific flag settings and converting to two other
  * formats: a Java mode string and an OpenFile mode int.
+ * 
+ * Note: In MRI these are called oflags.
  * 
  * @see org.jruby.util.io.ChannelDescriptor
  * @see org.jruby.util.io.Stream
@@ -65,8 +66,10 @@ public class ModeFlags implements Cloneable {
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
     /** binary flag, to ensure no encoding changes are made while writing */
     public static final int BINARY = OpenFlags.O_BINARY.intValue();
-    /** textmode flag, for normalizing newline characters to \n */
-    public static final int TEXT = 0x00001000; // from ruby.h
+    /** textmode flag, MRI has no equivalent but we use ModeFlags currently
+     * to also capture what are oflags.
+     */
+    public static final int TEXT = 0x10000000; 
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
@@ -97,10 +100,12 @@ public class ModeFlags implements Cloneable {
         }
     }
 
+    @Deprecated
     public ModeFlags(String flagString) throws InvalidValueException {
         this.flags = getOFlagsFromString(flagString);
     }
-
+    
+    @Deprecated
     public static int getOFlagsFromString(String modesString) throws InvalidValueException {
         int modes = 0;
         int length = modesString.length();
@@ -132,7 +137,7 @@ public class ModeFlags implements Cloneable {
                     modes = (modes & ~ACCMODE) | RDWR;
                     break;
                 case 't' :
-                    // TODO: impl text mode
+                    modes |= TEXT;
                     break;
                 case ':':
                     break ModifierLoop;
@@ -141,9 +146,9 @@ public class ModeFlags implements Cloneable {
             }
         }
 
-        return modes;
+        return modes;        
     }
-    
+
     /**
      * Produce a Java IO mode string from the flags in this object.
      * 
@@ -164,7 +169,7 @@ public class ModeFlags implements Cloneable {
      * 
      * @return true if read-only, false otherwise
      */
-    public boolean isReadOnly() {
+    public final boolean isReadOnly() {
         return ((flags & WRONLY) == 0) && ((flags & RDWR) == 0);
     }
     
@@ -262,8 +267,24 @@ public class ModeFlags implements Cloneable {
     
     @Override
     public String toString() {
-        // TODO: Make this more intelligible value
-        return ""+flags;
+        StringBuilder buf = new StringBuilder("ModeFlags(" + flags + "): ");
+        
+        if (isAppendable()) buf.append("APPENDABLE ");
+        if (isBinary()) buf.append("BINARY ");
+        if (isCreate()) buf.append("CREATE ");
+        if (isExclusive()) buf.append("EXCLUSIVE ");
+        if (isReadOnly()) buf.append("READONLY ");
+        if (isText()) buf.append("TEXT ");
+        if (isTruncate()) buf.append("TRUNCATE ");
+        if (isWritable()) {
+            if (isReadable()) {
+                buf.append("RDWR");
+            } else {
+                buf.append("WRITABLE ");
+            }
+        }
+        
+        return buf.toString();
     }
 
     /**
@@ -276,37 +297,51 @@ public class ModeFlags implements Cloneable {
         return flags;
     }
 
+
+    // MRI: rb_io_oflags_fmode
+    /**
+     * With the provided open flags parameter what fmode values should be
+     * set (fmode for us is represented by OpenFile).
+     */
+    public static int getOpenFileFlagsFor(int flags) {
+        int fmodeFlags;
+
+        int readWrite = flags & 3;
+        if (readWrite == RDONLY) {
+            fmodeFlags = OpenFile.READABLE;
+        } else if (readWrite == WRONLY) {
+            fmodeFlags = OpenFile.WRITABLE;
+        } else {
+            fmodeFlags = OpenFile.READWRITE;
+        }
+
+        if ((flags & APPEND) != 0) {
+            fmodeFlags |= OpenFile.APPEND;
+        }
+        if ((flags & CREAT) != 0) {
+            fmodeFlags |= OpenFile.CREATE;
+        }
+        if ((flags & BINARY) == BINARY) {
+            fmodeFlags |= OpenFile.BINMODE;
+        }
+
+        // This is unique to us to keep bridge betweeen mode_flags and oflags
+        if ((flags & TEXT) == TEXT) {
+            fmodeFlags |= OpenFile.TEXTMODE;
+        }
+        
+        return fmodeFlags;
+    }
+
     /**
      * Convert the flags in this object to a set of flags appropriate for the
      * OpenFile structure and logic therein.
      * 
      * @return an int of flags appropriate for OpenFile
-     */
+     */    
     public int getOpenFileFlags() {
-        int openFileFlags = 0;
-
-        int readWrite = flags & 3;
-        if (readWrite == RDONLY) {
-            openFileFlags = OpenFile.READABLE;
-        } else if (readWrite == WRONLY) {
-            openFileFlags = OpenFile.WRITABLE;
-        } else {
-            openFileFlags = OpenFile.READWRITE;
-        }
-
-        if ((flags & APPEND) != 0) {
-            openFileFlags |= OpenFile.APPEND;
-        }
-        if ((flags & CREAT) != 0) {
-            openFileFlags |= OpenFile.CREATE;
-        }
-        if ((flags & BINARY) == BINARY) {
-            openFileFlags |= OpenFile.BINMODE;
-        }
-        
-        return openFileFlags;
+        return getOpenFileFlagsFor(flags);
     }
-
     /**
      * Convert the flags in this object to a set of flags appropriate for the
      * fcntl.
@@ -326,5 +361,13 @@ public class ModeFlags implements Cloneable {
         }
 
         return fcntlFlags;
+    }
+    
+    public static ModeFlags createModeFlags(int oflags) {
+        try {
+            return new ModeFlags(oflags);
+        } catch (InvalidValueException e) {
+            return new ModeFlags();
+        }             
     }
 }

@@ -5,7 +5,7 @@
   <groupId>org.jruby</groupId>
   <artifactId>shared</artifactId>
   <packaging>pom</packaging>
-  <version>1.7.3.dev</version>
+  <version>1.7.4.dev</version>
   <name>JRuby Shared</name>
   <url>http://www.jruby.org/</url>
   <description>A 1.9.3 compatible Ruby interpreter for the JVM</description>
@@ -23,8 +23,8 @@
 
   <licenses>
     <license>
-      <name>Common Public License - v 1.0</name>
-      <url>http://www-128.ibm.com/developerworks/library/os-cpl.html</url>
+      <name>Eclipse Public License - v 1.0</name>
+      <url>http://www.eclipse.org/legal/epl-v10.html</url>
       <distribution>repo</distribution>
     </license>
     <license>

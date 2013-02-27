@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,11 +29,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -153,7 +153,18 @@ public class RubyTime extends RubyObject {
             return getTimeZone(runtime, tz.toString());
         }
     }
-     
+
+    public static DateTimeZone getTimeZone(Ruby runtime, long seconds) {
+        // append "s" to the offset when looking up the cache
+        String zone = seconds + "s";
+        DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
+
+        if (cachedZone != null) return cachedZone;
+        DateTimeZone dtz = DateTimeZone.forOffsetMillis((int) (seconds * 1000));
+        runtime.getTimezoneCache().put(zone, dtz);
+        return dtz;
+    }
+
     public static DateTimeZone getTimeZone(Ruby runtime, String zone) {
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
 
@@ -1148,6 +1159,9 @@ public class RubyTime extends RubyObject {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
             dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
+        } else if (args.length == 10 && args[9].respondsTo("to_int")) {
+            IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
+            dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
         } else {
             dtz = getLocalTimeZone(runtime);
         }

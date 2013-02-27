@@ -45,6 +45,7 @@ public class InputStreamLexerSource extends LexerSource {
      * 
      * @return next character to viewed by the source
      */
+    @Override
     public int read() throws IOException {
         int c;
         
@@ -69,6 +70,7 @@ public class InputStreamLexerSource extends LexerSource {
      * 
      * @param  to be put back onto the source
      */
+    @Override
     public void unread(int c) {
         if (c == RubyYaccLexer.EOF) return;
         
@@ -87,6 +89,7 @@ public class InputStreamLexerSource extends LexerSource {
      * @return true if the same
      * @throws IOException
      */
+    @Override
     public boolean peek(int to) throws IOException {
         // keep value of twoAgo around so we can restore after we unread
         int captureTwoAgo = twoAgo;
@@ -247,24 +250,47 @@ public class InputStreamLexerSource extends LexerSource {
     public boolean lastWasBeginOfLine() {
         return oneAgo == '\n';
     }
+    
+    static final ByteList EOF_LABEL = new ByteList(new byte[] {'{', 'e', 'o', 'f', '}'});
 
+    @Override
     public String toString() {
         try {
             ByteList buffer = new ByteList(20);
-            buffer.append(twoAgo);
-            buffer.append(oneAgo);
-            buffer.append(new byte[] {'-', '>'});
+            ByteList unreadBuffer = new ByteList(20);
+
+            if (twoAgo != -1 && twoAgo != 0) buffer.append(twoAgo);
+            if (oneAgo != -1 && oneAgo != 0) buffer.append(oneAgo);
+
+            buffer.append('<');
+
             int i = 0;
+            int c = read();
+            unreadBuffer.append(c);
+            
+            if (c == -1) {
+                unread(unreadBuffer.charAt(0));
+                buffer.append(EOF_LABEL);
+                buffer.append('>');
+                
+                return buffer.toString();
+            } else {
+                buffer.append(c).append('>');
+            }
+            i = 1;
+            
             for (; i < 20; i++) {
-                int c = read();
-                if (c == 0) {
+                c = read();
+                unreadBuffer.append(c);
+                if (c == -1) {
+                    buffer.append(EOF_LABEL);
                     i--;
                     break;
                 }
                 buffer.append(c);
             }
             for (; i >= 0; i--) {
-                unread(buffer.charAt(i));
+                unread(unreadBuffer.charAt(i));
             }
             buffer.append(new byte[] {' ', '.', '.', '.'});
             return buffer.toString();
@@ -297,7 +323,7 @@ public class InputStreamLexerSource extends LexerSource {
     private InputStream bufferEntireStream(InputStream stream) throws IOException {
         byte[] allBytes = new byte[0];
         byte[] b = new byte[1024];
-        int bytesRead = 0;
+        int bytesRead;
         while ((bytesRead = stream.read(b)) != -1) {
             byte[] newbuf = new byte[allBytes.length + bytesRead];
             System.arraycopy(allBytes, 0, newbuf, 0, allBytes.length);

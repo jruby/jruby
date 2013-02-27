@@ -498,17 +498,17 @@ class TestRegexp < Test::Unit::TestCase
     assert(m.tainted?)
   end
 
-  def check(re, ss, fs = [])
+  def check(re, ss, fs = [], msg = nil)
     re = Regexp.new(re) unless re.is_a?(Regexp)
     ss = [ss] unless ss.is_a?(Array)
     ss.each do |e, s|
       s ||= e
-      assert_match(re, s)
+      assert_match(re, s, msg)
       m = re.match(s)
-      assert_equal(e, m[0])
+      assert_equal(e, m[0], msg)
     end
     fs = [fs] unless fs.is_a?(Array)
-    fs.each {|s| assert_no_match(re, s) }
+    fs.each {|s| assert_no_match(re, s, msg) }
   end
 
   def failcheck(re)
@@ -688,7 +688,7 @@ class TestRegexp < Test::Unit::TestCase
     check(/\A[a-b-]\z/, %w(a b -), ["", "c"])
     check('\A[a-b-&&\w]\z', %w(a b), ["", "-"])
     check('\A[a-b-&&\W]\z', "-", ["", "a", "b"])
-    check('\A[a-c-e]\z', %w(a b c e), %w(- d)) # is it OK?
+    check('\A[a-c-e]\z', %w(a b c e -), %w(d))
     check(/\A[a-f&&[^b-c]&&[^e]]\z/, %w(a d f), %w(b c e g 0))
     check(/\A[[^b-c]&&[^e]&&a-f]\z/, %w(a d f), %w(b c e g 0))
     check(/\A[\n\r\t]\z/, ["\n", "\r", "\t"])
@@ -866,5 +866,11 @@ class TestRegexp < Test::Unit::TestCase
     error = assert_raise(SyntaxError) {eval('/\x/', nil, bug3539)}
     assert_match(/invalid hex escape/, error.message)
     assert_equal(1, error.message.scan(/.*invalid .*escape.*/i).size, bug3539)
+  end
+
+  def test_raw_hyphen_and_tk_char_type_after_range
+    bug6853 = '[ruby-core:47115]'
+    # use Regexp.new instead of literal to ignore a parser warning.
+    check(Regexp.new('[0-1-\\s]'), [' ', '-'], ['2', 'a'], bug6853)
   end
 end

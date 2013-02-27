@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * c: X509_VERIFY_PARAM
@@ -48,7 +48,7 @@ public class VerifyParameter {
     public int purpose;
     public int trust;
     public int depth;
-    public List<DERObject> policies;
+    public List<ASN1Primitive> policies;
 
     /**
      * c: X509_VERIFY_PARAM_new
@@ -57,7 +57,7 @@ public class VerifyParameter {
         zero();
     }
 
-    public VerifyParameter(String n, long t, long i_f, long f, int p, int trs, int d, List<DERObject> pol) {
+    public VerifyParameter(String n, long t, long i_f, long f, int p, int trs, int d, List<ASN1Primitive> pol) {
         this.name = n;
         this.checkTime = new Date(t);
         this.inheritFlags = i_f;
@@ -214,9 +214,9 @@ public class VerifyParameter {
     /**
      * c: X509_VERIFY_PARAM_add0_policy
      */
-    public int addPolicy(DERObject policy) { 
+    public int addPolicy(ASN1Primitive policy) { 
         if(policies == null) {
-            policies = new ArrayList<DERObject>();
+            policies = new ArrayList<ASN1Primitive>();
         }
         policies.add(policy);
         return 1;
@@ -225,12 +225,12 @@ public class VerifyParameter {
     /**
      * c: X509_VERIFY_PARAM_set1_policies
      */
-    public int setPolicies(List<DERObject> policies) { 
+    public int setPolicies(List<ASN1Primitive> policies) { 
         if(policies == null) {
             this.policies = null;
             return 1;
         }
-        this.policies = new ArrayList<DERObject>();
+        this.policies = new ArrayList<ASN1Primitive>();
         this.policies.addAll(policies);
         this.flags |= X509Utils.V_FLAG_POLICY_CHECK;
         return 1;

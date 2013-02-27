@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -27,11 +27,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -61,7 +61,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -84,6 +83,7 @@ import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Ruby File class equivalent in java.
@@ -174,6 +174,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new RubyFile(runtime, klass);
 
@@ -203,6 +204,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     //     Converting a reader back into an InputStream doesn't generally work.
     public RubyFile(Ruby runtime, String path, final Reader reader) {
         this(runtime, path, new InputStream() {
+            @Override
             public int read() throws IOException {
                 return reader.read();
             }
@@ -320,13 +322,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (args.length > 0 && args.length <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getFixnum(), "to_int");
             if (!fd.isNil()) {
-                args[0] = fd;
                 if (args.length == 1) {
-                    return super.initialize19(context, args[0], block);
+                    return super.initialize19(context, fd, block);
                 } else if (args.length == 2) {
-                    return super.initialize19(context, args[0], args[1], block);
+                    return super.initialize19(context, fd, args[1], block);
                 }
-                return super.initialize19(context, args[0], args[1], args[2], block);
+                return super.initialize19(context, fd, args[1], args[2], block);
             }
         }
 
@@ -1095,52 +1096,65 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
 
+    @Override
     public Encoding getEncoding() {
         return null;
     }
 
+    @Override
     public void setEncoding(Encoding encoding) {
         // :)
     }
 
+    // mri: rb_open_file + rb_scan_open_args
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
-        String modeString = "r";
-        IOOptions modes = newIOOptions(runtime, modeString);
+        IRubyObject[] pm = new IRubyObject[]{null, null};
         RubyHash options = null;
-        int perm = 0;
-
-        if (args.length > 1) {
-            if (args[1] instanceof RubyHash) {
-                options = (RubyHash)args[1];
-            } else {
-                modes = parseIOOptions19(args[1]);
+        
+        switch(args.length) {
+            case 1:
+                break;
+            case 2: {
+                IRubyObject test = TypeConverter.checkHashType(runtime, args[1]);
+                if (test instanceof RubyHash) {
+                    options = (RubyHash) test;
+                } else {
+                    pm[EncodingUtils.VMODE] = args[1];
+                }
+                break;
             }
-        } else {
-            modes = parseIOOptions19(RubyString.newString(runtime, modeString));
-        }
-
-        if (args.length > 2 && !args[2].isNil()) {
-            if (args[2] instanceof RubyHash) {
-                options = (RubyHash)args[2];
-            } else {
-                perm = getFilePermissions(args);
+            case 3: {
+                IRubyObject test = TypeConverter.checkHashType(runtime, args[2]);
+                if (test instanceof RubyHash) {
+                    options = (RubyHash) test;
+                } else {
+                    pm[EncodingUtils.PERM] = args[2];
+                }
+                pm[EncodingUtils.VMODE] = args[1];                
+                break;
             }
+            case 4:
+                options = args[3].convertToHash();
+                pm[EncodingUtils.PERM] = args[2];
+                pm[EncodingUtils.VMODE] = args[1];
+                break;
         }
-
-        if (perm > 0) {
-            sysopenInternal19(context, path, options, modes, perm);
-        } else {
-            openInternal19(context, path, options, modes);
-        }
+        
+        int oflags = EncodingUtils.extractModeEncoding(context, this, pm, options, false);
+        int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
+                RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
+        
+        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm);
 
         return this;
     }
 
+    // 1.8
     private IRubyObject openFile(IRubyObject args[]) {
         Ruby runtime = getRuntime();
         RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
@@ -1172,44 +1186,42 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
-    protected void sysopenInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions, int perm) {
-        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-
-        sysopenInternal(path, ioOptions.getModeFlags(), perm);
-
-        setEncodingFromOptions(ioOptions.getEncodingOption());
-    }
-
+    // mri: rb_file_open_generic
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
+        if (path.startsWith("jar:")) path = path.substring(4);
+        
         openFile = new OpenFile();
 
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
-    }
+        if (hasBom) {
+            // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
+            Ruby runtime = getRuntime();
+            Encoding bomEncoding = encodingFromBOM();
+            if (bomEncoding != null) {
+                IRubyObject theBom = runtime.getEncodingService().getEncoding(bomEncoding);
+                Encoding internalEncoding = getInternalEncoding(getRuntime());
+                IRubyObject theInternal = internalEncoding == null ? 
+                        runtime.getNil() : runtime.getEncodingService().getEncoding(internalEncoding);
 
-    protected void openInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions) {
-        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-
-        openInternal(path, ioOptions.getModeFlags());
-
-        setEncodingFromOptions(ioOptions.getEncodingOption());
-    }
-
-    protected void openInternal(String path, ModeFlags modes) {
-        if (path.startsWith("jar:")) {
-            path = path.substring(4);
+                setEncoding(runtime.getCurrentContext(), theInternal, theBom, null);
+            }
         }
+    }
+
+    @Deprecated
+    protected void openInternal(String path, ModeFlags modes) {
+        if (path.startsWith("jar:")) path = path.substring(4);
+
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes));
     }
@@ -1501,7 +1513,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         String relativePath = get_path(context, args[0]).getUnicodeValue();
         String[] uriParts = splitURI(relativePath);
-        String cwd = null;
+        String cwd;
 
         // Handle ~user paths
         if (expandUser) {

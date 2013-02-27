@@ -31,6 +31,6 @@ public class BNilInstr extends BranchInstr {
     @Override
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
         Object value1 = getArg1().retrieve(context, self, currDynScope, temp);
-        return value1 == context.nil ? getJumpTarget().getTargetPC() : ipc+1;
+        return value1 == context.nil ? getJumpTarget().getTargetPC() : ipc;
     }
 }

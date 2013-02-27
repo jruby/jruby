@@ -3,6 +3,7 @@ package org.jruby.ext.ffi;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
@@ -17,7 +18,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.util.WeakReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 
 import static org.jruby.runtime.Visibility.*;
 
@@ -167,7 +168,7 @@ public final class AutoPointer extends Pointer {
     private void setReaper(Reaper reaper) {
         Reference<ReaperGroup> reaperGroupReference = currentReaper.get();
         ReaperGroup reaperGroup = reaperGroupReference != null ? reaperGroupReference.get() : null;
-        Object referent = reaperGroup != null ? reaperGroup.get() : null;
+        Object referent = reaperGroup != null ? reaperGroup.referent() : null;
         if (referent == null || !reaperGroup.canAccept()) {
             reaperGroup = new ReaperGroup(referent = new Object());
             currentReaper.set(new SoftReference<ReaperGroup>(reaperGroup));
@@ -178,13 +179,19 @@ public final class AutoPointer extends Pointer {
         reaperGroup.add(reaper);
     }
 
-    private static final class ReaperGroup extends WeakReferenceReaper<Object> implements Runnable {
+    private static final class ReaperGroup extends PhantomReferenceReaper<Object> implements Runnable {
         private static int MAX_REAPERS_PER_GROUP = 100;
+        private final WeakReference<Object> weakref;
         private int reaperCount;
         private volatile Reaper head;
         
         ReaperGroup(Object referent) {
             super(referent);
+            this.weakref = new WeakReference<Object>(referent);
+        }
+        
+        Object referent() {
+            return weakref.get();
         }
         
         boolean canAccept() {

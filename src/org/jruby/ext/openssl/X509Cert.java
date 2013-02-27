@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
@@ -48,9 +48,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -76,7 +77,6 @@ import org.jruby.util.ByteList;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class X509Cert extends RubyObject {
     private static final long serialVersionUID = 5626619026058595493L;
 
@@ -429,15 +429,9 @@ public class X509Cert extends RubyObject {
             lazyInitializePublicKey();
         }
         try {
-            // X509V3CertificateGenerator depends BC.
-            OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {
-
-                public void run() throws GeneralSecurityException {
-                    cert = generator.generate(((PKey) key).getPrivateKey(), "BC");
-                }
-            });
-        } catch (GeneralSecurityException gse) {
-            throw newCertificateError(getRuntime(), gse.getMessage());
+            cert = generator.generate(((PKey) key).getPrivateKey());
+        } catch (Exception e) {
+            throw newCertificateError(getRuntime(), e.getMessage());
         }
         if (cert == null) {
             throw newCertificateError(runtime, (String) null);
@@ -466,7 +460,7 @@ public class X509Cert extends RubyObject {
         } catch (NoSuchProviderException nspe) {
             throw newCertificateError(getRuntime(), nspe);
         } catch (SignatureException se) {
-            throw newCertificateError(getRuntime(), se);
+            return getRuntime().getFalse();
         } catch(InvalidKeyException e) {
             return getRuntime().getFalse();
         }
@@ -497,12 +491,12 @@ public class X509Cert extends RubyObject {
     @JRubyMethod
     public IRubyObject add_extension(IRubyObject arg) {
         changed = true;
-        DERObjectIdentifier oid = ((X509Extensions.Extension)arg).getRealOid();
-        if(oid.equals(new DERObjectIdentifier("2.5.29.17"))) {
+        ASN1ObjectIdentifier oid = ((X509Extensions.Extension)arg).getRealOid();
+        if(oid.equals(new ASN1ObjectIdentifier("2.5.29.17"))) {
             boolean one = true;
             for(Iterator<IRubyObject> iter = extensions.iterator();iter.hasNext();) {
                 X509Extensions.Extension ag = (X509Extensions.Extension)iter.next();
-                if(ag.getRealOid().equals(new DERObjectIdentifier("2.5.29.17"))) {
+                if(ag.getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.17"))) {
                     ASN1EncodableVector v1 = new ASN1EncodableVector();
 
                     try {
@@ -515,11 +509,11 @@ public class X509Cert extends RubyObject {
                         for(int i=0;i<n2.length;i++) {
                             v1.add(n2[i]);
                         }
+                        
+                        ag.setRealValue(new String(ByteList.plain(GeneralNames.getInstance(new DLSequence(v1)).getEncoded(ASN1Encoding.DER))));
                     } catch (IOException ex) {
                         throw getRuntime().newIOErrorFromException(ex);
                     }
-
-                    ag.setRealValue(new String(ByteList.plain(new GeneralNames(new DERSequence(v1)).getDEREncoded())));
                     one = false;
                     break;
                 }

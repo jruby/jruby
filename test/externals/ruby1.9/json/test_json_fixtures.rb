@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 require 'test/unit'
 require File.join(File.dirname(__FILE__), 'setup_variant')
 
-class TC_JSONFixtures < Test::Unit::TestCase
+class TestJSONFixtures < Test::Unit::TestCase
   def setup
     fixtures = File.join(File.dirname(__FILE__), 'fixtures/*.json')
     passed, failed = Dir[fixtures].partition { |f| f['pass'] }

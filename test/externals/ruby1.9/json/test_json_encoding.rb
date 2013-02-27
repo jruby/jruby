@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 require 'test/unit'
 require File.join(File.dirname(__FILE__), 'setup_variant')
 
-class TC_JSONEncoding < Test::Unit::TestCase
+class TestJSONEncoding < Test::Unit::TestCase
   include JSON
 
   def setup

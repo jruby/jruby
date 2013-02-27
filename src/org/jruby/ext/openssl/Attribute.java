@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,18 +19,18 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -68,16 +68,16 @@ public class Attribute extends RubyObject {
     private IRubyObject oid;
     private IRubyObject value;
 
-    private DERObjectIdentifier getObjectIdentifier(String nameOrOid) {
+    private ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
         Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
         if(null != val1) {
-            return (DERObjectIdentifier)val1;
+            return (ASN1ObjectIdentifier)val1;
         }
-        DERObjectIdentifier val2 = new DERObjectIdentifier(nameOrOid);
+        ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
         return val2;
     }
 
-    DERObject toASN1() {
+    ASN1Primitive toASN1() {
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         v1.add(getObjectIdentifier(oid.toString()));
         if(value instanceof ASN1.ASN1Constructive) {
@@ -87,7 +87,7 @@ public class Attribute extends RubyObject {
             v2.add(((ASN1.ASN1Data)value).toASN1());
             v1.add(new DERSet(v2));
         }
-        return new DERSequence(v1);
+        return new DLSequence(v1);
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1)

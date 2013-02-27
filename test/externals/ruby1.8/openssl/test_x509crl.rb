@@ -125,13 +125,13 @@ class OpenSSL::TestX509CRL < Test::Unit::TestCase
   def test_extension
     cert_exts = [
       ["basicConstraints", "CA:TRUE", true],
-      ["subjectKeyIdentifier", "hash", false], 
-      ["authorityKeyIdentifier", "keyid:always", false], 
+      ["subjectKeyIdentifier", "hash", false],
+      ["authorityKeyIdentifier", "keyid:always", false],
       ["subjectAltName", "email:xyzzy@ruby-lang.org", false],
       ["keyUsage", "cRLSign, keyCertSign", true],
     ]
     crl_exts = [
-      ["authorityKeyIdentifier", "keyid:always", false], 
+      ["authorityKeyIdentifier", "keyid:always", false],
       ["issuerAltName", "issuer:copy", false],
     ]
 
@@ -190,6 +190,30 @@ class OpenSSL::TestX509CRL < Test::Unit::TestCase
     assert_match((2**100).to_s, crl.extensions[0].value)
   end
 
+  def test_sign_and_verify_wrong_key_type
+    cert_rsa = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
+                      nil, nil, OpenSSL::Digest::SHA1.new)
+    crl_rsa = issue_crl([], 1, Time.now, Time.now+1600, [],
+                    cert_rsa, @rsa2048, OpenSSL::Digest::SHA1.new)
+    cert_dsa = issue_cert(@ca, @dsa512, 1, Time.now, Time.now+3600, [],
+                      nil, nil, OpenSSL::Digest::DSS1.new)
+    crl_dsa = issue_crl([], 1, Time.now, Time.now+1600, [],
+                    cert_dsa, @dsa512, OpenSSL::Digest::DSS1.new)
+    begin
+      assert_equal(false, crl_rsa.verify(@dsa256))
+    rescue OpenSSL::X509::CRLError => e
+      # OpenSSL 1.0.0 added checks for pkey OID
+      assert_equal('wrong public key type', e.message)
+    end
+
+    begin
+      assert_equal(false, crl_dsa.verify(@rsa1024))
+    rescue OpenSSL::X509::CRLError => e
+      # OpenSSL 1.0.0 added checks for pkey OID
+      assert_equal('wrong public key type', e.message)
+    end
+  end
+
   def test_sign_and_verify
     cert = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
                       nil, nil, OpenSSL::Digest::SHA1.new)
@@ -197,8 +221,6 @@ class OpenSSL::TestX509CRL < Test::Unit::TestCase
                     cert, @rsa2048, OpenSSL::Digest::SHA1.new)
     assert_equal(false, crl.verify(@rsa1024))
     assert_equal(true,  crl.verify(@rsa2048))
-    assert_equal(false, crl.verify(@dsa256))
-    assert_equal(false, crl.verify(@dsa512))
     crl.version = 0
     assert_equal(false, crl.verify(@rsa2048))
 
@@ -206,12 +228,25 @@ class OpenSSL::TestX509CRL < Test::Unit::TestCase
                       nil, nil, OpenSSL::Digest::DSS1.new)
     crl = issue_crl([], 1, Time.now, Time.now+1600, [],
                     cert, @dsa512, OpenSSL::Digest::DSS1.new)
-    assert_equal(false, crl.verify(@rsa1024))
-    assert_equal(false, crl.verify(@rsa2048))
     assert_equal(false, crl.verify(@dsa256))
     assert_equal(true,  crl.verify(@dsa512))
     crl.version = 0
     assert_equal(false, crl.verify(@dsa512))
+  end
+
+  def test_create_from_pem
+    crl = <<END
+-----BEGIN X509 CRL-----
+MIHkME8CAQEwDQYJKoZIhvcNAQEFBQAwDTELMAkGA1UEAwwCY2EXDTA5MDUyMzEw
+MTkyM1oXDTE0MDUyMjEwMTkyM1qgDjAMMAoGA1UdFAQDAgEAMA0GCSqGSIb3DQEB
+BQUAA4GBAGrGXN03TQdoluA5Xjv64We9EOvmE0EviKMeaZ/n8krEwFhUK7Yq3GVD
+BFrb40cdFX1433buCZHG7Tq7eGv8cG1eO5RasuiedurMQXmVRDTDjGor/58Dk/Wy
+owO/GR8ASm6Fx6AUKEgLAaoaaptpaWtEB+N4uaGvc0LFO9WY+ZMq
+-----END X509 CRL-----
+END
+    crl = OpenSSL::X509::CRL.new(crl)
+    assert_equal(1, crl.version)
+    assert_equal(OpenSSL::X509::Name.parse("/CN=ca").to_der, crl.issuer.to_der)
   end
 end
 

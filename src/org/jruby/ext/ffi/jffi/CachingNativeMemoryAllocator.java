@@ -86,8 +86,8 @@ final class CachingNativeMemoryAllocator {
                 throw getRuntime().newRuntimeError("memory already freed");
             }
 
-            sentinel = null;
             allocation.free();
+            sentinel = null;
         }
 
         public void setAutoRelease(boolean autorelease) {

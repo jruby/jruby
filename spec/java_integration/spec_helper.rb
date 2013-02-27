@@ -13,9 +13,12 @@ end
 # Works like 'should include('str1', 'str2') but for arrays of
 # strings. Reports closest matches using Levenshtein distance when a
 # string is not found instead of dumping a huge inspect string.
-RSpec::Matchers.define :have_strings do |*strings|
+RSpec::Matchers.define :have_strings_or_symbols do |*strings|
   match do |container|
     @included, @missing = [], []
+    if RUBY_VERSION.to_f >= 1.9
+      strings.map!(&:to_sym)
+    end
     strings.flatten.each do |s|
       if container.include?(s)
         @included << s

@@ -44,10 +44,10 @@ if defined?(JRUBY_VERSION)
     BigInteger = java.math.BigInteger unless defined?(BigInteger)
     Cipher = javax.crypto.Cipher unless defined?(Cipher)
 
-    DERInteger = org.bouncycastle.asn1.DERInteger
+    ASN1Integer = org.bouncycastle.asn1.ASN1Integer
     DERSet = org.bouncycastle.asn1.DERSet
     DEROctetString = org.bouncycastle.asn1.DEROctetString 
-    X509Name = org.bouncycastle.asn1.x509.X509Name
+    X500Name = org.bouncycastle.asn1.x500.X500Name
     
     
     MimeEnvelopedString = File::read(File.join(File.dirname(__FILE__), 'java', 'pkcs7_mime_enveloped.message'))

@@ -75,7 +75,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         annotation.visit("frame", true);
         annotation.visit("required", scope.getRequiredArgs());
         annotation.visit("optional", scope.getOptionalArgs());
-        annotation.visit("rest", scope.getRestArg());
+        annotation.visit("rest", scope.getRestArg() >= 0);
         // TODO: reads/writes from frame
         // TODO: information on scoping
         // TODO: visibility?

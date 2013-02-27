@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
@@ -33,13 +33,13 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
@@ -47,7 +47,6 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class RecipInfo {
     private int version;
     private IssuerAndSerialNumber issuerAndSerial;
@@ -64,16 +63,12 @@ public class RecipInfo {
      */
     public void set(X509AuxCertificate cert) throws PKCS7Exception {
         version = 0;
-        try {
-            X509Name issuer = X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(cert.getIssuerX500Principal().getEncoded())).readObject());
-            BigInteger serial = cert.getSerialNumber();
-            issuerAndSerial = new IssuerAndSerialNumber(issuer, serial);
-            String algo = addEncryptionIfNeeded(cert.getPublicKey().getAlgorithm());
-            keyEncAlgor = new AlgorithmIdentifier(ASN1Registry.sym2oid(algo));
-            this.cert = cert;
-        } catch(IOException e) {
-            throw new PKCS7Exception(-1, -1, e);
-        }
+        X500Name issuer = X500Name.getInstance(cert.getIssuerX500Principal().getEncoded());
+        BigInteger serial = cert.getSerialNumber();
+        issuerAndSerial = new IssuerAndSerialNumber(issuer, serial);
+        String algo = addEncryptionIfNeeded(cert.getPublicKey().getAlgorithm());
+        keyEncAlgor = new AlgorithmIdentifier(ASN1Registry.sym2oid(algo));
+        this.cert = cert;
     }
 
     private String addEncryptionIfNeeded(String input) {
@@ -112,7 +107,7 @@ public class RecipInfo {
 
     @Override
     public String toString() {
-        return "#<Recipient version="+version+" issuerAndSerial=["+issuerAndSerial.getName()+","+issuerAndSerial.getCertificateSerialNumber()+"] keyEncAlgor="+ASN1Registry.o2a(keyEncAlgor.getObjectId())+" encKey="+encKey+">";
+        return "#<Recipient version="+version+" issuerAndSerial=["+issuerAndSerial.getName()+","+issuerAndSerial.getCertificateSerialNumber()+"] keyEncAlgor="+ASN1Registry.o2a(keyEncAlgor.getAlgorithm())+" encKey="+encKey+">";
     }
 
     /**
@@ -224,10 +219,10 @@ public class RecipInfo {
      * 
      * EncryptedKey ::= OCTET STRING
      */
-    public static RecipInfo fromASN1(DEREncodable content) {
-        DERSequence sequence = (DERSequence)content;
+    public static RecipInfo fromASN1(ASN1Encodable content) {
+        ASN1Sequence sequence = (ASN1Sequence)content;
         RecipInfo ri = new RecipInfo();
-        ri.setVersion(((DERInteger)sequence.getObjectAt(0)).getValue().intValue());
+        ri.setVersion(((ASN1Integer)sequence.getObjectAt(0)).getValue().intValue());
         ri.setIssuerAndSerial(IssuerAndSerialNumber.getInstance(sequence.getObjectAt(1)));
         ri.setKeyEncAlgor(AlgorithmIdentifier.getInstance(sequence.getObjectAt(2)));
         ri.setEncKey((ASN1OctetString)sequence.getObjectAt(3));
@@ -236,10 +231,10 @@ public class RecipInfo {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new DERInteger(getVersion()));
-        vector.add(issuerAndSerial.toASN1Object()); 
-        vector.add(keyEncAlgor.toASN1Object());
-        vector.add(encKey.toASN1Object());
-        return new DERSequence(vector);
+        vector.add(new ASN1Integer(getVersion()));
+        vector.add(issuerAndSerial.toASN1Primitive()); 
+        vector.add(keyEncAlgor.toASN1Primitive());
+        vector.add(encKey.toASN1Primitive());
+        return new DLSequence(vector);
     }
 }// RecipInfo

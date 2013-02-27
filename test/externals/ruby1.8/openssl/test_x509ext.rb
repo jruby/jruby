@@ -56,25 +56,44 @@ class OpenSSL::TestX509Extension < Test::Unit::TestCase
     cdp = ef.create_extension("crlDistributionPoints", "@crlDistPts")
     assert_equal(false, cdp.critical?)
     assert_equal("crlDistributionPoints", cdp.oid)
-# JRuby does not support @ so far. At least no support would be provided for 1.8 mode.
-unless defined?(JRUBY_VERSION)
+=begin TODO: JRuby-OSSL does not implement some features such as config reference, DER:, etc.
     assert_match(%{URI:http://www\.example\.com/crl}, cdp.value)
     assert_match(
       %r{URI:ldap://ldap\.example\.com/cn=ca\?certificateRevocationList;binary},
       cdp.value)
-end
+=end
 
     cdp = ef.create_extension("crlDistributionPoints", "critical, @crlDistPts")
     assert_equal(true, cdp.critical?)
     assert_equal("crlDistributionPoints", cdp.oid)
-# JRuby does not support @ so far. At least no support would be provided for 1.8 mode.
-unless defined?(JRUBY_VERSION)
+=begin TODO: ditto
     assert_match(%{URI:http://www.example.com/crl}, cdp.value)
     assert_match(
       %r{URI:ldap://ldap.example.com/cn=ca\?certificateRevocationList;binary},
       cdp.value)
-end
+=end
   end
+
+  # JRUBY-3888
+  # Problems with subjectKeyIdentifier with non 20-bytes sha1 digested keys
+  def test_certificate_with_rare_extension
+    cert_file = File.expand_path('../fixture/max.pem', File.dirname(__FILE__))
+    cer = OpenSSL::X509::Certificate.new(File.read(cert_file))
+    exts = Hash.new
+    cer.extensions.each{|ext| exts[ext.oid] = ext.value}
+
+    assert exts["subjectKeyIdentifier"] == "4C:B9:E1:DC:7A:AC:35:CF"
+  end
+
+  def test_extension_from_20_byte_sha1_digests
+    cert_file = File.expand_path('../fixture/common.pem', File.dirname(__FILE__))
+    cer = OpenSSL::X509::Certificate.new(File.read(cert_file))
+    exts = Hash.new
+    cer.extensions.each{|ext| exts[ext.oid] = ext.value}
+
+    assert exts["subjectKeyIdentifier"] == "B4:AC:83:5D:21:FB:D6:8A:56:7E:B2:49:6D:69:BB:E4:6F:D8:5A:AC"
+  end
+
 end
 
 end

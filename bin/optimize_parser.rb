@@ -37,17 +37,34 @@ class PostProcessor
   end
 
   def generate_action_body_methods
-    @out.puts "static ParserState[] states = new ParserState[#{@max_case_number+1}];"
+    if RIPPER
+      @out.puts "static RipperParserState[] states = new RipperParserState[#{@max_case_number+1}];"
+    else
+      @out.puts "static ParserState[] states = new ParserState[#{@max_case_number+1}];"
+    end
     @out.puts "static {";
     @case_bodies.each do |state, code_body| 
-      generate_action_body_method(state, code_body) 
+      if RIPPER
+        generate_ripper_action_body_method(state, code_body) 
+      else
+        generate_action_body_method(state, code_body) 
+      end
     end
     @out.puts "}";
   end
 
+  def generate_ripper_action_body_method(state, code_body)
+    @out.puts "states[#{state}] = new RipperParserState() {"
+    @out.puts "  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {"
+    code_body.each { |line| @out.puts line }
+    @out.puts "    return yyVal;"
+    @out.puts "  }"
+    @out.puts "};"
+  end
+
   def generate_action_body_method(state, code_body)
     @out.puts "states[#{state}] = new ParserState() {"
-    @out.puts "  public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
+    @out.puts "  @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
     code_body.each { |line| @out.puts line }
     @out.puts "    return yyVal;"
     @out.puts "  }"
@@ -101,6 +118,12 @@ class PostProcessor
     @case_bodies[case_number] = body
     true
   end
+end
+
+if ARGV[0] =~ /Ripper/
+  RIPPER = true
+else
+  RIPPER = false
 end
 
 PostProcessor.new(ARGV.shift).translate

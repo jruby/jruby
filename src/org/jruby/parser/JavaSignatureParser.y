@@ -7,7 +7,7 @@
  * with Jay which is another LALR grammar compiler compiler tool.
  *
  * The output this tool generates is subject to our tri-license (GPL,LGPL,
- * and CPL), but this source file itself is released only under the terms
+ * and EPL), but this source file itself is released only under the terms
  * of the GPL.
  *
  * This program is released under the terms of the GPL; see the file

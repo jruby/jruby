@@ -82,7 +82,7 @@ public class ModuleVersionGuardInstr extends Instr {
 
     @Override
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
-        return versionMatches(context, currDynScope, self, temp) ? ipc + 1 : getFailurePathLabel().getTargetPC();
+        return versionMatches(context, currDynScope, self, temp) ? ipc : getFailurePathLabel().getTargetPC();
     }
 
     @Override

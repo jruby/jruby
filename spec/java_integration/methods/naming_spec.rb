@@ -8,7 +8,7 @@ describe "Java static method names" do
   let(:class_methods) { MethodNames.methods }
 
   it "should present as both camel-case and ruby-case" do
-    class_methods.should have_strings("lowercase1",
+    class_methods.should have_strings_or_symbols("lowercase1",
                                       "camelCase1",
                                       "camel_case1",
                                       "camelWithUPPER1",
@@ -16,19 +16,19 @@ describe "Java static method names" do
                                       "camelWITHUpper1",
                                       "CAMELWithUpper1")
 
-    class_methods.should_not have_strings("camel_withupper1",
+    class_methods.should_not have_strings_or_symbols("camel_withupper1",
                                           "camelwith_upper1")
   end
 
   it "keeps all caps in a name together as a single downcased word" do
-    class_methods.should have_strings("value_objs",
+    class_methods.should have_strings_or_symbols("value_objs",
                                       "value_objs=",
                                       "value_objs_here",
                                       "value_objs_here=")
   end
 
   it "should present javabean properties as attribute readers and writers" do
-    class_methods.should have_strings("getValue1",
+    class_methods.should have_strings_or_symbols("getValue1",
                                       "get_value1",
                                       "value1",
                                       "setValue1",
@@ -39,12 +39,12 @@ describe "Java static method names" do
                                       "setValues1",
                                       "set_values1")
 
-    class_methods.should_not have_strings("values1",
+    class_methods.should_not have_strings_or_symbols("values1",
                                           "values1=")
   end
 
   it "should present boolean javabean property accessors as '?' method" do
-    class_methods.should have_strings("isFirst1",
+    class_methods.should have_strings_or_symbols("isFirst1",
                                       "first1",
                                       "first1?",
                                       "isSecond1",
@@ -57,7 +57,7 @@ describe "Java static method names" do
                                       "has_fourth1",
                                       "has_fourth1?")
 
-    class_methods.should_not have_strings("fourth1?")
+    class_methods.should_not have_strings_or_symbols("fourth1?")
   end
 
   it "should not overwrite critical core Ruby methods" do
@@ -69,7 +69,7 @@ describe "Java instance method names" do
   let(:members) { MethodNames.instance_methods }
 
   it "should present as both camel-case and ruby-case" do
-    members.should have_strings("lowercase2",
+    members.should have_strings_or_symbols("lowercase2",
                                 "camelCase2",
                                 "camel_case2",
                                 "camelWithUPPER2",
@@ -77,12 +77,12 @@ describe "Java instance method names" do
                                 "camelWITHUpper2",
                                 "CAMELWithUpper2")
 
-    members.should_not have_strings("camel_withupper2",
+    members.should_not have_strings_or_symbols("camel_withupper2",
                                     "camelwith_upper2")
   end
 
   it "should present javabean properties as attribute readers and writers" do
-    members.should have_strings("getValue2",
+    members.should have_strings_or_symbols("getValue2",
                                 "get_value2",
                                 "value2",
                                 "setValue2",
@@ -102,7 +102,7 @@ describe "Java instance method names" do
                                 "bigO",
                                 "big_o")
 
-    members.should_not have_strings("values2",
+    members.should_not have_strings_or_symbols("values2",
                                     "values2=",
                                     "get_myvalue",
                                     "set_myvalue",
@@ -110,19 +110,19 @@ describe "Java instance method names" do
   end
 
   it "keeps all caps in a name together as a single downcased word" do
-    members.should have_strings("value_obj",
+    members.should have_strings_or_symbols("value_obj",
                                 "value_obj=",
                                 "value_obj_here",
                                 "value_obj_here=")
   end
 
   it "should treat consecutive caps as part of one property name" do
-    members.should have_strings("jconsecutive_caps",
+    members.should have_strings_or_symbols("jconsecutive_caps",
                                 "jconsecutive_caps=")
   end
 
   it "should present boolean javabean property accessors as '?' method" do
-    members.should have_strings("isFirst2",
+    members.should have_strings_or_symbols("isFirst2",
                                 "first2",
                                 "first2?",
                                 "isSecond2",
@@ -135,7 +135,7 @@ describe "Java instance method names" do
                                 "has_fourth2",
                                 "has_fourth2?")
 
-    members.should_not have_strings("fourth2?")
+    members.should_not have_strings_or_symbols("fourth2?")
   end
 
   it "should not overwrite critical core Ruby methods" do
@@ -150,73 +150,73 @@ end
 
 describe "Needed implementation methods for concrete classes" do
   it "should have __id__ method" do
-    ArrayReceiver.new.methods.should have_strings("__id__")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("__id__")
   end
   it "should have __send__ method" do
-    ArrayReceiver.new.methods.should have_strings("__send__")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("__send__")
   end
   it "should have == method" do
-    ArrayReceiver.new.methods.should have_strings("==")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("==")
   end
   it "should have inspect method" do
-    ArrayReceiver.new.methods.should have_strings("inspect")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("inspect")
   end
   it "should have respond_to? method" do
-    ArrayReceiver.new.methods.should have_strings("respond_to?")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("respond_to?")
   end
   it "should have class method" do
-    ArrayReceiver.new.methods.should have_strings("class")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("class")
   end
   it "should have methods method" do
-    ArrayReceiver.new.methods.should have_strings("methods")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("methods")
   end
   it "should have send method" do
-    ArrayReceiver.new.methods.should have_strings("send")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("send")
   end
   it "should have equal? method" do
-    ArrayReceiver.new.methods.should have_strings("equal?")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("equal?")
   end
   it "should have eql? method" do
-    ArrayReceiver.new.methods.should have_strings("eql?")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("eql?")
   end
   it "should have to_s method" do
-    ArrayReceiver.new.methods.should have_strings("to_s")
+    ArrayReceiver.new.methods.should have_strings_or_symbols("to_s")
   end
 end
 
 describe "Needed implementation methods for interfaces" do
   it "should have __id__ method" do
-    BeanLikeInterface.new.methods.should have_strings("__id__")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("__id__")
   end
   it "should have __send__ method" do
-    BeanLikeInterface.new.methods.should have_strings("__send__")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("__send__")
   end
   it "should have == method" do
-    BeanLikeInterface.new.methods.should have_strings("==")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("==")
   end
   it "should have inspect method" do
-    BeanLikeInterface.new.methods.should have_strings("inspect")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("inspect")
   end
   it "should have respond_to? method" do
-    BeanLikeInterface.new.methods.should have_strings("respond_to?")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("respond_to?")
   end
   it "should have class method" do
-    BeanLikeInterface.new.methods.should have_strings("class")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("class")
   end
   it "should have methods method" do
-    BeanLikeInterface.new.methods.should have_strings("methods")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("methods")
   end
   it "should have send method" do
-    BeanLikeInterface.new.methods.should have_strings("send")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("send")
   end
   it "should have equal? method" do
-    BeanLikeInterface.new.methods.should have_strings("equal?")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("equal?")
   end
   it "should have eql? method" do
-    BeanLikeInterface.new.methods.should have_strings("eql?")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("eql?")
   end
   it "should have to_s method" do
-    BeanLikeInterface.new.methods.should have_strings("to_s")
+    BeanLikeInterface.new.methods.should have_strings_or_symbols("to_s")
   end
 
   it "should be able to access Java methods of core Ruby Methods via __method" do

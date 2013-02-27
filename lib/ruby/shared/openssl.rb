@@ -30,4 +30,5 @@ rescue LoadError
   require 'openssl/ssl-internal'
   require 'openssl/x509-internal'
   require 'openssl/pkcs12'
+  require 'krypt/ossl'
 end

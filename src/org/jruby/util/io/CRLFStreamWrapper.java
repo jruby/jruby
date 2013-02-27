@@ -9,6 +9,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 
 /**
@@ -17,12 +18,15 @@ import org.jruby.util.ByteList;
  */
 public class CRLFStreamWrapper implements Stream {
     private final Stream stream;
+    private final boolean isWindows;
     private boolean binmode = false;
     private static final int CR = 13;
     private static final int LF = 10;
 
     public CRLFStreamWrapper(Stream stream) {
         this.stream = stream;
+        // To differentiate between textmode and windows in how we handle crlf.
+        this.isWindows = Platform.IS_WINDOWS;
     }
 
     public ChannelDescriptor getDescriptor() {
@@ -117,7 +121,9 @@ public class CRLFStreamWrapper implements Stream {
     }
 
     public int fwrite(ByteList string) throws IOException, BadDescriptorException {
-        return stream.fwrite(convertLFToCRLF(string));
+        if (isWindows) return stream.fwrite(convertLFToCRLF(string));
+        
+        return stream.fwrite(convertCRLFToLF(string));
     }
 
     public int fgetc() throws IOException, BadDescriptorException, EOFException {
@@ -291,23 +297,37 @@ public class CRLFStreamWrapper implements Stream {
         return LFBYTES;
     }
     
-    private ByteList convertLFToCRLF(ByteList input) {
-        if (input == null || binmode) return input;
+    private ByteList convertLFToCRLF(ByteList bs) {
+        if (bs == null || binmode) return bs;
 
-        byte[] crBytes = crBytes(input.getEncoding());
-        byte[] lfBytes = lfBytes(input.getEncoding());
+        byte[] crBytes = crBytes(bs.getEncoding());
+        byte[] lfBytes = lfBytes(bs.getEncoding());
+        
+        int p = bs.getBegin();
+        int end = p + bs.getRealSize();
+        byte[]bytes = bs.getUnsafeBytes();
+        Encoding enc = bs.getEncoding();
 
         ByteList result = new ByteList();
-        int length = input.lengthEnc();
-        for (int i = 0; i < length; i++) {
-            int b = input.getEnc(i);
-            if (b == LF) {
+        int lastWrittenIndex = p;
+        while (p < end) {
+            int c = enc.mbcToCode(bytes, p, end);
+            int cLength = enc.codeToMbcLength(c);
+
+            if (c == LF) {
+                result.append(bytes, lastWrittenIndex, p - lastWrittenIndex);
                 result.append(crBytes);
                 result.append(lfBytes);
-            } else {
-                result.append(b);
+                lastWrittenIndex = p + cLength;
             }
+
+            p += cLength;
         }
+        
+        if (lastWrittenIndex < end) {
+            result.append(bytes, lastWrittenIndex, end - lastWrittenIndex);
+        }
+
         return result;
     }
 

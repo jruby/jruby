@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
@@ -41,8 +41,9 @@ import java.util.Set;
 import java.util.HashSet;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 
 /**
  * c: X509_STORE_CTX
@@ -970,9 +971,9 @@ public class StoreContext {
             }
 
             if(x.getExtensionValue("1.3.6.1.5.5.7.1.14") != null) {
-                DERSequence pci = (DERSequence)new ASN1InputStream(x.getExtensionValue("1.3.6.1.5.5.7.1.14")).readObject();
-                if(pci.size() > 0 && pci.getObjectAt(0) instanceof DERInteger) {
-                    int pcpathlen = ((DERInteger)pci.getObjectAt(0)).getValue().intValue();
+                ASN1Sequence pci = (ASN1Sequence)new ASN1InputStream(x.getExtensionValue("1.3.6.1.5.5.7.1.14")).readObject();
+                if(pci.size() > 0 && pci.getObjectAt(0) instanceof ASN1Integer) {
+                    int pcpathlen = ((ASN1Integer)pci.getObjectAt(0)).getValue().intValue();
                     if(i > pcpathlen) {
                         error = X509Utils.V_ERR_PROXY_PATH_LENGTH_EXCEEDED;
                         errorDepth = i;

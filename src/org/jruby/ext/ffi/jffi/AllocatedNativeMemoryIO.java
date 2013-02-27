@@ -2,13 +2,13 @@ package org.jruby.ext.ffi.jffi;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.util.WeakReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
     /** Keeps strong references to the memory bucket until cleanup */
@@ -52,16 +52,16 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         try {
             /*
             * Instead of using a WeakReference per memory allocation to free the native memory, memory allocations
-            * are grouped together into a bucket with a reference to a common object which has a WeakReference.
+            * are grouped together into a bucket with a reference to a common object which is tracked via a PhantomReference.
             *
             * When all the MemoryIO instances are no longer referenced, the common object can be garbage collected
-            * and its WeakReference en-queued, and then the group of memory allocations will be freed in one hit.
+            * and its PhantomReference en-queued, and then the group of memory allocations will be freed in one hit.
             *
             * This reduces the overhead of automatically freed native memory allocations by about 70%
             */
             Reference<AllocationGroup> allocationGroupReference = currentBucket.get();
             AllocationGroup allocationGroup = allocationGroupReference != null ? allocationGroupReference.get() : null;
-            Object sentinel = allocationGroup != null ? allocationGroup.get() : null;
+            Object sentinel = allocationGroup != null ? allocationGroup.sentinel() : null;
 
             if (sentinel == null || !allocationGroup.canAccept(size)) {
                 referenceSet.put(allocationGroup = new AllocationGroup(sentinel = new Object()), Boolean.TRUE);
@@ -106,13 +106,19 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     /**
      * Holder for a group of memory allocations.
      */
-    private static final class AllocationGroup extends WeakReferenceReaper<Object> implements Runnable {
+    private static final class AllocationGroup extends PhantomReferenceReaper<Object> implements Runnable {
         public static final int MAX_BYTES_PER_BUCKET = 4096;
+        private final WeakReference<Object> weakref;
         private volatile MemoryAllocation head = null;
         private long bytesUsed = 0;
         
         AllocationGroup(Object sentinel) {
             super(sentinel);
+            this.weakref = new WeakReference<Object>(sentinel);
+        }
+        
+        Object sentinel() {
+            return weakref.get();
         }
 
         void add(MemoryAllocation m, int size) {

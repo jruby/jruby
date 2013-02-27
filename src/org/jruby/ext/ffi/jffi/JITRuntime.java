@@ -564,7 +564,12 @@ public final class JITRuntime {
     public static MemoryIO convertToPointerMemoryIO(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {
         DynamicMethod method = getConversionMethod(parameter, callSite);
         IRubyObject ptr = method.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
-        return getPointerMemoryIO(ptr);
+        if (ptr instanceof AbstractMemory) {
+            return ((AbstractMemory) ptr).getMemoryIO();
+        }
+
+        throw parameter.getRuntime().newTypeError(parameter.getMetaClass() + "#" + callSite.getMethodName() 
+                + " should return " + context.runtime.getFFI().pointerClass);
     }
 
     public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {

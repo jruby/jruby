@@ -489,6 +489,8 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(["-we", "1.times do\n  a=1\nend"], "", [], [], feature3446)
     assert_in_out_err(["-we", "def foo\n  1.times do\n    a=1\n  end\nend"], "", [], ["-e:3: warning: assigned but unused variable - a"], feature3446)
     assert_in_out_err(["-we", "def foo\n""  1.times do |a| end\n""end"], "", [], [])
+    bug7408 = '[ruby-core:49659]'
+    assert_in_out_err(["-we", "def foo\n  a=1\n :a\nend"], "", [], ["-e:2: warning: assigned but unused variable - a"], bug7408)
   end
 
   def test_shadowing_variable
@@ -552,5 +554,15 @@ class TestRubyOptions < Test::Unit::TestCase
       File.unlink(File.join(dir, a))
       assert_in_out_err(["-C", dir, a], "", [], /LoadError/, bug3851)
     end
+  end
+
+  def test_pflag_gsub
+    bug7157 = '[ruby-core:47967]'
+    assert_in_out_err(['-p', '-e', 'gsub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
+  end
+
+  def test_pflag_sub
+    bug7157 = '[ruby-core:47967]'
+    assert_in_out_err(['-p', '-e', 'sub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
   end
 end

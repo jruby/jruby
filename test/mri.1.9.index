@@ -48,6 +48,7 @@ externals/ruby1.9/json/test_json_addition
 externals/ruby1.9/json/test_json_encoding
 externals/ruby1.9/json/test_json_fixtures
 externals/ruby1.9/json/test_json_generate
+externals/ruby1.9/json/test_json_generic_object
 # Depends on some rails lib?
 #externals/ruby1.9/json/test_json_rails
 externals/ruby1.9/json/test_json_string_matching
@@ -194,6 +195,7 @@ externals/ruby1.9/ruby/test_exception
 externals/ruby1.9/ruby/test_file
 externals/ruby1.9/ruby/test_file_exhaustive
 externals/ruby1.9/ruby/test_fixnum
+externals/ruby1.9/ruby/test_flip
 externals/ruby1.9/ruby/test_float
 externals/ruby1.9/ruby/test_fnmatch
 externals/ruby1.9/ruby/test_gc

@@ -29,6 +29,7 @@ public class ThreadFiber extends Fiber {
             public void run() {
                 // initialize and yield back to launcher
                 ThreadContext context = runtime.getCurrentContext();
+                context.setThread(parent);
                 context.setFiber(ThreadFiber.this);
                 IRubyObject result = yield(context, context.nil);
 

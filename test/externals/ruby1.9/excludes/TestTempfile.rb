@@ -1,4 +1,3 @@
-exclude :test_binmode, "needs investigation"
 exclude :test_close_bang_does_not_unlink_if_already_unlinked, "needs investigation"
 exclude :test_close_bang_works, "needs investigation"
 exclude :test_close_with_unlink_now_true_does_not_unlink_if_already_unlinked, "needs investigation"

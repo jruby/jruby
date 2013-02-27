@@ -40,7 +40,7 @@ public class BEQInstr extends BranchInstr {
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
         Object value1 = getArg1().retrieve(context, self, currDynScope, temp);
         Object value2 = getArg2().retrieve(context, self, currDynScope, temp);
-        return ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue() ? getJumpTarget().getTargetPC() : ipc+1;
+        return ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue() ? getJumpTarget().getTargetPC() : ipc;
     }
 
     @Override

@@ -19,6 +19,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 final class AsmClassBuilder {
     public static final boolean DEBUG = false || Options.FFI_COMPILE_DUMP.load() || Options.COMPILE_DUMP.load();
+    public static final boolean REIFY = Options.FFI_COMPILE_REIFY.load();
     private static final AtomicLong nextClassID = new AtomicLong(0);
     private final JITSignature signature;
     private final ClassWriter classWriter;
@@ -26,10 +27,12 @@ final class AsmClassBuilder {
     private final String className;
     private final Class parentClass;
     private final JITMethodGenerator generator;
+    private final String methodName;
     
-    AsmClassBuilder(JITMethodGenerator generator, JITSignature signature) {
+    AsmClassBuilder(JITMethodGenerator generator, JITSignature signature, String methodName) {
         this.generator = generator;
         this.signature = signature;
+        this.methodName = methodName;
         
         switch (signature.getParameterCount()) {
             case 0:
@@ -47,7 +50,8 @@ final class AsmClassBuilder {
                         + signature.getParameterCount()  + " not supported");
         }
         
-        className = p(NativeInvoker.class) + "$ffi$" + nextClassID.getAndIncrement();
+        className = p(NativeInvoker.class) + "$ffi$" + nextClassID.getAndIncrement()
+            + (REIFY ? ("$" + methodName) : "");
         
         classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         classVisitor = DEBUG ? newCheckClassAdapter(classWriter) : classWriter;

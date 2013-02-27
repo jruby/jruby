@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -19,11 +19,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
@@ -48,22 +48,23 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.ext.openssl.x509store.Store;
 import org.jruby.ext.openssl.x509store.StoreContext;
@@ -76,7 +77,6 @@ import org.jruby.ext.openssl.x509store.X509Utils;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-@SuppressWarnings("deprecation")
 public class PKCS7 {
     // OpenSSL behavior: PKCS#7 ObjectId for "ITU-T" + "0"
     private static final String EMPTY_PKCS7_OID = "0.0";
@@ -102,8 +102,14 @@ public class PKCS7 {
         return isSigned() && getDetached() != 0;
     }
 
-    private void initiateWith(Integer nid, DEREncodable content) throws PKCS7Exception {
+    private void initiateWith(Integer nid, ASN1Encodable content) throws PKCS7Exception {
         this.data = PKCS7Data.fromASN1(nid, content);
+    }
+
+    public static PKCS7 newEmpty() {
+        PKCS7 p7 = new PKCS7();
+        p7.data = new PKCS7DataData();
+        return p7;
     }
 
     /**
@@ -113,7 +119,7 @@ public class PKCS7 {
      *
      * ContentType ::= OBJECT IDENTIFIER
      */
-    public static PKCS7 fromASN1(DEREncodable obj) throws PKCS7Exception {
+    public static PKCS7 fromASN1(ASN1Encodable obj) throws PKCS7Exception {
         PKCS7 p7 = new PKCS7();
 
         int size = ((ASN1Sequence) obj).size();
@@ -121,17 +127,17 @@ public class PKCS7 {
             return p7;
         }
 
-        DERObjectIdentifier contentType = (DERObjectIdentifier) (((ASN1Sequence) obj).getObjectAt(0));
+        ASN1ObjectIdentifier contentType = (ASN1ObjectIdentifier) (((ASN1Sequence) obj).getObjectAt(0));
         if (EMPTY_PKCS7_OID.equals(contentType.getId())) {
             // OpenSSL behavior
             p7.setType(ASN1Registry.NID_undef);
         } else {
             Integer nid = ASN1Registry.obj2nid(contentType);
 
-            DEREncodable content = size == 1 ? (DEREncodable) null : ((ASN1Sequence) obj).getObjectAt(1);
+            ASN1Encodable content = size == 1 ? (ASN1Encodable) null : ((ASN1Sequence) obj).getObjectAt(1);
 
-            if (content != null && content instanceof DERTaggedObject && ((DERTaggedObject) content).getTagNo() == 0) {
-                content = ((DERTaggedObject) content).getObject();
+            if (content != null && content instanceof ASN1TaggedObject && ((ASN1TaggedObject) content).getTagNo() == 0) {
+                content = ((ASN1TaggedObject) content).getObject();
             }
             p7.initiateWith(nid, content);
         }
@@ -148,10 +154,10 @@ public class PKCS7 {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        DERObjectIdentifier contentType;
+        ASN1ObjectIdentifier contentType;
         if (data == null) {
             // OpenSSL behavior
-            contentType = new DERObjectIdentifier(EMPTY_PKCS7_OID);
+            contentType = new ASN1ObjectIdentifier(EMPTY_PKCS7_OID);
         } else {
             contentType = ASN1Registry.nid2obj(getType());
         }
@@ -159,14 +165,14 @@ public class PKCS7 {
         if (data != null) {
             vector.add(new DERTaggedObject(0, data.asASN1()));
         }
-        return new DERSequence(vector);
+        return new DLSequence(vector);
     }
 
     /* c: i2d_PKCS7
      *
      */
     public byte[] toASN1() throws IOException {
-        return asASN1().getEncoded();
+        return asASN1().toASN1Primitive().getEncoded();
     }
 
     /* c: PKCS7_add_signature
@@ -182,7 +188,7 @@ public class PKCS7 {
     /* c: X509_find_by_issuer_and_serial
      *
      */
-    public static X509AuxCertificate findByIssuerAndSerial(Collection<X509AuxCertificate> certs, X509Name issuer, BigInteger serial) {
+    public static X509AuxCertificate findByIssuerAndSerial(Collection<X509AuxCertificate> certs, X500Name issuer, BigInteger serial) {
         Name name = new Name(issuer);
         for(X509AuxCertificate cert : certs) {
             if(name.isEqual(cert.getIssuerX500Principal()) && serial.equals(cert.getSerialNumber())) {
@@ -242,7 +248,7 @@ public class PKCS7 {
             throw new PKCS7Exception(F_PKCS7_SIGNATUREVERIFY, R_WRONG_PKCS7_TYPE);
         }
 
-        int md_type = ASN1Registry.obj2nid(si.getDigestAlgorithm().getObjectId()).intValue();
+        int md_type = ASN1Registry.obj2nid(si.getDigestAlgorithm().getAlgorithm()).intValue();
         BIO btmp = bio;
         MessageDigest mdc = null;
 
@@ -426,11 +432,11 @@ public class PKCS7 {
             if((flags & NOSMIMECAP) == 0) {
                 ASN1EncodableVector smcap = new ASN1EncodableVector();
                 smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_ede3_cbc)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new DERInteger(128)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new DERInteger(64)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new DERInteger(40)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(128)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(64)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(40)));
                 smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_cbc)));
-                si.addSignedAttribute(ASN1Registry.NID_SMIMECapabilities, new DERSequence(smcap));
+                si.addSignedAttribute(ASN1Registry.NID_SMIMECapabilities, new DLSequence(smcap));
             }
         }
 
@@ -768,7 +774,7 @@ public class PKCS7 {
                 }
             }
 
-            DEREncodable params = encAlg.getParameters();
+            ASN1Encodable params = encAlg.getParameters();
             try {
                 String algo = org.jruby.ext.openssl.Cipher.Algorithm.getAlgorithmBase(evpCipher);
                 if(params != null && params instanceof ASN1OctetString) {
@@ -895,7 +901,7 @@ public class PKCS7 {
                 throw new PKCS7Exception(F_PKCS7_DATAINIT, R_ERROR_SETTING_CIPHER, e);
             }
 
-            DERObjectIdentifier encAlgo = ASN1Registry.sym2oid(evpCipher.getOsslName());
+            ASN1ObjectIdentifier encAlgo = ASN1Registry.sym2oid(evpCipher.getOsslName());
             if (encAlgo == null) {
                 throw new PKCS7Exception(F_PKCS7_DATAINIT, R_CIPHER_HAS_NO_OBJECT_IDENTIFIER);
             }
@@ -987,7 +993,7 @@ public class PKCS7 {
                 if(si.getPkey() == null) {
                     continue;
                 }
-                int j = ASN1Registry.obj2nid(si.getDigestAlgorithm().getObjectId());
+                int j = ASN1Registry.obj2nid(si.getDigestAlgorithm().getAlgorithm());
                 btmp = bio;
                 MessageDigest[] _mdc = new MessageDigest[] {mdc};
                 btmp = findDigest(_mdc, btmp, j);
@@ -1035,7 +1041,7 @@ public class PKCS7 {
                 }
             }
         } else if(i == ASN1Registry.NID_pkcs7_digest) {
-            int nid = ASN1Registry.obj2nid(getDigest().getMd().getObjectId());
+            int nid = ASN1Registry.obj2nid(getDigest().getMd().getAlgorithm());
             MessageDigest[] _mdc = new MessageDigest[] {mdc};
             bio = findDigest(_mdc, bio, nid);
             mdc = _mdc[0];

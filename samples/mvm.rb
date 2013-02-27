@@ -1,8 +1,11 @@
 require 'jruby/vm'
 
 # create the VMs
-vm1 = JRuby::VM.spawn(['-e' "load 'samples/mvm_subvm.rb'"])
-vm2 = JRuby::VM.spawn(['-e' "load 'samples/mvm_subvm.rb'"])
+vm1 = JRuby::VM.spawn("-e", "load 'samples/mvm_subvm.rb'")
+vm2 = JRuby::VM.spawn("-e", "load 'samples/mvm_subvm.rb'")
+
+vm1.start
+vm2.start
 
 # connect them to parent
 vm1 << JRuby::VM_ID

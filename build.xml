@@ -777,7 +777,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
         </or>
     </condition>
 
-    <target name="install-jruby-launcher-gem" depends="jar" unless="jruby-launcher.gem.installed">
+    <target name="install-jruby-launcher-gem" depends="install-dev-gems" unless="jruby-launcher.gem.installed">
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
             <classpath refid="build.classpath"/>
             <classpath path="${jruby.classes.dir}"/>

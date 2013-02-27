@@ -47,7 +47,7 @@ file "lib/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar" => :update
 
 file GEM_FILE => [GEM_SPEC_FILE, :update] do
   puts "Generating #{GEM_FILE}"
-  `gem build #{GEM_SPEC_FILE}`
+  sh "../../../../bin/jruby -S gem build #{GEM_SPEC_FILE}"
   FileUtils.mv "jruby-jars-#{JRUBY_SRC_VERSION}.gem", GEM_FILE
 end
 task :gem => GEM_FILE

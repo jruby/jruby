@@ -1,6 +1,16 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "A Java primitive Array of type" do
+  if {}.respond_to? :key
+    def key(hash, value)
+      hash.key(value)
+    end
+  else
+    def key(hash, value)
+      hash.index(value)
+    end
+  end
+    
   def test_equal(a, b)
     b.should == a
   end
@@ -136,13 +146,13 @@ describe "A Java primitive Array of type" do
     test_equal(nil, h[k1])
 
     h.put(1, 2); h.put(3, 4);
-    test_equal(1, h.index(2))
-    test_equal(nil, h.index(10))
+    test_equal(1, key(h, 2))
+    test_equal(nil, key(h, 10))
     test_equal(nil, h.default_proc)
     h.default = :hello
     test_equal(nil, h.default_proc)
-    test_equal(1, h.index(2))
-    test_equal(nil, h.index(10))
+    test_equal(1, key(h, 2))
+    test_equal(nil, key(h, 10))
 
 # java.util.HashMap can't have a block as an arg for its constructor
 #h = Hash.new {|h,k| h[k] = k.to_i*10 }
@@ -202,46 +212,46 @@ describe "A Java primitive Array of type" do
 ###
 
 # Test hash coercion
-    if RUBY_VERSION =~ /1\.9/
-      class MyHash
-        def initialize(hash)
-          @hash = hash
-        end
-
-        def to_hash
-          @hash
-        end
-      end
-
-      class SubHash < Hash
-      end
-
-      x = java.util.HashMap.new
-      x.put(:a, 1); x.put(:b, 2)
-      x.update(MyHash.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.update(MyHash.new(4)) }
-
-      x.put(:a, 1); x.put(:b, 2)
-      sub2 = SubHash.new()
-      sub2[:a] = 10
-      sub2[:b] = 20
-      x.update(MyHash.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(MyHash.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.replace(MyHash.new(4)) }
-
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(MyHash.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-    end
+#    if RUBY_VERSION =~ /1\.9/
+#      class MyHash
+#        def initialize(hash)
+#          @hash = hash
+#        end
+#
+#        def to_hash
+#          @hash
+#        end
+#      end
+#
+#      class SubHash < Hash
+#      end
+#
+#      x = java.util.HashMap.new
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.update(MyHash.new({:a => 10, :b => 20}))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#      test_exception(TypeError) { x.update(MyHash.new(4)) }
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      sub2 = SubHash.new()
+#      sub2[:a] = 10
+#      sub2[:b] = 20
+#      x.update(MyHash.new(sub2))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.replace(MyHash.new({:a => 10, :b => 20}))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#      test_exception(TypeError) { x.replace(MyHash.new(4)) }
+#
+#      x.put(:a, 1); x.put(:b, 2)
+#      x.replace(MyHash.new(sub2))
+#      test_equal(10, x[:a])
+#      test_equal(20, x[:b])
+#    end
 
     class H1 < java.util.HashMap
     end

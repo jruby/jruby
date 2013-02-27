@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,11 +31,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
@@ -1166,7 +1166,16 @@ public final class Ruby {
         initBuiltins();
 
         // load JRuby internals, which loads Java support
-        if (!RubyInstanceConfig.DEBUG_PARSER) {
+        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
+        boolean reflectionWorks;
+        try {
+            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
+            reflectionWorks = true;
+        } catch (Exception e) {
+            reflectionWorks = false;
+        }
+        
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
             loadService.require("jruby");
         }
 
@@ -1605,6 +1614,7 @@ public final class Ruby {
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.weakref.WeakRefLibrary");
         addLazyBuiltin("delegate_internal.jar", "delegate_internal", "org.jruby.ext.delegate.DelegateLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.timeout.Timeout");
+        addLazyBuiltin("ripper.jar", "ripper", "org.jruby.ext.ripper.RipperLibrary");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.ext.jruby.JRubySerializationLibrary");
@@ -1642,8 +1652,6 @@ public final class Ruby {
                 runtime.getLoadService().require("jruby/win32ole/stub");
             }
         });
-        
-        RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
     
     private void initRubyKernel() {
@@ -3423,11 +3431,18 @@ public final class Ruby {
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
+		return newErrnoEADDRFromBindException(be, null);
+	}
+
+    public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
         if (msg == null) {
             msg = "bind";
         } else {
             msg = "bind - " + msg;
+        }
+        if (contextMessage != null) {
+            msg = msg + contextMessage;
         }
         // This is ugly, but what can we do, Java provides the same BindingException
         // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
@@ -3482,7 +3497,14 @@ public final class Ruby {
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null);
     }
+    
+    // This name sucks and should be replaced by newNameErrorfor 9k.
+    public RaiseException newNameErrorObject(String message, IRubyObject name) {
+        RubyException error = new RubyNameError(this, getNameError(), message, name);
 
+        return new RaiseException(error, false);
+    }
+    
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
     }
@@ -4570,8 +4592,8 @@ public final class Ruby {
     private final AtomicInteger warningCount = new AtomicInteger();
     
     private Invalidator 
-            fixnumInvalidator = OptoFactory.newConstantInvalidator(),
-            floatInvalidator = OptoFactory.newConstantInvalidator();
+            fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
+            floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
     
     private volatile boolean booting = true;
