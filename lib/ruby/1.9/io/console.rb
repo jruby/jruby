@@ -124,7 +124,9 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       end
 
       def getch(*)
-        getc
+        raw do
+          getc
+        end
       end
 
       def winsize
