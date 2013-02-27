@@ -201,21 +201,14 @@ class TestArgf < Test::Unit::TestCase
     t = make_tempfile
 
     assert_in_out_err(["-", t.path], <<-INPUT) do |r, e|
-      ARGF.inplace_mode = '/\\\\'
+      ARGF.inplace_mode = '/\\\\:'
       while line = ARGF.gets
         puts line.chomp + '.new'
       end
     INPUT
-      if no_safe_rename
-        assert_equal([], e)
-        assert_equal([], r)
-        assert_equal("foo.new\nbar.new\nbaz.new\n", File.read(t.path))
-        File.unlink(t.path + ".~~~") rescue nil
-      else
-        assert_match(/Can't rename .* to .*: .*. skipping file/, e.first) #'
-        assert_equal([], r)
-        assert_equal("foo\nbar\nbaz\n", File.read(t.path))
-      end
+      assert_match(/Can't rename .* to .*: .*. skipping file/, e.first) #'
+      assert_equal([], r)
+      assert_equal("foo\nbar\nbaz\n", File.read(t.path))
     end
   end
 
@@ -762,5 +755,29 @@ class TestArgf < Test::Unit::TestCase
   def test_readlines_twice
     bug5952 = '[ruby-dev:45160]'
     assert_ruby_status(["-e", "2.times {STDIN.tty?; readlines}"], "", bug5952)
+  end
+
+  def test_bytes
+    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+      print Marshal.dump(ARGF.bytes.to_a)
+    SRC
+      assert_equal([49, 10, 50, 10, 51, 10, 52, 10, 53, 10, 54, 10], Marshal.load(f.read))
+    end
+  end
+
+  def test_chars
+    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+      print [Marshal.dump(ARGF.chars.to_a)].pack('m')
+    SRC
+    assert_equal(["1", "\n", "2", "\n", "3", "\n", "4", "\n", "5", "\n", "6", "\n"], Marshal.load(f.read.unpack('m').first))
+    end
+  end
+
+  def test_codepoints
+    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+      print Marshal.dump(ARGF.codepoints.to_a)
+    SRC
+      assert_equal([49, 10, 50, 10, 51, 10, 52, 10, 53, 10, 54, 10], Marshal.load(f.read))
+    end
   end
 end

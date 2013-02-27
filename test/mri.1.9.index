@@ -195,6 +195,7 @@ externals/ruby1.9/ruby/test_exception
 externals/ruby1.9/ruby/test_file
 externals/ruby1.9/ruby/test_file_exhaustive
 externals/ruby1.9/ruby/test_fixnum
+externals/ruby1.9/ruby/test_flip
 externals/ruby1.9/ruby/test_float
 externals/ruby1.9/ruby/test_fnmatch
 externals/ruby1.9/ruby/test_gc
