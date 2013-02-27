@@ -1,5 +1,7 @@
 # JRuby -  A Java implementation of the Ruby language
 
+[![Build Status](https://travis-ci.org/jruby/jruby.png)](https://travis-ci.org/jruby/jruby)
+
 Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
  Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
  Benoit Cerrina, Wyss Clemens, David Corbin, Thomas E Enebo, Robert Feldt,
@@ -7,7 +9,7 @@ Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
  Kelvin Liu, Alan Moore, Akinori Musha, Charles Nutter, Takashi Okamoto
  Jan Arne Petersen, Tobias Reif, David Saff, Ed Sinjiashvili, Daiki Ueno
  Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota, 
- Ola Bini, Nick Sieger, Vladimir Sizikov, and many gracious contributions
+ Ola Bini, Nick Sieger, Vladimir Sizikov, and many gracious contributors
  from the community.
 
 Project Contact: Thomas E Enebo <enebo@acm.org>
@@ -44,7 +46,7 @@ To compile, just type:
 
     ant
 
-This will create a `jruby.jar` file in the projects `lib` directory.
+This will create a `jruby.jar` file in the project `lib` directory.
 Add `bin` to your `$PATH`, and invoke `jruby`.
 
 ## Testing
