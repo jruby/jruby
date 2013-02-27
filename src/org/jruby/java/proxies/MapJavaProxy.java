@@ -262,6 +262,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
+        if (context.runtime.is1_9()) return getOrCreateRubyHashMap().inspect19(context);
+
         return getOrCreateRubyHashMap().inspect(context);
     }
 

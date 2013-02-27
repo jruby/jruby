@@ -49,6 +49,8 @@ import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -749,23 +751,12 @@ public class RubyHash extends RubyObject implements Map {
         final boolean[] firstEntry = new boolean[1];
 
         firstEntry[0] = true;
-        final boolean is19 = context.runtime.is1_9();
         visitAll(new Visitor() {
+            @Override
             public void visit(IRubyObject key, IRubyObject value) {
                 if (!firstEntry[0]) str.cat((byte)',').cat((byte)' ');
 
-                RubyString inspectedKey = inspect(context, key);
-                RubyString inspectedValue = inspect(context, value);
-
-                if (is19) {
-                    str.cat19(inspectedKey);
-                    str.cat((byte)'=').cat((byte)'>');
-                    str.cat19(inspectedValue);
-                } else {
-                    str.cat(inspectedKey);
-                    str.cat((byte)'=').cat((byte)'>');
-                    str.cat(inspectedValue);
-                }
+                str.cat(inspect(context, key)).cat((byte)'=').cat((byte)'>').cat(inspect(context, value));
                 
                 firstEntry[0] = false;
             }
@@ -773,11 +764,31 @@ public class RubyHash extends RubyObject implements Map {
         str.cat((byte)'}');
         return str;
     }
+    
+    private IRubyObject inspectHash19(final ThreadContext context) {
+        final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, ASCIIEncoding.INSTANCE);
+        str.cat((byte)'{');
+        final boolean[] firstEntry = new boolean[1];
+
+        firstEntry[0] = true;
+        visitAll(new Visitor() {
+            @Override
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (!firstEntry[0]) str.cat((byte)',').cat((byte)' ');
+
+                str.cat19(inspect(context, key)).cat((byte)'=').cat((byte)'>').cat19(inspect(context, value));
+                
+                firstEntry[0] = false;
+            }
+        });
+        str.cat((byte)'}');
+        return str;
+    }    
 
     /** rb_hash_inspect
      *
      */
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", compat = RUBY1_8)
     public IRubyObject inspect(ThreadContext context) {
         if (size == 0) return getRuntime().newString("{}");
         if (getRuntime().isInspecting(this)) return getRuntime().newString("{...}");
@@ -785,6 +796,19 @@ public class RubyHash extends RubyObject implements Map {
         try {
             getRuntime().registerInspecting(this);
             return inspectHash(context);
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
+    }
+
+    @JRubyMethod(name = "inspect", compat = RUBY1_9)
+    public IRubyObject inspect19(ThreadContext context) {
+        if (size == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
+        if (getRuntime().isInspecting(this)) return RubyString.newUSASCIIString(context.runtime, "{...}");
+
+        try {
+            getRuntime().registerInspecting(this);
+            return inspectHash19(context);
         } finally {
             getRuntime().unregisterInspecting(this);
         }
@@ -846,7 +870,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "to_s", compat = RUBY1_9)
     public IRubyObject to_s19(ThreadContext context) {
-        return inspect(context);
+        return inspect19(context);
     }
 
     /** rb_hash_rehash
