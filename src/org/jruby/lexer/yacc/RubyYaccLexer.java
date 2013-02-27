@@ -182,7 +182,7 @@ public class RubyYaccLexer {
             src.unread(b1);
         }
     }
-    
+   
     public enum Keyword {
         END ("end", Tokens.kEND, Tokens.kEND, LexState.EXPR_END),
         ELSE ("else", Tokens.kELSE, Tokens.kELSE, LexState.EXPR_BEG),
@@ -2065,7 +2065,19 @@ public class RubyYaccLexer {
         } else if (c == '\\') {
             if (!isOneEight && src.peek('u')) {
                 src.read(); // Eat 'u'
-                c = readUTFEscape(null /* Not String literal so no buffer setting */, false, false);
+                ByteList oneCharBL = new ByteList(2);
+                c = readUTFEscape(oneCharBL, false, false);
+                
+                if (c >= 0x80) {
+                    tokenAddMBC(c, oneCharBL);
+                } else {
+                    oneCharBL.append(c);
+                }
+                
+                setState(LexState.EXPR_END);
+                yaccValue = new StrNode(getPosition(), oneCharBL);
+                
+                return Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
             } else {
                 c = readEscape();
             }
@@ -2075,13 +2087,13 @@ public class RubyYaccLexer {
         if (isOneEight) {
             c &= 0xff;
             yaccValue = new FixnumNode(getPosition(), c);
-        } else {
-            // TODO: this isn't handling multibyte yet
-            ByteList oneCharBL = new ByteList(1);
-            oneCharBL.append(c);
-            yaccValue = new StrNode(getPosition(), oneCharBL);
-        }
-        // TODO: This should be something else like a tCHAR
+            return Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
+        } 
+
+        ByteList oneCharBL = new ByteList(1);
+        oneCharBL.append(c);
+        yaccValue = new StrNode(getPosition(), oneCharBL);
+        
         return Tokens.tINTEGER;
     }
     
@@ -2515,13 +2527,7 @@ public class RubyYaccLexer {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "invalid Unicode codepoint (too large)");
                 }
-
-                if (codepoint >= 0x80) {
-                    buffer.setEncoding(UTF8_ENCODING);
-                    if (stringLiteral) tokenAddMBC(codepoint, buffer);
-                } else if (stringLiteral) {
-                    buffer.append((char) codepoint);
-                }
+                if (buffer != null) reeadUTF8EscapeInfoBuffer(codepoint, buffer, stringLiteral);
             } while (src.peek(' ') || src.peek('\t'));
 
             c = src.read();
@@ -2531,16 +2537,21 @@ public class RubyYaccLexer {
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
-            if (codepoint >= 0x80) {
-                buffer.setEncoding(UTF8_ENCODING);
-                if (stringLiteral) tokenAddMBC(codepoint, buffer);
-            } else if (stringLiteral) {
-                buffer.append((char) codepoint);
-            }
+            if (buffer != null) reeadUTF8EscapeInfoBuffer(codepoint, buffer, stringLiteral);
         }
 
         return codepoint;
     }
+    
+    private void reeadUTF8EscapeInfoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) {
+        if (codepoint >= 0x80) {
+            buffer.setEncoding(UTF8_ENCODING);
+            if (stringLiteral) tokenAddMBC(codepoint, buffer);
+        } else if (stringLiteral) {
+            buffer.append((char) codepoint);
+        }
+    }
+ 
     
     public int readEscape() throws IOException {
         int c = src.read();
