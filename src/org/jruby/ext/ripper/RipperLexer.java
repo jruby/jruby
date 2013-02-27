@@ -2112,7 +2112,19 @@ public class RipperLexer {
         } else if (c == '\\') {
             if (src.peek('u')) {
                 src.read(); // Eat 'u'
-                c = readUTFEscape(null /* Not String literal so no buffer setting */, false, false);
+                ByteList oneCharBL = new ByteList(2);
+                c = readUTFEscape(oneCharBL, false, false);
+                
+                if (c >= 0x80) {
+                    tokenAddMBC(c, oneCharBL);
+                } else {
+                    oneCharBL.append(c);
+                }
+                
+                setState(LexState.EXPR_END);
+                yaccValue = getRuntime().newString(oneCharBL);
+                
+                return org.jruby.parser.Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
             } else {
                 c = readEscape();
             }
@@ -2536,13 +2548,7 @@ public class RipperLexer {
                     throw new SyntaxException(SyntaxException.PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "invalid Unicode codepoint (too large)");
                 }
-
-                if (codepoint >= 0x80) {
-                    buffer.setEncoding(UTF8_ENCODING);
-                    if (stringLiteral) tokenAddMBC(codepoint, buffer);
-                } else if (stringLiteral) {
-                    buffer.append((char) codepoint);
-                }
+                if (buffer != null) reeadUTF8EscapeInfoBuffer(codepoint, buffer, stringLiteral);
             } while (src.peek(' ') || src.peek('\t'));
 
             c = src.read();
@@ -2552,16 +2558,20 @@ public class RipperLexer {
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
-            if (codepoint >= 0x80) {
-                buffer.setEncoding(UTF8_ENCODING);
-                if (stringLiteral) tokenAddMBC(codepoint, buffer);
-            } else if (stringLiteral) {
-                buffer.append((char) codepoint);
-            }
+            if (buffer != null) reeadUTF8EscapeInfoBuffer(codepoint, buffer, stringLiteral);
         }
 
         return codepoint;
     }
+    
+    private void reeadUTF8EscapeInfoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) {
+        if (codepoint >= 0x80) {
+            buffer.setEncoding(UTF8_ENCODING);
+            if (stringLiteral) tokenAddMBC(codepoint, buffer);
+        } else if (stringLiteral) {
+            buffer.append((char) codepoint);
+        }
+    }    
     
     public int readEscape() throws IOException {
         int c = src.read();
