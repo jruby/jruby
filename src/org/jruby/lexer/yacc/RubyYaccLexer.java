@@ -2527,7 +2527,7 @@ public class RubyYaccLexer {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "invalid Unicode codepoint (too large)");
                 }
-                if (buffer != null) reeadUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
+                if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
             } while (src.peek(' ') || src.peek('\t'));
 
             c = src.read();
@@ -2537,13 +2537,13 @@ public class RubyYaccLexer {
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
-            if (buffer != null) reeadUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
+            if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
         }
 
         return codepoint;
     }
     
-    private void reeadUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) {
+    private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) {
         if (codepoint >= 0x80) {
             buffer.setEncoding(UTF8_ENCODING);
             if (stringLiteral) tokenAddMBC(codepoint, buffer);
