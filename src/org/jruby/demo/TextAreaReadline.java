@@ -478,6 +478,8 @@ public class TextAreaReadline implements KeyListener {
         case KeyEvent.VK_UP: upAction(event); break;
         case KeyEvent.VK_DOWN: downAction(event); break;
         case KeyEvent.VK_ENTER: enterAction(event); break;
+        case KeyEvent.VK_A: 
+            if (!event.isControlDown()) break;
         case KeyEvent.VK_HOME: event.consume(); area.setCaretPosition(startPos); break;
         case KeyEvent.VK_D:
             if ( ( event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK ) != 0 ) {
