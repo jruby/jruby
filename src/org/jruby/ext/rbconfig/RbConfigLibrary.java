@@ -367,6 +367,8 @@ public class RbConfigLibrary implements Library {
         }
 
         setupMakefileConfig(configModule, mkmfHash);
+        
+        runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
     }
     
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
