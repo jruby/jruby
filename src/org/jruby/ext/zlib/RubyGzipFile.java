@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.joda.time.DateTime;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -64,7 +65,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return newArgs.toArray(new IRubyObject[0]);
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, name = "wrap", compat = CompatVersion.RUBY1_8)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;
@@ -78,6 +79,22 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
         return wrapBlock(context, instance, block);
     }
+    
+    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        RubyGzipFile instance;
+
+        // TODO: People extending GzipWriter/reader will break.  Find better way here.
+        if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
+            instance = JZlibRubyGzipWriter.newInstance(recv, args, block);
+        } else {
+            instance = JZlibRubyGzipReader.newInstance(recv, args, block);
+        }
+
+        return wrapBlock(context, instance, block);
+    }
+    
     protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
 
         @Override
