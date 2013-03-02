@@ -391,6 +391,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "==", required = 1, compat= CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other.isNil()) {
             return RubyBoolean.newBoolean(getRuntime(), false);
@@ -398,7 +399,7 @@ public class RubyTime extends RubyObject {
             return getRuntime().newBoolean(cmp((RubyTime) other) == 0);
         }
 
-        return RubyComparable.op_equal(context, this, other);
+        return RubyComparable.op_equal19(context, this, other);
     }
     
     @JRubyMethod(name = ">=", required = 1)
