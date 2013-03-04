@@ -180,6 +180,21 @@ class TestDir < Test::Unit::TestCase
     entries = []
     Dir.foreach(jar_path) {|d| entries << d}
     assert entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{entries.inspect}"
+
+    entries_by_enum = Dir.foreach(jar_path).to_a
+    assert entries_by_enum.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{entries_by_enum.inspect}"
+
+    root_jar_path = "file:#{jar_file}!"
+    root_entries_by_enum = Dir.foreach(root_jar_path).to_a
+    assert root_entries_by_enum.include?('test'), "#{root_jar_path} does not contain 'test' directory: #{root_entries_by_enum.inspect}"
+
+    root_jar_path_with_slash = "file:#{jar_file}!/"
+    root_entries_with_slash_by_enum = Dir.foreach(root_jar_path_with_slash).to_a
+    assert root_entries_with_slash_by_enum.include?('test'), "#{root_jar_path_with_slash} does not contain 'test' directory: #{root_entries_with_slash_by_enum.inspect}"
+
+    root_jar_path_with_jar_prefix = "jar:file:#{jar_file}!"
+    root_entries_with_jar_prefix_by_enum = Dir.foreach(root_jar_path_with_jar_prefix).to_a
+    assert root_entries_with_jar_prefix_by_enum.include?('test'), "#{root_jar_path_with_jar_prefix} does not contain 'test' directory: #{root_entries_with_jar_prefix_by_enum.inspect}"
   end
 
   def jar_file_with_spaces

@@ -584,11 +584,17 @@ public class RubyFileTest {
         if (pathJStr.startsWith("file:")) {
             String file = pathJStr.substring(5);
             int bang = file.indexOf('!');
-            if (bang == -1 || bang == file.length() - 1) {
+            if (bang == -1) {
                 return null;
+            }
+            if (bang == file.length() - 1) {
+                file = file + "/";
             }
             String jar = file.substring(0, bang);
             String after = file.substring(bang + 2);
+            if (after.length() > 0 && after.charAt(after.length() - 1) == '/') {
+                after = after.substring(0, after.length() -1);
+            }
             try {
                 return RubyFile.getDirOrFileEntry(jar, after);
             } catch (Exception e) {

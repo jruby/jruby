@@ -385,6 +385,7 @@ public class RubyDir extends RubyObject {
             throw runtime.newErrnoENOENTError("No such directory: " + path);
         }
 
+        if (path.startsWith("jar:")) path = path.substring(4);
         if (path.startsWith("file:")) return entriesIntoAJarFile(runtime, path);
 
         return entriesIntoADirectory(runtime, path);
@@ -406,10 +407,13 @@ public class RubyDir extends RubyObject {
           return entriesIntoADirectory(runtime, path.substring(5));
         }
         if (bang == file.length() - 1) {
-            return new ArrayList<String>();
+            file = file + "/";
         }
         String jar = file.substring(0, bang);
         String after = file.substring(bang + 2);
+        if (after.length() > 0 && after.charAt(after.length() - 1) != '/') {
+            after = after + "/";
+        }
         JarFile jf;
         try {
             jf = new JarFile(jar);
@@ -421,8 +425,15 @@ public class RubyDir extends RubyObject {
         Enumeration<? extends ZipEntry> entries = jf.entries();
         while (entries.hasMoreElements()) {
             String zipEntry = entries.nextElement().getName();
-            if (zipEntry.matches(after + "/" + "[^/]+")) {
-                fileList.add(zipEntry.substring(after.length() + 1));
+            if (zipEntry.matches(after + "[^/]+(/.*)?")) {
+                int end_index = zipEntry.indexOf('/', after.length());
+                if (end_index == -1) {
+                    end_index = zipEntry.length();
+                }
+                String entry_str = zipEntry.substring(after.length(), end_index);
+                if (!fileList.contains(entry_str)) {
+                    fileList.add(entry_str);
+                }
             }
         }
 
