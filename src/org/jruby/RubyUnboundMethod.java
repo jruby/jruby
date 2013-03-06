@@ -103,15 +103,8 @@ public class RubyUnboundMethod extends RubyMethod {
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
-        if (!originModule.isInstance(aReceiver)) {
-            if (originModule instanceof MetaClass) {
-                throw context.runtime.newTypeError("singleton method called for a different object");
-            } else if (
-                !(originModule.isModule() ? originModule.isInstance(aReceiver) : aReceiver.getType() == originModule)) {
-                // FIX replace type() == ... with isInstanceOf(...)
-                throw context.runtime.newTypeError("bind argument must be an instance of " + originModule.getName());
-            }
-        }
+        receiverClass.checkValidBindTargetFrom(context, originModule);
+        
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
 

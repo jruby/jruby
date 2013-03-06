@@ -154,6 +154,16 @@ public class RubyModule extends RubyObject {
 
         return moduleClass;
     }
+
+    public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
+        if (!this.hasModuleInHierarchy(originModule)) {
+            if (originModule instanceof MetaClass) {
+                throw context.runtime.newTypeError("can't bind singleton method to a different class");
+            } else {
+                throw context.runtime.newTypeError("bind argument must be an instance of " + originModule.getName());
+            }
+        }
+    }
     
     public static class ModuleKernelMethods {
         @JRubyMethod
@@ -1507,7 +1517,9 @@ public class RubyModule extends RubyObject {
         } else if (runtime.getMethod().isInstance(arg1)) {
             RubyMethod method = (RubyMethod)arg1;
             body = method;
-
+            
+            checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
+            
             newMethod = method.unbind().getMethod();
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
