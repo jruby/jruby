@@ -1508,7 +1508,7 @@ public class RubyModule extends RubyObject {
             RubyMethod method = (RubyMethod)arg1;
             body = method;
 
-            newMethod = new MethodMethod(this, method.unbind(), visibility);
+            newMethod = method.unbind().getMethod();
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
