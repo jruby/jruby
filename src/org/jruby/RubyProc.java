@@ -159,6 +159,9 @@ public class RubyProc extends RubyObject implements DataType {
 
         block.type = type;
         block.setProcObject(this);
+        
+        // pre-request dummy scope to avoid clone overhead in lightweight blocks
+        block.getBinding().getDummyScope(block.getBody().getStaticScope());
     }
     
     @JRubyMethod(name = "clone")

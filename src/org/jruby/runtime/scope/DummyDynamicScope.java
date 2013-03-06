@@ -36,7 +36,8 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
     }
     
     public DynamicScope cloneScope() {
-        return new DummyDynamicScope(staticScope, parent);
+        // there should be no mutable state in this scope, so return same
+        return this;
     }
 
     /**

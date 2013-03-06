@@ -43,16 +43,16 @@ public class CallBlock extends BlockBody {
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(imClass, arity, callback, context);
+        BlockBody body = new CallBlock(arity, callback, context);
         
         return new Block(body, binding);
     }
 
-    private CallBlock(RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+    private CallBlock(Arity arity, BlockCallback callback, ThreadContext context) {
         super(BlockBody.SINGLE_RESTARG);
         this.arity = arity;
         this.callback = callback;
-        this.dummyScope = imClass.getRuntime().getStaticScopeFactory().getDummyScope();
+        this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
     @Override

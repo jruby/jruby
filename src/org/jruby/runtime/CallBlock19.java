@@ -39,18 +39,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallBlock19 extends BlockBody {
     private final Arity arity;
     private final BlockCallback callback;
+    private final StaticScope dummy;
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock19(imClass, arity, callback, context);
+        BlockBody body = new CallBlock19(arity, callback, context);
         
         return new Block(body, binding);
     }
 
-    private CallBlock19(RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+    private CallBlock19(Arity arity, BlockCallback callback, ThreadContext context) {
         super(BlockBody.SINGLE_RESTARG);
         this.arity = arity;
         this.callback = callback;
+        this.dummy = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
     @Override
@@ -109,11 +111,11 @@ public class CallBlock19 extends BlockBody {
     }
     
     public StaticScope getStaticScope() {
-        throw new RuntimeException("CallBlock does not have a static scope; this should not be called");
+        return dummy;
     }
 
     public void setStaticScope(StaticScope newScope) {
-        throw new RuntimeException("CallBlock does not have a static scope; this should not be called");
+        // ignore
     }
 
     public Block cloneBlock(Binding binding) {
