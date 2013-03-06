@@ -215,25 +215,29 @@ public class RubyProc extends RubyObject implements DataType {
     
     private IRubyObject[] prepareProcArgs(ThreadContext context, IRubyObject[] args) {
         Arity arity = block.arity();
+        boolean isFixed = arity.isFixed();
+        int required = arity.required();
+        int actual = args.length;
         
         // for procs and blocks, single array passed to multi-arg must be spread
-        if (arity != Arity.ONE_ARGUMENT && arity.required() != 0 && 
-                (arity.isFixed() || arity != Arity.OPTIONAL) &&
-                args.length == 1 && args[0].respondsTo("to_ary")) {
+        if (arity != Arity.ONE_ARGUMENT &&  required != 0 && 
+                (isFixed || arity != Arity.OPTIONAL) &&
+                actual == 1 && args[0].respondsTo("to_ary")) {
             args = args[0].convertToArray().toJavaArray();
+            actual = args.length;
         }
-
-        if (arity.isFixed()) {
-            List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
-            int required = arity.required();
-            if (required > args.length) {
-                for (int i = args.length; i < required; i++) {
-                    list.add(context.runtime.getNil());
-                }
-                args = list.toArray(args);
-            } else if (required < args.length) {
-                args = list.subList(0, required).toArray(args);
+        
+        // fixed arity > 0 with mismatch needs a new args array
+        if (isFixed && required > 0 && required != actual) {
+            
+            IRubyObject[] newArgs = Arrays.copyOf(args, required);
+            
+            // pad with nil
+            if (required > actual) {
+                RuntimeHelpers.fillNil(newArgs, actual, required, context.runtime);
             }
+            
+            args = newArgs;
         }
 
         return args;
@@ -252,12 +256,19 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
         
-        Block newBlock = block.cloneBlock();
+        Block newBlock;
+        
+        // bind to new self, if given
+        if (self == null) {
+            newBlock = block;
+        } else {
+            newBlock = block.cloneBlock();
+            newBlock.getBinding().setSelf(self);
+        }
+        
         int jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
         
         try {
-            if (self != null) newBlock.getBinding().setSelf(self);
-            
             return newBlock.call(context, args, passedBlock);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(getRuntime(), newBlock, bj, jumpTarget);

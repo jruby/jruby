@@ -118,14 +118,12 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        IRubyObject value = args.length == 1 ? args[0] : context.runtime.newArrayNoCopy(args);
-
-        return yield(context, value, null, null, ALREADY_ARRAY, binding, type, Block.NULL_BLOCK);
+        return yield(context, newArgsArrayFromArgsWithUnbox(args, context), null, null, ALREADY_ARRAY, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, context.runtime.newArrayNoCopy(args), null, null, ALREADY_ARRAY, binding, type, block);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, ALREADY_ARRAY, binding, type, block);
     }
 
     @Override

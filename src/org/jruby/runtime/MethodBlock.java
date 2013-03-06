@@ -79,12 +79,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type, block);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, block);
     }
     
     @Override

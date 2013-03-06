@@ -1349,6 +1349,8 @@ public final class Ruby {
         }
         if (profile.allowClass("Array")) {
             RubyArray.createArrayClass(this);
+            emptyFrozenArray = newEmptyArray();
+            emptyFrozenArray.setFrozen(true);
         }
         if (profile.allowClass("Float")) {
             RubyFloat.createFloatClass(this);
@@ -3096,6 +3098,10 @@ public final class Ruby {
     public RubyArray newArray(int size) {
         return RubyArray.newArray(this, size);
     }
+    
+    public RubyArray getEmptyFrozenArray() {
+        return emptyFrozenArray;
+    }
 
     public RubyBoolean newBoolean(boolean value) {
         return value ? trueObject : falseObject;
@@ -4650,4 +4656,6 @@ public final class Ruby {
     public void addToObjectSpace(boolean useObjectSpace, IRubyObject object) {
         objectSpacer.addToObjectSpace(this, useObjectSpace, object);
     }
+    
+    private RubyArray emptyFrozenArray;
 }

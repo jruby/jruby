@@ -260,4 +260,28 @@ public abstract class BlockBody {
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();
+
+    public IRubyObject newArgsArrayFromArgsWithUnbox(IRubyObject[] args, ThreadContext context) {
+        IRubyObject value;
+        if (args.length == 0) {
+            value = context.runtime.getEmptyFrozenArray();
+        } else {
+            if (args.length == 1) {
+                value = args[0];
+            } else {
+                value = context.runtime.newArrayNoCopyLight(args);
+            }
+        }
+        return value;
+    }
+
+    public IRubyObject newArgsArrayFromArgsWithoutUnbox(IRubyObject[] args, ThreadContext context) {
+        IRubyObject value;
+        if (args.length == 0) {
+            value = context.runtime.getEmptyFrozenArray();
+        } else {
+            value = context.runtime.newArrayNoCopyLight(args);
+        }
+        return value;
+    }
 }
