@@ -56,6 +56,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
 import static org.jruby.CompatVersion.*;
+import org.jruby.runtime.Arity;
 
 /** 
  * Implementation of the Fixnum class.
@@ -263,7 +264,8 @@ public class RubyFixnum extends RubyInteger {
         if (block.isGiven()) {
             Ruby runtime = context.runtime;
             long lvalue = this.value;
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS ||
+                    block.arity() == Arity.NO_ARGUMENTS) {
                 IRubyObject nil = runtime.getNil();
                 for (long i = 0; i < lvalue; i++) {
                     block.yield(context, nil);
