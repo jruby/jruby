@@ -35,6 +35,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
@@ -74,6 +75,7 @@ public class RubyRunnable implements Runnable {
     
     public void run() {
         javaThread = Thread.currentThread();
+        ThreadContext initContext = runtime.getCurrentContext();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         
         // set thread context JRuby classloader here, for Ruby-owned thread
@@ -95,7 +97,9 @@ public class RubyRunnable implements Runnable {
         try {
             // Call the thread's code
             try {
+                if (runtime.hasEventHooks()) initContext.trace(RubyEvent.THREAD_BEGIN, null, initContext.getFrameKlazz());
                 IRubyObject result = proc.call(context, arguments);
+                if (runtime.hasEventHooks()) initContext.trace(RubyEvent.THREAD_END, null, initContext.getFrameKlazz());
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
                 if (runtime.is1_9()) {

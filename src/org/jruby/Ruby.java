@@ -2799,9 +2799,14 @@ public final class Ruby {
         return javaProxyClassFactory;
     }
             
-
+    private static final EnumSet<RubyEvent> EVENTS2_0 = EnumSet.of(RubyEvent.B_CALL, RubyEvent.B_RETURN, RubyEvent.THREAD_BEGIN, RubyEvent.THREAD_END);
     public class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
+        // filter out 2.0 events on non 2.0
+        private EnumSet<RubyEvent> interest =
+                is2_0() ?
+                EnumSet.complementOf(EVENTS2_0) :
+                EnumSet.allOf(RubyEvent.class);
         
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
@@ -2831,7 +2836,7 @@ public final class Ruby {
         }
 
         public boolean isInterestedInEvent(RubyEvent event) {
-            return true;
+            return interest.contains(event);
         }
     };
     

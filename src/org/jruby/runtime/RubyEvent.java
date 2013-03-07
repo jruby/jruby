@@ -14,6 +14,10 @@ public enum RubyEvent {
     RETURN   ("return", 1),
     C_CALL   ("c-call", 1),
     C_RETURN ("c-return", 1),
+    B_CALL   ("b-call", 1),
+    B_RETURN ("b-return", 1),
+    THREAD_BEGIN   ("thread-begin", 1),
+    THREAD_END ("thread-end", 1),
     RAISE    ("raise", 1),
     COVERAGE ("coverage", 1);
 

@@ -1213,7 +1213,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding() {
         Frame frame = getCurrentFrame();
-        return new Binding(frame, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
