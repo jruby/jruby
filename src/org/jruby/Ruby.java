@@ -154,6 +154,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
@@ -1449,6 +1450,10 @@ public final class Ruby {
             } else {
                 addLazyBuiltin("jruby/fiber.jar", "jruby/fiber", "org.jruby.ext.fiber.ThreadFiberLibrary");
             }
+        }
+        
+        if (is2_0()) {
+            TracePoint.createTracePointClass(this);
         }
         
         // Load the JRuby::Config module for accessing configuration settings from Ruby

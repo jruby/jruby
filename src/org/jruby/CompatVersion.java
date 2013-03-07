@@ -29,4 +29,11 @@ public enum CompatVersion {
             return null;
         }
     }
+    
+    public static boolean shouldBindMethod(CompatVersion runtimeVersion, CompatVersion methodVersion) {
+        if (runtimeVersion == RUBY1_8) return methodVersion == RUBY1_8 || methodVersion == BOTH;
+        if (runtimeVersion == RUBY1_9) return methodVersion == RUBY1_9 || methodVersion == BOTH;
+        if (runtimeVersion == RUBY2_0) return methodVersion == RUBY1_9 || methodVersion == RUBY2_0 || methodVersion == BOTH;
+        return false;
+    }
 }

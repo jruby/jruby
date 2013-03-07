@@ -754,10 +754,15 @@ public class RubyModule extends RubyObject {
         if (methods.size() == 1) {
             return defineAnnotatedMethod(desc, methodFactory);
         } else {
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
-            define(this, desc, dynamicMethod);
+            CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
+            if (shouldBindMethod(compatVersion, desc.anno.compat())) {
+                DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+                define(this, desc, dynamicMethod);
             
-            return true;
+                return true;
+            }
+            
+            return false;
         }
     }
     
@@ -766,8 +771,8 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-            if(jrubyMethod.compat() == BOTH ||
-                    getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
+        CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
+        if (shouldBindMethod(compatVersion, jrubyMethod.compat())) {
             JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
             define(this, desc, dynamicMethod);
@@ -782,8 +787,8 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-            if(jrubyMethod.compat() == BOTH ||
-                    getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
+        CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
+        if (shouldBindMethod(compatVersion, jrubyMethod.compat())) {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
             define(this, desc, dynamicMethod);
 
@@ -3610,68 +3615,66 @@ public class RubyModule extends RubyObject {
                 ASTInspector.FRAME_AWARE_METHODS.add(name);
             }
         }
-        if(jrubyMethod.compat() == BOTH ||
-                module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-            RubyModule singletonClass;
+        
+        RubyModule singletonClass;
 
-            if (jrubyMethod.meta()) {
+        if (jrubyMethod.meta()) {
+            singletonClass = module.getSingletonClass();
+            dynamicMethod.setImplementationClass(singletonClass);
+
+            String baseName;
+            if (jrubyMethod.name().length == 0) {
+                baseName = desc.name;
+                singletonClass.addMethod(baseName, dynamicMethod);
+            } else {
+                baseName = jrubyMethod.name()[0];
+                for (String name : jrubyMethod.name()) {
+                    singletonClass.addMethod(name, dynamicMethod);
+                }
+            }
+
+            if (jrubyMethod.alias().length > 0) {
+                for (String alias : jrubyMethod.alias()) {
+                    singletonClass.defineAlias(alias, baseName);
+                }
+            }
+        } else {
+            String baseName;
+            if (jrubyMethod.name().length == 0) {
+                baseName = desc.name;
+                module.addMethod(baseName, dynamicMethod);
+            } else {
+                baseName = jrubyMethod.name()[0];
+                for (String name : jrubyMethod.name()) {
+                    module.addMethod(name, dynamicMethod);
+                }
+            }
+
+            if (jrubyMethod.alias().length > 0) {
+                for (String alias : jrubyMethod.alias()) {
+                    module.defineAlias(alias, baseName);
+                }
+            }
+
+            if (jrubyMethod.module()) {
                 singletonClass = module.getSingletonClass();
-                dynamicMethod.setImplementationClass(singletonClass);
+                // module/singleton methods are all defined public
+                DynamicMethod moduleMethod = dynamicMethod.dup();
+                moduleMethod.setVisibility(PUBLIC);
 
-                String baseName;
                 if (jrubyMethod.name().length == 0) {
                     baseName = desc.name;
-                    singletonClass.addMethod(baseName, dynamicMethod);
+                    singletonClass.addMethod(desc.name, moduleMethod);
                 } else {
                     baseName = jrubyMethod.name()[0];
                     for (String name : jrubyMethod.name()) {
-                        singletonClass.addMethod(name, dynamicMethod);
+                        singletonClass.addMethod(name, moduleMethod);
                     }
                 }
 
                 if (jrubyMethod.alias().length > 0) {
                     for (String alias : jrubyMethod.alias()) {
                         singletonClass.defineAlias(alias, baseName);
-                    }
-                }
-            } else {
-                String baseName;
-                if (jrubyMethod.name().length == 0) {
-                    baseName = desc.name;
-                    module.addMethod(baseName, dynamicMethod);
-                } else {
-                    baseName = jrubyMethod.name()[0];
-                    for (String name : jrubyMethod.name()) {
-                        module.addMethod(name, dynamicMethod);
-                    }
-                }
-
-                if (jrubyMethod.alias().length > 0) {
-                    for (String alias : jrubyMethod.alias()) {
-                        module.defineAlias(alias, baseName);
-                    }
-                }
-
-                if (jrubyMethod.module()) {
-                    singletonClass = module.getSingletonClass();
-                    // module/singleton methods are all defined public
-                    DynamicMethod moduleMethod = dynamicMethod.dup();
-                    moduleMethod.setVisibility(PUBLIC);
-
-                    if (jrubyMethod.name().length == 0) {
-                        baseName = desc.name;
-                        singletonClass.addMethod(desc.name, moduleMethod);
-                    } else {
-                        baseName = jrubyMethod.name()[0];
-                        for (String name : jrubyMethod.name()) {
-                            singletonClass.addMethod(name, moduleMethod);
-                        }
-                    }
-
-                    if (jrubyMethod.alias().length > 0) {
-                        for (String alias : jrubyMethod.alias()) {
-                            singletonClass.defineAlias(alias, baseName);
-                        }
                     }
                 }
             }
