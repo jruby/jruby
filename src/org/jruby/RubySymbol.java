@@ -418,19 +418,34 @@ public class RubySymbol extends RubyObject {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
+            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");
                 }
 
                 IRubyObject self = array.shift(context);
 
-                return site.call(context, self, self, array.toJavaArray());
+                return site.call(context, self, self, array.toJavaArray(), block);
+            }
+
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
+                    RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+                RubyArray array = aValue && value instanceof RubyArray ?
+                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
+
+                return yieldInner(context, array, block);
+            }
+
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject value,
+                    Binding binding, Block.Type type, Block block) {
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
             }
             
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false));
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
             }
 
             @Override
@@ -438,7 +453,7 @@ public class RubySymbol extends RubyObject {
                 RubyArray array = aValue && value instanceof RubyArray ?
                         (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
 
-                return yieldInner(context, array);
+                return yieldInner(context, array, Block.NULL_BLOCK);
             }
 
             @Override
