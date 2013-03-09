@@ -66,15 +66,15 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testToI() {
-        assertEquals(RubyFixnum.zero(runtime), RubyNil.to_i(rubyNil));
+        assertEquals(RubyFixnum.zero(runtime), RubyNil.to_i(runtime.getCurrentContext(), rubyNil));
     }
 
     public void testToS() {
-        assertEquals("", RubyNil.to_s(rubyNil).toString());
+        assertEquals("", RubyNil.to_s(runtime.getCurrentContext(), rubyNil).toString());
     }
 
     public void testToA() {
-        assertEquals(new ArrayList(), RubyNil.to_a(rubyNil).getList());
+        assertEquals(new ArrayList(), RubyNil.to_a(runtime.getCurrentContext(), rubyNil).getList());
     }
 
     public void testInspect() {
