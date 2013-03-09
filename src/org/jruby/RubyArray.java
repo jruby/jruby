@@ -83,6 +83,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import org.jruby.util.Numeric;
 
 /**
  * The implementation of the built-in class Array in Ruby.
@@ -2215,6 +2216,52 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
 
         return runtime.getNil();
+    }
+    
+    @JRubyMethod(compat = RUBY2_0)
+    public IRubyObject bsearch(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        
+        if (!block.isGiven()) {
+            return enumeratorize(context.runtime, this, "bsearch");
+        }
+        
+        int low = 0, high = realLength, mid;
+        boolean smaller = false, satisfied = false;
+        IRubyObject v, val;
+        
+        while (low < high) {
+            mid = low + ((high - low) / 2);
+            val = eltOk(mid);
+            v = block.yieldSpecific(context, val);
+            
+            if (v instanceof RubyFixnum) {
+                long fixValue = ((RubyFixnum)v).getLongValue();
+                if (fixValue == 0) return val;
+                smaller = fixValue < 0;
+            } else if (v == runtime.getTrue()) {
+                satisfied = true;
+                smaller = true;
+            } else if (v == runtime.getFalse() || v == runtime.getNil()) {
+                smaller = false;
+            } else if (runtime.getNumeric().isInstance(v)) {
+                switch (RubyComparable.cmpint(context, invokedynamic(context, v, OP_CMP, RubyFixnum.zero(runtime)), v, RubyFixnum.zero(runtime))) {
+                    case 0: return val;
+                    case 1: smaller = true; break;
+                    case -1: smaller = false;
+                }
+            } else {
+                throw runtime.newTypeError("wrong argument type " + v.getType().getName() + " (must be numeric, true, false or nil");
+            }
+            if (smaller) {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        if (low == realLength) return context.nil;
+        if (!satisfied) return context.nil;
+        return eltOk(low);
     }
 
     /** rb_ary_rindex
