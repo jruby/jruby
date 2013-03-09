@@ -76,6 +76,9 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -277,7 +280,71 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
+        if (runtime.is2_0()) {
+            // set up Thread::Backtrace::Location class
+            RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            
+            location.defineAnnotatedMethods(Location.class);
+            
+            runtime.setLocation(location);
+        }
+        
         return threadClass;
+    }
+    
+    public static class Location extends RubyObject {
+        public Location(Ruby runtime, RubyClass klass, RubyStackTraceElement element) {
+            super(runtime, klass);
+            this.element = element;
+        }
+        
+        @JRubyMethod
+        public IRubyObject absolute_path(ThreadContext context) {
+            return context.runtime.newString(element.getFileName());
+        }
+        
+        @JRubyMethod
+        public IRubyObject base_label(ThreadContext context) {
+            return context.runtime.newString(element.getMethodName());
+        }
+        
+        @JRubyMethod
+        public IRubyObject inspect(ThreadContext context) {
+            return to_s(context).inspect();
+        }
+        
+        @JRubyMethod
+        public IRubyObject label(ThreadContext context) {
+            return context.runtime.newString(element.getMethodName());
+        }
+        
+        @JRubyMethod
+        public IRubyObject lineno(ThreadContext context) {
+            return context.runtime.newFixnum(element.getLineNumber());
+        }
+        
+        @JRubyMethod
+        public IRubyObject path(ThreadContext context) {
+            return context.runtime.newString(element.getFileName());
+        }
+        
+        @JRubyMethod
+        public IRubyObject to_s(ThreadContext context) {
+            return context.runtime.newString(element.mriStyleString());
+        }
+
+        public static IRubyObject newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
+            RubyArray ary = runtime.newArray(elements.length);
+
+            for (RubyStackTraceElement element : elements) {
+                ary.append(new RubyThread.Location(runtime, runtime.getLocation(), element));
+            }
+
+            return ary;
+        }
+        
+        private final RubyStackTraceElement element;
     }
 
     /**
@@ -971,6 +1038,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject backtrace(ThreadContext context) {
         return getContext().createCallerBacktrace(context.runtime, 0);
+    }
+    
+    @JRubyMethod(compat = CompatVersion.RUBY2_0, omit = true)
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyStackTraceElement[] elements =
+                TraceType.Gather.CALLER.getBacktraceData(context, getNativeThread().getStackTrace(), true).getBacktrace(runtime);
+        
+        return RubyThread.Location.newLocationArray(runtime, elements);
     }
 
     public StackTraceElement[] javaBacktrace() {

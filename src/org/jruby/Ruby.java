@@ -2226,6 +2226,14 @@ public final class Ruby {
     public void setENV(RubyHash env) {
         envObject = env;
     }
+    
+    public RubyClass getLocation() {
+        return locationClass;
+    }
+    
+    public void setLocation(RubyClass location) {
+        this.locationClass = location;
+    }
 
     public RubyModule getErrno() {
         return errnoModule;
@@ -4455,7 +4463,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass, keyError;
+            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and

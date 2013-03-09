@@ -98,6 +98,14 @@ public class RubyException extends RubyObject {
         }
         return backtrace();
     }
+    
+    @JRubyMethod(compat = CompatVersion.RUBY2_0, omit = true)
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyStackTraceElement[] elements = backtraceData.getBacktrace(runtime);
+        
+        return RubyThread.Location.newLocationArray(runtime, elements);
+    }
 
     @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {

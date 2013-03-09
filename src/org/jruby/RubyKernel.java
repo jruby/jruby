@@ -84,6 +84,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
+import org.jruby.runtime.backtrace.TraceType;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -1148,6 +1149,15 @@ public class RubyKernel {
         }
 
         return context.createCallerBacktrace(context.runtime, level);
+    }
+    
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.runtime;
+        RubyStackTraceElement[] elements =
+                TraceType.Gather.CALLER.getBacktraceData(context, Thread.currentThread().getStackTrace(), true).getBacktrace(runtime);
+        
+        return RubyThread.Location.newLocationArray(runtime, elements);
     }
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_8)

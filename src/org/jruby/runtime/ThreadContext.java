@@ -710,7 +710,7 @@ public final class ThreadContext {
     }
     
     private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, RubyStackTraceElement element) {
-        RubyString str = RubyString.newString(runtime, element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
+        RubyString str = RubyString.newString(runtime, element.mriStyleString());
         backtrace.append(str);
     }
     
