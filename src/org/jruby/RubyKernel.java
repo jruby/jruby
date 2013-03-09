@@ -1771,19 +1771,29 @@ public class RubyKernel {
         block.yield(context, recv);
         return recv;
     }
+    
+    @JRubyMethod(name = {"to_enum", "enum_for"})
+    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self) {
+        return RubyEnumerator.newEnumerator(context, self);
+    }
 
-    @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, compat = RUBY1_9)
-    public static IRubyObject to_enum(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        switch (args.length) {
-        case 0: return enumeratorize(runtime, recv, "each");
-        case 1: return enumeratorize(runtime, recv, args[0].asJavaString());
-        case 2: return enumeratorize(runtime, recv, args[0].asJavaString(), args[1]);
-        default:
-            IRubyObject enumArgs[] = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 1, enumArgs, 0, enumArgs.length);
-            return enumeratorize(runtime, recv, args[0].asJavaString(), enumArgs);
-        }
+    @JRubyMethod(name = {"to_enum", "enum_for"})
+    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return RubyEnumerator.newEnumerator(context, self, arg);
+    }
+
+    @JRubyMethod(name = {"to_enum", "enum_for"})
+    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        return RubyEnumerator.newEnumerator(context, self, arg0, arg1);
+    }
+
+    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true)
+    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        newArgs[0] = self;
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+
+        return context.runtime.getEnumerator().callMethod(context, "new", newArgs);
     }
 
     @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)

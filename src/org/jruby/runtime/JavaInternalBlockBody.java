@@ -4,6 +4,7 @@
  */
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
@@ -17,12 +18,13 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     private final Arity arity;
     private final ThreadContext originalContext;
     private final String methodName;
+    private final StaticScope dummyScope;
     
     /**
      * For blocks which can be executed in any thread concurrently.
      */
-    public JavaInternalBlockBody(Arity arity) {
-        this(null, null, arity);
+    public JavaInternalBlockBody(Ruby runtime, Arity arity) {
+        this(runtime, null, null, arity);
     }
 
     /**
@@ -30,12 +32,13 @@ public abstract class JavaInternalBlockBody extends BlockBody {
      * @param methodName
      * @param arity 
      */
-    public JavaInternalBlockBody(ThreadContext originalContext, String methodName, Arity arity) {
+    public JavaInternalBlockBody(Ruby runtime, ThreadContext originalContext, String methodName, Arity arity) {
         super(BlockBody.SINGLE_RESTARG);
         
         this.arity = arity;
         this.originalContext = originalContext;
         this.methodName = methodName;
+        this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
     }
     
     // Make sure we are still on the same thread as originator if we care
@@ -87,12 +90,11 @@ public abstract class JavaInternalBlockBody extends BlockBody {
 
     @Override
     public StaticScope getStaticScope() {
-        throw new RuntimeException("CallBlock does not have a static scope; this should not be called");
+        return dummyScope;
     }
 
     @Override
     public void setStaticScope(StaticScope newScope) {
-        throw new RuntimeException("CallBlock does not have a static scope; this should not be called");
     }
 
     @Override

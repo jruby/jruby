@@ -912,9 +912,37 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
+        return toArray(array, add);
+    }
+    
+    public static IRubyObject[] toArray(IRubyObject[] array, IRubyObject... add) {
         IRubyObject[] newArray = new IRubyObject[array.length + add.length];
         System.arraycopy(array, 0, newArray, 0, array.length);
         System.arraycopy(add, 0, newArray, array.length, add.length);
+        return newArray;
+    }
+    
+    public static IRubyObject[] toArray(IRubyObject obj, IRubyObject... rest) {
+        IRubyObject[] newArray = new IRubyObject[rest.length + 1];
+        newArray[0] = obj;
+        System.arraycopy(rest, 0, newArray, 1, rest.length);
+        return newArray;
+    }
+    
+    public static IRubyObject[] toArray(IRubyObject obj0, IRubyObject obj1, IRubyObject... rest) {
+        IRubyObject[] newArray = new IRubyObject[rest.length + 2];
+        newArray[0] = obj0;
+        newArray[1] = obj1;
+        System.arraycopy(rest, 0, newArray, 2, rest.length);
+        return newArray;
+    }
+    
+    public static IRubyObject[] toArray(IRubyObject obj0, IRubyObject obj1, IRubyObject obj2, IRubyObject... rest) {
+        IRubyObject[] newArray = new IRubyObject[rest.length + 3];
+        newArray[0] = obj0;
+        newArray[1] = obj1;
+        newArray[2] = obj2;
+        System.arraycopy(rest, 0, newArray, 3, rest.length);
         return newArray;
     }
 
