@@ -98,7 +98,7 @@ public class RubyNil extends RubyObject {
      *
      */
     @JRubyMethod(name = "to_i")
-    public static RubyFixnum to_i(IRubyObject recv) {
+    public static RubyFixnum to_i(ThreadContext context, IRubyObject recv) {
         return RubyFixnum.zero(recv.getRuntime());
     }
     
@@ -107,24 +107,29 @@ public class RubyNil extends RubyObject {
      *
      */
     @JRubyMethod(name = "to_f")
-    public static RubyFloat to_f(IRubyObject recv) {
-        return RubyFloat.newFloat(recv.getRuntime(), 0.0D);
+    public static RubyFloat to_f(ThreadContext context, IRubyObject recv) {
+        return RubyFloat.newFloat(context.runtime, 0.0D);
     }
     
     /** nil_to_s
      *
      */
     @JRubyMethod(name = "to_s")
-    public static RubyString to_s(IRubyObject recv) {
-        return RubyString.newEmptyString(recv.getRuntime());
+    public static RubyString to_s(ThreadContext context, IRubyObject recv) {
+        return RubyString.newEmptyString(context.runtime);
     }
     
     /** nil_to_a
      *
      */
     @JRubyMethod(name = "to_a")
-    public static RubyArray to_a(IRubyObject recv) {
-        return recv.getRuntime().newEmptyArray();
+    public static RubyArray to_a(ThreadContext context, IRubyObject recv) {
+        return context.runtime.newEmptyArray();
+    }
+    
+    @JRubyMethod(name = "to_h")
+    public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
+        return RubyHash.newSmallHash(context.runtime);
     }
     
     /** nil_inspect

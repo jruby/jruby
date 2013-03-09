@@ -574,6 +574,19 @@ public class RubyStruct extends RubyObject {
     public RubyArray to_a() {
         return getRuntime().newArray(values);
     }
+    
+    @JRubyMethod(compat = CompatVersion.RUBY2_0)
+    public RubyHash to_h(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newHash(runtime);
+        RubyArray members = (RubyArray)getType().getInternalVariable("__member__");
+        
+        for (int i = 0; i < values.length; i++) {
+            hash.op_aset(context, members.eltOk(i), values[i]);
+        }
+        
+        return hash;
+    }
 
     @JRubyMethod(name = {"size", "length"} )
     public RubyFixnum size() {
