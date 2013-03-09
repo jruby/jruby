@@ -52,7 +52,7 @@ class Enumerator
 
     def drop(n)
       Lazy.new do |output|
-        each do |element, index|
+        each_with_index do |element, index|
           next if index < n
           output.yield(element)
         end
@@ -194,14 +194,44 @@ class Enumerator
     end
     
     def zip(*enumerables, &block)
+      if block
+        return super
+      end
+      
+      all_arrays = true
+      enumerators = enumerables.map do |enumerable|
+        if enumerable.kind_of? Array
+          next enumerable
+        elsif enumerable.respond_to?(:to_ary)
+          enumerator = enumerable.to_ary
+          
+          next enumerator unless enumerator.nil?
+        end
+        
+        all_arrays = false
+        next enumerable if enumerable.respond_to?(:each)
+        
+        raise TypeError, "wront argument type #{enumerable.class.name} (must respond to :each)"
+      end
+      
+      if all_arrays
         Lazy.new do |output|
-          enumerators = enumerables.map(&:to_enum)
-          each do |element|
+          each_with_index do |element, index|
             ary = [element]
-            enumerators.each {|enumerator| ary << enumerator.next} rescue StopIteration
+            enumerators.each {|array| ary << array[index] if index < array.size}
             output.yield ary
           end
         end
+      else
+        Lazy.new do |output|
+          enumerators = enumerators.map(&:to_enum)
+          each do |element|
+            ary = [element]
+            enumerators.each {|enumerator| ary << (enumerator.next rescue nil)}
+            output.yield ary
+          end
+        end
+      end
     end
     
     def _block_error(name)

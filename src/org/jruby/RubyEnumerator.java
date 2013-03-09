@@ -407,8 +407,8 @@ public class RubyEnumerator extends RubyObject {
         final Ruby runtime = context.runtime;
         int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if (!block.isGiven()) {
-            return arg.isNil() ? enumeratorize(runtime, self , rubyMethodName) :
-                enumeratorize(runtime, self , rubyMethodName, runtime.newFixnum(index));
+            return arg.isNil() ? enumeratorize(runtime, self.getType(), self, rubyMethodName) :
+                enumeratorize(runtime, self.getType(), self , rubyMethodName, runtime.newFixnum(index));
         }
 
         return RubyEnumerable.callEach(runtime, context, self, new EachWithIndex(context, block, index));
