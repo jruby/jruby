@@ -10,12 +10,12 @@ module Kernel
     relative_feature = JRuby::Type.convert_to_str(relative_feature)
     
     c = caller.first
-    e = c.rindex(/:\d+:in /)
-    file = $`
+    e = c.rindex(/:\d+:in /) 
+    file = $` # just the filename
     if /\A\((.*)\)/ =~ file # eval, etc.
       raise LoadError, "cannot infer basepath"
     end
-    absolute_feature = File.join(File.dirname(File.realpath(file)), relative_feature)
+    absolute_feature = File.expand_path(relative_feature, File.dirname(file))
     require absolute_feature
   end
 
