@@ -4,6 +4,7 @@
 
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/jruby/generator.rb'
+load 'jruby/kernel/jruby/type.rb'
 load 'jruby/kernel/signal.rb'
 
 # Java 7 process launching support

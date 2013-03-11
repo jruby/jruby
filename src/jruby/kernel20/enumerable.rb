@@ -1,275 +1,235 @@
+# Copyright (c) 2009 Marc-Andre Lafortune
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+module Enumerable
+  def lazy
+    klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
+    Enumerator::Lazy.new(klass.new(self, :each, []))
+  end
+end
+
 class Enumerator
+  class Yielder
+    # Current API for Lazy Enumerator does not provide an easy way
+    # to handle internal state. We "cheat" and use yielder to hold it for us.
+    # A new yielder is created when generating or after a `rewind`.
+    # This way we avoid issues like http://bugs.ruby-lang.org/issues/7691
+    # or http://bugs.ruby-lang.org/issues/7696
+    attr_accessor :backports_memo
+  end
 
   class Lazy < Enumerator
-    
-    def initialize(*)
+    LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block
+
+    def initialize(obj)
+      if obj.is_a?(LAZY_WITH_NO_BLOCK)
+        @inspect_info = obj
+        return super(@receiver = obj.object, @method = obj.method || :each, * @args = obj.args)
+      end
       _block_error(:new) unless block_given?
-      super
-    end
-    
-    def collect()
-      _block_error(:collect) unless block_given?
-      Lazy.new do |output|
-        each do |element|
-          output.yield yield(element)
-        end
-      end
-    end
-    alias map collect
-    
-    def cycle(n = nil, &block)
-      if block
-        if n
-          n.times do
-            each {|*elt| block.call(*elt)}
-          end
-        else
-          loop do
-            each {|*elt| block.call(*elt)}
-          end
-        end
-        nil
-      else
-        if n
-          Lazy.new do |output|
-            n.times do
-              each do |elt|
-                output.yield elt
-              end
-            end
-          end
-        else
-          Lazy.new do |output|
-            loop do
-              each do |elt|
-                output.yield elt
-              end
-            end
+      @receiver = obj
+      super() do |yielder, *args|
+        catch yielder do
+          obj.each(*args) do |*x|
+            yield yielder, *x
           end
         end
       end
     end
 
-    def drop(n)
-      Lazy.new do |output|
-        each_with_index do |element, index|
-          next if index < n
-          output.yield(element)
-        end
-      end
-    end
+    alias_method :force, :to_a
 
-    def drop_while(&block)
-      _block_error(:collect) unless block
-      Lazy.new do |output|
-        each do |element|
-          output.yield(element) unless yield(element)..true
-        end
-      end
-    end
-
-    alias force to_a
-
-    def flat_map(&block)
-      _block_error(:collect) unless block
-      Lazy.new do |output|
-        each do |element|
-          result = yield element
-          if result.is_a? Array
-            ary = result
-          elsif result.respond_to?(:force) && result.respond_to?(:each)
-            lazy = result
-          else
-            ary = result.to_ary if result.respond_to?(:to_ary)
-          end
-
-
-          if ary
-            # if it's an array or coerced to an array, iterate directly
-            i, max = 0, ary.size
-            while i < max
-              output.yield ary.at(i)
-              i+=1
-            end
-          elsif lazy
-            # if it's lazy, each over it
-            lazy.each {|value| output.yield value}
-          else
-            # otherwise just yield it
-            output.yield(result)
-          end
-        end
-      end
-    end
-  
-    def grep(pattern, &block)
-      if block_given?
-        Lazy.new do |output|
-          each do |element|
-            output.yield(yield element) if pattern === element
-          end
-        end
-      else
-        Lazy.new do |output|
-          each do |element|
-            output.yield(element) if pattern === element
-          end
-        end
-      end
-    end
     def lazy
       self
     end
 
-    def reject(&block)
-      _block_error(:collect) unless block
-      Lazy.new do |output|
-        each do |element|
-          output.yield(element) unless yield(element)
-        end
+    def to_enum(method = :each, *args)
+      Lazy.new(LAZY_WITH_NO_BLOCK.new(self, method, args))
+    end
+    alias_method :enum_for, :to_enum
+
+    def inspect
+      suff = ''
+      suff << ":#{@method}" unless @method.nil? || @method == :each
+      suff << "(#{@args.inspect[1...-1]})" if @args && !@args.empty?
+      "#<#{self.class}: #{@receiver.inspect}#{suff}>"
+    end
+
+    {
+      :slice_before => //,
+      :with_index => [],
+      :cycle => [],
+      :each_with_object => 42,
+      :each_slice => 42,
+      :each_entry => [],
+      :each_cons => 42,
+    }.each do |method, args|
+      next unless Enumerator.method_defined? method
+      unless [].lazy.send(method, *args).is_a?(Lazy) # Nothing to do if already backported, since it would use to_enum...
+        module_eval <<-EOT, __FILE__, __LINE__ + 1
+          def #{method}(*args)                                     # def cycle(*args)
+            return to_enum(:#{method}, *args) unless block_given?  #   return to_enum(:cycle, *args) unless block_given?
+            super                                                  #   super
+          end                                                      # end
+        EOT
       end
     end
 
-    def select(&block)
-      _block_error(:collect) unless block
-      Lazy.new do |output|
-        each do |element|
-          output.yield(element) if yield(element)
-        end
-      end
+    def chunk(*)
+      super.lazy
+    end if Enumerable.method_defined?(:chunk) && ![].lazy.chunk{}.is_a?(Lazy)
+
+    def map
+      _block_error(:map) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        yielder << yield(*values)
+      end.__set_inspect :map
     end
-    
-    def slice_before(pattern)
-      Lazy.new do |output|
-        slice = []
-        catch(output) do
-          each do |element|
-            if pattern === element
-              slice << element
-            else
-              throw output
-            end
-          end
+    alias_method :collect, :map
+
+    def select
+      _block_error(:select) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield values if yield values
+      end.__set_inspect :select
+    end
+    alias_method :find_all, :select
+
+    def reject
+      _block_error(:reject) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield(values) unless yield values
+      end.__set_inspect :reject
+    end
+
+    def grep(pattern)
+      if block_given?
+        # Split for performance
+        Lazy.new(self) do |yielder, *values|
+          values = values.first unless values.size > 1
+          yielder.yield(yield(values)) if pattern === values
         end
-        output.yield slice
-      end
+      else
+        Lazy.new(self) do |yielder, *values|
+          values = values.first unless values.size > 1
+          yielder.yield(values) if pattern === values
+        end
+      end.__set_inspect :grep, [pattern]
+    end
+
+    def drop(n)
+      n = JRuby::Type.coerce_to_int(n)
+      Lazy.new(self) do |yielder, *values|
+        data = yielder.backports_memo ||= {:remain => n}
+        if data[:remain] > 0
+          data[:remain] -= 1
+        else
+          yielder.yield(*values)
+        end
+      end.__set_inspect :drop, [n]
+    end
+
+    def drop_while
+      _block_error(:drop_while) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        data = yielder.backports_memo ||= {:dropping => true}
+        yielder.yield(*values) unless data[:dropping] &&= yield(*values)
+      end.__set_inspect :drop_while
     end
 
     def take(n)
-      Lazy.new do |output|
-        if n > 0
-          catch(output) do
-            each_with_index do |element, index|
-              output.yield(element)
-              # break failed to work for some reason
-              throw output if index + 1 == n
+      n = JRuby::Type.coerce_to_int(n)
+      raise ArgumentError, 'attempt to take negative size' if n < 0
+      Lazy.new(n == 0 ? [] : self) do |yielder, *values|
+        data = yielder.backports_memo ||= {:remain => n}
+        yielder.yield(*values)
+        throw yielder if (data[:remain] -= 1) == 0
+      end.__set_inspect :take, [n], self
+    end
+
+    def take_while
+      _block_error(:take_while) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        throw yielder unless yield(*values)
+        yielder.yield(*values)
+      end.__set_inspect :take_while
+    end
+
+    def flat_map
+      _block_error(:flat_map) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        result = yield(*values)
+        ary = JRuby::Type.is_array?(result)
+        if ary || (result.respond_to?(:each) && result.respond_to?(:force))
+          (ary || result).each{|x| yielder << x }
+        else
+          yielder << result
+        end
+      end.__set_inspect :flat_map
+    end
+    alias_method :collect_concat, :flat_map
+
+    def zip(*args)
+      return super if block_given?
+      arys = args.map{ |arg| JRuby::Type.is_array?(arg) }
+      if arys.all?
+        # Handle trivial case of multiple array arguments separately
+        # by avoiding Enumerator#next for efficiency & compatibility
+        Lazy.new(self) do |yielder, *values|
+          data = yielder.backports_memo ||= {:iter => 0}
+          values = values.first unless values.size > 1
+          yielder << arys.map{|ary| ary[data[:iter]]}.unshift(values)
+          data[:iter] += 1
+        end
+      else
+        args.each do |a|
+          raise TypeError, "wrong argument type #{a.class} (must respond to :each)" unless a.respond_to? :each
+        end
+        Lazy.new(self) do |yielder, *values|
+          enums = yielder.backports_memo ||= args.map(&:to_enum)
+          values = values.first unless values.size > 1
+          others = enums.map do |arg|
+            begin
+              arg.next
+            rescue StopIteration
+              nil
             end
           end
+          yielder << others.unshift(values)
         end
-      end
+      end.__set_inspect :zip, args
     end
-    
-    def to_enum(name = nil, *args)
-      if name
-        Lazy.new do |yielder|
-          send(name, *args) {|element| yielder.yield(element)}
-        end
-      else
-        self
-      end
-    end
-    alias enum_for to_enum
 
-    def take_while(&block)
-      _block_error(:collect) unless block
-      Lazy.new do |output|
-        catch(output) do
-          each do |element|
-            # break failed to work for some reason
-            throw output unless yield(element)
-            output.yield(element)
-          end
-        end
-      end
-    end
-    
-    def zip(*enumerables, &block)
-      if block
-        return super
-      end
-      
-      all_arrays = true
-      enumerators = enumerables.map do |enumerable|
-        if enumerable.kind_of? Array
-          next enumerable
-        elsif enumerable.respond_to?(:to_ary)
-          enumerator = enumerable.to_ary
-          
-          next enumerator unless enumerator.nil?
-        end
-        
-        all_arrays = false
-        next enumerable if enumerable.respond_to?(:each)
-        
-        raise TypeError, "wront argument type #{enumerable.class.name} (must respond to :each)"
-      end
-      
-      if all_arrays
-        Lazy.new do |output|
-          each_with_index do |element, index|
-            ary = [element]
-            enumerators.each {|array| ary << array[index] if index < array.size}
-            output.yield ary
-          end
-        end
-      else
-        Lazy.new do |output|
-          enumerators = enumerators.map(&:to_enum)
-          each do |element|
-            ary = [element]
-            enumerators.each {|enumerator| ary << (enumerator.next rescue nil)}
-            output.yield ary
-          end
-        end
-      end
+    protected
+    def __set_inspect(method, args = nil, receiver = nil)
+      @method = method
+      @args = args
+      @receiver = receiver if receiver
+      self
     end
     
     def _block_error(name)
       raise ArgumentError.new("tried to call lazy #{name} without a block")
-    end
-    private :_block_error
-    
-  end
-end
-
-module Enumerable
-  def lazy
-    Enumerator::Lazy.new(self) do |output, *values|
-      output.yield(*values)
-    end
-  end
-  
-  def chunk(init_val = (init_given = true; nil))
-    cls = (self.kind_of? Enumerator) ? self.class : Enumerator
-    cls.new do |yielder|
-      
-      chunk = nil
-      each do |elt|
-        new_val = init_given ? yield(elt, init_val) : yield(elt)
-        
-        if chunk.nil?
-          chunk = [new_val, [elt]]
-        elsif new_val == init_val
-          chunk[1] << elt
-        else
-          yielder.yield chunk
-          chunk = [new_val, [elt]]
-        end
-        
-        init_val = new_val
-      end
-      
-      yielder.yield chunk if chunk
     end
   end
 end
