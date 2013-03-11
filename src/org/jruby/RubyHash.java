@@ -734,6 +734,18 @@ public class RubyHash extends RubyObject implements Map {
         flags |= PROCDEFAULT_HASH_F;
         return proc;
     }
+    
+    @JRubyMethod(name = "default_proc=", compat = RUBY2_0)
+    public IRubyObject set_default_proc20(IRubyObject proc) {
+        modify();
+        
+        if (proc.isNil()) {
+            ifNone = proc;
+            return proc;
+        }
+        
+        return set_default_proc(proc);
+    }
 
     /** rb_hash_modify
      *
@@ -907,6 +919,11 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "to_hash")
     public RubyHash to_hash() {
         return this;
+    }
+    
+    @JRubyMethod
+    public RubyHash to_h(ThreadContext context) {
+        return getType() == getRuntime().getHash() ? this : newHash(getRuntime()).replace(context, this);
     }
 
     @Override
