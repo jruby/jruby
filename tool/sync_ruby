@@ -8,7 +8,7 @@
 #
 # This script selects the branch to use against with the version number, i.e: jruby-ruby_1_8_7 or jruby-ruby_1_9_3.
 #
-# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_3)> <jruby ruby fork clone> <jruby dir>
+# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_3|2_0_0)> <jruby ruby fork clone> <jruby dir>
 #
 # Example:
 # 

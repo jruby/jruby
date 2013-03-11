@@ -96,8 +96,6 @@ EXT_FILES = {
   'ext/psych/lib/psych' => 'psych',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/ripper/lib/ripper' => 'ripper',
-  'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
-  'ext/fiddle/lib/fiddle' => 'fiddle',
   'ext/openssl/lib/openssl' => 'openssl',
   'ext/socket/lib/socket.rb' => 'socket.rb'
 }

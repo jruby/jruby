@@ -22,7 +22,21 @@ class Dir
       tmp = @@systmpdir
     else
       tmp = nil
-      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.']
+      # Search a directory which isn't world-writable first. In JRuby,
+      # FileUtils.remove_entry_secure(dir) crashes when a dir is under
+      # a world-writable directory because it tries to open directory.
+      # Opening directory is not allowed in Java.
+      dirs = [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', tmp]
+      for dir in dirs
+        if dir and stat = File.stat(dir) and stat.directory? and stat.writable? and !stat.world_writable?
+          return File.expand_path(dir)
+        end
+      end
+      
+      # Some OS sets the environment variables to '/tmp', which we may reject.
+      warn "Unable to find a non world-writable directory for #{__method__}. Consider setting ENV['TMPDIR'], ENV['TMP'] or ENV['TEMP'] to a non world-writable directory."
+      
+      for dir in dirs
         next if !dir
         dir = File.expand_path(dir)
         if stat = File.stat(dir) and stat.directory? and stat.writable? and

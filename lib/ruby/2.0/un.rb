@@ -246,10 +246,8 @@ def wait_writable
         break
       rescue Errno::EACCES => e
         raise if n and (n -= 1) <= 0
-        if verbose
-          puts e
-          STDOUT.flush
-        end
+        puts e
+        STDOUT.flush
         sleep wait
         retry
       end

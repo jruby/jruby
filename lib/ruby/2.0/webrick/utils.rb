@@ -72,11 +72,26 @@ module WEBrick
       unless port
         raise ArgumentError, "must specify port"
       end
-      sockets = Socket.tcp_server_sockets(address, port)
-      sockets = sockets.map {|s|
-        s.autoclose = false
-        TCPServer.for_fd(s.fileno)
+      res = Socket::getaddrinfo(address, port,
+                                Socket::AF_UNSPEC,   # address family
+                                Socket::SOCK_STREAM, # socket type
+                                0,                   # protocol
+                                Socket::AI_PASSIVE)  # flag
+      last_error = nil
+      sockets = []
+      res.each{|ai|
+        begin
+          logger.debug("TCPServer.new(#{ai[3]}, #{port})") if logger
+          sock = TCPServer.new(ai[3], port)
+          port = sock.addr[1] if port == 0
+          Utils::set_close_on_exec(sock)
+          sockets << sock
+        rescue => ex
+          logger.warn("TCPServer Error: #{ex}") if logger
+          last_error  = ex
+        end
       }
+      raise last_error if sockets.empty?
       return sockets
     end
     module_function :create_listeners

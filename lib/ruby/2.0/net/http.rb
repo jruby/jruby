@@ -605,7 +605,11 @@ module Net   #:nodoc:
     # and +p_user+ and +p_pass+ the username and password if authorization is
     # required to use the proxy.
     #
-    def HTTP.new(address, port = nil, p_addr = :ENV, p_port = nil, p_user = nil, p_pass = nil)
+    # In JRuby, this will default to the JSE proxy settings provided in the
+    # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
+    # are set and no alternative proxy has been provided.
+    #
+    def HTTP.new(address, port = nil, p_addr = ENV_JAVA['http.proxyHost'], p_port = ENV_JAVA['http.proxyPort'], p_user = nil, p_pass = nil)
       http = super address, port
 
       if proxy_class? then # from Net::HTTP::Proxy()
@@ -966,7 +970,12 @@ module Net   #:nodoc:
     #
     # This class is obsolete.  You may pass these same parameters directly to
     # Net::HTTP.new.  See Net::HTTP.new for details of the arguments.
-    def HTTP.Proxy(p_addr = :ENV, p_port = nil, p_user = nil, p_pass = nil)
+    #
+    # In JRuby, this will default to the JSE proxy settings provided in the
+    # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
+    # are set and no alternative proxy has been provided.
+    #
+    def HTTP.Proxy(p_addr = :ENV, p_port = ENV_JAVA['http.proxyHost'], p_user = ENV_JAVA['http.proxyPort'], p_pass = nil)
       return self unless p_addr
 
       Class.new(self) {

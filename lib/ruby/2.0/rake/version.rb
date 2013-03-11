@@ -1,4 +1,3 @@
-# :include: lib/rake/doc/README.rdoc
 module Rake
   VERSION = '0.9.6'
 
