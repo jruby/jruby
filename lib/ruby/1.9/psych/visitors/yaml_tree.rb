@@ -8,6 +8,30 @@ module Psych
     #   builder.tree # => #<Psych::Nodes::Stream .. }
     #
     class YAMLTree < Psych::Visitors::Visitor
+      class Registrar # :nodoc:
+        def initialize
+          @obj_to_id   = {}
+          @obj_to_node = {}
+          @counter     = 0
+        end
+
+        def register target, node
+          @obj_to_node[target.object_id] = node
+        end
+
+        def key? target
+          @obj_to_node.key? target.object_id
+        end
+
+        def id_for target
+          @obj_to_id[target.object_id] ||= (@counter += 1)
+        end
+
+        def node_for target
+          @obj_to_node[target.object_id]
+        end
+      end
+
       attr_reader :started, :finished
       alias :finished? :finished
       alias :started? :started
@@ -17,7 +41,7 @@ module Psych
         @started  = false
         @finished = false
         @emitter  = emitter
-        @st       = {}
+        @st       = Registrar.new
         @ss       = ss
         @options  = options
         @coders   = []
@@ -72,9 +96,9 @@ module Psych
 
       def accept target
         # return any aliases we find
-        if @st.key? target.object_id
-          oid         = target.object_id
-          node        = @st[oid]
+        if @st.key? target
+          oid         = @st.id_for target
+          node        = @st.node_for target
           anchor      = oid.to_s
           node.anchor = anchor
           return @emitter.alias anchor
@@ -147,8 +171,8 @@ module Psych
         @emitter.start_mapping nil, tag, false, Nodes::Mapping::BLOCK
 
         {
-          'message'   => private_iv_get(o, 'mesg') || o.message,
-          'backtrace' => private_iv_get(o, 'backtrace') || o.backtrace,
+          'message'   => private_iv_get(o, 'mesg'),
+          'backtrace' => private_iv_get(o, 'backtrace'),
         }.each do |k,v|
           next unless v
           @emitter.scalar k, nil, nil, true, false, Nodes::Scalar::ANY
@@ -221,16 +245,17 @@ module Psych
       end
 
       def binary? string
-        string.encoding == Encoding::ASCII_8BIT ||
+        (string.encoding == Encoding::ASCII_8BIT && !string.ascii_only?) ||
           string.index("\x00") ||
-          string.count("\x00-\x7F", "^ -~\t\r\n").fdiv(string.length) > 0.3
+          string.count("\x00-\x7F", "^ -~\t\r\n").fdiv(string.length) > 0.3 ||
+          string.class != String
       end
       private :binary?
 
       def visit_String o
-        plain = false
-        quote = false
-        style = Nodes::Scalar::ANY
+        plain = true
+        quote = true
+        style = Nodes::Scalar::PLAIN
         tag   = nil
         str   = o
 
@@ -239,15 +264,14 @@ module Psych
           tag   = '!binary' # FIXME: change to below when syck is removed
           #tag   = 'tag:yaml.org,2002:binary'
           style = Nodes::Scalar::LITERAL
+          plain = false
+          quote = false
         elsif o =~ /\n/
-          quote = true
           style = Nodes::Scalar::LITERAL
-        elsif o =~ /^\W/
-          quote = true
-          style = Nodes::Scalar::DOUBLE_QUOTED
         else
-          quote = !(String === @ss.tokenize(o))
-          plain = !quote
+          unless String === @ss.tokenize(o)
+            style = Nodes::Scalar::SINGLE_QUOTED
+          end
         end
 
         ivars = find_ivars o
@@ -409,7 +433,7 @@ module Psych
       end
 
       def register target, yaml_obj
-        @st[target.object_id] = yaml_obj
+        @st.register target, yaml_obj
         yaml_obj
       end
 
