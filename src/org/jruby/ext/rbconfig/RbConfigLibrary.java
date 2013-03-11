@@ -110,7 +110,7 @@ public class RbConfigLibrary implements Library {
 
     public static String getRuntimeVerStr(Ruby runtime) {
         if (runtime.is1_9()) {
-	    return "1.9";
+            return "1.9";
         }
         return "1.8";
     }
@@ -165,7 +165,11 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRubyLibDir(Ruby runtime) {
-        return new NormalizedFile(getVendorDirGeneral(runtime), String.format("ruby/%s", getRuntimeVerStr(runtime))).getPath();
+        return getRubyLibDirFor(runtime, getRuntimeVerStr(runtime));
+    }
+
+    public static String getRubyLibDirFor(Ruby runtime, String runtimeVerStr) {
+        return new NormalizedFile(getVendorDirGeneral(runtime), String.format("ruby/%s", runtimeVerStr)).getPath();
     }
 
     public static String getArchDir(Ruby runtime) {
