@@ -237,21 +237,27 @@ public class CFG {
 
         addEdge(geb, getExitBB(), EdgeType.EXIT);
         
-        for (BasicBlock basicBlock: getBasicBlocks()) {
-            if (basicBlock != geb && !bbIsProtected(basicBlock)) {
-                addEdge(basicBlock, geb, EdgeType.EXCEPTION);
-                setRescuerBB(basicBlock, geb);
-                setEnsurerBB(basicBlock, geb);
+        for (BasicBlock b: getBasicBlocks()) {
+            if (b != geb && !bbIsProtected(b)) {
+                addEdge(b, geb, EdgeType.EXCEPTION);
+                setRescuerBB(b, geb);
+                setEnsurerBB(b, geb);
             }
         }
+
+        // We are not creating a global exception region and adding it to the list of
+        // exc. regions because in graph form, we dont know what the "last BB" is.
+        // That requires a linearized form of the CFG's bbs.  So, the JIT can add
+        // a special case for this global exception block since it has access to the
+        // linearized form.
     }     
 
     public void setEnsurerBB(BasicBlock block, BasicBlock ensureBlock) {
         ensurerMap.put(block, ensureBlock);
     }
     
-    public void setRescuerBB(BasicBlock block, BasicBlock exceptionBlock) {
-        rescuerMap.put(block, exceptionBlock);
+    public void setRescuerBB(BasicBlock block, BasicBlock rescuerBlock) {
+        rescuerMap.put(block, rescuerBlock);
     }
     
     /**
@@ -316,10 +322,9 @@ public class CFG {
             }
 
             if (i instanceof ExceptionRegionStartMarkerInstr) {
-// SSS: Do we need this anymore?
-//                currBB.addInstr(i);
+                // We dont need the instruction anymore -- so it is not added to the CFG.
                 ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
-                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, ersmi.ensureBlockLabel);
+                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, ersmi.ensureBlockLabel, currBB);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
@@ -331,8 +336,7 @@ public class CFG {
 
                 nestedExceptionRegions.push(rr);
             } else if (i instanceof ExceptionRegionEndMarkerInstr) {
-// SSS: Do we need this anymore?
-//                currBB.addInstr(i);
+                // We dont need the instruction anymore -- so it is not added to the CFG.
                 nestedExceptionRegions.pop().setEndBB(currBB);
             } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
@@ -405,10 +409,10 @@ public class CFG {
             // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
             BasicBlock ensureBlockBB = rr.getEnsureBlockLabel() == null ? null : bbMap.get(rr.getEnsureBlockLabel());
             for (BasicBlock b : rr.getExclusiveBBs()) {
-                rescuerMap.put(b, firstRescueBB);
+                setRescuerBB(b, firstRescueBB);
                 graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
                 if (ensureBlockBB != null) {
-                    ensurerMap.put(b, ensureBlockBB);
+                    setEnsurerBB(b, ensureBlockBB);
                     if (ensureBlockBB != firstRescueBB) {
                         // SSS FIXME: This is a conservative edge because when a rescue block is present
                         // that catches an exception, control never reaches the ensure block directly.
@@ -424,7 +428,13 @@ public class CFG {
         buildExitBasicBlock(nestedExceptionRegions, firstBB, returnBBs, exceptionBBs, nextBBIsFallThrough, currBB, entryBB);
 
         optimize(); // remove useless cfg edges & orphaned bbs
-        
+
+        /*
+        for (ExceptionRegion er: this.outermostERs) {
+            System.out.println(er);
+        }
+        */
+
         return graph;
     }
     
@@ -534,7 +544,7 @@ public class CFG {
         //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
         //    ensure blocks for the two are identical.
         // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
-        //    an empty basic block cannot raise an exception, can it.
+        //    an empty basic block cannot raise an exception, can it?
         if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
             // First, remove straight-line jump, if present
             Instr lastInstr = a.getLastInstr();
@@ -557,7 +567,15 @@ public class CFG {
                 setRescuerBB(a, bR);
                 BasicBlock aE = getEnsurerBBFor(a);
                 BasicBlock bE = getEnsurerBBFor(b);
-                if ((aE == null) && (bE != null)) setRescuerBB(a, bE);
+                if ((aE == null) && (bE != null)) {
+                    setRescuerBB(a, bE);
+                    setEnsurerBB(a, bE);
+                }
+            }
+
+            // Fix up exception regions
+            for (ExceptionRegion er: this.outermostERs) {
+                er.mergeBBs(a, b);
             }
 
             return true;
@@ -747,12 +765,12 @@ public class CFG {
 
         // Clone rescuer map
         for (BasicBlock b: rescuerMap.keySet()) {
-            clone.rescuerMap.put(cloneBBMap.get(b), cloneBBMap.get(rescuerMap.get(b)));
+            clone.setRescuerBB(cloneBBMap.get(b), cloneBBMap.get(rescuerMap.get(b)));
         }
 
         // Clone ensurer map
         for (BasicBlock b: ensurerMap.keySet()) {
-            clone.ensurerMap.put(cloneBBMap.get(b), cloneBBMap.get(ensurerMap.get(b)));
+            clone.setEnsurerBB(cloneBBMap.get(b), cloneBBMap.get(ensurerMap.get(b)));
         }
 
         return clone;

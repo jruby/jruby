@@ -144,11 +144,12 @@ public class JVMVisitor extends IRVisitor {
         Instr[] instrs = t.a;
         Map<Integer, Label[]> jumpTable = t.b;
 
+        IRBytecodeAdapter m = jvm.method();
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
 
             if (jumpTable.get(i) != null) {
-                for (Label label : jumpTable.get(i)) jvm.method().mark(jvm.methodData().getLabel(label));
+                for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
             }
             visit(instr);
         }
@@ -308,8 +309,17 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void BreakInstr(BreakInstr breakinstr) {
-        super.BreakInstr(breakinstr);    //To change body of overridden methods use File | Settings | File Templates.
+    public void BreakInstr(BreakInstr breakInstr) {
+        IRBytecodeAdapter   m = jvm.method();
+        SkinnyMethodAdapter a = m.adapter;
+        m.loadLocal(0); // context
+        a.aload(1); // current scope
+        // FIXME: emit a constant-pool referencing breakInstr.scopeToReturnTo.some_id and load it here
+        // Also requires fixing up initiateBreak to accept StaticScope and extract IRScope and its id
+        // and compare them instead of the scope.
+        visit(breakInstr.getReturnValue());
+        // FIXME: emit block-type for the scope that is currently executing
+        a.invokestatic(p(IRubyObject.class), "initiateBreak", sig(ThreadContext.class, IRScope.class, IRScope.class, IRubyObject.class, Block.Type.class));
     }
 
     @Override

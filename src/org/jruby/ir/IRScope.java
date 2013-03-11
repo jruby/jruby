@@ -722,24 +722,14 @@ public abstract class IRScope {
         List<Object[]> etEntries = new ArrayList<Object[]>();
         for (BasicBlock b: linearizedBBList) {
             // We need handlers for:
-            // - RaiseException (Ruby exceptions -- handled by rescues),
-            // - Unrescuable    (JRuby exceptions -- handled by ensures),
-            // - Throwable      (JRuby/Java exceptions -- handled by rescues)
-            // in that order since Throwable < Unrescuable and Throwable < RaiseException
-            //
-            // Note that Throwable also catches IRReturnJump and IRBreakJump.  There is
-            // nothing special to do for IRReturnJump.  But, break-jumps have extra
-            // logic.  So, all handlers need to check if the handler is a IRBreakJump
-            // and take action accordingly.
+            // - Unrescuable    (handled by ensures),
+            // - Throwable      (handled by rescues)
+            // in that order since Throwable < Unrescuable
             BasicBlock rBB = cfg().getRescuerBBFor(b);
             BasicBlock eBB = cfg().getEnsurerBBFor(b);
             if ((eBB != null) && (rBB == eBB || rBB == null)) {
                 // 1. same rescue and ensure handler ==> just spit out one entry with a Throwable class
                 // 2. only ensure handler            ==> just spit out one entry with a Throwable class
-                //
-                // The rescue handler knows whether to unwrap or not.  But for now, the rescue handler
-                // has to process its recv_exception instruction as
-                //    e = (e instanceof RaiseException) ? unwrap(e) : e;
 
                 etEntries.add(new Object[] {b.getLabel(), eBB.getLabel(), Throwable.class});
             } else if (rBB != null) {
