@@ -153,6 +153,7 @@ module Net # :nodoc:
         else
           raise Timeout::Error
         end
+      end
     end
 
     def rbuf_consume(len)
