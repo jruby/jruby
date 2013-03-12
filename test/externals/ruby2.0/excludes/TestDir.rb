@@ -1,0 +1,7 @@
+exclude :test_JVN_13947696, "needs investigation"
+exclude :test_chdir, "needs investigation"
+exclude :test_dir_enc, "needs investigation"
+exclude :test_glob, "needs investigation"
+exclude :test_inspect, "needs investigation"
+exclude :test_path, "needs investigation"
+exclude :test_rewind, "needs investigation"

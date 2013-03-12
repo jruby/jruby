@@ -1,0 +1,7 @@
+exclude :test_grep_multiple_values, "needs investigation"
+exclude :test_inspect, "needs investigation"
+exclude :test_map_zip, "needs investigation"
+exclude :test_reject_multiple_values, "needs investigation"
+exclude :test_select_multiple_values, "needs investigation"
+exclude :test_size, "needs investigation"
+exclude :test_zip_without_arg, "needs investigation"

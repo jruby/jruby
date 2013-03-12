@@ -47,6 +47,7 @@ import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -471,6 +472,15 @@ public class Readline {
                 block.yield(context, runtime.newString(i.next().value().toString()).taint(context));
             }
             return recv;
+        }
+
+        @JRubyMethod(name = "clear", compat = CompatVersion.RUBY1_9)
+        public static IRubyObject clear(ThreadContext context, IRubyObject recv, Block block) {
+            ConsoleHolder holder = getHolder(context.runtime);
+
+            holder.history.clear();
+            
+            return context.nil;
         }
     }
 

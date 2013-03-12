@@ -1,0 +1,8 @@
+exclude :test_arg_concat, "needs investigation"
+exclude :test_assign_in_conditional, "needs investigation"
+exclude :test_dynamic_constant_assignment, "needs investigation"
+exclude :test_invalid_char, "needs investigation"
+exclude :test_method_block_location, "needs investigation"
+exclude :test_question, "needs investigation"
+exclude :test_void_expr_stmts_value, "1; next; 2 is figured via compile.c.  IR can do equivalent for 9k.  Not a huge issue for 1.7.x barring real issue"
+exclude :test_xstring, "needs investigation"

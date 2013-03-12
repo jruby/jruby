@@ -1,0 +1,5 @@
+exclude :test_initialize_frozen, "needs investigation"
+exclude :test_marshal_load_frozen, "needs investigation"
+exclude :test_marshal_load_insecure, "needs investigation"
+exclude :test_random_range, "precision issue?"
+exclude :test_rand_reseed_on_fork, "precision issue?"

@@ -1,0 +1,7 @@
+exclude :test_aref, "needs investigation"
+exclude :test_lshift, "needs investigation"
+exclude :test_pack, "needs investigation"
+exclude :test_pow, "needs investigation"
+exclude :test_printf_diu, "needs investigation"
+exclude :test_printf_o, "needs investigation"
+exclude :test_rshift, "needs investigation"

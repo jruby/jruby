@@ -1,0 +1,6 @@
+exclude :test__httpdate, "needs investigation"
+exclude :test__iso8601, "needs investigation"
+exclude :test__rfc2822, "needs investigation"
+exclude :test__rfc3339, "needs investigation"
+exclude :test__xmlschema, "needs investigation"
+exclude :test_parse__ex, "needs investigation"
