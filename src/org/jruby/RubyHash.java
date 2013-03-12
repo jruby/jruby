@@ -243,7 +243,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         this.ifNone = runtime.getNil();
-        alloc();
+        allocFirst();
     }
 
     public RubyHash(Ruby runtime, int buckets) {
@@ -257,13 +257,13 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
-        alloc();
+        allocFirst();
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
-        alloc(buckets);
+        allocFirst(buckets);
     }
 
     /*
@@ -272,14 +272,14 @@ public class RubyHash extends RubyObject implements Map {
      */
     RubyHash(Ruby runtime, boolean objectSpace) {
         super(runtime, runtime.getHash(), objectSpace);
-        alloc();
+        allocFirst();
     }
 
     // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
-        alloc();
+        allocFirst();
 
         for (Iterator iter = valueMap.entrySet().iterator();iter.hasNext();) {
             Map.Entry e = (Map.Entry)iter.next();
@@ -287,14 +287,26 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private final void alloc() {
+    private final void allocFirst() {
         threshold = INITIAL_THRESHOLD;
         table = new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY];
     }
 
-    private final void alloc(int buckets) {
+    private final void allocFirst(int buckets) {
         threshold = INITIAL_THRESHOLD;
         table = new RubyHashEntry[buckets];
+    }
+
+    private final void alloc() {
+        generation++;
+        head.prevAdded = head.nextAdded = head;
+        allocFirst();
+    }
+
+    private final void alloc(int buckets) {
+        generation++;
+        head.prevAdded = head.nextAdded = head;
+        allocFirst(buckets);
     }
 
     /* ============================

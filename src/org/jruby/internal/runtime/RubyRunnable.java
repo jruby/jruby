@@ -75,7 +75,6 @@ public class RubyRunnable implements Runnable {
     
     public void run() {
         javaThread = Thread.currentThread();
-        ThreadContext initContext = runtime.getCurrentContext();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         
         // set thread context JRuby classloader here, for Ruby-owned thread
@@ -97,9 +96,9 @@ public class RubyRunnable implements Runnable {
         try {
             // Call the thread's code
             try {
-                if (runtime.hasEventHooks()) initContext.trace(RubyEvent.THREAD_BEGIN, null, initContext.getFrameKlazz());
+                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_BEGIN, null, context.getFrameKlazz());
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks()) initContext.trace(RubyEvent.THREAD_END, null, initContext.getFrameKlazz());
+                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_END, null, context.getFrameKlazz());
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
                 if (runtime.is1_9()) {
