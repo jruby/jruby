@@ -48,9 +48,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -290,15 +289,11 @@ public class RubyHash extends RubyObject implements Map {
 
     private final void alloc() {
         threshold = INITIAL_THRESHOLD;
-        generation++;
-        head.nextAdded = head.prevAdded = head;
         table = new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY];
     }
 
     private final void alloc(int buckets) {
         threshold = INITIAL_THRESHOLD;
-        generation++;
-        head.nextAdded = head.prevAdded = head;
         table = new RubyHashEntry[buckets];
     }
 
@@ -487,7 +482,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private void checkIterating() {
-        if (iteratorCount.get() > 0) {
+        if (iteratorCount > 0) {
             throw getRuntime().newRuntimeError("can't add a new key into hash during iteration");
         }
     }
@@ -890,7 +885,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "rehash")
     public RubyHash rehash() {
-        if (iteratorCount.get() > 0) {
+        if (iteratorCount > 0) {
             throw getRuntime().newRuntimeError("rehash during iteration");
         }
 
@@ -1246,14 +1241,41 @@ public class RubyHash extends RubyObject implements Map {
         return getRuntime().newBoolean(hasValue(context, expected));
     }
 
-    private AtomicInteger iteratorCount = new AtomicInteger(0);
+    private volatile int iteratorCount;
+    
+    private static final AtomicIntegerFieldUpdater<RubyHash> ITERATOR_UPDATER;
+    static {
+        AtomicIntegerFieldUpdater<RubyHash> iterUp = null;
+        try {
+            iterUp = AtomicIntegerFieldUpdater.newUpdater(RubyHash.class, "iteratorCount");
+        } catch (Exception e) {
+            // ignore, leave null
+        }
+        ITERATOR_UPDATER = iterUp;
+    }
 
     private void iteratorEntry() {
-        iteratorCount.incrementAndGet();
+        if (ITERATOR_UPDATER == null) {
+            iteratorEntrySync();
+            return;
+        }
+        ITERATOR_UPDATER.incrementAndGet(this);
     }
 
     private void iteratorExit() {
-        iteratorCount.decrementAndGet();
+        if (ITERATOR_UPDATER == null) {
+            iteratorExitSync();
+            return;
+        }
+        ITERATOR_UPDATER.decrementAndGet(this);
+    }
+
+    private synchronized void iteratorEntrySync() {
+        ++iteratorCount;
+    }
+
+    private void iteratorExitSync() {
+        --iteratorCount;
     }
 
     private void iteratorVisitAll(Visitor visitor) {
