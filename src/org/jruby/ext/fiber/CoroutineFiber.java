@@ -10,7 +10,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,7 +40,6 @@ public class CoroutineFiber extends Fiber {
         this.slot = runtime.getNil();
         this.context = root ? context : ThreadContext.newContext(runtime);
         this.context.setFiber(this);
-        this.context.setThread(context.getThread());
 
         this.state = CoroutineFiberState.SUSPENDED_YIELD;
         if (coro == null) {
@@ -51,7 +49,11 @@ public class CoroutineFiber extends Fiber {
                 protected void run() {
                     try {
                         // first resume, dive into the block
-                        slot = block.yieldArray(CoroutineFiber.this.context, slot, null, null);
+                        if (slot == NEVER) {
+                            slot = block.yieldSpecific(CoroutineFiber.this.context);
+                        } else {
+                            slot = block.yieldArray(CoroutineFiber.this.context, slot, null, null);
+                        }
                     } catch (JumpException t) {
                         coroException = t;
                     } finally {

@@ -1,6 +1,7 @@
 package org.jruby.ext.fiber;
 
 import java.util.concurrent.Exchanger;
+import java.util.concurrent.Future;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -16,26 +17,34 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ThreadFiber extends Fiber {
     private final Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
     private volatile ThreadFiberState state = ThreadFiberState.NOT_STARTED;
+    private Future future;
 
     public ThreadFiber(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
     
+    @Override
     protected void initFiber(ThreadContext context) {
         final Ruby runtime = context.runtime;
         
         Runnable runnable = new Runnable() {
 
+            @Override
             public void run() {
                 // initialize and yield back to launcher
                 ThreadContext context = runtime.getCurrentContext();
-                context.setThread(parent);
                 context.setFiber(ThreadFiber.this);
+                
+                // yield gets Fiber#resume argument for first resume
                 IRubyObject result = yield(context, context.nil);
 
                 try {
                     // first resume, dive into the block
-                    result = block.yieldArray(context, result, null, null);
+                    if (result == NEVER) {
+                        result = block.yieldSpecific(context);
+                    } else {
+                        result = block.yieldArray(context, result, null, null);
+                    }
                 } catch (JumpException.RetryJump rtry) {
                     // FIXME: technically this should happen before the block is executed
                     parent.raise(new IRubyObject[]{runtime.newSyntaxError("Invalid retry").getException()}, Block.NULL_BLOCK);
@@ -59,8 +68,9 @@ public class ThreadFiber extends Fiber {
         };
 
         // submit job and wait to be resumed
-        context.runtime.getExecutor().execute(runnable);
+        future = context.runtime.getExecutor().submit(runnable);
         try {
+            // kick the fiber into "YIELDED" mode, waiting for resume
             exchanger.exchange(context.nil);
         } catch (InterruptedException ie) {
             throw runtime.newConcurrencyError("interrupted while waiting for fiber to start");
@@ -79,6 +89,10 @@ public class ThreadFiber extends Fiber {
                     }
                     throw context.runtime.newRuntimeError("BUG: resume before fiber is started");
                 case YIELDED:
+                    if (context.getThread() != parent) {
+                        throw context.runtime.newFiberError("resuming fiber from different thread");
+                    }
+                    
                     if (!transfer && transferredTo != null) {
                         throw context.runtime.newFiberError("double resume");
                     }

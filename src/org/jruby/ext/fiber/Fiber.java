@@ -58,10 +58,14 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
         root = true;
         return this;
     }
+    
+    public RubyThread getParentThread() {
+        return parent;
+    }
 
     @JRubyMethod()
     public IRubyObject resume(ThreadContext context) {
-        return resumeOrTransfer(context, context.nil, false);
+        return resumeOrTransfer(context, NEVER, false);
     }
 
     @JRubyMethod()
@@ -77,7 +81,7 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
     // This should only be defined after require 'fiber'
     @JRubyMethod()
     public IRubyObject transfer(ThreadContext context) {
-        return resumeOrTransfer(context, context.nil, true);
+        return resumeOrTransfer(context, NEVER, true);
     }
 
     // This should only be defined after require 'fiber'
