@@ -74,10 +74,20 @@
         <include name="jruby.bnd.template"/>
         <include name="pom.xml"/>
         <include name="maven/**"/>
+        
         <include name="gems/jruby-jars/**"/>
         <exclude name="gems/jruby-jars/pkg/**"/>
         <exclude name="gems/jruby-jars/lib/jruby*.jar"/>
         <exclude name="gems/jruby-jars/lib/jruby-jars/**"/>
+        
+        <include name="gems/jruby-openssl/**"/>
+        <exclude name="gems/jruby-openssl/pkg/**"/>
+        <exclude name="gems/jruby-openssl/*.gem"/>
+        
+        <include name="gems/bouncy-castle-java/**"/>
+        <exclude name="gems/jruby-openssl/*.gem"/>
+        <exclude name="gems/bouncy-castle-java/lib/**"/>
+        
         <exclude name="lib/jruby*.jar"/>
     </patternset>
 
