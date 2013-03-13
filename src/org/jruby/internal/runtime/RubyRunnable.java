@@ -96,9 +96,9 @@ public class RubyRunnable implements Runnable {
         try {
             // Call the thread's code
             try {
-                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_BEGIN, null, context.getFrameKlazz());
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, context.getFrameKlazz());
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_END, null, context.getFrameKlazz());
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, context.getFrameKlazz());
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
                 if (runtime.is1_9()) {
