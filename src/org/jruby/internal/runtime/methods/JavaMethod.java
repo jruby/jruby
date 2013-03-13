@@ -37,12 +37,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  */
-public abstract class JavaMethod extends DynamicMethod implements Cloneable {
+public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2 {
     protected int arityValue;
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
     protected StaticScope staticScope;
+    private String parameterDesc;
+    private String[] parameterList;
 
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
@@ -216,6 +218,25 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
 
     public StaticScope getStaticScope() {
         return staticScope;
+    }
+    
+    public void setParameterDesc(String parameterDesc) {
+        this.parameterDesc = parameterDesc;
+        this.parameterList = null;
+    }
+    
+    public void setParameterList(String[] parameterList) {
+        this.parameterDesc = null;
+        this.parameterList = parameterList;
+    }
+
+    public String[] getParameterList() {
+        if (parameterList == null && parameterDesc != null && parameterDesc.length() > 0) {
+            parameterList = parameterDesc.split(";");
+        } else {
+            return parameterList = new String[0];
+        }
+        return parameterList;
     }
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {

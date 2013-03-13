@@ -59,6 +59,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -2667,6 +2668,7 @@ public class RuntimeHelpers {
                 continue;
             }
 
+            if (param.length() == 0) System.out.println(Arrays.toString(parameterList));
             if (param.charAt(0) == 'q') {
                 // required/normal arg
                 elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
@@ -2690,7 +2692,11 @@ public class RuntimeHelpers {
                 // block arg
                 elem.add(RubySymbol.newSymbol(runtime, "block"));
             }
-            elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+            
+            if (param.length() > 1) {
+                elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+            }
+            
             parms.add(elem);
         }
 

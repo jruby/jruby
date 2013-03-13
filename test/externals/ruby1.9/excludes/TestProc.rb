@@ -1,5 +1,4 @@
 exclude :test_attr_source_location, "needs investigation"
-exclude :test_block_propagation, "needs investigation"
 exclude :test_curry, "needs investigation"
 exclude :test_curry_from_knownbug, "needs investigation"
 exclude :test_curry_ski_fib, "needs investigation"

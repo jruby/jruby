@@ -42,7 +42,6 @@ import org.jruby.runtime.PositionAware;
 public abstract class CompiledMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2 {
     protected Object $scriptObject;
     protected ISourcePosition position;
-    protected String[] parameterList;
     
     public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
         private final String method;
@@ -227,7 +226,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         }
 
         public String[] getParameterList() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            if (compiledMethod == null) initializeMethod();
+            return parameterList;
         }
         
     }
@@ -246,7 +246,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         
         this.$scriptObject = scriptObject;
         this.position = position;
-        this.parameterList = parameterDesc.split(";");
+        setParameterDesc(parameterDesc);
         super.init(implementationClass, arity, visibility, staticScope, callConfig);
     }
         
@@ -291,10 +291,6 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
 
     public int getLine() {
         return position.getStartLine();
-    }
-
-    public String[] getParameterList() {
-        return parameterList;
     }
 
     public Object getScriptObject() {

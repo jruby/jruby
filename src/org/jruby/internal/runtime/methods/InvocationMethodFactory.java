@@ -596,6 +596,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         private boolean scope;
         private boolean rest;
         private boolean block;
+        private String parameterDesc;
+        
+        private static final boolean RICH_NATIVE_METHOD_PARAMETERS = false;
         
         public DescriptorInfo(List<JavaMethodDescriptor> descs) {
             min = Integer.MAX_VALUE;
@@ -660,6 +663,41 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 scope |= desc.anno.scope();
                 block |= desc.hasBlock;
             }
+            
+            // Core methods currently only show :req's for fixed-arity or a single
+            // :rest if it's variable arity. I have filed a bug to improve this
+            // (using the skipped logic below, when the time comes) but for now
+            // we follow suit. See https://bugs.ruby-lang.org/issues/8088
+            
+            StringBuilder descBuilder = new StringBuilder();
+            if (min == max) {
+                int i = 0;
+                for (; i < min; i++) {
+                    if (i > 0) descBuilder.append(';');
+                    descBuilder.append("q");
+                }
+               // variable arity
+            } else if (RICH_NATIVE_METHOD_PARAMETERS) {
+                int i = 0;
+                for (; i < min; i++) {
+                    if (i > 0) descBuilder.append(';');
+                    descBuilder.append("q");
+                }
+
+                for (; i < max; i++) {
+                    if (i > 0) descBuilder.append(';');
+                    descBuilder.append("o");
+                }
+
+                if (rest) {
+                    if (i > 0) descBuilder.append(';');
+                    descBuilder.append("r");
+                }
+            } else {
+                descBuilder.append("r");
+            }
+            
+            parameterDesc = descBuilder.toString();
         }
 
         @Deprecated
@@ -689,6 +727,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         public boolean isBlock() {
             return block;
+        }
+        
+        public String getParameterDesc() {
+            return parameterDesc;
         }
     }
 
@@ -795,8 +837,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     if (superClass == null) throw new RuntimeException("invalid multi combination");
                     String superClassString = p(superClass);
-                    int dotIndex = desc1.declaringClassName.lastIndexOf('.');
-                    ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "$" + desc1.name, superClassString);
+                    
+                    ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
                     addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
 
@@ -1117,7 +1159,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private ClassWriter createJavaMethodCtor(String namePath, String shortPath, String sup) throws Exception {
+    private ClassWriter createJavaMethodCtor(String namePath, String sup, String parameterDesc) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         String sourceFile = namePath.substring(namePath.lastIndexOf('/') + 1) + ".gen";
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
@@ -1126,6 +1168,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.start();
         mv.aloadMany(0, 1, 2);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
+        mv.aload(0);
+        mv.ldc(parameterDesc);
+        mv.invokevirtual(p(JavaMethod.class), "setParameterDesc", sig(void.class, String.class));
         mv.voidreturn();
         mv.end();
         
