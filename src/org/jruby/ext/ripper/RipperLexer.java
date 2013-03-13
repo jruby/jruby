@@ -940,7 +940,7 @@ public class RipperLexer {
             } else {
                 // FIXME: HEH...totally broken
                 if (value == null) {
-                    System.out.println("Token: " + printToken(token) + " has a null value");
+                    //System.out.println("Token: " + printToken(token) + " has a null value");
                     return parser.getRuntime().getNil();
                 } else {
                     arg = parser.getRuntime().newString("Error: " + value.getClass().getName());

@@ -137,6 +137,12 @@ externals/ruby1.9/psych/visitors/test_emitter
 externals/ruby1.9/psych/visitors/test_to_ruby
 externals/ruby1.9/psych/visitors/test_yaml_tree
 
+externals/ruby1.9/ripper/test_files
+externals/ruby1.9/ripper/test_filter
+externals/ruby1.9/ripper/test_parser_events
+externals/ruby1.9/ripper/test_ripper
+externals/ruby1.9/ripper/test_scanner_event
+
 # No AddrInfo
 #externals/ruby1.9/socket/test_addrinfo
 # No Socket::AncillaryData
