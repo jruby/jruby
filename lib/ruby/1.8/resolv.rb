@@ -2,6 +2,7 @@ require 'socket'
 require 'fcntl'
 require 'timeout'
 require 'thread'
+require 'rbconfig'
 
 begin
   require 'securerandom'
@@ -165,7 +166,6 @@ class Resolv
   # DNS::Hosts is a hostname resolver that uses the system hosts file.
 
   class Hosts
-    require 'rbconfig'
     if /mswin32|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM || ::Config::CONFIG['host_os'] =~ /mswin/
       require 'win32/resolv'
       DefaultFileName = Win32::Resolv.get_hosts_path
