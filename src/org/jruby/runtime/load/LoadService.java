@@ -1126,7 +1126,9 @@ public class LoadService {
      * Try loading the resource from the current dir by appending suffixes and
      * passing it to tryResourceAsIs to have the ./ replaced by CWD.
      */
-    protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
+    protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
+        if (!runtime.is1_9()) return tryResourceFromCWD(state, baseName, suffixType);
+        
         LoadServiceResource foundResource = null;
 
         for (String suffix : suffixType.getSuffixes()) {
@@ -1452,7 +1454,7 @@ public class LoadService {
                 
                 debugLogTry(debugName, actualPath.toString());
                 
-                if (reportedPath.contains("..")) {
+                if (reportedPath.contains("..") && runtime.is1_9()) {
                     // try to canonicalize if path contains ..
                     try {
                         actualPath = actualPath.getCanonicalFile();
