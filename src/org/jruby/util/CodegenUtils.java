@@ -227,37 +227,45 @@ public class CodegenUtils {
     }
 
     public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {
-      try {
-        for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
-            Object value = fieldEntry.getValue();
-          if (value instanceof Map) {
-            Map<Class, Map<String, Object>> nestedAnnotationMap = (Map<Class, Map<String, Object>>) value;
+        try {
+            for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
+                Object value = fieldEntry.getValue();
+                String key = fieldEntry.getKey();
 
-            for (Map.Entry<Class, Map<String, Object>> nestedAnnotation : nestedAnnotationMap.entrySet()) {
-              AnnotationVisitor annotationV = visitor.visitAnnotation(fieldEntry.getKey(), Type.getType(nestedAnnotation.getKey()).getDescriptor());
-              visitAnnotationFields(annotationV, nestedAnnotation.getValue());
-              annotationV.visitEnd();
+                if (value instanceof Map) {
+                    Map<Class, Map<String, Object>> nestedAnnotationMap = (Map<Class, Map<String, Object>>) value;
+
+                    for (Map.Entry<Class, Map<String, Object>> nestedAnnotation : nestedAnnotationMap.entrySet()) {
+                        AnnotationVisitor annotationV;
+
+                        annotationV = visitor.visitAnnotation(key, Type.getType(nestedAnnotation.getKey()).getDescriptor());
+                        visitAnnotationFields(annotationV, nestedAnnotation.getValue());
+                        annotationV.visitEnd();
+                    }
+                } else if (value.getClass().isArray()) {
+                    Object[] values = (Object[]) value;
+
+                    AnnotationVisitor arrayV = visitor.visitArray(key);
+                    for (int i = 0; i < values.length; i++) {
+                        Map<String, Object> map = new HashMap<String, Object>();
+                        map.put(null, values[i]);
+                        visitAnnotationFields(arrayV, map);
+                    }
+                    arrayV.visitEnd();
+                } else if (value.getClass().isEnum()) {
+                    visitor.visitEnum(key, ci(value.getClass()), value.toString());
+                } else if (value instanceof Class) {
+                    visitor.visit(key, Type.getType((Class) value));
+                } else {
+                    visitor.visit(key, value);
+                }
             }
-          } else if (value.getClass().isArray()) {
-            Object[] values = (Object[]) value;
-            AnnotationVisitor arrayV = visitor.visitArray(fieldEntry.getKey());
-            for (int i = 0; i < values.length; i++) {
-              Map<String, Object> map = new HashMap<String, Object>();
-              map.put(null, values[i]);
-              visitAnnotationFields(arrayV, map);
-            }
-            arrayV.visitEnd();
-          } else if (value.getClass().isEnum()) {
-            visitor.visitEnum(fieldEntry.getKey(), ci(value.getClass()), value.toString());
-          } else if (value instanceof Class) {
-            visitor.visit(fieldEntry.getKey(), Type.getType((Class) value));
-          } else {
-            visitor.visit(fieldEntry.getKey(), value);
-          }
+        } catch (ClassCastException e) {
+            throw new InvalidAnnotationDescriptorException("Fields "
+                + fields
+                + " did not match annotation format.  See CodegenUtils#visitAnnotationFields for format",
+                e);
         }
-      } catch(ClassCastException e) {
-        throw new InvalidAnnotationDescriptorException("Fields " + fields + " did not match annotation format.  See CodegenUtils#visitAnnotationFields for format", e);
-      }
     }
 
     public static Class getBoxType(Class type) {
@@ -284,20 +292,20 @@ public class CodegenUtils {
         }
     }
 
-  public static class InvalidAnnotationDescriptorException extends RuntimeException {
-    public InvalidAnnotationDescriptorException() {
-    }
+    public static class InvalidAnnotationDescriptorException extends RuntimeException {
+        public InvalidAnnotationDescriptorException() {
+        }
 
-    public InvalidAnnotationDescriptorException(String s) {
-      super(s);
-    }
+        public InvalidAnnotationDescriptorException(String s) {
+            super(s);
+        }
 
-    public InvalidAnnotationDescriptorException(String s, Throwable throwable) {
-      super(s, throwable);
-    }
+        public InvalidAnnotationDescriptorException(String s, Throwable throwable) {
+            super(s, throwable);
+        }
 
-    public InvalidAnnotationDescriptorException(Throwable throwable) {
-      super(throwable);
+        public InvalidAnnotationDescriptorException(Throwable throwable) {
+            super(throwable);
+        }
     }
-  }
 }
