@@ -18,8 +18,8 @@ require 'psych/handlers/document_stream'
 ###
 # = Overview
 #
-# Psych is a YAML parser and emitter. 
-# Psych leverages libyaml [Home page: http://pyyaml.org/wiki/LibYAML] 
+# Psych is a YAML parser and emitter.
+# Psych leverages libyaml [Home page: http://pyyaml.org/wiki/LibYAML]
 # or [Git repo: https://github.com/zerotao/libyaml] for its YAML parsing
 # and emitting capabilities. In addition to wrapping libyaml, Psych also
 # knows how to serialize and de-serialize most Ruby objects to and from
@@ -43,27 +43,6 @@ require 'psych/handlers/document_stream'
 # level, is an event based parser.  Mid level is access to the raw YAML AST,
 # and at the highest level is the ability to unmarshal YAML to ruby objects.
 #
-# === Low level parsing
-#
-# The lowest level parser should be used when the YAML input is already known,
-# and the developer does not want to pay the price of building an AST or
-# automatic detection and conversion to ruby objects.  See Psych::Parser for
-# more information on using the event based parser.
-#
-# === Mid level parsing
-#
-# Psych provides access to an AST produced from parsing a YAML document.  This
-# tree is built using the Psych::Parser and Psych::TreeBuilder.  The AST can
-# be examined and manipulated freely.  Please see Psych::parse_stream,
-# Psych::Nodes, and Psych::Nodes::Node for more information on dealing with
-# YAML syntax trees.
-#
-# === High level parsing
-#
-# The high level YAML parser provided by Psych simply takes YAML as input and
-# returns a Ruby data structure.  For information on using the high level parser
-# see Psych.load
-#
 # == YAML Emitting
 #
 # Psych provides a range of interfaces ranging from low to high level for
@@ -72,14 +51,98 @@ require 'psych/handlers/document_stream'
 # a YAML AST, and the highest level is converting a Ruby object straight to
 # a YAML document.
 #
-# === Low level emitting
+# == High-level API
 #
-# The lowest level emitter is an event based system.  Events are sent to a
-# Psych::Emitter object.  That object knows how to convert the events to a YAML
-# document.  This interface should be used when document format is known in
-# advance or speed is a concern.  See Psych::Emitter for more information.
+# === Parsing
 #
-# === Mid level emitting
+# The high level YAML parser provided by Psych simply takes YAML as input and
+# returns a Ruby data structure.  For information on using the high level parser
+# see Psych.load
+#
+# ==== Reading from a string
+#
+#   Psych.load("--- a")             # => 'a'
+#   Psych.load("---\n - a\n - b")   # => ['a', 'b']
+#
+# ==== Reading from a file
+#
+#   Psych.load_file("database.yml")
+#
+# ==== Exception handling
+#
+#   begin
+#     # The second argument chnages only the exception contents
+#     Psych.parse("--- `", "file.txt")
+#   rescue Psych::SyntaxError => ex
+#     ex.file    # => 'file.txt'
+#     ex.message # => "(file.txt): found character that cannot start any token"
+#   end
+#
+# === Emitting
+#
+# The high level emitter has the easiest interface.  Psych simply takes a Ruby
+# data structure and converts it to a YAML document.  See Psych.dump for more
+# information on dumping a Ruby data structure.
+#
+# ==== Writing to a string
+#
+#   # Dump an array, get back a YAML string
+#   Psych.dump(['a', 'b'])  # => "---\n- a\n- b\n"
+#
+#   # Dump an array to an IO object
+#   Psych.dump(['a', 'b'], StringIO.new)  # => #<StringIO:0x000001009d0890>
+#
+#   # Dump an array with indentation set
+#   Psych.dump(['a', ['b']], :indentation => 3) # => "---\n- a\n-  - b\n"
+#
+#   # Dump an array to an IO with indentation set
+#   Psych.dump(['a', ['b']], StringIO.new, :indentation => 3)
+#
+# ==== Writing to a file
+#
+# Currently there is no direct API for dumping Ruby structure to file:
+#
+#   File.open('database.yml', 'w') do |file|
+#     file.write(Psych.dump(['a', 'b']))
+#   end
+#
+# == Mid-level API
+#
+# === Parsing
+#
+# Psych provides access to an AST produced from parsing a YAML document.  This
+# tree is built using the Psych::Parser and Psych::TreeBuilder.  The AST can
+# be examined and manipulated freely.  Please see Psych::parse_stream,
+# Psych::Nodes, and Psych::Nodes::Node for more information on dealing with
+# YAML syntax trees.
+#
+# ==== Reading from a string
+#
+#   # Returns Psych::Nodes::Stream
+#   Psych.parse_stream("---\n - a\n - b")
+#
+#   # Returns Psych::Nodes::Document
+#   Psych.parse("---\n - a\n - b")
+#
+# ==== Reading from a file
+#
+#   # Returns Psych::Nodes::Stream
+#   Psych.parse_stream(File.read('database.yml'))
+#
+#   # Returns Psych::Nodes::Document
+#   Psych.parse_file('database.yml')
+#
+# ==== Exception handling
+#
+#   begin
+#     # The second argument chnages only the exception contents
+#     Psych.parse("--- `", "file.txt")
+#   rescue Psych::SyntaxError => ex
+#     ex.file    # => 'file.txt'
+#     ex.message # => "(file.txt): found character that cannot start any token"
+#   end
+#
+# === Emitting
 #
 # At the mid level is building an AST.  This AST is exactly the same as the AST
 # used when parsing a YAML document.  Users can build an AST by hand and the
@@ -87,18 +150,76 @@ require 'psych/handlers/document_stream'
 # Psych::Nodes::Node, and Psych::TreeBuilder for more information on building
 # a YAML AST.
 #
-# === High level emitting
+# ==== Writing to a string
 #
-# The high level emitter has the easiest interface.  Psych simply takes a Ruby
-# data structure and converts it to a YAML document.  See Psych.dump for more
-# information on dumping a Ruby data structure.
+#   # We need Psych::Nodes::Stream (not Psych::Nodes::Document)
+#   stream = Psych.parse_stream("---\n - a\n - b")
+#
+#   stream.to_yaml # => "---\n- a\n- b\n"
+#
+# ==== Writing to a file
+#
+#   # We need Psych::Nodes::Stream (not Psych::Nodes::Document)
+#   stream = Psych.parse_stream(File.read('database.yml'))
+#
+#   File.open('database.yml', 'w') do |file|
+#     file.write(stream.to_yaml)
+#   end
+#
+# == Low-level API
+#
+# === Parsing
+#
+# The lowest level parser should be used when the YAML input is already known,
+# and the developer does not want to pay the price of building an AST or
+# automatic detection and conversion to ruby objects.  See Psych::Parser for
+# more information on using the event based parser.
+#
+# ==== Reading to Psych::Nodes::Stream structure
+#
+#   parser = Psych::Parser.new(TreeBuilder.new) # => #<Psych::Parser>
+#   parser = Psych.parser                       # it's an alias for the above
+#
+#   parser.parse("---\n - a\n - b")             # => #<Psych::Parser>
+#   parser.handler                              # => #<Psych::TreeBuilder>
+#   parser.handler.root                         # => #<Psych::Nodes::Stream>
+#
+# ==== Receiving an events stream
+#
+#   parser = Psych::Parser.new(Psych::Handlers::Recorder.new)
+#
+#   parser.parse("---\n - a\n - b")
+#   parser.events # => [list of [event, args] lists]
+#                 # event is one of: Psych::Handler::EVENTS
+#                 # args are the arguments passed to the event
+#
+# === Emitting
+#
+# The lowest level emitter is an event based system.  Events are sent to a
+# Psych::Emitter object.  That object knows how to convert the events to a YAML
+# document.  This interface should be used when document format is known in
+# advance or speed is a concern.  See Psych::Emitter for more information.
+#
+# ==== Writing to a ruby structure
+#
+#   Psych.parser.parse("--- a")       # => #<Psych::Parser>
+#
+#   parser.handler.first              # => #<Psych::Nodes::Stream>
+#   parser.handler.first.to_ruby      # => ["a"]
+#
+#   parser.handler.root.first         # => #<Psych::Nodes::Document>
+#   parser.handler.root.first.to_ruby # => "a"
+#
+#   # You can instantiate an Emitter manually
+#   Psych::Visitors::ToRuby.new.accept(parser.handler.root.first)
+#   # => "a"
 
 module Psych
   # The version is Psych you're using
-  VERSION         = '1.3.4'
+  VERSION         = '2.0.0'
 
   # The version of libyaml Psych is using
-  LIBYAML_VERSION = Psych.libyaml_version.join '.' unless RUBY_ENGINE == 'jruby'
+  LIBYAML_VERSION = Psych.libyaml_version.join '.'
 
   class Exception < RuntimeError
   end
@@ -123,7 +244,7 @@ module Psych
   #     Psych.load("--- `", "file.txt")
   #   rescue Psych::SyntaxError => ex
   #     ex.file    # => 'file.txt'
-  #     ex.message # => "(foo.txt): found character that cannot start any token"
+  #     ex.message # => "(file.txt): found character that cannot start any token"
   #   end
   def self.load yaml, filename = nil
     result = parse(yaml, filename)
@@ -131,7 +252,7 @@ module Psych
   end
 
   ###
-  # Parse a YAML string in +yaml+.  Returns the first object of a YAML AST.
+  # Parse a YAML string in +yaml+.  Returns the Psych::Nodes::Document.
   # +filename+ is used in the exception message if a Psych::SyntaxError is
   # raised.
   #
@@ -139,13 +260,13 @@ module Psych
   #
   # Example:
   #
-  #   Psych.parse("---\n - a\n - b") # => #<Psych::Nodes::Sequence:0x00>
+  #   Psych.parse("---\n - a\n - b") # => #<Psych::Nodes::Document:0x00>
   #
   #   begin
   #     Psych.parse("--- `", "file.txt")
   #   rescue Psych::SyntaxError => ex
   #     ex.file    # => 'file.txt'
-  #     ex.message # => "(foo.txt): found character that cannot start any token"
+  #     ex.message # => "(file.txt): found character that cannot start any token"
   #   end
   #
   # See Psych::Nodes for more information about YAML AST.
@@ -157,7 +278,7 @@ module Psych
   end
 
   ###
-  # Parse a file at +filename+. Returns the YAML AST.
+  # Parse a file at +filename+. Returns the Psych::Nodes::Document.
   #
   # Raises a Psych::SyntaxError when a YAML syntax error is detected.
   def self.parse_file filename
@@ -173,7 +294,7 @@ module Psych
   end
 
   ###
-  # Parse a YAML string in +yaml+.  Returns the full AST for the YAML document.
+  # Parse a YAML string in +yaml+.  Returns the Psych::Nodes::Stream.
   # This method can handle multiple YAML documents contained in +yaml+.
   # +filename+ is used in the exception message if a Psych::SyntaxError is
   # raised.
@@ -195,7 +316,7 @@ module Psych
   #     Psych.parse_stream("--- `", "file.txt")
   #   rescue Psych::SyntaxError => ex
   #     ex.file    # => 'file.txt'
-  #     ex.message # => "(foo.txt): found character that cannot start any token"
+  #     ex.message # => "(file.txt): found character that cannot start any token"
   #   end
   #
   # See Psych::Nodes for more information about YAML AST.
