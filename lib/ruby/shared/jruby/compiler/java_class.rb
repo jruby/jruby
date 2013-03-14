@@ -288,7 +288,7 @@ module JRuby::Compiler
     def initialize(script_name, imports = BASE_IMPORTS)
       @classes = []
       @script_name = script_name
-      @imports = imports
+      @imports = imports.dup
       @requires = []
       @package = ""
     end
