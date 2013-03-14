@@ -173,17 +173,16 @@ public class LoadService {
         private static final String[] allSuffixes;
 
         static {                // compute based on platform
-            if (Options.CEXT_ENABLED.load()) {
-                if (Platform.IS_WINDOWS) {
-                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
-                } else if (Platform.IS_MAC) {
-                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
-                } else {
-                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
-                }
+            extensionSuffixes = new String[3];
+            extensionSuffixes[0] = ".jar";
+            if (Platform.IS_WINDOWS) {
+                extensionSuffixes[1] = ".dll";
+            } else if (Platform.IS_MAC) { // TODO: BSD also?
+                extensionSuffixes[1] = ".bundle";
             } else {
-                extensionSuffixes = new String[]{".jar", ".jar.rb"};
+                extensionSuffixes[1] = ".so";
             }
+            extensionSuffixes[2] = ".jar.rb";
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
