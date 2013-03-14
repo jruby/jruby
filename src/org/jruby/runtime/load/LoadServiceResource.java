@@ -48,6 +48,7 @@ public class LoadServiceResource {
     private final File path;
     private final String name;
     private final boolean absolute;
+    private String absolutePath;
 
     public LoadServiceResource(URL resource, String name) {
         this.resource = resource;
@@ -134,10 +135,12 @@ public class LoadServiceResource {
     }
 
     public String getAbsolutePath() {
+        if (absolutePath != null) return absolutePath;
+        
         try {
-            return new File(URLUtil.getPath(getURL())).getCanonicalPath();
+            return absolutePath = new File(URLUtil.getPath(getURL())).getCanonicalPath();
         } catch (IOException e) {
-            return resource.toString();
+            return absolutePath = resource.toString();
         }
     }
 

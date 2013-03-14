@@ -75,6 +75,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.util.URLUtil.getPath;
+import org.jruby.util.cli.Options;
 
 /**
  * <h2>How require works in JRuby</h2>
@@ -172,16 +173,17 @@ public class LoadService {
         private static final String[] allSuffixes;
 
         static {                // compute based on platform
-            extensionSuffixes = new String[3];
-            extensionSuffixes[0] = ".jar";
-            if (Platform.IS_WINDOWS) {
-                extensionSuffixes[1] = ".dll";
-            } else if (Platform.IS_MAC) { // TODO: BSD also?
-                extensionSuffixes[1] = ".bundle";
+            if (Options.CEXT_ENABLED.load()) {
+                if (Platform.IS_WINDOWS) {
+                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
+                } else if (Platform.IS_MAC) {
+                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
+                } else {
+                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
+                }
             } else {
-                extensionSuffixes[1] = ".so";
+                extensionSuffixes = new String[]{".jar", ".jar.rb"};
             }
-            extensionSuffixes[2] = ".jar.rb";
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
@@ -762,6 +764,8 @@ public class LoadService {
         }
 
         public boolean trySearch(SearchState state) {
+            debugLogTry("jarWithExtension", state.searchFile);
+            
             // This code exploits the fact that all .jar files will be found for the JarredScript feature.
             // This is where the basic extension mechanism gets fixed
             Library oldLibrary = state.library;
@@ -790,12 +794,15 @@ public class LoadService {
                 if(state.library instanceof JarredScript) {
                     // It's _really_ expensive to check that the class actually exists in the Jar, so
                     // we don't do that now.
-                    runtime.getJRubyClassLoader().addURL(((JarredScript)state.library).getResource().getURL());
+                    URL jarURL = ((JarredScript)state.library).getResource().getURL();
+                    runtime.getJRubyClassLoader().addURL(jarURL);
+                    debugLogFound("jarWithoutExtension", jarURL.toString());
                 }
 
                 // quietly try to load the class
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
                 state.library = new ClassExtensionLibrary(className + ".java", theClass);
+                debugLogFound("jarWithExtension", className);
             } catch (ClassNotFoundException cnfe) {
                 if (runtime.isDebug()) cnfe.printStackTrace();
                 // we ignore this and assume the jar is not an extension
@@ -1115,6 +1122,24 @@ public class LoadService {
         return foundResource;
     }
 
+    /**
+     * Try loading the resource from the current dir by appending suffixes and
+     * passing it to tryResourceAsIs to have the ./ replaced by CWD.
+     */
+    protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
+        LoadServiceResource foundResource = null;
+
+        for (String suffix : suffixType.getSuffixes()) {
+            String namePlusSuffix = baseName + suffix;
+            
+            foundResource = tryResourceAsIs(namePlusSuffix, "resourceFromDotSlash");
+            
+            if (foundResource != null) break;
+        }
+
+        return foundResource;
+    }
+
     protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1207,9 +1232,9 @@ public class LoadService {
     protected LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
         LoadServiceResource foundResource = null;
 
-        // if it's a ./ baseName, use CWD logic
+        // if it's a ./ baseName, use ./ logic
         if (baseName.startsWith("./")) {
-            foundResource = tryResourceFromCWD(state, baseName, suffixType);
+            foundResource = tryResourceFromDotSlash(state, baseName, suffixType);
 
             if (foundResource != null) {
                 state.loadName = resolveLoadName(foundResource, foundResource.getName());
@@ -1402,25 +1427,39 @@ public class LoadService {
     }
 
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
+        return tryResourceAsIs(namePlusSuffix, "resourceAsIs");
+    }
+
+    protected LoadServiceResource tryResourceAsIs(String namePlusSuffix, String debugName) throws RaiseException {
         LoadServiceResource foundResource = null;
 
         try {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = namePlusSuffix;
                 File actualPath;
-                // we check length == 0 for 'load', which does not use load path
+                
                 if (new File(reportedPath).isAbsolute()) {
                     // it's an absolute path, use it as-is
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 } else {
-                    // prepend ./ if . is not already there, since we're loading based on CWD
+                    // replace leading ./ with current directory
                     if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
                         reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
                     }
 
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
-                debugLogTry("resourceAsIs", actualPath.toString());
+                
+                debugLogTry(debugName, actualPath.toString());
+                
+                if (reportedPath.contains("..")) {
+                    // try to canonicalize if path contains ..
+                    try {
+                        actualPath = actualPath.getCanonicalFile();
+                    } catch (IOException ioe) {
+                    }
+                }
+                
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
                     debugLogFound(foundResource);

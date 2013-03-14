@@ -116,12 +116,13 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_big_S_resolves_relative___FILE___correctly
     
     with_temp_script(%q{puts __FILE__}) do |s|
-      Dir.chdir(Dir.tmpdir)
-      relative_tmp = File.basename(s.path)
-      output = jruby("-S #{relative_tmp}").chomp
+      Dir.chdir(Dir.tmpdir) do
+        relative_tmp = File.basename(s.path)
+        output = jruby("-S #{relative_tmp}").chomp
 
-      assert_equal 0, $?.exitstatus
-      assert_equal relative_tmp, output
+        assert_equal 0, $?.exitstatus
+        assert_equal relative_tmp, output
+      end
     end
   end
 
