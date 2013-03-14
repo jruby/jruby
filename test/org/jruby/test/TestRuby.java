@@ -120,8 +120,7 @@ public class TestRuby extends TestRubyBase {
             runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '" + extensionSuffix + "']); file.close; require file.path");
             fail();
         } catch (RaiseException re) {
-            assertTrue(re.getException().message.asJavaString().startsWith(
-                    "C extensions are disabled"));
+            assertEquals(re.getException().getType(), runtime.getLoadError());
         }
     }
     
