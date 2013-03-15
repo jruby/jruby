@@ -86,7 +86,7 @@
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
-      <version>1.1.1</version>
+      <version>1.1.2</version>
     </dependency>
     <!-- to use this explicitly allows to exclude the asm deps
     which are repacked inside jruby-core itself -->

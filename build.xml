@@ -388,7 +388,7 @@
           yecht.jar
           yydebug.jar
           nailgun-0.7.1.jar
-          jzlib-1.1.0.jar
+          jzlib-1.1.2.jar
           invokebinder.jar"/>
 
     <target name="jar-jruby" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
