@@ -1,1 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'M' converts Floats to the minimum unique representation

@@ -1,5 +1,4 @@
 fails:Time#strftime with %N formats the nanoseconds of of the second with %N
-fails:Time#strftime with %N formats the milliseconds of of the second with %3N
 fails:Time#strftime with %N formats the microseconds of of the second with %6N
 fails:Time#strftime with %N formats the nanoseconds of of the second with %9N
 fails:Time#strftime with %N formats the picoseconds of of the second with %12N

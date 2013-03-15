@@ -1,4 +1,3 @@
-fails:Proc#eql? returns true if self and other are the same object
 fails:Proc#eql? returns true if other is a dup of the original
 fails:Proc#eql? returns true if both procs have the same body and environment
 fails:Proc#eql? returns true if both lambdas with the same body and environment

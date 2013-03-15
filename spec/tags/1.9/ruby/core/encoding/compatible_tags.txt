@@ -1,4 +1,3 @@
-fails:Encoding.compatible? String, String when the first's Encoding is ASCII compatible and ASCII only returns the first's Encoding if the second is ASCII compatible and ASCII only
 fails:Encoding.compatible? String, Symbol returns US-ASCII if both are ASCII only
 fails:Encoding.compatible? String, Symbol returns the String's Encoding if it is not US-ASCII but both are ASCII only
 fails:Encoding.compatible? String, Symbol returns the String's Encoding if the String is not ASCII only
