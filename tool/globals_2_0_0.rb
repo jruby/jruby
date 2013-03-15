@@ -51,8 +51,6 @@ STDLIB_FILES = %w[
 
 EXT_FILES = {
   'ext/bigdecimal/lib/bigdecimal' => 'bigdecimal',
-  'ext/psych/lib/psych.rb' => 'psych.rb',
-  'ext/psych/lib/psych' => 'psych',
   'ext/openssl/lib/openssl' => 'openssl',
   'ext/socket/lib/socket.rb' => 'socket.rb'
 }
