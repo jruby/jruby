@@ -36,6 +36,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import com.headius.invokebinder.Binder;
+import com.headius.invokebinder.Signature;
+import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
 import org.jruby.*;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.*;
@@ -1821,7 +1824,7 @@ public class InvocationLinker {
     private static MethodHandle dynamicCallTarget(Signature from, Signature to) {
         return SmartBinder
                 .from(from)
-                .fold("selfClass", from.asFold(RubyClass.class).permuteTo(PGC, "context", "self"))
+                .fold("selfClass", from.asFold(RubyClass.class).permuteWith(PGC, "context", "self"))
                 .permute(to)
                 .cast(to)
                 .invokeVirtualQuiet(lookup(), "call")

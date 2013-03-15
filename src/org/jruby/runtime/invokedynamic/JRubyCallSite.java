@@ -27,6 +27,7 @@
 
 package org.jruby.runtime.invokedynamic;
 
+import com.headius.invokebinder.Signature;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
