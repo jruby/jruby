@@ -448,9 +448,9 @@ public class SSLSocket extends RubyObject {
             throw ioe;
         }
         if (netData.hasRemaining()) {
-            return false;
-        }  else {
             return true;
+        }  else {
+            return false;
         }
     }
 
