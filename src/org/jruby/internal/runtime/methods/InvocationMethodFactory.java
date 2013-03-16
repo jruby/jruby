@@ -202,7 +202,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass,
-            String method,
+            String rubyName,
+            String javaName,
             Arity arity,
             Visibility visibility,
             StaticScope scope,
@@ -213,7 +214,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         return new CompiledMethod.LazyCompiledMethod(
                 implementationClass,
-                method,
+                rubyName,
+                javaName,
                 arity,
                 visibility,
                 scope,
@@ -235,7 +237,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass,
-            String method,
+            String rubyName,
+            String javaName,
             Arity arity,
             Visibility visibility,
             StaticScope scope,
@@ -246,7 +249,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
-        String invokerPath = getCompiledCallbackName(typePath, method);
+        String invokerPath = getCompiledCallbackName(typePath, javaName);
         try {
             Class generatedClass = tryClass(invokerPath, scriptClass);
             if (generatedClass == null) {
@@ -258,7 +261,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             LOG.debug("no generated handle in classloader for: {}", invokerPath);
                         }
                         byte[] invokerBytes = getCompiledMethodOffline(
-                                method,
+                                rubyName,
+                                javaName,
                                 typePath,
                                 invokerPath,
                                 arity,
@@ -282,7 +286,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             } else {
                 params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
             }
-            compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
+            compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
 
             return compiledMethod;
         } catch(Exception e) {
@@ -298,7 +302,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     @Override
     public byte[] getCompiledMethodOffline(
-            String method, String className, String invokerPath, Arity arity,
+            String RubyName, String method, String className, String invokerPath, Arity arity,
             StaticScope scope, CallConfiguration callConfig, String filename, int line) {
         String sup = COMPILED_SUPER_CLASS;
         ClassWriter cw;

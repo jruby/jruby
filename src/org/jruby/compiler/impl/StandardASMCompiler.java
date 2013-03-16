@@ -220,7 +220,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public void writeInvokers(File destination) throws IOException {
         for (InvokerDescriptor descriptor : invokerDescriptors) {
             byte[] invokerBytes = RuntimeHelpers.defOffline(
-                    descriptor.getName(),
+                    descriptor.getRubyName(),
+                    descriptor.getJavaName(),
                     descriptor.getClassname(),
                     descriptor.getInvokerName(),
                     descriptor.getArity(),
@@ -293,7 +294,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public static class InvokerDescriptor {
-        private final String name;
+        private final String rubyName;
+        private final String javaName;
         private final String classname;
         private final String invokerName;
         private final Arity arity;
@@ -302,10 +304,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private final String file;
         private final int line;
         
-        public InvokerDescriptor(String name, String classname, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
-            this.name = name;
+        public InvokerDescriptor(String rubyName, String javaName, String classname, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
+            this.rubyName = rubyName;
+            this.javaName = javaName;
             this.classname = classname;
-            this.invokerName = InvocationMethodFactory.getCompiledCallbackName(classname, name);
+            this.invokerName = InvocationMethodFactory.getCompiledCallbackName(classname, javaName);
             this.arity = arity;
             this.scope = scope;
             this.callConfig = callConfig;
@@ -337,12 +340,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             return line;
         }
 
-        public String getName() {
-            return name;
+        public String getJavaName() {
+            return javaName;
         }
 
         public StaticScope getScope() {
             return scope;
+        }
+        
+        public String getRubyName() {
+            return rubyName;
         }
     }
 
@@ -382,9 +389,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
     }
 
-    public void addInvokerDescriptor(String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+    public void addInvokerDescriptor(String rubyName, String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
         Arity arity = Arity.createArity(methodArity);
-        InvokerDescriptor descriptor = new InvokerDescriptor(newMethodName, classname, arity, scope, callConfig, filename, line);
+        InvokerDescriptor descriptor = new InvokerDescriptor(rubyName, newMethodName, classname, arity, scope, callConfig, filename, line);
 
         invokerDescriptors.add(descriptor);
     }

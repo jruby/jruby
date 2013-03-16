@@ -65,59 +65,6 @@ import org.jruby.util.unsafe.UnsafeFactory;
 public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger("InvokeDynamicMethodFactory");
-
-    private static final boolean DEBUG = false;
-    
-    /** The pathname of the super class for compiled Ruby method handles. */ 
-    private final static String COMPILED_SUPER_CLASS = p(CompiledMethod.class);
-    
-    /** The outward call signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-    
-    /** The outward call signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_BLOCK = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_ZERO_BLOCK = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_ONE_BLOCK = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_ONE = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_TWO_BLOCK = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_TWO = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_THREE_BLOCK = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-    
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
-    private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
-            params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-
-    private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
-            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject.class, Block.class));
-    private final static String BLOCK_CALL_SIG19 = sig(RubyKernel.IRUBY_OBJECT, params(
-            ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
-    
-    /** The super constructor signature for Java-based method handles. */
-    private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
     
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     
@@ -134,7 +81,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      */
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass,
-            String method,
+            String rubyName,
+            String javaName,
             Arity arity,
             Visibility visibility,
             StaticScope scope,
@@ -143,7 +91,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             ISourcePosition position,
             String parameterDesc) {
 
-        return getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+        return getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
     }
 
     /**
@@ -153,7 +101,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass,
-            String method,
+            String rubyName,
+            String javaName,
             Arity arity,
             Visibility visibility,
             StaticScope scope,
@@ -165,39 +114,34 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
         try {
             MethodHandle[] targets = new MethodHandle[5];
-            
-            // generate [] version as well as specific arity, if specific arity
             SmartHandle directCall;
             int specificArity = -1;
 
+            // acquire handle to the actual method body
             if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+                // variable arity method (has optional, rest, or more args than we can splat)
                 directCall = SmartBinder
                         .from(VARIABLE_ARITY_SIGNATURE.prependArg("script", scriptClass))
-                        .invokeStaticQuiet(LOOKUP, scriptClass, method)
+                        .invokeStaticQuiet(LOOKUP, scriptClass, javaName)
                         .bindTo(scriptObject);
             } else {
+                // specific arity method (less than 4 required args only)
                 specificArity = scope.getRequiredArgs();
 
                 directCall = SmartBinder
                         .from(SPECIFIC_ARITY_SIGNATURES[specificArity].prependArg("script", scriptClass))
-                        .invokeStaticQuiet(LOOKUP, scriptClass, method)
+                        .invokeStaticQuiet(LOOKUP, scriptClass, javaName)
                         .bindTo(scriptObject);
             }
 
-            // Wrapping logic:
-            // * preserve ThreadContext.callNumber for return jump checks
-            // * redo handling
-            // * framing
-            // * scoping
-
+            // wrap with framing logic if needed
             if (!callConfig.isNoop()) {
-                // FIXME: "foo" needs to come from call site somehow?
                 directCall = new SmartHandle(
                         directCall.signature(),
-                        InvocationLinker.wrapWithFraming(directCall.signature(), callConfig, implementationClass, "foo", directCall.handle(), scope));
+                        InvocationLinker.wrapWithFraming(directCall.signature(), callConfig, implementationClass, rubyName, directCall.handle(), scope));
             }
 
-            // need to wrap specific-arity calls with variable arity + check
+            // provide a variable-arity path for specific-arity target
             SmartHandle variableCall;
             if (specificArity >= 0) {
                 SmartHandle arityCheck = SmartBinder
@@ -276,7 +220,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
     @Override
     public byte[] getCompiledMethodOffline(
-            String method, String className, String invokerPath, Arity arity,
+            String rubyName, String javaName, String className, String invokerPath, Arity arity,
             StaticScope scope, CallConfiguration callConfig, String filename, int line) {
         throw new RuntimeException("no offline support for invokedynamic handles");
     }

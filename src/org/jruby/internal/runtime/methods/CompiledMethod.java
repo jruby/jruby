@@ -44,7 +44,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     protected ISourcePosition position;
     
     public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
-        private final String method;
+        private final String rubyName;
+        private final String javaName;
         private final Arity arity;
         private final StaticScope scope;
         private final Object scriptObject;
@@ -56,7 +57,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     
         public LazyCompiledMethod(
                 RubyModule implementationClass,
-                String method,
+                String rubyName,
+                String javaName,
                 Arity arity,
                 Visibility visibility,
                 StaticScope scope,
@@ -67,7 +69,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
                 MethodFactory factory) {
             
             super(implementationClass, visibility, callConfig);
-            this.method = method;
+            this.rubyName = rubyName;
+            this.javaName = javaName;
             this.arity = arity;
             this.scope = scope;
             this.scriptObject = scriptObject;
@@ -79,7 +82,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         
         private synchronized void initializeMethod() {
             if (compiledMethod != null) return;
-            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+            compiledMethod = factory.getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
             factory = null;
         }
         
