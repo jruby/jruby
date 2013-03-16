@@ -39,12 +39,12 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
-import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
+import org.jruby.internal.runtime.methods.InvokeDynamicMethodFactory;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache.OneShotClassLoader;
-import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -115,7 +115,11 @@ public abstract class MethodFactory {
         if (reflection || !CAN_LOAD_BYTECODE) return new ReflectionMethodFactory();
 
         // otherwise, generate invokers at runtime
-        return new InvocationMethodFactory(classLoader);
+        if (Options.COMPILE_INVOKEDYNAMIC.load() && Options.INVOKEDYNAMIC_HANDLES.load()) {
+            return new InvokeDynamicMethodFactory(classLoader);
+        } else {
+            return new InvocationMethodFactory(classLoader);
+        }
     }
     
     /**
