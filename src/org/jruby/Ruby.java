@@ -2898,10 +2898,6 @@ public final class Ruby {
         this.globalVariables = globalVariables;
     }
 
-    public CallbackFactory callbackFactory(Class<?> type) {
-        return CallbackFactory.createFactory(this, type);
-    }
-
     /**
      * Push block onto exit stack.  When runtime environment exits
      * these blocks will be evaluated.
@@ -4404,6 +4400,11 @@ public final class Ruby {
 
     @Deprecated
     public void secure(int level) {
+    }
+
+    @Deprecated
+    public CallbackFactory callbackFactory(Class<?> type) {
+        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
     private final Invalidator constantInvalidator;

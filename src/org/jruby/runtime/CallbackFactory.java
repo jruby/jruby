@@ -32,10 +32,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.callback.ReflectionCallbackFactory;
-import org.jruby.runtime.callback.InvocationCallbackFactory;
 
 /**
  * Helper class to build Callback method.
@@ -231,30 +228,14 @@ public abstract class CallbackFactory {
      **/
     public abstract Callback getFastOptMethod(String method);
 
-    private static final boolean reflection;
-    
-
-    static {
-        boolean reflection_ = false;
-        boolean dumping_ = false;
-        if (Ruby.isSecurityRestricted()) {
-            reflection_ = true;
-        } else {
-            reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
-        }
-        reflection = reflection_;
-    }
-
+    @Deprecated
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
-        return createFactory(runtime, type, runtime.getJRubyClassLoader());
+        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
     // used by compiler
+    @Deprecated
     public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
-        if (reflection) {
-            return new ReflectionCallbackFactory(type);
-        } else {
-            return new InvocationCallbackFactory(runtime, type, classLoader);
-        }
+        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 }

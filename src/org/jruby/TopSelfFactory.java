@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -51,69 +54,33 @@ public final class TopSelfFactory {
     public static IRubyObject createTopSelf(final Ruby runtime) {
         IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
         
-        topSelf.getSingletonClass().defineFastMethod("to_s", new Callback() {
-            /**
-             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
-             */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+        topSelf.getSingletonClass().addMethod("to_s", new JavaMethod.JavaMethodZero(topSelf.getSingletonClass(), Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 return runtime.newString("main");
-            }
-
-            /**
-             * @see org.jruby.runtime.callback.Callback#getArity()
-             */
-            public Arity getArity() {
-                return Arity.noArguments();
             }
         });
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
-        topSelf.getSingletonClass().defineFastPrivateMethod("include", new Callback() {
-            /**
-             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
-             */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return runtime.getObject().include(args);
-            }
-
-            /**
-             * @see org.jruby.runtime.callback.Callback#getArity()
-             */
-            public Arity getArity() {
-                return Arity.optional();
+        topSelf.getSingletonClass().addMethod("include", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                return context.runtime.getObject().include(args);
             }
         });
         
-        topSelf.getSingletonClass().defineFastPrivateMethod("public", new Callback() {
-            /**
-             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
-             */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                return runtime.getObject().rbPublic(recv.getRuntime().getCurrentContext(), args);
-            }
-
-            /**
-             * @see org.jruby.runtime.callback.Callback#getArity()
-             */
-            public Arity getArity() {
-                return Arity.optional();
+        topSelf.getSingletonClass().addMethod("public", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                return context.runtime.getObject().rbPublic(context, args);
             }
         });
         
-        topSelf.getSingletonClass().defineFastPrivateMethod("private", new Callback() {
-            /**
-             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
-             */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                return runtime.getObject().rbPrivate(recv.getRuntime().getCurrentContext(), args);
-            }
-
-            /**
-             * @see org.jruby.runtime.callback.Callback#getArity()
-             */
-            public Arity getArity() {
-                return Arity.optional();
+        topSelf.getSingletonClass().addMethod("private", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                return context.runtime.getObject().rbPrivate(context, args);
             }
         });
         

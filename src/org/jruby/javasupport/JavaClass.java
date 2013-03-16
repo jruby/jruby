@@ -697,7 +697,26 @@ public class JavaClass extends JavaObject {
         
         initializer.initialize();
 
-        proxy.defineFastMethod("__jsend!", __jsend_method);
+        proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                String callName = args[0].asJavaString();
+                
+                DynamicMethod method = self.getMetaClass().searchMethod(callName);
+                int v = method.getArity().getValue();
+                
+                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+
+                if(v < 0 || v == (newArgs.length)) {
+                    return RuntimeHelpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
+                } else {
+                    RubyClass superClass = self.getMetaClass().getSuperClass();
+                    return RuntimeHelpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
+                }
+            }
+        });
+        
         final Class<?> javaClass = javaClass();
         if (javaClass.isInterface()) {
             setupInterfaceProxy(proxy);
@@ -1226,29 +1245,6 @@ public class JavaClass extends JavaObject {
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return forNameVerbose(recv.getRuntime(), name.asJavaString());
     }
-    
-    private static final Callback __jsend_method = new Callback() {
-            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                String name = args[0].asJavaString();
-                
-                DynamicMethod method = self.getMetaClass().searchMethod(name);
-                int v = method.getArity().getValue();
-                
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-
-                if(v < 0 || v == (newArgs.length)) {
-                    return RuntimeHelpers.invoke(self.getRuntime().getCurrentContext(), self, name, newArgs, block);
-                } else {
-                    RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return RuntimeHelpers.invokeAs(self.getRuntime().getCurrentContext(), superClass, self, name, newArgs, block);
-                }
-            }
-
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        };
 
     @JRubyMethod
     public RubyModule ruby_class() {

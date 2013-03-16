@@ -30,8 +30,12 @@ import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.readline.Readline;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.Join;
@@ -270,17 +274,19 @@ public class TextAreaReadline implements KeyListener {
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.getModule("Readline");
 
-        readlineM.defineModuleFunction("readline", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                String line = readLine(args[0].toString());
+        DynamicMethod readlineMethod = new JavaMethod.JavaMethodTwo(readlineM, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+                String line = readLine(arg0.toString());
                 if (line != null) {
                     return RubyString.newUnicodeString(runtime, line);
                 } else {
                     return runtime.getNil();
                 }
             }
-            public Arity getArity() { return Arity.twoArguments(); }
-        });
+        };
+        readlineM.addMethod("readline", readlineMethod);
+        readlineM.getSingletonClass().addMethod("readline", readlineMethod);
     }
 
     /**
