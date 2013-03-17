@@ -161,6 +161,20 @@ public class RubyBoolean extends RubyObject {
         }
     }
     
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        if ((flags & FALSE_F) == 0) {
+            return 155;
+        } else {
+            return -48;
+        }
+    }
+
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {

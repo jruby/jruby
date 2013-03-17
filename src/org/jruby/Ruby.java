@@ -216,8 +216,14 @@ public final class Ruby {
             myRandom = new Random();
         }
         this.random = myRandom;
-        this.hashSeedK0 = this.random.nextLong();
-        this.hashSeedK1 = this.random.nextLong();
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            this.hashSeedK0 = -561135208506705104l;
+            this.hashSeedK1 = 7114160726623585955l;
+        } else {
+            this.hashSeedK0 = this.random.nextLong();
+            this.hashSeedK1 = this.random.nextLong();
+        }
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
