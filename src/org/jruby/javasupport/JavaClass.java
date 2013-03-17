@@ -622,6 +622,7 @@ public class JavaClass extends JavaObject {
                 if (Modifier.isStatic(modifiers)) addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(modifiers), true);
             }
             
+            // Add in any Scala singleton methods
             handleScalaSingletons(javaClass, state);
 
             // Now add all aliases for the static methods (fields) as appropriate
