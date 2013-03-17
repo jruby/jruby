@@ -62,4 +62,13 @@ public class TestRubySymbol extends TestCase {
         assertSame(another, st.getSymbol("another_name"));
         assertSame(another, st.fastGetSymbol("another_name"));
     }
+    
+    public void testSymbolHashCode() {
+        RubySymbol sym = RubySymbol.newSymbol(runtime, "somename");
+        assertTrue(sym.hashCode() != 0);
+        assertTrue(sym.hashCode() != sym.getId());
+        if (runtime.isSiphashEnabled()) {
+            assertEquals(1706472664, sym.hashCode());
+        }
+    }
 }

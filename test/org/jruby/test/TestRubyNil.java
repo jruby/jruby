@@ -38,6 +38,8 @@ import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNil;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
 * @author chadfowler
@@ -97,5 +99,17 @@ public class TestRubyNil extends TestCase {
     public void testOpXOr() {
         assertTrue(RubyNil.op_xor(rubyNil, runtime.getTrue()).isTrue());
         assertTrue(RubyNil.op_xor(rubyNil, runtime.getFalse()).isFalse());
+    }
+
+    public void testHash() {
+        IRubyObject hash = RuntimeHelpers.invoke(
+                runtime.getCurrentContext(), rubyNil, "hash");
+        assertEquals(RubyFixnum.newFixnum(
+                runtime, System.identityHashCode(rubyNil)), hash);
+    }
+    
+    public void testHashCode() {
+        // should be the default Object#hashCode()
+        assertEquals(System.identityHashCode(rubyNil), rubyNil.hashCode());
     }
 }

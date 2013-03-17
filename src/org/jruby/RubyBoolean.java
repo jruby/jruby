@@ -46,13 +46,23 @@ import org.jruby.runtime.marshal.MarshalStream;
  */
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject {
-    
+
+    private final int hashCode;
+
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
                 (value ? runtime.getTrueClass() : runtime.getFalseClass()),
                 false); // Don't put in object space
 
         if (!value) flags = FALSE_F;
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            // default to a fixed value
+            this.hashCode = value ? 155 : -48;
+        } else {
+            // save the object id based hash code;
+            this.hashCode = System.identityHashCode(this);
+        }
     }
     
     @Override
@@ -82,6 +92,7 @@ public class RubyBoolean extends RubyObject {
         falseClass.setReifiedClass(RubyBoolean.class);
         
         falseClass.defineAnnotatedMethods(False.class);
+        falseClass.defineAnnotatedMethods(RubyBoolean.class);
         
         falseClass.getMetaClass().undefineMethod("new");
         
@@ -95,6 +106,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.setReifiedClass(RubyBoolean.class);
         
         trueClass.defineAnnotatedMethods(True.class);
+        trueClass.defineAnnotatedMethods(RubyBoolean.class);
         
         trueClass.getMetaClass().undefineMethod("new");
         
@@ -161,6 +173,16 @@ public class RubyBoolean extends RubyObject {
         }
     }
     
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
