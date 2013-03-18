@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.RubyEvent;
@@ -44,30 +45,42 @@ import org.jruby.runtime.callback.Callback;
 /**
  */
 @Deprecated
-public class SimpleCallbackMethod extends DynamicMethod {
+public class FullFunctionCallbackMethod extends DynamicMethod {
     private Callback callback;
 
-    public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
+    public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+        super(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
         this.callback = callback;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-    	assert args != null;
-        Ruby runtime = context.runtime;
-        
-        if (runtime.hasEventHooks()) {
-            runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        try {
+            callConfig.pre(context, self, clazz, name, block, null);
+            
+            assert args != null;
+            Ruby runtime = context.runtime;
+            boolean isTrace = runtime.hasEventHooks();
+
+            if (isTrace) {
+                runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+            }
+
             try {
                 return callback.execute(self, args, block);
-            } finally {
-                runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
-            }
-        }
-        
-        return callback.execute(self, args, block);
-    }
+            } catch (JumpException.ReturnJump rj) {
+                if (rj.getTarget() == context.getFrameJumpTarget()) return (IRubyObject)rj.getValue();
 
+                throw rj;
+            } finally {
+                if (isTrace) {
+                    runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
+                }
+            }
+        } finally {
+            callConfig.post(context);
+        }
+    }
+    
     public Callback getCallback() {
         return callback;
     }
@@ -77,6 +90,6 @@ public class SimpleCallbackMethod extends DynamicMethod {
     }
     
     public DynamicMethod dup() {
-        return new SimpleCallbackMethod(getImplementationClass(), callback, getVisibility());
+        return new FullFunctionCallbackMethod(getImplementationClass(), callback, getVisibility());
     }
 }
