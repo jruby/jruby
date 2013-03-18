@@ -163,12 +163,16 @@
                 <include name="**/*.rb"/>
             </fileset>
         </copy>
+        <antcall target="copy-bc-resources"/>
+        <property name="copy-resources.hasrun" value="true"/>
+    </target>
+
+    <target name="copy-bc-resources" unless="exclude_openssl">
         <copy todir="${lib.dir}/ruby/shared" preservelastmodified="true">
             <fileset dir="${build.lib.dir}">
                 <include name="bc*.jar"/>
             </fileset>
         </copy>
-        <property name="copy-resources.hasrun" value="true"/>
     </target>
 
     <macrodef name="update-constants">
@@ -287,6 +291,7 @@
             <src path="${src.dir}"/>
             <exclude name="org/jruby/runtime/Constants.java"/>
             <exclude name="java/dyn/**"/>
+            <exclude name="org/jruby/ext/openssl/"/>
             <patternset refid="java.src.pattern"/>
             <compilerarg line="-XDignore.symbol.file=true"/>
             <compilerarg line="-J-Dfile.encoding=UTF-8"/>
@@ -294,11 +299,26 @@
             <compilerarg line="-J-Xbootclasspath/p:build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
             <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
         </javac>
-
+        <antcall target="compile_ssl"/>
         <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
         <antcall target="instrument"/>
 
         <property name="compiled" value="true"/>
+    </target>
+
+    <target name="compile_ssl" unless="exclude_openssl">
+        <javac destdir="${jruby.classes.dir}" fork="true"
+               debug="true" source="${javac.version}" target="${javac.version}"
+               deprecation="true" encoding="UTF-8" includeantruntime="true" memorymaximumsize="${jruby.compile.memory}">
+            <classpath refid="jruby.execute.classpath"/>
+            <src path="${src.dir}/org/jruby/ext/openssl/"/>
+            <patternset refid="java.src.pattern"/>
+            <compilerarg line="-XDignore.symbol.file=true"/>
+            <compilerarg line="-J-Dfile.encoding=UTF-8"/>
+            <compilerarg line="-J-Duser.language=en"/>
+            <compilerarg line="-J-Xbootclasspath/p:build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
+            <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
+        </javac>
     </target>
 
     <target name="generate-method-classes">
@@ -415,7 +435,7 @@
         <property name="jar-jruby.hasrun" value="true"/>
     </target>
     
-    <target name="jar-jopenssl">
+    <target name="jar-jopenssl" unless="exclude_openssl">
         <jar destfile="${lib.dir}/ruby/shared/jopenssl.jar" compress="true" index="true" update="true">
             <fileset dir="${jruby.classes.dir}">
                 <include name="**/*openssl*/**/*"/>
@@ -492,7 +512,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <param name="jar.wrap" value="${lib.dir}/jruby.jar"/>
             <param name="bar.wrap" value="${lib.dir}/jruby.bar"/>
         </antcall>
-        
         <antcall target="jar-jopenssl"/>
     </target>
     <target name="jarjar" depends="jar-jruby-dist"/>
@@ -655,7 +674,11 @@ other than ASM, which is rewritten to avoid conflicts. -->
             description="Create the jruby-complete.jar file. This version uses JarJar to rewrite some packages.">
         <antcall target="jar-jruby-complete" inheritall="true"/>
     </target>
-
+    <target name="jar-no-encryption-complete" depends="init"
+            description="Create the jruby-complete.jar file just like jar-complete, but refrains from including anything with encryption algorithms">
+        <property name="exclude_openssl" value="true"/>
+        <antcall target="jar-jruby-complete" inheritall="true"/>
+    </target>
     <target name="compile-stdlib" unless="test">
         <mkdir dir="${build.dir}/stdlib"/>
         <echo message="Compiling 1.8 stdlib..."/>
