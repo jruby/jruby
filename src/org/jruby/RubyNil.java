@@ -181,7 +181,17 @@ public class RubyNil extends RubyObject {
     public IRubyObject nil_p() {
         return getRuntime().getTrue();
     }
-    
+
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return 34;
+    }
+
     @Override
     public RubyFixnum id() {
         return getRuntime().newFixnum(4);

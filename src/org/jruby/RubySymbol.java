@@ -65,15 +65,20 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.PerlHash;
+import org.jruby.util.SipHashInline;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name="Symbol")
 public class RubySymbol extends RubyObject {
+    public static final long symbolHashSeedK0 = 5238926673095087190l;
+
     private final String symbol;
     private final int id;
     private final ByteList symbolBytes;
+    private final int hashCode;
     
     /**
      * 
@@ -99,6 +104,13 @@ public class RubySymbol extends RubyObject {
         this.symbol = internedSymbol;
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
+
+        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(
+                symbolHashSeedK0, 0, symbolBytes.getUnsafeBytes(),
+                symbolBytes.getBegin(), symbolBytes.getRealSize()) :
+                PerlHash.hash(symbolHashSeedK0, symbolBytes.getUnsafeBytes(),
+                symbolBytes.getBegin(), symbolBytes.getRealSize());
+        this.hashCode = (int) hash;
     }
 
     private RubySymbol(Ruby runtime, String internedSymbol) {
@@ -296,7 +308,7 @@ public class RubySymbol extends RubyObject {
     
     @Override
     public int hashCode() {
-        return id;
+        return hashCode;
     }
 
     public int getId() {

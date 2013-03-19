@@ -1653,6 +1653,14 @@ public class RubyInstanceConfig {
     
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
     
+    /**
+     * Whether to calculate consistent hashes across JVM instances, or to ensure
+     * un-predicatable hash values using SecureRandom.
+     *
+     * Set with the <tt>jruby.consistent.hashing.enabled</tt> system property.
+     */
+    public static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING_ENABLED.load();
+
     private static volatile boolean loadedNativeExtensions = false;
     
     ////////////////////////////////////////////////////////////////////////////
