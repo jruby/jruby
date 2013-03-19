@@ -24,10 +24,18 @@ module OpenSSL
     attr_reader :key, :certificate, :ca_certs
 
     def initialize(str = nil, pass = nil)
-      @der = str
       if str
-        p12_input_stream = StringBufferInputStream.new(str)
-        store = KeyStore.get_instance("PKCS12", "BC")
+        if str.is_a?(File)
+          file = File.open(str.path, "rb")
+          @der = file.read
+          file.close
+        else
+          @der = str
+        end
+
+        p12_input_stream = StringBufferInputStream.new(@der)
+
+        store = KeyStore.get_instance("PKCS12")
         password = pass.nil? ? "" : pass
         begin
           store.load(p12_input_stream, password.to_java.to_char_array)
@@ -49,7 +57,7 @@ module OpenSSL
             end
 
             begin
-              java_key = store.get_key(alias_name, nil)
+              java_key = store.get_key(alias_name, password.to_java.to_char_array)
             rescue java.lang.Exception => e
               raise PKCS12Error, "Exception: #{e}"
             end
@@ -87,6 +95,8 @@ module OpenSSL
           end
           break
         }
+      else
+        @der = nil
       end
     end
 
