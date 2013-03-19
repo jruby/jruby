@@ -89,7 +89,7 @@ public class RubyTime extends RubyObject {
     // the legacy TZ format in order to convert it to the newer format
     // understood by Java API.
     private static final Pattern TZ_PATTERN
-            = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
+            = Pattern.compile("([^-\\+\\d]+)?([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
     
     private static final Pattern TIME_OFFSET_PATTERN
             = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)");

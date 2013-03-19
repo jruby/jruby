@@ -73,12 +73,9 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
-import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -87,7 +84,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -95,7 +91,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -556,12 +551,6 @@ public class RubyModule extends RubyObject {
         invalidateCoreClasses();
         invalidateCacheDescendants();
     }
-
-    public void defineMethod(String name, Callback method) {
-        Visibility visibility = name.equals("initialize") ?
-                PRIVATE : PUBLIC;
-        addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
-    }
     
     public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
@@ -795,28 +784,6 @@ public class RubyModule extends RubyObject {
             return true;
         }
         return false;
-    }
-
-    public void defineFastMethod(String name, Callback method) {
-        Visibility visibility = name.equals("initialize") ?
-                PRIVATE : PUBLIC;
-        addMethod(name, new SimpleCallbackMethod(this, method, visibility));
-    }
-
-    public void defineFastMethod(String name, Callback method, Visibility visibility) {
-        addMethod(name, new SimpleCallbackMethod(this, method, visibility));
-    }
-
-    public void definePrivateMethod(String name, Callback method) {
-        addMethod(name, new FullFunctionCallbackMethod(this, method, PRIVATE));
-    }
-
-    public void defineFastPrivateMethod(String name, Callback method) {
-        addMethod(name, new SimpleCallbackMethod(this, method, PRIVATE));
-    }
-
-    public void defineFastProtectedMethod(String name, Callback method) {
-        addMethod(name, new SimpleCallbackMethod(this, method, PROTECTED));
     }
 
     public void undefineMethod(String name) {
@@ -1185,38 +1152,6 @@ public class RubyModule extends RubyObject {
         getSingletonClass().addMethod(name, method);
     }
 
-    /** rb_define_module_function
-     *
-     */
-    public void defineModuleFunction(String name, Callback method) {
-        definePrivateMethod(name, method);
-        getSingletonClass().defineMethod(name, method);
-    }
-
-    /** rb_define_module_function
-     *
-     */
-    public void definePublicModuleFunction(String name, Callback method) {
-        defineMethod(name, method);
-        getSingletonClass().defineMethod(name, method);
-    }
-
-    /** rb_define_module_function
-     *
-     */
-    public void defineFastModuleFunction(String name, Callback method) {
-        defineFastPrivateMethod(name, method);
-        getSingletonClass().defineFastMethod(name, method);
-    }
-
-    /** rb_define_module_function
-     *
-     */
-    public void defineFastPublicModuleFunction(String name, Callback method) {
-        defineFastMethod(name, method);
-        getSingletonClass().defineFastMethod(name, method);
-    }
-
     /** rb_alias
      *
      */
@@ -1569,7 +1504,7 @@ public class RubyModule extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject executeUnder(ThreadContext context, Callback method, IRubyObject[] args, Block block) {
+    public IRubyObject executeUnder(ThreadContext context, org.jruby.runtime.callback.Callback method, IRubyObject[] args, Block block) {
         context.preExecuteUnder(this, block);
         try {
             return method.execute(this, args, block);
@@ -3833,6 +3768,76 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
+    }
+
+    @Deprecated
+    public void defineMethod(String name, org.jruby.runtime.callback.Callback method) {
+        Visibility visibility = name.equals("initialize") ?
+                PRIVATE : PUBLIC;
+        addMethod(name, new org.jruby.internal.runtime.methods.FullFunctionCallbackMethod(this, method, visibility));
+    }
+
+    @Deprecated
+    public void defineFastMethod(String name, org.jruby.runtime.callback.Callback method) {
+        Visibility visibility = name.equals("initialize") ?
+                PRIVATE : PUBLIC;
+        addMethod(name, new org.jruby.internal.runtime.methods.SimpleCallbackMethod(this, method, visibility));
+    }
+
+    @Deprecated
+    public void defineFastMethod(String name, org.jruby.runtime.callback.Callback method, Visibility visibility) {
+        addMethod(name, new org.jruby.internal.runtime.methods.SimpleCallbackMethod(this, method, visibility));
+    }
+
+    @Deprecated
+    public void definePrivateMethod(String name, org.jruby.runtime.callback.Callback method) {
+        addMethod(name, new org.jruby.internal.runtime.methods.FullFunctionCallbackMethod(this, method, PRIVATE));
+    }
+
+    @Deprecated
+    public void defineFastPrivateMethod(String name, org.jruby.runtime.callback.Callback method) {
+        addMethod(name, new org.jruby.internal.runtime.methods.SimpleCallbackMethod(this, method, PRIVATE));
+    }
+
+    @Deprecated
+    public void defineFastProtectedMethod(String name, org.jruby.runtime.callback.Callback method) {
+        addMethod(name, new org.jruby.internal.runtime.methods.SimpleCallbackMethod(this, method, PROTECTED));
+    }
+
+    /** rb_define_module_function
+     *
+     */
+    @Deprecated
+    public void defineModuleFunction(String name, org.jruby.runtime.callback.Callback method) {
+        definePrivateMethod(name, method);
+        getSingletonClass().defineMethod(name, method);
+    }
+
+    /** rb_define_module_function
+     *
+     */
+    @Deprecated
+    public void definePublicModuleFunction(String name, org.jruby.runtime.callback.Callback method) {
+        defineMethod(name, method);
+        getSingletonClass().defineMethod(name, method);
+    }
+
+    /** rb_define_module_function
+     *
+     */
+    @Deprecated
+    public void defineFastModuleFunction(String name, org.jruby.runtime.callback.Callback method) {
+        defineFastPrivateMethod(name, method);
+        getSingletonClass().defineFastMethod(name, method);
+    }
+
+    /** rb_define_module_function
+     *
+     */
+    @Deprecated
+    public void defineFastPublicModuleFunction(String name, org.jruby.runtime.callback.Callback method) {
+        defineFastMethod(name, method);
+        getSingletonClass().defineFastMethod(name, method);
     }
     
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;

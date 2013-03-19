@@ -240,12 +240,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
-        try {
-            method.preBacktraceOnly(context, name);
-            Arity.raiseArgumentError(context.runtime, name, given, min, max);
-        } finally {
-            postBacktraceOnly(context);
-        }
+        Arity.raiseArgumentError(context.runtime, name, given, min, max);
         // never reached
         return context.runtime.getNil();
     }

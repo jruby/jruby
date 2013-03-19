@@ -44,6 +44,7 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
+@Deprecated
 public class FullFunctionCallbackMethod extends DynamicMethod {
     private Callback callback;
 

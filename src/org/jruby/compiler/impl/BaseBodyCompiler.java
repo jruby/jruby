@@ -2720,7 +2720,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         }
 
-        script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
+        script.addInvokerDescriptor(name, newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
 
         // emit method body
 

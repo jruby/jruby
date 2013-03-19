@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -62,7 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.encoding.MarshalEncoding;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -196,9 +195,9 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private boolean shouldMarshalEncoding(IRubyObject value) {
-        return runtime.is1_9()
-                && (value instanceof RubyString || value instanceof RubyRegexp)
-                && ((EncodingCapable)value).getEncoding() != ASCIIEncoding.INSTANCE;
+        if (!runtime.is1_9()) return false;
+        if (!(value instanceof MarshalEncoding)) return false;
+        return ((MarshalEncoding) value).shouldMarshalEncoding();
     }
 
     public void writeDirectly(IRubyObject value) throws IOException {
@@ -406,7 +405,7 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpVariablesWithEncoding(List<Variable<Object>> vars, IRubyObject obj) throws IOException {
         if (shouldMarshalEncoding(obj)) {
             writeInt(vars.size() + 1); // vars preceded by encoding
-            writeEncoding(((EncodingCapable)obj).getEncoding());
+            writeEncoding(((MarshalEncoding)obj).getMarshalEncoding());
         } else {
             writeInt(vars.size());
         }

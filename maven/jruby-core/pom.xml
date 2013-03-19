@@ -86,14 +86,19 @@
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
-      <version>1.1.1</version>
+      <version>1.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.headius</groupId>
+      <artifactId>invokebinder</artifactId>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <!-- to use this explicitly allows to exclude the asm deps
     which are repacked inside jruby-core itself -->
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>0.7.10</version>
+      <version>0.7.11</version>
       <exclusions>
 	<exclusion>
 	  <groupId>org.ow2.asm</groupId>

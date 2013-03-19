@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
+@Deprecated
 public interface Callback {
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block);
 

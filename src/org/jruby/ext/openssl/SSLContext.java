@@ -126,6 +126,9 @@ public class SSLContext extends RubyObject {
         for(int i=0;i<ctx_attrs.length;i++) {
             cSSLContext.addReadWriteAttribute(runtime.getCurrentContext(), ctx_attrs[i]);
         }
+        
+        cSSLContext.defineAlias("ssl_timeout", "timeout");
+        cSSLContext.defineAlias("ssl_timeout=", "timeout=");
 
         cSSLContext.defineAnnotatedMethods(SSLContext.class);
     }
@@ -137,7 +140,7 @@ public class SSLContext extends RubyObject {
     public static RaiseException newSSLError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
     }
-
+    
     private String ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
     private String protocol = "SSL"; // SSLv23 in OpenSSL by default
     private boolean protocolForServer = true;

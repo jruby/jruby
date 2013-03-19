@@ -32,9 +32,11 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -62,16 +64,10 @@ public class RubyPrecision {
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include, Block block) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
-            include.getSingletonClass().defineMethod("induced_from", new Callback() {
-
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(recv.getRuntime(), args, 1, 1);
-                    
-                    return RubyPrecision.induced_from(recv, args[0], block);
-                }
-
-                public Arity getArity() {
-                    return Arity.ONE_ARGUMENT;
+            include.getSingletonClass().addMethod("induced_from", new JavaMethod.JavaMethodOne(include.getSingletonClass(), Visibility.PUBLIC) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+                    return RubyPrecision.induced_from(self, arg0, Block.NULL_BLOCK);
                 }
             });
         }

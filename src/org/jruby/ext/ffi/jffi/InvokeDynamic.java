@@ -34,16 +34,40 @@ public final class InvokeDynamic {
     private InvokeDynamic() {}
 
 
-    public static MethodHandle getMethodHandle(JRubyCallSite site, DynamicMethod method) {
-        MethodHandle fast = getFastNumericMethodHandle(site, method);
-        if (fast == null) {
-            return generateNativeInvokerHandle(site, method);
+    private static final class IndyNotSupportedException extends Exception {
+        private IndyNotSupportedException() {
         }
 
-        MethodHandle guard = getDirectPointerParameterGuard(site, method);
-        return guard != null
-            ? MethodHandles.guardWithTest(guard, fast, generateNativeInvokerHandle(site, method))
-            : fast;
+        private IndyNotSupportedException(String message) {
+            super(message);
+        }
+    }
+
+    public static MethodHandle getMethodHandle(JRubyCallSite site, DynamicMethod method) {
+        try {
+            MethodHandle fast = getFastNumericMethodHandle(site, method);
+            if (fast == null) {
+                return generateNativeInvokerHandle(site, method);
+            }
+
+            MethodHandle guard = getDirectPointerParameterGuard(site, method);
+            return guard != null
+                ? MethodHandles.guardWithTest(guard, fast, generateNativeInvokerHandle(site, method))
+                : fast;
+        
+        } catch (IndyNotSupportedException inse) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                LOG.info(site.name() + "\t" + inse.getLocalizedMessage());
+            }
+            return null;
+
+        } catch (NullPointerException npe) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                LOG.info(site.name() + "\t" + npe.getLocalizedMessage());
+            }
+
+            return null;
+        }
     }
 
     public static MethodHandle getFastNumericMethodHandle(JRubyCallSite site, DynamicMethod method) {
@@ -105,58 +129,62 @@ public final class InvokeDynamic {
         return methodHandle;
     }
 
-    private static MethodHandle generateNativeInvokerHandle(JRubyCallSite site, DynamicMethod method) {
+    private static MethodHandle generateNativeInvokerHandle(JRubyCallSite site, DynamicMethod method) throws IndyNotSupportedException {
         if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
             NativeInvoker nativeInvoker = ((org.jruby.ext.ffi.jffi.DefaultMethod) method).forceCompilation();
             if (nativeInvoker == null) {
                 // Compilation failed, cannot build a native handle for it
-                return null;
+                throw new IndyNotSupportedException("compilation failed");
             }
 
             method = nativeInvoker;
         }
 
-        if (method.getArity().isFixed() && method.getArity().getValue() <= 6 && method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
-            Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];
-            callMethodParameters[0] = ThreadContext.class;
-            callMethodParameters[1] = IRubyObject.class;
-            callMethodParameters[2] = RubyModule.class;
-            callMethodParameters[3] = String.class;
-            Arrays.fill(callMethodParameters, 4, callMethodParameters.length, IRubyObject.class);
+        if (!method.getArity().isFixed()) {
+            throw new IndyNotSupportedException("non fixed arity");
+        }
+        if (method.getArity().getValue() > 6) {
+            throw new IndyNotSupportedException("arity > 6");
+        }
+        if (!CallConfiguration.FrameNoneScopeNone.equals(method.getCallConfig())) {
+            throw new IndyNotSupportedException("cannot bindy functions with scope or frame");
+        }
+        
+        Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];
+        callMethodParameters[0] = ThreadContext.class;
+        callMethodParameters[1] = IRubyObject.class;
+        callMethodParameters[2] = RubyModule.class;
+        callMethodParameters[3] = String.class;
+        Arrays.fill(callMethodParameters, 4, callMethodParameters.length, IRubyObject.class);
 
-            MethodHandle nativeTarget;
-            try {
-                nativeTarget = site.lookup().findVirtual(method.getClass(), "call",
-                        methodType(IRubyObject.class, callMethodParameters));
+        MethodHandle nativeTarget;
+        try {
+            nativeTarget = site.lookup().findVirtual(method.getClass(), "call",
+                    methodType(IRubyObject.class, callMethodParameters));
 
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            int argCount = method.getArity().getValue();
-            if (argCount > 3) {
-                // Expand the incoming IRubyObject[] parameter array to individual params
-                nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
-            }
-
-            nativeTarget = Binder.from(site.type())
-                    .drop(1, 1)
-                    .insert(2, method.getImplementationClass(), site.name())
-                    .invoke(nativeTarget.bindTo(method));
-
-            method.setHandle(nativeTarget);
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
-                    + logMethod(method) + ": "
-                    + IRubyObject.class.getSimpleName() + " "
-                    + method.getClass().getSimpleName() + ".call"
-                    + CodegenUtils.prettyShortParams(callMethodParameters));
-
-            return nativeTarget;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
+        int argCount = method.getArity().getValue();
+        if (argCount > 3) {
+            // Expand the incoming IRubyObject[] parameter array to individual params
+            nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
+        }
 
-        // can't build native handle for it
-        return null;
+        nativeTarget = Binder.from(site.type())
+                .drop(1, 1)
+                .insert(2, method.getImplementationClass(), site.name())
+                .invoke(nativeTarget.bindTo(method));
+
+        method.setHandle(nativeTarget);
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
+                + logMethod(method) + ": "
+                + IRubyObject.class.getSimpleName() + " "
+                + method.getClass().getSimpleName() + ".call"
+                + CodegenUtils.prettyShortParams(callMethodParameters));
+
+        return nativeTarget;
     }
 
     private static String logMethod(DynamicMethod method) {

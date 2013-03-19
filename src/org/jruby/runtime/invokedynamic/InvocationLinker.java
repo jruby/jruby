@@ -36,6 +36,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import com.headius.invokebinder.Binder;
+import com.headius.invokebinder.Signature;
+import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
 import org.jruby.*;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.*;
@@ -484,8 +487,14 @@ public class InvocationLinker {
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
 
         int siteArgCount = getSiteCount(site.type().parameterArray());
-
-        if (method instanceof AttrReaderMethod) {
+        
+        if (method instanceof HandleMethod) {
+            MethodHandle handle = ((HandleMethod)method).getHandle(siteArgCount);
+            
+            if (handle == null) {
+                throw new IndirectBindingException("MH dynamic method does not have needed arity");
+            }
+        } else if (method instanceof AttrReaderMethod) {
             // attr reader
             if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
                 throw new IndirectBindingException("direct attribute dispatch not enabled");
@@ -593,7 +602,23 @@ public class InvocationLinker {
         
         boolean checkArity = false;
         
-        if (method instanceof AttrReaderMethod) {
+        int siteArgCount = getSiteCount(site.type().parameterArray());
+        
+        if (method instanceof HandleMethod) {
+            MethodHandle handle = ((HandleMethod)method).getHandle(siteArgCount);
+            
+            if (handle == null) {
+                throw new IndirectBindingException("MH dynamic method does not have needed arity");
+            }
+            
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
+            
+            Signature fullSig = site.fullSignature();
+            nativeTarget = Binder
+                    .from(fullSig.type())
+                    .permute(fullSig.to("context", "self", "arg*", "block"))
+                    .invoke(handle);
+        } else if (method instanceof AttrReaderMethod) {
             // Ruby to attr reader
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
             nativeTarget = createAttrReaderHandle(site, cls, method);
@@ -646,7 +671,6 @@ public class InvocationLinker {
             // add arity check if needed
             if (checkArity) {
                 int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
-                int siteArgCount = getSiteCount(site.type().parameterArray());
                 
                 if (nativeArgCount == 4 && siteArgCount == 4) {
                     // Arity does not give us enough information about min/max
@@ -1351,10 +1375,10 @@ public class InvocationLinker {
             }
         }
 
-        nativeTarget = explicitCastArguments(nativeTarget, target.methodType());
-        nativeTarget = permuteArguments(nativeTarget, fullSig.methodType(), fullSig.to(target));
+        nativeTarget = explicitCastArguments(nativeTarget, target.type());
+        nativeTarget = permuteArguments(nativeTarget, fullSig.type(), fullSig.to(target));
 
-        nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, null);
+        nativeTarget = wrapWithFraming(fullSig, method.getCallConfig(), method.getImplementationClass(), name, nativeTarget, null);
 
         method.setHandle(nativeTarget);
 
@@ -1475,12 +1499,12 @@ public class InvocationLinker {
 
             Signature fullSig = site.fullSignature();
             nativeTarget = Binder
-                    .from(fullSig.methodType())
+                    .from(fullSig.type())
                     .permute(fullSig.to("context", "self", "arg*", "block"))
                     .insert(0, scriptObject)
                     .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
 
-            nativeTarget = wrapWithFraming(fullSig, method, name, nativeTarget, scope);
+            nativeTarget = wrapWithFraming(fullSig, method.getCallConfig(), method.getImplementationClass(), name, nativeTarget, scope);
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1489,14 +1513,13 @@ public class InvocationLinker {
         }
     }
 
-    private static MethodHandle wrapWithFraming(Signature signature, DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope) {
-        MethodHandle framePre = getFramePre(signature, method, name, scope);
+    public static MethodHandle wrapWithFraming(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, MethodHandle nativeTarget, StaticScope scope) {
+        MethodHandle framePre = getFramePre(signature, callConfig, implClass, name, scope);
 
         if (framePre != null) {
-            MethodHandle framePost = getFramePost(signature, method);
+            MethodHandle framePost = getFramePost(signature, callConfig);
 
             // break, return, redo handling
-            CallConfiguration callConfig = method.getCallConfig();
             boolean heapScoped = callConfig.scoping() != Scoping.None;
             boolean framed = callConfig.framing() != Framing.None;
 
@@ -1560,17 +1583,17 @@ public class InvocationLinker {
         return values;
     }
 
-    private static MethodHandle getFramePre(Signature signature, DynamicMethod method, String name, StaticScope scope) {
+    public static MethodHandle getFramePre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, StaticScope scope) {
         Signature inbound = signature.asFold(void.class);
         SmartBinder binder = SmartBinder
                            .from(inbound);
 
-        switch (method.getCallConfig()) {
+        switch (callConfig) {
             case FrameFullScopeFull:
                 // before logic
                 return binder
                         .permute("context", "self", "block")
-                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), implClass, name)
                         .insert(5, arrayOf("scope"), arrayOf(StaticScope.class), scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope")
                         .handle();
@@ -1579,7 +1602,7 @@ public class InvocationLinker {
                 // before logic
                 return binder
                         .permute("context", "self", "block")
-                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), implClass, name)
                         .insert(5, arrayOf("scope"), arrayOf(StaticScope.class), scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope")
                         .handle();
@@ -1588,7 +1611,7 @@ public class InvocationLinker {
                 // before logic
                 return binder
                         .permute("context", "self", "block")
-                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), method.getImplementationClass(), name)
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), implClass, name)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameOnly")
                         .handle();
 
@@ -1596,7 +1619,7 @@ public class InvocationLinker {
                 // before logic
                 return binder
                         .permute("context")
-                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), method.getImplementationClass(), scope)
+                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), implClass, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodScopeOnly")
                         .handle();
 
@@ -1604,7 +1627,7 @@ public class InvocationLinker {
                 // before logic
                 return binder
                         .permute("context")
-                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), method.getImplementationClass(), scope)
+                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), implClass, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope")
                         .handle();
 
@@ -1613,13 +1636,13 @@ public class InvocationLinker {
         return null;
     }
 
-    private static MethodHandle getFramePost(Signature signature, DynamicMethod method) {
+    public static MethodHandle getFramePost(Signature signature, CallConfiguration callConfig) {
         Signature inbound = signature.asFold(void.class);
         SmartBinder binder = SmartBinder
                                .from(inbound)
                                .permute("context");
         
-        switch (method.getCallConfig()) {
+        switch (callConfig) {
             case FrameFullScopeFull:
                 // finally logic
                 return binder
@@ -1821,7 +1844,7 @@ public class InvocationLinker {
     private static MethodHandle dynamicCallTarget(Signature from, Signature to) {
         return SmartBinder
                 .from(from)
-                .fold("selfClass", from.asFold(RubyClass.class).permuteTo(PGC, "context", "self"))
+                .fold("selfClass", from.asFold(RubyClass.class).permuteWith(PGC, "context", "self"))
                 .permute(to)
                 .cast(to)
                 .invokeVirtualQuiet(lookup(), "call")
@@ -1856,29 +1879,29 @@ public class InvocationLinker {
     private static final Signature FALLBACK_SIG_3ARG_BLOCK = FALLBACK_SIG_3ARG.appendArg("block", Block.class);
     private static final Signature FALLBACK_SIG_NARG_BLOCK = FALLBACK_SIG_NARG.appendArg("block", Block.class);
     
-    private static final MethodHandle FALLBACK_0 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG.methodType());
-    private static final MethodHandle FALLBACK_1 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_1ARG.methodType());
-    private static final MethodHandle FALLBACK_2 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_2ARG.methodType());
-    private static final MethodHandle FALLBACK_3 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_3ARG.methodType());
-    private static final MethodHandle FALLBACK_N = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_NARG.methodType());
+    private static final MethodHandle FALLBACK_0 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG.type());
+    private static final MethodHandle FALLBACK_1 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_1ARG.type());
+    private static final MethodHandle FALLBACK_2 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_2ARG.type());
+    private static final MethodHandle FALLBACK_3 = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_3ARG.type());
+    private static final MethodHandle FALLBACK_N = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_NARG.type());
     
-    private static final MethodHandle FALLBACK_0_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_BLOCK.methodType());
-    private static final MethodHandle FALLBACK_1_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_1ARG_BLOCK.methodType());
-    private static final MethodHandle FALLBACK_2_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_2ARG_BLOCK.methodType());
-    private static final MethodHandle FALLBACK_3_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_3ARG_BLOCK.methodType());
-    private static final MethodHandle FALLBACK_N_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_NARG_BLOCK.methodType());
+    private static final MethodHandle FALLBACK_0_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_BLOCK.type());
+    private static final MethodHandle FALLBACK_1_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_1ARG_BLOCK.type());
+    private static final MethodHandle FALLBACK_2_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_2ARG_BLOCK.type());
+    private static final MethodHandle FALLBACK_3_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_3ARG_BLOCK.type());
+    private static final MethodHandle FALLBACK_N_B = findStatic(InvocationLinker.class, "invocationFallback", FALLBACK_SIG_NARG_BLOCK.type());
     
-    private static final MethodHandle FAIL_0 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG.methodType());
-    private static final MethodHandle FAIL_1 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_1ARG.methodType());
-    private static final MethodHandle FAIL_2 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_2ARG.methodType());
-    private static final MethodHandle FAIL_3 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_3ARG.methodType());
-    private static final MethodHandle FAIL_N = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_NARG.methodType());
+    private static final MethodHandle FAIL_0 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG.type());
+    private static final MethodHandle FAIL_1 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_1ARG.type());
+    private static final MethodHandle FAIL_2 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_2ARG.type());
+    private static final MethodHandle FAIL_3 = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_3ARG.type());
+    private static final MethodHandle FAIL_N = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_NARG.type());
     
-    private static final MethodHandle FAIL_0_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_BLOCK.methodType());
-    private static final MethodHandle FAIL_1_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_1ARG_BLOCK.methodType());
-    private static final MethodHandle FAIL_2_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_2ARG_BLOCK.methodType());
-    private static final MethodHandle FAIL_3_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_3ARG_BLOCK.methodType());
-    private static final MethodHandle FAIL_N_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_NARG_BLOCK.methodType());
+    private static final MethodHandle FAIL_0_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_BLOCK.type());
+    private static final MethodHandle FAIL_1_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_1ARG_BLOCK.type());
+    private static final MethodHandle FAIL_2_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_2ARG_BLOCK.type());
+    private static final MethodHandle FAIL_3_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_3ARG_BLOCK.type());
+    private static final MethodHandle FAIL_N_B = findStatic(InvocationLinker.class, "fail", FALLBACK_SIG_NARG_BLOCK.type());
 
     private static final MethodHandle[] FALLBACKS = new MethodHandle[] {
         FALLBACK_0,

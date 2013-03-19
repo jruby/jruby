@@ -172,7 +172,6 @@ public class RubySystemCallError extends RubyException {
 
         exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);
         
-        runtime.callbackFactory(RubyClass.class);
         exceptionClass.defineAnnotatedMethods(RubySystemCallError.class);
 
         return exceptionClass;

@@ -43,6 +43,7 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
+@Deprecated
 public class SimpleCallbackMethod extends DynamicMethod {
     private Callback callback;
 

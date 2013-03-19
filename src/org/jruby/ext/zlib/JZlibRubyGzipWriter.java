@@ -9,6 +9,7 @@ import static org.jruby.CompatVersion.RUBY1_9;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -16,11 +17,13 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.stringio.RubyStringIO;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -110,16 +113,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             checkLevel(getRuntime(), RubyNumeric.fix2int(args[2]));
         }
         if (realIo.respondsTo("path")) {
-            obj.getSingletonClass().defineMethod("path", new Callback() {
-
+            obj.getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(obj.getSingletonClass(), Visibility.PUBLIC) {
                 @Override
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                    return ((JZlibRubyGzipWriter) recv).realIo.callMethod(recv.getRuntime().getCurrentContext(), "path");
-                }
-
-                @Override
-                public Arity getArity() {
-                    return Arity.NO_ARGUMENTS;
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                    return ((JZlibRubyGzipWriter) self).realIo.callMethod(context, "path");
                 }
             });
         }

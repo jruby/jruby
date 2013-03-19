@@ -74,7 +74,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
                 jitCompiledScript.getClass(),
                 "__file__",
                 IRubyObject.class,
-                StandardASMCompiler.getStaticMethodArgs(jitCompiledScript.getClass(), argCount), true);
+                StandardASMCompiler.getStaticMethodParams(jitCompiledScript.getClass(), argCount), true);
     }
 
     public StaticScope getStaticScope() {

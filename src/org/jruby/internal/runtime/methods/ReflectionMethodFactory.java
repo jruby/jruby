@@ -68,13 +68,14 @@ public class ReflectionMethodFactory extends MethodFactory {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
-            String methodName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc) {
 
         return getCompiledMethod(
                 implementationClass,
-                methodName,
+                rubyName,
+                javaName,
                 arity,
                 visibility,
                 scope,
@@ -90,12 +91,12 @@ public class ReflectionMethodFactory extends MethodFactory {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
-            String methodName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc) {
         try {
             Class scriptClass = scriptObject.getClass();
-            Method method = scriptClass.getMethod(methodName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+            Method method = scriptClass.getMethod(javaName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
             return new ReflectedCompiledMethod(
                     implementationClass,
                     arity,
@@ -107,7 +108,7 @@ public class ReflectionMethodFactory extends MethodFactory {
                     position,
                     parameterDesc);
         } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
+            throw new RuntimeException("No method with name " + javaName + " found in " + scriptObject.getClass());
         }
     }
     
