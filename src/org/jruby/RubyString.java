@@ -90,6 +90,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
@@ -115,7 +116,7 @@ import org.jruby.util.string.JavaCrypt;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements EncodingCapable {
+public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyString");
 
@@ -168,6 +169,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public void setEncoding(Encoding encoding) {
         value.setEncoding(encoding);
+    }
+
+    public boolean shouldMarshalEncoding() {
+        return getEncoding() != ASCIIEncoding.INSTANCE;
+    }
+
+    public Encoding getMarshalEncoding() {
+        return getEncoding();
     }
 
     public void associateEncoding(Encoding enc) {

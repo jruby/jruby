@@ -1,4 +1,3 @@
-fails:Marshal.dump with a Symbol dumps an encoded Symbol
 fails:Marshal.dump dumps subsequent appearances of a symbol as a link
 fails:Marshal.dump dumps subsequent appearances of an object as a link
 fails:Marshal.dump ignores the recursion limit if the limit is negative
