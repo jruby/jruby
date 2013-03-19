@@ -291,7 +291,6 @@
             <src path="${src.dir}"/>
             <exclude name="org/jruby/runtime/Constants.java"/>
             <exclude name="java/dyn/**"/>
-            <exclude name="org/jruby/ext/openssl/"/>
             <patternset refid="java.src.pattern"/>
             <compilerarg line="-XDignore.symbol.file=true"/>
             <compilerarg line="-J-Dfile.encoding=UTF-8"/>
@@ -299,26 +298,10 @@
             <compilerarg line="-J-Xbootclasspath/p:build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
             <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
         </javac>
-        <antcall target="compile_ssl"/>
         <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
         <antcall target="instrument"/>
 
         <property name="compiled" value="true"/>
-    </target>
-
-    <target name="compile_ssl" unless="exclude_openssl">
-        <javac destdir="${jruby.classes.dir}" fork="true"
-               debug="true" source="${javac.version}" target="${javac.version}"
-               deprecation="true" encoding="UTF-8" includeantruntime="true" memorymaximumsize="${jruby.compile.memory}">
-            <classpath refid="jruby.execute.classpath"/>
-            <src path="${src.dir}/org/jruby/ext/openssl/"/>
-            <patternset refid="java.src.pattern"/>
-            <compilerarg line="-XDignore.symbol.file=true"/>
-            <compilerarg line="-J-Dfile.encoding=UTF-8"/>
-            <compilerarg line="-J-Duser.language=en"/>
-            <compilerarg line="-J-Xbootclasspath/p:build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
-            <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
-        </javac>
     </target>
 
     <target name="generate-method-classes">
