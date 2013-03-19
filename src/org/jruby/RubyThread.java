@@ -1040,7 +1040,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return getContext().createCallerBacktrace(context.runtime, 0);
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY2_0, omit = true)
+    @JRubyMethod(compat = CompatVersion.RUBY2_0)
     public IRubyObject backtrace_locations(ThreadContext context) {
         Ruby runtime = context.runtime;
         RubyStackTraceElement[] elements =
