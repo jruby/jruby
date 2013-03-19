@@ -163,12 +163,16 @@
                 <include name="**/*.rb"/>
             </fileset>
         </copy>
+        <antcall target="copy-bc-resources"/>
+        <property name="copy-resources.hasrun" value="true"/>
+    </target>
+
+    <target name="copy-bc-resources" unless="exclude_openssl">
         <copy todir="${lib.dir}/ruby/shared" preservelastmodified="true">
             <fileset dir="${build.lib.dir}">
                 <include name="bc*.jar"/>
             </fileset>
         </copy>
-        <property name="copy-resources.hasrun" value="true"/>
     </target>
 
     <macrodef name="update-constants">
@@ -414,7 +418,7 @@
         <property name="jar-jruby.hasrun" value="true"/>
     </target>
     
-    <target name="jar-jopenssl">
+    <target name="jar-jopenssl" unless="exclude_openssl">
         <jar destfile="${lib.dir}/ruby/shared/jopenssl.jar" compress="true" index="true" update="true">
             <fileset dir="${jruby.classes.dir}">
                 <include name="**/*openssl*/**/*"/>
@@ -491,7 +495,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <param name="jar.wrap" value="${lib.dir}/jruby.jar"/>
             <param name="bar.wrap" value="${lib.dir}/jruby.bar"/>
         </antcall>
-        
         <antcall target="jar-jopenssl"/>
     </target>
     <target name="jarjar" depends="jar-jruby-dist"/>
@@ -654,7 +657,11 @@ other than ASM, which is rewritten to avoid conflicts. -->
             description="Create the jruby-complete.jar file. This version uses JarJar to rewrite some packages.">
         <antcall target="jar-jruby-complete" inheritall="true"/>
     </target>
-
+    <target name="jar-no-encryption-complete" depends="init"
+            description="Create the jruby-complete.jar file just like jar-complete, but refrains from including anything with encryption algorithms">
+        <property name="exclude_openssl" value="true"/>
+        <antcall target="jar-jruby-complete" inheritall="true"/>
+    </target>
     <target name="compile-stdlib" unless="test">
         <mkdir dir="${build.dir}/stdlib"/>
         <echo message="Compiling 1.8 stdlib..."/>
