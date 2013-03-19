@@ -141,10 +141,6 @@ public class SSLContext extends RubyObject {
         return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
     }
     
-    public void hello() {
-        System.out.printf("hello\n");
-    }
-
     private String ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
     private String protocol = "SSL"; // SSLv23 in OpenSSL by default
     private boolean protocolForServer = true;
