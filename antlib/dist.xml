@@ -23,6 +23,7 @@
         <include name="lib/ruby/shared/**"/>
         <exclude name="lib/ruby/shared/bc*.jar" if="exclude_openssl"/>
         <exclude name="lib/ruby/shared/bouncy-castle-java.rb" if="exclude_openssl"/>
+        <exclude name="lib/ruby/shared/jopenssl.jar" if="exclude_openssl"/>
         <exclude name="lib/ruby/shared/jopenssl/**" if="exclude_openssl"/>
         <exclude name="lib/ruby/shared/krypt*" if="exclude_openssl"/>
         <exclude name="lib/ruby/shared/krypt" if="exclude_openssl"/>
