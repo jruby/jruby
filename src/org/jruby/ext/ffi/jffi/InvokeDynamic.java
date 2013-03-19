@@ -39,11 +39,18 @@ public final class InvokeDynamic {
         if (fast == null) {
             return generateNativeInvokerHandle(site, method);
         }
-
+        
         MethodHandle guard = getDirectPointerParameterGuard(site, method);
-        return guard != null
-            ? MethodHandles.guardWithTest(guard, fast, generateNativeInvokerHandle(site, method))
-            : fast;
+        if (guard == null) {
+            return fast;
+        }
+        
+        MethodHandle nativeInvokerHandle = generateNativeInvokerHandle(site, method);
+        if (nativeInvokerHandle == null) {
+            return null;
+        }
+
+        return MethodHandles.guardWithTest(guard, fast, nativeInvokerHandle);
     }
 
     public static MethodHandle getFastNumericMethodHandle(JRubyCallSite site, DynamicMethod method) {
