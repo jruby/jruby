@@ -60,6 +60,13 @@ public final class InvokeDynamic {
                 LOG.info(site.name() + "\t" + inse.getLocalizedMessage());
             }
             return null;
+
+        } catch (NullPointerException npe) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                LOG.info(site.name() + "\t" + npe.getLocalizedMessage());
+            }
+
+            return null;
         }
     }
 
