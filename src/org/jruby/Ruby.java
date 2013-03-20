@@ -197,6 +197,8 @@ public final class Ruby {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
         }
         
+        getJRubyClassLoader(); // force JRubyClassLoader to init if possible
+        
         if (config.getCompileMode() == CompileMode.OFFIR ||
                 config.getCompileMode() == CompileMode.FORCEIR) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
