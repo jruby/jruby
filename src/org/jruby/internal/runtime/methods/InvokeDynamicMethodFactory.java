@@ -334,6 +334,12 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         
         if (targets[4] == null) {
             // provide a variable-arity path for specific-arity target
+            Signature VARIABLE_ARITY_SIGNATURE = Signature
+                    .returning(IRubyObject.class)
+                    .appendArg("context", ThreadContext.class)
+                    .appendArg("self", IRubyObject.class)
+                    .appendArg("args", IRubyObject[].class)
+                    .appendArg("block", Block.class);
             
             // convert all specific-arity handles into varargs handles
             MethodHandle[] varargsTargets = new MethodHandle[4];
@@ -343,10 +349,18 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 if (i == 0) {
                     varargsTargets[i] = MethodHandles.dropArguments(targets[i], 2, IRubyObject[].class);
                 } else {
-                    varargsTargets[i] = SPREAD_BINDERS[i]
+                    varargsTargets[i] = SmartBinder
+                            .from(VARIABLE_ARITY_SIGNATURE)
+                            .permute("context", "self", "block", "args")
+                            .spread("arg", i)
+                            .permute("context", "self", "arg*", "block")
                             .invoke(targets[i]).handle();
                 }
             }
+            
+            SmartHandle HANDLE_GETTER = SmartBinder
+                    .from(Signature.returning(MethodHandle.class).appendArg("targets", MethodHandle[].class).appendArg("arity", int.class))
+                    .arrayGet();
             
             SmartHandle handleLookup = SmartBinder
                     .from(Signature.returning(MethodHandle.class).appendArg("args", IRubyObject[].class))

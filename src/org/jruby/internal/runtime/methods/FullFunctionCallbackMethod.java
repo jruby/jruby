@@ -40,15 +40,14 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 /**
  */
 @Deprecated
 public class FullFunctionCallbackMethod extends DynamicMethod {
-    private Callback callback;
+    private org.jruby.runtime.callback.Callback callback;
 
-    public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+    public FullFunctionCallbackMethod(RubyModule implementationClass, org.jruby.runtime.callback.Callback callback, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
         this.callback = callback;
     }
@@ -81,7 +80,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
         }
     }
     
-    public Callback getCallback() {
+    public org.jruby.runtime.callback.Callback getCallback() {
         return callback;
     }
 

@@ -39,15 +39,14 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 /**
  */
 @Deprecated
 public class SimpleCallbackMethod extends DynamicMethod {
-    private Callback callback;
+    private org.jruby.runtime.callback.Callback callback;
 
-    public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+    public SimpleCallbackMethod(RubyModule implementationClass, org.jruby.runtime.callback.Callback callback, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.callback = callback;
     }
@@ -68,7 +67,7 @@ public class SimpleCallbackMethod extends DynamicMethod {
         return callback.execute(self, args, block);
     }
 
-    public Callback getCallback() {
+    public org.jruby.runtime.callback.Callback getCallback() {
         return callback;
     }
 

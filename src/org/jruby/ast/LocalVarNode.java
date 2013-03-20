@@ -59,6 +59,9 @@ public class LocalVarNode extends Node implements INameNode {
         super(position);
         this.location = location;
         this.name = name;
+        long blah;
+        
+        blah = System.currentTimeMillis();
     }
 
     public NodeType getNodeType() {
