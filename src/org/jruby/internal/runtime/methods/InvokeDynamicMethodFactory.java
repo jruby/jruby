@@ -31,7 +31,6 @@ import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyKernel;
 import org.jruby.parser.StaticScope;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -41,13 +40,17 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.util.CodegenUtils.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
+import org.jruby.Ruby;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 /**
  * In order to avoid the overhead with reflection-based method handles, this
@@ -79,6 +82,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      * 
      * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
+    @Override
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass,
             String rubyName,
@@ -99,6 +103,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      * 
      * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
+    @Override
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass,
             String rubyName,
@@ -136,9 +141,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
             // wrap with framing logic if needed
             if (!callConfig.isNoop()) {
-                directCall = new SmartHandle(
-                        directCall.signature(),
-                        InvocationLinker.wrapWithFraming(directCall.signature(), callConfig, implementationClass, rubyName, directCall.handle(), scope));
+                directCall = SmartHandle
+                        .from(directCall.signature(), InvocationLinker.wrapWithFraming(directCall.signature(), callConfig, implementationClass, rubyName, directCall.handle(), scope));
             }
 
             // provide a variable-arity path for specific-arity target
@@ -180,6 +184,200 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public byte[] getCompiledMethodOffline(
+            String rubyName, String javaName, String className, String invokerPath, Arity arity,
+            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+        throw new RuntimeException("no offline support for invokedynamic handles");
+    }
+
+    @Override
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
+        JavaMethodDescriptor desc1 = descs.get(0);
+        
+        if (desc1.anno.frame()) {
+            // super logic does not work yet because we need to take impl class
+            // and method name from the DynamicMethod#call call, so punt to
+            // generated class for now
+            return super.getAnnotatedMethod(implementationClass, descs);
+        }
+
+        if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
+            LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
+        }
+
+        DescriptorInfo info = new DescriptorInfo(descs);
+        MethodHandle[] targets = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
+        
+        return new HandleMethod(implementationClass, desc1.anno.visibility(), CallConfiguration.getCallConfig(info.isFrame(), info.isScope()), targets, null);
+    }
+
+    private MethodHandle[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
+        MethodHandle[] targets = new MethodHandle[5];
+        
+        for (JavaMethodDescriptor desc: descs) {
+            int specificArity = -1;
+            if (desc.optional == 0 && !desc.rest) {
+                if (desc.required == 0) {
+                    if (desc.actualRequired <= 3) {
+                        specificArity = desc.actualRequired;
+                    } else {
+                        specificArity = -1;
+                    }
+                } else if (desc.required >= 0 && desc.required <= 3) {
+                    specificArity = desc.required;
+                }
+            }
+
+            String javaMethodName = desc.name;
+            String rubyName;
+            
+            if (desc.anno.name() != null && desc.anno.name().length > 0) {
+                // FIXME: Using this for super may super up the wrong name
+                rubyName = desc.anno.name()[0];
+            } else {
+                rubyName = javaMethodName;
+            }
+
+//            checkArity(desc.anno, method, specificArity);
+
+            SmartBinder targetBinder;
+            SmartHandle target;
+            Signature baseSignature;
+            if (specificArity >= 0) {
+                baseSignature = SPECIFIC_ARITY_SIGNATURES[specificArity];
+            } else {
+                baseSignature = VARIABLE_ARITY_SIGNATURE;
+            }
+            
+            targetBinder = SmartBinder.from(baseSignature);
+            
+            MethodHandle returnFilter = null;
+            boolean castReturn = false;
+            if (desc.returnClass != IRubyObject.class) {
+                if (desc.returnClass == void.class) {
+                    returnFilter = MethodHandles.constant(IRubyObject.class, runtime.getNil());
+                } else {
+                    castReturn = true;
+                }
+            }
+            
+            if (desc.isStatic) {
+                if (desc.hasContext) {
+                    if (desc.hasBlock) {
+                        // straight through with no permutation necessary
+                    } else {
+                        targetBinder = targetBinder.exclude("block");
+                    }
+                } else {
+                    if (desc.hasBlock) {
+                        targetBinder = targetBinder.exclude("context");
+                    } else {
+                        targetBinder = targetBinder.exclude("context", "block");
+                    }
+                }
+                
+                if (returnFilter != null) {
+                    targetBinder = targetBinder
+                            .filterReturn(returnFilter);
+                } else if (castReturn) {
+                    targetBinder = targetBinder
+                            .castReturn(desc.returnClass);
+                }
+            } else {
+                if (desc.hasContext) {
+                    if (desc.hasBlock) {
+                        targetBinder = targetBinder.permute("self", "context", "arg*", "block");
+                    } else {
+                        targetBinder = targetBinder.permute("self", "context", "arg*");
+                    }
+                } else {
+                    if (desc.hasBlock) {
+                        targetBinder = targetBinder.permute("self", "arg*", "block");
+                    } else {
+                        targetBinder = targetBinder.permute("self", "arg*");
+                    }
+                }
+                
+                if (returnFilter != null) {
+                    targetBinder = targetBinder
+                            .filterReturn(returnFilter);
+                } else if (castReturn) {
+                    targetBinder = targetBinder
+                            .castReturn(desc.returnClass);
+                }
+                targetBinder = targetBinder
+                        .castArg("self", desc.getDeclaringClass());
+            }
+            
+            if (desc.isStatic) {
+                target = targetBinder
+                        .invokeStaticQuiet(LOOKUP, desc.getDeclaringClass(), javaMethodName);
+            } else {
+                target = targetBinder
+                        .invokeVirtualQuiet(LOOKUP, javaMethodName);
+            }
+
+            CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
+            if (!callConfig.isNoop()) {
+                target = SmartHandle
+                        .from(target.signature(), InvocationLinker.wrapWithFraming(baseSignature, callConfig, implementationClass, rubyName, target.handle(), null));
+            }
+            
+            if (specificArity >= 0) {
+                targets[specificArity] = target.handle();
+            } else {
+                targets[4] = target.handle();
+            }
+        }
+        
+        if (targets[4] == null) {
+            // provide a variable-arity path for specific-arity target
+            
+            // convert all specific-arity handles into varargs handles
+            MethodHandle[] varargsTargets = new MethodHandle[4];
+            for (int i = 0; i < 4; i++) {
+                // TODO arity error
+                if (targets[i] == null) continue;
+                if (i == 0) {
+                    varargsTargets[i] = MethodHandles.dropArguments(targets[i], 2, IRubyObject[].class);
+                } else {
+                    varargsTargets[i] = SPREAD_BINDERS[i]
+                            .invoke(targets[i]).handle();
+                }
+            }
+            
+            SmartHandle handleLookup = SmartBinder
+                    .from(Signature.returning(MethodHandle.class).appendArg("args", IRubyObject[].class))
+                    .filterReturn(HANDLE_GETTER.bindTo(varargsTargets))
+                    .cast(int.class, Object.class)
+                    .invokeStaticQuiet(LOOKUP, Array.class, "getLength");
+            
+            SmartHandle variableCall = SmartBinder
+                    .from(VARIABLE_ARITY_SIGNATURE)
+                    .fold("handle", handleLookup)
+                    .invoker();
+            
+            targets[4] = variableCall.handle();
+        }
+        
+        
+        // TODO: tracing
+        
+        return targets;
+    }
+
+    /**
+     * Use code generation to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
+     */
+    @Override
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
+        return getAnnotatedMethod(implementationClass, Arrays.asList(desc));
+    }
     
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature
             .returning(IRubyObject.class)
@@ -217,11 +415,19 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             }
             SPECIFIC_ARITY_SIGNATURES = specifics;
     }
-
-    @Override
-    public byte[] getCompiledMethodOffline(
-            String rubyName, String javaName, String className, String invokerPath, Arity arity,
-            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
-        throw new RuntimeException("no offline support for invokedynamic handles");
+    
+    private static final SmartBinder[] SPREAD_BINDERS = new SmartBinder[4];
+    static {
+        for (int i = 0; i < 4; i++) {
+            SPREAD_BINDERS[i] = SmartBinder
+                    .from(VARIABLE_ARITY_SIGNATURE)
+                    .permute("context", "self", "block", "args")
+                    .spread("arg", i)
+                    .permute("context", "self", "arg*", "block");
+        }
     }
+    
+    private static final SmartHandle HANDLE_GETTER = SmartBinder
+                    .from(Signature.returning(MethodHandle.class).appendArg("targets", MethodHandle[].class).appendArg("arity", int.class))
+                    .arrayGet();
 }

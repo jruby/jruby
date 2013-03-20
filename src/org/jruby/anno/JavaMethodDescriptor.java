@@ -26,11 +26,11 @@ public class JavaMethodDescriptor {
     public final int required;
     public final int optional;
     public final boolean rest;
-    private final Class[] parameters;
-    private final Class returnClass;
+    public final Class[] parameters;
+    public final Class returnClass;
     public final JRubyMethod anno;
     public final int modifiers;
-    private final Class declaringClass;
+    public final Class declaringClass;
     public final String declaringClassName;
     public final String declaringClassPath;
     public final String name;

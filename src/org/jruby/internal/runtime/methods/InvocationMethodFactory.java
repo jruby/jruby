@@ -593,7 +593,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return endCallOffline(cw);
     }
     
-    private static class DescriptorInfo {
+    static class DescriptorInfo {
         private int min;
         private int max;
         private boolean frame;
@@ -1565,8 +1565,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             if (desc.getReturnClass() == void.class) {
                 // void return type, so we need to load a nil for returning below
                 method.aload(THREADCONTEXT_INDEX);
-                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+                method.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
             }
         }
         method.label(tryEnd);
