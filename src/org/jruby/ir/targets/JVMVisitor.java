@@ -87,6 +87,7 @@ import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.Map;
+import org.jruby.RubyRange;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -1279,7 +1280,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        super.Range(range);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().pushRuntime();
+        jvm.method().loadContext();
+        visit(range.getBegin());
+        visit(range.getEnd());
+        jvm.method().adapter.ldc(range.isExclusive());
+        jvm.method().adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
     }
 
     @Override

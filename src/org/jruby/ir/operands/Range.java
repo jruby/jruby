@@ -25,6 +25,18 @@ public class Range extends Operand {
         this.end = end;
         this.exclusive = exclusive;
     }
+    
+    public Operand getBegin() {
+        return begin;
+    }
+    
+    public Operand getEnd() {
+        return end;
+    }
+    
+    public boolean isExclusive() {
+        return exclusive;
+    }
 
     @Override
     public String toString() {
