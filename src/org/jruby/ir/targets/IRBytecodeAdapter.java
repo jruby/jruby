@@ -57,6 +57,11 @@ public class IRBytecodeAdapter {
         adapter.aload(0);
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
+    
+    public void push(Double d) {
+        adapter.aload(0);
+        adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
+    }
 
     public void push(ByteList bl) {
         adapter.aload(0);
@@ -186,8 +191,7 @@ public class IRBytecodeAdapter {
     }
 
     public void pushObjectClass() {
-        adapter.aload(0);
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        pushRuntime();
         adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
     }
 

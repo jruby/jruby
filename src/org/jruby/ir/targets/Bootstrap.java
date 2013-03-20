@@ -39,6 +39,7 @@ import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
+import org.jruby.RubyFloat;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -871,5 +872,33 @@ public class Bootstrap {
                 .constant(fixnum)
         );
         return fixnum;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Float binding
+
+    public static Handle flote() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "flote", sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class));
+    }
+
+    public static CallSite flote(Lookup lookup, String name, MethodType type, double value) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .insert(0, site, value)
+                .cast(IRubyObject.class, MutableCallSite.class, double.class, ThreadContext.class)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "flote");
+        site.setTarget(handle);
+        return site;
+    }
+
+    public static IRubyObject flote(MutableCallSite site, double value, ThreadContext context) {
+        RubyFloat flote = RubyFloat.newFloat(context.runtime, value);
+        site.setTarget(Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .drop(0)
+                .constant(flote)
+        );
+        return flote;
     }
 }

@@ -1234,8 +1234,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Float(org.jruby.ir.operands.Float flote) {
-        super.Float(flote);
-        // jvm.method().push(flote.getValue());
+        jvm.method().push(flote.getValue());
     }
 
     @Override
@@ -1312,7 +1311,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StandardError(StandardError standarderror) {
-        super.StandardError(standarderror);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().pushRuntime();
+        jvm.method().adapter.invokevirtual(p(Ruby.class), "getStandardError", sig(RubyClass.class));
     }
 
     @Override
