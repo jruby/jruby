@@ -610,30 +610,31 @@ public class JavaClass extends JavaObject {
             if (hasRun) return;
             hasRun = true;
 
-            Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
-            List<ConstantField> constants = new ArrayList<ConstantField>();
-            Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
+            InitializerState state = new InitializerState(getRuntime(), null);
             Field[] fields = getDeclaredFields(javaClass);
 
             for (int i = fields.length; --i >= 0; ) {
                 Field field = fields[i];
                 if (javaClass != field.getDeclaringClass()) continue;
-                if (ConstantField.isConstant(field)) constants.add(new ConstantField(field));
+                if (ConstantField.isConstant(field)) state.constantFields.add(new ConstantField(field));
 
                 int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers)) addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
+                if (Modifier.isStatic(modifiers)) addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(modifiers), true);
             }
+            
+            // Add in any Scala singleton methods
+            handleScalaSingletons(javaClass, state);
 
             // Now add all aliases for the static methods (fields) as appropriate
-            for (Map.Entry<String, NamedInstaller> entry : staticCallbacks.entrySet()) {
+            for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
                 if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                    assignAliases((MethodInstaller)entry.getValue(), staticNames);
+                    assignAliases((MethodInstaller)entry.getValue(), state.staticNames);
                 }
             }
 
-            JavaClass.this.staticAssignedNames = staticNames;
-            JavaClass.this.staticInstallers = staticCallbacks;
-            JavaClass.this.constantFields = constants;
+            JavaClass.this.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
+            JavaClass.this.staticInstallers = Collections.unmodifiableMap(state.staticCallbacks);
+            JavaClass.this.constantFields = Collections.unmodifiableList(state.constantFields);
         }
     };
 
