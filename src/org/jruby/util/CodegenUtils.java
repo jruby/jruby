@@ -9,12 +9,14 @@
 
 package org.jruby.util;
 
-import java.util.Arrays;
-import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
 import javax.lang.model.element.Name;
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -225,22 +227,44 @@ public class CodegenUtils {
     }
 
     public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {
-        for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
-            Object value = fieldEntry.getValue();
-            if (value.getClass().isArray()) {
-                Object[] values = (Object[]) value;
-                AnnotationVisitor arrayV = visitor.visitArray(fieldEntry.getKey());
-                for (int i = 0; i < values.length; i++) {
-                    arrayV.visit(null, values[i]);
+        try {
+            for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
+                Object value = fieldEntry.getValue();
+                String key = fieldEntry.getKey();
+
+                if (value instanceof Map) {
+                    Map<Class, Map<String, Object>> nestedAnnotationMap = (Map<Class, Map<String, Object>>) value;
+
+                    for (Map.Entry<Class, Map<String, Object>> nestedAnnotation : nestedAnnotationMap.entrySet()) {
+                        AnnotationVisitor annotationV;
+
+                        annotationV = visitor.visitAnnotation(key, Type.getType(nestedAnnotation.getKey()).getDescriptor());
+                        visitAnnotationFields(annotationV, nestedAnnotation.getValue());
+                        annotationV.visitEnd();
+                    }
+                } else if (value.getClass().isArray()) {
+                    Object[] values = (Object[]) value;
+
+                    AnnotationVisitor arrayV = visitor.visitArray(key);
+                    for (int i = 0; i < values.length; i++) {
+                        Map<String, Object> map = new HashMap<String, Object>();
+                        map.put(null, values[i]);
+                        visitAnnotationFields(arrayV, map);
+                    }
+                    arrayV.visitEnd();
+                } else if (value.getClass().isEnum()) {
+                    visitor.visitEnum(key, ci(value.getClass()), value.toString());
+                } else if (value instanceof Class) {
+                    visitor.visit(key, Type.getType((Class) value));
+                } else {
+                    visitor.visit(key, value);
                 }
-                arrayV.visitEnd();
-            } else if (value.getClass().isEnum()) {
-                visitor.visitEnum(fieldEntry.getKey(), ci(value.getClass()), value.toString());
-            } else if (value instanceof Class) {
-                visitor.visit(fieldEntry.getKey(), Type.getType((Class)value));
-            } else {
-                visitor.visit(fieldEntry.getKey(), value);
             }
+        } catch (ClassCastException e) {
+            throw new InvalidAnnotationDescriptorException("Fields "
+                + fields
+                + " did not match annotation format.  See CodegenUtils#visitAnnotationFields for format",
+                e);
         }
     }
 
@@ -265,6 +289,23 @@ public class CodegenUtils {
             return Void.class;
         } else {
             throw new RuntimeException("Not a native type: " + type);
+        }
+    }
+
+    public static class InvalidAnnotationDescriptorException extends RuntimeException {
+        public InvalidAnnotationDescriptorException() {
+        }
+
+        public InvalidAnnotationDescriptorException(String s) {
+            super(s);
+        }
+
+        public InvalidAnnotationDescriptorException(String s, Throwable throwable) {
+            super(s, throwable);
+        }
+
+        public InvalidAnnotationDescriptorException(Throwable throwable) {
+            super(throwable);
         }
     }
 }
