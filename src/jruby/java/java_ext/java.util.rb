@@ -29,6 +29,7 @@ module java::util::Collection
     # first
     toArray.to_a
   end
+  alias_method :to_ary, :to_a
 end
 
 module java::util::Enumeration
