@@ -17,7 +17,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ThreadFiber extends Fiber {
     private final Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
     private volatile ThreadFiberState state = ThreadFiberState.NOT_STARTED;
-    private Future future;
 
     public ThreadFiber(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -68,7 +67,7 @@ public class ThreadFiber extends Fiber {
         };
 
         // submit job and wait to be resumed
-        future = context.runtime.getExecutor().submit(runnable);
+        context.runtime.getExecutor().submit(runnable);
         try {
             // kick the fiber into "YIELDED" mode, waiting for resume
             exchanger.exchange(context.nil);
@@ -77,6 +76,7 @@ public class ThreadFiber extends Fiber {
         }
     }
 
+    @Override
     protected IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject arg, boolean transfer) {
         try {
             switch (state) {
@@ -84,12 +84,12 @@ public class ThreadFiber extends Fiber {
                     if (isRoot()) {
                         state = ThreadFiberState.RUNNING;
                         return arg;
-                    } else if (context.getThread() != parent) {
+                    } else if (!isSameParentThread(context)) {
                         throw context.runtime.newFiberError("resuming fiber from different thread");
                     }
                     throw context.runtime.newRuntimeError("BUG: resume before fiber is started");
                 case YIELDED:
-                    if (context.getThread() != parent) {
+                    if (!isSameParentThread(context)) {
                         throw context.runtime.newFiberError("resuming fiber from different thread");
                     }
                     
@@ -141,6 +141,7 @@ public class ThreadFiber extends Fiber {
         }
     }
 
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject res) {
         try {
             state = ThreadFiberState.YIELDED;
@@ -156,8 +157,13 @@ public class ThreadFiber extends Fiber {
         }
     }
     
+    @Override
     public boolean isAlive() {
         return state != ThreadFiberState.FINISHED;
+    }
+    
+    private boolean isSameParentThread(ThreadContext context) {
+        return context.getThread() == parent || (context.getFiber() != null && context.getFiber().getParentThread() == parent);
     }
     
 }
