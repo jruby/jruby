@@ -60,6 +60,7 @@ public class JRubyCallSite extends MutableCallSite {
     private boolean boundOnce = false;
     private final Signature signature;
     private final Signature fullSignature;
+    private final int arity;
 
     public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
@@ -113,6 +114,28 @@ public class JRubyCallSite extends MutableCallSite {
 
             signature = STANDARD_SITE_SIGS[arity];
             fullSignature = STANDARD_SITE_SIGS_BLOCK[arity];
+        }
+        
+        this.arity = getSiteCount(type.parameterArray());
+    }
+    
+    public int arity() {
+        return arity;
+    }
+
+    private static int getSiteCount(Class[] args) {
+        if (args[args.length - 1] == Block.class) {
+            if (args[args.length - 2] == IRubyObject[].class) {
+                return 4;
+            } else {
+                return args.length - 4; // TC, caller, self, block
+            }
+        } else {
+            if (args[args.length - 1] == IRubyObject[].class) {
+                return 4;
+            } else {
+                return args.length - 3; // TC, caller, self
+            }
         }
     }
     

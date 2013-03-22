@@ -59,6 +59,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import static java.lang.invoke.MethodType.methodType;
 import java.lang.reflect.Method;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.runtime.Arity;
@@ -461,6 +462,247 @@ public class InvocationLinker {
             super(reason);
         }
     }
+    
+    public interface HandleGenerator {
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method);
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method);
+    }
+    
+    public static class HandleMethodGenerator implements HandleGenerator {
+        
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            return method instanceof HandleMethod;
+        }
+        
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            MethodHandle handle = ((HandleMethod)method).getHandle(site.arity());
+            
+            if (handle == null) {
+                throw new IndirectBindingException("MH dynamic method does not have needed arity");
+            }
+            
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
+            
+            Signature fullSig = site.fullSignature();
+            return Binder
+                    .from(fullSig.type())
+                    .permute(fullSig.to("context", "self", "arg*", "block"))
+                    .invoke(handle);
+        }
+    }
+    
+    public static class AttrReaderGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            if (method instanceof AttrReaderMethod) {
+                // attr reader
+                if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                    throw new IndirectBindingException("direct attribute dispatch not enabled");
+                }
+                if (site.arity() != 0) {
+                    throw new IndirectBindingException("attr reader with > 0 args");
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to attr reader
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+            return createAttrReaderHandle(site, cls, method);
+        }
+    }
+
+    public static class AttrWriterGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            if (method instanceof AttrWriterMethod) {
+                // attr writer
+                if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                    throw new IndirectBindingException("direct attribute dispatch not enabled");
+                }
+                if (site.arity() != 1) {
+                    throw new IndirectBindingException("attr writer with > 1 args");
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to attr reader
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+            }
+            return createAttrWriterHandle(site, cls, method);
+        }
+    }
+    
+    public static class FFIGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
+                // if frame/scope required, can't dispatch direct
+                if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
+                    throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
+                }
+
+                if (!method.getArity().isFixed()) {
+                    throw new IndirectBindingException("fixed arity required: " + method.getArity());
+                }
+
+                // Arity must match, otherwise let the indirect method process errors
+                if (method.getArity().getValue() != site.arity()) {
+                    throw new IndirectBindingException("arity mismatch");
+                }
+
+                // Only support 0..6 parameters
+                if (method.getArity().getValue() > 6) {
+                    throw new IndirectBindingException("target args > 6");
+                }
+
+                if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
+                    // Called with a block to substitute for a callback param - cannot bind directly
+                    throw new IndirectBindingException("callback block supplied");
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to FFI
+            return createFFIHandle(site, method);
+        }
+        
+    }
+    
+    public static class JavaCallGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            NativeCall nativeCall = method.getNativeCall();
+            
+            if (nativeCall != null) {
+                // has an explicit native call path
+
+                if (nativeCall.isJava()) {
+                    if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                        throw new IndirectBindingException("direct Java dispatch not enabled");
+                    }
+
+                    // if Java, must:
+                    // * match arity <= 3
+                    // * not be passed a block (no coercion yet)
+                    // * be a normal wrapper around a class or module (not a Ruby subclass)
+                    if (nativeCall.getNativeSignature().length != site.arity()
+                            || site.arity() > 3
+                            || site.isIterator()
+                            || !cls.getJavaProxy()) {
+                        throw new IndirectBindingException("Java call arity mismatch or > 3 args");
+                    }
+                    
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to Java
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Java method " + logMethod(method) + ": " + method.getNativeCall());
+            
+            return postProcessNativeHandle(createJavaHandle(site, method), site, method, false);
+        }
+        
+    }
+    
+    public static class RubyCallGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            NativeCall nativeCall = method.getNativeCall();
+            
+            if (method instanceof CompiledMethod || method instanceof JittedMethod) {
+                if (nativeCall != null) {
+                    int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+                    
+                    // arity must match or both be [] args
+                    if (nativeArgCount != site.arity()) {
+                        throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + site.arity());
+                    }
+
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to Ruby
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
+            return postProcessNativeHandle(createRubyHandle(site, method, site.name()), site, method, true);
+        }
+        
+    }
+    
+    public static class CoreCallGenerator implements HandleGenerator {
+
+        @Override
+        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            NativeCall nativeCall = method.getNativeCall();
+            
+            if (nativeCall != null) {
+                int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+
+                // arity must match or both be [] args
+                if (nativeArgCount != site.arity()) {
+                    throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + site.arity());
+                }
+
+                return true;
+            }
+            
+            return false;
+        }
+
+        @Override
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            // Ruby to Core
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
+            return postProcessNativeHandle(createNativeHandle(site, method, site.name()), site, method, true);
+        }
+        
+    }
+    
+    private static final List<HandleGenerator> HANDLE_GENERATORS =  Arrays.<HandleGenerator>asList(
+            new HandleMethodGenerator(),
+            new AttrReaderGenerator(),
+            new AttrWriterGenerator(),
+            new FFIGenerator(),
+            new JavaCallGenerator(),
+            new RubyCallGenerator(),
+            new CoreCallGenerator()
+            );
 
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         // get the "real" method in a few ways
@@ -483,91 +725,14 @@ public class InvocationLinker {
                 method = defaultMethod.getMethodForCaching();
             }
         }
-
-        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-
-        int siteArgCount = getSiteCount(site.type().parameterArray());
         
-        if (method instanceof HandleMethod) {
-            MethodHandle handle = ((HandleMethod)method).getHandle(siteArgCount);
-            
-            if (handle == null) {
-                throw new IndirectBindingException("MH dynamic method does not have needed arity");
+        for (HandleGenerator generator : HANDLE_GENERATORS) {
+            if (generator.canGenerate(site, cls, method)) {
+                return generator.generate(site, cls, method);
             }
-        } else if (method instanceof AttrReaderMethod) {
-            // attr reader
-            if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
-                throw new IndirectBindingException("direct attribute dispatch not enabled");
-            }
-            if (siteArgCount != 0) {
-                throw new IndirectBindingException("attr reader with > 0 args");
-            }
-        } else if (method instanceof AttrWriterMethod) {
-            // attr writer
-            if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
-                throw new IndirectBindingException("direct attribute dispatch not enabled");
-            }
-            if (siteArgCount != 1) {
-                throw new IndirectBindingException("attr writer with > 1 args");
-            }
-
-        } else if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
-            // if frame/scope required, can't dispatch direct
-            if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
-                throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
-            }
-
-            if (!method.getArity().isFixed()) {
-                throw new IndirectBindingException("fixed arity required: " + method.getArity());
-            }
-
-            // Arity must match, otherwise let the indirect method process errors
-            if (method.getArity().getValue() != siteArgCount) {
-                throw new IndirectBindingException("arity mismatch");
-            }
-
-            // Only support 0..6 parameters
-            if (method.getArity().getValue() > 6) {
-                throw new IndirectBindingException("target args > 6");
-            }
-
-            if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
-                // Called with a block to substitute for a callback param - cannot bind directly
-                throw new IndirectBindingException("callback block supplied");
-            }
-
-        } else if (nativeCall != null) {
-            // has an explicit native call path
-
-            if (nativeCall.isJava()) {
-                if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
-                    throw new IndirectBindingException("direct Java dispatch not enabled");
-                }
-
-                // if Java, must:
-                // * match arity <= 3
-                // * not be passed a block (no coercion yet)
-                // * be a normal wrapper around a class or module (not a Ruby subclass)
-                if (nativeCall.getNativeSignature().length != siteArgCount
-                        || siteArgCount > 3
-                        || site.isIterator()
-                        || !cls.getJavaProxy()) {
-                    throw new IndirectBindingException("Java call arity mismatch or > 3 args");
-                }
-            } else {
-
-                int nativeArgCount = getNativeArgCount(method, nativeCall);
-
-                // arity must match or both be [] args
-                if (nativeArgCount != siteArgCount) {
-                    throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + siteArgCount);
-                }
-            }
-        } else {
-            throw new IndirectBindingException("no direct path available for " + method.getClass().getName());
         }
-
-        return handleForMethod(site, name, cls, method);
+        
+        throw new IndirectBindingException("no direct path available for " + method.getClass().getName());
     }
 
     private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
@@ -597,60 +762,7 @@ public class InvocationLinker {
         return dynMethodTarget;
     }
     
-    private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
-        MethodHandle nativeTarget = null;
-        
-        boolean checkArity = false;
-        
-        int siteArgCount = getSiteCount(site.type().parameterArray());
-        
-        if (method instanceof HandleMethod) {
-            MethodHandle handle = ((HandleMethod)method).getHandle(siteArgCount);
-            
-            if (handle == null) {
-                throw new IndirectBindingException("MH dynamic method does not have needed arity");
-            }
-            
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
-            
-            Signature fullSig = site.fullSignature();
-            nativeTarget = Binder
-                    .from(fullSig.type())
-                    .permute(fullSig.to("context", "self", "arg*", "block"))
-                    .invoke(handle);
-        } else if (method instanceof AttrReaderMethod) {
-            // Ruby to attr reader
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-            nativeTarget = createAttrReaderHandle(site, cls, method);
-        } else if (method instanceof AttrWriterMethod) {
-            // Ruby to attr writer
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod)method).getVariableName());
-            nativeTarget = createAttrWriterHandle(site, cls, method);
-
-        } else if (method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker || method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
-            // Ruby to FFI
-            nativeTarget = createFFIHandle(site, method);
-
-        } else if (method.getNativeCall() != null) {
-            DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-
-            if (nativeCall.isJava()) {
-                // Ruby to Java
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method " + logMethod(method) + ": " + nativeCall);
-                nativeTarget = createJavaHandle(site, method);
-            } else if (method instanceof CompiledMethod || method instanceof JittedMethod) {
-                // Ruby to Ruby
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method " + logMethod(method) + ": " + nativeCall);
-                nativeTarget = createRubyHandle(site, method, name);
-                checkArity = true;
-            } else {
-                // Ruby to Core
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method " + logMethod(method) + ": " + nativeCall);
-                nativeTarget = createNativeHandle(site, method, name);
-                checkArity = true;
-            }
-        }
-                        
+    private static MethodHandle postProcessNativeHandle(MethodHandle nativeTarget, JRubyCallSite site, DynamicMethod method, boolean checkArity) {                    
         if (nativeTarget != null) {
             // add NULL_BLOCK if needed
             if (
@@ -672,7 +784,7 @@ public class InvocationLinker {
             if (checkArity) {
                 int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
                 
-                if (nativeArgCount == 4 && siteArgCount == 4) {
+                if (nativeArgCount == 4 && site.arity() == 4) {
                     // Arity does not give us enough information about min/max
                     // so we must go to the annotation
                     Method reflected = method.getNativeCall().getMethod();
@@ -1934,4 +2046,4 @@ public class InvocationLinker {
         FAIL_3_B,
         FAIL_N_B
     };
-}
+    }
