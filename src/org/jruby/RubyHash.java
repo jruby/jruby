@@ -1796,6 +1796,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private RubyHash replaceCommon(final ThreadContext context, IRubyObject other, Visitor visitor) {
+        modify();
+        
         final RubyHash otherHash = other.convertToHash();
 
         if (this == otherHash) return this;
@@ -1820,6 +1822,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private RubyHash replaceCommon19(final ThreadContext context, IRubyObject other, Visitor visitor) {
+        modify();
+        
         final RubyHash otherHash = other.convertToHash();
 
         if (this == otherHash) return this;
