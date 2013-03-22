@@ -1460,7 +1460,8 @@ public class RubyModule extends RubyObject {
             
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
             
-            newMethod = method.unbind().getMethod();
+            newMethod = method.unbind().getMethod().dup();
+            newMethod.setImplementationClass(this);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
