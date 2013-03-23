@@ -46,13 +46,23 @@ import org.jruby.runtime.marshal.MarshalStream;
  */
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject {
-    
+
+    private final int hashCode;
+
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
                 (value ? runtime.getTrueClass() : runtime.getFalseClass()),
                 false); // Don't put in object space
 
         if (!value) flags = FALSE_F;
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            // default to a fixed value
+            this.hashCode = value ? 155 : -48;
+        } else {
+            // save the object id based hash code;
+            this.hashCode = System.identityHashCode(this);
+        }
     }
     
     @Override
@@ -168,11 +178,7 @@ public class RubyBoolean extends RubyObject {
 
     @Override
     public int hashCode() {
-        if ((flags & FALSE_F) == 0) {
-            return 155;
-        } else {
-            return -48;
-        }
+        return hashCode;
     }
 
     @Override

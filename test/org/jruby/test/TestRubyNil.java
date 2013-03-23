@@ -104,10 +104,12 @@ public class TestRubyNil extends TestCase {
     public void testHash() {
         IRubyObject hash = RuntimeHelpers.invoke(
                 runtime.getCurrentContext(), rubyNil, "hash");
-        assertEquals(RubyFixnum.newFixnum(runtime, 34), hash);
+        assertEquals(RubyFixnum.newFixnum(
+                runtime, System.identityHashCode(rubyNil)), hash);
     }
     
     public void testHashCode() {
-        assertEquals(34, rubyNil.hashCode());
+        // should be the default Object#hashCode()
+        assertEquals(System.identityHashCode(rubyNil), rubyNil.hashCode());
     }
 }

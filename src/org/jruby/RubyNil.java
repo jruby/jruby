@@ -45,9 +45,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="NilClass")
 public class RubyNil extends RubyObject {
+
+    private final int hashCode;
+
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
         flags |= NIL_F | FALSE_F;
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            // default to a fixed value
+            this.hashCode = 34;
+        } else {
+            // save the object id based hash code;
+            this.hashCode = System.identityHashCode(this);
+        }
     }
     
     public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
@@ -189,7 +200,7 @@ public class RubyNil extends RubyObject {
 
     @Override
     public int hashCode() {
-        return 34;
+        return hashCode;
     }
 
     @Override
