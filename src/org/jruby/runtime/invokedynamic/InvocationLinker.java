@@ -130,7 +130,7 @@ public class InvocationLinker {
             return callMethodMissing(entry, site.callType(), context, self, method);
         }
         
-        MethodHandle target = getTarget(site, selfClass, method, entry, 0);
+        MethodHandle target = getTarget(site, selfClass, entry, 0);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 0);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self);
@@ -147,7 +147,7 @@ public class InvocationLinker {
             return site.isAttrAssign() ? arg0 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, method, entry, 1);
+        MethodHandle target = getTarget(site, selfClass, entry, 1);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 1);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0);
@@ -164,7 +164,7 @@ public class InvocationLinker {
             return site.isAttrAssign() ? arg1 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, method, entry, 2);
+        MethodHandle target = getTarget(site, selfClass, entry, 2);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 2);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1);
@@ -181,7 +181,7 @@ public class InvocationLinker {
             return site.isAttrAssign() ? arg2 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, method, entry, 3);
+        MethodHandle target = getTarget(site, selfClass, entry, 3);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 3);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
@@ -198,7 +198,7 @@ public class InvocationLinker {
             return site.isAttrAssign() ? args[args.length - 1] : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, method, entry, -1);
+        MethodHandle target = getTarget(site, selfClass, entry, -1);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 4);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, args);
@@ -222,7 +222,7 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, method, entry, 0);
+        MethodHandle target = getTarget(site, selfClass, entry, 0);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 0);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, block);
@@ -246,7 +246,7 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, method, entry, 1);
+        MethodHandle target = getTarget(site, selfClass, entry, 1);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 1);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, block);
@@ -270,7 +270,7 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, method, entry, 2);
+        MethodHandle target = getTarget(site, selfClass, entry, 2);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 2);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, block);
@@ -294,7 +294,7 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, method, entry, 3);
+        MethodHandle target = getTarget(site, selfClass, entry, 3);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 3);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
@@ -318,7 +318,7 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, method, entry, -1);
+        MethodHandle target = getTarget(site, selfClass, entry, -1);
         target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 4);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, args, block);
@@ -456,6 +456,29 @@ public class InvocationLinker {
                 : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
         return nativeArgCount;
     }
+
+    public static DynamicMethod unwrapMethod(DynamicMethod method) throws IndirectBindingException {
+        String name;
+        // get the "real" method in a few ways
+        while (method instanceof AliasMethod) {
+            name = ((AliasMethod)method).getOldName(); // need to use original name, not aliased name
+            method = method.getRealMethod();
+        }
+        while (method instanceof WrapperMethod) method = method.getRealMethod();
+        // ProfilingDynamicMethod wraps any number of other types of methods but
+        // we do not handle it in indy binding right now. Disable direct binding
+        // and bind through DynamicMethod.
+        if (method instanceof ProfilingDynamicMethod) {
+            throw new IndirectBindingException("profiling active");
+        }
+        if (method instanceof DefaultMethod) {
+            DefaultMethod defaultMethod = (DefaultMethod) method;
+            if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
+                method = defaultMethod.getMethodForCaching();
+            }
+        }
+        return method;
+    }
     
     private static class IndirectBindingException extends RuntimeException {
         public IndirectBindingException(String reason) {
@@ -486,10 +509,13 @@ public class InvocationLinker {
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
             
             Signature fullSig = site.fullSignature();
-            return Binder
+            MethodHandle nativeTarget =  Binder
                     .from(fullSig.type())
                     .permute(fullSig.to("context", "self", "arg*", "block"))
                     .invoke(handle);
+            nativeTarget = addOrRemoveBlock(site, nativeTarget);
+            
+            return nativeTarget;            
         }
     }
     
@@ -704,27 +730,8 @@ public class InvocationLinker {
             new CoreCallGenerator()
             );
 
-    private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
-        // get the "real" method in a few ways
-        while (method instanceof AliasMethod) {
-            name = ((AliasMethod)method).getOldName(); // need to use original name, not aliased name
-            method = method.getRealMethod();
-        }
-        while (method instanceof WrapperMethod) method = method.getRealMethod();
-        
-        // ProfilingDynamicMethod wraps any number of other types of methods but
-        // we do not handle it in indy binding right now. Disable direct binding
-        // and bind through DynamicMethod.
-        if (method instanceof ProfilingDynamicMethod) {
-            throw new IndirectBindingException("profiling active");
-        }
-
-        if (method instanceof DefaultMethod) {
-            DefaultMethod defaultMethod = (DefaultMethod) method;
-            if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
-                method = defaultMethod.getMethodForCaching();
-            }
-        }
+    private static MethodHandle tryDispatchDirect(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        method = unwrapMethod(method);
         
         for (HandleGenerator generator : HANDLE_GENERATORS) {
             if (generator.canGenerate(site, cls, method)) {
@@ -735,10 +742,10 @@ public class InvocationLinker {
         throw new IndirectBindingException("no direct path available for " + method.getClass().getName());
     }
 
-    private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
+    private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, CacheEntry entry, int arity) {
         IndirectBindingException ibe;
         try {
-            return tryDispatchDirect(site, name, cls, entry.method);
+            return tryDispatchDirect(site, cls, entry.method);
         } catch (IndirectBindingException _ibe) {
             ibe = _ibe;
             // proceed with indirect, if enabled
@@ -747,16 +754,16 @@ public class InvocationLinker {
         // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
         if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
             if (RubyInstanceConfig.LOG_INDY_BINDINGS)
-                LOG.info(name + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
+                LOG.info(site.name() + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
             return null;
         }
 
         // no direct native path, use DynamicMethod.call
         if (RubyInstanceConfig.LOG_INDY_BINDINGS)
-            LOG.info(name + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
+            LOG.info(site.name() + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
 
         MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
-        dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
+        dynMethodTarget = insertArguments(dynMethodTarget, 4, site.name());
         dynMethodTarget = insertArguments(dynMethodTarget, 0, entry.method);
 
         return dynMethodTarget;
@@ -764,21 +771,7 @@ public class InvocationLinker {
     
     private static MethodHandle postProcessNativeHandle(MethodHandle nativeTarget, JRubyCallSite site, DynamicMethod method, boolean checkArity) {                    
         if (nativeTarget != null) {
-            // add NULL_BLOCK if needed
-            if (
-                    site.type().parameterCount() > 0
-                    && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
-                    && nativeTarget.type().parameterCount() > 0
-                    && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) == Block.class) {
-                nativeTarget = insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
-            } else if (
-                    site.type().parameterCount() > 0
-                    && site.type().parameterArray()[site.type().parameterCount() - 1] == Block.class
-                    && nativeTarget.type().parameterCount() > 0
-                    && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) != Block.class) {
-                // drop block if not used
-                nativeTarget = dropArguments(nativeTarget, nativeTarget.type().parameterCount(), Block.class);
-            }
+            nativeTarget = addOrRemoveBlock(site, nativeTarget);
             
             // add arity check if needed
             if (checkArity) {
@@ -805,6 +798,25 @@ public class InvocationLinker {
             }
         }
         
+        return nativeTarget;
+    }
+
+    private static MethodHandle addOrRemoveBlock(JRubyCallSite site, MethodHandle nativeTarget) {
+        // add NULL_BLOCK if needed
+        if (
+                site.type().parameterCount() > 0
+                && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                && nativeTarget.type().parameterCount() > 0
+                && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) == Block.class) {
+            nativeTarget = insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+        } else if (
+                site.type().parameterCount() > 0
+                && site.type().parameterArray()[site.type().parameterCount() - 1] == Block.class
+                && nativeTarget.type().parameterCount() > 0
+                && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) != Block.class) {
+            // drop block if not used
+            nativeTarget = dropArguments(nativeTarget, nativeTarget.type().parameterCount(), Block.class);
+        }
         return nativeTarget;
     }
     
