@@ -49,7 +49,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public final class Block {
-    public enum Type { NORMAL, PROC, LAMBDA, THREAD }
+    public enum Type {
+        NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
+        
+        Type(boolean checkArity) {
+            this.checkArity = checkArity;
+        }
+        
+        public final boolean checkArity;
+    }
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable

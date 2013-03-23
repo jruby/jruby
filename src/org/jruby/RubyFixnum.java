@@ -264,11 +264,21 @@ public class RubyFixnum extends RubyInteger {
         if (block.isGiven()) {
             Ruby runtime = context.runtime;
             long lvalue = this.value;
+            boolean checkArity = block.type.checkArity;
+            
             if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS ||
                     block.arity() == Arity.NO_ARGUMENTS) {
-                IRubyObject nil = runtime.getNil();
-                for (long i = 0; i < lvalue; i++) {
-                    block.yieldSpecific(context);
+                if (checkArity) {
+                    // must pass arg
+                    IRubyObject nil = runtime.getNil();
+                    for (long i = 0; i < lvalue; i++) {
+                        block.yieldSpecific(context, nil);
+                    }
+                } else {
+                    // no arg needed
+                    for (long i = 0; i < lvalue; i++) {
+                        block.yieldSpecific(context);
+                    }
                 }
             } else {
                 for (long i = 0; i < lvalue; i++) {
