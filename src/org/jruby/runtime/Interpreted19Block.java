@@ -233,7 +233,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
      * @see RuntimeHelpers#restructureBlockArgs19(IRubyObject, boolean, boolean)
      */
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-        IRubyObject[] parameters = RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
+        IRubyObject[] parameters = RuntimeHelpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
 
         Ruby runtime = context.runtime;
         if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        

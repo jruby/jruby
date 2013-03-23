@@ -28,7 +28,6 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -133,7 +132,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, null, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self);
+            IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self, type);
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -157,7 +156,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArgs(args, aValue);
+            IRubyObject[] realArgs = setupBlockArgs(args, type, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -178,12 +177,12 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
-    private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
-        return setupBlockArgs(value, false);
+    private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self, Block.Type type) {
+        return setupBlockArgs(value, type, false);
     }
 
-    private IRubyObject[] setupBlockArgs(IRubyObject value, boolean alreadyArray) {
-        return RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
+    private IRubyObject[] setupBlockArgs(IRubyObject value, Block.Type type, boolean alreadyArray) {
+        return RuntimeHelpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
     }
 
     public String getFile() {
