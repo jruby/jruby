@@ -268,7 +268,7 @@ public class RubyFixnum extends RubyInteger {
                     block.arity() == Arity.NO_ARGUMENTS) {
                 IRubyObject nil = runtime.getNil();
                 for (long i = 0; i < lvalue; i++) {
-                    block.yield(context, nil);
+                    block.yieldSpecific(context);
                 }
             } else {
                 for (long i = 0; i < lvalue; i++) {
