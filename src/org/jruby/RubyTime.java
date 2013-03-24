@@ -181,7 +181,7 @@ public class RubyTime extends RubyObject {
         // and so, we need to convert it.
 
         Matcher tzMatcher = TZ_PATTERN.matcher(zone);
-        if (tzMatcher.matches()) {                    
+        if (tzMatcher.matches()) {
             String sign = tzMatcher.group(2);
             String hours = tzMatcher.group(3);
             String minutes = tzMatcher.group(4);
