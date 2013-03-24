@@ -96,6 +96,8 @@ public class RubyTime extends RubyObject {
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
     
+    private static boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
+    
     /* JRUBY-3560
      * joda-time disallows use of three-letter time zone IDs.
      * Since MRI accepts these values, we need to translate them.
@@ -750,6 +752,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
         int offset = dt.getZone().getOffset(dt.getMillis());
+        if (isTzRelative) offset = -offset;
         
         return getRuntime().newFixnum((int)(offset/1000));
     }
@@ -1028,6 +1031,12 @@ public class RubyTime extends RubyObject {
         }
         if (args.length == 7) {
           Ruby runtime = recv.getRuntime();
+          // offset needs to be inverted (because Java's offset is)
+          // only when it is given in the form relative to UTC.
+          // See https://github.com/jruby/jruby/issues/591
+          Matcher tzMatcher = TZ_PATTERN.matcher(args[6].toString());
+          if (tzMatcher.matches()) isTzRelative = true;
+
           // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
           args = new IRubyObject[] { args[5],          // seconds
                                      args[4],          // minutes
