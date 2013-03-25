@@ -1031,12 +1031,6 @@ public class RubyTime extends RubyObject {
         }
         if (args.length == 7) {
           Ruby runtime = recv.getRuntime();
-          // offset needs to be inverted (because Java's offset is)
-          // only when it is given in the form relative to UTC.
-          // See https://github.com/jruby/jruby/issues/591
-          Matcher tzMatcher = TZ_PATTERN.matcher(args[6].toString());
-          if (tzMatcher.matches()) isTzRelative = true;
-
           // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
           args = new IRubyObject[] { args[5],          // seconds
                                      args[4],          // minutes
@@ -1169,6 +1163,7 @@ public class RubyTime extends RubyObject {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
             dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
+            isTzRelative = true;
         } else if (args.length == 10 && args[9].respondsTo("to_int")) {
             IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
             dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
