@@ -89,7 +89,7 @@ public class RubyTime extends RubyObject {
     // the legacy TZ format in order to convert it to the newer format
     // understood by Java API.
     private static final Pattern TZ_PATTERN
-            = Pattern.compile("([^-\\+\\d]+)?([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
+            = Pattern.compile("([^-\\+\\d]+)?([\\+-]?)(\\d+)(?::(\\d+))?(?::\\d+)?");
     
     private static final Pattern TIME_OFFSET_PATTERN
             = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)");
@@ -157,6 +157,10 @@ public class RubyTime extends RubyObject {
     }
 
     public static DateTimeZone getTimeZone(Ruby runtime, long seconds) {
+        if (seconds >= 60*60*24 || seconds <= -60*60*24) {
+            throw runtime.newArgumentError("utc_offset out of range");
+        }
+        
         // append "s" to the offset when looking up the cache
         String zone = seconds + "s";
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
@@ -187,11 +191,15 @@ public class RubyTime extends RubyObject {
             String sign = tzMatcher.group(2);
             String hours = tzMatcher.group(3);
             String minutes = tzMatcher.group(4);
-                
+            
+            if (Integer.parseInt(hours) > 23 || Integer.parseInt(minutes) > 59) {
+                throw runtime.newArgumentError("utc_offset out of range");
+            }
+            
             // GMT+00:00 --> Etc/GMT, see "MRI behavior"
             // comment below.
             if (("00".equals(hours) || "0".equals(hours)) &&
-                    (minutes == null || ":00".equals(minutes) || ":0".equals(minutes))) {
+                    (minutes == null || "00".equals(minutes) || "0".equals(minutes))) {
                 zone = "Etc/GMT";
             } else {
                 // Invert the sign, since TZ format and Java format
@@ -377,9 +385,26 @@ public class RubyTime extends RubyObject {
         return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), nsec);
     }
 
-    @JRubyMethod(name = "getlocal")
+    @JRubyMethod(name = "getlocal", compat = RUBY1_8)
     public RubyTime getlocal() {
         return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
+    }
+
+    @JRubyMethod(name = "getlocal", compat = RUBY1_9, optional = 1)
+    public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) {
+            return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
+        } else {
+            Matcher tzMatcher = TIME_OFFSET_PATTERN.matcher(args[0].toString());
+            String hours, minutes;
+            if (tzMatcher.matches()) {
+                hours = tzMatcher.group(2);
+                minutes = tzMatcher.group(3);
+            } else {
+                throw getRuntime().newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
+            }
+            return newTime(getRuntime(), dt.withZone(DateTimeZone.forOffsetHoursMinutes(Integer.parseInt(hours), Integer.parseInt(minutes))), nsec);
+        }
     }
 
     @JRubyMethod(name = "strftime", required = 1)
