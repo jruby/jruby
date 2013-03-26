@@ -3,7 +3,7 @@ require 'rspec'
 if RUBY_VERSION > '1.9'
   describe 'Time#+' do
     it 'does not introduce rounding errors' do
-      time = Time.new(2012, 10, 17, 23, 59, 59, 999999.9)
+      time = Time.new(2012, 10, 17, 23, 59, 59, 86399.9)
       time_p1 = time + 1
       time_p1_m1 = time_p1 - 1
 
