@@ -1724,6 +1724,21 @@ abstract public class AbstractMemory extends MemoryObject {
         return arr;
     }
 
+    @JRubyMethod(name = { "read_array_of_type" }, required = 3)
+    public IRubyObject read_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject reader, IRubyObject lenArg) {
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
+        DynamicMethod method = getMetaClass().searchMethod(reader.asJavaString());
+        
+        int len = checkArrayLength(lenArg);
+        RubyArray arr = RubyArray.newArray(context.runtime, len);
+
+        for (int i = 0, off = 0; i < len; i++, off += type.size) {
+            arr.add(method.call(context, this.slice(context.runtime, off, type.size), this.getMetaClass(), reader.asJavaString()));
+        }
+
+        return arr;
+    }
+
     @JRubyMethod(name = { "write_array_of_type" }, required = 2)
     public IRubyObject write_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject aryArg) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
@@ -1737,6 +1752,21 @@ abstract public class AbstractMemory extends MemoryObject {
 
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
             op.put(context, getMemoryIO(), off, arr.entry(i));
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = { "write_array_of_type" }, required = 3)
+    public IRubyObject write_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject writer, IRubyObject aryArg) {
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
+        DynamicMethod method = getMetaClass().searchMethod(writer.asJavaString());
+
+        RubyArray arr = aryArg.convertToArray();
+        int len = arr.size();
+
+        for (int i = 0, off = 0; i < len; i++, off += type.size) {
+            method.call(context, this.slice(context.runtime, off, type.size), this.getMetaClass(), writer.asJavaString(), arr.entry(i));
         }
 
         return this;
