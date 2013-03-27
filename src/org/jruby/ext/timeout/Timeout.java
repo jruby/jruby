@@ -80,7 +80,7 @@ public class Timeout implements Library {
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
-    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(RubyInstanceConfig.POOL_MAX, new DaemonThreadFactory("JRubyTimeoutWorker"));
+    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(RubyInstanceConfig.TIMEOUT_POOL_MAX, new DaemonThreadFactory("JRubyTimeoutWorker"));
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
