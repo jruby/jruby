@@ -2017,6 +2017,11 @@ abstract public class AbstractMemory extends MemoryObject {
     public final IRubyObject to_ptr(ThreadContext context) {
         return this;
     }
+    
+    @JRubyMethod(name = "slice")
+    public final IRubyObject slice(ThreadContext context, IRubyObject offset, IRubyObject size) {
+        return slice(context.getRuntime(), RubyNumeric.num2int(offset), RubyNumeric.num2int(size));
+    }
 
     abstract public AbstractMemory order(Ruby runtime, ByteOrder order);
     abstract protected AbstractMemory slice(Ruby runtime, long offset);
