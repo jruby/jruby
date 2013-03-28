@@ -721,13 +721,25 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
+        return createCallerBacktrace(runtime, level, null);
+    }
+
+    /**
+     * Create an Array with backtrace information for Kernel#caller
+     * @param runtime
+     * @param level
+     * @param length
+     * @return an Array with the backtrace
+     */
+    public IRubyObject createCallerBacktrace(Ruby runtime, int level, Integer length) {
         runtime.incrementCallerCount();
         
         RubyStackTraceElement[] trace = gatherCallerBacktrace();
+        int traceLength = length != null ? length + level : trace.length;
         
-        RubyArray newTrace = runtime.newArray(trace.length - level);
+        RubyArray newTrace = runtime.newArray(traceLength - level);
 
-        for (int i = level; i < trace.length; i++) {
+        for (int i = level; i < traceLength; i++) {
             addBackTraceElement(runtime, newTrace, trace[i]);
         }
         
