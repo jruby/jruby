@@ -45,7 +45,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
@@ -67,7 +67,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -340,14 +340,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * method missing exists. Otherwise returns null. 1.9: rb_check_funcall
      */
     public final IRubyObject checkCallMethod(ThreadContext context, String name) {
-        return RuntimeHelpers.invokeChecked(context, this, name);
+        return Helpers.invokeChecked(context, this, name);
     }
 
     /**
      * Will invoke a named method with no arguments and no block.
      */
     public final IRubyObject callMethod(ThreadContext context, String name) {
-        return RuntimeHelpers.invoke(context, this, name);
+        return Helpers.invoke(context, this, name);
     }
 
     /**
@@ -355,7 +355,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * functional invocation.
      */
      public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg);
+        return Helpers.invoke(context, this, name, arg);
     }
 
     /**
@@ -363,15 +363,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * block with functional invocation.
      */
     public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, this, name, args);
+        return Helpers.invoke(context, this, name, args);
     }
 
     public final IRubyObject callMethod(String name, IRubyObject... args) {
-        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, name, args);
+        return Helpers.invoke(getRuntime().getCurrentContext(), this, name, args);
     }
 
     public final IRubyObject callMethod(String name) {
-        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, name);
+        return Helpers.invoke(getRuntime().getCurrentContext(), this, name);
     }
 
     /**
@@ -379,7 +379,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * supplied block with functional invocation.
      */
     public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invoke(context, this, name, args, block);
+        return Helpers.invoke(context, this, name, args, block);
     }
 
     /**
@@ -663,7 +663,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * instead.
      */
     public RubyString asString() {
-        IRubyObject str = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s");
+        IRubyObject str = Helpers.invoke(getRuntime().getCurrentContext(), this, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString)anyToString();
         if (isTaint()) str.setTaint(true);
@@ -1035,7 +1035,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (isNil()) return RubyNil.inspect(this);
-        return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, "to_s");
+        return Helpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 
     public IRubyObject hashyInspect() {
@@ -1981,7 +1981,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
         
         private void callFinalizer(IRubyObject finalizer) {
-            RuntimeHelpers.invoke(
+            Helpers.invoke(
                     finalizer.getRuntime().getCurrentContext(),
                     finalizer, "call", id);
         }
@@ -2071,7 +2071,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true, true));
         if (!respond.isTrue()) {
-            respond = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
+            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
             respond = getRuntime().newBoolean(respond.isTrue());
         }
         return respond;
@@ -2103,7 +2103,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
         if (!respond.isTrue()) {
-            respond = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
+            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
             respond = getRuntime().newBoolean(respond.isTrue());
         }
         return respond;
@@ -3072,17 +3072,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Deprecated
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invokeSuper(context, this, args, block);
+        return Helpers.invokeSuper(context, this, args, block);
     }
 
     @Deprecated
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return RuntimeHelpers.invoke(context, this, name);
+        return Helpers.invoke(context, this, name);
     }
 
     @Deprecated
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
+        return Helpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
     }
 
     @Deprecated

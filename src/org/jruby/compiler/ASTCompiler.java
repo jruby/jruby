@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
@@ -44,20 +43,12 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
-import org.jruby.internal.runtime.methods.InterpretedMethod;
-import org.jruby.internal.runtime.methods.JittedMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.StringSupport;
 
@@ -1807,7 +1798,7 @@ public class ASTCompiler {
                 defnNode.getName(), defnNode.getArgsNode().getArity().getValue(),
                 defnNode.getScope(), body, args, null, inspector, isAtRoot,
                 defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine(),
-                RuntimeHelpers.encodeParameterList(argsNode));
+                Helpers.encodeParameterList(argsNode));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -1865,7 +1856,7 @@ public class ASTCompiler {
                 defsNode.getName(), defsNode.getArgsNode().getArity().getValue(),
                 defsNode.getScope(), body, args, receiver, inspector, false,
                 defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine(),
-                RuntimeHelpers.encodeParameterList(argsNode));
+                Helpers.encodeParameterList(argsNode));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

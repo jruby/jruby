@@ -32,7 +32,7 @@ package org.jruby.runtime.assigner;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,37 +49,37 @@ public class Pre0Rest0Post0BlockAssigner extends Assigner {
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, IRubyObject value3, Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject values[],
             Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assignArray(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject values,
             Block block) {
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override

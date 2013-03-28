@@ -46,7 +46,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -58,8 +58,8 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.ConvertBytes;
 import static org.jruby.CompatVersion.*;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.Helpers.invokedynamic;
+
 import org.jruby.runtime.invokedynamic.MethodNames;
 
 /**
@@ -646,7 +646,7 @@ public class RubyNumeric extends RubyObject {
     /** num_fdiv (1.9) */
     @JRubyMethod(name = "fdiv", compat = RUBY1_9)
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        return RuntimeHelpers.invoke(context, this.convertToFloat(), "/", other);
+        return Helpers.invoke(context, this.convertToFloat(), "/", other);
     }
 
     /** num_modulo
@@ -709,7 +709,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int(ThreadContext context) {
-        return RuntimeHelpers.invoke(context, this, "to_i");
+        return Helpers.invoke(context, this, "to_i");
     }
 
     /** num_real_p

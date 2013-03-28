@@ -21,7 +21,7 @@ javac -cp /Users/headius/projects/jruby/lib/jruby.jar:/Users/headius/Downloads/j
 ~/projects/jruby/samples/compiler2 ➔ cat TestSomething.java 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.RubyClass;
@@ -43,7 +43,7 @@ public class TestSomething extends RubyObject  {
   @org.junit.Test()
   public Object test_jruby_rocks() {
 
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "test_jruby_rocks" );
+    IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), this, "test_jruby_rocks" );
     return (Object)ruby_result.toJava(Object.class);
   }
 
@@ -51,7 +51,7 @@ public class TestSomething extends RubyObject  {
   @org.junit.Test()
   public Object test_jruby_will_never_support_annotations() {
 
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "test_jruby_will_never_support_annotations" );
+    IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), this, "test_jruby_will_never_support_annotations" );
     return (Object)ruby_result.toJava(Object.class);
   }
 

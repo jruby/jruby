@@ -35,7 +35,7 @@ import org.jruby.RubyHash;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
@@ -132,27 +132,27 @@ public class RipperParser {
     }
     
     public IRubyObject dispatch(String method_name) {
-        return RuntimeHelpers.invoke(context, ripper, method_name);
+        return Helpers.invoke(context, ripper, method_name);
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1));
+        return Helpers.invoke(context, ripper, method_name, escape(arg1));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2));
+        return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3));
+        return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3));
     }
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4));
+        return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4));
     }    
     
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        return RuntimeHelpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4), escape(arg5));
+        return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4), escape(arg5));
     }
     
     public IRubyObject escape(IRubyObject arg) {

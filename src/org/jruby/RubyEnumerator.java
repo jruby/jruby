@@ -27,11 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Arrays;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ObjectAllocator;
@@ -40,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import static org.jruby.CompatVersion.*;
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.javasupport.util.RuntimeHelpers.toArray;
+import static org.jruby.runtime.Helpers.toArray;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -331,11 +329,11 @@ public class RubyEnumerator extends RubyObject {
     }
 
     protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return RuntimeHelpers.invoke(context, context.runtime.getEnumerator(), "new", arg1, arg2);
+        return Helpers.invoke(context, context.runtime.getEnumerator(), "new", arg1, arg2);
     }
 
     protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return RuntimeHelpers.invoke(context, context.runtime.getEnumerator(), "new", arg1, arg2, arg3);
+        return Helpers.invoke(context, context.runtime.getEnumerator(), "new", arg1, arg2, arg3);
     }
 
     @JRubyMethod(required = 1, compat = CompatVersion.RUBY1_9)

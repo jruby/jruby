@@ -43,16 +43,13 @@
 package org.jruby.ast;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
-import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -530,7 +527,7 @@ public class ArgsNode extends Node {
     }
 
     protected void processBlockArg(DynamicScope scope, Ruby runtime, Block block) {
-        scope.setValue(getBlock().getCount(), RuntimeHelpers.processBlockArgument(runtime, block), 0);
+        scope.setValue(getBlock().getCount(), Helpers.processBlockArgument(runtime, block), 0);
     }
 
     public List<Node> childNodes() {

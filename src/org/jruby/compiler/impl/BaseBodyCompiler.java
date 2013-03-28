@@ -33,7 +33,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArgumentsCallback;
@@ -51,7 +50,7 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
@@ -69,7 +68,6 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
@@ -269,7 +267,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
      * necessary.  All of these live in CompilerHelpers.
      */
     public void invokeUtilityMethod(String methodName, String signature) {
-        method.invokestatic(p(RuntimeHelpers.class), methodName, signature);
+        method.invokestatic(p(Helpers.class), methodName, signature);
     }
 
     public void invokeThreadContext(String methodName, String signature) {
@@ -602,7 +600,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {
         if (sourceArray.length == 0) {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-        } else if (sourceArray.length <= RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+        } else if (sourceArray.length <= Helpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
             // if we have a specific-arity helper to construct an array for us, use that
             for (int i = 0; i < sourceArray.length; i++) {
                 callback.nextValue(this, sourceArray, i);
@@ -627,7 +625,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     private void buildRubyArray(Object[] sourceArray, ArrayCallback callback, boolean light) {
         if (sourceArray.length == 0) {
             method.invokestatic(p(RubyArray.class), "newEmptyArray", sig(RubyArray.class, Ruby.class));
-        } else if (sourceArray.length <= RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+        } else if (sourceArray.length <= Helpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
             // if we have a specific-arity helper to construct an array for us, use that
             for (int i = 0; i < sourceArray.length; i++) {
                 callback.nextValue(this, sourceArray, i);
@@ -779,7 +777,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         // use specific-arity for as much as possible
         int i = 0;
-        for (; i < keyCount && i < RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH; i++) {
+        for (; i < keyCount && i < Helpers.MAX_SPECIFIC_ARITY_HASH; i++) {
             callback.nextValue(this, elements, i);
         }
 
@@ -1183,7 +1181,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadThreadContext();
         loadSelf();
 
-        String scopeNames = RuntimeHelpers.encodeScope(scope);
+        String scopeNames = Helpers.encodeScope(scope);
         method.ldc(scopeNames);
 
         script.getCacheCompiler().cacheSpecialClosure(this, closureMethodName);
@@ -1328,19 +1326,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void splatCurrentValue(String methodName) {
-        method.invokestatic(p(RuntimeHelpers.class), methodName, sig(RubyArray.class, params(IRubyObject.class)));
+        method.invokestatic(p(Helpers.class), methodName, sig(RubyArray.class, params(IRubyObject.class)));
     }
 
     public void singlifySplattedValue() {
-        method.invokestatic(p(RuntimeHelpers.class), "aValueSplat", sig(IRubyObject.class, params(IRubyObject.class)));
+        method.invokestatic(p(Helpers.class), "aValueSplat", sig(IRubyObject.class, params(IRubyObject.class)));
     }
 
     public void singlifySplattedValue19() {
-        method.invokestatic(p(RuntimeHelpers.class), "aValueSplat19", sig(IRubyObject.class, params(IRubyObject.class)));
+        method.invokestatic(p(Helpers.class), "aValueSplat19", sig(IRubyObject.class, params(IRubyObject.class)));
     }
 
     public void aryToAry() {
-        method.invokestatic(p(RuntimeHelpers.class), "aryToAry", sig(IRubyObject.class, params(IRubyObject.class)));
+        method.invokestatic(p(Helpers.class), "aryToAry", sig(IRubyObject.class, params(IRubyObject.class)));
     }
 
     public void ensureRubyArray() {
@@ -1480,7 +1478,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void match2Capture(CompilerCallback value, int[] scopeOffsets, boolean is19) {
         loadThreadContext();
         value.call(this);
-        method.ldc(RuntimeHelpers.encodeCaptureOffsets(scopeOffsets));
+        method.ldc(Helpers.encodeCaptureOffsets(scopeOffsets));
         invokeUtilityMethod(is19 ? "match2AndUpdateScope19" : "match2AndUpdateScope", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class)));
     }
 

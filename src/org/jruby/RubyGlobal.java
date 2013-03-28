@@ -43,7 +43,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
@@ -410,9 +410,9 @@ public class RubyGlobal {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
 
-            IRubyObject keyAsStr = normalizeEnvString(RuntimeHelpers.invoke(context, key, "to_str"));
+            IRubyObject keyAsStr = normalizeEnvString(Helpers.invoke(context, key, "to_str"));
             IRubyObject valueAsStr = value.isNil() ? getRuntime().getNil() :
-                    normalizeEnvString(RuntimeHelpers.invoke(context, value, "to_str"));
+                    normalizeEnvString(Helpers.invoke(context, value, "to_str"));
 
             if (updateRealENV) {
                 POSIX posix = getRuntime().getPosix();
@@ -562,12 +562,12 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject get() {
-            return RuntimeHelpers.getBackref(runtime, runtime.getCurrentContext());
+            return Helpers.getBackref(runtime, runtime.getCurrentContext());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            RuntimeHelpers.setBackref(runtime, runtime.getCurrentContext(), value);
+            Helpers.setBackref(runtime, runtime.getCurrentContext(), value);
             return value;
         }
     }
@@ -755,12 +755,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return RuntimeHelpers.getLastLine(runtime, runtime.getCurrentContext());
+            return Helpers.getLastLine(runtime, runtime.getCurrentContext());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            RuntimeHelpers.setLastLine(runtime, runtime.getCurrentContext(), value);
+            Helpers.setLastLine(runtime, runtime.getCurrentContext(), value);
             return value;
         }
     }

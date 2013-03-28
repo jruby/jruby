@@ -12,12 +12,11 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  *
@@ -39,7 +38,7 @@ public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject value = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
         String name = getName().string;
-        RubyString definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(value, name);
+        RubyString definedType = Helpers.getDefinedConstantOrBoundMethod(value, name);
         
         return definedType == null ? context.nil : new StringLiteral(definedType.getByteList()).retrieve(context, self, currDynScope, temp);
     }

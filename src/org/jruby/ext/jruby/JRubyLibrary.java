@@ -30,8 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.jruby;
 
-import java.io.IOException;
-
 import org.jruby.CompatVersion;
 import org.jruby.ast.RestArgNode;
 import org.jruby.anno.JRubyMethod;
@@ -42,6 +40,7 @@ import org.jruby.ast.ListNode;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
@@ -62,7 +61,6 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -170,7 +168,7 @@ public class JRubyLibrary implements Library {
             RubySymbol block = runtime.newSymbol("block");
 
             if (method instanceof MethodArgs2) {
-                return RuntimeHelpers.parameterListToParameters(runtime, ((MethodArgs2)method).getParameterList(), true);
+                return Helpers.parameterListToParameters(runtime, ((MethodArgs2) method).getParameterList(), true);
             } else if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();

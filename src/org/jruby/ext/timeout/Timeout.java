@@ -43,8 +43,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -101,7 +100,7 @@ public class Timeout implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, Block block) {
         // No seconds, just yield
-        if (seconds.isNil() || RuntimeHelpers.invoke(context, seconds, "zero?").isTrue()) {
+        if (seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue()) {
             return block.yieldSpecific(context);
         }
 
@@ -140,7 +139,7 @@ public class Timeout implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, IRubyObject exceptionType, Block block) {
         // No seconds, just yield
-        if (seconds.isNil() || RuntimeHelpers.invoke(context, seconds, "zero?").isTrue()) {
+        if (seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue()) {
             return block.yieldSpecific(context);
         }
 

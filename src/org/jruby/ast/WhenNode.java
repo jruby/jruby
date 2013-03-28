@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -110,7 +110,7 @@ public class WhenNode extends Node {
     }
 
     public IRubyObject when(IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
+        RubyArray expressions = Helpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
 
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject test = expressions.eltInternal(j);

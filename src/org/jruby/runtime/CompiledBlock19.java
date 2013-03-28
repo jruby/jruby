@@ -28,10 +28,8 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,20 +46,20 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     /**
      * Whether the arguments "need splat".
      *
-     * @see RuntimeHelpers#needsSplat19(int, boolean)
+     * @see Helpers#needsSplat19(int, boolean)
      */
     private final boolean needsSplat;
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
+        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
         BlockBody body = new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType, EMPTY_PARAMETER_LIST);
 
         return new Block(body, binding);
     }
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, BlockBody body) {
-        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
+        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
         return new Block(body, binding);
     }
     
@@ -76,7 +74,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.parameterList = parameterList;
-        this.needsSplat = RuntimeHelpers.needsSplat19(arity().required(), !arity().isFixed());
+        this.needsSplat = Helpers.needsSplat19(arity().required(), !arity().isFixed());
     }
 
     @Override
@@ -133,7 +131,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, null, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self);
+            IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self, type);
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -157,7 +155,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArgs(args, aValue);
+            IRubyObject[] realArgs = setupBlockArgs(args, type, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -178,12 +176,12 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
-    private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
-        return setupBlockArgs(value, false);
+    private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self, Block.Type type) {
+        return setupBlockArgs(value, type, false);
     }
 
-    private IRubyObject[] setupBlockArgs(IRubyObject value, boolean alreadyArray) {
-        return RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
+    private IRubyObject[] setupBlockArgs(IRubyObject value, Block.Type type, boolean alreadyArray) {
+        return Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
     }
 
     public String getFile() {

@@ -6,7 +6,7 @@ import java.util.List;
 import org.jruby.RubyArray;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
@@ -35,7 +35,7 @@ public class AttrAssignCallAdapter extends CallAdapter {
         
         if (callSite == null) {
             CallType callType = self == receiver ? CallType.FUNCTIONAL : CallType.NORMAL;
-            RuntimeHelpers.invoke(context, receiver, name, values, callType, Block.NULL_BLOCK);
+            Helpers.invoke(context, receiver, name, values, callType, Block.NULL_BLOCK);
         } else {
             callSite.call(context, self, receiver, values);
         }

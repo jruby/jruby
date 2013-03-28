@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.NativeException;
@@ -44,9 +43,8 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -171,7 +169,7 @@ public class RescueNode extends Node {
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, context).isTrue()) {
+            if (Helpers.isExceptionHandled(raisedException, exceptions, context).isTrue()) {
                 runtime.getGlobalVariables().set("$!", raisedException);
 
                 return cRescueNode.interpret(runtime,context, self, aBlock);
@@ -190,7 +188,7 @@ public class RescueNode extends Node {
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isJavaExceptionHandled(throwable, exceptions, context).isTrue()) {
+            if (Helpers.isJavaExceptionHandled(throwable, exceptions, context).isTrue()) {
                 IRubyObject exceptionObj;
 
                 if (exceptions.length == 1 && exceptions[0] == runtime.getNativeException()) {

@@ -6,7 +6,7 @@ package org.jruby.runtime.invokedynamic;
  * Adding names here will increase the size of the global method cache by the number of indexed classes in the system.
  *
  * @see org.jruby.runtime.ClassIndex
- * @see org.jruby.javasupport.util.RuntimeHelpers#invokedynamic(org.jruby.runtime.ThreadContext, org.jruby.runtime.builtin.IRubyObject, MethodNames)
+ * @see org.jruby.runtime.Helpers#invokedynamic(org.jruby.runtime.ThreadContext, org.jruby.runtime.builtin.IRubyObject, MethodNames)
 */
 public enum MethodNames {
     DUMMY(""),

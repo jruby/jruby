@@ -13,12 +13,11 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  *
@@ -39,7 +38,7 @@ public class MethodDefinedInstr extends DefinedObjectNameInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
-        RubyString boundValue = RuntimeHelpers.getDefinedCall(context, self, receiver, getName().string);
+        RubyString boundValue = Helpers.getDefinedCall(context, self, receiver, getName().string);
         
         return boundValue == null ? context.nil : boundValue;
     }

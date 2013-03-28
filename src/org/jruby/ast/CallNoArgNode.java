@@ -33,17 +33,13 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * A method or operator call.
@@ -74,7 +70,7 @@ public final class CallNoArgNode extends CallNode {
         if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-                return RuntimeHelpers.getDefinedCall(context, self, receiver, getName());
+                return Helpers.getDefinedCall(context, self, receiver, getName());
             } catch (JumpException je) {
             }
         }

@@ -9,7 +9,7 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -78,7 +78,7 @@ public class ArrayUtils {
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
         Ruby runtime = context.runtime;
         int oldLength = Array.getLength(original);
-        int addLength = (int)((RubyFixnum)RuntimeHelpers.invoke(context, additional, "length")).getLongValue();
+        int addLength = (int)((RubyFixnum) Helpers.invoke(context, additional, "length")).getLongValue();
         
         ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(runtime, original.getClass().getComponentType(), oldLength + addLength);
         Object newArray = proxy.getObject();
@@ -86,8 +86,8 @@ public class ArrayUtils {
         System.arraycopy(original, 0, newArray, 0, oldLength);
 
         for (int i = 0; i < addLength; i++) {
-            RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
-                    RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
+            Helpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i),
+                    Helpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
         }
 
         return proxy;

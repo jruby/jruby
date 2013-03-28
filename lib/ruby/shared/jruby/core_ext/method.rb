@@ -8,7 +8,7 @@ class Method
 
     case method
     when MethodArgs2
-      return RuntimeHelpers.parameter_list_to_parameters(JRuby.runtime, method.parameter_list, true)
+      return Helpers.parameter_list_to_parameters(JRuby.runtime, method.parameter_list, true)
     when MethodArgs
       args_node = method.args_node
 

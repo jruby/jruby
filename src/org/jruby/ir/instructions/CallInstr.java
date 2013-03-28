@@ -109,7 +109,7 @@ public class CallInstr extends CallBase implements ResultInstr {
             String        mn = mh.getResolvedMethodName();
             IRubyObject   ro = mh.getReceiverObj();
             if (m.isUndefined()) {
-                resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, 
+                resultValue = Helpers.callMethodMissing(interp.getContext(), ro,
                         m.getVisibility(), mn, CallType.FUNCTIONAL, args, prepareBlock(interp));
             } else {
                ThreadContext tc = interp.getContext();
@@ -151,7 +151,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         String mn = mh.getResolvedMethodName();
         IRubyObject ro = mh.getReceiverObj();
         if (m.isUndefined()) {
-            resultValue = RuntimeHelpers.callMethodMissing(context, ro,
+            resultValue = Helpers.callMethodMissing(context, ro,
                     m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
                     prepareBlock(interp, context, self));
         } else {

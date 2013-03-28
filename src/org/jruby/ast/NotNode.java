@@ -36,12 +36,11 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * not is !
@@ -89,6 +88,6 @@ public class NotNode extends Node {
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyString definition = super.definition(runtime, context, self, aBlock);
-        return RuntimeHelpers.getDefinedNot(runtime, definition);
+        return Helpers.getDefinedNot(runtime, definition);
     }
 }

@@ -86,6 +86,11 @@ public class Pointer extends AbstractMemory {
                 order.equals(getMemoryIO().order()) ? getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
                 size, typeSize);
     }
+    
+    @JRubyMethod(name = "size", meta = true, visibility = PUBLIC)
+    public static IRubyObject size(ThreadContext context, IRubyObject recv) {
+        return RubyFixnum.newFixnum(context.getRuntime(), Factory.getInstance().sizeOf(NativeType.POINTER));
+    }
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {

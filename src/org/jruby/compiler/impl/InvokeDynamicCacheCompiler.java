@@ -28,7 +28,6 @@ package org.jruby.compiler.impl;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -40,7 +39,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -129,7 +128,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
             return;
         }
         
-        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String asString = Helpers.rawBytesToString(contents.bytes());
         String encodingName = new String(contents.getEncoding().getName());
         
         method.method.invokedynamic(
@@ -169,7 +168,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public int cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+        String descriptor = Helpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
                 file,
@@ -196,7 +195,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public int cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor19(
+        String descriptor = Helpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
                 file,
@@ -233,7 +232,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
             return;
         }
         
-        String asString = RuntimeHelpers.rawBytesToString(pattern.bytes());
+        String asString = Helpers.rawBytesToString(pattern.bytes());
         String encodingName = new String(pattern.getEncoding().getName());
         
         method.loadThreadContext();
@@ -299,7 +298,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
         
         int index = scopeCount;
         scopeCount++;
@@ -378,7 +377,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
             return;
         }
         
-        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String asString = Helpers.rawBytesToString(contents.bytes());
         String encodingName = new String(contents.getEncoding().getName());
         
         method.loadThreadContext();

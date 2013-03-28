@@ -75,7 +75,7 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
@@ -243,7 +243,7 @@ public class JavaUtil {
                 }
             });
         }
-        JavaObject jo = (JavaObject) RuntimeHelpers.invoke(context, rubyObject, "__jcreate_meta!");
+        JavaObject jo = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
         return jo.getValue();
     }
 

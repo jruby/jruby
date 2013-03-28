@@ -32,7 +32,7 @@ package org.jruby.runtime.assigner;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.Node;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,7 +56,7 @@ public class Pre2Rest0Post0BlockAssigner extends Assigner {
             Block block) {
         parameter1.assign(runtime, context, self, runtime.getNil(), block, false);
         parameter2.assign(runtime, context, self, runtime.getNil(), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Pre2Rest0Post0BlockAssigner extends Assigner {
             Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
         parameter2.assign(runtime, context, self, runtime.getNil(), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class Pre2Rest0Post0BlockAssigner extends Assigner {
             IRubyObject value2, Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
         parameter2.assign(runtime, context, self, value2, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class Pre2Rest0Post0BlockAssigner extends Assigner {
             IRubyObject value2, IRubyObject value3, Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
         parameter2.assign(runtime, context, self, value2, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override

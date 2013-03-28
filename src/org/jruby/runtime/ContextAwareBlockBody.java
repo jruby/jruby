@@ -11,7 +11,7 @@ public abstract class ContextAwareBlockBody extends BlockBody {
     protected StaticScope scope;
 
     /** The 'Arity' of the block */
-    private final Arity arity;
+    protected final Arity arity;
 
     public ContextAwareBlockBody(StaticScope scope, Arity arity, int argumentType) {
         super(argumentType);

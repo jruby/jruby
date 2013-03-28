@@ -15,7 +15,7 @@ import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -37,7 +37,7 @@ public class RuntimeCache {
     public final StaticScope getScope(ThreadContext context, StaticScope parent, String varNamesDescriptor, int index) {
         StaticScope scope = scopes[index];
         if (scope == null) {
-            scopes[index] = scope = RuntimeHelpers.decodeScopeAndDetermineModule(context, parent, varNamesDescriptor);
+            scopes[index] = scope = Helpers.decodeScopeAndDetermineModule(context, parent, varNamesDescriptor);
         }
         return scope;
     }
@@ -451,17 +451,17 @@ public class RuntimeCache {
     }
 
     private BlockBody createBlockBody(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) throws NumberFormatException {
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, scope, descriptor);
+        BlockBody body = Helpers.createCompiledBlockBody(context, scriptObject, scope, descriptor);
         return blockBodies[index] = body;
     }
 
     private BlockBody createBlockBody19(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) throws NumberFormatException {
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
+        BlockBody body = Helpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
         return blockBodies[index] = body;
     }
 
     private CompiledBlockCallback createCompiledBlockCallback(Object scriptObject, int index, String method) {
-        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(scriptObject, method, "(internal)", -1);
+        CompiledBlockCallback callback = Helpers.createBlockCallback(scriptObject, method, "(internal)", -1);
         return blockCallbacks[index] = callback;
     }
 
@@ -481,7 +481,7 @@ public class RuntimeCache {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (method.isUndefined()) {
-            return RuntimeHelpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, CallType.FUNCTIONAL);
+            return Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, CallType.FUNCTIONAL);
         }
         methodCache[index] = entry;
         return method;
@@ -491,7 +491,7 @@ public class RuntimeCache {
         CacheEntry entry = clazz.searchWithCache(name1);
         DynamicMethod method = entry.method;
         if (entry.method == UndefinedMethod.INSTANCE) {
-            return RuntimeHelpers.selectMethodMissing(clazz, method.getVisibility(), name1, CallType.FUNCTIONAL);
+            return Helpers.selectMethodMissing(clazz, method.getVisibility(), name1, CallType.FUNCTIONAL);
         }
         methodCache[index] = entry;
         return method;

@@ -37,7 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -106,9 +106,9 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
             
             IRubyObject obj = leftNode.interpret(runtime, context, self, aBlock);
 
-            return RuntimeHelpers.setConstantInModule(context, constNode.getName(), result, obj);
+            return Helpers.setConstantInModule(context, constNode.getName(), result, obj);
         } else { // colon3
-            return RuntimeHelpers.setConstantInModule(context, constNode.getName(), result, runtime.getObject());
+            return Helpers.setConstantInModule(context, constNode.getName(), result, runtime.getObject());
         }
     }
 

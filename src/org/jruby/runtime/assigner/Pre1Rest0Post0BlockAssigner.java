@@ -32,7 +32,7 @@ package org.jruby.runtime.assigner;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.Node;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,21 +52,21 @@ public class Pre1Rest0Post0BlockAssigner extends Assigner {
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
         parameter1.assign(runtime, context, self, runtime.getNil(), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
 
@@ -74,7 +74,7 @@ public class Pre1Rest0Post0BlockAssigner extends Assigner {
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, IRubyObject value3, Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override

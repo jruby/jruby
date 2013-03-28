@@ -52,7 +52,6 @@ import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.Nil;
@@ -74,7 +73,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -83,7 +82,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.Map;
@@ -409,7 +407,7 @@ public class JVMVisitor extends IRVisitor {
             throw new RuntimeException("can't compile variable method: " + this);
         }
 
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter; 
@@ -426,7 +424,7 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(newIRClassBody.getFileName());
         a.ldc(newIRClassBody.getLineNumber());
 
-        // construct class with RuntimeHelpers.newClassForIR
+        // construct class with Helpers.newClassForIR
         a.aload(0); // ThreadContext
         a.ldc(newIRClassBody.getName()); // class name
         m.loadLocal(2); // self
@@ -452,7 +450,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
         a.swap();
 
         // set into StaticScope
@@ -482,7 +480,7 @@ public class JVMVisitor extends IRVisitor {
             throw new RuntimeException("can't compile variable method: " + this);
         }
 
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter; 
@@ -507,7 +505,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         a.aload(0);
         a.invokevirtual(p(ThreadContext.class), "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
@@ -529,7 +527,7 @@ public class JVMVisitor extends IRVisitor {
             throw new RuntimeException("can't compile variable method: " + this);
         }
 
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter; 
@@ -550,7 +548,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         // get singleton class
         m.pushRuntime();
@@ -579,7 +577,7 @@ public class JVMVisitor extends IRVisitor {
             throw new RuntimeException("can't compile variable method: " + this);
         }
 
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter; 
@@ -599,7 +597,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         // create module
         m.loadLocal(0);

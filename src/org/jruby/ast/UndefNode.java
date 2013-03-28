@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -80,7 +80,7 @@ public class UndefNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyModule module = context.getRubyClass();
-        String undefName = RuntimeHelpers.interpretAliasUndefName(name, runtime, context, self, aBlock);
+        String undefName = Helpers.interpretAliasUndefName(name, runtime, context, self, aBlock);
    
         if (module == null) {
             throw runtime.newTypeError("No class to undef method '" + undefName + "'.");

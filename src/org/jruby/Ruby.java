@@ -78,7 +78,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.*;
+import org.jruby.runtime.Helpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.ClassCache;
@@ -90,19 +91,6 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Binding;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.EventHook;
-import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.RubyEvent;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -160,7 +148,6 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Visibility;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -606,7 +593,7 @@ public final class Ruby {
 
         // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
-        RuntimeHelpers.preLoad(context, ((RootNode)scriptNode).getStaticScope().getVariables());
+        Helpers.preLoad(context, ((RootNode) scriptNode).getStaticScope().getVariables());
 
         try {
             while (RubyKernel.gets(context, getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
@@ -640,7 +627,7 @@ public final class Ruby {
                 }
             }
         } finally {
-            RuntimeHelpers.postLoad(context);
+            Helpers.postLoad(context);
         }
         
         return getNil();
@@ -750,10 +737,10 @@ public final class Ruby {
 
                 public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
                     try {
-                        RuntimeHelpers.preLoadCommon(context, staticScope, false);
+                        Helpers.preLoadCommon(context, staticScope, false);
                         return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                     } finally {
-                        RuntimeHelpers.postLoad(context);
+                        Helpers.postLoad(context);
                     }
                 }
             };

@@ -33,7 +33,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -92,7 +92,7 @@ public class WeakRef extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject obj) {
         ref = new WeakReference<IRubyObject>(obj);
         
-        return RuntimeHelpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+        return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
     
     @JRubyMethod(name = "weakref_alive?")

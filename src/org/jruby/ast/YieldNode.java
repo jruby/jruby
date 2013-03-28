@@ -34,15 +34,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /** 
@@ -113,7 +111,7 @@ public class YieldNode extends Node {
         IRubyObject argsResult = argsNode.interpret(runtime, context, self, aBlock);
         
         if (expandedArguments) {
-            if (argsNode instanceof Splat19Node) argsResult = RuntimeHelpers.unsplatValue19(argsResult);
+            if (argsNode instanceof Splat19Node) argsResult = Helpers.unsplatValue19(argsResult);
 
             return context.getCurrentFrame().getBlock().yieldArray(context, argsResult, null, null);
         } 

@@ -2,18 +2,14 @@ package org.jruby.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
-import org.jruby.util.StringSupport;
 
 /**
  * Base class for all D (e.g. Dynamic) node types like DStrNode, DSymbolNode, etc...
@@ -73,9 +69,9 @@ public abstract class DNode extends ListNode {
 
             IRubyObject body = bodyNode.interpret(runtime, context, self, aBlock);
             if (is19()) {
-                RuntimeHelpers.shortcutAppend(string, body);
+                Helpers.shortcutAppend(string, body);
             } else {
-                RuntimeHelpers.shortcutAppend18(string, body);
+                Helpers.shortcutAppend18(string, body);
             }
         } else if (is19()) {
             string.append19(node.interpret(runtime, context, self, aBlock));

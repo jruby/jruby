@@ -9,7 +9,7 @@ end
 =begin
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.RubyClass;

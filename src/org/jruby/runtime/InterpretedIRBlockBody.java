@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.interpreter.Interpreter;
@@ -142,7 +141,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             if (soleArg instanceof RubyArray) {
                 if (argumentType == MULTIPLE_ASSIGNMENT) args = ((RubyArray) soleArg).toJavaArray();
             } else if (blockArity > 1) {
-                IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
+                IRubyObject toAryArg = Helpers.aryToAry(soleArg);
                 if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
                 else {
                     throw context.runtime.newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
@@ -170,7 +169,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                         args = ((RubyArray) soleArg).toJavaArray();
                     }
                 } else if (blockArity > 1) {
-                    IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
+                    IRubyObject toAryArg = Helpers.aryToAry(soleArg);
                     if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
                     else {
                         throw context.runtime.newTypeError(soleArg.getType().getName() + "#to_ary should return Array");

@@ -29,7 +29,7 @@ import java.math.BigInteger;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -515,7 +515,7 @@ public class RubyRandom extends RubyObject {
                 return ((RubyFloat) v).op_plus(context, f);
             }
         }
-        return RuntimeHelpers.invoke(context, range.begin, "+", v);
+        return Helpers.invoke(context, range.begin, "+", v);
     }
 
     // c: float_value
@@ -563,11 +563,11 @@ public class RubyRandom extends RubyObject {
                     || !range.respondsTo("exclude_end?")) {
                 return null;
             }
-            like.begin = RuntimeHelpers.invoke(context, range, "begin");
-            like.end = RuntimeHelpers.invoke(context, range, "end");
-            like.excl = RuntimeHelpers.invoke(context, range, "exlucde_end?").isTrue();
+            like.begin = Helpers.invoke(context, range, "begin");
+            like.end = Helpers.invoke(context, range, "end");
+            like.excl = Helpers.invoke(context, range, "exlucde_end?").isTrue();
         }
-        like.range = RuntimeHelpers.invoke(context, like.end, "-", like.begin);
+        like.range = Helpers.invoke(context, like.end, "-", like.begin);
         return like;
     }
 
@@ -701,7 +701,7 @@ public class RubyRandom extends RubyObject {
         if (random != null) {
             return random.genrandReal();
         }
-        double d = RubyNumeric.num2dbl(RuntimeHelpers.invoke(context, obj, "rand"));
+        double d = RubyNumeric.num2dbl(Helpers.invoke(context, obj, "rand"));
         if (d < 0.0 || d >= 1.0) {
             throw context.runtime.newRangeError("random number too big: " + d);
         }

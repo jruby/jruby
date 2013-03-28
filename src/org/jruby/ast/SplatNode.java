@@ -33,7 +33,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -68,6 +68,6 @@ public class SplatNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RuntimeHelpers.splatValue(node.interpret(runtime, context, self, aBlock));
+        return Helpers.splatValue(node.interpret(runtime, context, self, aBlock));
     }
 }

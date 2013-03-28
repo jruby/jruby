@@ -42,7 +42,6 @@ import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -55,8 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -169,7 +167,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject doCallProcForLink(IRubyObject result, int type) {
         if (proc != null && type != ';') {
             // return the result of the proc, but not for symbols
-            return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
+            return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
         }
         return result;
     }
@@ -177,7 +175,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject doCallProcForObj(IRubyObject result) {
         if (proc != null) {
             // return the result of the proc, but not for symbols
-            return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
+            return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
         }
         return result;
     }

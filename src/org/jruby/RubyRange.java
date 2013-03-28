@@ -46,7 +46,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -67,9 +67,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.HASH;
-import static org.jruby.runtime.MethodIndex.OP_CMP;
+import static org.jruby.runtime.Helpers.invokedynamic;
+
 import org.jruby.runtime.invokedynamic.MethodNames;
 
 /**
@@ -642,7 +641,7 @@ public class RubyRange extends RubyObject {
                 }
             }
         }
-        return RuntimeHelpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+        return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "===", compat = RUBY1_9)
@@ -658,7 +657,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(compat = RUBY1_9, frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            return RuntimeHelpers.invokeSuper(context, this, block);
+            return Helpers.invokeSuper(context, this, block);
         } else {
             int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
             if (c > 0 || (c == 0 && isExclusive)) {
@@ -674,7 +673,7 @@ public class RubyRange extends RubyObject {
             return context.runtime.getNil();
         }
         if (block.isGiven() || isExclusive && !(end instanceof RubyNumeric)) {
-            return RuntimeHelpers.invokeSuper(context, this, block);
+            return Helpers.invokeSuper(context, this, block);
         } else {
             int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
             Ruby runtime = context.runtime;

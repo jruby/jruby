@@ -8,12 +8,11 @@ package org.jruby.ast;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /**
@@ -29,7 +28,7 @@ public class Colon2MethodNode extends Colon2Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RuntimeHelpers.invoke(context, leftNode.interpret(runtime, context, self, aBlock), name, aBlock);
+        return Helpers.invoke(context, leftNode.interpret(runtime, context, self, aBlock), name, aBlock);
     }
 
     @Override

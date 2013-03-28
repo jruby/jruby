@@ -48,7 +48,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 
 public class IRBuilder19 extends IRBuilder {
@@ -234,7 +234,7 @@ public class IRBuilder19 extends IRBuilder {
     public void receiveBlockArgs(final IterNode node, IRScope s) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
-            ((IRClosure)s).setParameterList(RuntimeHelpers.encodeParameterList((ArgsNode)args).split(";"));
+            ((IRClosure)s).setParameterList(Helpers.encodeParameterList((ArgsNode) args).split(";"));
             receiveArgs((ArgsNode)args, s);
         } else  { 
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment

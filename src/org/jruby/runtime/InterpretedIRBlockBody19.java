@@ -2,7 +2,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.ir.IRClosure;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,10 +38,10 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                 if (argIsArray) {
                     RubyArray valArray = (RubyArray)value;
                     if (valArray.size() == 1) value = valArray.eltInternal(0);
-                    value = RuntimeHelpers.aryToAry(value);
+                    value = Helpers.aryToAry(value);
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
-                    value = RuntimeHelpers.aryToAry(value);
+                    value = Helpers.aryToAry(value);
                     if (!(value instanceof RubyArray)) {
                         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
                     }

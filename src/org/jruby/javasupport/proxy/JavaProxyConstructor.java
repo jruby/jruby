@@ -44,7 +44,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -185,7 +185,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                     return method.call(runtime.getCurrentContext(), self, self.getMetaClass(), name, newArgs).toJava(m.getReturnType());
                 } else if (m.hasSuperImplementation()) {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
+                    return Helpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
                 } else {
                     throw runtime.newArgumentError(newArgs.length, v);
                 }
@@ -224,7 +224,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                     result = method.call(runtime.getCurrentContext(), self, self.getMetaClass(), name, newArgs);
                 } else if (m.hasSuperImplementation()) {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    result = RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK);
+                    result = Helpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK);
                 } else {
                     throw runtime.newArgumentError(newArgs.length, v);
                 }

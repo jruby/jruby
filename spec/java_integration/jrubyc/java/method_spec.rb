@@ -10,31 +10,31 @@ describe "A Ruby class generating a Java stub" do
   end
   
   OBJECT_VOID_BAR_PATTERN =
-    /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar"\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
+    /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar"\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   OBJECT_OBJECT_BAR_PATTERN =
-    /public *(.*) *Object bar\(Object \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar", .*\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
+    /public *(.*) *Object bar\(Object \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar", .*\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   BYTE_VOID_BAR_PATTERN =
-    /public *(.*) *byte bar_byte\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_byte"\);\s+return \(Byte\)ruby_result\.toJava\(byte\.class\);/
+    /public *(.*) *byte bar_byte\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_byte"\);\s+return \(Byte\)ruby_result\.toJava\(byte\.class\);/
   SHORT_VOID_BAR_PATTERN =
-    /public *(.*) *short bar_short\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_short"\);\s+return \(Short\)ruby_result\.toJava\(short\.class\);/
+    /public *(.*) *short bar_short\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_short"\);\s+return \(Short\)ruby_result\.toJava\(short\.class\);/
   CHAR_VOID_BAR_PATTERN =
-    /public *(.*) *char bar_char\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_char"\);\s+return \(Character\)ruby_result\.toJava\(char\.class\);/
+    /public *(.*) *char bar_char\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_char"\);\s+return \(Character\)ruby_result\.toJava\(char\.class\);/
   INT_VOID_BAR_PATTERN =
-    /public *(.*) *int bar_int\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_int"\);\s+return \(Integer\)ruby_result\.toJava\(int\.class\);/
+    /public *(.*) *int bar_int\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_int"\);\s+return \(Integer\)ruby_result\.toJava\(int\.class\);/
   LONG_VOID_BAR_PATTERN =
-    /public *(.*) *long bar_long\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_long"\);\s+return \(Long\)ruby_result\.toJava\(long\.class\);/
+    /public *(.*) *long bar_long\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_long"\);\s+return \(Long\)ruby_result\.toJava\(long\.class\);/
   FLOAT_VOID_BAR_PATTERN =
-    /public *(.*) *float bar_float\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_float"\);\s+return \(Float\)ruby_result\.toJava\(float\.class\);/
+    /public *(.*) *float bar_float\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_float"\);\s+return \(Float\)ruby_result\.toJava\(float\.class\);/
   DOUBLE_VOID_BAR_PATTERN =
-    /public *(.*) *double bar_double\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_double"\);\s+return \(Double\)ruby_result\.toJava\(double\.class\);/
+    /public *(.*) *double bar_double\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_double"\);\s+return \(Double\)ruby_result\.toJava\(double\.class\);/
   BOOLEAN_VOID_BAR_PATTERN =
-    /public *(.*) *boolean bar_boolean\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_boolean"\);\s+return \(Boolean\)ruby_result\.toJava\(boolean\.class\);/
+    /public *(.*) *boolean bar_boolean\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_boolean"\);\s+return \(Boolean\)ruby_result\.toJava\(boolean\.class\);/
   VOID_STRING_BAR_PATTERN =
-    /public *(.*) *void bar\(String \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
+    /public *(.*) *void bar\(String \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
   VOID_INT_BAR_PATTERN =
-    /public *(.*) *void bar\(int \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
+    /public *(.*) *void bar\(int \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
   DOUBLE_ARY_VOID_BAR_PATTERN =
-    /public *(.*) *double\[\] bar_double_ary\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_double_ary"\);\s+return \(double\[\]\)ruby_result\.toJava\(double\[\]\.class\);/
+    /public *(.*) *double\[\] bar_double_ary\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_double_ary"\);\s+return \(double\[\]\)ruby_result\.toJava\(double\[\]\.class\);/
 
   describe "with a method" do
     describe "with no java_signature" do

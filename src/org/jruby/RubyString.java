@@ -42,7 +42,7 @@ import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -80,7 +80,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -95,7 +95,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.ConvertBytes;
-import org.jruby.util.MurmurHash;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.PerlHash;
@@ -7401,7 +7400,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject backref = scope.getBackRef(runtime);
             if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-            IRubyObject s = RuntimeHelpers.invoke(
+            IRubyObject s = Helpers.invoke(
                     context, this, "gsub",
                     RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
                     runtime.newString(new ByteList(new byte[]{'_'})));
@@ -7435,7 +7434,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject backref = scope.getBackRef(runtime);
             if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-            IRubyObject s = RuntimeHelpers.invoke(
+            IRubyObject s = Helpers.invoke(
                     context, this, "gsub",
                     RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
                     runtime.newString(new ByteList(new byte[]{'_'})));

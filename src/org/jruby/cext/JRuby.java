@@ -47,7 +47,7 @@ import org.jruby.RubyThread;
 import org.jruby.RubyThread.BlockingTask;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -74,21 +74,21 @@ public class JRuby {
     }
 
     public static long callRubyMethod0(IRubyObject recv, Object methodName) {
-        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+        IRubyObject retval = Helpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString());
 
         return Handle.nativeHandle(retval);
     }
 
     public static long callRubyMethod1(IRubyObject recv, Object methodName, IRubyObject arg1) {
-        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+        IRubyObject retval = Helpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString(), arg1);
 
         return Handle.nativeHandle(retval);
     }
 
     public static long callRubyMethod2(IRubyObject recv, Object methodName, IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+        IRubyObject retval = Helpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString(), arg1, arg2);
 
         return Handle.nativeHandle(retval);
@@ -96,7 +96,7 @@ public class JRuby {
 
     public static long callRubyMethod3(IRubyObject recv, Object methodName, IRubyObject arg1,
             IRubyObject arg2, IRubyObject arg3) {
-        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+        IRubyObject retval = Helpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString(), arg1, arg2, arg3);
 
         return Handle.nativeHandle(retval);
@@ -104,7 +104,7 @@ public class JRuby {
 
     public static long callSuperMethod(Ruby runtime, IRubyObject[] args) {
         ThreadContext currentContext = runtime.getCurrentContext();
-        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext,
+        IRubyObject retval = Helpers.invokeSuper(currentContext,
                 runtime.getCurrentContext().getFrameSelf(), args, Block.NULL_BLOCK);
 
         return Handle.nativeHandle(retval);

@@ -46,7 +46,7 @@ import java.util.List;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -56,7 +56,7 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -208,7 +208,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public String toString() {
-        RubyString rubyString = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s").convertToString();
+        RubyString rubyString = Helpers.invoke(getRuntime().getCurrentContext(), this, "to_s").convertToString();
         return rubyString.getUnicodeValue();
     }
 
@@ -216,35 +216,35 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject[] args, Block block) {
-        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", args, block);
+        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", args, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(Block block) {
-        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", block);
+        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, Block block) {
-        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, block);
+        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
-        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, block);
+        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, arg2, block);
+        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, arg2, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject[] args, Block block) {

@@ -49,7 +49,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public final class Block {
-    public enum Type { NORMAL, PROC, LAMBDA, THREAD }
+    public enum Type {
+        NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
+        
+        Type(boolean checkArity) {
+            this.checkArity = checkArity;
+        }
+        
+        public final boolean checkArity;
+    }
     
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
@@ -64,7 +72,11 @@ public final class Block {
     
     private final BlockBody body;
     
-    private boolean[] escaped = new boolean[] {false};
+    /** Whether this block and any clones of it should be considered "escaped" */
+    private boolean escaped;
+    
+    /** What block to use for determining escape; defaults to this */
+    private Block escapeBlock = this;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -157,10 +169,13 @@ public final class Block {
     }
     
     public Block cloneBlock() {
+        // force binding to reify
+        binding.reify();
+        
         Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;
-        newBlock.escaped = escaped;
+        newBlock.escapeBlock = this;
 
         return newBlock;
     }
@@ -219,11 +234,11 @@ public final class Block {
     }
     
     public boolean isEscaped() {
-        return escaped[0];
+        return escapeBlock.escaped;
     }
     
     public void escape() {
-        this.escaped[0] = true;
+        escapeBlock.escaped = true;
     }
 
     @Override

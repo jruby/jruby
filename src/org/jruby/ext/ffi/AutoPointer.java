@@ -97,7 +97,9 @@ public final class AutoPointer extends Pointer {
 
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
-        this.pointer = (Pointer) pointerArg;        
+        this.pointer = (Pointer) pointerArg;
+        this.size = pointer.size;
+        this.typeSize = pointer.typeSize;
         setReaper(new Reaper(pointer, getMetaClass(), classData.releaseCallSite));
 
         return this;
@@ -111,6 +113,9 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
+        this.size = pointer.size;
+        this.typeSize = pointer.typeSize;
+
         Object ffiHandle = releaser.getMetaClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(releaser);
         if (!(ffiHandle instanceof ReleaserData)) {
             getMetaClass().setFFIHandle(ffiHandle = new ReleaserData());

@@ -6,7 +6,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -29,7 +29,7 @@ public class FCallOneArgBlockNode extends FCallNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = RuntimeHelpers.getBlock(context, self, iterNode);
+        Block block = Helpers.getBlock(context, self, iterNode);
         
         return callAdapter.callIter(context, self, self, arg1.interpret(runtime, context, self, aBlock), block);
     }

@@ -52,7 +52,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jnr.posix.util.ProcessMaker;
 import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -61,10 +60,9 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import jnr.posix.POSIX;
 import jnr.posix.util.FieldAccess;
 import jnr.posix.util.Platform;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1536,8 +1534,8 @@ public class ShellLauncher {
                     runtime.getLoadService().require("jruby/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-                RubyArray parts = (RubyArray) RuntimeHelpers.invoke(
-                                                                    context, pathHelper, "smart_split_command", rawArgs);
+                RubyArray parts = (RubyArray) Helpers.invoke(
+                        context, pathHelper, "smart_split_command", rawArgs);
                 args = new String[parts.getLength()];
                 for (int i = 0; i < parts.getLength(); i++) {
                     args[i] = parts.entry(i).toString();

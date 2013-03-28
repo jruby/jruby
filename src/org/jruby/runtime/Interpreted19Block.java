@@ -37,7 +37,6 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 /**
@@ -62,7 +61,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     /**
      * Whether the arguments "need splat".
      *
-     * @see RuntimeHelpers#needsSplat19(int, boolean)
+     * @see Helpers#needsSplat19(int, boolean)
      */
     private final boolean needsSplat;
 
@@ -73,7 +72,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     private final Node body;
 
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
-        Binding binding = context.currentBinding(self);
+        Binding binding = context.currentBindingLight(self);
         return new Block(body, binding);
     }
 
@@ -92,8 +91,8 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(iterNode.getScope(), ((ArgsNode)iterNode.getVarNode()).getArity(), -1); // We override that the logic which uses this
 
         this.args = (ArgsNode)iterNode.getVarNode();
-        this.needsSplat = RuntimeHelpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
-        this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
+        this.needsSplat = Helpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
+        this.parameterList = Helpers.encodeParameterList(args).split(";");
         this.body = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.position = iterNode.getPosition();
 
@@ -106,8 +105,8 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(lambdaNode.getScope(), lambdaNode.getArgs().getArity(), -1); // We override that the logic which uses this
 
         this.args = lambdaNode.getArgs();
-        this.needsSplat = RuntimeHelpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
-        this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
+        this.needsSplat = Helpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
+        this.parameterList = Helpers.encodeParameterList(args).split(";");
         this.body = lambdaNode.getBody() == null ? NilImplicitNode.NIL : lambdaNode.getBody();
         this.position = lambdaNode.getPosition();
 
@@ -230,10 +229,10 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     }
 
     /**
-     * @see RuntimeHelpers#restructureBlockArgs19(IRubyObject, boolean, boolean)
+     * @see Helpers#restructureBlockArgs19(IRubyObject, boolean, boolean)
      */
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-        IRubyObject[] parameters = RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
+        IRubyObject[] parameters = Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
 
         Ruby runtime = context.runtime;
         if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        

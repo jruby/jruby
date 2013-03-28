@@ -2,7 +2,7 @@ package org.jruby.ir.instructions.specialized;
 
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
@@ -29,7 +29,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
         IRubyObject value = (IRubyObject) args[0].retrieve(context, self, dynamicScope, temp);
         
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        RuntimeHelpers.invoke(context, object, getMethodAddr().getName(), value, callType, Block.NULL_BLOCK);
+        Helpers.invoke(context, object, getMethodAddr().getName(), value, callType, Block.NULL_BLOCK);
         return null;
     }    
 }

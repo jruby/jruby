@@ -63,7 +63,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
 import static org.jruby.CompatVersion.*;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** The Time class.
@@ -1017,29 +1017,45 @@ public class RubyTime extends RubyObject {
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
 
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv,
-                new DateTime(0L, getLocalTimeZone(runtime)));
+        RubyTime time;
+        long seconds;
+        
+        if (arg1 instanceof RubyTime && runtime.is1_9()) {
+            time = new RubyTime(runtime, (RubyClass) recv, ((RubyTime) arg1).getDateTime());
+            seconds = time.getDateTime().getMillis() / 1000;
+        } else {
+            time = new RubyTime(runtime, (RubyClass) recv,
+                    new DateTime(0L, getLocalTimeZone(runtime)));
+            seconds = RubyNumeric.num2long(arg1);            
+        }
 
-            long seconds = RubyNumeric.num2long(arg1);
-            long millisecs = 0;
-            long nanosecs = 0;
+        long millisecs;
+        long nanosecs;
 
-            if (arg2 instanceof RubyFloat || arg2 instanceof RubyRational) {
-                double micros = RubyNumeric.num2dbl(arg2);
-                double nanos = micros * 1000;
-                millisecs = (long)(nanos / 1000000);
-                nanosecs = (long)(nanos % 1000000);
-            } else {
-                long micros = RubyNumeric.num2long(arg2);
-                long nanos = micros * 1000;
-                millisecs = nanos / 1000000;
-                nanosecs = nanos % 1000000;
-            }
+        if (arg2 instanceof RubyFloat || arg2 instanceof RubyRational) {
+            double micros = RubyNumeric.num2dbl(arg2);
+            double nanos = micros * 1000;
+            millisecs = (long) (nanos / 1000000);
+            nanosecs = (long) (nanos % 1000000);
+        } else if (arg2 instanceof RubyTime && runtime.is1_9()) {
+            RubyTime t = (RubyTime) arg2;
+            // MRI treats the second argument as nanoseconds since the epoch
+            // However, RubyTime contains *seconds* since epoch, which is
+            // returned by .getMillis().
+            long nanos = t.getDateTime().getMillis();
+            millisecs = nanos / 1000000;
+            nanosecs = nanos % 1000000;
+        } else {
+            long micros = RubyNumeric.num2long(arg2);
+            long nanos = micros * 1000;
+            millisecs = nanos / 1000000;
+            nanosecs = nanos % 1000000;
+        }
 
-            time.setNSec(nanosecs);
-            time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
+        time.setNSec(nanosecs);
+        time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
 
-            time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
+        time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
 
         return time;
     }

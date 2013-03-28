@@ -34,8 +34,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +48,7 @@ import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -219,7 +217,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public void writeInvokers(File destination) throws IOException {
         for (InvokerDescriptor descriptor : invokerDescriptors) {
-            byte[] invokerBytes = RuntimeHelpers.defOffline(
+            byte[] invokerBytes = Helpers.defOffline(
                     descriptor.getRubyName(),
                     descriptor.getJavaName(),
                     descriptor.getClassname(),
@@ -236,7 +234,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         for (BlockCallbackDescriptor descriptor : blockCallbackDescriptors) {
-            byte[] callbackBytes = RuntimeHelpers.createBlockCallbackOffline(
+            byte[] callbackBytes = Helpers.createBlockCallbackOffline(
                     descriptor.getClassname(),
                     descriptor.getMethod(),
                     descriptor.getFile(),
@@ -248,7 +246,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         for (BlockCallbackDescriptor descriptor : blockCallback19Descriptors) {
-            byte[] callbackBytes = RuntimeHelpers.createBlockCallback19Offline(
+            byte[] callbackBytes = Helpers.createBlockCallback19Offline(
                     descriptor.getClassname(),
                     descriptor.getMethod(),
                     descriptor.getFile(),
@@ -485,10 +483,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.label(tryBegin);
             method.aload(THREADCONTEXT_INDEX);
-            String scopeNames = RuntimeHelpers.encodeScope(topLevelScope);
+            String scopeNames = Helpers.encodeScope(topLevelScope);
             method.ldc(scopeNames);
             method.iload(SELF_INDEX + 1);
-            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(StaticScope.class, ThreadContext.class, String.class, boolean.class));
+            method.invokestatic(p(Helpers.class), "preLoad", sig(StaticScope.class, ThreadContext.class, String.class, boolean.class));
 
             // store root scope
             method.aload(THIS);
@@ -503,12 +501,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.invokestatic(getClassname(),methodName, getStaticMethodSignature(getClassname(), 4));
             method.aload(THREADCONTEXT_INDEX);
-            method.invokestatic(p(RuntimeHelpers.class), "postLoad", sig(void.class, ThreadContext.class));
+            method.invokestatic(p(Helpers.class), "postLoad", sig(void.class, ThreadContext.class));
             method.areturn();
 
             method.label(tryFinally);
             method.aload(THREADCONTEXT_INDEX);
-            method.invokestatic(p(RuntimeHelpers.class), "postLoad", sig(void.class, ThreadContext.class));
+            method.invokestatic(p(Helpers.class), "postLoad", sig(void.class, ThreadContext.class));
             method.athrow();
 
             method.trycatch(tryBegin, tryFinally, tryFinally, null);
@@ -574,7 +572,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public static String buildStaticScopeNames(StaticScope scope) {
-        return RuntimeHelpers.encodeScope(scope);
+        return Helpers.encodeScope(scope);
     }
 
     private void beginInit() {

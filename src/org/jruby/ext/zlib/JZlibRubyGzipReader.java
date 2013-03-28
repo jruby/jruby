@@ -20,7 +20,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -60,7 +60,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject open18(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
+        IRubyObject io = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
         JZlibRubyGzipReader gzio = newInstance(recv, new IRubyObject[]{io}, block);
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -68,7 +68,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject open19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
+        IRubyObject io = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
         JZlibRubyGzipReader gzio = newInstance(recv, argsWithIo(io, args), block);
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
