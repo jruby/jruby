@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -87,7 +87,7 @@ public class CompoundArray extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, currDynScope, temp);
         IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, currDynScope, temp);
-        return isArgsPush ? RuntimeHelpers.argsPush((RubyArray)v1, v2) : RuntimeHelpers.argsCat(v1, v2);
+        return isArgsPush ? Helpers.argsPush((RubyArray) v1, v2) : Helpers.argsCat(v1, v2);
     }
 
     @Override

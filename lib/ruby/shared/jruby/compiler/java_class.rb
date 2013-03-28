@@ -279,7 +279,7 @@ module JRuby::Compiler
     BASE_IMPORTS = [
       "org.jruby.Ruby",
       "org.jruby.RubyObject",
-      "org.jruby.javasupport.util.RuntimeHelpers",
+      "org.jruby.runtime.Helpers",
       "org.jruby.runtime.builtin.IRubyObject",
       "org.jruby.javasupport.JavaUtil",
       "org.jruby.RubyClass"
@@ -446,7 +446,7 @@ JAVA
      */
     public #{name}() {
         this(__ruby__, __metaclass__);
-        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+        Helpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
     }
 JAVA
       end
@@ -508,7 +508,7 @@ JAVA
       declarator_string do
         <<-JAVA
 #{conversion_string(var_names)}
-        IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+        IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
         #{return_string}
         JAVA
       end
@@ -660,7 +660,7 @@ JAVA
         <<-JAVA
         this(__ruby__, __metaclass__);
 #{conversion_string(var_names)}
-        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
+        Helpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
         JAVA
       end
     end

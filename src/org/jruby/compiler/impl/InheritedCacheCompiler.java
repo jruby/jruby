@@ -48,7 +48,7 @@ import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -106,7 +106,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
-        String scopeString = RuntimeHelpers.encodeScope(scope);
+        String scopeString = Helpers.encodeScope(scope);
         
         int index = scopeCount;
         scopeCount++;
@@ -363,7 +363,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
-        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String asString = Helpers.rawBytesToString(contents.bytes());
         String key = asString + contents.getEncoding();
         
         Integer index = stringIndices.get(key);
@@ -387,7 +387,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
-        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String asString = Helpers.rawBytesToString(contents.bytes());
         String key = asString + contents.getEncoding();
 
         Integer index = stringIndices.get(key);
@@ -510,7 +510,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public int cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+        String descriptor = Helpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
                 file,
@@ -538,7 +538,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public int cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor19(
+        String descriptor = Helpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
                 file,

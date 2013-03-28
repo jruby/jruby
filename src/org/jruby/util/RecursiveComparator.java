@@ -7,7 +7,7 @@ import org.jruby.RubyArray;
 import org.jruby.Ruby;
 import org.jruby.runtime.invokedynamic.MethodNames;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 
 import java.util.Set;
 import java.util.HashSet;

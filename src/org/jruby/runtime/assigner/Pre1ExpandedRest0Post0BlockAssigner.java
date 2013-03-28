@@ -34,7 +34,7 @@ import org.jruby.RubyArray;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -55,28 +55,28 @@ public class Pre1ExpandedRest0Post0BlockAssigner extends Assigner {
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
         parameter1.assign(runtime, context, self, runtime.getNil(), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, Block block) {
         parameter1.assign(runtime, context, self, runtime.newArray(value1, value2), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
             IRubyObject value2, IRubyObject value3, Block block) {
         parameter1.assign(runtime, context, self, runtime.newArray(value1, value2, value3), block, false);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class Pre1ExpandedRest0Post0BlockAssigner extends Assigner {
     public void assignArray(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value,
             Block block) {        
         assign(runtime, context, self, value, block);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override

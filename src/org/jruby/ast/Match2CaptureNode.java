@@ -1,7 +1,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -28,7 +28,7 @@ public class Match2CaptureNode extends Match2Node {
         IRubyObject result = super.interpret(runtime, context, self, aBlock);
         DynamicScope scope = context.getCurrentScope();
 
-        RuntimeHelpers.updateScopeWithCaptures(context, scope, scopeOffsets, result);
+        Helpers.updateScopeWithCaptures(context, scope, scopeOffsets, result);
 
         return result;
     }

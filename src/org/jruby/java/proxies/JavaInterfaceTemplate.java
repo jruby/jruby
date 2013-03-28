@@ -19,7 +19,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtilities;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -85,22 +85,22 @@ public class JavaInterfaceTemplate {
             throw context.runtime.newTypeError("received " + clazz + ", expected Class/Module");
         }
 
-        return RuntimeHelpers.invokeSuper(context, self, clazz, block);
+        return Helpers.invokeSuper(context, self, clazz, block);
     }
 
     private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, final RubyClass clazz) {
         Ruby runtime = context.runtime;
         checkAlreadyReified(clazz, runtime);
 
-        IRubyObject javaClassObj = RuntimeHelpers.getInstanceVariable(self, runtime, "@java_class");
+        IRubyObject javaClassObj = Helpers.getInstanceVariable(self, runtime, "@java_class");
         IRubyObject javaInterfaces;
         if (!clazz.hasInstanceVariable("@java_interfaces")) {
             javaInterfaces = RubyArray.newArray(runtime, javaClassObj);
-            RuntimeHelpers.setInstanceVariable(javaInterfaces, clazz, "@java_interfaces");
+            Helpers.setInstanceVariable(javaInterfaces, clazz, "@java_interfaces");
 
             initInterfaceImplMethods(context, clazz);
         } else {
-            javaInterfaces = RuntimeHelpers.getInstanceVariable(clazz, runtime, "@java_interfaces");
+            javaInterfaces = Helpers.getInstanceVariable(clazz, runtime, "@java_interfaces");
             // we've already done the above priming logic, just add another interface
             // to the list of intentions unless we're past the point of no return or
             // already intend to implement the given interface
@@ -149,7 +149,7 @@ public class JavaInterfaceTemplate {
                 clazz.setAllocator(new ObjectAllocator() {
                     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                         IRubyObject newObj = proxyAllocator.allocate(runtime, klazz);
-                        RuntimeHelpers.invoke(runtime.getCurrentContext(), newObj, "__jcreate!");
+                        Helpers.invoke(runtime.getCurrentContext(), newObj, "__jcreate!");
                         return newObj;
                     }
                 });
@@ -208,7 +208,7 @@ public class JavaInterfaceTemplate {
                             return context.runtime.newBoolean(((RubyArray) interfaces).op_diff(
                                     ((JavaClass) ((JavaObject) arg.dataGetStruct()).java_class()).interfaces()).equals(RubyArray.newArray(context.runtime)));
                         } else {
-                            return RuntimeHelpers.invoke(context, self, "old_eqq", arg);
+                            return Helpers.invoke(context, self, "old_eqq", arg);
                         }
                     }
                 });
@@ -228,7 +228,7 @@ public class JavaInterfaceTemplate {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
                     IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
                     if (javaInterfaces != null && ((RubyArray) javaInterfaces).includes(context, arg)) {
-                        return RuntimeHelpers.invoke(context, arg, "implement", self);
+                        return Helpers.invoke(context, arg, "implement", self);
                     }
                     return context.runtime.getNil();
                 }
@@ -242,7 +242,7 @@ public class JavaInterfaceTemplate {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
                     RubyArray javaInterfaces = (RubyArray) self.getInstanceVariables().getInstanceVariable("@java_interfaces");
                     for (int i = 0; i < javaInterfaces.size(); i++) {
-                        RuntimeHelpers.invoke(context, JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
+                        Helpers.invoke(context, JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
                     }
                     return javaInterfaces;
                 }
@@ -310,7 +310,7 @@ public class JavaInterfaceTemplate {
 
                         target.include(javaInterfaceMods.toJavaArray());
 
-                        return RuntimeHelpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
+                        return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
                     }
                 });
             } else {
@@ -376,9 +376,9 @@ public class JavaInterfaceTemplate {
         if (implClass == null) {
             implClass = RubyClass.newClass(runtime, (RubyClass)runtime.getClass("InterfaceJavaProxy"));
             implClass.include(new IRubyObject[] {self});
-            RuntimeHelpers.setInstanceVariable(implClass, self, "@__implementation");
+            Helpers.setInstanceVariable(implClass, self, "@__implementation");
         }
 
-        return RuntimeHelpers.invoke(context, implClass, "new", args, block);
+        return Helpers.invoke(context, implClass, "new", args, block);
     }
 }

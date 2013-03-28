@@ -48,7 +48,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -348,15 +348,15 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         ThreadContext context = runtime.getCurrentContext();
             switch (type) {
                 case CALLMETHOD_NOARG:
-                    return RuntimeHelpers.invoke(context, rubyReceiver, methodName);
+                    return Helpers.invoke(context, rubyReceiver, methodName);
                 case CALLMETHOD:
-                    return RuntimeHelpers.invoke(context, rubyReceiver, methodName, rubyArgs);
+                    return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs);
                 case CALLMETHOD_WITHBLOCK:
-                    return RuntimeHelpers.invoke(context, rubyReceiver, methodName, rubyArgs, block);
+                    return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs, block);
                 case CALLSUPER:
-                    return RuntimeHelpers.invokeSuper(context, rubyReceiver, rubyArgs, Block.NULL_BLOCK);
+                    return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, Block.NULL_BLOCK);
                 case CALLSUPER_WITHBLOCK:
-                    return RuntimeHelpers.invokeSuper(context, rubyReceiver, rubyArgs, block);
+                    return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, block);
                 default:
                     break;
             }

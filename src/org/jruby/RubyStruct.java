@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -51,12 +52,11 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 
 import static org.jruby.runtime.Visibility.*;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 /**
@@ -78,7 +78,7 @@ public class RubyStruct extends RubyObject {
 
         values = new IRubyObject[size];
 
-        RuntimeHelpers.fillNil(values, runtime);
+        Helpers.fillNil(values, runtime);
     }
 
     public static RubyClass createStructClass(Ruby runtime) {
@@ -366,7 +366,7 @@ public class RubyStruct extends RubyObject {
         checkSize(args.length);
 
         System.arraycopy(args, 0, values, 0, args.length);
-        RuntimeHelpers.fillNil(values, args.length, values.length, context.runtime);
+        Helpers.fillNil(values, args.length, values.length, context.runtime);
 
         return context.nil;
     }
@@ -406,7 +406,7 @@ public class RubyStruct extends RubyObject {
             values[0] = arg0;
         }
         if (provided < values.length) {
-            RuntimeHelpers.fillNil(values, provided, values.length, context.runtime);
+            Helpers.fillNil(values, provided, values.length, context.runtime);
         }
 
         return getRuntime().getNil();
@@ -726,7 +726,7 @@ public class RubyStruct extends RubyObject {
             values = IRubyObject.NULL_ARRAY;
         } else {
             values = new IRubyObject[len];
-            RuntimeHelpers.fillNil(values, runtime);
+            Helpers.fillNil(values, runtime);
         }
 
         // FIXME: This could all be more efficient, but it's how struct works

@@ -34,7 +34,7 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -52,7 +52,7 @@ public final class CallSpecialArgBlockPassNode extends CallNode implements Speci
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         IRubyObject arg = getArgsNode().interpret(runtime, context, self, aBlock);
-        Block block = RuntimeHelpers.getBlock(runtime, context, self, iterNode, aBlock);
+        Block block = Helpers.getBlock(runtime, context, self, iterNode, aBlock);
 
         if (arg instanceof RubyArray) {
             RubyArray nodes = (RubyArray) arg;

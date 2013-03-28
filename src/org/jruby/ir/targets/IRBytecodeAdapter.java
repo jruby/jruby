@@ -10,7 +10,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -135,11 +135,11 @@ public class IRBytecodeAdapter {
     }
 
     public void invokeHelper(String name, Class... sig) {
-        adapter.invokestatic(p(RuntimeHelpers.class), name, sig(sig));
+        adapter.invokestatic(p(Helpers.class), name, sig(sig));
     }
 
     public void invokeHelper(String name, String sig) {
-        adapter.invokestatic(p(RuntimeHelpers.class), name, sig);
+        adapter.invokestatic(p(Helpers.class), name, sig);
     }
 
     public void searchConst(String name) {

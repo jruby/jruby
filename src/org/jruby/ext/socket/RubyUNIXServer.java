@@ -34,7 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -87,7 +87,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 } else {
                     UnixSocketChannel socketChannel = asUnixServer().accept();
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
                     sock.channel = socketChannel;
                     sock.fpath = "";
@@ -118,7 +118,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 try {
                     UnixSocketChannel socketChannel = ((UnixServerSocketChannel) channel).accept();
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
                     sock.channel = socketChannel;
                     sock.fpath = "";

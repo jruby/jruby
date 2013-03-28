@@ -5,7 +5,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -30,7 +30,7 @@ public class Yield19Node extends YieldNode {
             case ARGSPUSHNODE:
             case ARGSCATNODE:
             case SPLATNODE: 
-                argsResult = RuntimeHelpers.unsplatValue19IfArityOne(argsResult, yieldToBlock);
+                argsResult = Helpers.unsplatValue19IfArityOne(argsResult, yieldToBlock);
                 break;
             case ARRAYNODE:
                 // Pass-thru

@@ -35,7 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -87,6 +87,6 @@ public class BreakNode extends Node implements NonLocalControlFlowNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = valueNode.interpret(runtime, context, self, aBlock);
    
-        return RuntimeHelpers.breakJump(context, result);
+        return Helpers.breakJump(context, result);
     }
 }

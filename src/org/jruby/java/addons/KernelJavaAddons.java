@@ -10,7 +10,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -114,7 +114,7 @@ public class KernelJavaAddons {
             targetType = runtime.getJavaSupport().getNameClassMap().get(type.asJavaString());
             if (targetType == null) targetType = JavaClass.forNameVerbose(runtime, type.asJavaString());
         } else if (type instanceof RubyModule && type.respondsTo("java_class")) {
-            targetType = (JavaClass)RuntimeHelpers.invoke(context, type, "java_class");
+            targetType = (JavaClass) Helpers.invoke(context, type, "java_class");
         } else if (type instanceof JavaProxy) {
             if  (((JavaProxy)type).getObject() instanceof Class) {
                 targetType = JavaClass.get(runtime, (Class)((JavaProxy)type).getObject());

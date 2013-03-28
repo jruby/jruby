@@ -37,7 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -125,7 +125,7 @@ public class UntilNode extends Node {
                     break loop;
                 } catch (JumpException.BreakJump bj) {
                     // JRUBY-530 until case
-                    result = RuntimeHelpers.breakJumpInWhile(bj, context);
+                    result = Helpers.breakJumpInWhile(bj, context);
                     break outerLoop;
                 }
             }

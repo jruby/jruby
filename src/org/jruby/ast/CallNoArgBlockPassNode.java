@@ -33,7 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -52,6 +52,6 @@ public final class CallNoArgBlockPassNode extends CallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return callAdapter.call(context, self,
                 getReceiverNode().interpret(runtime, context, self, aBlock),
-                RuntimeHelpers.getBlock(runtime, context, self, iterNode, aBlock));
+                Helpers.getBlock(runtime, context, self, iterNode, aBlock));
     }
 }

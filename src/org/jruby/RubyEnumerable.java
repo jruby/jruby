@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.BlockBody;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
+
 import java.util.ArrayList;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
@@ -45,18 +45,11 @@ import org.jruby.common.IRubyWarnings.ID;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallBlock19;
-import org.jruby.runtime.JavaInternalBlockBody;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /**
@@ -77,43 +70,43 @@ public class RubyEnumerable {
 
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(),
+        return Helpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(),
                 Arity.OPTIONAL, callback, context));
     }
 
     public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
+        return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
                 Arity.OPTIONAL, callback, context));
     }
 
     @Deprecated
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
             BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), Arity.OPTIONAL, callback, context));
+        return Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), Arity.OPTIONAL, callback, context));
     }
 
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             Arity arity, BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(),
+        return Helpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(),
                 arity, callback, context));
     }
 
     public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
             Arity arity, BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
+        return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
                 arity, callback, context));
     }
     
     public static IRubyObject each(ThreadContext context, IRubyObject self, BlockBody body) {
         Block block = new Block(body, context.currentBinding(self, Visibility.PUBLIC));
-        return RuntimeHelpers.invoke(context, self, "each", block);
+        return Helpers.invoke(context, self, "each", block);
     }
 
     @Deprecated
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
             Arity arity, BlockCallback callback) {
-        return RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), arity, callback, context));
+        return Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), arity, callback, context));
     }
 
     private static void checkContext(ThreadContext firstContext, ThreadContext secondContext, String name) {
@@ -373,7 +366,7 @@ public class RubyEnumerable {
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         RubyArray result = runtime.newArray();
-        RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+        Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
                 Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
         return result;
     }
@@ -391,7 +384,7 @@ public class RubyEnumerable {
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         RubyArray result = runtime.newArray();
-        RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+        Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
                 Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
         result.infectBy(self);
         return result;
@@ -1688,9 +1681,9 @@ public class RubyEnumerable {
         enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(context.runtime, block, block.type));
         enumerator.getInternalVariables().setInternalVariable("chunk_initial_state", initialState);
 
-        RuntimeHelpers.invoke(context, enumerator, "initialize",
-                              CallBlock.newCallClosure(self, context.runtime.getEnumerable(), Arity.ONE_ARGUMENT,
-                                                       new ChunkedBlockCallback(context.runtime, enumerator), context));
+        Helpers.invoke(context, enumerator, "initialize",
+                CallBlock.newCallClosure(self, context.runtime.getEnumerable(), Arity.ONE_ARGUMENT,
+                        new ChunkedBlockCallback(context.runtime, enumerator), context));
         return enumerator;
     }
 

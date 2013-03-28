@@ -9,7 +9,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -66,7 +66,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
         Ruby runtime = context.runtime;
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         
-        RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, obj);
+        RubyClass singletonClass = Helpers.getSingletonClass(runtime, obj);
         metaClassBody.getStaticScope().setModule(singletonClass);
 		  return new InterpretedIRMethod(metaClassBody, Visibility.PUBLIC, singletonClass);
     }

@@ -55,7 +55,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -70,7 +70,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.CompatVersion.*;
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 // Design overview:
@@ -687,7 +687,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return RuntimeHelpers.invoke(context, ifNone, "call", this, arg);
+            return Helpers.invoke(context, ifNone, "call", this, arg);
         }
         return ifNone;
     }
@@ -1059,7 +1059,7 @@ public class RubyHash extends RubyObject implements Map {
             if (!other.respondsTo("to_hash")) {
                 return runtime.getFalse();
             } else {
-                return RuntimeHelpers.rbEqual(context, other, this);
+                return Helpers.rbEqual(context, other, this);
             }
         }
 
@@ -1080,8 +1080,8 @@ public class RubyHash extends RubyObject implements Map {
                     }
 
                     if (!(method == MethodNames.OP_EQUAL ?
-                            RuntimeHelpers.rbEqual(context, value, value2) :
-                            RuntimeHelpers.rbEql(context, value, value2)).isTrue()) {
+                            Helpers.rbEqual(context, value, value2) :
+                            Helpers.rbEql(context, value, value2)).isTrue()) {
                         throw MISMATCH;
                     }
                 }
@@ -1545,7 +1545,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return RuntimeHelpers.invoke(context, ifNone, "call", this, getRuntime().getNil());
+            return Helpers.invoke(context, ifNone, "call", this, getRuntime().getNil());
         } else {
             return ifNone;
         }

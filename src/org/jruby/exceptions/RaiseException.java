@@ -34,8 +34,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -46,7 +44,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -103,7 +101,7 @@ public class RaiseException extends JumpException {
         if (DEBUG) {
             Thread.dumpStack();
         }
-        setException((RubyException)RuntimeHelpers.invoke(
+        setException((RubyException) Helpers.invoke(
                 runtime.getCurrentContext(),
                 excptnClass,
                 "new",
@@ -122,7 +120,7 @@ public class RaiseException extends JumpException {
         if (DEBUG) {
             Thread.dumpStack();
         }
-        setException((RubyException)RuntimeHelpers.invoke(
+        setException((RubyException) Helpers.invoke(
                 runtime.getCurrentContext(),
                 excptnClass,
                 "new",

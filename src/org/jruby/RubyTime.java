@@ -63,7 +63,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
 import static org.jruby.CompatVersion.*;
 
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** The Time class.

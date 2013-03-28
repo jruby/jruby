@@ -61,13 +61,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import org.jcodings.Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -78,20 +76,17 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
-import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
@@ -710,10 +705,10 @@ public class JavaClass extends JavaObject {
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
                 if(v < 0 || v == (newArgs.length)) {
-                    return RuntimeHelpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
+                    return Helpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return RuntimeHelpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
+                    return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
                 }
             }
         });

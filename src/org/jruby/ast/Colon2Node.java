@@ -37,7 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -86,6 +86,6 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
     	if (leftNode != null && leftNode instanceof NilNode) {
             throw context.runtime.newTypeError("no outer class/module");
         }
-        return RuntimeHelpers.prepareClassNamespace(context, context.getCurrentStaticScope(), leftNode.interpret(runtime, context, self, aBlock));
+        return Helpers.prepareClassNamespace(context, context.getCurrentStaticScope(), leftNode.interpret(runtime, context, self, aBlock));
     }
  }

@@ -38,14 +38,13 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /**
@@ -123,7 +122,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
 
         if (name != null &&
                 klazz != null &&
-                RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
+                Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
             return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, runtime.getDefinedMessage(DefinedMessage.SUPER), self, aBlock);
         }
             

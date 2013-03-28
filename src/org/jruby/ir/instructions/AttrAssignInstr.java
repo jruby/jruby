@@ -6,7 +6,7 @@ import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
@@ -48,7 +48,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
         IRubyObject[] values = prepareArguments(context, self, getCallArgs(), dynamicScope, temp);
         
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        RuntimeHelpers.invoke(context, object, getMethodAddr().getName(), values, callType, Block.NULL_BLOCK);
+        Helpers.invoke(context, object, getMethodAddr().getName(), values, callType, Block.NULL_BLOCK);
         return null;
     }
 

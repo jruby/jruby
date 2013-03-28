@@ -34,13 +34,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -237,7 +236,7 @@ public class RubyProc extends RubyObject implements DataType {
             
             // pad with nil
             if (required > actual) {
-                RuntimeHelpers.fillNil(newArgs, actual, required, context.runtime);
+                Helpers.fillNil(newArgs, actual, required, context.runtime);
             }
             
             args = newArgs;
@@ -351,7 +350,7 @@ public class RubyProc extends RubyObject implements DataType {
 
         if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
 
-        return RuntimeHelpers.parameterListToParameters(context.runtime,
+        return Helpers.parameterListToParameters(context.runtime,
                 body.getParameterList(), isLambda());
     }
 

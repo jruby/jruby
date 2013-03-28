@@ -19,7 +19,7 @@ Note: Recompile with -Xlint:deprecation for details.
 ~/projects/jruby/samples/jrubyc_java ➔ cat OverloadedClass.java 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.RubyClass;
@@ -41,7 +41,7 @@ public class OverloadedClass extends RubyObject  {
 
   public void run(String a) {
     IRubyObject ruby_a = JavaUtil.convertJavaToRuby(__ruby__, a);
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "run1" ,ruby_a);
+    IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), this, "run1" ,ruby_a);
     
   }
 
@@ -49,7 +49,7 @@ public class OverloadedClass extends RubyObject  {
 
   public void run(int a) {
     IRubyObject ruby_a = JavaUtil.convertJavaToRuby(__ruby__, a);
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "run2" ,ruby_a);
+    IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), this, "run2" ,ruby_a);
     
   }
 

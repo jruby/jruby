@@ -29,7 +29,8 @@ package org.jruby;
 
 import java.util.Collections;
 import java.util.List;
-import org.jruby.javasupport.util.RuntimeHelpers;
+
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -37,38 +38,38 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.RubyJavaObject;
 import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.invokedynamic.MethodNames;
+
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.Helpers.invokedynamic;
 import org.jruby.util.TypeConverter;
 
 public final class BasicObjectStub {
     public static IRubyObject callSuper(IRubyObject self, ThreadContext context, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invokeSuper(context, self, args, block);
+        return Helpers.invokeSuper(context, self, args, block);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, String name) {
-        return RuntimeHelpers.invoke(context, self, name);
+        return Helpers.invoke(context, self, name);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, self, name, arg);
+        return Helpers.invoke(context, self, name, arg);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, self, name, args);
+        return Helpers.invoke(context, self, name, args);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, String name, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invoke(context, self, name, args, block);
+        return Helpers.invoke(context, self, name, args, block);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, int methodIndex, String name) {
-        return RuntimeHelpers.invoke(context, self, name);
+        return Helpers.invoke(context, self, name);
     }
 
     public static IRubyObject callMethod(IRubyObject self, ThreadContext context, int methodIndex, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, self, name, arg);
+        return Helpers.invoke(context, self, name, arg);
     }
 
     public static boolean isNil(IRubyObject self) {
@@ -149,7 +150,7 @@ public final class BasicObjectStub {
     }
 
     public static RubyString asString(IRubyObject self) {
-        IRubyObject str = RuntimeHelpers.invoke(getRuntime(self).getCurrentContext(), self, "to_s");
+        IRubyObject str = Helpers.invoke(getRuntime(self).getCurrentContext(), self, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString)anyToString(self);
         if (isTaint(self)) str.setTaint(true);
@@ -240,7 +241,7 @@ public final class BasicObjectStub {
             }
         }
 
-        return RuntimeHelpers.invoke(runtime.getCurrentContext(), self, "to_s");
+        return Helpers.invoke(runtime.getCurrentContext(), self, "to_s");
     }
 
 

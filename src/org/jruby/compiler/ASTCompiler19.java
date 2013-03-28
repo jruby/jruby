@@ -53,7 +53,7 @@ import org.jruby.ast.SValue19Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.Yield19Node;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.DefinedMessage;
@@ -311,10 +311,10 @@ public class ASTCompiler19 extends ASTCompiler {
         if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, RuntimeHelpers.encodeParameterList(argsNode), inspector);
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, Helpers.encodeParameterList(argsNode), inspector);
         } else {
             context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, RuntimeHelpers.encodeParameterList(argsNode), inspector);
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, Helpers.encodeParameterList(argsNode), inspector);
         }
     }
 

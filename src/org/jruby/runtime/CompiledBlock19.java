@@ -30,7 +30,6 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,7 +46,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     /**
      * Whether the arguments "need splat".
      *
-     * @see RuntimeHelpers#needsSplat19(int, boolean)
+     * @see Helpers#needsSplat19(int, boolean)
      */
     private final boolean needsSplat;
     
@@ -75,7 +74,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.parameterList = parameterList;
-        this.needsSplat = RuntimeHelpers.needsSplat19(arity().required(), !arity().isFixed());
+        this.needsSplat = Helpers.needsSplat19(arity().required(), !arity().isFixed());
     }
 
     @Override
@@ -182,7 +181,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     private IRubyObject[] setupBlockArgs(IRubyObject value, Block.Type type, boolean alreadyArray) {
-        return RuntimeHelpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
+        return Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
     }
 
     public String getFile() {

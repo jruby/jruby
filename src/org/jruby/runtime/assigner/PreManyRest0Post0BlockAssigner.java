@@ -33,7 +33,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,7 +57,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
         assignNilTo(runtime, context, self, block, 0);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
         pre.get(0).assign(runtime, context, self, value1, block, false);
 
         assignNilTo(runtime, context, self, block, 1);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
         pre.get(1).assign(runtime, context, self, value1, block, false);
 
         assignNilTo(runtime, context, self, block, 2);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
         pre.get(2).assign(runtime, context, self, value1, block, false);
 
         assignNilTo(runtime, context, self, block, 3);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
         if (valueLength < preLength) {
             assignNilTo(runtime, context, self, block, valueLength);
         }
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class PreManyRest0Post0BlockAssigner extends Assigner {
         for (int i = 0; i < preLength && i < valueLength; i++) {
             pre.get(i).assign(runtime, context, self, values.eltInternal(i), block, false);
         }
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     private void assignNilTo(Ruby runtime, ThreadContext context, IRubyObject self, Block block,

@@ -44,7 +44,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -54,7 +54,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.InterpretedBlock;
-import org.jruby.util.ByteList;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ir.interpreter.Interpreter;
 
@@ -329,7 +328,7 @@ public class ASTInterpreter {
             proc = bodyNode.interpret(runtime, context, self, currentBlock);
         }
 
-        return RuntimeHelpers.getBlockFromBlockPassBody(proc, currentBlock);
+        return Helpers.getBlockFromBlockPassBody(proc, currentBlock);
     }
 
     private static Block getIterNodeBlock(Node blockNode, ThreadContext context, IRubyObject self) {

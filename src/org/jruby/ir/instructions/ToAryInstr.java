@@ -9,7 +9,7 @@ import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -76,7 +76,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
             return receiver;
         } else {
             IRubyObject rcvr = (IRubyObject)receiver;
-            IRubyObject ary  = RuntimeHelpers.aryToAry(rcvr);
+            IRubyObject ary  = Helpers.aryToAry(rcvr);
             if (ary instanceof RubyArray) {
                 return ary;
             } else {

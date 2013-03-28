@@ -1,11 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -18,8 +14,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CompiledIRMethod extends DynamicMethod implements PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("CompiledIRMethod");

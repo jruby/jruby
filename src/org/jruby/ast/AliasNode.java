@@ -35,7 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -87,9 +87,9 @@ public class AliasNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String newerName = RuntimeHelpers.interpretAliasUndefName(newName, runtime, context, self, aBlock);
-        String olderName = RuntimeHelpers.interpretAliasUndefName(oldName, runtime, context, self, aBlock);
+        String newerName = Helpers.interpretAliasUndefName(newName, runtime, context, self, aBlock);
+        String olderName = Helpers.interpretAliasUndefName(oldName, runtime, context, self, aBlock);
 
-        return RuntimeHelpers.defineAlias(context, self, newerName, olderName);
+        return Helpers.defineAlias(context, self, newerName, olderName);
     }
 }

@@ -32,7 +32,7 @@ package org.jruby.runtime.assigner;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.Node;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,7 +66,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
         parameter3.assign(runtime, context, self, nil, block, false);
 
         rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
         parameter3.assign(runtime, context, self, runtime.getNil(), block, false);
 
         rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
         parameter3.assign(runtime, context, self, runtime.getNil(), block, false);
 
         rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
         parameter3.assign(runtime, context, self, value3, block, false);
 
         rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
-        blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+        blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
 
                 rest.assign(runtime, context, self,
                         runtime.newArrayNoCopyLight(shiftedArray(values, 3)), block, true);
-                blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+                blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
                 break;
         }
     }
@@ -158,7 +158,7 @@ public class Pre3Rest1Post0BlockAssigner extends Assigner {
                 parameter3.assign(runtime, context, self, values.eltInternal(2), block, false);
 
                 rest.assign(runtime, context, self, values.subseqLight(3, length - 3), block, true);
-                blockVar.assign(runtime, context, self, RuntimeHelpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
+                blockVar.assign(runtime, context, self, Helpers.processBlockArgument(runtime, block), Block.NULL_BLOCK, false);
                 break;
         }
     }
