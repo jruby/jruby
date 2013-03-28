@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledSharedScopeBlock extends CompiledBlockLight {
     public static Block newCompiledSharedScopeClosure(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = context.currentBinding(self, Visibility.PUBLIC, dynamicScope);
+        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC, dynamicScope);
         BlockBody body = new CompiledSharedScopeBlock(arity, dynamicScope, callback, hasMultipleArgsHead, argumentType);
         
         return new Block(body, binding);
