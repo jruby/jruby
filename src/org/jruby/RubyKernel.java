@@ -1151,9 +1151,10 @@ public class RubyKernel {
             RubyRange range = (RubyRange) args[0];
             level = RubyNumeric.fix2int(range.first());
             length = RubyNumeric.fix2int(range.last()) - level;
-            if (range.exclude_end_p().isTrue()){
-                length--;
+            if (!range.exclude_end_p().isTrue()){
+                length++;
             }
+            length = length < 0 ? 0 : length;
         } else if (args.length > 0) {
             level = RubyNumeric.fix2int(args[0]);
         } else {
@@ -1162,6 +1163,9 @@ public class RubyKernel {
 
         if (level < 0) {
             throw context.runtime.newArgumentError("negative level (" + level + ')');
+        }
+        if (length != null && length < 0) {
+            throw context.runtime.newArgumentError("negative size (" + length + ')');
         }
 
         return context.createCallerBacktrace(context.runtime, level, length);

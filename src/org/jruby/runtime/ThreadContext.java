@@ -735,9 +735,9 @@ public final class ThreadContext {
         runtime.incrementCallerCount();
         
         RubyStackTraceElement[] trace = gatherCallerBacktrace();
-        int traceLength = length != null ? length + level : trace.length;
+        int traceLength = length != null ? length : trace.length - level;
         
-        RubyArray newTrace = runtime.newArray(traceLength - level);
+        RubyArray newTrace = runtime.newArray(traceLength);
 
         for (int i = level; i < traceLength; i++) {
             addBackTraceElement(runtime, newTrace, trace[i]);
