@@ -72,7 +72,11 @@ public final class Block {
     
     private final BlockBody body;
     
-    private boolean[] escaped;
+    /** Whether this block and any clones of it should be considered "escaped" */
+    private boolean escaped;
+    
+    /** What block to use for determining escape; defaults to this */
+    private Block escapeBlock = this;
     
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -168,8 +172,7 @@ public final class Block {
         Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;
-        if (escaped == null) escaped = new boolean[]{false};
-        newBlock.escaped = escaped;
+        newBlock.escapeBlock = this;
 
         return newBlock;
     }
@@ -228,20 +231,11 @@ public final class Block {
     }
     
     public boolean isEscaped() {
-        return escaped != null && escaped[0];
+        return escapeBlock.escaped;
     }
     
     public void escape() {
-        if (proc == null) {
-            // has not been captured into a proc, so it's dead
-            return;
-        }
-        
-        if (escaped == null) {
-            escaped = new boolean[]{true};
-        } else {
-            this.escaped[0] = true;
-        }
+        escapeBlock.escaped = true;
     }
 
     @Override
