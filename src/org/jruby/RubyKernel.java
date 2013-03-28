@@ -1142,23 +1142,23 @@ public class RubyKernel {
 
     @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-		int level;
-		Integer length = null;
-		if (args.length > 1){
-			level = RubyNumeric.fix2int(args[0]);
-			length = RubyNumeric.fix2int(args[1]);
-		} else if (args.length > 0 && args[0] instanceof RubyRange){
-			RubyRange range = (RubyRange) args[0];
-			level = RubyNumeric.fix2int(range.first());
-			length = RubyNumeric.fix2int(range.last()) - level;
-			if (range.exclude_end_p().isTrue()){
-				length--;
-			}
-		} else if (args.length > 0){
-			level = RubyNumeric.fix2int(args[0]);
-		} else {
-			level = 1;
-		}
+        int level;
+        Integer length = null;
+        if (args.length > 1) {
+            level = RubyNumeric.fix2int(args[0]);
+            length = RubyNumeric.fix2int(args[1]);
+        } else if (args.length > 0 && args[0] instanceof RubyRange) {
+            RubyRange range = (RubyRange) args[0];
+            level = RubyNumeric.fix2int(range.first());
+            length = RubyNumeric.fix2int(range.last()) - level;
+            if (range.exclude_end_p().isTrue()){
+                length--;
+            }
+        } else if (args.length > 0) {
+            level = RubyNumeric.fix2int(args[0]);
+        } else {
+            level = 1;
+        }
 
         if (level < 0) {
             throw context.runtime.newArgumentError("negative level (" + level + ')');
