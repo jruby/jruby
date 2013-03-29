@@ -258,6 +258,8 @@ public class Main {
             // use drip's runtime, reinitializing config
             runtime = DripMain.DRIP_RUNTIME;
             runtime.reinitialize(true);
+        } else if (!config.getHasScriptArgv()) {
+            return new Status();
         } else {
             runtime = Ruby.newInstance(config);
         }

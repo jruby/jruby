@@ -703,6 +703,7 @@ public class RubyInstanceConfig {
     }
     
     public void setHasInlineScript(boolean hasInlineScript) {
+        this.hasScriptArgv = true;
         this.hasInlineScript = hasInlineScript;
     }
     
@@ -767,6 +768,7 @@ public class RubyInstanceConfig {
     }
 
     public void setScriptFileName(String scriptFileName) {
+        this.hasScriptArgv = true;
         this.scriptFileName = scriptFileName;
     }
 
@@ -1041,6 +1043,14 @@ public class RubyInstanceConfig {
         this.traceType = traceType;
     }
 
+    public void setHasScriptArgv(boolean argvRemains) {
+        hasScriptArgv = argvRemains;
+    }
+    
+    public boolean getHasScriptArgv() {
+        return hasScriptArgv;
+    }
+    
     /**
      * Whether to mask .java lines in the Ruby backtrace, as MRI does for C calls.
      *
@@ -1282,6 +1292,7 @@ public class RubyInstanceConfig {
     private boolean disableGems = false;
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
+    private boolean hasScriptArgv = false;
 
     private String jrubyHome;
     
