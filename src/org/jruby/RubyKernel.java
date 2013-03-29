@@ -1140,15 +1140,35 @@ public class RubyKernel {
         return continuation.enter(context, continuation, block);
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
+        int level;
+        Integer length = null;
+        if (args.length > 1) {
+            level = RubyNumeric.fix2int(args[0]);
+            length = RubyNumeric.fix2int(args[1]);
+        } else if (args.length > 0 && args[0] instanceof RubyRange) {
+            RubyRange range = (RubyRange) args[0];
+            level = RubyNumeric.fix2int(range.first());
+            length = RubyNumeric.fix2int(range.last()) - level;
+            if (!range.exclude_end_p().isTrue()){
+                length++;
+            }
+            length = length < 0 ? 0 : length;
+        } else if (args.length > 0) {
+            level = RubyNumeric.fix2int(args[0]);
+        } else {
+            level = 1;
+        }
 
         if (level < 0) {
             throw context.runtime.newArgumentError("negative level (" + level + ')');
         }
+        if (length != null && length < 0) {
+            throw context.runtime.newArgumentError("negative size (" + length + ')');
+        }
 
-        return context.createCallerBacktrace(context.runtime, level);
+        return context.createCallerBacktrace(context.runtime, level, length);
     }
     
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
