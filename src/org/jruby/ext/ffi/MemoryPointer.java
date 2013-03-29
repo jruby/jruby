@@ -14,16 +14,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
-public final class MemoryPointer extends Pointer {
+public class MemoryPointer extends Pointer {
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("MemoryPointer",
+        RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
                 module.getClass("Pointer"),
-                MemoryPointerAllocator.INSTANCE);
-        result.defineAnnotatedMethods(MemoryPointer.class);
-        result.defineAnnotatedConstants(MemoryPointer.class);
+                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
+        memptrClass.defineAnnotatedMethods(MemoryPointer.class);
+        memptrClass.defineAnnotatedConstants(MemoryPointer.class);
+        memptrClass.setReifiedClass(MemoryPointer.class);
+        memptrClass.kindOf = new RubyModule.KindOf() {
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof MemoryPointer && super.isKindOf(obj, type);
+            }
+        };
 
-        return result;
+        return memptrClass;
     }
 
     private static final class MemoryPointerAllocator implements ObjectAllocator {
@@ -35,8 +42,9 @@ public final class MemoryPointer extends Pointer {
     }
 
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass) {
-        super(runtime, (RubyClass) klass);
+
+    public MemoryPointer(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     private MemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long total, int typeSize) {

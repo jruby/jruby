@@ -2,11 +2,8 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -25,24 +22,30 @@ import static org.jruby.runtime.Visibility.*;
 @JRubyClass(name="FFI::Pointer", parent=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
 public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("Pointer",
+        RubyClass pointerClass = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                PointerAllocator.INSTANCE);
+                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(Pointer.class) : PointerAllocator.INSTANCE);
 
-        result.defineAnnotatedMethods(Pointer.class);
-        result.defineAnnotatedConstants(Pointer.class);
-
+        pointerClass.defineAnnotatedMethods(Pointer.class);
+        pointerClass.defineAnnotatedConstants(Pointer.class);
+        pointerClass.setReifiedClass(Pointer.class);
+        pointerClass.kindOf = new RubyModule.KindOf() {
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof Pointer && super.isKindOf(obj, type); 
+            }
+        };
 
         module.defineClassUnder("NullPointerError", runtime.getRuntimeError(),
                 runtime.getRuntimeError().getAllocator());
 
         // Add Pointer::NULL as a constant
-        Pointer nullPointer = new Pointer(runtime, result, new NullMemoryIO(runtime));
-        result.setConstant("NULL", nullPointer);
+        Pointer nullPointer = new Pointer(runtime, pointerClass, new NullMemoryIO(runtime));
+        pointerClass.setConstant("NULL", nullPointer);
         
         runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer));
 
-        return result;
+        return pointerClass;
     }
 
     private static final class PointerAllocator implements ObjectAllocator {
@@ -57,7 +60,7 @@ public class Pointer extends AbstractMemory {
         return runtime.getFFI().nullPointer;
     }
 
-    Pointer(Ruby runtime, RubyClass klazz) {
+    public Pointer(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz, runtime.getFFI().getNullMemoryIO(), 0);
     }
 

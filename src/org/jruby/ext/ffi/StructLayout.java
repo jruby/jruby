@@ -101,6 +101,7 @@ public final class StructLayout extends Type {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
         layoutClass.defineAnnotatedMethods(StructLayout.class);
         layoutClass.defineAnnotatedConstants(StructLayout.class);
+        layoutClass.setReifiedClass(StructLayout.class);
 
         RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);

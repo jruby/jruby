@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -23,7 +24,7 @@ import org.jruby.util.PhantomReferenceReaper;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
-public final class AutoPointer extends Pointer {
+public class AutoPointer extends Pointer {
     static final String AUTOPTR_CLASS_NAME = "AutoPointer";
     
     /** Keep strong references to the Reaper until cleanup */
@@ -35,13 +36,20 @@ public final class AutoPointer extends Pointer {
     private transient volatile Reaper reaper;
     
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(AUTOPTR_CLASS_NAME,
+        RubyClass autoptrClass = module.defineClassUnder(AUTOPTR_CLASS_NAME,
                 module.getClass("Pointer"),
-                AutoPointerAllocator.INSTANCE);
-        result.defineAnnotatedMethods(AutoPointer.class);
-        result.defineAnnotatedConstants(AutoPointer.class);
+                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(AutoPointer.class) : AutoPointerAllocator.INSTANCE);
+        autoptrClass.defineAnnotatedMethods(AutoPointer.class);
+        autoptrClass.defineAnnotatedConstants(AutoPointer.class);
+        autoptrClass.setReifiedClass(AutoPointer.class);
+        autoptrClass.kindOf = new RubyModule.KindOf() {
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof AutoPointer && super.isKindOf(obj, type);
+            }
+        };
 
-        return result;
+        return autoptrClass;
     }
 
     private static final class AutoPointerAllocator implements ObjectAllocator {
@@ -53,7 +61,7 @@ public final class AutoPointer extends Pointer {
 
     }
 
-    private AutoPointer(Ruby runtime, RubyClass klazz) {
+    public AutoPointer(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz, runtime.getFFI().getNullMemoryIO());
     }
     
