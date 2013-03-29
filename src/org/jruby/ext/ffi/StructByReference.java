@@ -77,14 +77,14 @@ public final class StructByReference extends RubyObject {
 
     @JRubyMethod(name = "to_native")
     public IRubyObject to_native(ThreadContext context, IRubyObject value, IRubyObject ctx) {
-        if (value instanceof Struct) {
+        if (value instanceof Struct && structClass.isInstance(value)) {
             return ((Struct) value).getMemory();
 
         } else if (value.isNil()) {
             return Pointer.getNull(context.runtime);
 
         } else {
-            throw context.runtime.newTypeError(value, context.runtime.getFFI().structClass);
+            throw context.runtime.newTypeError(value, structClass);
         }
     }
 
