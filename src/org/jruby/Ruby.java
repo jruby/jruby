@@ -721,6 +721,7 @@ public final class Ruby {
             final StaticScope staticScope = scope.getStaticScope();
             staticScope.setModule(getTopSelf().getMetaClass());
             return new AbstractScript() {
+                @Override
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
                         return (IRubyObject)compiled.getMethod("__script__0", ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf(), block);
@@ -735,6 +736,7 @@ public final class Ruby {
                     }
                 }
 
+                @Override
                 public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
                     try {
                         Helpers.preLoadCommon(context, staticScope, false);
@@ -2471,10 +2473,12 @@ public final class Ruby {
      */
     public void defineVariable(final GlobalVariable variable, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
         globalVariables.define(variable.name(), new IAccessor() {
+            @Override
             public IRubyObject getValue() {
                 return variable.get();
             }
 
+            @Override
             public IRubyObject setValue(IRubyObject newValue) {
                 return variable.set(newValue);
             }
@@ -2832,6 +2836,7 @@ public final class Ruby {
             }
         }
 
+        @Override
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
         }
@@ -4649,11 +4654,13 @@ public final class Ruby {
     }
 
     private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
+        @Override
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
         }
     };
 
     private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
+        @Override
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
             if (useObjectSpace) runtime.objectSpace.add(object);
         }
