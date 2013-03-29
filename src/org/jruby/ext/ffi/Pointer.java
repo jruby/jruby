@@ -54,7 +54,7 @@ public class Pointer extends AbstractMemory {
     }
 
     public static final Pointer getNull(Ruby runtime) {
-        return (Pointer) runtime.getFFI().pointerClass.getConstant("NULL");
+        return runtime.getFFI().nullPointer;
     }
 
     Pointer(Ruby runtime, RubyClass klazz) {
