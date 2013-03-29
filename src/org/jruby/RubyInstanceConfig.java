@@ -874,7 +874,7 @@ public class RubyInstanceConfig {
     }
     
     public boolean getShouldRunInterpreter() {
-        return shouldRunInterpreter;
+        return shouldRunInterpreter && (hasScriptArgv || !showVersion);
     }
 
     @Deprecated
