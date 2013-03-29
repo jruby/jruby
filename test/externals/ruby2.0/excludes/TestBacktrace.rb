@@ -1,5 +1,0 @@
-exclude :test_caller_lev_and_n, "needs investigation"
-exclude :test_caller_locations, "needs investigation"
-exclude :test_caller_locations_to_s_inspect, "needs investigation"
-exclude :test_caller_locations_with_range, "needs investigation"
-exclude :test_thread_backtrace, "needs investigation"

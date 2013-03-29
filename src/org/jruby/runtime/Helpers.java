@@ -2264,6 +2264,7 @@ public class Helpers {
     }
 
     public static void fillNil(IRubyObject[]arr, int from, int to, Ruby runtime) {
+        if (arr.length == 0) return;
         IRubyObject nils[] = runtime.getNilPrefilledArray();
         int i;
 
@@ -2274,6 +2275,7 @@ public class Helpers {
     }
 
     public static void fillNil(IRubyObject[]arr, Ruby runtime) {
+        if (arr.length == 0) return;
         fillNil(arr, 0, arr.length, runtime);
     }
 

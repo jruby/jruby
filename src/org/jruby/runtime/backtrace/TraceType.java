@@ -73,6 +73,10 @@ public class TraceType {
     public static void dumpCaller(RubyArray trace) {
         LOG.info("Caller backtrace generated:\n" + trace);
     }
+    
+    public static void dumpCaller(RubyStackTraceElement[] trace) {
+        LOG.info("Caller backtrace generated:\n" + Arrays.toString(trace));
+    }
 
     public static void dumpWarning(RubyStackTraceElement[] trace) {
         LOG.info("Warning backtrace generated:\n" + Arrays.toString(trace));

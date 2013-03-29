@@ -76,7 +76,7 @@ import java.util.Map;
 
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
-import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.CompatVersion.RUBY2_0;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.LASTLINE;
@@ -1140,8 +1140,41 @@ public class RubyKernel {
         return continuation.enter(context, continuation, block);
     }
 
-    @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE, omit = true, compat = RUBY1_8)
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return caller19(context, recv, args, block);
+    }
+    
+    @JRubyMethod(name = "caller", optional = 1, module = true, visibility = PRIVATE, omit = true, compat = RUBY1_9)
+    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
+
+        if (level < 0) {
+            throw context.runtime.newArgumentError("negative level (" + level + ')');
+        }
+
+        return context.createCallerBacktrace(level, Thread.currentThread().getStackTrace());
+    }
+
+    @JRubyMethod(name = "caller", optional = 2, module = true, visibility = PRIVATE, omit = true, compat = RUBY2_0)
+    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
+        Integer level = ll[0], length = ll[1];
+
+        return context.createCallerBacktrace(level, length, Thread.currentThread().getStackTrace());
+    }
+    
+    @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true, compat = RUBY2_0)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
+        Integer level = ll[0], length = ll[1];
+        
+        return context.createCallerLocations(level, length, Thread.currentThread().getStackTrace());
+    }
+    
+    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject[] args, int defaultLevel) {
         int level;
         Integer length = null;
         if (args.length > 1) {
@@ -1158,26 +1191,17 @@ public class RubyKernel {
         } else if (args.length > 0) {
             level = RubyNumeric.fix2int(args[0]);
         } else {
-            level = 1;
+            level = defaultLevel;
         }
 
         if (level < 0) {
-            throw context.runtime.newArgumentError("negative level (" + level + ')');
+            throw runtime.newArgumentError("negative level (" + level + ')');
         }
         if (length != null && length < 0) {
-            throw context.runtime.newArgumentError("negative size (" + length + ')');
+            throw runtime.newArgumentError("negative size (" + length + ')');
         }
-
-        return context.createCallerBacktrace(context.runtime, level, length);
-    }
-    
-    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        RubyStackTraceElement[] elements =
-                TraceType.Gather.CALLER.getBacktraceData(context, Thread.currentThread().getStackTrace(), true).getBacktrace(runtime);
         
-        return RubyThread.Location.newLocationArray(runtime, elements);
+        return new Integer[] {level, length};
     }
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_8)

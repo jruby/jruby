@@ -1037,16 +1037,25 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject backtrace(ThreadContext context) {
-        return getContext().createCallerBacktrace(context.runtime, 0);
+        return getContext().createCallerBacktrace(0, getNativeThread().getStackTrace());
+    }
+
+    @JRubyMethod(name = "backtrace", optional = 2, compat = CompatVersion.RUBY2_0)
+    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
+        Integer level = ll[0], length = ll[1];
+        
+        return getContext().createCallerBacktrace(level, length, getNativeThread().getStackTrace());
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY2_0)
-    public IRubyObject backtrace_locations(ThreadContext context) {
+    @JRubyMethod(optional = 2, compat = CompatVersion.RUBY2_0)
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        RubyStackTraceElement[] elements =
-                TraceType.Gather.CALLER.getBacktraceData(context, getNativeThread().getStackTrace(), true).getBacktrace(runtime);
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
+        Integer level = ll[0], length = ll[1];
         
-        return RubyThread.Location.newLocationArray(runtime, elements);
+        return context.createCallerLocations(level, length, getNativeThread().getStackTrace());
     }
 
     public StackTraceElement[] javaBacktrace() {

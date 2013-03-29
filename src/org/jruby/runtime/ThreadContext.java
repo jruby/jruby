@@ -36,6 +36,7 @@
 package org.jruby.runtime;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -720,8 +721,8 @@ public final class ThreadContext {
      * @param level
      * @return an Array with the backtrace
      */
-    public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
-        return createCallerBacktrace(runtime, level, null);
+    public IRubyObject createCallerBacktrace(int level, StackTraceElement[] stacktrace) {
+        return createCallerBacktrace(level, null, stacktrace);
     }
 
     /**
@@ -731,21 +732,62 @@ public final class ThreadContext {
      * @param length
      * @return an Array with the backtrace
      */
-    public IRubyObject createCallerBacktrace(Ruby runtime, int level, Integer length) {
+    public IRubyObject createCallerBacktrace(int level, Integer length, StackTraceElement[] stacktrace) {
         runtime.incrementCallerCount();
         
-        RubyStackTraceElement[] trace = gatherCallerBacktrace();
-        int traceLength = length != null ? length : trace.length - level;
+        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
         
-        RubyArray newTrace = runtime.newArray(traceLength);
+        if (trace == null) return nil;
+        
+        RubyArray newTrace = runtime.newArray(trace.length);
 
-        for (int i = level; i < traceLength; i++) {
-            addBackTraceElement(runtime, newTrace, trace[i]);
+        for (int i = level; i - level < trace.length; i++) {
+            addBackTraceElement(runtime, newTrace, trace[i - level]);
         }
         
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(newTrace);
         
         return newTrace;
+    }
+
+    /**
+     * Create an array containing Thread::Backtrace::Location objects for the
+     * requested caller trace level and length.
+     * 
+     * @param level the level at which the trace should start
+     * @param length the length of the trace
+     * @return an Array with the backtrace locations
+     */
+    public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
+        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
+        
+        if (trace == null) return nil;
+        
+        return RubyThread.Location.newLocationArray(runtime, trace);
+    }
+    
+    private RubyStackTraceElement[] getTraceSubset(int level, Integer length, StackTraceElement[] stacktrace) {
+        runtime.incrementCallerCount();
+        
+        if (length != null && length == 0) return new RubyStackTraceElement[0];
+        
+        RubyStackTraceElement[] trace =
+                TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
+        
+        int traceLength = safeLength(level, length, trace);
+        
+        if (traceLength < 0) return null;
+        
+        trace = Arrays.copyOfRange(trace, level, level + traceLength);
+        
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(trace);
+        
+        return trace;
+    }
+    
+    private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
+        int baseLength = trace.length - level;
+        return length != null ? Math.min(length, baseLength) : baseLength;
     }
 
     /**

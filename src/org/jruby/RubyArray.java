@@ -309,12 +309,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     
     protected RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
-        values = new IRubyObject[length];
+        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
     private RubyArray(Ruby runtime, int length, boolean objectspace) {
         super(runtime, runtime.getArray(), objectspace);
-        values = new IRubyObject[length];
+        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
     /* NEWOBJ and OBJSETUP equivalent
@@ -333,7 +333,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     private RubyArray(Ruby runtime, RubyClass klass, int length) {
         super(runtime, klass);
-        values = new IRubyObject[length];
+        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
     private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[]vals, boolean objectspace) {
@@ -359,7 +359,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private void alloc(int length) {
-        final IRubyObject[] newValues = new IRubyObject[length];
+        IRubyObject[] newValues = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
         Helpers.fillNil(newValues, getRuntime());
         values = newValues;
         begin = 0;
