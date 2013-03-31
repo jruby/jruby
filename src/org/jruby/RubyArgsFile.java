@@ -235,7 +235,9 @@ public class RubyArgsFile {
             }
         }
 
-        if (!line.isNil()) {
+        assert line == null;
+        
+        if (line != null && !line.isNil()) {
             context.runtime.setCurrentLine(data.currentLineNumber);
         }
 
