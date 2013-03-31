@@ -715,7 +715,7 @@ public class InvocationLinker {
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
             // Ruby to Core
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createNativeHandle(site, method, site.name()), site, method, true);
+            return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, site.name()), site, method, true);
         }
         
     }
@@ -1451,7 +1451,7 @@ public class InvocationLinker {
     // Dispatch via direct handle to native core method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createNativeHandle(JRubyCallSite site, DynamicMethod method, String name) {
+    private static MethodHandle createNativeHandle(Ruby runtime, JRubyCallSite site, DynamicMethod method, String name) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
 
@@ -1476,8 +1476,12 @@ public class InvocationLinker {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        
+        // if native method returns void, return nil instead
+        if (nativeCall.getNativeReturn() == void.class) {
+            nativeTarget = filterReturnValue(nativeTarget, constant(IRubyObject.class, runtime.getNil()));
+        }
 
-        int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
         Signature fullSig = site.fullSignature();
         Signature target;
 
