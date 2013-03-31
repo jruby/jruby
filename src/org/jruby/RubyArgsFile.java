@@ -188,10 +188,12 @@ public class RubyArgsFile {
 
         runtime.setArgsFile(argsFile);
         runtime.getGlobalVariables().defineReadonly("$<", new IAccessor() {
+            @Override
             public IRubyObject getValue() {
                 return runtime.getArgsFile();
             }
 
+            @Override
             public IRubyObject setValue(IRubyObject newValue) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
