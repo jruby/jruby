@@ -1513,7 +1513,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             System.arraycopy(otherTable, 0, currentTable, 0, otherTable.length);
     
         // null out object ID so we don't share it
-        if (objectIdIdx > 0 && objectIdIdx < currentTable.length) {
+        if (objectIdIdx >= 0 && objectIdIdx < currentTable.length) {
             currentTable[objectIdIdx] = null;
         }
         
