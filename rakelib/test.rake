@@ -18,6 +18,7 @@ namespace :test do
     ant "compile-test"
   end
 
+  rubyspecs = ["spec:ci_18", "spec:ci_19"]
   short_tests_18 = ['jruby', 'mri', 'rubicon']
   short_tests_19 = short_tests_18.map {|test| test + "19"}
   short_tests_20 = short_tests_18.map {|test| test + "20"}
@@ -68,7 +69,7 @@ namespace :test do
   desc "Run the comprehensive 1.8 suite: #{all_tests_18}"
   task :all18 => [:compile, *all_tests_18]
 
-  task :rake_targets => long_tests
+  task :rake_targets => long_tests + rubyspecs
 
   desc "Run tracing tests"
   task :tracing do
