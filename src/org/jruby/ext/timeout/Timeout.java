@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -78,13 +79,13 @@ public class Timeout implements Library {
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
-    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
+    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(RubyInstanceConfig.TIMEOUT_POOL_MAX, new DaemonThreadFactory("JRubyTimeoutWorker"));
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             RubyModule timeout = context.runtime.getModule("Timeout");
-            
+
             switch (args.length) {
             case 1:
                 return Timeout.timeout(context, timeout, args[0], block);

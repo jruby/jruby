@@ -106,10 +106,10 @@ public class RubyInstanceConfig {
                 String[] elements = COMPILE_EXCLUDE.split(",");
                 excludedMethods.addAll(Arrays.asList(elements));
             }
-            
+
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
             runRubyInProcess = Options.LAUNCH_INPROC.load();
-            
+
             String jitModeProperty = Options.COMPILE_MODE.load();
 
             if (jitModeProperty.equals("OFF")) {
@@ -124,7 +124,7 @@ public class RubyInstanceConfig {
                 error.print(Options.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
                 compileMode = CompileMode.JIT;
             }
-            
+
             jitLogging = Options.JIT_LOGGING.load();
             jitDumping = Options.JIT_DUMPING.load();
             jitLoggingVerbose = Options.JIT_LOGGING_VERBOSE.load();
@@ -144,7 +144,7 @@ public class RubyInstanceConfig {
             environment = new HashMap();
         }
     }
-    
+
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
         samplingEnabled = parentConfig.samplingEnabled;
@@ -162,7 +162,7 @@ public class RubyInstanceConfig {
         excludedMethods = parentConfig.excludedMethods;
         threadDumpSignal = parentConfig.threadDumpSignal;
         updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
-        
+
         classCache = new ClassCache<Script>(loader, jitMax);
 
         try {
@@ -211,7 +211,7 @@ public class RubyInstanceConfig {
             // environment defaults to System.getenv normally
             Object rubyoptObj = environment.get("RUBYOPT");
             String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
-            
+
             if (rubyopt == null || "".equals(rubyopt)) return;
 
             if (rubyopt.split("\\s").length != 0) {
@@ -222,7 +222,7 @@ public class RubyInstanceConfig {
             // ignore and do nothing
         }
     }
-    
+
     // This method does not work like previous version in verifying it is
     // a Ruby shebang line.  Looking for ruby before \n is possible to add,
     // but I wanted to keep this short.
@@ -238,16 +238,16 @@ public class RubyInstanceConfig {
         } else {
             cursor.rewind();
         }
-        
+
         return false;
     }
-    
+
     private boolean skipToNextLine(InputStreamMarkCursor cursor) throws IOException {
         int c = cursor.read();
         do {
             if (c == '\n') return true;
         } while ((c = cursor.read()) != -1);
-        
+
         return false;
     }
 
@@ -262,7 +262,7 @@ public class RubyInstanceConfig {
             try { cursor.finish(); } catch (IOException e) {}
         }
     }
-    
+
     /**
      * The intent here is to gather up any options that might have
      * been specified in the shebang line and return them so they can
@@ -280,9 +280,9 @@ public class RubyInstanceConfig {
         BufferedReader reader = null;
         String[] result = new String[0];
         if (in == null) return result;
-        
+
         if (isXFlag()) eatToShebang(in);
-        
+
         try {
             InputStreamMarkCursor cursor = new InputStreamMarkCursor(in, 8192);
             try {
@@ -329,16 +329,16 @@ public class RubyInstanceConfig {
         }
         return result;
     }
-    
+
     private static final Pattern RUBY_SHEBANG = Pattern.compile("#!.*ruby.*");
 
     protected static boolean isRubyShebangLine(String line) {
         return RUBY_SHEBANG.matcher(line).matches();
     }
-    
+
     private String calculateJRubyHome() {
         String newJRubyHome = null;
-        
+
         // try the normal property first
         if (!Ruby.isSecurityRestricted()) {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
@@ -360,7 +360,7 @@ public class RubyInstanceConfig {
                 newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
             }
         }
-        
+
         return newJRubyHome;
     }
 
@@ -503,19 +503,19 @@ public class RubyInstanceConfig {
             return new ASTCompiler19();
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Static utilities and global state management methods.
     ////////////////////////////////////////////////////////////////////////////
-    
+
     public static boolean hasLoadedNativeExtensions() {
         return loadedNativeExtensions;
     }
-    
+
     public static void setLoadedNativeExtensions(boolean loadedNativeExtensions) {
         RubyInstanceConfig.loadedNativeExtensions = loadedNativeExtensions;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Getters and setters for config settings.
     ////////////////////////////////////////////////////////////////////////////
@@ -660,11 +660,11 @@ public class RubyInstanceConfig {
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
-    
+
     public void setSiphashEnabled(boolean newSiphashEnabled) {
         siphashEnabled = newSiphashEnabled;
     }
-    
+
     public boolean isSiphashEnabled() {
         return siphashEnabled;
     }
@@ -697,20 +697,20 @@ public class RubyInstanceConfig {
     public void setArgv(String[] argv) {
         this.argv = argv;
     }
-    
+
     public StringBuffer getInlineScript() {
         return inlineScript;
     }
-    
+
     public void setHasInlineScript(boolean hasInlineScript) {
         this.hasScriptArgv = true;
         this.hasInlineScript = hasInlineScript;
     }
-    
+
     public boolean hasInlineScript() {
         return hasInlineScript;
     }
-    
+
     public Collection<String> getRequiredLibraries() {
         return requiredLibraries;
     }
@@ -719,7 +719,7 @@ public class RubyInstanceConfig {
     public Collection<String> requiredLibraries() {
         return requiredLibraries;
     }
-    
+
     public List<String> getLoadPaths() {
         return loadPaths;
     }
@@ -732,11 +732,11 @@ public class RubyInstanceConfig {
     public void setLoadPaths(List<String> loadPaths) {
         this.loadPaths = loadPaths;
     }
-    
+
     public void setShouldPrintUsage(boolean shouldPrintUsage) {
         this.shouldPrintUsage = shouldPrintUsage;
     }
-    
+
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
     }
@@ -745,11 +745,11 @@ public class RubyInstanceConfig {
     public boolean shouldPrintUsage() {
         return shouldPrintUsage;
     }
-    
+
     public void setShouldPrintProperties(boolean shouldPrintProperties) {
         this.shouldPrintProperties = shouldPrintProperties;
     }
-    
+
     public boolean getShouldPrintProperties() {
         return shouldPrintProperties;
     }
@@ -775,7 +775,7 @@ public class RubyInstanceConfig {
     public String getScriptFileName() {
         return scriptFileName;
     }
-    
+
     public void setBenchmarking(boolean benchmarking) {
         this.benchmarking = benchmarking;
     }
@@ -783,7 +783,7 @@ public class RubyInstanceConfig {
     public boolean isBenchmarking() {
         return benchmarking;
     }
-    
+
     public void setAssumeLoop(boolean assumeLoop) {
         this.assumeLoop = assumeLoop;
     }
@@ -791,7 +791,7 @@ public class RubyInstanceConfig {
     public boolean isAssumeLoop() {
         return assumeLoop;
     }
-    
+
     public void setAssumePrinting(boolean assumePrinting) {
         this.assumePrinting = assumePrinting;
     }
@@ -799,7 +799,7 @@ public class RubyInstanceConfig {
     public boolean isAssumePrinting() {
         return assumePrinting;
     }
-    
+
     public void setProcessLineEnds(boolean processLineEnds) {
         this.processLineEnds = processLineEnds;
     }
@@ -807,7 +807,7 @@ public class RubyInstanceConfig {
     public boolean isProcessLineEnds() {
         return processLineEnds;
     }
-    
+
     public void setSplit(boolean split) {
         this.split = split;
     }
@@ -815,11 +815,11 @@ public class RubyInstanceConfig {
     public boolean isSplit() {
         return split;
     }
-    
+
     public Verbosity getVerbosity() {
         return verbosity;
     }
-    
+
     public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
     }
@@ -848,7 +848,7 @@ public class RubyInstanceConfig {
     public boolean isShowVersion() {
         return showVersion;
     }
-    
+
     public boolean isShowBytecode() {
         return showBytecode;
     }
@@ -860,7 +860,7 @@ public class RubyInstanceConfig {
     public void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
     }
-    
+
     public void setShowBytecode(boolean showBytecode) {
         this.showBytecode = showBytecode;
     }
@@ -868,11 +868,11 @@ public class RubyInstanceConfig {
     public void setShowCopyright(boolean showCopyright) {
         this.showCopyright = showCopyright;
     }
-    
+
     public void setShouldRunInterpreter(boolean shouldRunInterpreter) {
         this.shouldRunInterpreter = shouldRunInterpreter;
     }
-    
+
     public boolean getShouldRunInterpreter() {
         return shouldRunInterpreter && (hasScriptArgv || !showVersion);
     }
@@ -886,7 +886,7 @@ public class RubyInstanceConfig {
     public boolean isShouldRunInterpreter() {
         return shouldRunInterpreter;
     }
-    
+
     public void setShouldCheckSyntax(boolean shouldSetSyntax) {
         this.shouldCheckSyntax = shouldSetSyntax;
     }
@@ -894,7 +894,7 @@ public class RubyInstanceConfig {
     public boolean getShouldCheckSyntax() {
         return shouldCheckSyntax;
     }
-    
+
     public void setInputFieldSeparator(String inputFieldSeparator) {
         this.inputFieldSeparator = inputFieldSeparator;
     }
@@ -910,7 +910,7 @@ public class RubyInstanceConfig {
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
     }
-    
+
     public void setInternalEncoding(String internalEncoding) {
         this.internalEncoding = internalEncoding;
     }
@@ -918,7 +918,7 @@ public class RubyInstanceConfig {
     public String getInternalEncoding() {
         return internalEncoding;
     }
-    
+
     public void setExternalEncoding(String externalEncoding) {
         this.externalEncoding = externalEncoding;
     }
@@ -926,7 +926,7 @@ public class RubyInstanceConfig {
     public String getExternalEncoding() {
         return externalEncoding;
     }
-    
+
     public void setRecordSeparator(String recordSeparator) {
         this.recordSeparator = recordSeparator;
     }
@@ -942,7 +942,7 @@ public class RubyInstanceConfig {
     public ClassCache getClassCache() {
         return classCache;
     }
-    
+
     public void setInPlaceBackupExtension(String inPlaceBackupExtension) {
         this.inPlaceBackupExtension = inPlaceBackupExtension;
     }
@@ -958,19 +958,19 @@ public class RubyInstanceConfig {
     public Map getOptionGlobals() {
         return optionGlobals;
     }
-    
+
     public boolean isManagementEnabled() {
         return managementEnabled;
     }
-    
+
     public Set getExcludedMethods() {
         return excludedMethods;
     }
-    
+
     public void setParserDebug(boolean parserDebug) {
         this.parserDebug = parserDebug;
     }
-    
+
     public boolean getParserDebug() {
         return parserDebug;
     }
@@ -998,11 +998,11 @@ public class RubyInstanceConfig {
     public boolean isProfiling() {
         return profilingMode != ProfilingMode.OFF;
     }
-    
+
     public boolean isProfilingEntireRun() {
         return profilingMode != ProfilingMode.OFF && profilingMode != ProfilingMode.API;
     }
-    
+
     public void setProfilingMode(ProfilingMode profilingMode) {
         this.profilingMode = profilingMode;
     }
@@ -1068,44 +1068,44 @@ public class RubyInstanceConfig {
     public void setBacktraceMask(boolean backtraceMask) {
         this.backtraceMask = backtraceMask;
     }
-    
+
     /**
      * Set whether native code is enabled for this config. Disabling it also
      * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
-     * 
+     *
      * @param b new value indicating whether native code is enabled
      */
     public void setNativeEnabled(boolean b) {
         _nativeEnabled = false;
     }
-    
+
     /**
      * Get whether native code is enabled for this config.
-     * 
+     *
      * @return true if native code is enabled; false otherwise.
      */
     public boolean isNativeEnabled() {
         return _nativeEnabled;
     }
-    
+
     /**
      * Set whether C extensions are enabled for this config.
-     * 
+     *
      * @param b new value indicating whether native code is enabled
      */
     public void setCextEnabled(boolean b) {
         _cextEnabled = b;
     }
-    
+
     /**
      * Get whether C extensions are enabled for this config.
-     * 
+     *
      * @return true if C extensions are enabled; false otherwise.
      */
     public boolean isCextEnabled() {
         return _cextEnabled;
     }
-    
+
     public void setXFlag(boolean xFlag) {
         this.xFlag = xFlag;
     }
@@ -1113,26 +1113,26 @@ public class RubyInstanceConfig {
     public boolean isXFlag() {
         return xFlag;
     }
-    
+
     @Deprecated
     public boolean isxFlag() {
         return xFlag;
     }
-    
+
     /**
      * True if colorized backtraces are enabled. False otherwise.
      */
     public boolean getBacktraceColor() {
         return backtraceColor;
     }
-    
+
     /**
      * Set to true to enable colorized backtraces.
      */
     public void setBacktraceColor(boolean backtraceColor) {
         this.backtraceColor = backtraceColor;
     }
-    
+
     /**
      * Whether to use a single global lock for requires.
      * @see Options.GLOBAL_REQUIRE_LOCK
@@ -1140,7 +1140,7 @@ public class RubyInstanceConfig {
     public boolean isGlobalRequireLock() {
         return globalRequireLock;
     }
-    
+
     /**
      * Set whether to use a single global lock for requires.
      */
@@ -1193,25 +1193,25 @@ public class RubyInstanceConfig {
     public int getProfileMaxMethods() {
         return profileMaxMethods;
     }
-    
+
     /**
      * Set whether Kernel#gsub should be defined
      */
     public void setKernelGsubDefined(boolean setDefineKernelGsub) {
         this.kernelGsubDefined = setDefineKernelGsub;
     }
-    
+
     /**
      * Get Kernel#gsub is defined or not
      */
     public boolean getKernelGsubDefined() {
         return kernelGsubDefined;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
-    
+
     /**
      * Indicates whether the script must be extracted from script source
      */
@@ -1248,10 +1248,10 @@ public class RubyInstanceConfig {
 
     private String internalEncoding = null;
     private String externalEncoding = null;
-		
+
     private ProfilingMode profilingMode = ProfilingMode.OFF;
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
-    
+
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
 
@@ -1295,12 +1295,12 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
 
     private String jrubyHome;
-    
+
     /**
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
-    
+
     /**
      * Whether C extensions are enabled for this configuration.
      */
@@ -1310,11 +1310,11 @@ public class RubyInstanceConfig {
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
 
     private boolean backtraceMask = Options.BACKTRACE_MASK.load();
-    
+
     private boolean backtraceColor = Options.BACKTRACE_COLOR.load();
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
-    
+
     private boolean globalRequireLock = Options.GLOBAL_REQUIRE_LOCK.load();
 
     private boolean jitBackground = Options.JIT_BACKGROUND.load();
@@ -1322,11 +1322,11 @@ public class RubyInstanceConfig {
     private boolean loadGemfile = false;
 
     private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
     ////////////////////////////////////////////////////////////////////////////
-    
+
     public enum Verbosity { NIL, FALSE, TRUE }
 
     public static interface LoadServiceCreator {
@@ -1343,8 +1343,8 @@ public class RubyInstanceConfig {
     }
 
     public enum ProfilingMode {
-		OFF, API, FLAT, GRAPH, HTML, JSON
-	}
+                OFF, API, FLAT, GRAPH, HTML, JSON
+        }
 
     public enum CompileMode {
         JIT, FORCE, FORCEIR, OFF, OFFIR;
@@ -1369,11 +1369,11 @@ public class RubyInstanceConfig {
             return this == FORCE;
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
-    
+
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
@@ -1391,18 +1391,18 @@ public class RubyInstanceConfig {
      */
     @Deprecated
     public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-    
+
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
     public static final int JAVA_VERSION = initGlobalJavaVersion();
-    
+
     /**
      * Default size for chained compilation.
      */
     @Deprecated
     public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
-    
+
     /**
      * The number of lines at which a method, class, or block body is split into
      * chained methods (to dodge 64k method-size limit in JVM).
@@ -1493,6 +1493,13 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
     public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
+
+    /**
+     * Maximum timeout thread pool size (integer, default # of cores).
+     *
+     * Set with the <tt>jruby.timeout.thread.pool.max</tt> system property.
+     */
+    public static final int TIMEOUT_POOL_MAX = Options.TIMEOUT_THREADPOOL_MAX.load();
 
     /**
      * Enable use of the native Java version of the 'net/protocol' library.
@@ -1608,24 +1615,24 @@ public class RubyInstanceConfig {
      * e.g., com.example.UpperCase.Class
      */
     public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
-    
-    
+
+
     public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
-    
+
     // max times an indy call site can fail before it goes to simple IC
     public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
-    
+
     // max polymorphism at a call site to build a chained method handle PIC
     public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
-    
+
     // logging of various indy aspects
     public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
     public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
-    
+
     // properties enabling or disabling certain uses of invokedynamic
     public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
     public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
-    
+
     public static final boolean INVOKEDYNAMIC_INVOCATION = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_INVOCATION.load();
     public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
@@ -1638,7 +1645,7 @@ public class RubyInstanceConfig {
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
     public static final boolean INVOKEDYNAMIC_FASTOPS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
-    
+
     public static final boolean INVOKEDYNAMIC_CACHE = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_CACHE.load();
     public static final boolean INVOKEDYNAMIC_CONSTANTS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
@@ -1647,32 +1654,32 @@ public class RubyInstanceConfig {
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     public static final boolean INVOKEDYNAMIC_IVARS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_IVARS.load();
-    
+
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
     public static final boolean LOG_BACKTRACES = Options.LOG_BACKTRACES.load();
     public static final boolean LOG_CALLERS = Options.LOG_CALLERS.load();
     public static final boolean LOG_WARNINGS = Options.LOG_WARNINGS.load();
-    
+
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
-    
+
     public static boolean IR_DEBUG = Options.IR_DEBUG.load();
     public static boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
-    
+
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
-    
+
     private static volatile boolean loadedNativeExtensions = false;
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
-    
+
     private static int initGlobalJavaVersion() {
         String specVersion = specVersion = Options.BYTECODE_VERSION.load();
-        
+
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
         if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
