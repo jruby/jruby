@@ -309,6 +309,15 @@
         </java>
     </target>
 
+    <target name="spec-ci-interpreted" depends="init">
+        <java classname="org.jruby.Main" fork="true" failonerror="true">
+            <classpath refid="test.class.path"/>
+            <jvmarg line="${java.opts}"/>
+            <jvmarg line="-Djruby.home=${basedir}"/>
+            <arg line="-S rake spec:ci_interpreted_19 spec:ci_interpreted_18"/>
+        </java>
+    </target>
+
     <target name="test-jar-complete" depends="init,unzip-native-libs,jar-jruby-complete"
             description="Do some sanity checks on the complete jar.">
         <java jar="lib/jruby-complete.jar" fork="true" failonerror="true">
