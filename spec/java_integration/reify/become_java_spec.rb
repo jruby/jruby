@@ -117,4 +117,44 @@ describe "JRuby class reification" do
     cl.load_class(a_class.get_name).should == a_class
   end
 
+  describe "java fields" do
+    let(:cls) {
+      Class.new(&fields)
+    }
+    let(:fields) { proc {
+      java_field "java.lang.String foo"
+    } }
+
+    subject { cls.become_java! }
+
+    it "adds specified fields to java_class" do
+      subject.get_declared_fields.map { |f| f.get_name }.should == %w(ruby rubyClass foo)
+    end
+
+    it "lets you write to the fields" do
+      subject
+
+      cls.new.should respond_to :foo
+      cls.new.should respond_to :foo=
+
+      field = subject.get_declared_fields.to_a.detect { |f| f.get_name == "foo" }
+      instance = cls.new
+      instance.foo = "String Value"
+      instance.foo.should == "String Value"
+      field.get(instance).should == "String Value"
+    end
+
+    context "many fields" do
+      let(:fields) { proc {
+        java_field "java.lang.String foo"
+        java_field "java.lang.String bar"
+        java_field "java.lang.String baz"
+        java_field "java.lang.String zot"
+        java_field "java.lang.String allegro"
+      }}
+      it "keeps the ordering as specified" do
+        subject.get_declared_fields.map { |f| f.get_name }.should == %w(ruby rubyClass foo bar baz zot allegro)
+      end
+    end
+  end
 end

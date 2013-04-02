@@ -1360,7 +1360,6 @@ public class RubyClass extends RubyModule {
 
             for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
                 Class annoType = fieldAnno.getKey();
-                System.out.println("  anno " + annoType.getName());
                 AnnotationVisitor av = fieldVisitor.visitAnnotation(ci(annoType), true);
                 CodegenUtils.visitAnnotationFields(av, fieldAnno.getValue());
             }
