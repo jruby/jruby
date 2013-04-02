@@ -10,21 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FieldAnnotations {
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.FIELD)
-  public @interface Annotated {
-  }
-
-  public static List<Annotation> countAnnotated(Class cls) {
-    Field[] declaredFields = cls.getDeclaredFields();
-    List<Annotation> annos = new ArrayList<Annotation>();
-    for (Field field: declaredFields) {
-      Annotated anno = field.getAnnotation(Annotated.class);
-      if (anno != null) {
-        annos.add(anno);
-      }
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Annotated {
     }
 
-    return annos;
-  }
+    public static List<Annotation> countAnnotated(Class cls) {
+      Field[] declaredFields = cls.getDeclaredFields();
+      List<Annotation> annos = new ArrayList<Annotation>();
+      for (Field field: declaredFields) {
+        Annotated anno = field.getAnnotation(Annotated.class);
+        if (anno != null) {
+          annos.add(anno);
+        }
+      }
+
+      return annos;
+    }
 }
