@@ -17,10 +17,13 @@ module JRuby
       return type if type
 
       # If annotation makes it in strip @ before we try and match it.
-      string = string[1..-1] if string.start_with? '@'
+      if string.is_a?(String)
+        string = string[1..-1] if string.start_with? '@'
+      end
 
-      eval "Java::#{make_class_jiable(string)}"
+      eval make_class_jiable(string)
     end
+
 
     ##
     # return live JI proxy for return type
@@ -102,21 +105,28 @@ return_type: #{return_type}
     end
 
     def make_class_jiable(string)
-      new_list = []
-      string.split(/\./).inject(false) do |last_cap, segment|
-        if segment =~ /[A-Z]/
-          if last_cap
-            new_list << "::" + segment
+      if string.is_a?(Java::OrgJrubyAstJava_signature::ReferenceTypeNode)
+        name = string.getFullyTypedName()
+        # If a package segment is capitalized, it's assumed to be a class in the package name.
+        klass_names,package_parts = name.split(".").partition{|n| n =~ /^[A-Z]/ }
+        "#{package_parts.join(".")}.#{klass_names.join("::")}"
+      else
+        new_list = []
+        string.split(/\./).inject(false) do |last_cap, segment|
+          if segment =~ /[A-Z]/
+            if last_cap
+              new_list << "::" + segment
+            else
+              new_list << "." + segment
+            end
+            last_cap = true
           else
             new_list << "." + segment
+            last_cap = false
           end
-          last_cap = true
-        else
-          new_list << "." + segment
-          last_cap = false
         end
+        "Java::#{new_list.join("")[1..-1]}"
       end
-      new_list.join("")[1..-1]
     end
   end
 end

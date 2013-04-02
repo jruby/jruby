@@ -44,3 +44,7 @@ A slightly shorter run we run frequently is:
   ant spec-short
 
 The rubyspecs will be fetched over the net, and then executed.
+
+To run an individual test use the checked in bin/rspec executable
+
+  bin/rspec spec/path-to-spec
