@@ -48,3 +48,5 @@ The rubyspecs will be fetched over the net, and then executed.
 To run an individual test use the checked in bin/rspec executable
 
   bin/rspec spec/path-to-spec
+
+But make sure to run ant test first to get java test classes from the fixtures
