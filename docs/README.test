@@ -45,8 +45,7 @@ A slightly shorter run we run frequently is:
 
 The rubyspecs will be fetched over the net, and then executed.
 
-To run an individual test use the checked in bin/rspec executable
-
-  bin/rspec spec/path-to-spec
-
-But make sure to run ant test first to get java test classes from the fixtures
+To run an individual test:
+ run `ant install-dev-gems` which will install bin/rspec for use.
+ run `ant test` to compile the java fixtures (you don't need to wait for the tests to finish)
+ then test as normal with `bin/rspec spec/path-to-spec`
