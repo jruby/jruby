@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1346,15 +1347,16 @@ public class RubyClass extends RubyModule {
         m.end();
 
         // define fields
-        System.out.println("Defining Fields");
         for (Map.Entry<String, Class> fieldSignature : getFieldSignatures().entrySet()) {
             String fieldName = fieldSignature.getKey();
             Class type = fieldSignature.getValue();
             Map<Class, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
 
-            System.out.println("Field " + fieldName);
-
             FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
+
+            if (fieldAnnos == null) {
+              continue;
+            }
 
             for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
                 Class annoType = fieldAnno.getKey();
@@ -1632,7 +1634,7 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized void addFieldSignature(String fieldName, Class type) {
-        if (fieldSignatures == null) fieldSignatures = new Hashtable<String,Class>();
+        if (fieldSignatures == null) fieldSignatures = new LinkedHashMap<String, Class>();
 
         fieldSignatures.put(fieldName, type);
     }
