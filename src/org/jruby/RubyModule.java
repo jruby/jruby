@@ -3101,7 +3101,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         boolean isObject = this == getRuntime().getObject();
 
@@ -3124,7 +3124,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
