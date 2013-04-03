@@ -22,6 +22,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
     private static final Logger LOG = LoggerFactory.getLogger("AnnotationBinder");
+    public static final String SRC_GEN_DIR = "build/src_gen/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<CharSequence>();
     private PrintStream out;
     private static final boolean DEBUG = false;
@@ -327,7 +328,8 @@ public class AnnotationBinder extends AbstractProcessor {
             out.close();
             out = null;
 
-            FileOutputStream fos = new FileOutputStream("build/src_gen/" + qualifiedName + POPULATOR_SUFFIX + ".java");
+            new File(SRC_GEN_DIR).mkdirs();
+            FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".java");
             fos.write(bytes.toByteArray());
             fos.close();
         } catch (IOException ioe) {
