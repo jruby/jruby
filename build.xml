@@ -201,12 +201,12 @@
             <echo message="...using git revision = ${jruby.revision}, tzdata = @{tzdata-version}"/>
 
             <!-- avoid overwriting if it hasn't changed, to avoid recompiles -->
-            <copy file="src_gen/org/jruby/runtime/Constants.java"
-                  tofile="src_gen/org/jruby/runtime/Constants.java.old"
+            <copy file="build/src_gen/org/jruby/runtime/Constants.java"
+                  tofile="build/src_gen/org/jruby/runtime/Constants.java.old"
                   preservelastmodified="true" failonerror="false"/>
             <copy file="src/org/jruby/runtime/Constants.java"
                   overwrite="true"
-                  tofile="src_gen/org/jruby/runtime/Constants.java.gen">
+                  tofile="build/src_gen/org/jruby/runtime/Constants.java.gen">
                 <filterset>
                     <filter token="version.ruby.major" value="${version.ruby.major}"/>
                     <filter token="version.ruby" value="${version.ruby}"/>
@@ -232,8 +232,8 @@
             </copy>
 
             <condition property="constants.java.is.same">
-                <filesmatch file1="src_gen/org/jruby/runtime/Constants.java.gen"
-                            file2="src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
+                <filesmatch file1="build/src_gen/org/jruby/runtime/Constants.java.gen"
+                            file2="build/src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
             </condition>
             <antcall target="_uc_internal_"/>
 
@@ -247,15 +247,15 @@
     </target>
 
     <target name="_uc_internal_" unless="constants.java.is.same">
-        <copy file="src_gen/org/jruby/runtime/Constants.java.gen" tofile="src_gen/org/jruby/runtime/Constants.java"/>
-        <javac destdir="${jruby.classes.dir}" debug="true" srcdir="src_gen"
+        <copy file="build/src_gen/org/jruby/runtime/Constants.java.gen" tofile="build/src_gen/org/jruby/runtime/Constants.java"/>
+        <javac destdir="${jruby.classes.dir}" debug="true" srcdir="build/src_gen"
                includes="org/jruby/runtime/Constants.java" source="${javac.version}"
                target="${javac.version}" deprecation="true" encoding="UTF-8"
                includeantruntime="false"/>
     </target>
 
     <target name="compile-annotation-binder">
-        <mkdir dir="src_gen"/>
+        <mkdir dir="build/src_gen"/>
 
         <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}"
                sourcepath="" classpathref="build.classpath" source="${javac.version}"
@@ -306,7 +306,7 @@
     </target>
 
     <target name="generate-method-classes">
-        <available file="src_gen/annotated_classes.txt" property="annotations.changed"/>
+        <available file="build/src_gen/annotated_classes.txt" property="annotations.changed"/>
         <antcall target="_gmc_internal_"/>
     </target>
 
@@ -315,7 +315,7 @@
         <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
             <classpath refid="jruby.execute.classpath"/>
             <sysproperty key="jruby.bytecode.version" value="${javac.version}"/>
-            <arg value="src_gen/annotated_classes.txt"/>
+            <arg value="build/src_gen/annotated_classes.txt"/>
             <arg value="${jruby.classes.dir}"/>
         </java>
 
@@ -324,11 +324,11 @@
                target="${javac.version}" deprecation="true" encoding="UTF-8"
                includeantruntime="true">
             <classpath refid="jruby.execute.classpath"/>
-            <src path="src_gen"/>
+            <src path="build/src_gen"/>
             <patternset refid="java.src.pattern"/>
         </javac>
 
-        <delete file="src_gen/annotated_classes.txt"/>
+        <delete file="build/src_gen/annotated_classes.txt"/>
     </target>
 
     <target name="generate-unsafe">
@@ -843,7 +843,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${lib.dir}" includes="jruby*.jar"/>
         </delete>
         <delete dir="${api.docs.dir}"/>
-        <delete dir="src_gen"/>
+        <delete dir="build/src_gen"/>
         <antcall target="clean-ng"/>
         <antcall target="clean-tzdata"/>
     </target>

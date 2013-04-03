@@ -168,9 +168,6 @@
 	    <fileset>
 	      <directory>build</directory>
 	    </fileset>
-	    <fileset>
-	      <directory>src_gen</directory>
-	    </fileset>
 	  </filesets>
 	</configuration>
       </plugin>

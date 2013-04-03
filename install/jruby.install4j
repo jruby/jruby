@@ -71,7 +71,6 @@
           <entry location="share" fileType="regular" />
           <entry location="spec" fileType="regular" />
           <entry location="src" fileType="regular" />
-          <entry location="src_gen" fileType="regular" />
           <entry location="test" fileType="regular" />
           <entry location="tool" fileType="regular" />
         </exclude>

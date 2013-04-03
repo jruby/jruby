@@ -33,7 +33,7 @@ public class AnnotationBinder extends AbstractProcessor {
         }
 
         try {
-            FileWriter fw = new FileWriter("src_gen/annotated_classes.txt");
+            FileWriter fw = new FileWriter("build/src_gen/annotated_classes.txt");
             for (CharSequence name : classNames) {
                 fw.write(name.toString());
                 fw.write('\n');
@@ -327,7 +327,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.close();
             out = null;
 
-            FileOutputStream fos = new FileOutputStream("src_gen/" + qualifiedName + POPULATOR_SUFFIX + ".java");
+            FileOutputStream fos = new FileOutputStream("build/src_gen/" + qualifiedName + POPULATOR_SUFFIX + ".java");
             fos.write(bytes.toByteArray());
             fos.close();
         } catch (IOException ioe) {

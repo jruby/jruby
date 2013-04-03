@@ -19,7 +19,6 @@ lib/ruby/shared/rubygems/defaults/jruby_native.rb
 nbproject/private
 share
 latest_source_cache
-src_gen
 docs/api
 test/rails
 test/prawn
