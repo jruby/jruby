@@ -27,115 +27,94 @@
 package org.jruby.runtime.opto;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.impl.BaseBodyCompiler;
 import org.jruby.compiler.impl.InheritedCacheCompiler;
+import org.jruby.compiler.impl.InvokeDynamicCacheCompiler;
+import org.jruby.compiler.impl.InvokeDynamicInvocationCompiler;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.compiler.impl.StandardInvocationCompiler;
-import org.objectweb.asm.Opcodes;
+import org.jruby.util.cli.Options;
 
 /**
  * A set of factory methods to construct optimizing utilities for compilation,
  * cache invalidation, and so on.
  */
 public class OptoFactory {
+    // failure switches to avoid retrying classes that can't be instantiated
+    public static boolean tryIndy = true;
+    
     public static InvocationCompiler newInvocationCompiler(BaseBodyCompiler bodyCompiler, SkinnyMethodAdapter method) {
-        if (invDynInvCompilerConstructor != null) {
+        if (tryIndy) {
             try {
-                return (InvocationCompiler) invDynInvCompilerConstructor.newInstance(bodyCompiler, method);
-            } catch (InstantiationException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (IllegalAccessException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (InvocationTargetException ie) {
-                // do nothing, fall back on default compiler below
-                }
+                return new InvokeDynamicInvocationCompiler(bodyCompiler, method);
+            } catch (Error e) {
+                tryIndy = false;
+                throw e;
+            } catch (Throwable t) {
+                tryIndy = false;
+            }
         }
         return new StandardInvocationCompiler(bodyCompiler, method);
     }
     
     public static CacheCompiler newCacheCompiler(StandardASMCompiler scriptCompiler) {
-        if (invDynCacheCompilerConstructor != null) {
+        if (tryIndy) {
             try {
-                return (CacheCompiler)invDynCacheCompilerConstructor.newInstance(scriptCompiler);
-            } catch (InstantiationException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (IllegalAccessException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (InvocationTargetException ie) {
-                // do nothing, fall back on default compiler below
-                }
+                return new InvokeDynamicCacheCompiler(scriptCompiler);
+            } catch (Error e) {
+                tryIndy = false;
+                throw e;
+            } catch (Throwable t) {
+                tryIndy = false;
+            }
         }
         return new InheritedCacheCompiler(scriptCompiler);
     }
     
     public static Invalidator newConstantInvalidator() {
-        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
             try {
-                return (Invalidator)Class.forName("org.jruby.runtime.opto.SwitchPointInvalidator").newInstance();
+                return new SwitchPointInvalidator();
+            } catch (Error e) {
+                tryIndy = false;
+                throw e;
             } catch (Throwable t) {
-                // ignore
+                tryIndy = false;
             }
         }
         return new ObjectIdentityInvalidator();
     }
     
     public static Invalidator newGlobalInvalidator(int maxFailures) {
-        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
             try {
-                Class failoverInvalidator = Class.forName("org.jruby.runtime.opto.FailoverSwitchPointInvalidator");
-                Constructor constructor = failoverInvalidator.getConstructor(int.class);
-                return (Invalidator)constructor.newInstance(maxFailures);
+                return new FailoverSwitchPointInvalidator(maxFailures);
+            } catch (Error e) {
+                tryIndy = false;
+                throw e;
             } catch (Throwable t) {
-                // ignore
+                tryIndy = false;
             }
         }
         return new ObjectIdentityInvalidator();
     }
     
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
             try {
-                return (Invalidator)Class.forName("org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator").getConstructor(RubyModule.class).newInstance(module);
+                return new GenerationAndSwitchPointInvalidator(module);
+            } catch (Error e) {
+                tryIndy = false;
+                throw e;
             } catch (Throwable t) {
-                // ignore
+                tryIndy = false;
             }
         }
         return new GenerationInvalidator(module);
-    }
-    
-    // constructors for compiler impls
-    public static final Constructor invDynInvCompilerConstructor;
-    public static final Constructor invDynCacheCompilerConstructor;
-    
-    static {
-        Constructor invCompilerConstructor = null;
-        if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION) {
-            try {
-                Class compiler =
-                        Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
-                invCompilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
-            } catch (Exception e) {
-                // leave it null and fall back on our normal invocation logic
-            }
-        }
-        invDynInvCompilerConstructor = invCompilerConstructor;
-        
-        Constructor cacheCompilerConstructor = null;
-        if (RubyInstanceConfig.INVOKEDYNAMIC_CACHE) {
-            try {
-                Class compiler =
-                        Class.forName("org.jruby.compiler.impl.InvokeDynamicCacheCompiler");
-                cacheCompilerConstructor = compiler.getConstructor(StandardASMCompiler.class);
-            } catch (Exception e) {
-                // leave it null and fall back on our normal invocation logic
-            }
-        }
-        invDynCacheCompilerConstructor = cacheCompilerConstructor;
     }
 }
