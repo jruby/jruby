@@ -258,17 +258,7 @@ set -- "${ruby_args}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_VM $JAVA_MEM $JAVA_STACK"
 
-JFFI_BOOT=""
-if [ -d "$JRUBY_HOME/lib/native/" ]; then
-  for d in $JRUBY_HOME/lib/native/*`uname -s`; do
-    if [ -z "$JFFI_BOOT" ]; then
-      JFFI_BOOT="$d"
-    else
-      JFFI_BOOT="$JFFI_BOOT:$d"
-    fi
-  done
-fi
-JFFI_OPTS="-Djffi.boot.library.path=$JFFI_BOOT"
+JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/native"
 
 
 if [ "$nailgun_client" != "" ]; then
