@@ -169,9 +169,6 @@ public final class Block {
     }
     
     public Block cloneBlock() {
-        // force binding to reify
-        binding.reify();
-        
         Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;

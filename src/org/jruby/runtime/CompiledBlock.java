@@ -47,14 +47,14 @@ public class CompiledBlock extends ContextAwareBlockBody {
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CompiledBlock(arity, scope, callback, hasMultipleArgsHead, argumentType);
 
         return new Block(body, binding);
     }
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, BlockBody body) {
-        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         return new Block(body, binding);
     }
     

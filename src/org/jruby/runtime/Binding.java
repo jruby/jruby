@@ -47,8 +47,8 @@ public class Binding {
     /**
      * frame of method which defined this block
      */
-    private Frame frame;
-    private BacktraceElement backtrace;
+    private final Frame frame;
+    private final BacktraceElement backtrace;
     private final RubyModule klass;
 
     private Visibility visibility;
@@ -68,12 +68,6 @@ public class Binding {
     private DynamicScope evalScope;
     
     /**
-     * Whether this Binding has had appropriate state duplicated to isolate it
-     * from changes.
-     */
-    private boolean reified = false;
-    
-    /**
      * Location of eval scope.
      * 
      * 
@@ -88,7 +82,7 @@ public class Binding {
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = self;
-        this.frame = frame;
+        this.frame = frame.duplicate();
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
@@ -109,7 +103,7 @@ public class Binding {
     
     public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = frame.getSelf();
-        this.frame = frame;
+        this.frame = frame.duplicate();
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
@@ -126,22 +120,6 @@ public class Binding {
     
     private Binding(Binding other, Visibility visibility) {
         this(other.self, other.frame.duplicate(), visibility, other.klass, other.dynamicScope, other.evalScopeBinding, other.backtrace, other.dummyScope);
-    }
-    
-    /**
-     * Ensure captured, mutable state (Frame, BacktraceElement) have been cloned
-     * so they can stand alone.
-     * 
-     * @return this binding, reified
-     */
-    public Binding reify() {
-        if (!reified) {
-            frame = frame.duplicate();
-            backtrace = backtrace.clone();
-            reified = true;
-        }
-        
-        return this;
     }
 
     public Binding clone() {

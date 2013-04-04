@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledBlockLight extends CompiledBlock {
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CompiledBlockLight(arity, scope, callback, hasMultipleArgsHead, argumentType);
 
         return new Block(body, binding);

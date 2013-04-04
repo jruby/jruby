@@ -485,7 +485,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         };
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, context.currentBindingLight()),
+                                new Block(body, context.currentBinding()),
                                 Block.Type.PROC);
     }
     

@@ -42,7 +42,7 @@ public class CallBlock extends BlockBody {
     private final StaticScope dummyScope;
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        Binding binding = context.currentBindingLight(self, Visibility.PUBLIC);
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock(arity, callback, context);
         
         return new Block(body, binding);

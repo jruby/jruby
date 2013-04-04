@@ -72,7 +72,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     private final Node body;
 
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
-        Binding binding = context.currentBindingLight(self);
+        Binding binding = context.currentBinding(self);
         return new Block(body, binding);
     }
 

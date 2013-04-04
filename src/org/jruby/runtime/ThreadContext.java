@@ -1263,113 +1263,51 @@ public final class ThreadContext {
     
     /**
      * Return a binding representing the current call's state
-     * 
-     * This version will duplicate the current frame and backtrace eagerly,
-     * assuming that they need to be isolated.
-     * 
      * @return the current binding
      */
     public Binding currentBinding() {
-        return currentBindingLight().reify();
-    }
-    
-    /**
-     * Return a binding representing the current call's state
-     * 
-     * @return the current binding
-     */
-    public Binding currentBindingLight() {
         Frame frame = getCurrentFrame();
-        return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex]);
+        return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
      * Return a binding representing the current call's state but with a specified self
-     * 
-     * This version will duplicate the current frame and backtrace eagerly,
-     * assuming that they need to be isolated.
-     * 
      * @param self the self object to use
      * @return the current binding, using the specified self
      */
     public Binding currentBinding(IRubyObject self) {
-        return currentBindingLight(self).reify();
-    }
-
-    /**
-     * Return a binding representing the current call's state but with a specified self
-     * 
-     * @param self the self object to use
-     * @return the current binding, using the specified self
-     */
-    public Binding currentBindingLight(IRubyObject self) {
         Frame frame = getCurrentFrame();
-        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), backtrace[backtraceIndex]);
+        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
      * Return a binding representing the current call's state but with the
      * specified visibility and self.
-     * 
-     * This version will duplicate the current frame and backtrace eagerly,
-     * assuming that they need to be isolated.
-     * 
      * @param self the self object to use
      * @param visibility the visibility to use
      * @return the current binding using the specified self and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
-        return currentBindingLight(self, visibility).reify();
-    }
-
-    /**
-     * Return a binding representing the current call's state but with the
-     * specified visibility and self.
-     * 
-     * @param self the self object to use
-     * @param visibility the visibility to use
-     * @return the current binding using the specified self and visibility
-     */
-    public Binding currentBindingLight(IRubyObject self, Visibility visibility) {
         Frame frame = getCurrentFrame();
-        return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex]);
+        return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
      * Return a binding representing the current call's state but with the
      * specified scope and self.
-     * 
-     * This version will duplicate the current frame and backtrace eagerly,
-     * assuming that they need to be isolated.
-     * 
      * @param self the self object to use
      * @param scope the scope to use
      * @return the current binding using the specified self and scope
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
-        return currentBindingLight(self, scope).reify();
-    }
-
-    /**
-     * Return a binding representing the current call's state but with the
-     * specified scope and self.
-     * 
-     * @param self the self object to use
-     * @param scope the scope to use
-     * @return the current binding using the specified self and scope
-     */
-    public Binding currentBindingLight(IRubyObject self, DynamicScope scope) {
         Frame frame = getCurrentFrame();
-        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, backtrace[backtraceIndex]);
+        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 
     /**
      * Return a binding representing the current call's state but with the
      * specified visibility, scope, and self. For shared-scope binding
      * consumers like for loops.
-     * 
-     * This version will duplicate the current frame and backtrace eagerly,
-     * assuming that they need to be isolated.
      * 
      * @param self the self object to use
      * @param visibility the visibility to use
@@ -1377,22 +1315,8 @@ public final class ThreadContext {
      * @return the current binding using the specified self, scope, and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
-        return currentBindingLight(self, visibility, scope).reify();
-    }
-
-    /**
-     * Return a binding representing the current call's state but with the
-     * specified visibility, scope, and self. For shared-scope binding
-     * consumers like for loops.
-     * 
-     * @param self the self object to use
-     * @param visibility the visibility to use
-     * @param scope the scope to use
-     * @return the current binding using the specified self, scope, and visibility
-     */
-    public Binding currentBindingLight(IRubyObject self, Visibility visibility, DynamicScope scope) {
         Frame frame = getCurrentFrame();
-        return new Binding(self, frame, visibility, getRubyClass(), scope, backtrace[backtraceIndex]);
+        return new Binding(self, frame, visibility, getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 
     /**

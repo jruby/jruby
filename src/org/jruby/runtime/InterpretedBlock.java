@@ -99,7 +99,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
     protected Assigner assigner;
 
     public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
-        Binding binding = context.currentBindingLight(self);
+        Binding binding = context.currentBinding(self);
         NodeType argsNodeId = getArgumentTypeWackyHack(iterNode);
 
         BlockBody body = new InterpretedBlock(
@@ -110,7 +110,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
     }
 
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
-        Binding binding = context.currentBindingLight(self);
+        Binding binding = context.currentBinding(self);
         return new Block(body, binding);
     }
 
