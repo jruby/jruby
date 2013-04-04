@@ -46,7 +46,7 @@ import org.jruby.util.cli.Options;
  */
 public class OptoFactory {
     // failure switches to avoid retrying classes that can't be instantiated
-    public static boolean tryIndy = true;
+    public static boolean tryIndy = Options.COMPILE_INVOKEDYNAMIC.load();
     
     public static InvocationCompiler newInvocationCompiler(BaseBodyCompiler bodyCompiler, SkinnyMethodAdapter method) {
         if (tryIndy) {
