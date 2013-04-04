@@ -4,6 +4,7 @@
 require 'rbconfig'
 require 'java'
 require 'jruby'
+require 'mspec/runner/formatters'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
@@ -98,6 +99,8 @@ class MSpecScript
                         [%r(^.*/library/),      TAGS_DIR + '/1.8/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
+
+  set :formatter, DottedFormatter
 
   # Disable features (not currently supported)
   MSpec.disable_feature :fork
