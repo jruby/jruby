@@ -938,10 +938,8 @@ public class RipperLexer {
             if (value instanceof IRubyObject) {
                 arg = ((IRubyObject) value).asString();
             } else {
-                // FIXME: HEH...totally broken
                 if (value == null) {
-                    //System.out.println("Token: " + printToken(token) + " has a null value");
-                    return parser.getRuntime().getNil();
+                    arg = parser.getRuntime().getNil();
                 } else {
                     arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
                 }
@@ -1526,6 +1524,7 @@ public class RipperLexer {
         int c = src.read();
         
         if (c == ':') {
+            yaccValue = getRuntime().newString("::");
             if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
                 setState(LexState.EXPR_BEG);
                 return Tokens.tCOLON3;
