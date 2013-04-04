@@ -840,7 +840,6 @@ class ERB
   end
 
   def new_toplevel
-    # New binding each time *near* toplevel for unspecified runs
     TOPLEVEL_BINDING.dup
   end
   private :new_toplevel

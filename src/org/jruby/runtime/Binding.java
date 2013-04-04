@@ -90,13 +90,12 @@ public class Binding {
     }
 
     private Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, RubyModule klass, DynamicScope dynamicScope, Binding evalScopeBinding, BacktraceElement backtrace, DynamicScope dummyScope) {
+                   Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace, DynamicScope dummyScope) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
-        this.evalScopeBinding = evalScopeBinding;
         this.backtrace = backtrace;
         this.dummyScope = dummyScope;
     }
@@ -111,27 +110,29 @@ public class Binding {
     }
     
     private Binding(Binding other) {
-        this(other.self, other.frame.duplicate(), other.visibility, other.klass, other.dynamicScope, other.evalScopeBinding, other.backtrace, other.dummyScope);
-    }
-    
-    private Binding(Binding other, DynamicScope dynamicScope, Binding evalScopeBinding) {
-        this(other.self, other.frame.duplicate(), other.visibility, other.klass, dynamicScope, evalScopeBinding, other.backtrace, other.dummyScope);
-    }
-    
-    private Binding(Binding other, Visibility visibility) {
-        this(other.self, other.frame.duplicate(), visibility, other.klass, other.dynamicScope, other.evalScopeBinding, other.backtrace, other.dummyScope);
+        this(other.self, other.frame.duplicate(), other.visibility, other.klass, other.dynamicScope, other.backtrace, other.dummyScope);
     }
 
+    /**
+     * Clone the binding, but maintain a reference to the original "eval
+     * binding" to continue sharing eval context.
+     * 
+     * @return a new Binding with shared eval context
+     */
+    public Binding cloneForEval() {
+        Binding clone = new Binding(this);
+        clone.evalScopeBinding = this;
+        return clone;
+    }
+
+    /**
+     * Clone the binding. The frame will be duplicated, and eval context will
+     * point to the new binding, but other fields will be copied as-is.
+     * 
+     * @return a new cloned Binding
+     */
     public Binding clone() {
         return new Binding(this);
-    }
-
-    public Binding deepClone() {
-        return new Binding(this, dynamicScope.cloneScope(), this);
-    }
-
-    public Binding clone(Visibility visibility) {
-        return new Binding(this, visibility);
     }
 
     public Visibility getVisibility() {

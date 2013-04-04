@@ -114,8 +114,7 @@ public class CallBlock extends BlockBody {
     }
 
     public Block cloneBlock(Binding binding) {
-        binding = binding.clone(Visibility.PUBLIC);
-        return new Block(this, binding);
+        return new Block(this, binding.clone());
     }
 
     public Arity arity() {

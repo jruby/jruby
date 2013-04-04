@@ -1111,10 +1111,10 @@ public class RubyKernel {
     private static EvalBinding evalBinding18 = new EvalBinding() {
         public Binding convertToBinding(IRubyObject scope) {
             if (scope instanceof RubyBinding) {
-                return ((RubyBinding)scope).getBinding().clone();
+                return ((RubyBinding)scope).getBinding().cloneForEval();
             } else {
                 if (scope instanceof RubyProc) {
-                    return ((RubyProc) scope).getBlock().getBinding().clone();
+                    return ((RubyProc) scope).getBlock().getBinding().cloneForEval();
                 } else {
                     // bomb out, it's not a binding or a proc
                     throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
@@ -1126,7 +1126,7 @@ public class RubyKernel {
     private static EvalBinding evalBinding19 = new EvalBinding() {
         public Binding convertToBinding(IRubyObject scope) {
             if (scope instanceof RubyBinding) {
-                return ((RubyBinding)scope).getBinding().clone();
+                return ((RubyBinding)scope).getBinding().cloneForEval();
             } else {
                 throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Binding)");
             }
