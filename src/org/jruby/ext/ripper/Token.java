@@ -1,5 +1,4 @@
-/*
- * **** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E. Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,37 +27,45 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-public class Position {
-    final String filename;
-    final int line;
 
-    public Position(String filename, int line) {
-        this.filename = filename;
-        this.line = line;
-    }
-
-    public String getFile() {
-        return filename;
-    }
-
-    public int getStartLine() {
-        return line;
-    }
-
-    public int getLine() {
-        return line;
-    }
+public class Token {
+	Position position = null;
+	Object value;
+	int type = 0;
+	
+	public Token(Object value, Position position) {
+	    this.value = value;
+	    this.position = position;
+	}
+	
+	public Token(Object value, int type, Position position) {
+		this.value = value;
+		this.position = position;
+		this.type = type;
+	}
+	
+	public void setValue(Object value) {
+		this.value = value;
+	}
+	
+	public Object getValue() {
+		return value;
+	}
+	
+	public int getType() {
+	    return type;
+	}
+	
+	public Position getPosition() {
+		return position;
+	}
+	
+	public void setPosition(Position position) {
+		this.position = position;
+	}
     
-    public int getStartOffset() {
-        return -1;
-    }
-    
-    public int getEndOffset() {
-        return -1;
-    }
-
     @Override
     public String toString() {
-        return getFile() + ":" + (getStartLine() + 1);
+        return "Token { Value=" + value + ", Position=" + position + "}";
     }
 }

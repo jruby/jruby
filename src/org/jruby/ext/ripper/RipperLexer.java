@@ -40,11 +40,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.StackState;
-import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
@@ -54,7 +50,7 @@ import org.jruby.util.StringSupport;
  *
  * @author enebo
  */
-public class RipperLexer {
+public class RipperLexer implements Warnings {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
     public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
     public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
@@ -121,8 +117,7 @@ public class RipperLexer {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            IRubyWarnings warnings = getRuntime().getWarnings();
-            warnings.warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+            warn(Warnings.ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -136,6 +131,70 @@ public class RipperLexer {
 
     private Object newFixnum(String value, int radix) throws NumberFormatException {
         return parser.getRuntime().newFixnum(Long.parseLong(value, radix));
+    }
+
+    public boolean isVerbose() {
+        return parser.getRuntime().isVerbose();
+    }
+
+    @Override
+    public void warn(ID id, Position position, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warn(ID id, String fileName, int lineNumber, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warn(ID id, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, Position position, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, String fileName, int lineNumber, String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warn(ID id, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warn(ID id, Position position, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, Position position, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     public enum Keyword {
@@ -327,7 +386,7 @@ public class RipperLexer {
      * @param inclusive include previous position into position information at current locaiton
      * @return a new position
      */
-    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    public Position getPosition(Position startPosition) {
     	return src.getPosition(startPosition); 
     }
     
@@ -335,7 +394,7 @@ public class RipperLexer {
         return parser.context.getRuntime();
     }
     
-    public ISourcePosition getPosition() {
+    public Position getPosition() {
         return src.getPosition();
     }
 
@@ -495,7 +554,7 @@ public class RipperLexer {
     }
 
     // STR_NEW3/parser_str_new
-    public IRubyObject createStr(ISourcePosition position, ByteList buffer, int flags) {
+    public IRubyObject createStr(Position position, ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
@@ -1417,10 +1476,9 @@ public class RipperLexer {
         //tmpPosition is required because getPosition()'s side effects.
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
-        ISourcePosition tmpPosition = getPosition();
+        Position tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
-            IRubyWarnings warnings = getRuntime().getWarnings();
-            if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
+            if (isVerbose()) warning(Warnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -2089,8 +2147,7 @@ public class RipperLexer {
                     break;
                 }
                 if (c2 != 0) {
-                    IRubyWarnings warnings = getRuntime().getWarnings();
-                    warnings.warn(IRubyWarnings.ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
+                    warn(Warnings.ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
                 }
             }
             src.unread(c);
@@ -2208,9 +2265,7 @@ public class RipperLexer {
         default:
             src.unread(c);
             if (isSpaceArg(c, spaceSeen)) {
-                IRubyWarnings warnings = getRuntime().getWarnings();
-                
-                if (warnings.isVerbose()) warnings.warning(IRubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
+                if (isVerbose()) warning(Warnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;

@@ -28,18 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import org.jruby.lexer.yacc.ISourcePosition;
-
 public class SimplePositionFactory {
     private LexerSource source;
-    private ISourcePosition lastPosition;
+    private Position lastPosition;
 
     public SimplePositionFactory(LexerSource source, int line) {
         this.source = source;
         lastPosition = new Position(source.getFilename(), line);
     }
 
-    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    public Position getPosition(Position startPosition) {
         if (startPosition != null) {
             lastPosition = startPosition;
             
@@ -49,7 +47,7 @@ public class SimplePositionFactory {
         return getPosition();
     }
 
-    public ISourcePosition getPosition() {
+    public Position getPosition() {
         if (lastPosition.getStartLine() == source.getVirtualLine()) return lastPosition;
 
         lastPosition = new Position(source.getFilename(), source.getVirtualLine());

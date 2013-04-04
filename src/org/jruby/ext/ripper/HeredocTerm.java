@@ -28,11 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.lexer.yacc.Token;
-
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
@@ -75,7 +70,7 @@ public class HeredocTerm extends StrTerm {
 
         // Found end marker for this heredoc
         if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true)) {
-            ISourcePosition position = lexer.getPosition();
+            Position position = lexer.getPosition();
             
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
@@ -86,7 +81,7 @@ public class HeredocTerm extends StrTerm {
 
         ByteList str = new ByteList();
         str.setEncoding(lexer.getEncoding());
-        ISourcePosition position;
+        Position position;
         
         if ((flags & RipperLexer.STR_FUNC_EXPAND) == 0) {
             do {
@@ -138,7 +133,8 @@ public class HeredocTerm extends StrTerm {
     }
     
     private void syntaxError(LexerSource src) {
-        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), src.getCurrentLine(), 
-                "can't find string \"" + marker + "\" anywhere before EOF", marker);
+        // FIXME: Ripper error here
+//        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), src.getCurrentLine(), 
+//                "can't find string \"" + marker + "\" anywhere before EOF", marker);
     }
 }

@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.jcodings.Encoding;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
@@ -126,7 +125,7 @@ public abstract class LexerSource {
      * 
      * @return the current position
      */
-    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    public Position getPosition(Position startPosition) {
     	return positionFactory.getPosition(startPosition);
     }
     
@@ -135,7 +134,7 @@ public abstract class LexerSource {
      * 
      * @return the current position
      */
-    public ISourcePosition getPosition() {
+    public Position getPosition() {
     	return positionFactory.getPosition(null);
     }
 
@@ -215,7 +214,7 @@ public abstract class LexerSource {
 
     // Super slow codepoint reader when we detect non-asci chars
     public int readCodepoint(int first, Encoding encoding) throws IOException {
-        int count = 0;
+        int count;
         byte[] value = new byte[6];
 
         // We know this will never be EOF

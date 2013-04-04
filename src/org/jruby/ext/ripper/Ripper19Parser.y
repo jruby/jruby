@@ -31,8 +31,8 @@ package org.jruby.ext.ripper;
 import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
+import org.jruby.ext.ripper.Warnings.ID;
 
 public class Ripper19Parser extends RipperParser {
     public Ripper19Parser(ThreadContext context, IRubyObject ripper, LexerSource source) {

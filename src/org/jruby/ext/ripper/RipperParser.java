@@ -32,13 +32,10 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
+import org.jruby.ext.ripper.Warnings.ID;
 import org.jruby.runtime.Helpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.StackState;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -162,7 +159,7 @@ public class RipperParser {
         return shadowing_lvar(identifier);
     }
     
-    protected void getterIdentifierError(ISourcePosition position, String identifier) {
+    protected void getterIdentifierError(Position position, String identifier) {
         throw new SyntaxException(SyntaxException.PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
                 "identifier " + identifier + " is not valid", identifier);
     }    
@@ -237,10 +234,8 @@ public class RipperParser {
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
             
-            IRubyWarnings warnings = context.runtime.getWarnings();
-
-            if (warnings.isVerbose() && current.isDefined(name) >= 0) {
-                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
+            if (lexer.isVerbose() && current.isDefined(name) >= 0) {
+                lexer.warning(ID.STATEMENT_NOT_REACHED,lexer.getPosition(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
@@ -254,8 +249,8 @@ public class RipperParser {
         return lexer.getConditionState();
     }
     
-    public ISourcePosition getPosition() {
-        return null;
+    public Position getPosition() {
+        return lexer.getPosition();
     }
 
     public boolean isInDef() {
@@ -312,16 +307,12 @@ public class RipperParser {
         lexer.setState(lexState);
     }
 
-    public void warning(ID id, ISourcePosition position, String message) {
-        IRubyWarnings warnings = context.runtime.getWarnings();
-        
-        if (warnings.isVerbose()) warnings.warning(id, position, message);
+    public void warning(ID id, Position position, String message) {
+        if (lexer.isVerbose()) lexer.warning(id, position, message);
     }
 
-    public void warn(ID id, ISourcePosition position, String message) {
-        IRubyWarnings warnings = context.runtime.getWarnings();
-        
-        warnings.warn(id, position, message);
+    public void warn(ID id, Position position, String message) {
+        lexer.warn(id, position, message);
     }
 
     public Integer incrementParenNest() {

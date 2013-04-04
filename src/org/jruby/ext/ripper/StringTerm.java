@@ -29,9 +29,7 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.lexer.yacc.Token;
+import org.jruby.ext.ripper.SyntaxException.PID;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
