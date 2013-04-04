@@ -74,7 +74,7 @@ class Ant
     def assign_attributes(instance, args)
       wrapper = RuntimeConfigurable.new instance, instance.task_name
       args.each do |key, value|
-        wrapper.set_attribute key, @ant.project.replace_properties(to_string(value))
+        wrapper.set_attribute to_string(key), @ant.project.replace_properties(to_string(value))
       end
     end
 
