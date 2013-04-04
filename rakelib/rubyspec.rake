@@ -166,7 +166,14 @@ namespace :spec do
   desc "Run RubySpec in interpreted mode under the language compat version ENV['RUBYSPEC_LANG_VER']"
   task :ci_interpreted_via_env do
     ENV['RUBYSPEC_LANG_VER'] ||= '1.9'
-    mspec :compile_mode => 'OFF', :compat => ENV['RUBYSPEC_LANG_VER'].to_s
+    case
+    when ENV['RUBYSPEC_LANG_VER'] == '1.8'
+      spec_config_file = RUBY18_MSPEC_FILE
+    else
+      spec_config_file = RUBY19_MSPEC_FILE
+    end
+    mspec :compile_mode => 'OFF', :compat => ENV['RUBYSPEC_LANG_VER'],
+      :spec_config => spec_config_file
   end
   
   # Complimentary tasks for running specs
