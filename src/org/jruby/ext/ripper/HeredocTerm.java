@@ -29,7 +29,6 @@
 package org.jruby.ext.ripper;
 
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;

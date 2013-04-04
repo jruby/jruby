@@ -36,8 +36,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.lexer.yacc.InputStreamLexerSource;
-import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;

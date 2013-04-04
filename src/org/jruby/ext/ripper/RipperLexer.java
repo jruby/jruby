@@ -42,7 +42,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;

@@ -37,7 +37,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.parser.StaticScope;
