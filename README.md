@@ -40,7 +40,7 @@ see the next section to build JRuby first.
 You will need:
 
 * JDK 1.6 or greater
-* Apache Ant (http://jakarta.apache.org/ant/) 1.7 or greater.
+* Apache Ant (http://jakarta.apache.org/ant/) 1.7.x or 1.8.x.
 
 To compile, just type:
 
