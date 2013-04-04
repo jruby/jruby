@@ -34,6 +34,9 @@
     <target name="spec:ci_interpreted_19" depends="install-gems">
         <rake task="spec:ci_interpreted_19"/>
     </target>
+    <target name="spec:ci_interpreted_via_env" depends="install-gems">
+        <rake task="spec:ci_interpreted_via_env"/>
+    </target>
     <target name="spec:ci_compiled_18" depends="install-gems">
         <rake task="spec:ci_compiled_18"/>
     </target>
