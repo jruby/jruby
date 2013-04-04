@@ -133,6 +133,7 @@ public class RipperLexer implements Warnings {
         return parser.getRuntime().newFixnum(Long.parseLong(value, radix));
     }
 
+    @Override
     public boolean isVerbose() {
         return parser.getRuntime().isVerbose();
     }
@@ -386,8 +387,8 @@ public class RipperLexer implements Warnings {
      * @param inclusive include previous position into position information at current locaiton
      * @return a new position
      */
-    public Position getPosition(Position startPosition) {
-    	return src.getPosition(startPosition); 
+    public Position getPosition(Position startPosition, boolean inclusive) {
+    	return src.getPosition(startPosition, inclusive); 
     }
     
     public Ruby getRuntime() {

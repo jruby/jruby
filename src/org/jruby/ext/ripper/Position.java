@@ -30,11 +30,17 @@ package org.jruby.ext.ripper;
 
 public class Position {
     final String filename;
-    final int line;
+    final int startLine;
+    final int endLine;
+    final int startOffset;
+    final int endOffset;
 
-    public Position(String filename, int line) {
+    public Position(String filename, int startLine, int endLine, int startOffset, int endOffset) {
         this.filename = filename;
-        this.line = line;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.startOffset = startOffset;
+        this.endOffset = endOffset;
     }
 
     public String getFile() {
@@ -42,23 +48,23 @@ public class Position {
     }
 
     public int getStartLine() {
-        return line;
+        return startLine;
     }
 
-    public int getLine() {
-        return line;
+    public int getEndLine() {
+        return endLine;
     }
     
     public int getStartOffset() {
-        return -1;
+        return startOffset;
     }
     
     public int getEndOffset() {
-        return -1;
+        return endOffset;
     }
 
     @Override
     public String toString() {
-        return getFile() + ":" + (getStartLine() + 1);
+        return getFile() + ":L[" + getStartLine() + "," + getEndLine() + "]O[" + startOffset + ", " + endOffset + "]";
     }
 }

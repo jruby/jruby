@@ -49,8 +49,8 @@ import org.jruby.util.ByteList;
  * 
  */
 public abstract class LexerSource {
-	// Where we get new positions from.
-	private SimplePositionFactory positionFactory;
+	// Last position we gave out
+    private Position lastPosition;
 	
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -85,7 +85,7 @@ public abstract class LexerSource {
             boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-        positionFactory = new SimplePositionFactory(this, line);
+        lastPosition = new Position(sourceName, line, line, offset, offset);
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
@@ -119,15 +119,6 @@ public abstract class LexerSource {
     public int getOffset() {
         return (offset <= 0 ? 0 : offset);
     }
-
-    /**
-     * Where is the reader within the source {filename,row}
-     * 
-     * @return the current position
-     */
-    public Position getPosition(Position startPosition) {
-    	return positionFactory.getPosition(startPosition);
-    }
     
     /**
      * Where is the reader within the source {filename,row}
@@ -135,8 +126,29 @@ public abstract class LexerSource {
      * @return the current position
      */
     public Position getPosition() {
-    	return positionFactory.getPosition(null);
+        return new Position(getFilename(), lastPosition.getEndLine(),
+                    getLine(), lastPosition.getEndOffset(), getOffset());
     }
+    
+    /**
+     * Where is the reader within the source {filename,row}
+     * 
+     * @return the current position
+     */
+    public Position getPosition(Position startPosition, boolean inclusive) {
+        if (startPosition == null) {
+            lastPosition = new Position(getFilename(), lastPosition.getEndLine(),
+                    getLine(), lastPosition.getEndOffset(), getOffset());
+        } else if (inclusive) {
+            lastPosition = new Position(getFilename(), startPosition.getStartLine(),
+                    getLine(), startPosition.getStartOffset(), getOffset());
+        } else {
+            lastPosition = new Position(getFilename(), startPosition.getEndLine(),
+                    getLine(), startPosition.getEndOffset(), getOffset());
+        }
+
+        return lastPosition;
+    }    
 
     /**
      * Create a source.
