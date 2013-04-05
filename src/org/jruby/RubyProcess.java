@@ -32,6 +32,8 @@ package org.jruby;
 import jnr.ffi.*;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
+import jnr.ffi.Runtime;
+import jnr.ffi.byref.IntByReference;
 import jnr.posix.Times;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -51,7 +53,8 @@ import static org.jruby.CompatVersion.*;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
-
+import static org.jruby.util.WindowsFFI.kernel32;
+import static org.jruby.util.WindowsFFI.Kernel32.*;
 
 /**
  */
@@ -881,22 +884,6 @@ public class RubyProcess {
             throw runtime.newArgumentError("unsupported name `" + signalName + "'");
         }
     }
-	
-    public static interface Kernel32  {
-        jnr.ffi.Pointer OpenProcess(int dwDesiredAccess, int bInheritHandle, int dwProcessId);
-		int CloseHandle(jnr.ffi.Pointer handle);
-		int GetLastError();
-		int GetExitCodeProcess(jnr.ffi.Pointer hProcess, jnr.ffi.Pointer pointerToExitCodeDword);
-		int TerminateProcess(jnr.ffi.Pointer hProcess, int uExitCode);
-    }
-	
-	private static class Kernel32Holder {
-		static Kernel32 kernel32Instance = Library.loadLibrary("kernel32", Kernel32.class); // instantiated lazily
-	}
-
-	static Kernel32 kernel32() {
-		return Kernel32Holder.kernel32Instance;
-	}
 
     @Deprecated
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
@@ -932,21 +919,17 @@ public class RubyProcess {
         }
         
 		if (Platform.IS_WINDOWS) {
-			int PROCESS_QUERY_INFORMATION  = 0x0400;
-			int ERROR_INVALID_PARAMETER = 0x57;
-			int PROCESS_TERMINATE  = 0x0001;
-			int STILL_ACTIVE = 259;
-			jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(kernel32()), 4);
 		    for (int i = 1; i < args.length; i++) {
 				int pid = RubyNumeric.num2int(args[i]);
 				if (signal == 0) {
 					jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
 					if(ptr != null && ptr.address() != -1) {
 					   try {
+                           IntByReference status = new IntByReference(0);
 					       if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
 					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
 					       } else {
-					           if(status.getInt(0) != STILL_ACTIVE) {
+					           if(status.intValue() != STILL_ACTIVE) {
 							       throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
                                }
 					       }
@@ -965,10 +948,11 @@ public class RubyProcess {
 				    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
 					    try {
+                            IntByReference status = new IntByReference(0);
 					        if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
 					            throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
 					        } else {
-					            if (status.getInt(0) == STILL_ACTIVE) {
+					            if (status.intValue() == STILL_ACTIVE) {
 						            if (kernel32().TerminateProcess(ptr, 0) == 0) {
 						               throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
 						             }

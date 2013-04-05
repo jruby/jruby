@@ -29,6 +29,9 @@ package org.jruby.util;
 
 import jnr.ffi.*;
 import jnr.ffi.LibraryOption;
+import jnr.ffi.Runtime;
+import jnr.ffi.annotations.Out;
+import jnr.ffi.byref.IntByReference;
 import jnr.ffi.types.intptr_t;
 import jnr.ffi.types.uintptr_t;
 
@@ -40,7 +43,17 @@ import java.util.Map;
  */
 public class WindowsFFI {
     public static interface Kernel32 {
+        public static final int PROCESS_QUERY_INFORMATION  = 0x0400;
+        public static final int ERROR_INVALID_PARAMETER = 0x57;
+        public static final int PROCESS_TERMINATE  = 0x0001;
+        public static final int STILL_ACTIVE = 259;
+        
         int GetProcessId(@intptr_t long handle);
+        jnr.ffi.Pointer OpenProcess(int dwDesiredAccess, int bInheritHandle, int dwProcessId);
+        int CloseHandle(jnr.ffi.Pointer handle);
+        int GetLastError();
+        int GetExitCodeProcess(jnr.ffi.Pointer hProcess, @Out IntByReference pointerToExitCodeDword);
+        int TerminateProcess(jnr.ffi.Pointer hProcess, int uExitCode);
     }
 
     private static final class SingletonHolder {
@@ -50,6 +63,10 @@ public class WindowsFFI {
     }
 
     public static Kernel32 getKernel32() {
+        return kernel32();
+    }
+
+    public static Kernel32 kernel32() {
         return SingletonHolder.Kernel32;
     }
 }
