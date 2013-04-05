@@ -29,6 +29,9 @@ package org.jruby.util;
 
 import jnr.ffi.*;
 import jnr.ffi.LibraryOption;
+import jnr.ffi.types.intptr_t;
+import jnr.ffi.types.uintptr_t;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,16 +40,13 @@ import java.util.Map;
  */
 public class WindowsFFI {
     public static interface Kernel32 {
-        int GetProcessId(int handle);
+        int GetProcessId(@intptr_t long handle);
     }
 
     private static final class SingletonHolder {
-        static final Kernel32 Kernel32;
-        static {
-            Map<LibraryOption, Object> options = new HashMap<LibraryOption, Object>();
-            options.put(LibraryOption.CallingConvention, CallingConvention.STDCALL);
-            Kernel32 = Library.loadLibrary("Kernel32.dll", Kernel32.class, options);
-        }
+        static final Kernel32 Kernel32 = LibraryLoader.create(Kernel32.class)
+                .convention(CallingConvention.STDCALL)
+                .load("Kernel32");
     }
 
     public static Kernel32 getKernel32() {
