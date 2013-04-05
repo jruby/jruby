@@ -7,3 +7,4 @@ fails:Time#getlocal raises ArgumentError if the argument represents a value grea
 fails:Time#getlocal with an argument that responds to #to_int coerces using #to_int
 fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r
 fails:Time#getlocal with an argument that responds to #to_str coerces using #to_str
+fails:Time#getlocal raises ArgumentError if the String argument is not in an ASCII-compatible encoding

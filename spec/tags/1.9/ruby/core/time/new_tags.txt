@@ -15,3 +15,4 @@ fails:Time.new with a utc_offset argument raises ArgumentError if the argument r
 fails:Time.new with a utc_offset argument with an argument that responds to #to_int coerces using #to_int
 fails:Time.new with a utc_offset argument with an argument that responds to #to_r coerces using #to_r
 fails:Time.new with a utc_offset argument with an argument that responds to #to_str coerces using #to_str
+fails:Time.new with a utc_offset argument returns a non-UTC time
