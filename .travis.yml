@@ -2,24 +2,26 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
-# disable cext
-env:
-  global:
-    - JAVA_OPTS="-server -Djruby.cext.enabled=false"
-  matrix:
-    - ANT_TARGET='test-extended'
-    - ANT_TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
-    - ANT_TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
-
-matrix:
-  allow_failures:
-    - env: ANT_TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
-    - env: ANT_TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
 
 jdk:
   - oraclejdk7
-#  - openjdk6
-script: "ant $ANT_TARGET"
+  - openjdk6
+
+env:
+  # disable cext
+  global:
+    - JAVA_OPTS="-server -Djruby.cext.enabled=false"
+  matrix:
+    - TARGET='test-extended'
+    - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
+    - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
+
+matrix:
+  allow_failures:
+    - env: TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
+    - env: TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
+
+script: "ant $TARGET"
 install: /bin/true
 notifications:
   irc:
