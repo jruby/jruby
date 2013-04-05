@@ -251,6 +251,7 @@ public class RubyTime extends RubyObject {
     }
 
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             DateTimeZone dtz = getLocalTimeZone(runtime);
             DateTime dt = new DateTime(dtz);
@@ -475,12 +476,12 @@ public class RubyTime extends RubyObject {
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
         // ignore < usec on 1.8
-        long nsec = runtime.is1_9() ? this.nsec : (this.nsec / 1000 * 1000);
+        long nanosec = runtime.is1_9() ? this.nsec : (this.nsec / 1000 * 1000);
         long nsec_other = runtime.is1_9() ? other.nsec : (other.nsec / 1000 * 1000);
 
-		if (millis > millis_other || (millis == millis_other && nsec > nsec_other)) {
+		if (millis > millis_other || (millis == millis_other && nanosec > nsec_other)) {
 		    return 1;
-		} else if (millis < millis_other || (millis == millis_other && nsec < nsec_other)) {
+		} else if (millis < millis_other || (millis == millis_other && nanosec < nsec_other)) {
 		    return -1;
 		}
 
@@ -599,6 +600,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_8)
+    @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return context.runtime.newFixnum(cmp((RubyTime) other));
@@ -770,12 +772,12 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "subsec", compat = CompatVersion.RUBY1_9)
     public IRubyObject subsec() {
         Ruby runtime = getRuntime();
-        long nsec = dt.getMillisOfSecond() * 1000000 + this.nsec;
+        long nanosec = dt.getMillisOfSecond() * 1000000 + this.nsec;
 
-        if (nsec % 1000000000 == 0) return RubyFixnum.zero(runtime);
+        if (nanosec % 1000000000 == 0) return RubyFixnum.zero(runtime);
 
         return runtime.newRationalReduced(
-                nsec, 1000000000);
+                nanosec, 1000000000);
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
@@ -860,7 +862,7 @@ public class RubyTime extends RubyObject {
         byte dumpValue[] = new byte[8];
         long nanos = this.nsec;
         long usec = this.nsec / 1000;
-        long nsec = this.nsec % 1000;
+        long nanosec = this.nsec % 1000;
         
         int pe = 
             0x1                                 << 31 |
@@ -890,19 +892,19 @@ public class RubyTime extends RubyObject {
             copyInstanceVariablesInto(string);
 
             // nanos in numerator/denominator form
-            if (nsec != 0) {
-                string.setInternalVariable("nano_num", runtime.newFixnum(nsec));
+            if (nanosec != 0) {
+                string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
                 string.setInternalVariable("nano_den", runtime.newFixnum(1));
             }
 
             // submicro for 1.9.1 compat
             byte[] submicro = new byte[2];
             int len = 2;
-            submicro[1] = (byte)((nsec % 10) << 4);
-            nsec /= 10;
-            submicro[0] = (byte)(nsec % 10);
-            nsec /= 10;
-            submicro[0] |= (byte)((nsec % 10) << 4);
+            submicro[1] = (byte)((nanosec % 10) << 4);
+            nanosec /= 10;
+            submicro[0] = (byte)(nanosec % 10);
+            nanosec /= 10;
+            submicro[0] |= (byte)((nanosec % 10) << 4);
             if (submicro[1] == 0) len = 1;
             string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
 
@@ -1129,7 +1131,7 @@ public class RubyTime extends RubyObject {
 
         DateTime dt = new DateTime(DateTimeZone.UTC);
 
-        byte[] fromAsBytes = null;
+        byte[] fromAsBytes;
         fromAsBytes = from.convertToString().getBytes();
         if(fromAsBytes.length != 8) {
             throw runtime.newTypeError("marshaled time format differ");
