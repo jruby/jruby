@@ -396,7 +396,7 @@ public class RipperLexer implements Warnings {
     }
     
     public Position getPosition() {
-        return src.getPosition();
+        return src.getPosition(null, false);
     }
 
     public String getCurrentLine() {
@@ -999,6 +999,11 @@ public class RipperLexer implements Warnings {
             } else {
                 if (value == null) {
                     arg = parser.getRuntime().getNil();
+                } else if (value instanceof Token) {
+                    Token tok = (Token) value;
+                    arg = parser.getRuntime().newString("" + tok.getValue());
+                    lastEventLocation = tok.getPosition();
+                    System.out.println("POS: " + lastEventLocation);
                 } else {
                     arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
                 }
@@ -1007,6 +1012,12 @@ public class RipperLexer implements Warnings {
             arg = parser.getRuntime().newString((ByteList) value);
         }
         return parser.dispatch(tokenToEventId(token), arg);
+    }
+    
+    private Position lastEventLocation = null;
+    
+    public Position getEventLocation() {
+        return lastEventLocation != null ? lastEventLocation : src.getPosition();
     }
     
     private String tokenToEventId(int token) {
@@ -1432,7 +1443,7 @@ public class RipperLexer implements Warnings {
             setState(LexState.EXPR_END);
         }
 
-        yaccValue = parser.getRuntime().newString(value);
+        yaccValue = new Token(value, getPosition());
         identValue = value;
         return result;
     }
@@ -1582,7 +1593,7 @@ public class RipperLexer implements Warnings {
         int c = src.read();
         
         if (c == ':') {
-            yaccValue = getRuntime().newString("::");
+            yaccValue = new Token("::", getPosition());
             if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
                 setState(LexState.EXPR_BEG);
                 return Tokens.tCOLON3;
@@ -1697,7 +1708,7 @@ public class RipperLexer implements Warnings {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            yaccValue = getRuntime().newString("$" + (char) c);
+            yaccValue = new Token("$" + (char) c, getPosition());
             if (last_state == LexState.EXPR_FNAME) return Tokens.tGVAR;
 
             return Tokens.tBACK_REF;
@@ -1715,7 +1726,7 @@ public class RipperLexer implements Warnings {
                 return Tokens.tGVAR;
             }
             
-            yaccValue = getRuntime().newString(tokenBuffer.toString());
+            yaccValue = new Token(tokenBuffer.toString(), getPosition());
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);
@@ -1852,7 +1863,7 @@ public class RipperLexer implements Warnings {
                 src.unread(c2);
                 setState(LexState.EXPR_BEG);
                 src.read();
-                yaccValue = getRuntime().newString(tempVal);
+                yaccValue = new Token(tempVal, getPosition());
                 return Tokens.tLABEL;
             }
             src.unread(c2);
@@ -1870,9 +1881,9 @@ public class RipperLexer implements Warnings {
                     setState(keyword.state);
                 }
                 if (state == LexState.EXPR_FNAME) {
-                    yaccValue = getRuntime().newString(keyword.name);
+                    yaccValue = new Token(keyword.name, getPosition());
                 } else {
-                    yaccValue = getRuntime().newString(tempVal);
+                    yaccValue = new Token(tempVal, getPosition());
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
@@ -2178,7 +2189,7 @@ public class RipperLexer implements Warnings {
                 }
                 
                 setState(LexState.EXPR_END);
-                yaccValue = getRuntime().newString(oneCharBL);
+                yaccValue = new Token(oneCharBL, getPosition());
                 
                 return org.jruby.parser.Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
             } else {
@@ -2190,7 +2201,7 @@ public class RipperLexer implements Warnings {
         // TODO: this isn't handling multibyte yet
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = getRuntime().newString(oneCharBL);
+        yaccValue = new Token(oneCharBL, getPosition());
         return Tokens.tCHAR;
     }
     

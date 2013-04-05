@@ -329,12 +329,12 @@ public class RipperParser {
     }
     
     public long getColumn() {
-        return lexer.getPosition().getStartOffset();
+        return lexer.getEventLocation().getStartOffset();
     }
 
     public long getLineno() {
-        return lexer.getPosition().getStartLine() + 1; //position is zero-based
-    }    
+        return lexer.getEventLocation().getStartLine() + 1; //position is zero-based
+    }
     
     protected IRubyObject ripper;
     protected ThreadContext context;
