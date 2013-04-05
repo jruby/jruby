@@ -96,7 +96,7 @@ public class RubyTime extends RubyObject {
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
     
-    private static boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
+    private boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
     
     /* JRUBY-3560
      * joda-time disallows use of three-letter time zone IDs.
@@ -133,6 +133,10 @@ public class RubyTime extends RubyObject {
         put("MET", "MEST"); // needs to be overriden
         put("UCT","UCT");
     }};
+    
+    private void setIsTzRelative(boolean tzRelative) {
+        isTzRelative = tzRelative;
+    }
 
     @Override
     public int getNativeTypeIndex() {
@@ -1198,13 +1202,14 @@ public class RubyTime extends RubyObject {
         Ruby runtime = recv.getRuntime();
         int len = ARG_SIZE;
         Boolean isDst = null;
+        boolean setTzRelative = false; 
 
         DateTimeZone dtz;
         if (gmt) {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
             dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
-            isTzRelative = true;
+            setTzRelative = true;
         } else if (args.length == 10 && args[9].respondsTo("to_int")) {
             IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
             dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
@@ -1360,6 +1365,7 @@ public class RubyTime extends RubyObject {
         }
 
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        time.setIsTzRelative(setTzRelative);
         return time;
     }
 }
