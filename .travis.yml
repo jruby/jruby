@@ -18,7 +18,6 @@ env:
 
 matrix:
   allow_failures:
-    - jdk: openjdk6
     - env: TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
     - env: TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
 
