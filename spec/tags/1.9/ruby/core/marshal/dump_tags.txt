@@ -10,4 +10,3 @@ fails:Marshal.dump with a String dumps multiple strings using symlinks for the :
 fails:Marshal.dump with an Array dumps an empty Array
 fails:Marshal.dump with an Array dumps a non-empty Array
 fails:Marshal.dump with an Array dumps a recursive Array
-

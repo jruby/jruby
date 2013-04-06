@@ -1,4 +1,3 @@
-fails:Kernel#exec passes environment vars to the child environment
 fails:Kernel#exec raises an ArgumentError if the command includes a null byte
 fails:Kernel#exec raises Errno::EACCES when passed a directory
 fails:Kernel#exec unsets other environment variables when given a true :unsetenv_others option

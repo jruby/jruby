@@ -1,4 +1,2 @@
 unstable(JRUBY-4171,linux,intermittent failure):IO.popen writes to a write-only pipe
 fails:IO.popen starts returns a forked process if the command is -
-windows(JRUBY-4701):IO.popen returns the IO if no block given
-windows(JRUBY-4814):IO.popen reads from a read-only pipe

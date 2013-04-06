@@ -1,5 +1,3 @@
-fails:Process.spawn passes environment vars to the child environment
-fails:Process.spawn runs the specified command
 fails:Process.spawn returns immediately
 fails:Process.spawn unsets environment variables whose value is nil
 fails:Process.spawn calls #to_str to convert the environment keys

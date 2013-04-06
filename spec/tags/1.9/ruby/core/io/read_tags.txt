@@ -1,4 +1,3 @@
-fails:IO#read with 1.9 encodings strips the BOM when given 'rb:utf-7-bom' as the mode
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
 fails:IO.read raises an IOError if the options Hash specifies write mode

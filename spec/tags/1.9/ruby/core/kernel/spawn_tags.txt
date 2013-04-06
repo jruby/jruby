@@ -1,8 +1,6 @@
-fails:Kernel.spawn sets the child's environment variables according to a supplied hash
 fails:Kernel.spawn joins a new process group if :pgroup => true
 fails:Kernel.spawn redirects STDERR to the given file if :err => String
 windows(JRUBY-4354):Kernel.spawn executes the given command
-windows(JRUBY-4354):Kernel.spawn executes the given command as a new process
 windows(JRUBY-4354):Kernel.spawn returns the process ID of the new process as a Fixnum
 windows(JRUBY-4354):Kernel.spawn returns immediately
 fails:Kernel.spawn returns the process ID of the new process as a Fixnum
@@ -11,7 +9,6 @@ fails:Kernel.spawn redirects STDOUT to the given file descriptior if :out => Fix
 fails:Kernel.spawn redirects STDOUT to the given file if :out => String
 fails:Kernel.spawn redirects STDOUT to the given file if :out => IO
 fails:Kernel.spawn redirects STDERR to the given file descriptior if :err => Fixnum
-fails:Kernel.spawn generates a process of a command based on the given set of strings, regarding the first as the command and the others as the arguments
 fails:Kernel.spawn joins the current process group by default
 fails:Kernel.spawn redirects STDERR to the given file descriptor if :err => IO
 fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
