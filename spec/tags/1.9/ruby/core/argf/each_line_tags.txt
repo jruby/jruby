@@ -1,0 +1,2 @@
+fails(gh-631):ARGF.each_line reads each line of files
+fails(gh-631):ARGF.each_line returns self when passed a block

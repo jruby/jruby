@@ -1,1 +1,2 @@
 fails:Method#eql? missing methods returns true for the same method missing
+fails(gh-631):Method#eql? returns true if a method was defined using the other one

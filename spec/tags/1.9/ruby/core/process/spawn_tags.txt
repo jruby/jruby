@@ -38,3 +38,6 @@ fails:Process.spawn with a command array raises an ArgumentError if the Strings 
 fails:Process.spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
 fails(only in rake run?):Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Process.spawn returns the process ID of the new process as a Fixnum
+fails(gh-631):Process.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
+fails(gh-631):Process.spawn with multiple arguments preserves whitespace in passed arguments
+

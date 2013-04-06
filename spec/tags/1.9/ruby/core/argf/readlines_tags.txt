@@ -1,0 +1,1 @@
+fails(gh-631):ARGF.readlines reads all lines of all files

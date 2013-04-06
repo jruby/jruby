@@ -10,3 +10,6 @@ fails:Marshal.dump with a String dumps multiple strings using symlinks for the :
 fails:Marshal.dump with an Array dumps an empty Array
 fails:Marshal.dump with an Array dumps a non-empty Array
 fails:Marshal.dump with an Array dumps a recursive Array
+fails(gh-631):Marshal.dump with a Hash dumps an extended Hash
+fails(gh-631):Marshal.dump with a Regexp dumps a binary Regexp
+fails(gh-631):Marshal.dump with an Array dumps an extended Array

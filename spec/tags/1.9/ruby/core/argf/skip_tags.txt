@@ -1,0 +1,2 @@
+fails(gh-631):ARGF.skip skips the current file
+fails(gh-631):ARGF.skip has no effect when called twice in a row
