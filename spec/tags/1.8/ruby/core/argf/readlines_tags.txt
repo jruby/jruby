@@ -1,1 +1,1 @@
-falis(gh-631):ARGF.readlines reads all lines of all files
+fails(gh-631):ARGF.readlines reads all lines of all files

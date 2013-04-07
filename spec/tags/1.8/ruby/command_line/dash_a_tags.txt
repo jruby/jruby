@@ -1,2 +1,2 @@
-falis(gh-631):The -a command line option runs the code in loop conditional on Kernel.gets()
-falis(gh-631):The -a command line option sets $-a
+fails(gh-631):The -a command line option runs the code in loop conditional on Kernel.gets()
+fails(gh-631):The -a command line option sets $-a

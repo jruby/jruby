@@ -1,2 +1,2 @@
-falis(gh-631):StringScanner#concat raises a TypeError if the given argument can't be converted to a String
-falis(gh-631):StringScanner#concat when passed a Fixnum raises a TypeError
+fails(gh-631):StringScanner#concat raises a TypeError if the given argument can't be converted to a String
+fails(gh-631):StringScanner#concat when passed a Fixnum raises a TypeError

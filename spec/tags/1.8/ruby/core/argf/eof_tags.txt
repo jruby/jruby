@@ -1,2 +1,2 @@
-falis(gh-631):ARGF.eof returns true when reaching the end of a file
-falis(gh-631):ARGF.eof? returns true when reaching the end of a file
+fails(gh-631):ARGF.eof returns true when reaching the end of a file
+fails(gh-631):ARGF.eof? returns true when reaching the end of a file

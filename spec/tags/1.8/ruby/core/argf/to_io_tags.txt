@@ -1,1 +1,1 @@
-falis(gh-631):ARGF.to_io returns the IO of the current file
+fails(gh-631):ARGF.to_io returns the IO of the current file

@@ -1,1 +1,1 @@
-falis(gh-631):ARGF.pos= sets the correct position in files
+fails(gh-631):ARGF.pos= sets the correct position in files

@@ -1,9 +1,9 @@
 fails:Marshal.dump with a Float dumps a Float
-falis(gh-631):Marshal.dump with an object responding to #_dump dumps the object returned by #marshal_dump
-falis(gh-631):Marshal.dump with a String dumps a blank String
-falis(gh-631):Marshal.dump with a String dumps a short String
-falis(gh-631):Marshal.dump with a String dumps a long String
-falis(gh-631):Marshal.dump with a String dumps a String extended with a Module
-falis(gh-631):Marshal.dump with a Regexp dumps an extended Regexp
-falis(gh-631):Marshal.dump with an Array dumps an extended Array
-falis(gh-631):Marshal.dump with a Hash dumps an extended Hash
+fails(gh-631):Marshal.dump with an object responding to #_dump dumps the object returned by #marshal_dump
+fails(gh-631):Marshal.dump with a String dumps a blank String
+fails(gh-631):Marshal.dump with a String dumps a short String
+fails(gh-631):Marshal.dump with a String dumps a long String
+fails(gh-631):Marshal.dump with a String dumps a String extended with a Module
+fails(gh-631):Marshal.dump with a Regexp dumps an extended Regexp
+fails(gh-631):Marshal.dump with an Array dumps an extended Array
+fails(gh-631):Marshal.dump with a Hash dumps an extended Hash

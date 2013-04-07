@@ -1,1 +1,1 @@
-falis(gh-631):ARGF.to_i returns the current file number on each file
+fails(gh-631):ARGF.to_i returns the current file number on each file
