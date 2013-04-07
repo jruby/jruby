@@ -1,0 +1,2 @@
+falis(gh-631):StringScanner#<< raises a TypeError if the given argument can't be converted to a String
+falis(gh-631):StringScanner#<< when passed a Fixnum raises a TypeError

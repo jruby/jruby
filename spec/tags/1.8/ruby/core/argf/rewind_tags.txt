@@ -1,0 +1,2 @@
+falis(gh-631):ARGF.rewind goes back to beginning of current file
+falis(gh-631):ARGF.rewind resets ARGF.lineno to 0
