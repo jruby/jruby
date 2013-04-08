@@ -1,7 +1,3 @@
-fails:String#encode raises UndefinedConversionError if the String contains characters invalid for the target     encoding
-fails:String#encode replaces invalid characters
-fails:String#encode! raises UndefinedConversionError if the String contains characters invalid for the target     encoding
-fails:String#encode! replaces invalid characters
 java1.5:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences
 java1.5:String#encode! raises an Encoding::InvalidByteSequenceError for invalid byte sequences
 fails:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences

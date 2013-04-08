@@ -9,7 +9,6 @@ fails:Kernel.spawn redirects STDOUT to the given file descriptior if :out => Fix
 fails:Kernel.spawn redirects STDOUT to the given file if :out => String
 fails:Kernel.spawn redirects STDOUT to the given file if :out => IO
 fails:Kernel.spawn redirects STDERR to the given file descriptior if :err => Fixnum
-fails:Kernel.spawn joins the current process group by default
 fails:Kernel.spawn redirects STDERR to the given file descriptor if :err => IO
 fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
 fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO
@@ -73,8 +72,6 @@ fails:Kernel.spawn does not close file descriptors >= 3 in the child process whe
 fails:Kernel.spawn raises an Errno::EACCES when passed a directory
 fails:Kernel.spawn raises an ArgumentError when passed a string key in options
 fails:Kernel.spawn raises an ArgumentError when passed an unknown option key
-fails:Kernel.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
-fails:Kernel.spawn with a single argument calls #to_str to convert the argument to a String
 fails:Kernel.spawn with a single argument raises an ArgumentError if the command includes a null byte
 fails:Kernel.spawn with a single argument raises a TypeError if the argument does not respond to #to_str
 fails:Kernel.spawn with multiple arguments raises an ArgumentError if an argument includes a null byte
@@ -86,6 +83,3 @@ fails:Kernel.spawn with a command array raises a TypeError if an element in the 
 fails(only in rake run?):Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel.spawn with multiple arguments does not subject the arguments to shell expansion
-fails:Kernel.spawn with multiple arguments calls #to_str to convert the arguments to Strings
-fails:Kernel.spawn with a command array calls #to_str to convert the first element to a String

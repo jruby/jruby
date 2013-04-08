@@ -1,1 +1,2 @@
 windows(JRUBY-4317):Process.kill raises an ArgumentError for unknown signals
+windows(JRUBY-4317):Process.kill doesn't accept lowercase signal names
