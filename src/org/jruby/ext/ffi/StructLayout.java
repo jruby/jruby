@@ -40,6 +40,7 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -1101,6 +1102,11 @@ public final class StructLayout extends Type {
         @JRubyMethod(name = { "to_ptr" })
         public IRubyObject to_ptr(ThreadContext context) {
             return ptr;
+        }
+
+        @JRubyMethod(name = { "size" })
+        public IRubyObject size(ThreadContext context) {
+            return RubyFixnum.zero(context.getRuntime());
         }
     }
 

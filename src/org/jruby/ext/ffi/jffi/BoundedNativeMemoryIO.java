@@ -53,7 +53,7 @@ class BoundedNativeMemoryIO extends MemoryIO {
     }
 
     public BoundedNativeMemoryIO slice(long offset) {
-        checkBounds(offset, 1);
+        checkBounds(offset, 0);
         return offset == 0 ? this :new BoundedNativeMemoryIO(this, offset);
     }
 
