@@ -115,6 +115,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySocket(runtime, klass);
         }
