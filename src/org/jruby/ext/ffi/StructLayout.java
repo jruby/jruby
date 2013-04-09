@@ -104,7 +104,10 @@ public final class StructLayout extends Type {
         layoutClass.defineAnnotatedConstants(StructLayout.class);
         layoutClass.setReifiedClass(StructLayout.class);
 
-        RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", runtime.getObject(),
+        RubyClass inlineArrayClass = module.getClass("Struct").defineClassUnder("InlineArray", 
+                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        
+        RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", inlineArrayClass,
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
         arrayClass.includeModule(runtime.getEnumerable());
         arrayClass.defineAnnotatedMethods(ArrayProxy.class);
@@ -144,10 +147,6 @@ public final class StructLayout extends Type {
         RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
                 ArrayFieldAllocator.INSTANCE, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
-
-        RubyClass variableLengthArrayProxyClass = runtime.defineClassUnder("VariableLengthArrayProxy", runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        variableLengthArrayProxyClass.defineAnnotatedMethods(VariableLengthArrayProxy.class);
 
         RubyClass mappedFieldClass = runtime.defineClassUnder("Mapped", fieldClass,
                 MappedFieldAllocator.INSTANCE, layoutClass);
@@ -955,11 +954,13 @@ public final class StructLayout extends Type {
 
         ArrayProxy(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             super(runtime, klass);
-            this.ptr = ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize());
+            this.ptr = type.length() > 0 
+                    ? ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize())
+                    : ((AbstractMemory) ptr).slice(runtime, offset);
             this.arrayType = type;
             this.aio = aio;
-            this.cacheable = type.getComponentType() instanceof Type.Array 
-                    || type.getComponentType() instanceof StructByValue;
+            this.cacheable = type.length() > 0 && (type.getComponentType() instanceof Type.Array 
+                    || type.getComponentType() instanceof StructByValue);
         }
 
         private final long getOffset(IRubyObject index) {
@@ -967,7 +968,7 @@ public final class StructLayout extends Type {
         }
 
         private final long getOffset(int index) {
-            if (index < 0 || index >= arrayType.length()) {
+            if (index < 0 || (index >= arrayType.length() && arrayType.length() > 0)) {
                 throw getRuntime().newIndexError("index " + index + " out of bounds");
             }
 
@@ -1058,55 +1059,6 @@ public final class StructLayout extends Type {
         @JRubyMethod(name = { "to_s" })
         public IRubyObject to_s(ThreadContext context) {
             return MemoryUtil.getTaintedString(context.runtime, ptr.getMemoryIO(), 0, arrayType.length());
-        }
-    }
-
-    @JRubyClass(name="FFI::StructLayout::VariableLengthArrayProxy", parent="Object")
-    public static class VariableLengthArrayProxy extends RubyObject {
-        protected final AbstractMemory ptr;
-        final MemoryOp aio;
-        private final Type componentType;
-
-        VariableLengthArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.getFFI().ffiModule.getClass(CLASS_NAME).getClass("VariableLengthArrayProxy"),
-                    ptr, offset, type, aio);
-        }
-
-        VariableLengthArrayProxy(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, klass);
-            this.ptr = ((AbstractMemory) ptr).slice(runtime, offset);
-            this.aio = aio;
-            this.componentType = type.getComponentType();
-        }
-
-        private long getOffset(int index) {
-            if (index < 0) {
-                throw getRuntime().newIndexError("index " + index + " out of bounds");
-            }
-
-            return (long) (index * componentType.getNativeSize());
-        }
-
-
-        @JRubyMethod(name = "[]")
-        public IRubyObject get(ThreadContext context, IRubyObject index) {
-            return aio.get(context, ptr, getOffset(Util.int32Value(index)));
-        }
-
-        @JRubyMethod(name = "[]=")
-        public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
-            aio.put(context, ptr, getOffset(Util.int32Value(index)), value);
-            return value;
-        }
-
-        @JRubyMethod(name = { "to_ptr" })
-        public IRubyObject to_ptr(ThreadContext context) {
-            return ptr;
-        }
-
-        @JRubyMethod(name = { "size" })
-        public IRubyObject size(ThreadContext context) {
-            return RubyFixnum.zero(context.getRuntime());
         }
     }
 
@@ -1451,13 +1403,10 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
-                if (isVariableLength()) {
-                    s = new VariableLengthArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
-                } else {
-                    s = isCharArray()
-                        ? new StructLayout.CharArrayProxy(context.runtime, ptr, m.offset, arrayType, op)
-                        : new StructLayout.ArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
-                }
+                s = isCharArray()
+                    ? new StructLayout.CharArrayProxy(context.runtime, ptr, m.offset, arrayType, op)
+                    : new StructLayout.ArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
+
                 cache.putCachedValue(m, s);
             }
 
