@@ -129,6 +129,7 @@ public class RubyModule extends RubyObject {
             ));
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyModule(runtime, klass);
         }
@@ -1016,6 +1017,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
+        @Override
         public CacheEntry newCacheEntry(DynamicMethod method, int token) {
             return new CacheEntry(method, token);
         }
@@ -1025,6 +1027,7 @@ public class RubyModule extends RubyObject {
         public SynchronizedCacheEntryFactory(CacheEntryFactory previous) {
             super(previous);
         }
+        @Override
         public CacheEntry newCacheEntry(DynamicMethod method, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
