@@ -1678,7 +1678,7 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     
     private static int initGlobalJavaVersion() {
-        String specVersion = specVersion = Options.BYTECODE_VERSION.load();
+        String specVersion = Options.BYTECODE_VERSION.load();
         
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
