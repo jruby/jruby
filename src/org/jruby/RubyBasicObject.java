@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
@@ -1104,8 +1105,33 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(!invokedynamic(context, this, OP_EQUAL, other).isTrue());
     }
 
+    /**
+     * Compares this Ruby object with another.
+     *
+     * @param other another IRubyObject
+     * @return 0 if equal,
+     *         &lt; 0 if this is less than other,
+     *         &gt; 0 if this is greater than other
+     * @throws IllegalArgumentException if the objects cannot be compared.
+     */
     public int compareTo(IRubyObject other) {
-        return (int)invokedynamic(getRuntime().getCurrentContext(), this, OP_CMP, other).convertToInteger().getLongValue();
+        try {
+            IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
+                    this, OP_CMP, other);
+            // if RubyBasicObject#op_cmp is used, the result may be nil
+            if (cmp.isNil()) {
+                throw new IllegalArgumentException(
+                        "Incomparable objects: " + cmp.inspect() + " <=> " +
+                        other.inspect() + " returned nil");
+            } else {
+                return (int) cmp.convertToInteger().getLongValue();
+            }
+        } catch (RaiseException ex) {
+            // NoMethodError was raised, but the call came from java. The
+            // correct java exception is IllegalArgumentException. Otherwise,
+            // the ruby stack trace makes no sense because ruby didn't call <=>
+            throw new IllegalArgumentException("Incomparable objects", ex);
+        }
     }
 
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
