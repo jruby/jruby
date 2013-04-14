@@ -3083,6 +3083,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             metaClass.getVariableAccessorForWrite(name).set(this, value);
         }
     }
+    
+    @JRubyMethod(name = "constants", module = true, compat = RUBY1_9)
+    public static RubyArray constants(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        RubyArray array = runtime.newArray();
+        array.add(runtime.newSymbol("BasicObject"));
+        return array;
+    }
 
     // Deprecated methods below this line
 
