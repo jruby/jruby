@@ -92,6 +92,7 @@ public class RubyBoolean extends RubyObject {
         falseClass.setReifiedClass(RubyBoolean.class);
         
         falseClass.defineAnnotatedMethods(False.class);
+        falseClass.defineAnnotatedMethods(RubyBoolean.class);
         
         falseClass.getMetaClass().undefineMethod("new");
         
@@ -105,6 +106,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.setReifiedClass(RubyBoolean.class);
         
         trueClass.defineAnnotatedMethods(True.class);
+        trueClass.defineAnnotatedMethods(RubyBoolean.class);
         
         trueClass.getMetaClass().undefineMethod("new");
         
