@@ -329,6 +329,15 @@ public class ThreadService {
             this.type = type;
             this.exception = exception;
         }
+        
+        public String toString() {
+            switch (type) {
+                case KILL: return sender.toString() + " sent KILL to " + target;
+                case RAISE: return sender.toString() + " sent RAISE to " + target + ": " + exception.getMetaClass().getRealClass();
+                case WAKEUP: return sender.toString() + " sent WAKEUP to " + target;
+            }
+            return ""; // not reached
+        }
     }
 
     public synchronized void deliverEvent(Event event) {
