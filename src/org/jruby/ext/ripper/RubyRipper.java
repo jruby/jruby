@@ -301,6 +301,8 @@ public class RubyRipper extends RubyObject {
             return (IRubyObject) parser.parse(true);
         } catch (IOException e) {
             System.out.println("ERRROR: " + e);
+        } catch (SyntaxException e) {
+            
         }
         return context.runtime.getNil();
     }    

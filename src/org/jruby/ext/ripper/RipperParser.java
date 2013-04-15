@@ -280,7 +280,7 @@ public class RipperParser {
     public void yyerror(String message, String[] expected, String found) {
         String text = message + ", unexpected " + found + "\n";
         
-        throw new SyntaxException(SyntaxException.PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), text, found);
+        dispatch("on_parse_error", getRuntime().newString(text));
     }
 
     public Integer getLeftParenBegin() {
