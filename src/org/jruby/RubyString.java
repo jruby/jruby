@@ -3084,6 +3084,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
+        return gsubCommon19(context, block, repl, hash, arg0, bang, tuFlags, true);
+    }
+
+    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
+            RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags, boolean useBackref) {
         Ruby runtime = context.runtime;
 
         final Regex pattern, prepared;
@@ -3104,10 +3109,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         byte[]bytes = value.getUnsafeBytes();
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
-        final DynamicScope scope = context.getCurrentScope();
+        DynamicScope scope = null;
+        if (useBackref) scope = context.getCurrentScope();
+        
         int beg = matcher.search(begin, range, Option.NONE);
         if (beg < 0) {
-            scope.setBackRef(runtime.getNil());
+            if (useBackref) scope.setBackRef(runtime.getNil());
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
@@ -3130,7 +3137,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr)); 
                 } else {            // block given
-                    match = RubyRegexp.updateBackRef19(context, this, scope, matcher, pattern);
+                    match = RubyRegexp.updateBackRef19(context, this, scope, matcher, pattern, useBackref);
                     match.regexp = regexp;
                     val = objAsString(context, block.yield(context, substr));
                 }
@@ -3158,9 +3165,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (slen > offset) dest.cat(bytes, cp, slen - offset, enc);
 
         if (match != null) { // block given
-            scope.setBackRef(match);
+            if (useBackref) scope.setBackRef(match);
         } else {
-            match = RubyRegexp.updateBackRef19(context, this, scope, matcher, pattern);
+            match = RubyRegexp.updateBackRef19(context, this, scope, matcher, pattern, useBackref);
             match.regexp = regexp;
         }
 
@@ -7392,30 +7399,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_c(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // FIXME: Ideally we would not need to call backref-sensitive methods here
-        context.pushScope(DynamicScope.newDynamicScope(INTERNAL_STATIC_SCOPE));
+        IRubyObject s = Helpers.invoke(
+                context, this, "gsub",
+                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                runtime.newString(new ByteList(new byte[]{'_'})));
 
-        try {
-            DynamicScope scope = context.getCurrentScope();
-            IRubyObject backref = scope.getBackRef(runtime);
-            if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        RubyArray a = RubyComplex.str_to_c_internal(context, s);
 
-            IRubyObject s = Helpers.invoke(
-                    context, this, "gsub",
-                    RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                    runtime.newString(new ByteList(new byte[]{'_'})));
-
-            RubyArray a = RubyComplex.str_to_c_internal(context, s);
-
-            scope.setBackRef(backref);
-
-            if (!a.eltInternal(0).isNil()) {
-                return a.eltInternal(0);
-            } else {
-                return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
-            }
-        } finally {
-            context.popScope();
+        if (!a.eltInternal(0).isNil()) {
+            return a.eltInternal(0);
+        } else {
+            return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
         }
     }
 
@@ -7426,30 +7420,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // FIXME: Ideally we would not need to call backref-sensitive methods here
-        context.pushScope(DynamicScope.newDynamicScope(INTERNAL_STATIC_SCOPE));
+        IRubyObject s = Helpers.invoke(
+                context, this, "gsub",
+                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                runtime.newString(new ByteList(new byte[]{'_'})));
 
-        try {
-            DynamicScope scope = context.getCurrentScope();
-            IRubyObject backref = scope.getBackRef(runtime);
-            if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        RubyArray a = RubyRational.str_to_r_internal(context, s);
 
-            IRubyObject s = Helpers.invoke(
-                    context, this, "gsub",
-                    RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                    runtime.newString(new ByteList(new byte[]{'_'})));
-
-            RubyArray a = RubyRational.str_to_r_internal(context, s);
-
-            scope.setBackRef(backref);
-
-            if (!a.eltInternal(0).isNil()) {
-                return a.eltInternal(0);
-            } else {
-                return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
-            }
-        } finally {
-            context.popScope();
+        if (!a.eltInternal(0).isNil()) {
+            return a.eltInternal(0);
+        } else {
+            return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
         }
     }    
 

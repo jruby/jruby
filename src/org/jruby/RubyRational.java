@@ -62,6 +62,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
@@ -382,10 +383,6 @@ public class RubyRational extends RubyNumeric {
             if (k_exact_p(a2Complex.getImage()) && f_zero_p(context, a2Complex.getImage())) a2 = a2Complex.getReal();
         }
         
-        DynamicScope scope = context.getCurrentScope();
-        IRubyObject backref = scope.getBackRef(context.runtime);
-        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
-        
         if (a1 instanceof RubyFloat) {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
@@ -401,8 +398,6 @@ public class RubyRational extends RubyNumeric {
         } else if (a2 instanceof RubyString) {
             a2 = str_to_r_strict(context, a2);
         }
-        
-        scope.setBackRef(backref);
 
         if (a1 instanceof RubyRational) {
             if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
@@ -1028,13 +1023,14 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
         if (bytes.getRealSize() == 0) return runtime.newArray(runtime.getNil(), recv);
 
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).callMethod(context, "match", s);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m19(context, s, false, Block.NULL_BLOCK);
         
         if (!m.isNil()) {
-            IRubyObject si = m.callMethod(context, "[]", RubyFixnum.one(runtime));
-            IRubyObject nu = m.callMethod(context, "[]", RubyFixnum.two(runtime));
-            IRubyObject de = m.callMethod(context, "[]", RubyFixnum.three(runtime));
-            IRubyObject re = m.callMethod(context, "post_match");
+            RubyMatchData match = (RubyMatchData)m;
+            IRubyObject si = match.op_aref19(RubyFixnum.one(runtime));
+            IRubyObject nu = match.op_aref19(RubyFixnum.two(runtime));
+            IRubyObject de = match.op_aref19(RubyFixnum.three(runtime));
+            IRubyObject re = match.post_match(context);
             
             RubyArray a = nu.callMethod(context, "split", RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat)).convertToArray();
             IRubyObject ifp = a.eltInternal(0);
