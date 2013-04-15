@@ -79,6 +79,7 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
+import org.jruby.util.ByteList;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -130,7 +131,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final boolean DEBUG = false;
 
     /** Thread statuses */
-    public static enum Status { RUN, SLEEP, ABORTING, DEAD }
+    public static enum Status { 
+        RUN, SLEEP, ABORTING, DEAD;
+        
+        public final ByteList bytes;
+        
+        Status() {
+            bytes = new ByteList(toString().toLowerCase().getBytes(RubyEncoding.UTF8));
+        }
+    }
 
     /** Current status in an atomic reference */
     private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
@@ -940,15 +949,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return result;
     }
 
+    public IRubyObject status() {
+        return status(getRuntime());
+    }
     @JRubyMethod(name = "status")
-    public synchronized IRubyObject status() {
+    public IRubyObject status(ThreadContext context) {
+        return status(context.runtime);
+    }
+    
+    private synchronized IRubyObject status(Ruby runtime) {
         if (threadImpl.isAlive()) {
-            // TODO: no java stringity
-            return getRuntime().newString(status.toString().toLowerCase());
+            return RubyString.newStringShared(runtime, status.get().bytes);
         } else if (exitingException != null) {
-            return getRuntime().getNil();
+            return runtime.getNil();
         } else {
-            return getRuntime().getFalse();
+            return runtime.getFalse();
         }
     }
 
