@@ -1003,7 +1003,6 @@ public class RipperLexer implements Warnings {
                     Token tok = (Token) value;
                     arg = parser.getRuntime().newString("" + tok.getValue());
                     lastEventLocation = tok.getPosition();
-                    System.out.println("POS: " + lastEventLocation);
                 } else {
                     arg = parser.getRuntime().newString("Error: " + value.getClass().getName());
                 }
@@ -1166,12 +1165,12 @@ public class RipperLexer implements Warnings {
             case Tokens.tSP: return "on_sp";
             case Tokens.tHEREDOC_BEG: return "on_heredoc_beg";
             case Tokens.tHEREDOC_END: return "on_heredoc_end";
+            default: // Weird catchall but we will try and not use < 256 value trick like MRI
+                return "on_CHAR";
                 // FIXME:
 //            case Tokens.k__END__:
 //                return "on___end__";
         }
-        
-        throw new RuntimeException("No such eventid: " + printToken(token));
     }
     
     // DEBUGGING HELP 
@@ -1527,6 +1526,7 @@ public class RipperLexer implements Warnings {
         
         if (!isIdentifierChar(c)) {
             src.unread(c);
+            yaccValue = new Token("@", getPosition());
             return '@';
         }
 
