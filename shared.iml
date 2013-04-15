@@ -13,6 +13,15 @@
       <excludeFolder url="file://$MODULE_DIR$/build.eclipse" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build_lib/unsafe-mock-1.0-SNAPSHOT.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
@@ -373,7 +382,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/joda-time-2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/joda-time-2.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -382,7 +391,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-analysis-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-analysis-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -391,7 +400,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-util-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-util-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -400,7 +409,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -418,7 +427,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-tree-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-tree-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -445,7 +454,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-commons-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-commons-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -499,7 +508,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/jline-2.7-SNAPSHOT.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/jline-2.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
