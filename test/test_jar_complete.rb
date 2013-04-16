@@ -117,4 +117,12 @@ class JarCompleteTest < Test::Unit::TestCase
 
     assert output == "Testing... 1.. 2.. 3..\n"
   end
+
+  def test_relative_require_from_gem_on_classpath
+    relative_require_gem = File.expand_path(File.join(File.dirname(__FILE__), "..", "samples", "relative_require.jar"))
+
+    `java -cp \"#{COMPLETE_JAR}:#{relative_require_gem}\" org.jruby.Main -rrelative_require -e "puts RelativeRequire::VERSION"`
+
+    assert $? == 0
+  end
 end
