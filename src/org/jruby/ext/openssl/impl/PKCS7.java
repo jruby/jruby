@@ -1110,6 +1110,8 @@ public class PKCS7 {
     public static final int CRLFEOL = 0x800;
     public static final int STREAM = 0x1000;
     public static final int NOCRL = 0x2000;
+    public static final int PARTIAL = 0x4000;
+    public static final int REUSE_DIGEST = 0x8000;
 
     /* Flags: for compatibility with older code */
     public static final int SMIME_TEXT = TEXT;
@@ -1121,6 +1123,8 @@ public class PKCS7 {
     public static final int SMIME_DETACHED = DETACHED;
     public static final int SMIME_BINARY = BINARY;
     public static final int SMIME_NOATTR = NOATTR;
+    public static final int SMIME_OLDMIME = NOOLDMIMETYPE;
+    public static final int SMIME_CRLFEOL = CRLFEOL;
 
     /* Function codes. */
     public static final int F_B64_READ_PKCS7 = 120;

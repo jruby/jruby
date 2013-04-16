@@ -29,7 +29,12 @@ package org.jruby.ext.openssl.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /** SMIME methods for PKCS7
  *
@@ -277,4 +282,161 @@ public class SMIME {
 
         return readPKCS7Base64(bio);
     }
-}
+
+    /* c: SMIME_write_PKCS7
+    *
+    */
+    public String writePKCS7(PKCS7 p7, String data, int flags) throws PKCS7Exception, IOException {
+
+        int ctype = p7.getType();
+        Set<AlgorithmIdentifier> mdAlgs = null;
+
+        if (ctype == ASN1Registry.NID_pkcs7_signed) {
+            mdAlgs = p7.getSign().getMdAlgs();
+        }
+
+        if (data != null && p7.isDetached()) {
+            flags |= PKCS7.SMIME_DETACHED; // to be compliant with cruby implementation.
+        }
+
+        String mimePrefix = "application/pkcs7-";
+        String mimeEOL;
+        String cName = "smime.p7s";
+
+        if ((flags & PKCS7.SMIME_CRLFEOL) > 0) {
+            mimeEOL = "\r\n";
+        } else {
+            mimeEOL = "\n";
+        }
+
+        StringBuilder output = new StringBuilder();
+        output.append("MIME-Version: 1.0").append(mimeEOL);
+
+        // Detached sign.
+        if ((flags & PKCS7.SMIME_DETACHED) > 0 && data != null) {
+            String mimeBoundary = generateMIMEBoundary(32);
+
+            // write headers
+            output.append("Content-Type: multipart/signed;");
+            output.append(" protocol=\"").append(mimePrefix).append("signature\";");
+            output.append(" micalg=\"").append(getMICalg(mdAlgs)).append("\";");
+            output.append(" boundary=\"----").append(mimeBoundary).append("\"");
+            output.append(mimeEOL).append(mimeEOL);
+
+            // write S/MIME preamble message
+            output.append("This is an S/MIME signed message.");
+            output.append(mimeEOL).append(mimeEOL);
+
+            // write data part
+            output.append("------").append(mimeBoundary).append(mimeEOL);
+            if ((flags & PKCS7.TEXT) > 0) {
+                output.append("Content-Type: text/plain;").append(mimeEOL).append(mimeEOL);
+            }
+            output.append(data);
+            output.append(mimeEOL);
+            output.append("------").append(mimeBoundary).append(mimeEOL);
+
+            // write signature part
+            output.append("Content-Type: application/x-pkcs7-signature; name=").append(cName)
+                    .append(mimeEOL);
+            output.append("Content-Transfer-Encoding: base64").append(mimeEOL);
+            output.append("Content-Description: S/MIME Signature").append(mimeEOL);
+            output.append("Content-Disposition: attachment; filename=").append(cName);
+            output.append(mimeEOL).append(mimeEOL);
+
+            byte[] p7Bytes = p7.toASN1();
+            String p7Base64 = Base64.encodeBytes(p7Bytes, Base64.DO_BREAK_LINES);
+            output.append(p7Base64).append(mimeEOL);
+
+            // write final boundary
+            output.append("------").append(mimeBoundary).append("--").append(mimeEOL);
+
+            return output.toString();
+        }
+
+        String msgType = null;
+
+        // This is not a detached sign.
+        if (ctype == ASN1Registry.NID_pkcs7_enveloped) {
+            msgType = "enveloped-data";
+        } else if (ctype == ASN1Registry.NID_pkcs7_signed) {
+            if (mdAlgs != null && mdAlgs.size() > 0) {
+                msgType = "signed-data";
+            } else {
+                msgType = "certs-only";
+            }
+        } else if (ctype == ASN1Registry.NID_id_smime_ct_compressedData) {
+            msgType = "compressed-data";
+            cName = "smime.p7z";
+        }
+
+        // MIME Headers
+        output.append("Content-Disposition: attachment;");
+        output.append(" filename=\"").append(cName).append("\"").append(mimeEOL);
+        output.append("Content-Type: ").append(mimePrefix).append("mime;");
+        if (msgType != null) {
+            output.append(" smime-type=").append(msgType).append(";");
+        }
+        output.append(" name=").append(cName).append(mimeEOL);
+        output.append("Content-Transfer-Encoding: base64").append(mimeEOL).append(mimeEOL);
+
+        // Write content
+        byte[] p7Bytes = p7.toASN1();
+        String p7Base64 = Base64.encodeBytes(p7Bytes, Base64.DO_BREAK_LINES);
+        output.append(p7Base64).append(mimeEOL);
+
+        return output.toString();
+    }
+
+    /**
+     * Generates MIME compatible MIC algorithm names for content-type header.
+     *
+     *  c : asn1_write_micalg
+     */
+    private String getMICalg(Set<AlgorithmIdentifier> mdAlgs) {
+
+        StringBuilder output = new StringBuilder();
+        Iterator<AlgorithmIdentifier> it = mdAlgs.iterator();
+
+        boolean writeComma = false;
+        while (it.hasNext()) {
+            if (writeComma) {
+                output.append(",");
+            }
+
+            String ln = ASN1Registry.nid2ln(ASN1Registry.obj2nid(it.next().getAlgorithm()));
+            if (ln == null) {
+                ln = "unknown";
+            }
+
+            output.append(ln);
+            writeComma = true;
+        }
+
+        return output.toString();
+    }
+
+    /**
+     * Generates a random boundary for MIME multipart messages.
+     * The alphabet can include other characters, but digits and letters should suffice.
+     *
+     * @param length the length of the string. (MIME spec allows a max of 70 chars)
+     * @return the generated boundary.
+     */
+    private String generateMIMEBoundary(int length) {
+
+        final char alphabet[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2',
+                '3', '4', '5', '6', '7', '8', '9' };
+        Random random = new Random();
+
+        StringBuilder output = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            output.append(alphabet[random.nextInt(length)]);
+        }
+
+        return output.toString();
+    }
+
+ }
