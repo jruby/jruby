@@ -160,8 +160,34 @@ public class PKCS7 extends RubyObject {
 
         @JRubyMethod(meta=true, rest=true)
         public static IRubyObject write_smime(IRubyObject recv, IRubyObject[] args) {
-            System.err.println("WARNING: unimplemented method called PKCS7#write_smime");
-            return recv.getRuntime().getNil();
+
+            Ruby runtime = recv.getRuntime();
+            IRubyObject pkcs7 = runtime.getNil();
+            IRubyObject data = runtime.getNil();
+            IRubyObject flags = runtime.getNil();
+
+            switch(Arity.checkArgumentCount(runtime, args, 1, 3)) {
+            case 3:
+                flags = args[2];
+            case 2:
+                data = args[1];
+            case 1:
+                pkcs7 = args[0];
+            }
+
+            PKCS7 pk7 = (PKCS7) pkcs7;
+            int flg = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
+
+            String smimeStr = "";
+            try {
+                smimeStr = new SMIME().writePKCS7(pk7.p7, data.asJavaString(), flg);
+            } catch (PKCS7Exception e) {
+                throw newPKCS7Exception(recv.getRuntime(), e);
+            } catch (IOException e) {
+                throw newPKCS7Error(recv.getRuntime(), e.getMessage());
+            }
+
+            return RubyString.newString(recv.getRuntime(), smimeStr);
         }
 
         @JRubyMethod(meta=true, rest=true)

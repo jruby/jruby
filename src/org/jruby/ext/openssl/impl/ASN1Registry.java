@@ -1166,6 +1166,10 @@ public class ASN1Registry {
     public final static String SN_id_smime_ct_DVCSResponseData = "id-smime-ct-DVCSResponseData";
     public final static String OBJ_id_smime_ct_DVCSResponseData = OBJ_id_smime_ct + ".8";
 
+    public final static int    NID_id_smime_ct_compressedData  =    786;
+    public final static String SN_id_smime_ct_compressedData = "id-smime-ct-compressedData";
+    public final static String OBJ_id_smime_ct_compressedData  =  OBJ_id_smime_ct + ".9";
+
     public final static int    NID_id_smime_aa_receiptRequest = 212;
     public final static String SN_id_smime_aa_receiptRequest = "id-smime-aa-receiptRequest";
     public final static String OBJ_id_smime_aa_receiptRequest = OBJ_id_smime_aa + ".1";
