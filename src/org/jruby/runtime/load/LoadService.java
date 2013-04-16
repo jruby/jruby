@@ -1178,7 +1178,9 @@ public class LoadService {
     protected LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
         // if a jar or file URL, return load service resource directly without further searching
         LoadServiceResource foundResource = null;
-        if (baseName.startsWith("jar:")) {
+        if (baseName.startsWith("jar:file:")) {
+            return tryResourceFromJarURL(state, baseName.replaceFirst("jar:", ""), suffixType);
+        } else if (baseName.startsWith("jar:")) {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 try {
