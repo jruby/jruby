@@ -47,7 +47,7 @@ public class Ripper19Parser extends RipperParser {
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
-  k__ENCODING__ kDO_LAMBDA k__END__
+  k__ENCODING__ kDO_LAMBDA
 
 %token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <IRubyObject> sym symbol operation operation2 operation3 cname fname 
@@ -186,6 +186,7 @@ public class Ripper19Parser extends RipperParser {
 %right tBANG tTILDE tUPLUS
 
    //%token <Integer> tLAST_TOKEN
+%token <IRubyObject> k__END__
 
 %%
 program       : {
