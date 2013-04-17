@@ -581,6 +581,7 @@ public class RipperLexer implements Warnings {
     private int parseQuote(int c) throws IOException {
         int begin, end;
         boolean shortHand;
+        String value = "%" + (char) c;
         
         // Short-hand (e.g. %{,%.,%!,... versus %Q{).
         if (!Character.isLetterOrDigit(c)) {
@@ -591,6 +592,7 @@ public class RipperLexer implements Warnings {
         } else {
             shortHand = false;
             begin = src.read();
+            value = value + (char) begin;
             if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) {
                 throw new SyntaxException(SyntaxException.PID.STRING_UNKNOWN_TYPE, getPosition(), getCurrentLine(), "unknown type of %string");
             }
@@ -610,6 +612,15 @@ public class RipperLexer implements Warnings {
             begin = '\0';
         }
 
+        // consume spaces here to record them as part of token
+        int w = src.read();
+        while (Character.isWhitespace(w)) {
+            value = value + (char) w;
+            w = src.read();
+        }
+        src.unread(w);
+        
+        yaccValue = new Token(value, getPosition());
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
