@@ -131,7 +131,7 @@ public class StringTerm extends StrTerm {
     }
 
     private String parseRegexpFlags(LexerSource src) throws IOException {
-        StringBuilder buf = new StringBuilder("/");
+        StringBuilder buf = new StringBuilder(""+end);
 
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);

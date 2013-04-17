@@ -1949,6 +1949,9 @@ public class RipperLexer implements Warnings {
         setState(LexState.EXPR_BEG);
         conditionState.stop();
         cmdArgumentState.stop();
+        
+        yaccValue = new Token("[", getPosition());
+        
         return c;
     }
     
@@ -1976,6 +1979,9 @@ public class RipperLexer implements Warnings {
         setState(LexState.EXPR_BEG);
         
         if (c != Tokens.tLBRACE) commandStart = true;
+        
+        yaccValue = new Token("{", getPosition());
+        
         return c;
     }
 
@@ -1996,6 +2002,8 @@ public class RipperLexer implements Warnings {
         conditionState.stop();
         cmdArgumentState.stop();
         setState(LexState.EXPR_BEG);
+        
+        yaccValue = new Token("(", getPosition());
         
         return result;
     }
@@ -2231,6 +2239,7 @@ public class RipperLexer implements Warnings {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
+        yaccValue = new Token("]", getPosition());
         return Tokens.tRBRACK;
     }
 
@@ -2238,6 +2247,7 @@ public class RipperLexer implements Warnings {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
+        yaccValue = new Token("}", getPosition());
         return Tokens.tRCURLY;
     }
 
@@ -2246,6 +2256,7 @@ public class RipperLexer implements Warnings {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDFN);
+        yaccValue = new Token(")", getPosition());
         return Tokens.tRPAREN;
     }
     
@@ -2258,7 +2269,8 @@ public class RipperLexer implements Warnings {
     private int slash(boolean spaceSeen) throws IOException {
         if (isBEG()) {
             lex_strterm = new StringTerm(str_regexp, '\0', '/');
-
+            yaccValue = new Token("/", getPosition());
+            
             return Tokens.tREGEXP_BEG;
         }
         
@@ -2266,16 +2278,23 @@ public class RipperLexer implements Warnings {
         
         if (c == '=') {
             setState(LexState.EXPR_BEG);
+            
+            yaccValue = new Token("/=", getPosition());
+            
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
         if (isSpaceArg(c, spaceSeen)) {
             arg_ambiguous();
             lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            yaccValue = new Token("/ ", getPosition());
+            
             return Tokens.tREGEXP_BEG;
         }
         
         determineExpressionState();
+        
+        yaccValue = new Token("/", getPosition());
         
         return Tokens.tDIVIDE;
     }
