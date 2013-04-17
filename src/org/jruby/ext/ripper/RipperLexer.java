@@ -1619,9 +1619,12 @@ public class RipperLexer implements Warnings {
             return Tokens.tCOLON2;
         }
 
+        yaccValue = new Token(":", getPosition());
+        
         if (isEND() || Character.isWhitespace(c)) {
             src.unread(c);
             setState(LexState.EXPR_BEG);
+            yaccValue = new Token(":", getPosition());
             return ':';
         }
         
