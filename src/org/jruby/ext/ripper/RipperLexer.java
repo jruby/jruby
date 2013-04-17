@@ -1231,8 +1231,8 @@ public class RipperLexer implements Warnings {
             case ' ': case '\t': case '\f': case '\r':
             case '\13': /* '\v' */ {
                 ByteList whitespaceBuf = new ByteList(); // FIXME: bytelist encoding hookedup
+                whitespaceBuf.append(c);
                 boolean looping = true;
-                getPosition();
                 spaceSeen = true;
                 while (looping && (c = src.read()) != EOF) {
                     switch (c) {
