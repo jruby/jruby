@@ -1789,6 +1789,7 @@ public class RipperLexer implements Warnings {
     
     private int doubleQuote() throws IOException {
         lex_strterm = new StringTerm(str_dquote, '\0', '"');
+        yaccValue = new Token("\"", getPosition());
 
         return Tokens.tSTRING_BEG;
     }
