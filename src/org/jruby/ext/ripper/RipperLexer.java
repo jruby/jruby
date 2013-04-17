@@ -1776,9 +1776,15 @@ public class RipperLexer implements Warnings {
         
         setState(LexState.EXPR_BEG);
         if ((c = src.read()) == '.') {
-            if ((c = src.read()) == '.') return Tokens.tDOT3;
+            if ((c = src.read()) == '.') {
+                yaccValue = new Token("..", getPosition());
 
+                return Tokens.tDOT3;
+            }
+            
             src.unread(c);
+            
+            yaccValue = new Token("..", getPosition());
             return Tokens.tDOT2;
         }
         
@@ -1789,6 +1795,9 @@ public class RipperLexer implements Warnings {
         }
         
         setState(LexState.EXPR_DOT);
+        
+        yaccValue = new Token(".", getPosition());
+        
         return Tokens.tDOT;
     }
     
