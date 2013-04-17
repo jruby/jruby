@@ -111,10 +111,10 @@ public class StringTerm extends StrTerm {
             case '$':
             case '@':
                 src.unread(c);
-                lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                lexer.setValue(new Token("#", lexer.getPosition()));
                 return Tokens.tSTRING_DVAR;
             case '{':
-                lexer.setValue(new Token("#" + c, lexer.getPosition())); 
+                lexer.setValue(new Token("#", lexer.getPosition())); 
                 return Tokens.tSTRING_DBEG;
             }
             buffer.append((byte) '#');
