@@ -69,7 +69,7 @@ public class HeredocTerm extends StrTerm {
         if (src.peek(RipperLexer.EOF)) syntaxError(src);
 
         // Found end marker for this heredoc
-        if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true)) {
+        if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true) != 0) {
             Position position = lexer.getPosition();
             
             // Put back lastLine for any elements past start of heredoc marker
@@ -89,7 +89,7 @@ public class HeredocTerm extends StrTerm {
                 str.append('\n');
                 if (src.peek(RipperLexer.EOF)) syntaxError(src);
                 position = lexer.getPosition();
-            } while (!src.matchMarker(marker, indent, true));
+            } while (src.matchMarker(marker, indent, true) == 0);
         } else {
             int c = src.read();
             if (c == '#') {
@@ -123,7 +123,7 @@ public class HeredocTerm extends StrTerm {
                 
                 if (src.peek(RipperLexer.EOF)) syntaxError(src);
                 position = lexer.getPosition();
-            } while (!src.matchMarker(marker, indent, true));
+            } while (src.matchMarker(marker, indent, true) == 0);
         }
 
         src.unreadMany(lastLine);

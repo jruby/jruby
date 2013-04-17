@@ -172,6 +172,7 @@ public interface Tokens {
     int tSP = Ripper19Parser.tSP;
     int tHEREDOC_BEG = Ripper19Parser.tHEREDOC_BEG;
     int tHEREDOC_END = Ripper19Parser.tHEREDOC_END;
+    int k__END__   = Ripper19Parser.k__END__;
 
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};

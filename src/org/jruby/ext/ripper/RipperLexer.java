@@ -1165,11 +1165,9 @@ public class RipperLexer implements Warnings {
             case Tokens.tSP: return "on_sp";
             case Tokens.tHEREDOC_BEG: return "on_heredoc_beg";
             case Tokens.tHEREDOC_END: return "on_heredoc_end";
+            case Tokens.k__END__: return "on___end__";
             default: // Weird catchall but we will try and not use < 256 value trick like MRI
                 return "on_CHAR";
-                // FIXME:
-//            case Tokens.k__END__:
-//                return "on___end__";
         }
     }
     
@@ -1309,7 +1307,7 @@ public class RipperLexer implements Warnings {
             case '=':
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
-                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false)) {
+                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != 0) {
                         c = src.read();
                         
                         if (Character.isWhitespace(c)) {
@@ -1328,7 +1326,7 @@ public class RipperLexer implements Warnings {
                                             getCurrentLine(), "embedded document meets end of file");
                                 }
                                 if (c != '=') continue;
-                                if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false)) {
+                                if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false) != 0) {
                                     ByteList list = src.readLineBytes();
                                     src.unread('\n');
                                     break;
@@ -1425,8 +1423,15 @@ public class RipperLexer implements Warnings {
             case '@':
                 return at();
             case '_':
-                if (src.wasBeginOfLine() && src.matchMarker(END_MARKER, false, true)) {
-                    return EOF;
+                if (src.wasBeginOfLine()) {
+                    int match = src.matchMarker(END_MARKER, false, true);
+
+                    if (match != 0) {
+                        String endString = match == '\n' ? "__END__\n" : "__END__";
+                        
+                        dispatchScanEvent(Tokens.k__END__, new Token(endString, getPosition()));
+                        return EOF;
+                    }
                 }
                 return identifier(c, commandState);
             default:

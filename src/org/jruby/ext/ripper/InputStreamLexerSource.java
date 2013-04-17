@@ -183,7 +183,7 @@ public class InputStreamLexerSource extends LexerSource {
     }
 
     @Override
-    public boolean matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
+    public int matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
         int length = match.length();
         ByteList buffer = new ByteList(length + 1);
         
@@ -191,7 +191,7 @@ public class InputStreamLexerSource extends LexerSource {
             indentLoop(buffer);
         }
         
-        if (!matches(match, buffer, length)) return false;
+        if (!matches(match, buffer, length)) return 0;
         
         return finishMarker(checkNewline, buffer); 
     }
@@ -220,20 +220,19 @@ public class InputStreamLexerSource extends LexerSource {
         return true;
     }
 
-    private boolean finishMarker(boolean checkNewline, ByteList buffer) throws IOException {
+    private int finishMarker(boolean checkNewline, ByteList buffer) throws IOException {
 
-        if (!checkNewline) {
-            return true;
-        }
+        if (!checkNewline) return -1;
+
         int c = read();
 
-        if (c == RipperLexer.EOF || c == '\n') {
-            return true;
-        }
+        if (c == RipperLexer.EOF) return -1;
+        if (c == '\n') return '\n';
+
         buffer.append(c);
         unreadMany(buffer);
 
-        return false;
+        return 0;
     }
     
     /**

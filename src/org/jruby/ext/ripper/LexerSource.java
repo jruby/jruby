@@ -258,10 +258,10 @@ public abstract class LexerSource {
      * @param marker to match against
      * @param indent eat any leading whitespace
      * @param withNewline includes a check that marker is followed by newline or EOF
-     * @return true if marker matches...false otherwise
+     * @return 0 if no match -1 is EOF and '\n' if newline (only if withNewline is true).
      * @throws IOException if an error occurred reading from underlying IO source
      */
-    public abstract boolean matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
+    public abstract int matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
 
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;
