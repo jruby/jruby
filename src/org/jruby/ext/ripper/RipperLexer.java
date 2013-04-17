@@ -1492,22 +1492,23 @@ public class RipperLexer implements Warnings {
             setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
+                yaccValue = new Token("&&=", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
+            yaccValue = new Token("&&", getPosition());
             return Tokens.tANDOP;
         case '=':
             setState(LexState.EXPR_BEG);
+            yaccValue = new Token("&=", getPosition());
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
+
+        yaccValue = new Token("&", getPosition());
         
-        //tmpPosition is required because getPosition()'s side effects.
-        //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
-        //a wrong position if the "inclusive" flag is not set.
-        Position tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
-            if (isVerbose()) warning(Warnings.ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
+            if (isVerbose()) warning(Warnings.ID.ARGUMENT_AS_PREFIX, getPosition(), "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -1565,11 +1566,11 @@ public class RipperLexer implements Warnings {
             return Tokens.tBACK_REF2;
         case EXPR_DOT:
             setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
-
+            
             return Tokens.tBACK_REF2;
         default:
             lex_strterm = new StringTerm(str_xquote, '\0', '`');
-        
+            
             return Tokens.tXSTRING_BEG;
         }
     }
@@ -1586,11 +1587,15 @@ public class RipperLexer implements Warnings {
         
         switch (c) {
         case '=':
+            yaccValue = new Token("!=", getPosition());
             return Tokens.tNEQ;
         case '~':
+            yaccValue = new Token("!~", getPosition());
             return Tokens.tNMATCH;
         default: // Just a plain bang
             src.unread(c);
+            
+            yaccValue = new Token("!", getPosition());
             return Tokens.tBANG;
         }
     }
@@ -1599,12 +1604,17 @@ public class RipperLexer implements Warnings {
         int c = src.read();
         if (c == '=') {
             setState(LexState.EXPR_BEG);
+            
+            yaccValue = new Token("^=", getPosition());
+            
             return Tokens.tOP_ASGN;
         }
         
         determineExpressionState();
         
         src.unread(c);
+        yaccValue = new Token("^", getPosition());
+        
         return Tokens.tCARET;
     }
 
@@ -1648,15 +1658,18 @@ public class RipperLexer implements Warnings {
 
     private int comma(int c) throws IOException {
         setState(LexState.EXPR_BEG);
+        yaccValue = new Token(",", getPosition());
         return c;
     }
 
     private int doKeyword(LexState state) {
         commandStart = true;
+        yaccValue = new Token("do", getPosition());
 
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             leftParenBegin = 0;
             parenNest--;
+            
             return Tokens.kDO_LAMBDA;
         }
 
@@ -1816,18 +1829,22 @@ public class RipperLexer implements Warnings {
 
         switch (c) {
         case '=':
+            yaccValue = new Token(">=", getPosition());
             return Tokens.tGEQ;
         case '>':
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
-
+                yaccValue = new Token(">>=", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
+            yaccValue = new Token(">>", getPosition());
             
             return Tokens.tRSHFT;
         default:
             src.unread(c);
+            
+            yaccValue = new Token(">", getPosition());
             return Tokens.tGT;
         }
     }
@@ -2097,7 +2114,7 @@ public class RipperLexer implements Warnings {
 
         if (c == '=') {
             setState(LexState.EXPR_BEG);
-
+            yaccValue = new Token("%=", getPosition());
             return Tokens.tOP_ASGN;
         }
         
@@ -2106,6 +2123,7 @@ public class RipperLexer implements Warnings {
         determineExpressionState();
         
         src.unread(c);
+        yaccValue = new Token("%", getPosition());
         return Tokens.tPERCENT;
     }
 
@@ -2222,7 +2240,7 @@ public class RipperLexer implements Warnings {
             }
             src.unread(c);
             setState(LexState.EXPR_VALUE);
-
+            yaccValue = new Token("?", getPosition());
             return '?';
             /*} else if (ismbchar(c)) { // ruby - we don't support them either?
                 rb_warn("multibyte character literal not supported yet; use ?\\" + c);
@@ -2335,13 +2353,16 @@ public class RipperLexer implements Warnings {
         case '*':
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
+                yaccValue = new Token("**=", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
+            yaccValue = new Token("**", getPosition());
             c = Tokens.tPOW;
             break;
         case '=':
             setState(LexState.EXPR_BEG);
+            yaccValue = new Token("*=", getPosition());
             return Tokens.tOP_ASGN;
         default:
             src.unread(c);
