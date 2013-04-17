@@ -61,6 +61,7 @@ public class StringTerm extends StrTerm {
             if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 lexer.getPosition();
+                lexer.setValue(new Token("" + end, lexer.getPosition()));
                 return ' ';
             }
 
@@ -72,7 +73,7 @@ public class StringTerm extends StrTerm {
                 return Tokens.tREGEXP_END;
             }
 
-            lexer.setValue(new Token("\"", lexer.getPosition()));
+            lexer.setValue(new Token("" + end, lexer.getPosition()));
             return Tokens.tSTRING_END;
     }
 
@@ -84,7 +85,7 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue(new Token("\"", lexer.getPosition()));
+            lexer.setValue(new Token("" + end, lexer.getPosition()));
             return Tokens.tSTRING_END;
         }
 
