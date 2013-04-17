@@ -1297,10 +1297,9 @@ public class RipperLexer implements Warnings {
                 }
 
 
-                if (c == -1) return EOF;
-
-                src.unread(c);
-                getPosition();
+                if (c != -1) {
+                    src.unread(c);
+                }
 
                 switch (lex_state) {
                 case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT: case EXPR_CLASS:
@@ -1309,6 +1308,9 @@ public class RipperLexer implements Warnings {
 
                 commandStart = true;
                 setState(LexState.EXPR_BEG);
+                
+                yaccValue = new Token("\n", getPosition());
+                
                 return '\n';
             case '*':
                 return star(spaceSeen);
@@ -2054,23 +2056,28 @@ public class RipperLexer implements Warnings {
         if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             setState(LexState.EXPR_ARG);
             if (c == '@') {
+                yaccValue = new Token("-", getPosition());
                 return Tokens.tUMINUS;
             }
             src.unread(c);
+            yaccValue = new Token("-", getPosition());
             return Tokens.tMINUS;
         }
         if (c == '=') {
             setState(LexState.EXPR_BEG);
+            yaccValue = new Token("-=", getPosition());
             return Tokens.tOP_ASGN;
         }
         if (c == '>') {
             setState(LexState.EXPR_ARG);
+            yaccValue = new Token("->", getPosition());
             return Tokens.tLAMBDA;
         }
         if (isBEG() || isSpaceArg(c, spaceSeen)) {
             if (isARG()) arg_ambiguous();
             setState(LexState.EXPR_BEG);
             src.unread(c);
+            yaccValue = new Token("-", getPosition());
             if (Character.isDigit(c)) {
                 return Tokens.tUMINUS_NUM;
             }
@@ -2078,6 +2085,8 @@ public class RipperLexer implements Warnings {
         }
         setState(LexState.EXPR_BEG);
         src.unread(c);
+        yaccValue = new Token("-", getPosition());
+        
         return Tokens.tMINUS;
     }
 
@@ -2108,17 +2117,24 @@ public class RipperLexer implements Warnings {
             setState(LexState.EXPR_BEG);
             if ((c = src.read()) == '=') {
                 setState(LexState.EXPR_BEG);
+                yaccValue = new Token("||=", getPosition());
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
+            yaccValue = new Token("||", getPosition());
             return Tokens.tOROP;
         case '=':
             setState(LexState.EXPR_BEG);
+            
+            yaccValue = new Token("|=", getPosition());
+            
             return Tokens.tOP_ASGN;
         default:
             determineExpressionState();
             
             src.unread(c);
+            yaccValue = new Token("|", getPosition());
+            
             return Tokens.tPIPE;
         }
     }
@@ -2130,15 +2146,19 @@ public class RipperLexer implements Warnings {
             if (c == '@') return Tokens.tUPLUS;
 
             src.unread(c);
+            yaccValue = new Token("+", getPosition());
 
             return Tokens.tPLUS;
         }
         
         if (c == '=') {
             setState(LexState.EXPR_BEG);
+            yaccValue = new Token("+=", getPosition());
 
             return Tokens.tOP_ASGN;
         }
+        
+        yaccValue = new Token("+", getPosition());
         
         if (isBEG() || isSpaceArg(c, spaceSeen)) {
             if (isARG()) arg_ambiguous();
