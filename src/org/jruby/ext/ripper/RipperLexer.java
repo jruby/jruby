@@ -1555,6 +1555,7 @@ public class RipperLexer implements Warnings {
     }
     
     private int backtick(boolean commandState) throws IOException {
+        yaccValue = new Token("`", getPosition());
         switch (lex_state) {
         case EXPR_FNAME:
             setState(LexState.EXPR_ENDFN);
