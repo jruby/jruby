@@ -1408,6 +1408,7 @@ public class RipperLexer implements Warnings {
             case ';':
                 commandStart = true;
                 setState(LexState.EXPR_BEG);
+                yaccValue = new Token(";", getPosition());
                 return ';';
             case ',':
                 return comma(c);
