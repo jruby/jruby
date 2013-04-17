@@ -850,9 +850,8 @@ public class RipperLexer implements Warnings {
             }
             return 0;
         }
-        commentLine = src.readUntil('\n');
         
-        commentBuf.append(commentLine);
+        commentBuf.append(src.readLineBytes());
         
         dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
         
