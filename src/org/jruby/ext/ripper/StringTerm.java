@@ -86,6 +86,7 @@ public class StringTerm extends StrTerm {
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.setValue(new Token("" + end, lexer.getPosition()));
+            lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;
         }
 

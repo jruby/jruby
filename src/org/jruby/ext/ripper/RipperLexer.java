@@ -30,7 +30,9 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -107,6 +109,10 @@ public class RipperLexer implements Warnings {
     }
 
     private Encoding encoding;
+    
+    private List<TokenPair> delayed = new ArrayList<TokenPair>();
+    
+    public boolean ignoreNextScanEvent = false;
 
     public Encoding getEncoding() {
         return encoding;
@@ -197,10 +203,25 @@ public class RipperLexer implements Warnings {
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    void dispatchHeredocEnd(ByteList marker) {
-        // FIXME: Add delayed
-        dispatchScanEvent(Tokens.tHEREDOC_END, marker);
+    
+    class TokenPair {
+        public final int token;
+        public final Object value;
+        
+        public TokenPair(int token, Object value) {
+            this.token = token;
+            this.value = value;
+        }
+    }
+    
+    public void addDelayedValue(int token, Object value) {
+        delayed.add(new TokenPair(token, value));
+    }
+    
+    void dispatchAllDelayedTokens() {
+        for (TokenPair pair: delayed) {
+            dispatchScanEvent(pair.token, pair.value);
+        }
     }
     
     public enum Keyword {
@@ -726,8 +747,7 @@ public class RipperLexer implements Warnings {
 
         if (term == '`') return Tokens.tXSTRING_BEG;
         
-        // Hacky: Advance position to eat newline here....
-        getPosition();
+        ignoreNextScanEvent = true;
         return Tokens.tSTRING_BEG;
     }
     
@@ -1007,7 +1027,18 @@ public class RipperLexer implements Warnings {
     }
     
     private void dispatchScanEvent(int token, Object value) {
+        // String processing generates extra tSTRING_END which we don't want to see for things like heredocs
+        if (ignoreNextScanEvent) { 
+            ignoreNextScanEvent = false;
+            return;
+        }
         yaccValue = scanEventValue(token, value);
+        
+        if (token == '\n') {
+            // This is different than MRI.  When processing heredocs we push all tstring_content + heredoc_end
+            // as deferred and then launch them all when we encounter newline which should preserve lexing order.
+            dispatchAllDelayedTokens();
+        }
     }
     
     private Object scanEventValue(int token, Object value) {

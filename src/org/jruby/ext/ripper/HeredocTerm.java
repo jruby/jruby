@@ -72,7 +72,7 @@ public class HeredocTerm extends StrTerm {
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
             
-            lexer.dispatchHeredocEnd(marker);
+            lexer.addDelayedValue(Tokens.tHEREDOC_END, marker);            
 
             return Tokens.tSTRING_END;
         }
@@ -126,8 +126,9 @@ public class HeredocTerm extends StrTerm {
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = lexer.createStr(position, str, 0);
-        lexer.dispatchHeredocEnd(marker);
+        lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(position, str, 0));
+        lexer.addDelayedValue(Tokens.tHEREDOC_END, marker);
+        lexer.ignoreNextScanEvent = true;
         return Tokens.tSTRING_CONTENT;
     }
     
