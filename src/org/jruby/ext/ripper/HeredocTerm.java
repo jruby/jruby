@@ -65,14 +65,21 @@ public class HeredocTerm extends StrTerm {
     public int parseString(RipperLexer lexer, LexerSource src) throws java.io.IOException {
         boolean indent = (flags & RipperLexer.STR_FUNC_INDENT) != 0;
 
-        if (src.peek(RipperLexer.EOF)) syntaxError(src);
+        if (src.peek(RipperLexer.EOF)) {
+            syntaxError(src);
+            return RipperLexer.EOF;
+        }
 
+        int match;
         // Found end marker for this heredoc
-        if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true) != 0) {
+        if (src.lastWasBeginOfLine() && (match = src.matchMarker(marker, indent, true)) != 0) {
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
             
-            lexer.addDelayedValue(Tokens.tHEREDOC_END, marker);            
+            if (match == '\n') marker.append('\n');
+            
+            lexer.addDelayedValue(Tokens.tHEREDOC_END, marker);
+            lexer.ignoreNextScanEvent = true;
 
             return Tokens.tSTRING_END;
         }
@@ -85,9 +92,13 @@ public class HeredocTerm extends StrTerm {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
-                if (src.peek(RipperLexer.EOF)) syntaxError(src);
+                if (src.peek(RipperLexer.EOF)) {
+                    syntaxError(src);
+                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, str);
+                    return RipperLexer.EOF;
+                }
                 position = lexer.getPosition();
-            } while (src.matchMarker(marker, indent, true) == 0);
+            } while ((match = src.matchMarker(marker, indent, true)) == 0);
         } else {
             int c = src.read();
             if (c == '#') {
@@ -114,15 +125,23 @@ public class HeredocTerm extends StrTerm {
                     syntaxError(src);
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = lexer.createStr(lexer.getPosition(), str, 0);
+                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
+                    lexer.ignoreNextScanEvent = true;
                     return Tokens.tSTRING_CONTENT;
                 }
                 str.append(src.read());
                 
-                if (src.peek(RipperLexer.EOF)) syntaxError(src);
+                if (src.peek(RipperLexer.EOF)) {
+                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
+                    syntaxError(src);
+                    return RipperLexer.EOF;
+                }
                 position = lexer.getPosition();
-            } while (src.matchMarker(marker, indent, true) == 0);
+                
+            } while ((match = src.matchMarker(marker, indent, true)) == 0);
         }
+        
+        if (match == '\n') marker.append('\n');        
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));

@@ -222,6 +222,7 @@ public class RipperLexer implements Warnings {
         for (TokenPair pair: delayed) {
             dispatchScanEvent(pair.token, pair.value);
         }
+        delayed.clear();
     }
     
     public enum Keyword {
@@ -373,7 +374,10 @@ public class RipperLexer implements Warnings {
     public int nextToken() throws IOException {
         token = yylex();
         
-        if (token == EOF) return 0;
+        if (token == EOF) {
+            dispatchAllDelayedTokens();
+            return 0;
+        }
         
         dispatchScanEvent(token, yaccValue);
 
