@@ -702,6 +702,7 @@ public class RipperLexer implements Warnings {
         
         ByteList markerValue;
         if (c == '\'' || c == '"' || c == '`') {
+            fullMarker.append(c);
             if (c == '\'') {
                 func |= str_squote;
             } else if (c == '"') {
@@ -719,7 +720,8 @@ public class RipperLexer implements Warnings {
             if (c == EOF) {
                 throw new SyntaxException(SyntaxException.PID.STRING_MARKER_MISSING, getPosition(), 
                         getCurrentLine(), "unterminated here document identifier");
-            }	
+            }
+            fullMarker.append(c);
         } else {
             if (!isIdentifierChar(c)) {
                 src.unread(c);
