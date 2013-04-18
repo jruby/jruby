@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
 
@@ -70,12 +69,11 @@ public class HeredocTerm extends StrTerm {
 
         // Found end marker for this heredoc
         if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true) != 0) {
-            Position position = lexer.getPosition();
-            
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
             
-            lexer.yaccValue = new Token(marker, position);
+            lexer.dispatchHeredocEnd(marker);
+
             return Tokens.tSTRING_END;
         }
 
@@ -97,10 +95,10 @@ public class HeredocTerm extends StrTerm {
                 case '$':
                 case '@':
                     src.unread(c);
-                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                    lexer.setValue(new Token("#", lexer.getPosition()));
                     return Tokens.tSTRING_DVAR;
                 case '{':
-                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                    lexer.setValue(new Token("#", lexer.getPosition()));
                     return Tokens.tSTRING_DBEG;
                 }
                 str.append('#');
@@ -129,6 +127,7 @@ public class HeredocTerm extends StrTerm {
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
         lexer.yaccValue = lexer.createStr(position, str, 0);
+        lexer.dispatchHeredocEnd(marker);
         return Tokens.tSTRING_CONTENT;
     }
     

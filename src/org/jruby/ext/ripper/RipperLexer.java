@@ -197,6 +197,11 @@ public class RipperLexer implements Warnings {
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    void dispatchHeredocEnd(ByteList marker) {
+        // FIXME: Add delayed
+        dispatchScanEvent(Tokens.tHEREDOC_END, marker);
+    }
     
     public enum Keyword {
         END ("end", Tokens.kEND, Tokens.kEND, LexState.EXPR_END),
@@ -663,10 +668,13 @@ public class RipperLexer implements Warnings {
     
     private int hereDocumentIdentifier() throws IOException {
         int c = src.read(); 
+        ByteList fullMarker = new ByteList();
+        fullMarker.append('<').append('<');
         int term;
 
         int func = 0;
         if (c == '-') {
+            fullMarker.append(c);
             c = src.read();
             func = STR_FUNC_INDENT;
         }
@@ -684,6 +692,7 @@ public class RipperLexer implements Warnings {
             markerValue = new ByteList();
             term = c;
             while ((c = src.read()) != EOF && c != term) {
+                fullMarker.append(c);
                 markerValue.append(c);
             }
             if (c == EOF) {
@@ -702,6 +711,7 @@ public class RipperLexer implements Warnings {
             term = '"';
             func |= str_dquote;
             do {
+                fullMarker.append(c);
                 markerValue.append(c);
             } while ((c = src.read()) != EOF && isIdentifierChar(c));
 
@@ -710,7 +720,7 @@ public class RipperLexer implements Warnings {
 
         ByteList lastLine = src.readLineBytes();
         lastLine.append('\n');
-        dispatchScanEvent(Tokens.tHEREDOC_BEG, lastLine);
+        dispatchScanEvent(Tokens.tHEREDOC_BEG, fullMarker);
 
         lex_strterm = new HeredocTerm(markerValue, func, lastLine);
 
@@ -2042,7 +2052,9 @@ public class RipperLexer implements Warnings {
                 !isEND() && (!isARG() || spaceSeen)) {
             int tok = hereDocumentIdentifier();
             
-            if (tok != 0) return tok;
+            if (tok != 0) {
+                return tok;
+            }
         }
         
         determineExpressionState();
