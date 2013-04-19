@@ -68,7 +68,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         return new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
-    protected CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+    public CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
         super(scope, arity, argumentType);
         
         this.callback = callback;
