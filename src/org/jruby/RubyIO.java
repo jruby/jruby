@@ -3321,15 +3321,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return block.isGiven() ? each_lineInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 2)
     public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject[] separatorArgs = args.length > 0 ? new IRubyObject[] { args[0] } : IRubyObject.NULL_ARRAY;
+        long limit = args.length > 1 ? RubyNumeric.num2long(args[1]) : -1;
+        
         ByteList separator = getSeparatorForGets(runtime, separatorArgs);
         RubyArray result = runtime.newArray();
         IRubyObject line;
         
-        while (! (line = getline(runtime, separator)).isNil()) {
+        while (! (line = getline(runtime, separator, limit, null)).isNil()) {
             result.append(line);
         }
         return result;
@@ -3708,15 +3710,42 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return write19(context, recv, path, str, offset, (RubyHash) options);
     }
 
-    @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true)
     public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int count = args.length;
-
-        IRubyObject[] fileArguments = new IRubyObject[]{ args[0].convertToString() };
-        IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
+        
+        IRubyObject[] fileArguments = null;
+        IRubyObject[] arguments = null;
+        
+        
+        RubyString path = RubyFile.get_path(context, args[0]);
+        
+        
+        if(count >= 4) {
+            fileArguments = new IRubyObject[]{ path, args[3] };    
+        } else {
+            fileArguments = new IRubyObject[]{ path };
+        }
+        
+        if(count >= 3) {
+            IRubyObject limitOrOptions = args[2];
+            
+            if (!(limitOrOptions instanceof RubyFixnum) && (limitOrOptions.respondsTo("to_hash"))) {
+                limitOrOptions = (RubyHash) TypeConverter.convertToType(limitOrOptions, context.runtime.getHash(), "to_hash");
+            }
+            
+            arguments = new IRubyObject[]{args[1], limitOrOptions};
+            
+        } else if (count >= 2) {
+            arguments = new IRubyObject[]{args[1]};
+        } else {
+            arguments = IRubyObject.NULL_ARRAY;
+        }
+        
         RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+        
         try {
-            return file.readlines(context, separatorArguments);
+            return file.readlines(context, arguments);
         } finally {
             file.close();
         }
