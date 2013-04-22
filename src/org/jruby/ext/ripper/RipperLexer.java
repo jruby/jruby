@@ -1419,17 +1419,24 @@ public class RipperLexer implements Warnings {
                 c = src.read();
                 if (c == '=') {
                     c = src.read();
-                    if (c == '=') return Tokens.tEQQ;
+                    if (c == '=') {
+                        yaccValue = new Token("===", getPosition());
+                        return Tokens.tEQQ;
+                    }
 
                     src.unread(c);
+                    yaccValue = new Token("==", getPosition());
                     return Tokens.tEQ;
                 }
                 if (c == '~') {
+                    yaccValue = new Token("=~", getPosition());
                     return Tokens.tMATCH;
                 } else if (c == '>') {
+                    yaccValue = new Token("=>", getPosition());
                     return Tokens.tASSOC;
                 }
                 src.unread(c);
+                yaccValue = new Token("=", getPosition());
                 return '=';
                 
             case '<':
@@ -2115,19 +2122,24 @@ public class RipperLexer implements Warnings {
         switch (c) {
         case '=':
             if ((c = src.read()) == '>') {
+                yaccValue = new Token("<=>", getPosition());
                 return Tokens.tCMP;
             }
             src.unread(c);
+            yaccValue = new Token("<=", getPosition());
             return Tokens.tLEQ;
         case '<':
             if ((c = src.read()) == '=') {
+                yaccValue = new Token("<<=", getPosition());
                 setState(LexState.EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             src.unread(c);
+            yaccValue = new Token("<<", getPosition());
             return Tokens.tLSHFT;
         default:
             src.unread(c);
+            yaccValue = new Token("<", getPosition());
             return Tokens.tLT;
         }
     }
