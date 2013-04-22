@@ -864,6 +864,7 @@ public class RipperLexer implements Warnings {
     protected int readComment() throws IOException {
         // 1.9 - first line comment handling
         ByteList commentBuf = new ByteList();
+        commentBuf.append('#');
         ByteList commentLine;
         boolean handledMagicComment = false;
         if (src.getLine() == 0 && token == 0) {
@@ -874,21 +875,23 @@ public class RipperLexer implements Warnings {
 
                 // TODO: Eat whitespace
                 
-                if (!src.peek('#')) return '\n'; // Next line better also be a comment
+                if (!src.peek('#')) return '\n';
             }
 
-            commentLine = src.readUntil('\n');
+            commentLine = src.readLineBytesPlusNewline();
             if (commentLine != null) {
-                commentBuf.append(commentLine);
                 handledMagicComment = parseMagicComment(commentLine);
                 if (!handledMagicComment) {
                     handleFileEncodingComment(commentLine);
                 }
-            }
+
+                commentBuf.append(commentLine);
+                dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
+            } 
             return 0;
         }
         
-        commentBuf.append(src.readLineBytes());
+        commentBuf.append(src.readLineBytesPlusNewline());
         
         dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
         
