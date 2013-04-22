@@ -266,6 +266,7 @@ public abstract class LexerSource {
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;
     public abstract ByteList readLineBytes() throws IOException;
+    public abstract ByteList readLineBytesPlusNewline() throws IOException;
     public abstract int skipUntil(int c) throws IOException;
     public abstract void unread(int c);
     public abstract void unreadMany(CharSequence line);

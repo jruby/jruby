@@ -163,8 +163,20 @@ public class InputStreamLexerSource extends LexerSource {
         for (int c = read(); c != '\n' && c != RipperLexer.EOF; c = read()) {
             bytelist.append(c);
         }
-        
+
         return bytelist;
+    }
+    
+    public ByteList readLineBytesPlusNewline() throws IOException {
+        ByteList bytelist = new ByteList(80);
+
+        int c = read();
+        for (; c != '\n' && c != RipperLexer.EOF; c = read()) {
+            bytelist.append(c);
+        }
+        if (c != RipperLexer.EOF) bytelist.append(c);
+
+        return bytelist;        
     }
     
     @Override

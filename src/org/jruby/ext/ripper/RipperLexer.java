@@ -1367,27 +1367,42 @@ public class RipperLexer implements Warnings {
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
                     if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != 0) {
+                        ByteList markerValue = new ByteList();
+                        markerValue.append('=').append(BEGIN_DOC_MARKER);
                         c = src.read();
                         
                         if (Character.isWhitespace(c)) {
                             // In case last next was the newline.
                             src.unread(c);
+                            markerValue.append(src.readLineBytesPlusNewline());
+
+                            dispatchScanEvent(Tokens.tEMBDOC_BEG, markerValue);
+                            ByteList embValue = new ByteList();
+                            
                             for (;;) {
                                 c = src.read();
 
                                 // If a line is followed by a blank line put
                                 // it back.
                                 while (c == '\n') {
+                                    embValue.append(c);
                                     c = src.read();
                                 }
                                 if (c == EOF) {
                                     throw new SyntaxException(SyntaxException.PID.STRING_HITS_EOF, getPosition(),
                                             getCurrentLine(), "embedded document meets end of file");
                                 }
-                                if (c != '=') continue;
-                                if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false) != 0) {
-                                    ByteList list = src.readLineBytes();
-                                    src.unread('\n');
+                                
+                                if (c != '=') {
+                                    embValue.append(c);
+                                    continue;
+                                }
+                                if (src.wasBeginOfLine() &&  src.matchMarker(END_DOC_MARKER, false, false) != 0) {
+                                    dispatchScanEvent(Tokens.tEMBDOC, embValue);
+                                    markerValue = new ByteList();
+                                    markerValue.append('=').append(END_DOC_MARKER);
+                                    markerValue.append(src.readLineBytesPlusNewline());
+                                    dispatchScanEvent(Tokens.tEMBDOC_END, markerValue);
                                     break;
                                 }
                             }
