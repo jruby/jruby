@@ -57,23 +57,25 @@ public class StringTerm extends StrTerm {
         return new ByteList(new byte[]{}, lexer.getEncoding());
     }
 
-    private int endFound(RipperLexer lexer, LexerSource src) throws IOException {
+    private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
             if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 lexer.getPosition();
-                lexer.setValue(new Token("" + end, lexer.getPosition()));
+                buffer.append(end);
+                lexer.setValue(new Token(buffer, lexer.getPosition()));
                 return ' ';
             }
 
             if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
                 String options = parseRegexpFlags(src);
-                ByteList regexpBytelist = ByteList.create("");
+                buffer.append(options.getBytes());
 
-                lexer.setValue(lexer.getRuntime().newString(options));
+                lexer.setValue(new Token(buffer, lexer.getPosition()));
                 return Tokens.tREGEXP_END;
             }
 
-            lexer.setValue(new Token("" + end, lexer.getPosition()));
+            buffer.append(end);
+            lexer.setValue(new Token(buffer, lexer.getPosition()));
             return Tokens.tSTRING_END;
     }
 
@@ -89,22 +91,28 @@ public class StringTerm extends StrTerm {
             lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;
         }
+        
+        ByteList buffer = createByteList(lexer);        
 
         c = src.read();
         if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
-            do { c = src.read(); } while (Character.isWhitespace(c));
+            do { 
+                buffer.append((char) c);
+                c = src.read();
+            } while (Character.isWhitespace(c));
             spaceSeen = true;
         }
 
-        if (c == end && nest == 0) return endFound(lexer, src);
+        if (c == end && nest == 0) {
+            return endFound(lexer, src, buffer);
+        }
         
         if (spaceSeen) {
             src.unread(c);
             lexer.getPosition();
+            lexer.setValue(new Token(buffer, lexer.getPosition()));
             return ' ';
-        }
-        
-        ByteList buffer = createByteList(lexer);
+        }        
 
         if ((flags & RipperLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
             c = src.read();
