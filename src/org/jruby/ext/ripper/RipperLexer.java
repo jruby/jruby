@@ -127,7 +127,8 @@ public class RipperLexer implements Warnings {
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        yaccValue = getRuntime().newFloat(d);
+        ByteList buf = new ByteList(number.getBytes());
+        yaccValue = new Token(buf, getPosition());
         return Tokens.tFLOAT;
     }
 
