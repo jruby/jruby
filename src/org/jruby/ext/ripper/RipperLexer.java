@@ -2034,8 +2034,10 @@ public class RipperLexer implements Warnings {
             if ((c = src.read()) == ']') {
                 if (src.peek('=')) {
                     c = src.read();
+                    yaccValue = new Token("[]=", getPosition());
                     return Tokens.tASET;
                 }
+                yaccValue = new Token("[]", getPosition());
                 return Tokens.tAREF;
             }
             src.unread(c);
