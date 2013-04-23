@@ -29,7 +29,6 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +40,6 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
-import org.jruby.RubyBignum;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -130,14 +128,6 @@ public class RipperLexer implements Warnings {
         ByteList buf = new ByteList(number.getBytes());
         yaccValue = new Token(buf, getPosition());
         return Tokens.tFLOAT;
-    }
-
-    private Object newBignum(String value, int radix) {
-        return RubyBignum.newBignum(parser.getRuntime(), new BigInteger(value, radix));
-    }
-
-    private Object newFixnum(String value, int radix) throws NumberFormatException {
-        return parser.getRuntime().newFixnum(Long.parseLong(value, radix));
     }
 
     @Override
@@ -540,11 +530,7 @@ public class RipperLexer implements Warnings {
     }
 
     private Object getInteger(String value, int radix) {
-        try {
-            return newFixnum(value, radix);
-        } catch (NumberFormatException e) {
-            return newBignum(value, radix);
-        }
+        return new Token(value, getPosition());
     }
 
 	/**
@@ -2036,7 +2022,7 @@ public class RipperLexer implements Warnings {
             
             if ((c = src.read()) == ']') {
                 if (src.peek('=')) {
-                    c = src.read();
+                    src.read();
                     yaccValue = new Token("[]=", getPosition());
                     return Tokens.tASET;
                 }
