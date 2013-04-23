@@ -264,7 +264,7 @@ public class RubyRipper extends RubyObject {
         filename = filenameAsString(context, file);
         int lineno = lineAsInt(context, line);
         ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
-        LexerSource source = new LexerSource(filename.asJavaString(), bos, null, lineno);
+        LexerSource source = new LexerSource(filename.asJavaString(), bos, lineno);
         parser = new Ripper19Parser(context, this, source);
          
         return context.runtime.getNil();

@@ -34,10 +34,8 @@ package org.jruby.ext.ripper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import org.jcodings.Encoding;
 
-import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
 
 /**
@@ -64,9 +62,6 @@ public class LexerSource {
     
     // How many bytes into the source are we?
     protected int offset = 0;
-    
-    // Store each line into this list if not null.
-    private List<String> list;
     
     // For 'list' and only populated if list is not null.
     private StringBuilder lineBuffer;
@@ -97,12 +92,11 @@ public class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, InputStream in, List<String> list, int lineOffset) {
+    protected LexerSource(String sourceName, InputStream in, int lineOffset) {
         this.in = in;        
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
         lastPosition = new Position(sourceName, line, line, offset, offset);
-        this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
     }
@@ -164,29 +158,12 @@ public class LexerSource {
         }
 
         return lastPosition;
-    }    
-
-    /**
-     * Create a source.
-     * 
-     * @param name the name of the source (e.g a filename: foo.rb)
-     * @param content the data of the source
-     * @return the new source
-     */
-    public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration) {
-        return new LexerSource(name, content, list, configuration.getLineNumber());
     }
 
     private void captureFeatureNewline() {
         StringBuilder temp = sourceLine;
         // Save sourceLine for error reporting to display line where error occurred
         sourceLine = lineBuffer;
-
-
-        // Ruby's OMG capture all source in a Hash feature
-        // Add each line to buffer when encountering newline or EOF for first time.
-        if (list != null && lineBuffer.length() > 0) list.add(sourceLine.toString());
 
         temp.setLength(0);
         lineBuffer = temp;
@@ -202,19 +179,6 @@ public class LexerSource {
             default:
                 lineBuffer.append((char) c);
                 break;
-        }
-    }
-
-    protected void uncaptureFeature(int c) {
-        int end = lineBuffer.length() - 1;
-        if (end >= 0 && lineBuffer.charAt(end) == c) {
-            lineBuffer.deleteCharAt(end);
-        } else if (c == '\n' && list != null && !list.isEmpty()) {
-            lineBuffer = new StringBuilder(list.remove(list.size() - 1));
-            end = lineBuffer.length() - 1;
-            if (lineBuffer.charAt(end) == '\n') {
-                lineBuffer.deleteCharAt(end);
-            }
         }
     }
 
