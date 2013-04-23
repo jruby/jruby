@@ -1,15 +1,15 @@
 # Under MRI, EAGAIN is extended on every creation with the appropriate module.
 # Due to the absurd overhead that results, we use these classes instead.
 module JRuby
-  class EAGAINReadable < Errno::EAGAIN
+  class EAGAINWaitReadable < Errno::EAGAIN
     include IO::WaitReadable
   end
   
-  class EAGAINWritable < Errno::EAGAIN
+  class EAGAINWaitWritable < Errno::EAGAIN
     include IO::WaitWritable
   end
 
-  class EINPROGRESSWritable < Errno::EINPROGRESS
+  class EINPROGRESSWaitWritable < Errno::EINPROGRESS
     include IO::WaitWritable
   end
 end

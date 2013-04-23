@@ -3302,11 +3302,11 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoEAGAINReadableError(String message) {
-        return newLightweightErrnoException(getModule("JRuby").getClass("EAGAINReadable"), message);
+        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitReadable"), message);
     }
 
     public RaiseException newErrnoEAGAINWritableError(String message) {
-        return newLightweightErrnoException(getModule("JRuby").getClass("EAGAINWritable"), message);
+        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {
