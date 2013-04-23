@@ -1248,52 +1248,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-        
-        try {
-            RubyString string = obj.asString();
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            myOpenFile.checkWritable(runtime);
-            
-            Stream writeStream = myOpenFile.getWriteStream();
-            
-            if (myOpenFile.isWriteBuffered()) {
-                runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "syswrite for buffered IO");
-            }
-            
-            if (!writeStream.getDescriptor().isWritable()) {
-                myOpenFile.checkClosed(runtime);
-            }
-            
-            context.getThread().beforeBlockingCall();
-            int read = writeStream.getDescriptor().write(string.getByteList());
-            
-            if (read == -1) {
-                // TODO? I think this ends up propagating from normal Java exceptions
-                // sys_fail(openFile.getPath())
-            }
-            
-            return runtime.newFixnum(read);
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            if (e.getMessage().equals("Broken pipe")) {
-                throw runtime.newErrnoEPIPEError();
-            }
-            if (e.getMessage().equals("Connection reset by peer")) {
-                throw runtime.newErrnoEPIPEError();
-            }
-            throw runtime.newSystemCallError(e.getMessage());
-        } finally {
-            context.getThread().afterBlockingCall();
-        }
+        return doWriteNonblock(context, obj, true);
     }
     
-    @JRubyMethod(name = "write_nonblock", required = 1)
-    public IRubyObject write_nonblock(ThreadContext context, IRubyObject obj) {
+    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject obj, boolean useException) {
         Ruby runtime = context.runtime;
 
         OpenFile myOpenFile = getOpenFileChecked();
@@ -1313,10 +1271,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             int written = stream.writenonblock(str.getByteList());
             if (written == 0) {
-                if (runtime.is1_9()) {
-                    throw runtime.newErrnoEAGAINWritableError("");
+                if (useException) {
+                    if (runtime.is1_9()) {
+                        throw runtime.newErrnoEAGAINWritableError("");
+                    } else {
+                        throw runtime.newErrnoEWOULDBLOCKError();
+                    }
                 } else {
-                    throw runtime.newErrnoEWOULDBLOCKError();
+                    return runtime.fastNewSymbol("wait_writable");
                 }
             }
 
@@ -2649,6 +2611,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        return doReadNonblock(context, args, true);
+    }
+    
+    public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
         IRubyObject value = getPartial(context, args, true);
 
         if (value.isNil()) {
@@ -2660,10 +2626,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (str.isEmpty()) {
                 Ruby ruby = context.runtime;
 
-                if (ruby.is1_9()) {
-                    throw ruby.newErrnoEAGAINReadableError("");
+                if (useException) {
+                    if (ruby.is1_9()) {
+                        throw ruby.newErrnoEAGAINReadableError("");
+                    } else {
+                        throw ruby.newErrnoEAGAINError("");
+                    }
                 } else {
-                    throw ruby.newErrnoEAGAINError("");
+                    return ruby.fastNewSymbol("wait_readable");
                 }
             }
         }

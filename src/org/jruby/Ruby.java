@@ -1621,6 +1621,7 @@ public final class Ruby {
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
         addLazyBuiltin("rubinius.jar", "rubinius", "org.jruby.ext.rubinius.RubiniusLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
+        addLazyBuiltin("io/try_nonblock.jar", "io/try_nonblock", "org.jruby.ext.io.try_nonblock.IOTryNonblockLibrary");
 
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
