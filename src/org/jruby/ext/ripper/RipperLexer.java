@@ -1077,7 +1077,7 @@ public class RipperLexer implements Warnings {
     private Position lastEventLocation = null;
     
     public Position getEventLocation() {
-        return lastEventLocation != null ? lastEventLocation : src.getPosition();
+        return lastEventLocation != null ? lastEventLocation : getPosition();
     }
     
     private String tokenToEventId(int token) {
@@ -1297,7 +1297,7 @@ public class RipperLexer implements Warnings {
                     }
                 }
                 src.unread(c);
-                dispatchScanEvent(Tokens.tSP, whitespaceBuf);
+                dispatchScanEvent(Tokens.tSP, new Token(whitespaceBuf, getPosition()));
                 continue;
             }
             case '#':		/* it's a comment */

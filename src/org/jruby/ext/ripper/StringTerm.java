@@ -67,7 +67,7 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
-                String options = parseRegexpFlags(src);
+                String options = parseRegexpFlags(lexer, src);
                 buffer.append(options.getBytes());
 
                 lexer.setValue(new Token(buffer, lexer.getPosition()));
@@ -131,7 +131,7 @@ public class StringTerm extends StrTerm {
         src.unread(c);
         
         if (parseStringIntoBuffer(lexer, src, buffer) == RipperLexer.EOF) {
-            throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(),
+            throw new SyntaxException(PID.STRING_HITS_EOF, lexer.getPosition(),
                     src.getCurrentLine(), "unterminated string meets end of file");
         }
 
@@ -139,7 +139,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private String parseRegexpFlags(LexerSource src) throws IOException {
+    private String parseRegexpFlags(RipperLexer lexer, LexerSource src) throws IOException {
         StringBuilder buf = new StringBuilder(""+end);
 
         int c;
@@ -159,7 +159,7 @@ public class StringTerm extends StrTerm {
         }
         src.unread(c);
         if (unknownFlags.length() != 0) {
-            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, src.getPosition(), "unknown regexp option"
+            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, lexer.getPosition(), "unknown regexp option"
                     + (unknownFlags.length() > 1 ? "s" : "") + " - "
                     + unknownFlags.toString(), unknownFlags.toString());
         }
@@ -233,7 +233,7 @@ public class StringTerm extends StrTerm {
                 default:
                     if (regexp) {
                         src.unread(c);
-                        parseEscapeIntoBuffer(src, buffer);
+                        parseEscapeIntoBuffer(lexer, src, buffer);
 
                         if (hasNonAscii && buffer.getEncoding() != encoding) {
                             mixedEscape(lexer, buffer.getEncoding(), encoding);
@@ -287,22 +287,22 @@ public class StringTerm extends StrTerm {
     }
 
     // Was a goto in original ruby lexer
-    private void escaped(LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void escaped(RipperLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
         switch (c = src.read()) {
         case '\\':
-            parseEscapeIntoBuffer(src, buffer);
+            parseEscapeIntoBuffer(lexer, src, buffer);
             break;
         case RipperLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                     src.getCurrentLine(), "Invalid escape character syntax");
         default:
             buffer.append(c);
         }
     }
 
-    private void parseEscapeIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void parseEscapeIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
         switch (c = src.read()) {
@@ -321,7 +321,7 @@ public class StringTerm extends StrTerm {
             for (int i = 0; i < 2; i++) {
                 c = src.read();
                 if (c == RipperLexer.EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                             src.getCurrentLine(), "Invalid escape character syntax");
                 }
                 if (!RipperLexer.isOctChar(c)) {
@@ -336,7 +336,7 @@ public class StringTerm extends StrTerm {
             buffer.append(c);
             c = src.read();
             if (!RipperLexer.isHexChar(c)) {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                         src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(c);
@@ -349,26 +349,26 @@ public class StringTerm extends StrTerm {
             break;
         case 'M':
             if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                         src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
-            escaped(src, buffer);
+            escaped(lexer, src, buffer);
             break;
         case 'C':
             if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                         src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
-            escaped(src, buffer);
+            escaped(lexer, src, buffer);
             break;
         case 'c':
             buffer.append(new byte[] { '\\', 'c' });
-            escaped(src, buffer);
+            escaped(lexer, src, buffer);
             break;
         case RipperLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
                     src.getCurrentLine(), "Invalid escape character syntax");
         default:
             if (c != '\\' || c != end) {
