@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -48,7 +49,7 @@ import org.jruby.util.ByteList;
  * PushbackBuffer, but the added complexity did not seem worth it.
  * 
  */
-public abstract class LexerSource {
+public class LexerSource {
 	// Last position we gave out
     private Position lastPosition;
 	
@@ -72,6 +73,21 @@ public abstract class LexerSource {
 
     // Last full line read.
     private StringBuilder sourceLine;
+    
+    private static final int INITIAL_PUSHBACK_SIZE = 100;
+    
+    // Where we get our newest char's
+    private final InputStream in;
+    
+    // Our readback/pushback buffer.
+    private char buf[] = new char[INITIAL_PUSHBACK_SIZE];
+    
+    // index of last character in pushback buffer
+    private int bufLength = -1;
+    
+    // Character read before previous read
+    private int oneAgo = '\n';
+    private int twoAgo = 0;    
 
     /**
      * Create our food-source for the lexer
@@ -81,8 +97,8 @@ public abstract class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, List<String> list, int lineOffset, 
-            boolean extraPositionInformation) {
+    protected LexerSource(String sourceName, InputStream in, List<String> list, int lineOffset) {
+        this.in = in;        
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
         lastPosition = new Position(sourceName, line, line, offset, offset);
@@ -159,8 +175,7 @@ public abstract class LexerSource {
      */
     public static LexerSource getSource(String name, InputStream content, List<String> list,
             ParserConfiguration configuration) {
-        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), 
-                configuration.hasExtraPositionInformation());
+        return new LexerSource(name, content, list, configuration.getLineNumber());
     }
 
     private void captureFeatureNewline() {
@@ -214,14 +229,14 @@ public abstract class LexerSource {
     }
 
     protected String makePointer(int length) {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buffer = new StringBuilder();
 
         for (int i = 0; i < length; i++) {
-            buf.append(' ');
+            buffer.append(' ');
         }
-        buf.append('^');
+        buffer.append('^');
 
-        return buf.toString();
+        return buffer.toString();
     }
 
     // Super slow codepoint reader when we detect non-asci chars
@@ -251,6 +266,155 @@ public abstract class LexerSource {
         return codepoint;
     }
 
+    
+    /**
+     * Read next character from this source
+     * 
+     * @return next character to viewed by the source
+     */
+    public int read() throws IOException {
+        int c;
+        
+        if (bufLength >= 0) {
+            c = buf[bufLength--];
+        } else {
+            c = wrappedRead();
+            
+            if (c == -1) return RipperLexer.EOF;
+        }
+        
+        advance(c);
+        
+        if (c == '\n') line++;
+            
+        return c; 
+    }
+
+    /**
+     * Pushes char back onto this source.  Note, this also
+     * allows us to push whatever is passes back into the source.
+     * 
+     * @param  to be put back onto the source
+     */
+    public void unread(int c) {
+        if (c == RipperLexer.EOF) return;
+        
+        retreat();
+            
+        if (c == '\n') line--;
+
+        buf[++bufLength] = (char) c;
+        
+        growBuf();
+    }
+    
+    /**
+     * Is the next character equal to 'to'
+     * @param to character to compare against
+     * @return true if the same
+     * @throws IOException
+     */
+    public boolean peek(int to) throws IOException {
+        // keep value of twoAgo around so we can restore after we unread
+        int captureTwoAgo = twoAgo;
+        int c = read();
+        unread(c);
+        twoAgo = captureTwoAgo;
+        return c == to;
+    }
+
+    private void advance(int c) {
+
+        twoAgo = oneAgo;
+        oneAgo = c;
+        offset++;
+    }
+
+    private int carriageReturn(int c) throws IOException {
+        if ((c = in.read()) != '\n') {
+            unread((char) c);
+        } else {
+            // Position within source must reflect the actual offset and column.  Since
+            // we ate an extra character here (this accounting is normally done in read
+            // ), we should update position info.
+            offset++;
+        }
+        return c;
+    }
+
+    private void growBuf() {
+        // If we outgrow our pushback stack then grow it (this should only happen in pretty 
+        // pathological cases).
+        if (bufLength + 1 == buf.length) {
+            char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
+
+            System.arraycopy(buf, 0, newBuf, 0, buf.length);
+
+            buf = newBuf;
+        }
+    }
+
+    private void retreat() {
+
+        offset--;
+        oneAgo = twoAgo;
+        twoAgo = 0;
+    }
+    
+    /**
+     * Convenience method to hide exception.  If we do hit an exception
+     * we will pretend we EOF'd.
+     * 
+     * @return the current char or EOF (at EOF or on error)
+     */
+    private int wrappedRead() throws IOException {
+        int c = in.read();
+        
+        // If \r\n then just pass along \n (windows). 
+        if (c == '\r') { 
+            c = carriageReturn(c);
+        }
+
+        captureFeature(c);
+
+        return c;
+    }
+
+    public ByteList readLineBytes() throws IOException {
+        ByteList bytelist = new ByteList(80);
+
+        for (int c = read(); c != '\n' && c != RipperLexer.EOF; c = read()) {
+            bytelist.append(c);
+        }
+
+        return bytelist;
+    }
+    
+    public ByteList readLineBytesPlusNewline() throws IOException {
+        ByteList bytelist = new ByteList(80);
+
+        int c = read();
+        for (; c != '\n' && c != RipperLexer.EOF; c = read()) {
+            bytelist.append(c);
+        }
+        if (c != RipperLexer.EOF) bytelist.append(c);
+
+        return bytelist;        
+    }
+    
+    public int skipUntil(int marker) throws IOException {
+        int c;
+        for (c = read(); c != marker && c != RipperLexer.EOF; c = read()) {}
+        return c;
+    }
+
+    public void unreadMany(CharSequence buffer) {
+        int length = buffer.length();
+        for (int i = length - 1; i >= 0; i--) {
+            unread(buffer.charAt(i));
+        }
+    }
+
     /**
      * Match marker against input consumering lexer source as it goes...Unless it does not match
      * then it reverts lexer source back to point when this method was invoked.
@@ -261,17 +425,148 @@ public abstract class LexerSource {
      * @return 0 if no match -1 is EOF and '\n' if newline (only if withNewline is true).
      * @throws IOException if an error occurred reading from underlying IO source
      */
-    public abstract int matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
+    public int matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
+        int length = match.length();
+        ByteList buffer = new ByteList(length + 1);
+        
+        if (indent) {
+            indentLoop(buffer);
+        }
+        
+        if (!matches(match, buffer, length)) return 0;
+        
+        return finishMarker(checkNewline, buffer); 
+    }
 
-    public abstract int read() throws IOException;
-    public abstract ByteList readUntil(char c) throws IOException;
-    public abstract ByteList readLineBytes() throws IOException;
-    public abstract ByteList readLineBytesPlusNewline() throws IOException;
-    public abstract int skipUntil(int c) throws IOException;
-    public abstract void unread(int c);
-    public abstract void unreadMany(CharSequence line);
-    public abstract boolean peek(int c) throws IOException;
-    public abstract boolean lastWasBeginOfLine();
-    public abstract boolean wasBeginOfLine();
-    public abstract InputStream getRemainingAsStream() throws IOException;
+    private void indentLoop(ByteList buffer) throws IOException {
+        int c;
+        while ((c = read()) != RipperLexer.EOF) {
+            if (!Character.isWhitespace(c) || c == '\n') {
+                unread(c);
+                break;
+            }
+            buffer.append(c);
+        }
+    }
+    
+    private boolean matches(ByteList match, ByteList buffer, int length) throws IOException {
+        int c;
+        for (int i = 0; i < length; i++) {
+            c = read();
+            buffer.append(c);
+            if (match.charAt(i) != c) {
+                unreadMany(buffer);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int finishMarker(boolean checkNewline, ByteList buffer) throws IOException {
+
+        if (!checkNewline) return -1;
+
+        int c = read();
+
+        if (c == RipperLexer.EOF) return -1;
+        if (c == '\n') return '\n';
+
+        buffer.append(c);
+        unreadMany(buffer);
+
+        return 0;
+    }
+    
+    /**
+     * Was the last character read from the stream the first character on a line
+     * 
+     * @return true if so
+     */
+    public boolean wasBeginOfLine() {
+        return twoAgo == '\n';
+    }
+
+    public boolean lastWasBeginOfLine() {
+        return oneAgo == '\n';
+    }
+    
+    static final ByteList EOF_LABEL = new ByteList(new byte[] {'{', 'e', 'o', 'f', '}'});
+
+    @Override
+    public String toString() {
+        try {
+            ByteList buffer = new ByteList(20);
+            ByteList unreadBuffer = new ByteList(20);
+
+            if (twoAgo != -1 && twoAgo != 0) buffer.append(twoAgo);
+            if (oneAgo != -1 && oneAgo != 0) buffer.append(oneAgo);
+
+            buffer.append('<');
+
+            int c = read();
+            unreadBuffer.append(c);
+            
+            if (c == -1) {
+                unread(unreadBuffer.charAt(0));
+                buffer.append(EOF_LABEL);
+                buffer.append('>');
+                
+                return buffer.toString();
+            } else {
+                buffer.append(c).append('>');
+            }
+            int i = 1;
+            
+            for (; i < 20; i++) {
+                c = read();
+                unreadBuffer.append(c);
+                if (c == -1) {
+                    buffer.append(EOF_LABEL);
+                    i--;
+                    break;
+                }
+                buffer.append(c);
+            }
+            for (; i >= 0; i--) {
+                unread(unreadBuffer.charAt(i));
+            }
+            buffer.append(new byte[] {' ', '.', '.', '.'});
+            return buffer.toString();
+        } catch(Exception e) {
+            return null;
+        }
+    }
+
+    public ByteList readUntil(char marker) throws IOException {
+        ByteList buffer = new ByteList(20);
+        int c;
+        
+        for (c = read(); c != marker && c != RipperLexer.EOF; c = read()) {
+            buffer.append(c);
+        }
+        
+        if (c == RipperLexer.EOF) return null;
+        
+        unread(c);
+        
+        return buffer;
+    }
+
+    public InputStream getRemainingAsStream() throws IOException {
+        return bufferEntireStream(in);
+    }
+
+    private InputStream bufferEntireStream(InputStream stream) throws IOException {
+        byte[] allBytes = new byte[0];
+        byte[] b = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = stream.read(b)) != -1) {
+            byte[] newbuf = new byte[allBytes.length + bytesRead];
+            System.arraycopy(allBytes, 0, newbuf, 0, allBytes.length);
+            System.arraycopy(b, 0, newbuf, allBytes.length, bytesRead);
+            allBytes = newbuf;
+        }
+
+        return new ByteArrayInputStream(allBytes);
+    }    
 }
