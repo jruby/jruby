@@ -71,7 +71,7 @@ public abstract class IRVisitor {
     }
 
     private void error(Object object) {
-        throw new RuntimeException("no compiler logic for " + object.getClass().getName());
+        throw new RuntimeException("no visitor logic for " + object.getClass().getName() + " in " + getClass().getName());
     }
 
     // standard instructions
