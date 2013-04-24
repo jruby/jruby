@@ -289,7 +289,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        jvm.method().pushRuntime();
+        jvm.method().loadRuntime();
         visit(blockGivenInstr.getBlockArg());
         jvm.method().invokeVirtual(Type.getType(Block.class), Method.getMethod("boolean isGiven()"));
         jvm.method().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.RubyBoolean newBoolean(boolean)"));
@@ -406,7 +406,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.checkcast("org/jruby/RubyModule");
         jvm.method().loadContext();
         jvm.method().adapter.ldc("const_missing");
-        jvm.method().push(constmissinginstr.getMissingConst());
+        jvm.method().pushSymbol(constmissinginstr.getMissingConst());
         jvm.method().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
     }
 
@@ -569,7 +569,7 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         // get singleton class
-        m.pushRuntime();
+        m.loadRuntime();
         visit(definemetaclassinstr.getObject());
         m.invokeHelper("getSingletonClass", RubyClass.class, Ruby.class, IRubyObject.class);
 
@@ -1107,7 +1107,7 @@ public class JVMVisitor extends IRVisitor {
     public void HasInstanceVarInstr(HasInstanceVarInstr hasinstancevarinstr) {
         IRBytecodeAdapter m = jvm.method();
         // TODO: This is suboptimal, not caching ivar offset at all
-        m.pushRuntime();
+        m.loadRuntime();
         visit(hasinstancevarinstr.getObject());
         m.adapter.invokeinterface(p(IRubyObject.class), "getInstanceVariables", sig(InstanceVariables.class));
         m.adapter.ldc(hasinstancevarinstr.getName().string);
@@ -1245,12 +1245,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Fixnum(Fixnum fixnum) {
-        jvm.method().push(fixnum.getValue());
+        jvm.method().pushFixnum(fixnum.getValue());
     }
 
     @Override
     public void Float(org.jruby.ir.operands.Float flote) {
-        jvm.method().push(flote.getValue());
+        jvm.method().pushFloat(flote.getValue());
     }
 
     @Override
@@ -1295,7 +1295,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        jvm.method().pushRuntime();
+        jvm.method().loadRuntime();
         jvm.method().loadContext();
         visit(range.getBegin());
         visit(range.getEnd());
@@ -1327,13 +1327,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StandardError(StandardError standarderror) {
-        jvm.method().pushRuntime();
+        jvm.method().loadRuntime();
         jvm.method().adapter.invokevirtual(p(Ruby.class), "getStandardError", sig(RubyClass.class));
     }
 
     @Override
     public void StringLiteral(StringLiteral stringliteral) {
-        jvm.method().push(stringliteral.getByteList());
+        jvm.method().pushString(stringliteral.getByteList());
     }
 
     @Override
@@ -1343,7 +1343,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Symbol(Symbol symbol) {
-        jvm.method().push(symbol.getName());
+        jvm.method().pushSymbol(symbol.getName());
     }
 
     @Override
