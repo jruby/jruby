@@ -134,6 +134,10 @@ public class IRBytecodeAdapter {
         adapter.invokevirtual(type.getInternalName(), method.getName(), method.getDescriptor());
     }
 
+    public void invokeStatic(Type type, Method method) {
+        adapter.invokestatic(type.getInternalName(), method.getName(), method.getDescriptor());
+    }
+
     public void invokeHelper(String name, Class... sig) {
         adapter.invokestatic(p(Helpers.class), name, sig(sig));
     }

@@ -382,7 +382,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) {
-        super.CheckArgsArrayArityInstr(checkargsarrayarityinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(checkargsarrayarityinstr.getArgsArray());
+        jvm.method().adapter.pushInt(checkargsarrayarityinstr.required);
+        jvm.method().adapter.pushInt(checkargsarrayarityinstr.opt);
+        jvm.method().adapter.pushInt(checkargsarrayarityinstr.rest);
+        jvm.method().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, int)"));
     }
 
     @Override

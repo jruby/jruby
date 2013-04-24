@@ -12,6 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.runtime.Helpers;
 
 public class CheckArgsArrayArityInstr extends Instr {
     public final int required;
@@ -26,6 +27,10 @@ public class CheckArgsArrayArityInstr extends Instr {
         this.opt = opt;
         this.rest = rest;
         this.argsArray = argsArray;
+    }
+    
+    public Operand getArgsArray() {
+        return argsArray;
     }
 
     @Override
@@ -51,10 +56,7 @@ public class CheckArgsArrayArityInstr extends Instr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         RubyArray args = (RubyArray) argsArray.retrieve(context, self, currDynScope, temp);
-        int numArgs = args.size();
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
-        }
+        Helpers.irCheckArgsArrayArity(context, args, required, opt, rest);
         return null;
     }
 
