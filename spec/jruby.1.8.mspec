@@ -100,8 +100,6 @@ class MSpecScript
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 
-  set :formatter, DottedFormatter
-
   # Disable features (not currently supported)
   MSpec.disable_feature :fork
 

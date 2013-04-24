@@ -107,8 +107,6 @@ class MSpecScript
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 
-  set :formatter, DottedFormatter
-
   # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
   if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
       JRuby.runtime.instance_config.jit_threshold == 1
