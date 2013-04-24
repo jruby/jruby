@@ -1,7 +1,7 @@
 This file contains the cert contents of "Verisign Class 3 Public Primary
 Certification Authority" and is used by (at least) openssl/test_integration.rb
-in test_ssl_verify. Because this test specifies a single CA cert, if the remote
-site (www.amazon.com) changes CA this content will have to be updated.
+in test_ca_path_name. Because this test specifies a single CA cert, if the
+remote site (www.amazon.com) changes CA this content will have to be updated.
 
 -----BEGIN CERTIFICATE-----
 MIICPDCCAaUCEHC65B0Q2Sk0tjjKewPMur8wDQYJKoZIhvcNAQECBQAwXzELMAkGA1UEBhMCVVMx

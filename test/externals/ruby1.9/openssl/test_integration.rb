@@ -52,7 +52,7 @@ class TestIntegration < Test::Unit::TestCase
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    http.ca_file = path('fixture/verisign_c3.pem')
+    http.ca_file = path('fixture/digital_signature_trust_global_ca_3.pem')
     assert_raise(OpenSSL::SSL::SSLError) do
       # it must cause SSLError for verification failure.
       response = http.start do |s|
@@ -77,7 +77,7 @@ class TestIntegration < Test::Unit::TestCase
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
     # right trust anchor for www.amazon.com
-    http.ca_file = path('fixture/verisign_c3.pem')
+    http.ca_file = path('fixture/verisign.pem')
     response = http.start do |s|
       assert s.get(uri.request_uri).length > 0
     end
