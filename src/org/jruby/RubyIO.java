@@ -556,6 +556,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
+
+        if (args.length > idx && args[idx] instanceof RubyFixnum) {
+            return separator(runtime, runtime.getRecordSeparatorVar().get());
+        }
+
         return separator(runtime, args.length > idx ? args[idx] : runtime.getRecordSeparatorVar().get());
     }
 
@@ -570,7 +575,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject getline(Ruby runtime, ByteList separator) {
         return getline(runtime, separator, -1, null);
     }
-
 
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
@@ -3350,30 +3354,29 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private RubyArray readlinesCommon(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
-        IRubyObject[] separatorArgs = IRubyObject.NULL_ARRAY;
-        long limit = -1;
-        
-        if (args.length > 1) {
-            separatorArgs = new IRubyObject[] { args[0] };
-            limit = RubyNumeric.num2long(args[1]);
-        } else if (args.length > 0) {
-            if (args[0] instanceof RubyFixnum) {
-                limit = RubyNumeric.num2long(args[0]);
-            } else {
-                separatorArgs = new IRubyObject[] { args[0] };
-            }
-        }
-        
-        ByteList separator = getSeparatorForGets(runtime, separatorArgs);
+        long limit = getLimitFromArgs(args);
+        ByteList separator = getSeparatorFromArgs(runtime, args, 0);
         RubyArray result = runtime.newArray();
         IRubyObject line;
-        
+
         while (! (line = getline(runtime, separator, limit, null)).isNil()) {
             result.append(line);
         }
         return result;
     }
     
+    private long getLimitFromArgs(IRubyObject[] args) {
+        long limit = -1;
+
+        if (args.length > 1) {
+            limit = RubyNumeric.num2long(args[1]);
+        } else if (args.length > 0 && args[0] instanceof RubyFixnum) {
+            limit = RubyNumeric.num2long(args[0]);
+        }
+
+        return limit;
+    }
+
     @JRubyMethod(name = "to_io")
     public RubyIO to_io() {
     	return this;
@@ -3393,11 +3396,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     /** rb_io_s_foreach
     *
     */
-    public static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject filename = args[0].convertToString();
 
-        RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
+        RubyIO io = newFile(context, runtime.getFile(), new IRubyObject[] { filename });
 
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
@@ -3419,49 +3422,25 @@ public class RubyIO extends RubyObject implements IOEncodable {
     /** rb_io_s_foreach
     *
     */
-    public static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    private static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        IRubyObject filename = args[0].convertToString();
-
-        RubyIO io;
-        // FIXME: This is gross; centralize options logic somewhere.
-        switch (args.length) {
-            case 1:
-                io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
-                break;
-            case 2:
-                if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingUtils.openArgsToArgs(runtime, filename, (RubyHash) args[1]), Block.NULL_BLOCK);
-                    args = new IRubyObject[]{args[0]};
-                } else {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
-                }
-                break;
-            case 3:
-                if (args[1] instanceof RubyHash) {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), EncodingUtils.openArgsToArgs(runtime, filename, (RubyHash) args[2]), Block.NULL_BLOCK);
-                    args = new IRubyObject[]{args[0], args[1]};
-                } else {
-                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
-                }
-                break;
-            default:
-                // Should never be reached.
-                Arity.checkArgumentCount(runtime, args.length, 1, 3);
-                throw runtime.newRuntimeError("invalid argument count in IO.foreach: " + args.length);
-        }
+       
+        IRubyObject[] openFileArguments  = processFileArguments19(context, args);
+        IRubyObject[] methodArguments = processReadlinesMethodArguments(args);
+        
+        RubyIO io = newFile19(context, runtime.getFile(), openFileArguments);
 
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
             try {
-                ByteList separator = io.getSeparatorFromArgs(runtime, args, 1);
-                IRubyObject str = io.getline(runtime, separator, cache);
+
+                long limit = io.getLimitFromArgs(methodArguments);
+                ByteList separator = io.getSeparatorFromArgs(runtime, methodArguments, 0);
+                
+                IRubyObject str = io.getline(runtime, separator, limit ,cache);
                 while (!str.isNil()) {
                     block.yield(context, str);
-                    str = io.getline(runtime, separator, cache);
-                    if (runtime.is1_9()) {
-                        separator = io.getSeparatorFromArgs(runtime, args, 1);
-                    }
+                    str = io.getline(runtime, separator, limit ,cache);
                 }
             } finally {
                 io.close();
@@ -3478,11 +3457,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return foreachInternal(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "foreach", required = 1, optional = 2, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true, compat = RUBY1_9)
     public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
-
-        args[0] = RubyFile.get_path(context, args[0]);
 
         return foreachInternal19(context, recv, args, block);
     }
@@ -3759,22 +3736,36 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true, compat = RUBY1_9)
     public static RubyArray readlines19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        int count = args.length;
         
-        IRubyObject[] openFileArguments = null;
-        IRubyObject[] methodArguments = IRubyObject.NULL_ARRAY;
+        IRubyObject[] fileArguments = processFileArguments19(context, args);
+        IRubyObject[] methodArguments = processReadlinesMethodArguments(args);
+
+        return readlinesCommon(context, recv, fileArguments, methodArguments);
+    }
+
+    private static IRubyObject[] processFileArguments19(ThreadContext context, IRubyObject[] args) {
+        int count = args.length;
         
         RubyString path = RubyFile.get_path(context, args[0]);
         
+        IRubyObject[] openFileArguments;
+        
+        
         if(count >= 4 && (args[3] instanceof RubyHash || args[3].respondsTo("to_hash")) ) {
-            openFileArguments = new IRubyObject[]{ path, args[3] };
+            openFileArguments = EncodingUtils.openArgsToArgs(context.runtime, path, (RubyHash) args[3].callMethod(context, "to_hash"));
         } else if (count >= 3 && (args[2] instanceof RubyHash || args[2].respondsTo("to_hash") )) {
-            openFileArguments = new IRubyObject[]{ path, args[2] };
+            openFileArguments = EncodingUtils.openArgsToArgs(context.runtime, path, (RubyHash) args[2].callMethod(context, "to_hash"));
         } else if(count >= 2 && (args[1] instanceof RubyHash || args[1].respondsTo("to_hash"))){
-            openFileArguments = new IRubyObject[]{ path, args[1] };    
+            openFileArguments = EncodingUtils.openArgsToArgs(context.runtime, path, (RubyHash) args[1].callMethod(context, "to_hash"));
         } else {
             openFileArguments = new IRubyObject[]{ path };
         }
+        return openFileArguments;
+    }
+
+    private static IRubyObject[] processReadlinesMethodArguments(IRubyObject[] args) {
+        int count = args.length;
+        IRubyObject[] methodArguments = IRubyObject.NULL_ARRAY;
         
         if(count >= 3 && (args[2] instanceof RubyFixnum || args[2].respondsTo("to_int"))) {
             methodArguments = new IRubyObject[]{args[1], args[2]};   
@@ -3784,7 +3775,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             methodArguments = new IRubyObject[]{args[1]};  
         }
         
-        return readlinesCommon(context, recv, openFileArguments, methodArguments);
+        return methodArguments;
     }
     
     private static RubyArray readlinesCommon(ThreadContext context, IRubyObject recv, IRubyObject[] openFileArguments , IRubyObject[] methodArguments) {
