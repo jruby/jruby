@@ -3291,15 +3291,38 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return block.isGiven() ? each_lineInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(name = "readlines", optional = 1, compat = RUBY1_8)
     public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
+        return readlinesCommon(context, args);
+    }
+    
+    @JRubyMethod(name = "readlines", optional = 2, compat = RUBY1_9)
+    public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
+        return readlinesCommon(context, args);
+    }
+    
+    private RubyArray readlinesCommon(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject[] separatorArgs = args.length > 0 ? new IRubyObject[] { args[0] } : IRubyObject.NULL_ARRAY;
+        
+        IRubyObject[] separatorArgs = IRubyObject.NULL_ARRAY;
+        long limit = -1;
+        
+        if (args.length > 1) {
+            separatorArgs = new IRubyObject[] { args[0] };
+            limit = RubyNumeric.num2long(args[1]);
+        } else if (args.length > 0) {
+            if (args[0] instanceof RubyFixnum) {
+                limit = RubyNumeric.num2long(args[0]);
+            } else {
+                separatorArgs = new IRubyObject[] { args[0] };
+            }
+        }
+        
         ByteList separator = getSeparatorForGets(runtime, separatorArgs);
         RubyArray result = runtime.newArray();
         IRubyObject line;
         
-        while (! (line = getline(runtime, separator)).isNil()) {
+        while (! (line = getline(runtime, separator, limit, null)).isNil()) {
             result.append(line);
         }
         return result;
@@ -3677,16 +3700,51 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         return write19(context, recv, path, str, offset, (RubyHash) options);
     }
-
-    @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
+    
+    @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int count = args.length;
 
         IRubyObject[] fileArguments = new IRubyObject[]{ args[0].convertToString() };
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
-        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+        
+        return readlinesCommon(context, recv, fileArguments, separatorArguments);
+    }
+
+    @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true, compat = RUBY1_9)
+    public static RubyArray readlines19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        int count = args.length;
+        
+        IRubyObject[] openFileArguments = null;
+        IRubyObject[] methodArguments = IRubyObject.NULL_ARRAY;
+        
+        RubyString path = RubyFile.get_path(context, args[0]);
+        
+        if(count >= 4 && (args[3] instanceof RubyHash || args[3].respondsTo("to_hash")) ) {
+            openFileArguments = new IRubyObject[]{ path, args[3] };
+        } else if (count >= 3 && (args[2] instanceof RubyHash || args[2].respondsTo("to_hash") )) {
+            openFileArguments = new IRubyObject[]{ path, args[2] };
+        } else if(count >= 2 && (args[1] instanceof RubyHash || args[1].respondsTo("to_hash"))){
+            openFileArguments = new IRubyObject[]{ path, args[1] };    
+        } else {
+            openFileArguments = new IRubyObject[]{ path };
+        }
+        
+        if(count >= 3 && (args[2] instanceof RubyFixnum || args[2].respondsTo("to_int"))) {
+            methodArguments = new IRubyObject[]{args[1], args[2]};   
+        } else if (count >= 2 && (args[1] instanceof RubyFixnum || args[1].respondsTo("to_int"))) {
+            methodArguments = new IRubyObject[]{args[1]};  
+        } else if (count >= 2 && !(args[1] instanceof RubyHash))  {
+            methodArguments = new IRubyObject[]{args[1]};  
+        }
+        
+        return readlinesCommon(context, recv, openFileArguments, methodArguments);
+    }
+    
+    private static RubyArray readlinesCommon(ThreadContext context, IRubyObject recv, IRubyObject[] openFileArguments , IRubyObject[] methodArguments) {
+        RubyIO file = (RubyIO) RubyKernel.open(context, recv, openFileArguments, Block.NULL_BLOCK);
         try {
-            return file.readlines(context, separatorArguments);
+            return (RubyArray) file.callMethod("readlines", methodArguments);
         } finally {
             file.close();
         }
