@@ -411,6 +411,13 @@ public class Helpers {
         return new MethodMissingMethod(methodMissing, callType);
     }
 
+    public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, int rest) {
+        int numArgs = args.size();
+        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+        }
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;

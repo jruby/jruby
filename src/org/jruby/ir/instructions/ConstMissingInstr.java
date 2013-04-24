@@ -24,6 +24,10 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
 
         this.missingConst = missingConst;
     }
+    
+    public String getMissingConst() {
+        return missingConst;
+    }
 
     @Override
     public Operand[] getOperands() { 

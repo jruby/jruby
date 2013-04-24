@@ -53,17 +53,17 @@ public class IRBytecodeAdapter {
         });
     }
 
-    public void push(Long l) {
+    public void pushFixnum(Long l) {
         adapter.aload(0);
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
     
-    public void push(Double d) {
+    public void pushFloat(Double d) {
         adapter.aload(0);
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
     }
 
-    public void push(ByteList bl) {
+    public void pushString(ByteList bl) {
         adapter.aload(0);
         adapter.invokedynamic("string", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().getIndex());
     }
@@ -72,12 +72,12 @@ public class IRBytecodeAdapter {
      * Push a symbol on the stack
      * @param sym the symbol's string identifier
      */
-    public void push(String sym) {
+    public void pushSymbol(String sym) {
         adapter.aload(0);
         adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
     }
 
-    public void pushRuntime() {
+    public void loadRuntime() {
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
@@ -132,6 +132,10 @@ public class IRBytecodeAdapter {
 
     public void invokeVirtual(Type type, Method method) {
         adapter.invokevirtual(type.getInternalName(), method.getName(), method.getDescriptor());
+    }
+
+    public void invokeStatic(Type type, Method method) {
+        adapter.invokestatic(type.getInternalName(), method.getName(), method.getDescriptor());
     }
 
     public void invokeHelper(String name, Class... sig) {
@@ -191,7 +195,7 @@ public class IRBytecodeAdapter {
     }
 
     public void pushObjectClass() {
-        pushRuntime();
+        loadRuntime();
         adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
     }
 

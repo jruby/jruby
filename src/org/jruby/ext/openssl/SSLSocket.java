@@ -102,11 +102,11 @@ public class SSLSocket extends RubyObject {
     }
 
     public static RaiseException newSSLErrorReadable(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorReadable", message, false);
+        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWaitReadable", message, false);
     }
 
     public static RaiseException newSSLErrorWritable(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWritable", message, false);
+        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWaitWritable", message, false);
     }
 
     private org.jruby.ext.openssl.SSLContext rubyCtx;
