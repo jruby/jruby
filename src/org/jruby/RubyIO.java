@@ -1248,6 +1248,52 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(ThreadContext context, IRubyObject obj) {
+       Ruby runtime = context.runtime;
+        
+        try {
+            RubyString string = obj.asString();
+            OpenFile myOpenFile = getOpenFileChecked();
+            
+            myOpenFile.checkWritable(runtime);
+            
+            Stream writeStream = myOpenFile.getWriteStream();
+            
+            if (myOpenFile.isWriteBuffered()) {
+                runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "syswrite for buffered IO");
+            }
+            
+            if (!writeStream.getDescriptor().isWritable()) {
+                myOpenFile.checkClosed(runtime);
+            }
+            
+            context.getThread().beforeBlockingCall();
+            int read = writeStream.getDescriptor().write(string.getByteList());
+            
+            if (read == -1) {
+                // TODO? I think this ends up propagating from normal Java exceptions
+                // sys_fail(openFile.getPath())
+            }
+            
+            return runtime.newFixnum(read);
+        } catch (InvalidValueException ex) {
+            throw runtime.newErrnoEINVALError();
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (IOException e) {
+            if (e.getMessage().equals("Broken pipe")) {
+                throw runtime.newErrnoEPIPEError();
+            }
+            if (e.getMessage().equals("Connection reset by peer")) {
+                throw runtime.newErrnoEPIPEError();
+            }
+            throw runtime.newSystemCallError(e.getMessage());
+        } finally {
+            context.getThread().afterBlockingCall();
+        }
+    }
+
+    @JRubyMethod(name = "write_nonblock", required = 1)
+    public IRubyObject write_nonblock(ThreadContext context, IRubyObject obj) {
         return doWriteNonblock(context, obj, true);
     }
     
