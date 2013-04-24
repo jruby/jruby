@@ -90,6 +90,8 @@ import org.jruby.RubyRange;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 /**
  * Implementation of IRCompiler for the JVM.
@@ -287,7 +289,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        super.BlockGivenInstr(blockGivenInstr);
+        jvm.method().pushRuntime();
+        visit(blockGivenInstr.getBlockArg());
+        jvm.method().invokeVirtual(Type.getType(Block.class), Method.getMethod("boolean isGiven()"));
+        jvm.method().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.RubyBoolean newBoolean(boolean)"));
+        jvmStoreLocal(blockGivenInstr.getResult());
     }
 
     @Override

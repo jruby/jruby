@@ -1393,7 +1393,7 @@ public class IRBuilder {
             case INSTVARNODE:
                 return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
             case YIELDNODE:
-                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable()), "yield");
+                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable(), s.getImplicitBlockArg()), "yield");
             case BACKREFNODE:
                 return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "$" + ((BackRefNode) node).getType());
             case NTHREFNODE: {
