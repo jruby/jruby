@@ -31,8 +31,16 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
         return new Operand[]{array};
     }
     
+    public Operand getArrayArg() {
+        return array;
+    }
+    
     public Variable getResult() {
         return result;
+    }
+    
+    public int getIndex() {
+        return index;
     }
 
     public void updateResult(Variable v) {

@@ -411,13 +411,6 @@ public class Helpers {
         return new MethodMissingMethod(methodMissing, callType);
     }
 
-    public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, int rest) {
-        int numArgs = args.size();
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
-        }
-    }
-
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
@@ -2846,6 +2839,45 @@ public class Helpers {
             return string.append19(object);
         } else {
             return string.append19(object.asString());
+        }
+    }
+
+    public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, int rest) {
+        int numArgs = args.size();
+        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+        }
+    }
+    
+    public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
+        return context.is19 ? splatValue19(maybeAry) : splatValue(maybeAry);
+    }
+
+    public static IRubyObject irToAry(ThreadContext context, IRubyObject receiver, boolean dontToAryArrays) {
+        if (dontToAryArrays && receiver instanceof RubyArray) {
+            return receiver;
+        } else {
+            IRubyObject ary = Helpers.aryToAry(receiver);
+            if (ary instanceof RubyArray) {
+                return ary;
+            } else {
+                String receiverType = receiver.getType().getName();
+                throw context.runtime.newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
+            }
+        }
+    }
+
+    public static IRubyObject irReqdArgMultipleAsgn(ThreadContext context, RubyArray rubyArray, int preArgsCount, int index, int postArgsCount) {
+        int n = rubyArray.getLength();
+        if (preArgsCount == -1) {
+            return rubyArray.entry(index);
+        } else {
+            int remaining = n - preArgsCount;
+            if (remaining <= index) {
+                return context.nil;
+            } else {
+                return (remaining > postArgsCount) ? rubyArray.entry(n - postArgsCount + index) : rubyArray.entry(preArgsCount + index);
+            }
         }
     }
 

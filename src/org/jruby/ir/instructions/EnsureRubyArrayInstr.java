@@ -34,6 +34,10 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
         simplifyOperands(valueMap, false);
         return (object instanceof Array) ? object : null;
     }
+    
+    public Operand getObject() {
+        return object;
+    }
 
     public Operand[] getOperands() {
         return new Operand[]{object};

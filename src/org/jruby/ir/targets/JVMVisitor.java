@@ -85,7 +85,9 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.Map;
+import org.jruby.RubyArray;
 import org.jruby.RubyRange;
+import org.jruby.ast.util.ArgsUtil;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -640,7 +642,17 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void EnsureRubyArrayInstr(EnsureRubyArrayInstr ensurerubyarrayinstr) {
-        super.EnsureRubyArrayInstr(ensurerubyarrayinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(ensurerubyarrayinstr.getObject());
+        jvm.method().adapter.dup();
+        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
+        jvm.method().adapter.instance_of("org/jruby/RubyArray");
+        jvm.method().adapter.iftrue(after);
+        jvm.method().adapter.swap();
+        jvm.method().loadRuntime();
+        jvm.method().adapter.ldc(false);
+        jvm.method().invokeStatic(Type.getType(ArgsUtil.class), Method.getMethod("org.jruby.RubyArray convertToRubyArray(org.jruby.Ruby, org.jruby.runtime.builtin.IRubyObject, boolean)"));
+        jvm.method().adapter.label(after);
+        jvmStoreLocal(ensurerubyarrayinstr.getResult());
     }
 
     @Override
@@ -920,7 +932,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) {
-        super.ReqdArgMultipleAsgnInstr(reqdargmultipleasgninstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(reqdargmultipleasgninstr.getArrayArg());
+        jvm.method().adapter.checkcast("org/jruby/RubyArray");
+        jvm.method().adapter.pushInt(reqdargmultipleasgninstr.getPreArgsCount());
+        jvm.method().adapter.pushInt(reqdargmultipleasgninstr.getIndex());
+        jvm.method().adapter.pushInt(reqdargmultipleasgninstr.getPostArgsCount());
+        jvm.method().invokeHelper("irReqdArgMultipleAsgn", IRubyObject.class, ThreadContext.class, RubyArray.class, int.class, int.class, int.class);
+        jvmStoreLocal(reqdargmultipleasgninstr.getResult());
     }
 
     @Override
@@ -1032,7 +1051,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ToAryInstr(ToAryInstr toaryinstr) {
-        super.ToAryInstr(toaryinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(toaryinstr.getArrayArg());
+        jvm.method().adapter.ldc(toaryinstr.dontToAryArrays());
+        jvm.method().invokeHelper("irToAry", IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class);
+        jvmStoreLocal(toaryinstr.getResult());
     }
 
     @Override
@@ -1225,7 +1248,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CompoundArray(CompoundArray compoundarray) {
-        super.CompoundArray(compoundarray);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(compoundarray.getAppendingArg());
+        if (compoundarray.isArgsPush()) jvm.method().adapter.checkcast("org/jruby/RubyArray");
+        visit(compoundarray.getAppendedArg());
+        if (compoundarray.isArgsPush()) {
+            jvm.method().invokeHelper("argsPush", RubyArray.class, RubyArray.class, IRubyObject.class);
+        } else {
+            jvm.method().invokeHelper("argsCat", RubyArray.class, IRubyObject.class, IRubyObject.class);
+        }
     }
 
     @Override
@@ -1322,7 +1352,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Splat(Splat splat) {
-        super.Splat(splat);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(splat.getArray());
+        jvm.method().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
     }
 
     @Override

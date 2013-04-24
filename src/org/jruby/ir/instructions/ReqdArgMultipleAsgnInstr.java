@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -24,6 +25,9 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
     public ReqdArgMultipleAsgnInstr(Variable result, Operand array, int index) {
         this(result, array, -1, -1, index);
     }
+    
+    public int getPreArgsCount() { return preArgsCount; }
+    public int getPostArgsCount() { return postArgsCount; }
 
     @Override
     public String toString() {
@@ -39,21 +43,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
-        Object val;
-        
-        int n = rubyArray.getLength();
-        if (preArgsCount == -1) {
-            // Masgn for 1.8 and 1.9 pre-reqd. args always comes down this path!
-            return rubyArray.entry(index);
-        } else {
-            // Masgn for 1.9 post-reqd args always come down this path
-            int remaining = n - preArgsCount;
-            if (remaining <= index) {
-                return context.nil;
-            } else {
-                return (remaining > postArgsCount) ? rubyArray.entry(n - postArgsCount + index) : rubyArray.entry(preArgsCount + index);
-            }
-        }
+        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);        
     }
 
     @Override
