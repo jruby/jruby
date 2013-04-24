@@ -4697,21 +4697,25 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_9)
     public RubyArray split19(ThreadContext context, IRubyObject arg0) {
-        return splitCommon19(arg0, false, 0, 0, context);
+        return splitCommon19(arg0, false, 0, 0, context, true);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_9)
     public RubyArray split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
         if (lim <= 0) {
-            return splitCommon19(arg0, false, lim, 1, context);
+            return splitCommon19(arg0, false, lim, 1, context, true);
         } else {
             if (lim == 1) return value.getRealSize() == 0 ? context.runtime.newArray() : context.runtime.newArray(this);
-            return splitCommon19(arg0, true, lim, 1, context);
+            return splitCommon19(arg0, true, lim, 1, context, true);
         }
     }
+    
+    public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
+        return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
+    }
 
-    private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context) {
+    private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context, boolean useBackref) {
         final RubyArray result;
         if (spat.isNil() && (spat = context.runtime.getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit19(limit, lim, i);
@@ -4722,7 +4726,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 Encoding spatEnc = spatValue.getEncoding();
                 if (len == 0) {
                     Regex pattern = RubyRegexp.getRegexpFromCache(context.runtime, spatValue, spatEnc, new RegexpOptions());
-                    result = regexSplit19(context, pattern, pattern, limit, lim, i);
+                    result = regexSplit19(context, pattern, pattern, limit, lim, i, useBackref);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.getUnsafeBytes();
@@ -4746,7 +4750,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     pattern = getStringPattern19(runtime, spat);
                     prepared = RubyRegexp.preparePattern(runtime, pattern, this);
                 }
-                result = regexSplit19(context, pattern, prepared, limit, lim, i);
+                result = regexSplit19(context, pattern, prepared, limit, lim, i, useBackref);
             }
         }
 
@@ -4759,7 +4763,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    private RubyArray regexSplit19(ThreadContext context, Regex pattern, Regex prepared, boolean limit, int lim, int i) {
+    private RubyArray regexSplit19(ThreadContext context, Regex pattern, Regex prepared, boolean limit, int lim, int i, boolean useBackref) {
         Ruby runtime = context.runtime;
 
         int begin = value.getBegin();
@@ -4801,7 +4805,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         // only this case affects backrefs 
-        context.getCurrentScope().setBackRef(runtime.getNil());
+        if (useBackref) context.getCurrentScope().setBackRef(runtime.getNil());
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
         return result;

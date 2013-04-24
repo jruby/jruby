@@ -1028,15 +1028,15 @@ public class RubyRational extends RubyNumeric {
         if (!m.isNil()) {
             RubyMatchData match = (RubyMatchData)m;
             IRubyObject si = match.op_aref19(RubyFixnum.one(runtime));
-            IRubyObject nu = match.op_aref19(RubyFixnum.two(runtime));
+            RubyString nu = (RubyString)match.op_aref19(RubyFixnum.two(runtime));
             IRubyObject de = match.op_aref19(RubyFixnum.three(runtime));
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.callMethod(context, "split", RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat)).convertToArray();
-            IRubyObject ifp = a.eltInternal(0);
+            RubyArray a = nu.split19(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), false).convertToArray();
+            RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
-            a = ifp.callMethod(context, "split", RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat)).convertToArray();
+            a = ifp.split19(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), false).convertToArray();
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
