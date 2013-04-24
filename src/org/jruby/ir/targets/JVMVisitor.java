@@ -336,7 +336,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BUndefInstr(BUndefInstr bundefinstr) {
-        super.BUndefInstr(bundefinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(bundefinstr.getArg1());
+        jvm.method().pushUndefined();
+        jvm.method().adapter.if_acmpeq(getJVMLabel(bundefinstr.getJumpTarget()));
     }
 
     @Override
