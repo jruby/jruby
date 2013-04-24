@@ -31,6 +31,7 @@
 package org.jruby.parser;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -107,7 +108,11 @@ public class ParserConfiguration {
 
     public Encoding getDefaultEncoding() {
         if (defaultEncoding == null) {
-            defaultEncoding = getEncodingService().loadEncoding(USASCII);
+            if (runtime.is2_0()) {
+                defaultEncoding = UTF8Encoding.INSTANCE;
+            } else {
+                defaultEncoding = getEncodingService().loadEncoding(USASCII);
+            }
         }
         
         return defaultEncoding;
