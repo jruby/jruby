@@ -728,9 +728,13 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"exists?", "exist?"}, meta = true, compat = RUBY1_9)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        // Capture previous exception if any.
+        IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
         try {
             return context.runtime.newFileStat(RubyFile.get_path(context, arg).asJavaString(), false).directory_p();
         } catch (Exception e) {
+            // Restore $!
+            context.runtime.getGlobalVariables().set("$!", exception);
             return context.runtime.newBoolean(false);
         }
     }
