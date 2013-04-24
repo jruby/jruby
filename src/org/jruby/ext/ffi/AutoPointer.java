@@ -175,7 +175,7 @@ public class AutoPointer extends Pointer {
 
     @JRubyMethod(name = "autorelease?")
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(!reaper.unmanaged);
+        return context.runtime.newBoolean(reaper != null ? !reaper.unmanaged : false);
     }
 
     private void setReaper(Reaper reaper) {
