@@ -81,6 +81,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
   mspec_options[:compat] ||= "1.8"
+  mspec_options[:format] ||= "m"
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
@@ -117,7 +118,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.verbosity.level=silent"
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-T -J-XX:MaxPermSize=512M" if ENV_JAVA["java.version"] !~ /\A1\.8/
-    arg :line => "-f m"
+    arg :line => "-f #{ms[:format]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
   end
 end
