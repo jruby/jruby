@@ -3424,6 +3424,15 @@ public final class Ruby {
 
         return newRaiseException(errnoClass, null);
     }
+    
+    public RaiseException newErrnoFromInt(int errno, String methodName, String message) {
+        if (Platform.IS_WINDOWS && ("stat".equals(methodName) || "lstat".equals(methodName))) {
+            if (errno == 20047) return newErrnoENOENTError(message); // boo:bar UNC stat failure
+            if (errno == Errno.ESRCH.intValue()) return newErrnoENOENTError(message); // ESRCH on stating ""
+        }
+        
+        return newErrnoFromInt(errno, message);
+    }
 
     public RaiseException newErrnoFromInt(int errno, String message) {
         RubyClass errnoClass = getErrno(errno);

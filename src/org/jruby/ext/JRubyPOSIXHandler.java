@@ -35,7 +35,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     }
     
     public void error(Errno error, String methodName, String extraData) {
-        error(error, extraData);
+        throw runtime.newErrnoFromInt(error.intValue(), methodName, extraData);
     }
 
     public void unimplementedError(String method) {
