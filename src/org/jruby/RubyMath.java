@@ -503,14 +503,9 @@ public class RubyMath {
     
     @JRubyMethod(name = "cbrt", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat cbrt(IRubyObject recv, IRubyObject x) {
-        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
-        double result;
+        double value = needFloat(x).getDoubleValue();
 
-        if (value < 0) {
-            result = -Math.pow(-value, 1/3.0);
-        } else{
-            result = Math.pow(value, 1/3.0);
-        }
+        double result = Math.cbrt(value);
 
         domainCheck(recv, result, "cbrt");
         return RubyFloat.newFloat(recv.getRuntime(), result);
