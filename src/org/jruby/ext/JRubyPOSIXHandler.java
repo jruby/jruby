@@ -33,6 +33,10 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     public void error(Errno error, String extraData) {
         throw runtime.newErrnoFromInt(error.intValue(), extraData);
     }
+    
+    public void error(Errno error, String methodName, String extraData) {
+        error(error, extraData);
+    }
 
     public void unimplementedError(String method) {
         throw runtime.newNotImplementedError(method + " unsupported or native support failed to load");
