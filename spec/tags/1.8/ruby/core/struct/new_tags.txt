@@ -1,0 +1,1 @@
+fails(only on travis?):Struct.new raises an ArgumentError if fixnum#to_sym is nil
