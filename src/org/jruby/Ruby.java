@@ -1243,7 +1243,7 @@ public final class Ruby {
         RubyClass.createClassClass(this, classClass);
         
         // set constants now that they're initialized
-        if (oneNine) objectClass.setConstant("BasicObject", basicObjectClass);
+        if (oneNine) basicObjectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
