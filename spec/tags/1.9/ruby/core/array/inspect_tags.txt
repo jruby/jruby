@@ -1,2 +1,0 @@
-fails:Array#inspect returns a US-ASCII string for an empty Array
-fails:Array#inspect copies the ASCII-compatible encoding of the result of inspecting the first element

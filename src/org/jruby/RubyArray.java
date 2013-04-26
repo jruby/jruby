@@ -261,6 +261,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     private volatile boolean isShared = false;
     private int begin = 0;
     private int realLength = 0;
+    
+    private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(ByteList.plain("[]"), USASCIIEncoding.INSTANCE);
+    private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(ByteList.plain("[...]"), USASCIIEncoding.INSTANCE);
 
     /*
      * plain internal array assignment
@@ -1479,6 +1482,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (i > 0) str.cat((byte)',').cat((byte)' ');
 
             RubyString str2 = inspect(context, safeArrayRef(values, begin + i));
+            if (i == 0 && str2.getEncoding() != encoding) str.setEncoding(str2.getEncoding());
             if (str2.isTaint()) tainted = true;
             if (str2.isUntrusted()) untrust = true;
             
@@ -1502,8 +1506,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "inspect")
     @Override
     public IRubyObject inspect() {
-        if (realLength == 0) return getRuntime().newString("[]");
-        if (getRuntime().isInspecting(this)) return  getRuntime().newString("[...]");
+        if (realLength == 0) return RubyString.newStringShared(getRuntime(), EMPTY_ARRAY_BYTELIST);
+        if (getRuntime().isInspecting(this)) return  RubyString.newStringShared(getRuntime(), RECURSIVE_ARRAY_BYTELIST);
 
         try {
             getRuntime().registerInspecting(this);
