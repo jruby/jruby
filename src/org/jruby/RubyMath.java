@@ -88,11 +88,11 @@ public class RubyMath {
     }
     
     private static RubyFloat needFloat(IRubyObject x) {
-        if(x instanceof RubyFloat) {
+        if (x instanceof RubyFloat) {
             return (RubyFloat)x;
         }
 
-        if(!x.getRuntime().getNumeric().isInstance(x)) {
+        if (!x.getRuntime().getNumeric().isInstance(x)) {
             TypeConverter.handleUncoercibleObject(true, x, x.getRuntime().getFloat());
         }
 
@@ -871,7 +871,11 @@ public class RubyMath {
             if (value < 0) {
                 result = Double.NaN;
             } else {
-                result = Double.POSITIVE_INFINITY;
+                if (value == 0 && 1 / value < 0) {
+                    result = Double.NEGATIVE_INFINITY;
+                } else {
+                    result = Double.POSITIVE_INFINITY;
+                }
             }
         }
 
