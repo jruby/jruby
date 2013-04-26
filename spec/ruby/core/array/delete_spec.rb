@@ -24,7 +24,6 @@ describe "Array#delete" do
       a = [1, 2, 3, 4, 3, 5, x]
 
       ret = a.delete y
-      p ret
       ret.should equal(y)
     end
   end
