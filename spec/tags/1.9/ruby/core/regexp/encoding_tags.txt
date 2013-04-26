@@ -1,2 +1,0 @@
-fails(compiler):Regexp#encoding returns Windows-31J if the 's' modifier is supplied
-fails(compiler):Regexp#encoding returns EUC_JP if the 'e' modifier is supplied
