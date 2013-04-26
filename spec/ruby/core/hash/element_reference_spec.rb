@@ -112,67 +112,9 @@ describe "Hash#[]" do
 
     new_hash(x => :x)[x].should == :x
   end
-end
 
-describe "Hash.[]" do
-  describe "passed zero arguments" do
-    it "returns an empty hash" do
-      hash_class[].should == new_hash
-    end
-  end
-
-  describe "passed an array" do
-    it "treats elements that are 2 element arrays as key and value" do
-      hash_class[[[:a, :b], [:c, :d]]].should == new_hash(:a => :b, :c => :d)
-    end
-
-    it "treats elements that are 1 element arrays as keys with value nil" do
-      hash_class[[[:a]]].should == new_hash(:a => nil)
-    end
-
-    it "ignores elements that are arrays of more than 2 elements" do
-      hash_class[[[:a, :b, :c]]].should == new_hash
-    end
-
-    it "ignores elements that are not arrays" do
-      hash_class[[:a]].should == new_hash
-    end
-  end
-
-  describe "passed a single argument which responds to #to_hash" do
-    it "coerces it and returns a copy" do
-      h = new_hash(:a => :b, :c => :d)
-      to_hash = mock('to_hash')
-      to_hash.should_receive(:to_hash).and_return(h)
-
-      result = hash_class[to_hash]
-      result.should == h
-      result.should_not equal(h)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "coerces a single argument which responds to #to_ary" do
-      ary = mock('to_ary')
-      ary.should_receive(:to_ary).and_return([[:a, :b]])
-
-      hash_class[ary].should == new_hash(:a => :b)
-    end
-  end
-
-  describe "passed an even number of arguments" do
-    it "treats them as alternating key/value pairs" do
-      hash_class[:a, :b, :c, :d].should == new_hash(:a => :b, :c => :d)
-    end
-  end
-
-  describe "passed an odd number of arguments" do
-    it "raises ArgumentError" do
-      lambda { hash_class[:a, :b, :c] }.should raise_error(ArgumentError)
-    end
-  end
-
-  it "returns instances of subclasses" do
-    HashSpecs::MyHash[].should be_an_instance_of(HashSpecs::MyHash)
+  it "supports keys with private #hash method" do
+    key = HashSpecs::KeyWithPrivateHash.new
+    new_hash(key => 42)[key].should == 42
   end
 end

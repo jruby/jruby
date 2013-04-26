@@ -95,6 +95,44 @@ describe "CApiGlobalSpecs" do
     end
   end
 
+  describe "rb_output_rs" do
+    before :each do
+      @dollar_backslash = $\
+    end
+
+    after :each do
+      $\ = @dollar_backslash
+    end
+
+    it "returns nil by default" do
+      @f.rb_output_rs.should be_nil
+    end
+
+    it "returns the value of $\\" do
+      $\ = "foo"
+      @f.rb_output_rs.should == "foo"
+    end
+  end
+
+  describe "rb_output_fs" do
+    before :each do
+      @dollar_comma = $,
+    end
+
+    after :each do
+      $, = @dollar_comma
+    end
+
+    it "returns nil by default" do
+      @f.rb_output_fs.should be_nil
+    end
+
+    it "returns the value of $\\" do
+      $, = "foo"
+      @f.rb_output_fs.should == "foo"
+    end
+  end
+
   describe "rb_lastline_set" do
     it "sets the value of $_" do
       @f.rb_lastline_set("last line")

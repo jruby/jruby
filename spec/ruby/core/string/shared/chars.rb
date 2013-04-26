@@ -16,12 +16,6 @@ describe :string_chars, :shared => true do
     end
   end
 
-  it "returns an enumerator when no block given" do
-    enum = "hello".send(@method)
-    enum.should be_an_instance_of(enumerator_class)
-    enum.to_a.should == ['h', 'e', 'l', 'l', 'o']
-  end
-
 
   it "is unicode aware" do
     before = $KCODE

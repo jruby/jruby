@@ -1,3 +1,4 @@
+# -*- encoding: US-ASCII -*-
 describe :string_succ, :shared => true do
   it "returns an empty string for empty strings" do
     "".send(@method).should == ""

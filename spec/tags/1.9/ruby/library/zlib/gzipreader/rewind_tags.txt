@@ -1,0 +1,1 @@
+fails:GzipReader#rewind resets the position of the stream pointer

@@ -1,3 +1,4 @@
+# -*- encoding: US-ASCII -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/iso-8859-9-encoding', __FILE__)
 

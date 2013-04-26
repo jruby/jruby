@@ -35,6 +35,10 @@ describe "Array#delete_if" do
     end
   end
 
+  it "returns an Enumerator if no block given, and the array is frozen" do
+    @a.freeze.delete_if.should be_an_instance_of(enumerator_class)
+  end
+
   ruby_version_is '' ... '1.9' do
     it "raises a TypeError on a frozen array" do
       lambda { ArraySpecs.frozen_array.delete_if {} }.should raise_error(TypeError)

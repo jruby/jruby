@@ -1,2 +1,20 @@
 fails:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -
+fails:IO.foreach sets $_ to nil
+fails:IO.foreach when passed name, object when the object is a Fixnum defaults to $/ as the separator
+fails:IO.foreach when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum
+fails:IO.foreach when passed name, object, object when the first object is a Fixnum uses the second object as an options Hash
+fails:IO.foreach when passed name, object, object when the first object is a Fixnum calls #to_hash to convert the second object to a Hash
+fails:IO.foreach when passed name, object, object when the first object is a String uses the second object as a limit if it is a Fixnum
+fails:IO.foreach when passed name, object, object when the first object is a String calls #to_int to convert the second object
+fails:IO.foreach when passed name, object, object when the first object is a String uses the second object as an options Hash
+fails:IO.foreach when passed name, object, object when the first object is a String calls #to_hash to convert the second object to a Hash
+fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_str to convert the object to a String
+fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum uses the second object as a limit if it is a Fixnum
+fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_int to convert the second object
+fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum uses the second object as an options Hash
+fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_hash to convert the second object to a Hash
+fails:IO.foreach when passed name, separator, limit, options calls #to_path to convert the name object
+fails:IO.foreach when passed name, separator, limit, options calls #to_str to convert the separator object
+fails:IO.foreach when passed name, separator, limit, options calls #to_int to convert the limit argument
+fails:IO.foreach when passed name, separator, limit, options calls #to_hash to convert the options object

@@ -38,4 +38,18 @@ describe "BasicSocket#getsockopt" do
   it "raises a SystemCallError with an invalid socket option" do
     lambda { @sock.getsockopt Socket::SOL_SOCKET, -1 }.should raise_error(Errno::ENOPROTOOPT)
   end
+
+  ruby_version_is "1.9.2" do
+    it "gets a Socket::Option" do
+      so = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_TYPE)
+      so.class.should == Socket::Option
+      so.level.should == Socket::SOL_SOCKET
+      so.optname.should == Socket::SO_TYPE
+      so.int.should == Socket::SOCK_STREAM
+
+      so = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER)
+      so.optname.should == Socket::SO_LINGER
+      so.linger.should == [false, 0]
+    end
+  end
 end

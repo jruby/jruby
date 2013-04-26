@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe :regexp_match, :shared => true do
@@ -38,6 +39,10 @@ describe "Regexp#match" do
 
     it "matches the input at a given position" do
       /./.match("abc", 1).begin(0).should == 1
+    end
+
+    it "uses the start as a character offset" do
+      /(.+)/.match("hüllo", 2)[0].should == 'llo'
     end
 
     describe "when passed a block" do

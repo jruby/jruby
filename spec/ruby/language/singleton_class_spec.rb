@@ -73,13 +73,19 @@ describe "A singleton class" do
     it "has class String as the superclass of a String instance" do
       "blah".singleton_class.superclass.should == String
     end
+  end
 
+  ruby_version_is "1.9"..."2.0" do
     it "has class Bignum as the superclass of a Bignum instance" do
-      # This behavior may be changed in the future, though.  [Feature #3222]
       bignum_value.singleton_class.superclass.should == Bignum
     end
   end
 
+  ruby_version_is "2.0" do
+    it "doesn't have singleton class" do
+      lambda { bignum_value.singleton_class.superclass.should == Bignum }.should raise_error(TypeError)
+    end
+  end
 end
 
 describe "A constant on a singleton class" do

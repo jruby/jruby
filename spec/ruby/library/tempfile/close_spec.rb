@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/common', __FILE__)
 require 'tempfile'
 
 describe "Tempfile#close when passed no argument or [false]" do
@@ -7,7 +8,7 @@ describe "Tempfile#close when passed no argument or [false]" do
   end
 
   after(:each) do
-    @tempfile.unlink if @tempfile.path
+    TempfileSpecs.cleanup(@tempfile)
   end
 
   it "closes self" do
@@ -22,7 +23,7 @@ describe "Tempfile#close when passed [true]" do
   end
 
   after(:each) do
-    @tempfile.unlink if @tempfile.path
+    TempfileSpecs.cleanup(@tempfile)
   end
 
   it "closes self" do

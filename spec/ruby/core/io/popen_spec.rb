@@ -58,6 +58,15 @@ describe "IO.popen" do
 
       @fname.should have_data("bar")
     end
+
+    it "does not throw an exception if child exited and has been waited for" do
+      @io = IO.popen("echo ready; sleep 1000")
+      true until @io.gets =~ /ready/
+      Process.kill "KILL", @io.pid
+      Process.wait @io.pid
+      @io.close
+      $?.exitstatus.should be_nil
+    end
   end
 
   it "returns an instance of a subclass when called on a subclass" do

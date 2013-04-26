@@ -1,0 +1,1 @@
+fails:String#[]= with a Regexp index checks the match before calling #to_str to convert the replacement

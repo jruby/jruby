@@ -147,7 +147,7 @@ describe "Array#pop" do
       end
 
       it "does not return subclass instances with Array subclass" do
-        ArraySpecs::MyArray[1, 2, 3].pop(2).should be_kind_of(Array)
+        ArraySpecs::MyArray[1, 2, 3].pop(2).should be_an_instance_of(Array)
       end
 
       it "returns an untainted array even if the array is tainted" do

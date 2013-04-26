@@ -1,4 +1,4 @@
-# coding: UTF-8
+# encoding: UTF-8
 
 module CodingUTF_8
   def self.encoding

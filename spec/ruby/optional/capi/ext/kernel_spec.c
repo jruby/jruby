@@ -35,7 +35,7 @@ VALUE kernel_spec_rb_block_proc(VALUE self) {
 #ifdef HAVE_RB_BLOCK_CALL
 
 VALUE block_call_inject(VALUE yield_value, VALUE data2) {
-  // yield_value yields the first block argument
+  /* yield_value yields the first block argument */
   VALUE elem = yield_value;
   VALUE elem_incr = INT2FIX(FIX2INT(elem) + 1);
   return elem_incr;
@@ -47,7 +47,7 @@ VALUE kernel_spec_rb_block_call(VALUE self, VALUE ary) {
 
 #ifdef RUBY_VERSION_IS_1_9
 VALUE block_call_inject_multi_arg(VALUE yield_value, VALUE data2, int argc, VALUE argv[]) {
-  // yield_value yields the first block argument
+  /* yield_value yields the first block argument */
   VALUE sum  = yield_value;
   VALUE elem = argv[1];
 
@@ -196,6 +196,17 @@ VALUE kernel_spec_rb_sys_fail(VALUE self, VALUE msg) {
 }
 #endif
 
+#ifdef HAVE_RB_SYSERR_FAIL
+VALUE kernel_spec_rb_syserr_fail(VALUE self, VALUE err, VALUE msg) {
+  if(msg == Qnil) {
+    rb_syserr_fail(NUM2INT(err), NULL);
+  } else {
+    rb_syserr_fail(NUM2INT(err), StringValuePtr(msg));
+  }
+  return Qnil;
+}
+#endif
+
 #ifdef HAVE_RB_WARN
 VALUE kernel_spec_rb_warn(VALUE self, VALUE msg) {
   rb_warn("%s", StringValuePtr(msg));
@@ -257,6 +268,12 @@ static VALUE kernel_spec_rb_f_sprintf(VALUE self, VALUE ary) {
 #ifdef HAVE_RB_MAKE_BACKTRACE
 static VALUE kernel_spec_rb_make_backtrace(VALUE self) {
   return rb_make_backtrace();
+}
+#endif
+
+#ifdef HAVE_RB_OBJ_METHOD
+static VALUE kernel_spec_rb_obj_method(VALUE self, VALUE obj, VALUE method) {
+  return rb_obj_method(obj, method);
 }
 #endif
 
@@ -324,6 +341,10 @@ void Init_kernel_spec() {
   rb_define_method(cls, "rb_sys_fail", kernel_spec_rb_sys_fail, 1);
 #endif
 
+#ifdef HAVE_RB_SYSERR_FAIL
+  rb_define_method(cls, "rb_syserr_fail", kernel_spec_rb_syserr_fail, 2);
+#endif
+
 #ifdef HAVE_RB_WARN
   rb_define_method(cls, "rb_warn", kernel_spec_rb_warn, 1);
 #endif
@@ -356,6 +377,9 @@ void Init_kernel_spec() {
   rb_define_method(cls, "rb_make_backtrace", kernel_spec_rb_make_backtrace, 0);
 #endif
 
+#ifdef HAVE_RB_OBJ_METHOD
+  rb_define_method(cls, "rb_obj_method", kernel_spec_rb_obj_method, 2);
+#endif
 }
 
 #ifdef __cplusplus

@@ -27,6 +27,17 @@ describe "The throw keyword" do
     msg.should == nil
   end
 
+  it "clears the current exception" do
+    catch :exit do
+      begin
+        raise "exception"
+      rescue
+        throw :exit
+      end
+    end
+    $!.should be_nil
+  end
+
   ruby_version_is "" ... "1.9" do
     it "only allows symbols and strings as its argument" do
       lambda { throw 1 }.should raise_error(ArgumentError)

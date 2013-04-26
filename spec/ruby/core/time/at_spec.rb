@@ -83,7 +83,7 @@ describe "Time.at" do
     describe "with an argument that responds to #to_r" do
       ruby_version_is ""..."1.9" do
         it "raises a TypeError" do
-          o = mock('rational')
+          o = mock_numeric('rational')
           o.should_not_receive(:to_r)
           lambda { Time.at(o) }.should raise_error(TypeError)
         end
@@ -91,7 +91,7 @@ describe "Time.at" do
 
       ruby_version_is "1.9" do
         it "coerces using #to_r" do
-          o = mock('rational')
+          o = mock_numeric('rational')
           o.should_receive(:to_r).and_return(Rational(5, 2))
           Time.at(o).should == Time.at(Rational(5, 2))
         end
@@ -134,7 +134,7 @@ describe "Time.at" do
 
     ruby_version_is "1.9" do
       it "coerces using #to_r" do
-        o = mock('rational')
+        o = mock_numeric('rational')
         o.should_receive(:to_r).and_return(Rational(5, 2))
         Time.at(0, o).should == Time.at(0, Rational(5, 2))
       end
@@ -160,12 +160,9 @@ describe "Time.at" do
       end
     end
 
-    ruby_version_is "1.9" do
-      it "returns a Time object equal to the specified time plus the number of microseconds" do
-        t1 = Time.at(10)
-        t2 = Time.at(t1, 500000)
-        t2.tv_sec.should == 10
-        t2.tv_usec.should == 500000
+    ruby_bug "#8173", "2.0" do
+      it "raises a TypeError" do
+        lambda { Time.at(Time.now, 500000) }.should raise_error(TypeError)
       end
     end
   end

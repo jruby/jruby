@@ -30,6 +30,10 @@ describe "Math.asinh" do
     end
   end
 
+  it "returns NaN given NaN" do
+    Math.asinh(nan_value).nan?.should be_true
+  end
+
   it "raises a TypeError if the argument is nil" do
     lambda { Math.asinh(nil) }.should raise_error(TypeError)
   end

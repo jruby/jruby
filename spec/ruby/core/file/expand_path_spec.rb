@@ -1,12 +1,9 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "File.expand_path" do
   before :each do
-    ruby_version_is "1.9" do
-      @extenc = Encoding.default_external
-    end
-
     platform_is :windows do
       @base = `cd`.chomp.tr '\\', '/'
       @tmpdir = "c:/tmp"
@@ -20,9 +17,13 @@ describe "File.expand_path" do
     end
   end
 
-  after :each do
-    ruby_version_is "1.9" do
-      Encoding.default_external = @extenc if Encoding.default_external != @extenc
+  with_feature :encoding do
+    before :each do
+      @external = Encoding.default_external
+    end
+
+    after :each do
+      Encoding.default_external = @external
     end
   end
 
@@ -64,12 +65,24 @@ describe "File.expand_path" do
         File.expand_path('~', '/tmp/gumby/ddd').should == home
         File.expand_path('~/a', '/tmp/gumby/ddd').should == File.join(home, 'a')
       end
+
+      it "does not return a frozen string" do
+        File.expand_path('~').frozen?.should == false
+        File.expand_path('~', '/tmp/gumby/ddd').frozen?.should == false
+        File.expand_path('~/a', '/tmp/gumby/ddd').frozen?.should == false
+      end
     end
     platform_is :windows do
       it "converts a pathname to an absolute pathname, using ~ (home) as base" do
         File.expand_path('~').should == home.tr("\\", '/')
         File.expand_path('~', '/tmp/gumby/ddd').should == home.tr("\\", '/')
         File.expand_path('~/a', '/tmp/gumby/ddd').should == File.join(home.tr("\\", '/'), 'a')
+      end
+
+      it "does not return a frozen string" do
+        File.expand_path('~').frozen?.should == false
+        File.expand_path('~', '/tmp/gumby/ddd').frozen?.should == false
+        File.expand_path('~/a', '/tmp/gumby/ddd').frozen?.should == false
       end
     end
   end
@@ -155,22 +168,28 @@ describe "File.expand_path" do
     end
   end
 
-  ruby_version_is "1.9"..."2.0" do
-    it "produces a String in the default external encoding" do
-      Encoding.default_external = Encoding::SHIFT_JIS
-      File.expand_path("./a").encoding.should == Encoding::SHIFT_JIS
+  with_feature :encoding do
+    ruby_version_is ""..."2.0" do
+      it "produces a String in the default external encoding" do
+        Encoding.default_external = Encoding::SHIFT_JIS
+        File.expand_path("./a").encoding.should equal(Encoding::SHIFT_JIS)
+      end
     end
 
-    it "raises a Encoding::CompatibilityError if the external encoding is not compatible" do
+    ruby_version_is "2.0" do
+      it "returns a String in the same encoding as the argument" do
+        path = "./a".force_encoding Encoding::CP1251
+        File.expand_path(path).encoding.should equal(Encoding::CP1251)
+      end
+    end
+
+    it "expands a path with multi-byte characters" do
+      File.expand_path("Ångström").should == "#{@base}/Ångström"
+    end
+
+    it "raises an Encoding::CompatibilityError if the external encoding is not compatible" do
       Encoding.default_external = Encoding::UTF_16BE
       lambda { File.expand_path("./a") }.should raise_error(Encoding::CompatibilityError)
-    end
-  end
-
-  ruby_version_is "2.0" do
-    it "produces a String in the default external encoding" do
-      Encoding.default_external = Encoding::SHIFT_JIS
-      File.expand_path("./a").encoding.should == Encoding::US_ASCII
     end
   end
 

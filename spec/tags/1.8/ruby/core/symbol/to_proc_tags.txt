@@ -1,0 +1,1 @@
+fails:Symbol#to_proc does not pass along the block passed to Proc#call

@@ -37,7 +37,7 @@ ruby_version_is "1.9" do
 
     describe "with an argument that responds to #to_r" do
       it "coerces using #to_r" do
-        o = mock('rational')
+        o = mock_numeric('rational')
         o.should_receive(:to_r).and_return(Rational(5, 2))
         Time.new(2000, 1, 1, 0, 0, 0, o).utc_offset.should eql(Rational(5, 2))
       end
@@ -69,6 +69,14 @@ ruby_version_is "1.9" do
 
     it "raises ArgumentError if the String argument is not of the form (+|-)HH:MM" do
       lambda { Time.new(2000, 1, 1, 0, 0, 0, "3600") }.should raise_error(ArgumentError)
+    end
+
+    it "raises ArgumentError if the hour value is greater than 23" do
+      lambda { Time.new(2000, 1, 1, 0, 0, 0, "+24:00") }.should raise_error(ArgumentError)
+    end
+
+    it "raises ArgumentError if the minute value is greater than 59" do
+      lambda { Time.new(2000, 1, 1, 0, 0, 0, "+01:60") }.should raise_error(ArgumentError)
     end
 
     it "raises ArgumentError if the String argument is not in an ASCII-compatible encoding" do

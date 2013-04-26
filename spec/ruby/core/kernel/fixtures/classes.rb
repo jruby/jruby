@@ -17,6 +17,34 @@ module KernelSpecs
     Kernel.putc arg
   end
 
+  def self.has_private_method(name)
+    cmd = <<-EOC
+| #{RUBY_EXE} -n -e '
+m = Kernel.private_instance_methods(false).grep(/^#{name}$/)
+print m.map { |x| x.to_s }.join("")
+'
+    EOC
+    ruby_exe("puts", :args => cmd) == name.to_s
+  end
+
+  def self.chop(str, method)
+    cmd = "| #{RUBY_EXE} -n -e '$_ = #{str.inspect}; #{method}; print $_'"
+    ruby_exe "puts", :args => cmd
+  end
+
+  def self.encoded_chop(file)
+    ruby_exe "puts", :args => "| #{RUBY_EXE} -n #{file}"
+  end
+
+  def self.chomp(str, method, sep="\n")
+    cmd = "| #{RUBY_EXE} -n -e '$_ = #{str.inspect}; $/ = #{sep.inspect}; #{method}; print $_'"
+    ruby_exe "puts", :args => cmd
+  end
+
+  def self.encoded_chomp(file)
+    ruby_exe "puts", :args => "| #{RUBY_EXE} -n #{file}"
+  end
+
   class Method
     public :abort, :exec, :exit, :exit!, :fork, :system
     public :spawn if respond_to?(:spawn, true)
@@ -264,6 +292,18 @@ module KernelSpecs
     end
   end
 
+  class Clone
+    def initialize_clone(other)
+      ScratchPad.record other.object_id
+    end
+  end
+
+  class Dup
+    def initialize_dup(other)
+      ScratchPad.record other.object_id
+    end
+  end
+
   module ParentMixin
     def parent_mixin_method; end
   end
@@ -327,7 +367,7 @@ module KernelSpecs
     end
   end
 
-  class Ivar
+  class InstanceVariable
     def initialize
       @greeting = "hello"
     end

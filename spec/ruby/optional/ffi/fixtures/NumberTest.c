@@ -1,28 +1,7 @@
 /*
  * Copyright (c) 2007 Wayne Meissner. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- * Neither the name of the project nor the names of its contributors
- * may be used to endorse or promote products derived from this software
- * without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * For licensing, see LICENSE.SPECS
  */
 
 #include <sys/types.h>
@@ -30,7 +9,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#ifdef __sparc
+#if defined(__sparc) && defined(__sun__)
     #define fix_mem_access __asm("ta 6")
 #else
     #define fix_mem_access
@@ -48,7 +27,10 @@ typedef signed long sL;
 typedef unsigned long uL;
 typedef float f32;
 typedef double f64;
+typedef long double f128;
+#if !defined(__OpenBSD__)
 typedef unsigned long ulong;
+#endif
 
 #define ADD(T) T add_##T(T arg1, T arg2) { return arg1 + arg2; }
 #define SUB(T) T sub_##T(T arg1, T arg2) { return arg1 - arg2; }
@@ -71,6 +53,7 @@ TEST(float);
 TEST(double);
 TEST(long);
 TEST(ulong);
+TEST(f128);
 
 #define ADD2(R, T1, T2) R add_##T1##T2##_##R(T1 arg1, T2 arg2) { return arg1 + arg2; }
 #define SUB2(R, T1, T2) R sub_##T1##T2##_##R(T1 arg1, T2 arg2) { return arg1 - arg2; }
@@ -97,8 +80,8 @@ TEST2(u64)
 #endif
 
 #define ADD3(R, T1, T2, T3) R add_##T1##T2##T3##_##R(T1 arg1, T2 arg2, T3 arg3) { return arg1 + arg2 + arg3; }
-#define pack_f32(buf, v) do { *(float *)(buf) = v; } while(0)
-#define pack_f64(buf, v) do { *(double *)(buf) = v; } while(0)
+#define pack_f32(buf, v) do { float f = v; memcpy((buf), &f, sizeof(f)); } while(0)
+#define pack_f64(buf, v) do { double f = v; memcpy((buf), &f, sizeof(f)); } while(0)
 #define pack_int(buf, v) do { *(buf) = v; } while(0)
 #define pack_s8 pack_int
 #define pack_u8 pack_int
@@ -140,4 +123,10 @@ TEST2(u64)
     T3_(R, sL) T3_(R, uL) T3_(R, s64) T3_(R, u64) T3_(R, f32) T3_(R, f64)
 
 TEST3(s64)
+
+void 
+foo6(intptr_t i1, intptr_t i2, intptr_t i3, intptr_t i4, intptr_t i5, intptr_t i6) { }
+
+void 
+foo5(intptr_t i1, intptr_t i2, intptr_t i3, intptr_t i4, intptr_t i5) { }
 

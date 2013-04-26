@@ -23,7 +23,7 @@ describe "Time#-" do
   ruby_version_is "1.9" do
     #see [ruby-dev:38446]
     it "accepts arguments that can be coerced into Rational" do
-      (obj = mock('10')).should_receive(:to_r).and_return(Rational(10))
+      (obj = mock_numeric('10')).should_receive(:to_r).and_return(Rational(10))
       (Time.at(100) - obj).should == Time.at(90)
     end
   end

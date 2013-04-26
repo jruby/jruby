@@ -11,7 +11,7 @@ describe "Logger#datetime_format" do
   after :each do
     @logger.close
     @log_file.close unless @log_file.closed?
-    File.unlink(@path) if File.exists?(@path)
+    rm_r @path
   end
 
   it "returns the date format used for the logs" do
@@ -35,7 +35,7 @@ describe "Logger#datetime_format=" do
   after :each do
     @logger.close
     @log_file.close unless @log_file.closed?
-    File.unlink(@path) if File.exists?(@path)
+    rm_r @path
   end
 
   it "sets the date format for the logs" do

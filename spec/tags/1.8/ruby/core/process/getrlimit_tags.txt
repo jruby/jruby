@@ -1,0 +1,4 @@
+fails:Process.getrlimit returns a two-element Array of Integers
+fails:Process.getrlimit raises a TypeError when passed a String
+fails:Process.getrlimit when passed an Object calls #to_int to convert to an Integer
+fails:Process.getrlimit when passed an Object raises a TypeError if #to_int does not return an Integer

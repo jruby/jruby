@@ -7,13 +7,13 @@ describe "UNIXServer.open" do
   platform_is_not :windows do
     before :each do
       @path = tmp("unixserver_spec")
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     after :each do
       @server.close if @server
       @server = nil
-      File.unlink(@path) rescue nil
+      rm_r @path
     end
 
     it "yields the new UNIXServer object to the block, if given" do

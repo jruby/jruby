@@ -1,11 +1,28 @@
-fails:Process.setrlimit and Process.getrlimit limit and get core size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get CPU time (seconds)
-fails:Process.setrlimit and Process.getrlimit limit and get data segment (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get file size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get file descriptors (number)
-fails:Process.setrlimit and Process.getrlimit limit and get stack size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get total available memory (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get total size for mlock(2) (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get number of processes for the user (number)
-fails:Process.setrlimit and Process.getrlimit limit and get resident memory size (bytes)
-fails:Process.setrlimit and Process.getrlimit coerces arguments to Integers
+fails:Process.setrlimit when passed an Object calls #to_int to convert resource to an Integer
+fails:Process.setrlimit when passed an Object raises a TypeError if #to_int for resource does not return an Integer
+fails:Process.setrlimit when passed an Object calls #to_int to convert the soft limit to an Integer
+fails:Process.setrlimit when passed an Object calls #to_int to convert the hard limit to an Integer
+fails:Process.setrlimit when passed a Symbol coerces :AS into RLIMIT_AS
+fails:Process.setrlimit when passed a Symbol coerces :CORE into RLIMIT_CORE
+fails:Process.setrlimit when passed a Symbol coerces :CPU into RLIMIT_CPU
+fails:Process.setrlimit when passed a Symbol coerces :DATA into RLIMIT_DATA
+fails:Process.setrlimit when passed a Symbol coerces :FSIZE into RLIMIT_FSIZE
+fails:Process.setrlimit when passed a Symbol coerces :NOFILE into RLIMIT_NOFILE
+fails:Process.setrlimit when passed a Symbol coerces :STACK into RLIMIT_STACK
+fails:Process.setrlimit when passed a Symbol coerces :MEMLOCK into RLIMIT_MEMLOCK
+fails:Process.setrlimit when passed a Symbol coerces :NPROC into RLIMIT_NPROC
+fails:Process.setrlimit when passed a Symbol coerces :RSS into RLIMIT_RSS
+fails:Process.setrlimit when passed a Symbol raises ArgumentError when passed an unknown resource
+fails:Process.setrlimit when passed a String coerces 'AS' into RLIMIT_AS
+fails:Process.setrlimit when passed a String coerces 'CORE' into RLIMIT_CORE
+fails:Process.setrlimit when passed a String coerces 'CPU' into RLIMIT_CPU
+fails:Process.setrlimit when passed a String coerces 'DATA' into RLIMIT_DATA
+fails:Process.setrlimit when passed a String coerces 'FSIZE' into RLIMIT_FSIZE
+fails:Process.setrlimit when passed a String coerces 'NOFILE' into RLIMIT_NOFILE
+fails:Process.setrlimit when passed a String coerces 'STACK' into RLIMIT_STACK
+fails:Process.setrlimit when passed a String coerces 'MEMLOCK' into RLIMIT_MEMLOCK
+fails:Process.setrlimit when passed a String coerces 'NPROC' into RLIMIT_NPROC
+fails:Process.setrlimit when passed a String coerces 'RSS' into RLIMIT_RSS
+fails:Process.setrlimit when passed a String raises ArgumentError when passed an unknown resource
+fails:Process.setrlimit when passed on Object calls #to_str to convert to a String
+fails:Process.setrlimit when passed on Object calls #to_int if #to_str does not return a String

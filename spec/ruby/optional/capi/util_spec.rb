@@ -88,7 +88,9 @@ describe "C-API Util function" do
         @o.rb_scan_args([1, 2, 3, 4], "01*1", 3, @acc).should == 4
         ScratchPad.recorded.should == [1, [2, 3], 4]
       end
+    end
 
+    ruby_version_is "1.9.3" do
       it "assigns required, optional, splat, post-splat and block arguments" do
         @o.rb_scan_args([1, 2, 3, 4, 5], "11*1&", 5, @acc, &@prc).should == 5
         ScratchPad.recorded.should == [1, 2, [3, 4], 5, @prc]
@@ -125,34 +127,78 @@ describe "C-API Util function" do
     end
   end
 
-  describe "rb_iter_break" do
+  ruby_version_is ""..."1.9" do
+    describe "rb_iter_break" do
 
-    before :each do
-      ScratchPad.record []
-    end
-
-    it "breaks a loop" do
-      3.times do |i|
-        if i == 2
-          @o.rb_iter_break
-        end
-        ScratchPad << i
+      before :each do
+        ScratchPad.record []
       end
-      ScratchPad.recorded.should == [0, 1]
-    end
 
-    it "breaks the inner loop" do
-      3.times do |i|
-        3.times do |j|
-          if i == 1
+      it "breaks a loop" do
+        3.times do |i|
+          if i == 2
             @o.rb_iter_break
           end
-          ScratchPad << [i, j]
+          ScratchPad << i
         end
+        ScratchPad.recorded.should == [0, 1]
       end
-      ScratchPad.recorded.should == [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]]
-    end
 
+      it "breaks the inner loop" do
+        3.times do |i|
+          3.times do |j|
+            if i == 1
+              @o.rb_iter_break
+            end
+            ScratchPad << [i, j]
+          end
+        end
+        ScratchPad.recorded.should == [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]]
+      end
+    end
+  end
+
+  ruby_bug "#7896", "2.0" do
+    describe "rb_iter_break" do
+
+      before :each do
+        ScratchPad.record []
+      end
+
+      it "breaks a loop" do
+        3.times do |i|
+          if i == 2
+            @o.rb_iter_break
+          end
+          ScratchPad << i
+        end
+        ScratchPad.recorded.should == [0, 1]
+      end
+
+      it "breaks the inner loop" do
+        3.times do |i|
+          3.times do |j|
+            if i == 1
+              @o.rb_iter_break
+            end
+            ScratchPad << [i, j]
+          end
+        end
+        ScratchPad.recorded.should == [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]]
+      end
+    end
+  end
+
+  describe "rb_sourcefile" do
+    it "returns the current ruby file" do
+      @o.rb_sourcefile.should == __FILE__
+    end
+  end
+
+  describe "rb_sourceline" do
+    it "returns the current ruby file" do
+      @o.rb_sourceline.should be_kind_of(Fixnum)
+    end
   end
 
 end

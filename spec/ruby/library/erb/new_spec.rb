@@ -2,7 +2,7 @@ require 'erb'
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ERB.new" do
-  before :each do
+  before :all do
     @eruby_str = <<'END'
 <ul>
 <% list = [1,2,3] %>
@@ -53,7 +53,7 @@ END
     expected = "<ul>\n  <li>1  <li>2  <li>3</ul>\n"
     input = <<'END'
 <ul>
-<%- for item in list -%>
+<%- for item in [1,2,3] -%>
   <%- if item -%>
   <li><%= item -%>
   <%- end -%>
@@ -135,5 +135,19 @@ END
 END
     ERB.new(input).result.should == "\n<b></b>\n\n"
     ERB.new(input, nil, '<>').result.should == "<b></b>\n"
+  end
+
+  ruby_version_is ""..."2.0" do
+    it "remember local variables defined previous one" do
+      ERB.new(@eruby_str).result
+      ERB.new("<%= list.inspect %>").result.should == "[1, 2, 3]"
+    end
+  end
+
+  ruby_version_is "2.0" do
+    it "forget local variables defined previous one" do
+      ERB.new(@eruby_str).result
+      lambda{ ERB.new("<%= list %>").result }.should raise_error(NameError)
+    end
   end
 end

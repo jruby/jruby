@@ -57,4 +57,10 @@ describe "String#downcase!" do
       lambda { "hello".freeze.downcase! }.should raise_error(RuntimeError)
     end
   end
+
+  with_feature :encoding do
+    it "sets the result String encoding to the source String encoding" do
+      "ABC".downcase.encoding.should equal(Encoding::UTF_8)
+    end
+  end
 end

@@ -9,7 +9,7 @@ describe "Logger::LogDevice#new" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
   it "creates a new log device" do
@@ -36,7 +36,7 @@ describe "Logger::LogDevice#new" do
       f.readlines.should_not be_empty
     end
 
-    File.unlink(path)
+    rm_r path
   end
 
   it "receives options via a hash as second argument" do

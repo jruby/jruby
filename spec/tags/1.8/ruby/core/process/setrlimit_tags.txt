@@ -1,11 +1,4 @@
-fails:Process.setrlimit and Process.getrlimit limit and get core size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get CPU time (seconds)
-fails:Process.setrlimit and Process.getrlimit limit and get data segment (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get file size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get file descriptors (number)
-fails:Process.setrlimit and Process.getrlimit limit and get stack size (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get total available memory (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get total size for mlock(2) (bytes)
-fails:Process.setrlimit and Process.getrlimit limit and get number of processes for the user (number)
-fails:Process.setrlimit and Process.getrlimit limit and get resident memory size (bytes)
-fails:Process.setrlimit and Process.getrlimit coerces arguments to Integers
+fails:Process.setrlimit when passed an Object calls #to_int to convert resource to an Integer
+fails:Process.setrlimit when passed an Object raises a TypeError if #to_int for resource does not return an Integer
+fails:Process.setrlimit when passed an Object calls #to_int to convert the soft limit to an Integer
+fails:Process.setrlimit when passed an Object calls #to_int to convert the hard limit to an Integer

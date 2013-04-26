@@ -48,7 +48,7 @@ ruby_version_is "1.9" do
     after :each do
       @duped.close if @duped
       @file.close
-      File.unlink @filename
+      rm_r @filename
     end
     
     it "is true after a call to IO#binmode" do

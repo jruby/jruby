@@ -283,19 +283,37 @@ describe "Kernel#sprintf" do
     sprintf("%#30u", 123).should == "                           123"
     sprintf("%#030u", 123).should == "000000000000000000000000000123"
 
-
     sprintf("%24.30u", 123).should == "000000000000000000000000000123"
     sprintf("%024.30u", 123).should == "000000000000000000000000000123"
 
     sprintf("%#24.30u", 123).should == "000000000000000000000000000123"
     sprintf("%#024.30u", 123).should == "000000000000000000000000000123"
 
-
     sprintf("%30.24u", 123).should == "      000000000000000000000123"
     sprintf("%030.24u", 123).should == "      000000000000000000000123"
 
     sprintf("%#30.24u", 123).should == "      000000000000000000000123"
     sprintf("%#030.24u", 123).should == "      000000000000000000000123"
+  end
+
+  it "passes some tests for positive %d" do
+    sprintf("%30d", 123).should == "                           123"
+    sprintf("%030d", 123).should == "000000000000000000000000000123"
+
+    sprintf("%#30d", 123).should == "                           123"
+    sprintf("%#030d", 123).should == "000000000000000000000000000123"
+
+    sprintf("%24.30d", 123).should == "000000000000000000000000000123"
+    sprintf("%024.30d", 123).should == "000000000000000000000000000123"
+
+    sprintf("%#24.30d", 123).should == "000000000000000000000000000123"
+    sprintf("%#024.30d", 123).should == "000000000000000000000000000123"
+
+    sprintf("%30.24d", 123).should == "      000000000000000000000123"
+    sprintf("%030.24d", 123).should == "      000000000000000000000123"
+
+    sprintf("%#30.24d", 123).should == "      000000000000000000000123"
+    sprintf("%#030.24d", 123).should == "      000000000000000000000123"
   end
 
   it "passes some tests for positive %f" do
@@ -355,6 +373,14 @@ describe "Kernel#sprintf" do
     sprintf("%+03d", -12).should == "-12"
     sprintf("%+03d", 123).should == "+123"
     sprintf("%+03d", -123).should == "-123"
+  end
+
+  with_feature :encoding do
+    it "returns a String in the same encoding as the format String" do
+      format = "%.2f %4s".force_encoding(Encoding::KOI8_U)
+      result = sprintf(format, 1.2, "dogs")
+      result.encoding.should equal(Encoding::KOI8_U)
+    end
   end
 end
 

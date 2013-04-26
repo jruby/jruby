@@ -27,7 +27,7 @@ describe "File.new" do
   end
 
   it "returns a new File with modus num and permissions" do
-    File.delete(@file)
+    rm_r @file
     File.umask(0011)
     @fh = File.new(@file, @flags, 0755)
     @fh.should be_kind_of(File)
@@ -41,7 +41,7 @@ describe "File.new" do
     # it should be possible to write to such a file via returned descriptior,
     # even though the file permissions are r-r-r.
 
-    File.delete(@file) if File.exists?(@file)
+    rm_r @file
     begin
       f = File.new(@file, "w", 0444)
       lambda { f.puts("test") }.should_not raise_error(IOError)

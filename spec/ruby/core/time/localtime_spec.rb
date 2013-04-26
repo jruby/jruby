@@ -44,7 +44,7 @@ describe "Time#localtime" do
 
     describe "with an argument that responds to #to_r" do
       it "coerces using #to_r" do
-        o = mock('rational')
+        o = mock_numeric('rational')
         o.should_receive(:to_r).and_return(Rational(7201, 2))
         t = Time.gm(2007, 1, 9, 12, 0, 0)
         t.localtime(o)

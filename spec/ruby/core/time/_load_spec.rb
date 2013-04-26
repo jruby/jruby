@@ -18,7 +18,7 @@ describe "Time#_load" do
              t.sec  << 20 |
                    t.usec
 
-      Time._load([high, low].pack("VV")).should == t
+      Time.send(:_load, [high, low].pack("VV")).should == t
     end
   end
 
@@ -30,7 +30,7 @@ describe "Time#_load" do
 
     low =  t.usec
 
-    Time._load([high, low].pack("VV")).should == t
+    Time.send(:_load, [high, low].pack("VV")).should == t
   end
 
   ruby_version_is ''...'1.9' do
@@ -48,6 +48,15 @@ describe "Time#_load" do
       t.utc
 
       t.to_s.should == "2010-10-22 16:57:48 UTC"
+    end
+  end
+
+  with_feature :encoding do
+    it "treats the data as binary data" do
+      data = "\x04\bu:\tTime\r\fM\x1C\xC0\x00\x00\xD0\xBE"
+      data.force_encoding Encoding::UTF_8
+      t = Marshal.load(data)
+      t.to_s.should == "2013-04-08 12:47:45 UTC"
     end
   end
 end

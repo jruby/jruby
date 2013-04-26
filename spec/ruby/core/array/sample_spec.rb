@@ -3,11 +3,14 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Array#sample" do
   ruby_version_is "1.8.8" do
-    it "selects a random value from the array" do
-      a = [1, 2, 3, 4]
-      10.times {
-        a.include?(a.sample).should be_true
-      }
+    it "selects a value from the array" do
+      [4].sample.should eql(4)
+    end
+
+    it "returns a distribution of results" do
+      source = [0,1,2,3,4]
+      samples = ArraySpecs::SampleRange.collect { |el| source.sample }
+      samples.uniq.sort.should eql(source)
     end
 
     it "returns nil for empty arrays" do
@@ -19,17 +22,28 @@ describe "Array#sample" do
         lambda { [1, 2].sample(-1) }.should raise_error(ArgumentError)
       end
 
-      it "returns different random values from the array" do
-        a = [1, 2, 3, 4]
-        sum = []
-        42.times {
-          pair = a.sample(2)
-          sum.concat(pair)
-          (pair - a).should == []
-          pair[0].should_not == pair[1]
-        }
-        a.should == [1, 2, 3, 4]
-        (a - sum).should == []  # Might fail once every 2^40 times ...
+      it "selects values from the array" do
+        source = [1,2,3,4]
+        source.should include(*source.sample(2))
+      end
+
+      it "does not return the same value if the array is unique" do
+        source = [1, 2, 3, 4]
+        ArraySpecs::SampleCount.times do
+          pair = source.sample(2)
+          pair[0].should_not eql(pair[1])
+        end
+      end
+
+      it "may return the same value if the array is not unique" do
+        source = [4, 4]
+        source.sample(2).should eql([4,4])
+      end
+
+      it "returns a distribution of results" do
+        source = [0,1,2,3,4]
+        samples = ArraySpecs::SampleRange.collect { |el| source.sample(3) }
+        samples.flatten.uniq.sort.should eql(source)
       end
 
       it "tries to convert n to an Integer using #to_int" do
@@ -41,7 +55,7 @@ describe "Array#sample" do
         a.sample(obj).size.should == 2
       end
 
-      it "returns all values with n big enough" do
+      it "returns all values when n >= array size" do
         a = [1, 2, 3, 4]
         a.sample(4).sort.should == a
         a.sample(5).sort.should == a
@@ -53,7 +67,7 @@ describe "Array#sample" do
       end
 
       it "does not return subclass instances with Array subclass" do
-        ArraySpecs::MyArray[1, 2, 3].sample(2).should be_kind_of(Array)
+        ArraySpecs::MyArray[1, 2, 3].sample(2).should be_an_instance_of(Array)
       end
     end
   end

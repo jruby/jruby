@@ -31,12 +31,16 @@ end
 
 describe "String#unpack with format 'Q'" do
   it_behaves_like :string_unpack_basic, 'Q'
-  it_behaves_like :string_unpack_no_platform, 'Q'
+  ruby_version_is '' ... '2.1' do
+    it_behaves_like :string_unpack_no_platform, 'Q'
+  end
 end
 
 describe "String#unpack with format 'q'" do
   it_behaves_like :string_unpack_basic, 'q'
-  it_behaves_like :string_unpack_no_platform, 'q'
+  ruby_version_is '' ... '2.1' do
+    it_behaves_like :string_unpack_no_platform, 'q'
+  end
 end
 
 little_endian do

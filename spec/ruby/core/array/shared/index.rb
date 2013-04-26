@@ -18,6 +18,7 @@ describe :array_index, :shared => true do
   it "returns nil if no element == to object" do
     [2, 1, 1, 1, 1].send(@method, 3).should == nil
   end
+
   ruby_version_is "1.8.7" do
     it "accepts a block instead of an argument" do
       [4, 2, 1, 5, 1, 3].send(@method) {|x| x < 2}.should == 2
@@ -25,6 +26,12 @@ describe :array_index, :shared => true do
 
     it "ignore the block if there is an argument" do
       [4, 2, 1, 5, 1, 3].send(@method, 5) {|x| x < 2}.should == 3
+    end
+
+    describe "given no argument and no block" do
+      it "produces an Enumerator" do
+        [].send(@method).should be_an_instance_of(enumerator_class)
+      end
     end
   end
 end

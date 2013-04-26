@@ -92,6 +92,25 @@ describe "C-API Thread function" do
     it_behaves_like :thread_wakeup, :call_capi_rb_thread_wakeup
   end
 
+  describe "rb_thread_create" do
+    it "creates a new thread" do
+      obj = Object.new
+      proc = lambda { |x| ScratchPad.record x }
+      thr = @t.rb_thread_create(proc, obj)
+      thr.should be_kind_of(Thread)
+      thr.join
+      ScratchPad.recorded.should == obj
+    end
+
+    it "handles throwing an exception in the thread" do
+      proc = lambda { |x| raise NotImplementedError }
+      thr = @t.rb_thread_create(proc, nil)
+      thr.should be_kind_of(Thread)
+
+      lambda { thr.join }.should raise_error(NotImplementedError)
+    end
+  end
+
 end
 
 describe :rb_thread_blocking_region, :shared => true do

@@ -31,6 +31,10 @@ describe "Kernel.__method__" do
       KernelSpecs::MethodTest.new.from_eval.should == :from_eval
     end
 
+    it "returns nil from inside a class body" do
+      KernelSpecs::MethodTest.new.from_class_body.should == nil
+    end
+
     # crashes hard on 1.8.7-p174
     ruby_bug "unknown", "1.8.7.248" do
       it "returns nil when not called from a method" do

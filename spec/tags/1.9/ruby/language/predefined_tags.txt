@@ -30,3 +30,8 @@ fails:Predefined global $' sets an empty result to the encoding of the source St
 fails:Predefined global $+ sets the encoding to the encoding of the source String
 fails:Predefined globals $1..N sets the encoding to the encoding of the source String
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
+fails:Predefined global $/ changes $-0
+fails:Predefined global $-0 changes $/
+fails:Predefined global $-0 does not call #to_str to convert the object to a String
+fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
+fails:Predefined global $-0 raises a TypeError if assigned a boolean

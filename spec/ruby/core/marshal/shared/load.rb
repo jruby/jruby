@@ -1,6 +1,19 @@
 require File.expand_path('../../fixtures/marshal_data', __FILE__)
+require 'stringio'
 
 describe :marshal_load, :shared => true do
+  ruby_version_is ""..."2.1" do
+    before :all do
+      @num_self_class = 0
+    end
+  end
+
+  ruby_version_is "2.1" do
+    before :all do
+      @num_self_class = 1
+    end
+  end
+
   it "raises an ArgumentError when the dumped data is truncated" do
     obj = {:first => 1, :second => 2, :third => 3}
     lambda { Marshal.send(@method, Marshal.dump(obj)[0, 5]) }.should raise_error(ArgumentError)
@@ -189,7 +202,7 @@ describe :marshal_load, :shared => true do
       lambda { Marshal.send(@method, file) }.should raise_error(EOFError)
     ensure
       file.close
-      File.unlink(temp_file)
+      rm_r temp_file
     end
   end
 
@@ -301,8 +314,8 @@ describe :marshal_load, :shared => true do
 
       new_obj.should == obj
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
-      new_obj_metaclass_ancestors[0].should == Meths
-      new_obj_metaclass_ancestors[1].should == UserHashInitParams
+      new_obj_metaclass_ancestors[@num_self_class].should == Meths
+      new_obj_metaclass_ancestors[@num_self_class+1].should == UserHashInitParams
     end
 
     it "preserves hash ivars when hash contains a string having ivar" do
@@ -327,6 +340,32 @@ describe :marshal_load, :shared => true do
     it "loads a string through StringIO stream" do
         obj = "This is a string which should be unmarshalled through StringIO stream!"
         Marshal.send(@method, StringIO.new(Marshal.dump(obj))).should == obj
+    end
+
+    with_feature :encoding do
+      it "loads a US-ASCII String" do
+        str = "abc".force_encoding("us-ascii")
+        data = "\x04\bI\"\babc\x06:\x06EF"
+        result = Marshal.load(data)
+        result.should == str
+        result.encoding.should equal(Encoding::US_ASCII)
+      end
+
+      it "loads a UTF-8 String" do
+        str = "\x6d\xc3\xb6\x68\x72\x65".force_encoding("utf-8")
+        data = "\x04\bI\"\vm\xC3\xB6hre\x06:\x06ET"
+        result = Marshal.load(data)
+        result.should == str
+        result.encoding.should equal(Encoding::UTF_8)
+      end
+
+      it "loads a String in another encoding" do
+        str = "\x6d\x00\xf6\x00\x68\x00\x72\x00\x65\x00".force_encoding("utf-16le")
+        data = "\x04\bI\"\x0Fm\x00\xF6\x00h\x00r\x00e\x00\x06:\rencoding\"\rUTF-16LE"
+        result = Marshal.load(data)
+        result.should == str
+        result.encoding.should equal(Encoding::UTF_16LE)
+      end
     end
   end
 
@@ -393,7 +432,7 @@ describe :marshal_load, :shared => true do
 
       new_obj.should == obj
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
-      new_obj_metaclass_ancestors.first.should == UserMarshal
+      new_obj_metaclass_ancestors[@num_self_class].should == UserMarshal
     end
 
     it "loads a user_object" do
@@ -418,7 +457,7 @@ describe :marshal_load, :shared => true do
 
       new_obj.class.should == obj.class
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
-      new_obj_metaclass_ancestors.first(2).should == [Meths, Object]
+      new_obj_metaclass_ancestors[@num_self_class, 2].should == [Meths, Object]
     end
 
     describe "that extends a core type other than Object or BasicObject" do
@@ -458,7 +497,7 @@ describe :marshal_load, :shared => true do
 
       new_obj.should == obj
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
-      new_obj_metaclass_ancestors.first(3).should ==
+      new_obj_metaclass_ancestors[@num_self_class, 3].should ==
         [Meths, MethsMore, Regexp]
     end
 
@@ -471,7 +510,7 @@ describe :marshal_load, :shared => true do
       new_obj.should == obj
       new_obj.instance_variable_get(:@noise).should == 'much'
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
-      new_obj_metaclass_ancestors.first(3).should ==
+      new_obj_metaclass_ancestors[@num_self_class, 3].should ==
         [Meths, UserRegexp, Regexp]
     end
   end

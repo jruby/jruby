@@ -1,105 +1,92 @@
 /*
  * Copyright (c) 2007 Wayne Meissner. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- * Neither the name of the project nor the names of its contributors
- * may be used to endorse or promote products derived from this software
- * without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * For licensing, see LICENSE.SPECS
  */
 
 #include <stdlib.h>
+#include <stdbool.h>
+#ifndef _WIN32
+# include <pthread.h>
+#else
+# include <windows.h>
+# include <process.h>
+#endif
+
+#define R(T, rtype) rtype testClosureVr##T(rtype (*closure)(void)) { \
+    return closure != NULL ? (*closure)() : (rtype) 0; \
+}
+
+#define P(T, ptype) void testClosure##T##rV(void (*closure)(ptype), ptype a1) { \
+    if (closure != NULL) (*closure)(a1); \
+}
 
 void testClosureVrV(void (*closure)(void))
 {
     (*closure)();
 }
-char testClosureVrB(char (*closure)(void))
-{
-    return (*closure)();
-}
-short testClosureVrS(short (*closure)(void))
-{
-    return (*closure)();
-}
-int testClosureVrI(int (*closure)(void))
-{
-    return (*closure)();
-}
-long long testClosureVrL(long (*closure)(void))
-{
-    return (*closure)();
-}
-long long testClosureVrLL(long long (*closure)(void))
-{
-    return (*closure)();
-}
-float testClosureVrF(float (*closure)(void))
-{
-    return (*closure)();
-}
-double testClosureVrD(double (*closure)(void))
-{
-    return (*closure)();
-}
-void* testClosureVrP(void* (*closure)(void))
-{
-    return (*closure)();
-}
-void testClosureBrV(void (*closure)(char), char a1)
-{
-    (*closure)(a1);
-}
-void testClosureSrV(void (*closure)(short), short a1)
-{
-    (*closure)(a1);
-}
-void testClosureIrV(void (*closure)(int), int a1)
-{
-    (*closure)(a1);
-}
-void testClosureLrV(void (*closure)(long), long a1)
-{
-    (*closure)(a1);
-}
-void testClosureULrV(void (*closure)(unsigned long), unsigned long a1)
-{
-    (*closure)(a1);
-}
-void testClosureLLrV(void (*closure)(long long), long long a1)
-{
-    (*closure)(a1);
-}
-void testClosureFrV(void (*closure)(float), float a1)
-{
-    (*closure)(a1);
-}
-void testClosureDrV(void (*closure)(double), double a1)
-{
-    (*closure)(a1);
-}
+
+R(Z, bool);
+R(B, char);
+R(S, short);
+R(I, int);
+R(L, long);
+R(J, long long);
+R(LL, long long);
+R(F, float);
+R(D, double);
+R(P, const void*);
+
+
+P(Z, bool);
+P(B, char);
+P(S, short);
+P(I, int);
+P(L, long);
+P(J, long long);
+P(LL, long long);
+P(F, float);
+P(D, double);
+P(P, const void*);
+P(UL, unsigned long);
+
 void testOptionalClosureBrV(void (*closure)(char), char a1)
 {
     if (closure) {
         (*closure)(a1);
     }
+}
+
+
+struct ThreadVrV {
+    void (*closure)(void);
+    int count;
+};
+
+static void *
+threadVrV(void *arg)
+{
+    struct ThreadVrV* t = (struct ThreadVrV *) arg;
+    
+    int i;
+    for (i = 0; i < t->count; i++) {
+        (*t->closure)();
+    }
+    
+    return NULL;
+}
+
+void testThreadedClosureVrV(void (*closure)(void), int n)
+{
+	struct ThreadVrV arg = {closure, n};
+#ifndef _WIN32
+    pthread_t t;
+    pthread_create(&t, NULL, threadVrV, &arg);
+    pthread_join(t, NULL);
+#else
+    HANDLE hThread = (HANDLE) _beginthread((void (*)(void *))threadVrV, 0, &arg);
+    WaitForSingleObject(hThread, INFINITE);	
+#endif
 }
 
 struct s8f32s32 {
@@ -155,7 +142,7 @@ int testArgumentClosure(withArgumentClosure_t closure_with, argumentClosure_t cl
 #define C2_(J1, J2, N1, N2) \
 void testClosure##J1##J2##rV(void (*closure)(N1, N2), N1 a1, N2 a2) \
 { \
-    (*closure)(a1, a2); \
+    if (closure != NULL) (*closure)(a1, a2); \
 }
 
 #define C2(J, N) \

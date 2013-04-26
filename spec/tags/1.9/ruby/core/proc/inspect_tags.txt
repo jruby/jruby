@@ -1,0 +1,1 @@
+fails:Proc#inspect returns a description of self

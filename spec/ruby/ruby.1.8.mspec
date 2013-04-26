@@ -29,6 +29,7 @@ class MSpecScript
     '^library/ripper',
     '^library/rake',
     '^library/rubygems',
+    '^library/socket/addrinfo',
   ]
 
   # An ordered list of the directories containing specs to run

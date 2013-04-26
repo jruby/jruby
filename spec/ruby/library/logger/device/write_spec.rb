@@ -11,7 +11,7 @@ describe "Logger::LogDevice#write" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
   it "writes a message to the device" do
@@ -32,7 +32,7 @@ describe "Logger::LogDevice#write" do
       messages.first.should =~ /#.*/    # only a comment
     end
 
-    File.unlink(path)
+    rm_r path
   end
 
   ruby_version_is "" ... "1.9" do

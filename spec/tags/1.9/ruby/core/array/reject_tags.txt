@@ -1,0 +1,1 @@
+fails:Array#reject does not return subclass instance on Array subclasses

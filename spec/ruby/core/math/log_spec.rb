@@ -30,6 +30,10 @@ describe "Math.log" do
       Math.log("10").should be_close( 2.30258509299405, TOLERANCE)
       Math.log("10e15").should be_close(36.8413614879047, TOLERANCE)
     end
+    
+    it "raises Errno::EDOM given NaN" do
+      lambda { Math.log(nan_value) }.should raise_error(Errno::EDOM)
+    end
   end
 
   ruby_version_is "1.9" do
@@ -49,6 +53,10 @@ describe "Math.log" do
     it "raises a TypeError when the numerical base cannot be coerced to a float" do
       lambda { Math.log(10, "2") }.should raise_error(TypeError)
       lambda { Math.log(10, nil) }.should raise_error(TypeError)
+    end
+
+    it "returns NaN given NaN" do
+      Math.log(nan_value).nan?.should be_true
     end
   end
 

@@ -35,7 +35,12 @@ describe "YAML.load" do
   end
 
   it "fails on invalid keys" do
-    lambda { YAML.load("key1: value\ninvalid_key") }.should raise_error(ArgumentError)
+    if YAML.to_s == "Psych"
+      error = Psych::SyntaxError
+    else
+      error = ArgumentError
+    end
+    lambda { YAML.load("key1: value\ninvalid_key") }.should raise_error(error)
   end
 
   it "accepts symbols" do
@@ -60,11 +65,13 @@ describe "YAML.load" do
     YAML.load("--- abc").should == "abc"
   end
 
-  it "does not escape symbols" do
-    YAML.load("foobar: >= 123").should == { "foobar" => ">= 123"}
-    YAML.load("foobar: |= 567").should == { "foobar" => "|= 567"}
-    YAML.load("--- \n*.rb").should == "*.rb"
-    YAML.load("--- \n&.rb").should == "&.rb"
+  ruby_version_is "" ... "2.0" do
+    it "does not escape symbols" do
+      YAML.load("foobar: >= 123").should == { "foobar" => ">= 123"}
+      YAML.load("foobar: |= 567").should == { "foobar" => "|= 567"}
+      YAML.load("--- \n*.rb").should == "*.rb"
+      YAML.load("--- \n&.rb").should == "&.rb"
+    end
   end
 
   it "works with block sequence shortcuts" do

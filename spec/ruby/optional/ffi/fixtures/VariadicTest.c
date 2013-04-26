@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2007 Wayne Meissner. All rights reserved.
+ *
+ * For licensing, see LICENSE.SPECS
+ */
 
 #include <sys/types.h>
 #include <stdio.h>

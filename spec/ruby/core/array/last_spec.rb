@@ -68,11 +68,11 @@ describe "Array#last" do
   end
 
   it "does not return subclass instance on Array subclasses" do
-    ArraySpecs::MyArray[].last(0).should be_kind_of(Array)
-    ArraySpecs::MyArray[].last(2).should be_kind_of(Array)
-    ArraySpecs::MyArray[1, 2, 3].last(0).should be_kind_of(Array)
-    ArraySpecs::MyArray[1, 2, 3].last(1).should be_kind_of(Array)
-    ArraySpecs::MyArray[1, 2, 3].last(2).should be_kind_of(Array)
+    ArraySpecs::MyArray[].last(0).should be_an_instance_of(Array)
+    ArraySpecs::MyArray[].last(2).should be_an_instance_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].last(0).should be_an_instance_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].last(1).should be_an_instance_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].last(2).should be_an_instance_of(Array)
   end
 
   it "is not destructive" do

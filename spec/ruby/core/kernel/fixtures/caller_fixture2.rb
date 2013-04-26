@@ -23,4 +23,11 @@ module CallerFixture
     eval("caller(#{depth})")
   end
   module_function :eval_caller
+
+  class InitializeRecorder
+    attr_reader :caller_on_initialize
+    def initialize(level)
+      @caller_on_initialize = caller(level)
+    end
+  end
 end

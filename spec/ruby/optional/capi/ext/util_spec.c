@@ -54,6 +54,26 @@ static VALUE util_spec_rb_iter_break(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_SOURCEFILE
+static VALUE util_spec_rb_sourcefile(VALUE self) {
+#ifdef RUBY_VERSION_IS_1_8_EX_1_9
+  return rb_str_new2(ruby_sourcefile);
+#else
+  return rb_str_new2(rb_sourcefile());
+#endif
+}
+#endif
+
+#ifdef HAVE_RB_SOURCELINE
+static VALUE util_spec_rb_sourceline(VALUE self) {
+#ifdef RUBY_VERSION_IS_1_8_EX_1_9
+  return INT2NUM(ruby_sourceline);
+#else
+  return INT2NUM(rb_sourceline());
+#endif
+}
+#endif
+
 void Init_util_spec() {
   VALUE cls = rb_define_class("CApiUtilSpecs", rb_cObject);
 
@@ -67,6 +87,14 @@ void Init_util_spec() {
 
 #ifdef HAVE_RB_ITER_BREAK
   rb_define_method(cls, "rb_iter_break", util_spec_rb_iter_break, 0);
+#endif
+
+#ifdef HAVE_RB_SOURCEFILE
+  rb_define_method(cls, "rb_sourcefile", util_spec_rb_sourcefile, 0);
+#endif
+
+#ifdef HAVE_RB_SOURCELINE
+  rb_define_method(cls, "rb_sourceline", util_spec_rb_sourceline, 0);
 #endif
 }
 

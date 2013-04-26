@@ -32,6 +32,10 @@ describe "Math.erf" do
     end
   end
 
+  it "returns NaN given NaN" do
+    Math.erf(nan_value).nan?.should be_true
+  end
+
   it "raises a TypeError if the argument is nil" do
     lambda { Math.erf(nil) }.should raise_error(TypeError)
   end

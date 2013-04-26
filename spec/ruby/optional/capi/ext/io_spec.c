@@ -187,6 +187,12 @@ VALUE io_spec_rb_thread_fd_writable(VALUE self, VALUE io) {
 }
 #endif
 
+#ifdef HAVE_RB_IO_BINMODE
+VALUE io_spec_rb_io_binmode(VALUE self, VALUE io) {
+  return rb_io_binmode(io);
+}
+#endif
+
 #ifdef HAVE_RB_IO_CLOSE
 VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
   return rb_io_close(io);
@@ -250,6 +256,10 @@ void Init_io_spec() {
 
 #ifdef HAVE_RB_THREAD_FD_WRITABLE
   rb_define_method(cls, "rb_thread_fd_writable", io_spec_rb_thread_fd_writable, 1);
+#endif
+
+#ifdef HAVE_RB_IO_BINMODE
+  rb_define_method(cls, "rb_io_binmode", io_spec_rb_io_binmode, 1);
 #endif
 
 }

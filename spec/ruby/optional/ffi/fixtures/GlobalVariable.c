@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2007 Wayne Meissner. All rights reserved.
+ *
+ * For licensing, see LICENSE.SPECS
+ */
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -13,7 +19,9 @@ typedef signed long sL;
 typedef unsigned long uL;
 typedef float f32;
 typedef double f64;
+#if !defined(__OpenBSD__)
 typedef unsigned long ulong;
+#endif
 typedef void* pointer;
 typedef void* P;
 
@@ -34,3 +42,21 @@ GVAR(u64);
 GVAR(long);
 GVAR(ulong);
 GVAR(pointer);
+
+struct gstruct {
+    long data;
+};
+
+struct gstruct gvar_gstruct = { -1 };
+
+struct gstruct*
+gvar_gstruct_get(void)
+{
+    return &gvar_gstruct;
+}
+
+void
+gvar_gstruct_set(const struct gstruct* val)
+{ 
+    gvar_gstruct = *val;
+}

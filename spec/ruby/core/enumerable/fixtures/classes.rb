@@ -133,6 +133,10 @@ module EnumerableSpecs
       self.sym = sym
       @delegate.to_enum(sym)
     end
+
+    def respond_to_missing?(*args)
+      @delegate.respond_to?(*args)
+    end
   end
 
   class Equals

@@ -31,9 +31,9 @@ describe :thread_exit, :shared => true do
 
   it "runs nested ensure clauses" do
     ScratchPad.record []
-    outer = Thread.new do
+    @outer = Thread.new do
       begin
-        inner = Thread.new do
+        @inner = Thread.new do
           begin
             sleep
           ensure
@@ -43,14 +43,15 @@ describe :thread_exit, :shared => true do
         sleep
       ensure
         ScratchPad << :outer_ensure_clause
-        Thread.pass while inner.status and inner.status != "sleep"
-        inner.send(@method)
-        inner.join
+        @inner.send(@method)
+        @inner.join
       end
     end
-    Thread.pass while outer.status and outer.status != "sleep"
-    outer.send(@method)
-    outer.join
+    Thread.pass while @outer.status and @outer.status != "sleep"
+    Thread.pass until @inner
+    Thread.pass while @inner.status and @inner.status != "sleep"
+    @outer.send(@method)
+    @outer.join
     ScratchPad.recorded.should include(:inner_ensure_clause)
     ScratchPad.recorded.should include(:outer_ensure_clause)
   end

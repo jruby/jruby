@@ -20,6 +20,12 @@ describe "Math.frexp" do
     end
   end
 
+  it "returns NaN given NaN" do
+    frac, exp = Math.frexp(nan_value)
+    frac.nan?.should be_true
+    exp.should == 0
+  end
+
   it "raises a TypeError if the argument is nil" do
     lambda { Math.frexp(nil) }.should raise_error(TypeError)
   end

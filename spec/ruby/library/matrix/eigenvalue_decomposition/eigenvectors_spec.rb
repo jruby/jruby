@@ -3,13 +3,15 @@ require 'matrix'
 
 ruby_version_is "1.9.3" do
   describe "Matrix::EigenvalueDecomposition#eigenvectors" do
-    it "returns an array of complex eigenvectors for a rotation matrix" do
-      # Fix me: should test for linearity, not for equality
-      Matrix[[ 1, 1],
-             [-1, 1]].eigensystem.eigenvectors.should ==
-      [ Vector[1, Complex(0, 1)],
-        Vector[Complex(0, -1), 1]
-      ]
+    ruby_bug '#7208', '1.9.3' do
+      it "returns an array of complex eigenvectors for a rotation matrix" do
+        # Fix me: should test for linearity, not for equality
+        Matrix[[ 1, 1],
+               [-1, 1]].eigensystem.eigenvectors.should ==
+        [ Vector[1, Complex(0, 1)],
+          Vector[1, Complex(0, -1)]
+        ]
+      end
     end
 
     it "returns an array of real eigenvectors for a symetric matrix" do

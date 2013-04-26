@@ -83,3 +83,6 @@ fails:Kernel.spawn with a command array raises a TypeError if an element in the 
 fails(only in rake run?):Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
+fails:Kernel#spawn with multiple arguments preserves whitespace in passed arguments
+fails(only in full runs):Kernel#spawn with multiple arguments calls #to_str to convert the arguments to Strings
+fails(only in full runs):Kernel.spawn with multiple arguments does not subject the arguments to shell expansion

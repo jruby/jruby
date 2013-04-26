@@ -12,7 +12,7 @@ ruby_version_is "1.8.7" do
 
     it "returns an Enumerator of all permutations when called without a block or arguments" do
       enum = @numbers.permutation
-      enum.should be_kind_of(Enumerable)
+      enum.should be_an_instance_of(enumerator_class)
       enum.to_a.sort.should == [
         [1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]
       ].sort
@@ -20,7 +20,7 @@ ruby_version_is "1.8.7" do
 
     it "returns an Enumerator of permutations of given length when called with an argument but no block" do
       enum = @numbers.permutation(1)
-      enum.should be_kind_of(Enumerable)
+      enum.should be_an_instance_of(enumerator_class)
       enum.to_a.sort.should == [[1],[2],[3]]
     end
 

@@ -12,6 +12,10 @@ module ProcSpecs
       Proc.new { true }
     end
 
+    def self.my_method
+      method(__method__).to_proc
+    end
+
     def self.my_multiline_proc
       proc do
         'a'.upcase

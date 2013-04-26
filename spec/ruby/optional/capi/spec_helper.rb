@@ -33,6 +33,9 @@ def compile_extension(name)
   elsif RUBY_NAME == 'jruby'
     require 'mkmf'
     hdrdir = $hdrdir
+  elsif RUBY_NAME == "maglev"
+    require 'mkmf'
+    hdrdir = $hdrdir
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"
   end
@@ -59,6 +62,7 @@ def compile_extension(name)
 
   cc        = RbConfig::CONFIG["CC"]
   cflags    = (ENV["CFLAGS"] || RbConfig::CONFIG["CFLAGS"]).dup
+  cflags   += " #{RbConfig::CONFIG["ARCH_FLAG"]}" if RbConfig::CONFIG["ARCH_FLAG"]
   cflags   += " -fPIC" unless cflags.include?("-fPIC")
   incflags  = "-I#{path} -I#{hdrdir}"
   incflags << " -I#{arch_hdrdir}" if arch_hdrdir
@@ -72,9 +76,10 @@ def compile_extension(name)
   end
 
   ldshared  = RbConfig::CONFIG["LDSHARED"]
+  ldshared += " #{RbConfig::CONFIG["ARCH_FLAG"]}" if RbConfig::CONFIG["ARCH_FLAG"]
   libpath   = "-L#{path}"
   libs      = RbConfig::CONFIG["LIBS"]
-  dldflags  = RbConfig::CONFIG["DLDFLAGS"]
+  dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]}"
   dldflags.sub!(/-Wl,-soname,\S+/, '')
 
   output = `#{ldshared} #{obj} #{libpath} #{dldflags} #{libs} -o #{lib}`

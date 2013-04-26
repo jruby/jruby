@@ -17,5 +17,12 @@ ruby_version_is "1.9.3" do
         Matrix::EigenvalueDecomposition.new(Matrix[[1, 2]])
       }.should raise_error(Matrix::ErrDimensionMismatch)
     end
+
+    ruby_bug "Fixed in Jama 1.0.3", "1.9.3" do
+      it "never hangs" do
+        m = Matrix[ [0,0,0,0,0], [0,0,0,0,1], [0,0,0,1,0], [1,1,0,0,1], [1,0,1,0,1] ]
+        Matrix::EigenvalueDecomposition.new(m).should_not == "infinite loop"
+      end
+    end
   end
 end

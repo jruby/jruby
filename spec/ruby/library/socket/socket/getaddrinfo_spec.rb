@@ -9,7 +9,7 @@ describe "Socket#getaddrinfo" do
   end
 
   before :each do
-    BasicSocket.do_not_reverse_lookup = false
+    BasicSocket.do_not_reverse_lookup = true
   end
 
   after :each do
@@ -21,7 +21,6 @@ describe "Socket#getaddrinfo" do
   end
 
   it "gets the address information" do
-    BasicSocket.do_not_reverse_lookup = true
     expected = []
     # The check for AP_INET6's class is needed because ipaddr.rb adds
     # fake AP_INET6 even in case when IPv6 is not really supported.
@@ -80,7 +79,6 @@ describe "Socket#getaddrinfo" do
    end
 
    it "accepts empty addresses for IPv4 non-passive sockets" do
-    BasicSocket.do_not_reverse_lookup = true
      res = Socket::getaddrinfo(nil, "http",
                                Socket::AF_INET,
                                Socket::SOCK_STREAM,
@@ -93,7 +91,6 @@ describe "Socket#getaddrinfo" do
 
 
    it "accepts empty addresses for IPv6 passive sockets" do
-     BasicSocket.do_not_reverse_lookup = true
      res = Socket::getaddrinfo(nil, "http",
                                Socket::AF_INET6,
                                Socket::SOCK_STREAM,
@@ -108,7 +105,6 @@ describe "Socket#getaddrinfo" do
    end
 
    it "accepts empty addresses for IPv6 non-passive sockets" do
-     BasicSocket.do_not_reverse_lookup = true
      res = Socket::getaddrinfo(nil, "http",
                                Socket::AF_INET6,
                                Socket::SOCK_STREAM,

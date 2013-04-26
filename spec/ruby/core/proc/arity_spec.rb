@@ -1,6 +1,9 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
-language_version __FILE__, "arity"
+
+ruby_bug "#5694", "1.9.3" do
+  language_version __FILE__, "arity"
+end
 
 describe "Proc#arity" do
   before :each do

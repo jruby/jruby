@@ -76,14 +76,22 @@ describe "String#crypt" do
       end
     end
 
-    platform_is :linux do
-      it "returns an empty string when the salt starts with NULL bytes" do
-        "hello".crypt("\x00\x00").should == ""
-        "hello".crypt("\x00a").should == ""
-      end
+    # These specs are quarantined because this behavior isn't consistent
+    # across different linux distributions and highly dependent of the
+    # exact distribution. It seems like in newer Glibc versions this now
+    # throws an error:
+    #
+    # https://github.com/rubinius/rubinius/issues/2168
+    quarantine! do
+      platform_is :linux do
+        it "returns an empty string when the salt starts with NULL bytes" do
+          "hello".crypt("\x00\x00").should == ""
+          "hello".crypt("\x00a").should == ""
+        end
 
-      it "ignores trailing NULL bytes in the salt but counts them for the 2 character minimum" do
-        "hello".crypt("a\x00").should == "aa1dYAU.hgL3A"
+        it "ignores trailing NULL bytes in the salt but counts them for the 2 character minimum" do
+          "hello".crypt("a\x00").should == "aa1dYAU.hgL3A"
+        end
       end
     end
   end

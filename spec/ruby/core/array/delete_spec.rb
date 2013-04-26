@@ -14,6 +14,34 @@ describe "Array#delete" do
     a.should == [1, 2, 4, 5]
   end
 
+  ruby_version_is '1.8.7' ... '1.9' do
+    it "returns the argument" do
+      x = mock('delete')
+      y = mock('delete_more')
+      def x.==(other) 3 == other end
+      def y.==(other) 3 == other end
+
+      a = [1, 2, 3, 4, 3, 5, x]
+
+      ret = a.delete y
+      ret.should equal(y)
+    end
+  end
+
+  ruby_version_is '1.9' ... '2.0' do
+    it "returns the last element in the array for which object is equal under #==" do
+      x = mock('delete')
+      y = mock('delete_more')
+      def x.==(other) 3 == other end
+      def y.==(other) 3 == other end
+
+      a = [1, 2, 3, y, 4, 3, 5, x]
+
+      ret = a.delete 3
+      ret.should equal(x)
+    end
+  end
+
   it "calculates equality correctly for reference values" do
     a = ["foo", "bar", "foo", "quux", "foo"]
     a.delete "foo"
@@ -36,13 +64,13 @@ describe "Array#delete" do
     a.delete(nil).should == nil
   end
 
+  it "returns nil on a frozen array if a modification does not take place" do
+    [1, 2, 3].freeze.delete(0).should == nil
+  end
+
   ruby_version_is '' ... '1.9' do
     it "raises a TypeError on a frozen array if a modification would take place" do
       lambda { [1, 2, 3].freeze.delete(1) }.should raise_error(TypeError)
-    end
-
-    it "returns false on a frozen array if a modification does not take place" do
-      [1, 2, 3].freeze.delete(0).should == nil
     end
   end
 

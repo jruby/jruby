@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
@@ -68,6 +70,12 @@ describe "String#insert with index, other" do
       str = "abcd".freeze
       lambda { str.insert(4, '')  }.should raise_error(RuntimeError)
       lambda { str.insert(4, 'X') }.should raise_error(RuntimeError)
+    end
+  end
+
+  with_feature :encoding do
+    it "inserts a character into a multibyte encoded string" do
+      "ありがとう".insert(1, 'ü').should == "あüりがとう"
     end
   end
 end

@@ -5,7 +5,7 @@ describe :io_pos, :shared => true do
   end
 
   after :each do
-    File.unlink @fname
+    rm_r @fname
   end
 
   it "gets the offset" do
@@ -39,7 +39,7 @@ describe :io_set_pos, :shared => true do
   end
 
   after :each do
-    File.unlink @fname
+    rm_r @fname
   end
 
   it "sets the offset" do

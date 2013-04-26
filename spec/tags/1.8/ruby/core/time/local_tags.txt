@@ -5,3 +5,5 @@ fails:Time.local coerces the day with #to_int
 fails:Time.local coerces the hour with #to_int
 fails:Time.local coerces the minute with #to_int
 fails:Time.local coerces the second with #to_int
+fails:Time.local creates the correct time just before dst change
+fails:Time.local creates the correct time just after dst change

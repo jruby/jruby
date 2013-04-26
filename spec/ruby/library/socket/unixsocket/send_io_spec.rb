@@ -6,7 +6,7 @@ describe "UNIXSocket#send_io" do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
 
       @server = UNIXServer.open(@path)
       @client = UNIXSocket.open(@path)
@@ -15,7 +15,7 @@ describe "UNIXSocket#send_io" do
     after :each do
       @client.close
       @server.close
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     it "sends the fd for an IO object across the socket" do

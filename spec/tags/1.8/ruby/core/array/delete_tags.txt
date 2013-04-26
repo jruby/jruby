@@ -1,0 +1,1 @@
+fails:Array#delete returns the argument

@@ -1,0 +1,7 @@
+fails:Kernel.chop removes the final character of $_
+fails:Kernel.chop removes the final carriage return, newline of $_
+fails:#chop is a private method
+fails:#chop removes the final character of $_
+fails:#chop removes the final carriage return, newline of $_
+fails:Kernel.chop removes the final multi-byte character from $_
+fails:Kernel#chop removes the final multi-byte character from $_

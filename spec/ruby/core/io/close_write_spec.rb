@@ -9,6 +9,7 @@ describe "IO#close_write" do
 
   after :each do
     @io.close unless @io.closed?
+    rm_r @path
   end
 
   it "closes the write end of a duplex I/O stream" do
@@ -37,7 +38,6 @@ describe "IO#close_write" do
     ensure
       io.close unless io.closed?
     end
-    File.unlink(@path)
   end
 
   it "closes the stream if it is neither readable nor duplexed" do
@@ -46,7 +46,6 @@ describe "IO#close_write" do
     io.close_write
 
     io.closed?.should == true
-    File.unlink @path
   end
 
   it "flushes and closes the write stream" do

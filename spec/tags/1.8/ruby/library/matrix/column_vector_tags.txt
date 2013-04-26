@@ -1,0 +1,1 @@
+fails:Matrix.column_vector for a subclass of Matrix returns an instance of Matrix

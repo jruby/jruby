@@ -15,7 +15,7 @@ describe "IO.sysopen" do
   end
 
   after :all do
-    File.unlink @filename
+    rm_r @filename
   end
 
   it "returns the file descriptor for a given path" do

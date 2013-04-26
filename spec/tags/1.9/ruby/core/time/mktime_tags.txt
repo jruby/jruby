@@ -5,3 +5,5 @@ fails:Time.mktime coerces the day with #to_int
 fails:Time.mktime coerces the hour with #to_int
 fails:Time.mktime coerces the minute with #to_int
 fails:Time.mktime coerces the second with #to_int
+fails:Time.mktime creates the correct time just before dst change
+fails:Time.mktime creates the correct time just after dst change

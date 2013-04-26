@@ -29,12 +29,12 @@ describe "Module#attr_accessor" do
   end
 
   it "allows creating an attr_accessor on an immediate class" do
-    class Integer
+    class TrueClass
       attr_accessor :spec_attr_accessor
     end
 
-    1.spec_attr_accessor = "a"
-    1.spec_attr_accessor.should == "a"
+    true.spec_attr_accessor = "a"
+    true.spec_attr_accessor.should == "a"
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do
@@ -67,4 +67,34 @@ describe "Module#attr_accessor" do
   it "is a private method" do
     lambda { Class.new.attr_accessor(:foo) }.should raise_error(NoMethodError)
   end
+
+  describe "on immediates" do
+    before :each do
+      class Fixnum
+        attr_accessor :foobar
+      end
+    end
+
+    after :each do
+      if Fixnum.method_defined?(:foobar)
+        Fixnum.send(:remove_method, :foobar)
+      end
+      if Fixnum.method_defined?(:foobar=)
+        Fixnum.send(:remove_method, :foobar=)
+      end
+    end
+
+    it "can read through the accessor" do
+      1.foobar.should be_nil
+    end
+
+    # On Ruby 2.0 immediates are always frozen, so setting fails.
+    ruby_version_is ""..."2.0" do
+      it "can set a value through the accessor" do
+        1.foobar = 2
+        1.foobar.should == 2
+      end
+    end
+  end
+
 end

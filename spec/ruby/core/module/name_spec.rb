@@ -33,12 +33,10 @@ describe "Module#name" do
       m::N.name.should be_nil
     end
 
-    ruby_bug "http://bugs.ruby-lang.org/issues/6078", "2.0.0" do
-      it "is nil for a nested module created with the module keyword" do
-        m = Module.new
-        module m::N; end
-        m::N.name.should be_nil
-      end
+    it "is nil for a nested module created with the module keyword" do
+      m = Module.new
+      module m::N; end
+      m::N.name.should =~ /#<Module:0x[0-9a-f]+>::N/
     end
   end
 

@@ -1,0 +1,1 @@
+fails:BasicSocket#getsockopt gets a Socket::Option

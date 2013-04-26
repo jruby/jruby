@@ -184,6 +184,11 @@ describe "Predefined global $+" do
     $+.should == 'o'
   end
 
+  it "captures the last non nil capture" do
+    /(a)|(b)/ =~ 'a'
+    $+.should == 'a'
+  end
+
   with_feature :encoding do
     it "sets the encoding to the encoding of the source String" do
       "abc".force_encoding(Encoding::EUC_JP) =~ /(b)/
@@ -316,6 +321,101 @@ $stdin           IO              The current standard input.
 $stdout          IO              The current standard output. Assignment to $stdout is deprecated: use
                                  $stdout.reopen instead.
 =end
+
+describe "Predefined global $/" do
+  before :each do
+    @dollar_slash = $/
+    @dollar_dash_zero = $-0
+  end
+
+  after :each do
+    $/ = @dollar_slash
+    $-0 = @dollar_dash_zero
+  end
+
+  it "can be assigned a String" do
+    str = "abc"
+    $/ = str
+    $/.should equal(str)
+  end
+
+  it "can be assigned nil" do
+    $/ = nil
+    $/.should be_nil
+  end
+
+  it "returns the value assigned" do
+    ($/ = "xyz").should == "xyz"
+  end
+
+
+  it "changes $-0" do
+    $/ = "xyz"
+    $-0.should equal($/)
+  end
+
+  it "does not call #to_str to convert the object to a String" do
+    obj = mock("$/ value")
+    obj.should_not_receive(:to_str)
+
+    lambda { $/ = obj }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if assigned a Fixnum" do
+    lambda { $/ = 1 }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if assigned a boolean" do
+    lambda { $/ = true }.should raise_error(TypeError)
+  end
+end
+
+describe "Predefined global $-0" do
+  before :each do
+    @dollar_slash = $/
+    @dollar_dash_zero = $-0
+  end
+
+  after :each do
+    $/ = @dollar_slash
+    $-0 = @dollar_dash_zero
+  end
+
+  it "can be assigned a String" do
+    str = "abc"
+    $-0 = str
+    $-0.should equal(str)
+  end
+
+  it "can be assigned nil" do
+    $-0 = nil
+    $-0.should be_nil
+  end
+
+  it "returns the value assigned" do
+    ($-0 = "xyz").should == "xyz"
+  end
+
+  it "changes $/" do
+    $-0 = "xyz"
+    $/.should equal($-0)
+  end
+
+  it "does not call #to_str to convert the object to a String" do
+    obj = mock("$-0 value")
+    obj.should_not_receive(:to_str)
+
+    lambda { $-0 = obj }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if assigned a Fixnum" do
+    lambda { $-0 = 1 }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if assigned a boolean" do
+    lambda { $-0 = true }.should raise_error(TypeError)
+  end
+end
 
 describe "Predefined global $," do
   it "defaults to nil" do
@@ -784,6 +884,114 @@ describe "The predefined global constants" do
     Object.const_defined?(:TOPLEVEL_BINDING).should == true
   end
 
+end
+
+with_feature :encoding do
+  describe "The predefined global constant" do
+    before :each do
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
+    end
+
+    after :each do
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+    end
+
+    describe "STDIN" do
+      it "has the same external encoding as Encoding.default_external" do
+        STDIN.external_encoding.should equal(Encoding.default_external)
+      end
+
+      it "has the same external encoding as Encoding.default_external when that encoding is changed" do
+        Encoding.default_external = Encoding::ISO_8859_16
+        STDIN.external_encoding.should equal(Encoding::ISO_8859_16)
+      end
+
+      it "has the encodings set by #set_encoding"do
+        code = "STDIN.set_encoding Encoding::IBM775, Encoding::IBM866; " \
+               "p [STDIN.external_encoding.name, STDIN.internal_encoding.name]"
+        ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
+      end
+
+      it "retains the encoding set by #set_encoding when Encoding.default_external is changed" do
+        code = "STDIN.set_encoding Encoding::IBM775, Encoding::IBM866; " \
+               "Encoding.default_external = Encoding::ISO_8859_16;" \
+               "p [STDIN.external_encoding.name, STDIN.internal_encoding.name]"
+        ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
+      end
+
+      it "has nil for the internal encoding" do
+        STDIN.internal_encoding.should be_nil
+      end
+
+      it "has nil for the internal encoding despite Encoding.default_internal being changed" do
+        Encoding.default_internal = Encoding::IBM437
+        STDIN.internal_encoding.should be_nil
+      end
+    end
+
+    describe "STDOUT" do
+      it "has nil for the external encoding" do
+        STDOUT.external_encoding.should be_nil
+      end
+
+      it "has nil for the external encoding despite Encoding.default_external being changed" do
+        Encoding.default_external = Encoding::ISO_8859_1
+        STDOUT.external_encoding.should be_nil
+      end
+
+      it "has the encodings set by #set_encoding"do
+        code = "STDOUT.set_encoding Encoding::IBM775, Encoding::IBM866; " \
+               "p [STDOUT.external_encoding.name, STDOUT.internal_encoding.name]"
+        ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
+      end
+
+      it "has nil for the internal encoding" do
+        STDOUT.internal_encoding.should be_nil
+      end
+
+      it "has nil for the internal encoding despite Encoding.default_internal being changed" do
+        Encoding.default_internal = Encoding::IBM437
+        STDOUT.internal_encoding.should be_nil
+      end
+    end
+
+    describe "STDERR" do
+      it "has nil for the external encoding" do
+        STDERR.external_encoding.should be_nil
+      end
+
+      it "has nil for the external encoding despite Encoding.default_external being changed" do
+        Encoding.default_external = Encoding::ISO_8859_1
+        STDERR.external_encoding.should be_nil
+      end
+
+      it "has the encodings set by #set_encoding"do
+        code = "STDERR.set_encoding Encoding::IBM775, Encoding::IBM866; " \
+               "p [STDERR.external_encoding.name, STDERR.internal_encoding.name]"
+        ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
+      end
+
+      it "has nil for the internal encoding" do
+        STDERR.internal_encoding.should be_nil
+      end
+
+      it "has nil for the internal encoding despite Encoding.default_internal being changed" do
+        Encoding.default_internal = Encoding::IBM437
+        STDERR.internal_encoding.should be_nil
+      end
+    end
+
+    describe "ARGV" do
+      it "contains Strings encoded in locale Encoding" do
+        code = fixture __FILE__, "argv_encoding.rb"
+        result = ruby_exe(code, :args => "a b")
+        encoding = Encoding.default_external
+        result.chomp.should == %{["#{encoding}", "#{encoding}"]}
+      end
+    end
+  end
 end
 
 describe "Processing RUBYOPT" do

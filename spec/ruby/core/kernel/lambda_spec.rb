@@ -30,6 +30,14 @@ describe "Kernel.lambda" do
       l.call(1).should == :called
       l.call(1, 2).should == :called
     end
+
+    it "checks the arity when passing a Proc with &" do
+      l = lambda { || :called }
+      p = proc { || :called }
+
+      lambda { l.call(1) }.should raise_error(ArgumentError)
+      lambda { p.call(1) }.should raise_error(ArgumentError)
+    end
   end
 
   ruby_version_is "1.9" do
@@ -47,6 +55,14 @@ describe "Kernel.lambda" do
 
       lambda { l.call }.should raise_error(ArgumentError)
       lambda { l.call(1, 2) }.should raise_error(ArgumentError)
+    end
+
+    it "does not check the arity when passing a Proc with &" do
+      l = lambda { || :called }
+      p = proc { || :called }
+
+      lambda { l.call(1) }.should raise_error(ArgumentError)
+      p.call(1).should == :called
     end
   end
 

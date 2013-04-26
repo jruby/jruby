@@ -1,0 +1,2 @@
+fails:Dir.getwd returns a String with Encoding.default_external encoding
+fails:Dir.getwd does not transcode to Encoding.default_internal

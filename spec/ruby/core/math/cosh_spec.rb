@@ -25,6 +25,10 @@ describe "Math.cosh" do
     end
   end
 
+  it "returns NaN given NaN" do
+    Math.cosh(nan_value).nan?.should be_true
+  end
+
   it "raises a TypeError if the argument is nil" do
     lambda { Math.cosh(nil) }.should raise_error(TypeError)
   end

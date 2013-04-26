@@ -5,3 +5,4 @@ fails:Kernel#caller in a Proc or eval returns the correct definition line for a 
 fails:Kernel#caller in a Proc or eval begins with (eval) for caller(0) in eval
 fails:Kernel#caller in a Proc or eval begins with the eval's sender's sender for caller(4) in eval
 fails:Kernel#caller in a Proc or eval shows the current line in the calling block twice when evaled
+fails:Kernel#caller in a Proc or eval it returns one frame for new and one frame for initialize when creating objects

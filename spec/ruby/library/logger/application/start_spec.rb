@@ -10,7 +10,7 @@ describe "Logger::Application#start" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
 

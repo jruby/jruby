@@ -252,6 +252,17 @@ describe "String#split with Regexp" do
     ary.should == ["こ", "に", "ち", "わ"]
   end
 
+  ruby_version_is ""..."1.9" do
+    it "uses $KCODE when splitting invalid characters" do
+      str = [129, 0].pack('C*')
+
+      $KCODE = "SJIS"
+      ary = str.split(//)
+      ary.size.should == 1
+      ary.should == [str]
+    end
+  end
+
   it "respects the encoding of the regexp when splitting between characters" do
     str = "\303\202"
 
@@ -351,6 +362,12 @@ describe "String#split with Regexp" do
   end
 
   ruby_version_is "1.9" do
+    it "retains the encoding of the source string" do
+      ary = "а б в".split
+      encodings = ary.map { |s| s.encoding }
+      encodings.should == [Encoding::UTF_8, Encoding::UTF_8, Encoding::UTF_8]
+    end
+
     it "returns an ArgumentError if an invalid UTF-8 string is supplied" do
       broken_str = 'проверка' # in russian, means "test"
       broken_str.force_encoding('binary')

@@ -57,8 +57,8 @@ describe :object_id, :shared => true do
 
   not_compliant_on :macruby do
     it "returns a different value for two Float literals" do
-      o1 = 1.0
-      o2 = 1.0
+      o1 = -0.0 # -0.0 is not flonum
+      o2 = -0.0
       o1.send(@method).should_not == o2.send(@method)
     end
   end

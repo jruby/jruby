@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/readlines', __FILE__)
 
 describe "IO#readlines" do
   before :each do
@@ -13,8 +14,8 @@ describe "IO#readlines" do
 
   ruby_version_is "1.9" do
     before :each do
-      Encoding.default_external = Encoding::UTF_8
       @orig_exteenc = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
     end
 
     after :each do
@@ -151,28 +152,30 @@ describe "IO#readlines" do
   end
 end
 
-describe "IO.readlines" do
-  before(:each) do
-    @name = fixture __FILE__, "lines.txt"
-  end
-
-  describe "when not passed a separator" do
+ruby_version_is ""..."1.9" do
+  describe "IO.readlines" do
     before :each do
-      @sep, $/ = $/, " "
+      @name = fixture __FILE__, "lines.txt"
+      ScratchPad.record []
+    end
+
+    it_behaves_like :io_readlines, :readlines
+    it_behaves_like :io_readlines_options_18, :readlines
+  end
+end
+
+ruby_version_is "1.9" do
+  describe "IO.readlines" do
+    before :each do
+      @external = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
+
+      @name = fixture __FILE__, "lines.txt"
+      ScratchPad.record []
     end
 
     after :each do
-      $/ = @sep
-    end
-
-    it "returns an Array containing lines of file_name based on $/" do
-      IO.readlines(@name).should == IOSpecs.lines_space_separator
-    end
-  end
-
-  describe "when not passed a separator" do
-    it "raises an Errno::ENOENT error when the passed file_name does not exist" do
-      lambda { IO.readlines(tmp("nonexistent.txt")) }.should raise_error(Errno::ENOENT)
+      Encoding.default_external = @external
     end
 
     it "does not change $_" do
@@ -181,42 +184,7 @@ describe "IO.readlines" do
       $_.should == "test"
     end
 
-    it "tries to convert the passed file_name to a String using #to_str" do
-      obj = mock('IO.readlines filename')
-      obj.stub!(:to_str).and_return(@name)
-      IO.readlines(obj).should == IOSpecs.lines
-    end
-  end
-
-  describe "when passed nil as a separator" do
-    it "returns the contents as a single String" do
-      IO.readlines(@name, nil).should == [IOSpecs.lines.join]
-    end
-  end
-
-  describe "when passed an empty String as a separator" do
-    it "returns an Array containing all paragraphs" do
-      IO.readlines(@name, "").should == IOSpecs.paragraphs
-    end
-  end
-
-  describe "when passed an arbitrary string separator" do
-    it "returns an Array containing lines of file_name based on the passed separator" do
-      IO.readlines(@name, "r").should == IOSpecs.lines_r_separator
-    end
-
-    it "does not change $_" do
-      $_ = "test"
-      IO.readlines(@name, "r")
-      $_.should == "test"
-    end
-  end
-
-  describe "when passed an object as separator" do
-    it "tries to convert the passed separator to a String using #to_str" do
-      obj = mock('IO.readlines filename')
-      obj.stub!(:to_str).and_return("r")
-      IO.readlines(@name, obj).should == IOSpecs.lines_r_separator
-    end
+    it_behaves_like :io_readlines, :readlines
+    it_behaves_like :io_readlines_options_19, :readlines
   end
 end

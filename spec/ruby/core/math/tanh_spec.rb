@@ -27,6 +27,10 @@ describe "Math.tanh" do
     end
   end
 
+  it "returns NaN given NaN" do
+    Math.tanh(nan_value).nan?.should be_true
+  end
+
   it "raises a TypeError if the argument is nil" do
     lambda { Math.tanh(nil) }.should raise_error(TypeError)
   end

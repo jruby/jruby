@@ -26,7 +26,7 @@ module FileSpecs
     File.open(@file, "w") {} # 'Touch'
     yield @file
   ensure
-    File.unlink @file
+    rm_r @file
   end
 
   def self.directory()
@@ -38,7 +38,7 @@ module FileSpecs
     system "mkfifo #{@fifo} 2> /dev/null"
     yield @fifo
   ensure
-    File.unlink @fifo
+    rm_r @fifo
   end
 
   def self.block_device()

@@ -42,4 +42,12 @@ describe "String#*" do
       end
     end
   end
+
+  with_feature :encoding do
+    it "returns a String in the same encoding as self" do
+      str = "\xE3\x81\x82".force_encoding Encoding::UTF_8
+      result = str * 2
+      result.encoding.should equal(Encoding::UTF_8)
+    end
+  end
 end

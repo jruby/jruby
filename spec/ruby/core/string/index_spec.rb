@@ -1,21 +1,44 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-describe "String#index with object" do
-  it "raises a TypeError if obj isn't a String, Fixnum or Regexp" do
-    lambda { "hello".index(:sym)      }.should raise_error(TypeError)
-    lambda { "hello".index(mock('x')) }.should raise_error(TypeError)
+describe "String#index" do
+  it "raises a TypeError if passed nil" do
+    lambda { "abc".index nil }.should raise_error(TypeError)
   end
 
-  it "doesn't try to convert obj to an Integer via to_int" do
-    obj = mock('x')
-    lambda { "hello".index(obj) }.should raise_error(TypeError)
+  it "raises a TypeError if passed a boolean" do
+    lambda { "abc".index true }.should raise_error(TypeError)
   end
 
-  it "tries to convert obj to a string via to_str" do
-    obj = mock('lo')
-    obj.should_receive(:to_str).and_return("lo")
-    "hello".index(obj).should == "hello".index("lo")
+  it "raises a TypeError if passed a Symbol" do
+    lambda { "abc".index :a }.should raise_error(TypeError)
+  end
+
+  it "calls #to_str to convert the first argument" do
+    char = mock("string index char")
+    char.should_receive(:to_str).and_return("b")
+    "abc".index(char).should == 1
+  end
+
+  it "calls #to_int to convert the second argument" do
+    offset = mock("string index offset")
+    offset.should_receive(:to_int).and_return(1)
+    "abc".index("c", offset).should == 2
+  end
+
+  ruby_version_is ""..."1.9" do
+    it "does not call #to_int to convert the first argument" do
+      char = mock("string index char")
+      char.should_not_receive(:to_int)
+      lambda { "abc".index char }.should raise_error(TypeError)
+    end
+  end
+
+  ruby_version_is "1.9" do
+    it "raises a TypeError if passed a Fixnum" do
+      lambda { "abc".index 97 }.should raise_error(TypeError)
+    end
   end
 end
 
@@ -85,12 +108,6 @@ ruby_version_is ""..."1.9" do
 
       "blablabla".index(?a, 9).should == nil
       "blablabla".index(?a, 20).should == nil
-    end
-
-    it "converts start_offset to an integer via to_int" do
-      obj = mock('1')
-      obj.should_receive(:to_int).and_return(1)
-      "ROAR".index(?R, obj).should == 3
     end
   end
 end
@@ -204,10 +221,25 @@ describe "String#index with String" do
     "hello".index("he", 2).should == nil
   end
 
-  it "converts start_offset to an integer via to_int" do
-    obj = mock('1')
-    obj.should_receive(:to_int).and_return(1)
-    "RWOARW".index("RW", obj).should == 4
+  with_feature :encoding do
+    it "returns the character index of a multibyte character" do
+      "ありがとう".index("が").should == 2
+    end
+
+    it "returns the character index after offset" do
+      "われわれ".index("わ", 1).should == 2
+    end
+
+    it "returns the character index after a partial first match" do
+      "</</h".index("</h").should == 2
+    end
+
+    it "raises an Encoding::CompatibilityError if the encodings are incompatible" do
+      char = "れ".encode Encoding::EUC_JP
+      lambda do
+        "あれ".index char
+      end.should raise_error(Encoding::CompatibilityError)
+    end
   end
 end
 
@@ -336,5 +368,26 @@ describe "String#index with Regexp" do
     obj = mock('1')
     obj.should_receive(:to_int).and_return(1)
     "RWOARW".index(/R./, obj).should == 4
+  end
+
+  with_feature :encoding do
+    it "returns the character index of a multibyte character" do
+      "ありがとう".index(/が/).should == 2
+    end
+
+    it "returns the character index after offset" do
+      "われわれ".index(/わ/, 1).should == 2
+    end
+
+    it "treats the offset as a character index" do
+      "われわわれ".index(/わ/, 3).should == 3
+    end
+
+    it "raises an Encoding::CompatibilityError if the encodings are incompatible" do
+      re = Regexp.new "れ".encode(Encoding::EUC_JP)
+      lambda do
+        "あれ".index re
+      end.should raise_error(Encoding::CompatibilityError)
+    end
   end
 end

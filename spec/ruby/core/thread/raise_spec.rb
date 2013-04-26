@@ -125,7 +125,7 @@ describe "Thread#raise on a running thread" do
 
   it "can go unhandled" do
     t = Thread.new do
-      loop {}
+      loop { Thread.pass }
     end
 
     t.raise
@@ -139,7 +139,7 @@ describe "Thread#raise on a running thread" do
         1/0
       rescue ZeroDivisionError
         raised = true
-        loop { }
+        loop { Thread.pass }
       end
     end
     begin

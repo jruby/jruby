@@ -18,6 +18,19 @@ static VALUE registered_reference_address(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_GC_ENABLE
+static VALUE gc_spec_rb_gc_enable() {
+  return rb_gc_enable();
+}
+#endif
+
+#ifdef HAVE_RB_GC_DISABLE
+static VALUE gc_spec_rb_gc_disable() {
+  return rb_gc_disable();
+}
+#endif
+
+
 void Init_gc_spec() {
   VALUE cls;
   cls = rb_define_class("CApiGCSpecs", rb_cObject);
@@ -32,6 +45,15 @@ void Init_gc_spec() {
   rb_define_method(cls, "registered_tagged_address", registered_tagged_address, 0);
   rb_define_method(cls, "registered_reference_address", registered_reference_address, 0);
 #endif
+
+#ifdef HAVE_RB_GC_ENABLE
+  rb_define_method(cls, "rb_gc_enable", gc_spec_rb_gc_enable, 0);
+#endif
+
+#ifdef HAVE_RB_GC_DISABLE
+  rb_define_method(cls, "rb_gc_disable", gc_spec_rb_gc_disable, 0);
+#endif
+
 }
 
 #ifdef __cplusplus

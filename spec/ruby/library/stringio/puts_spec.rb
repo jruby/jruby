@@ -91,6 +91,20 @@ describe "StringIO#puts when passed 1 or more objects" do
     @io.puts ''
     @io.string.should == "\n"
   end
+
+  ruby_version_is ""..."1.9" do
+    it "prints a newline when passed nil" do
+      @io.puts nil
+      @io.string.should == "nil\n"
+    end
+  end
+
+  ruby_version_is "1.9" do
+    it "prints a newline when passed nil" do
+      @io.puts nil
+      @io.string.should == "\n"
+    end
+  end
 end
 
 describe "StringIO#puts when passed no arguments" do

@@ -1,11 +1,114 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-ruby_version_is "1.9" do
+with_feature :encoding do
+  describe :io_set_encoding_write, :shared => true do
+    it "sets the encodings to nil" do
+      @io = new_io @name, "#{@object}:ibm437:ibm866"
+      @io.set_encoding nil, nil
+
+      @io.external_encoding.should be_nil
+      @io.internal_encoding.should be_nil
+    end
+
+    it "prevents the encodings from changing when Encoding defaults are changed" do
+      @io = new_io @name, "#{@object}:utf-8:us-ascii"
+      @io.set_encoding nil, nil
+
+      Encoding.default_external = Encoding::IBM437
+      Encoding.default_internal = Encoding::IBM866
+
+      @io.external_encoding.should be_nil
+      @io.internal_encoding.should be_nil
+    end
+  end
+
+  describe "IO#set_encoding when passed nil, nil" do
+    before :each do
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
+
+      Encoding.default_external = Encoding::UTF_8
+      Encoding.default_internal = nil
+
+      @name = tmp('io_set_encoding.txt')
+      touch(@name)
+    end
+
+    after :each do
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+
+      @io.close if @io and not @io.closed?
+      rm_r @name
+    end
+
+    describe "with 'r' mode" do
+      it "sets the encodings to the current Encoding defaults" do
+        @io = new_io @name, "r"
+
+        Encoding.default_external = Encoding::IBM437
+        Encoding.default_internal = Encoding::IBM866
+
+        @io.set_encoding nil, nil
+        @io.external_encoding.should equal(Encoding::IBM437)
+        @io.internal_encoding.should equal(Encoding::IBM866)
+      end
+
+      it "prevents the #internal_encoding from changing when Encoding.default_internal is changed" do
+        @io = new_io @name, "r"
+        @io.set_encoding nil, nil
+
+        Encoding.default_internal = Encoding::IBM437
+
+        @io.internal_encoding.should be_nil
+      end
+
+      it "allows the #external_encoding to change when Encoding.default_external is changed" do
+        @io = new_io @name, "r"
+        @io.set_encoding nil, nil
+
+        Encoding.default_external = Encoding::IBM437
+
+        @io.external_encoding.should equal(Encoding::IBM437)
+      end
+    end
+
+    describe "with 'rb' mode" do
+      it "returns Encoding.default_external" do
+        @io = new_io @name, "rb"
+        @io.external_encoding.should equal(Encoding::ASCII_8BIT)
+
+        @io.set_encoding nil, nil
+        @io.external_encoding.should equal(Encoding.default_external)
+      end
+    end
+
+    describe "with 'r+' mode" do
+      it_behaves_like :io_set_encoding_write, nil, "r+"
+    end
+
+    describe "with 'w' mode" do
+      it_behaves_like :io_set_encoding_write, nil, "w"
+    end
+
+    describe "with 'w+' mode" do
+      it_behaves_like :io_set_encoding_write, nil, "w+"
+    end
+
+    describe "with 'a' mode" do
+      it_behaves_like :io_set_encoding_write, nil, "a"
+    end
+
+    describe "with 'a+' mode" do
+      it_behaves_like :io_set_encoding_write, nil, "a+"
+    end
+  end
+
   describe "IO#set_encoding" do
     before :each do
       @name = tmp('io_set_encoding.txt')
+      touch(@name)
       @io = new_io @name
-      @io.set_encoding(nil, nil)
     end
 
     after :each do

@@ -1,8 +1,13 @@
-require File.expand_path('../spec_helper', __FILE__)
+#
+# This file is part of ruby-ffi.
+# For licensing, see LICENSE.SPECS
+#
+
+require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe FFI::Struct, ' with an initialize function' do
-  it "calls the initialize function" do
-    struct_with_initialize = Class.new(FFI::Struct) do
+  it "should call the initialize function" do
+    class StructWithInitialize < FFI::Struct
       layout :string, :string
       attr_accessor :magic
       def initialize
@@ -10,14 +15,13 @@ describe FFI::Struct, ' with an initialize function' do
         self.magic = 42
       end
     end
-
-    struct_with_initialize.new.magic.should == 42
+    StructWithInitialize.new.magic.should == 42
   end
 end
 
 describe FFI::ManagedStruct, ' with an initialize function' do
-  it "calls the initialize function" do
-    managed_struct_with_initialize = Class.new(FFI::ManagedStruct) do
+  it "should call the initialize function" do
+    class ManagedStructWithInitialize < FFI::ManagedStruct
       layout :string, :string
       attr_accessor :magic
       def initialize
@@ -26,7 +30,6 @@ describe FFI::ManagedStruct, ' with an initialize function' do
       end
       def self.release;end
     end
-
-    managed_struct_with_initialize.new.magic.should == 42
+    ManagedStructWithInitialize.new.magic.should == 42
   end
 end

@@ -171,6 +171,14 @@ describe "C-API Array function" do
     end
   end
 
+  describe "rb_ary_concat" do
+    it "concats two arrays" do
+      a = [5, 1, 1, 5, 4]
+      b = [2, 3]
+      @s.rb_ary_concat(a, b).should == [5, 1, 1, 5, 4, 2, 3]
+    end
+  end
+
   ruby_version_is ""..."1.9" do
     describe "RARRAY" do
       before :each do

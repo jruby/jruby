@@ -1,1 +1,0 @@
-fails:Socket#connect_nonblock takes an encoded socket address and starts the connection to it

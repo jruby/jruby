@@ -37,6 +37,12 @@ static VALUE so_attr_get(VALUE self, VALUE obj, VALUE attr) {
 }
 #endif
 
+#ifdef HAVE_RB_OBJ_INSTANCE_VARIABLES
+static VALUE object_spec_rb_obj_instance_variables(VALUE self, VALUE obj) {
+  return rb_obj_instance_variables(obj);
+}
+#endif
+
 #ifdef HAVE_RB_CHECK_ARRAY_TYPE
 static VALUE so_check_array_type(VALUE self, VALUE ary) {
   return rb_check_array_type(ary);
@@ -183,6 +189,13 @@ static VALUE so_obj_respond_to(VALUE self, VALUE obj, VALUE sym, VALUE priv) {
 }
 #endif
 
+#ifdef HAVE_RB_METHOD_BOUNDP
+static VALUE object_spec_rb_method_boundp(VALUE self, VALUE obj, VALUE method, VALUE exclude_private) {
+  ID id = SYM2ID(method);
+  return rb_method_boundp(obj, id, exclude_private == Qtrue ? 1 : 0) ? Qtrue : Qfalse;
+}
+#endif
+
 #ifdef HAVE_RB_SPECIAL_CONST_P
 static VALUE object_spec_rb_special_const_p(VALUE self, VALUE value) {
   return rb_special_const_p(value);
@@ -239,6 +252,50 @@ static VALUE so_is_type_class(VALUE self, VALUE obj) {
 
 static VALUE so_is_type_data(VALUE self, VALUE obj) {
   if(TYPE(obj) == T_DATA) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+#endif
+
+#ifdef HAVE_RB_TYPE_P
+static VALUE so_is_rb_type_p_nil(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_NIL)) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+
+static VALUE so_is_rb_type_p_object(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_OBJECT)) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+
+static VALUE so_is_rb_type_p_array(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_ARRAY)) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+
+static VALUE so_is_rb_type_p_module(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_MODULE)) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+
+static VALUE so_is_rb_type_p_class(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_CLASS)) {
+    return Qtrue;
+  }
+  return Qfalse;
+}
+
+static VALUE so_is_rb_type_p_data(VALUE self, VALUE obj) {
+  if(rb_type_p(obj, T_DATA)) {
     return Qtrue;
   }
   return Qfalse;
@@ -361,6 +418,10 @@ void Init_object_spec() {
   rb_define_method(cls, "rb_attr_get", so_attr_get, 2);
 #endif
 
+#ifdef HAVE_RB_OBJ_INSTANCE_VARIABLES
+  rb_define_method(cls, "rb_obj_instance_variables", object_spec_rb_obj_instance_variables, 1);
+#endif
+
 #ifdef HAVE_RB_CHECK_ARRAY_TYPE
   rb_define_method(cls, "rb_check_array_type", so_check_array_type, 1);
 #endif
@@ -445,6 +506,10 @@ void Init_object_spec() {
   rb_define_method(cls, "rb_respond_to", so_respond_to, 2);
 #endif
 
+#ifdef HAVE_RB_METHOD_BOUNDP
+  rb_define_method(cls, "rb_method_boundp", object_spec_rb_method_boundp, 3);
+#endif
+
 #ifdef HAVE_RB_OBJ_RESPOND_TO
   rb_define_method(cls, "rb_obj_respond_to", so_obj_respond_to, 3);
 #endif
@@ -471,6 +536,15 @@ void Init_object_spec() {
   rb_define_method(cls, "rb_is_type_module", so_is_type_module, 1);
   rb_define_method(cls, "rb_is_type_class", so_is_type_class, 1);
   rb_define_method(cls, "rb_is_type_data", so_is_type_data, 1);
+#endif
+
+#ifdef HAVE_RB_TYPE_P
+  rb_define_method(cls, "rb_is_rb_type_p_nil", so_is_rb_type_p_nil, 1);
+  rb_define_method(cls, "rb_is_rb_type_p_object", so_is_rb_type_p_object, 1);
+  rb_define_method(cls, "rb_is_rb_type_p_array", so_is_rb_type_p_array, 1);
+  rb_define_method(cls, "rb_is_rb_type_p_module", so_is_rb_type_p_module, 1);
+  rb_define_method(cls, "rb_is_rb_type_p_class", so_is_rb_type_p_class, 1);
+  rb_define_method(cls, "rb_is_rb_type_p_data", so_is_rb_type_p_data, 1);
 #endif
 
 #ifdef HAVE_BUILTIN_TYPE

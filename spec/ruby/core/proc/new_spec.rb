@@ -122,28 +122,58 @@ end
 
 describe "Proc.new with a block argument" do
   it "returns the passed proc created from a block" do
-    passed_prc = Proc.new { "hello".class }
+    passed_prc = Proc.new { "hello".size }
     prc = Proc.new(&passed_prc)
 
     prc.should equal(passed_prc)
-    prc.call.should == String
+    prc.call.should == 5
   end
 
   it "returns the passed proc created from a method" do
-    method = "hello".method(:class)
+    method = "hello".method(:size)
     passed_prc = Proc.new(&method)
     prc = Proc.new(&passed_prc)
 
     prc.should equal(passed_prc)
-    prc.call.should == String
+    prc.call.should == 5
   end
 
   it "returns the passed proc created from a symbol" do
-    passed_prc = Proc.new(&:class)
+    passed_prc = Proc.new(&:size)
     prc = Proc.new(&passed_prc)
 
     prc.should equal(passed_prc)
-    prc.call("hello").should == String
+    prc.call("hello").should == 5
+  end
+end
+
+describe "Proc.new with a block argument called indirectly from a subclass" do
+  it "returns the passed proc created from a block" do
+    passed_prc = ProcSpecs::MyProc.new { "hello".size }
+    passed_prc.class.should == ProcSpecs::MyProc
+    prc = ProcSpecs::MyProc.new(&passed_prc)
+
+    prc.should equal(passed_prc)
+    prc.call.should == 5
+  end
+
+  it "returns the passed proc created from a method" do
+    method = "hello".method(:size)
+    passed_prc = ProcSpecs::MyProc.new(&method)
+    passed_prc.class.should == ProcSpecs::MyProc
+    prc = ProcSpecs::MyProc.new(&passed_prc)
+
+    prc.should equal(passed_prc)
+    prc.call.should == 5
+  end
+
+  it "returns the passed proc created from a symbol" do
+    passed_prc = ProcSpecs::MyProc.new(&:size)
+    passed_prc.class.should == ProcSpecs::MyProc
+    prc = ProcSpecs::MyProc.new(&passed_prc)
+
+    prc.should equal(passed_prc)
+    prc.call("hello").should == 5
   end
 end
 

@@ -31,5 +31,17 @@ describe :time_gmt_offset, :shared => true do
       Time.new(2010,4,4,1,59,59,7245).send(@method).should == 7245
       Time.new(2010,4,4,1,59,59,7245.5).send(@method).should == Rational(14491,2)
     end
+
+    context 'given positive offset' do
+      it 'returns a positive offset' do
+        Time.new(2013,3,17,nil,nil,nil,"+03:00").send(@method).should == 10800
+      end
+    end
+
+    context 'given negative offset' do
+      it 'returns a negative offset' do
+        Time.new(2013,3,17,nil,nil,nil,"-03:00").send(@method).should == -10800
+      end
+    end
   end
 end

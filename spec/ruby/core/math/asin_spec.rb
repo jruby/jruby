@@ -30,11 +30,19 @@ describe "Math.asin" do
     it "raises an ArgumentError if the argument cannot be coerced with Float()" do
       lambda { Math.asin("test") }.should raise_error(ArgumentError)
     end
+    
+    it "raises an Errno::EDOM given NaN" do
+      lambda { Math.asin(nan_value) }.should raise_error( Errno::EDOM)
+    end
   end
 
   ruby_version_is "1.9" do
     it "raises a TypeError if the argument cannot be coerced with Float()" do
       lambda { Math.asin("test") }.should raise_error(TypeError)
+    end
+
+    it "returns NaN given NaN" do
+      Math.asin(nan_value).nan?.should be_true
     end
   end
 

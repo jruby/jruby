@@ -1,0 +1,5 @@
+fails:Socket::Option.linger creates a new Socket::Option for SO_LINGER
+fails:Socket::Option.linger accepts boolean as onoff argument
+fails:Socket::Option#linger returns linger option
+fails:Socket::Option#linger raises TypeError if not a SO_LINGER
+fails:Socket::Option#linger raises TypeError if option has not good size

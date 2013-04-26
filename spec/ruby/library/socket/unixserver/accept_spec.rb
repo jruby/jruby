@@ -5,11 +5,11 @@ platform_is_not :windows do
   describe "UNIXServer#accept" do
     before :each do
       @path = SocketSpecs.socket_path
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     after :each do
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     it "accepts what is written by the client" do

@@ -19,9 +19,15 @@ ruby_version_is "1.8.7" do
         r.should == [3, 6, 2, 1]
       end
 
-      it "ignores block if arg given" do
-        enum = enumerator_class.new([1,2,3]){|y| y.yield 4}
-        enum.to_a.should == [1,2,3]
+      ruby_version_is "" ... "2.0.0" do
+        it "ignores block if arg given" do
+          enum = enumerator_class.new([1,2,3]){|y| y.yield 4}
+          enum.to_a.should == [1,2,3]
+        end
+      end
+
+      ruby_version_is "2.0.0" do
+        it "needs to be reviewed for spec completeness"
       end
     end
   end

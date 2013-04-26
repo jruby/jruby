@@ -16,22 +16,6 @@ describe "Socket#connect_nonblock" do
     @thread.join if @thread
   end
 
-  it "takes an encoded socket address and starts the connection to it" do
-    lambda {
-      begin
-        @socket.connect_nonblock(@addr)
-      rescue Errno::EINPROGRESS
-        IO.select(nil, [@socket])
-        r = @socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_ERROR)
-        if r.int == Errno::ECONNREFUSED::Errno
-          raise Errno::ECONNREFUSED.new
-        else
-          raise r.inspect
-        end
-      end
-    }.should raise_error(Errno::ECONNREFUSED)
-  end
-
   it "connects the socket to the remote side" do
     ready = false
     @thread = Thread.new do
@@ -59,5 +43,21 @@ describe "Socket#connect_nonblock" do
     end
 
     @socket.read(6).should == "hello!"
+  end
+  
+  platform_is_not :freebsd do
+    it "raises Errno::EINPROGRESS when the connect would block" do
+      lambda do
+        @socket.connect_nonblock(@addr)
+      end.should raise_error(Errno::EINPROGRESS)
+    end
+
+    ruby_version_is "1.9.2" do
+      it "raises Errno::EINPROGRESS with IO::WaitWritable mixed in when the connect would block" do
+        lambda do
+          @socket.connect_nonblock(@addr)
+        end.should raise_error(IO::WaitWritable)
+      end
+    end
   end
 end
