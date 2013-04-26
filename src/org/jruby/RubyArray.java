@@ -1719,7 +1719,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (sep.isNil()) sep = runtime.getGlobalVariables().get("$,");
 
-        boolean taint = isTaint() || sep.isTaint();
+        boolean sepTainted =  sep.isTaint();
+        boolean taint = isTaint();
         boolean untrusted = isUntrusted() || sep.isUntrusted();
 
         int len = 1;
@@ -1737,6 +1738,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             len += sepBytes.getRealSize() * (realLength - 1);
         }
 
+        boolean appended = false;
         ByteList buf = new ByteList(len);
         for (int i = 0; i < realLength; i++) {
             // do not coarsen the "safe" catch, since it will misinterpret AIOOBE from inspect.
@@ -1754,10 +1756,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             }
 
-            if (i > 0 && sepBytes != null) buf.append(sepBytes);
+            if (i > 0 && sepBytes != null) {
+                buf.append(sepBytes);
+                appended = true;
+            }
 
             buf.append(tmp.asString().getByteList());
-            if (tmp.isTaint()) taint = true;
+            if (tmp.isTaint()) taint |= true;
+            if (appended) taint |= sepTainted;
             if (tmp.isUntrusted()) untrusted = true;
         }
 
