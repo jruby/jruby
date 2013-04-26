@@ -2543,7 +2543,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             concurrentModification();
         }
 
-        return value;
+        return context.is19 ? value : item;
     }
 
     /** rb_ary_delete_at
