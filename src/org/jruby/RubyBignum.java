@@ -878,9 +878,9 @@ public class RubyBignum extends RubyInteger {
     }
 
     /**
-     * In ruby 1.9, '==' and '===' are the same.
+     * In ruby 1.9, '==' and '===' are the same, but they differ from 'eql?'.
      */
-    @JRubyMethod(name = {"eql?", "==="}, required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = {"==="}, required = 1, compat = RUBY1_9)
     public IRubyObject eql_p19(IRubyObject other) {
         return op_equal(other);
     }
