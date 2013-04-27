@@ -247,7 +247,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject to_s() {
         int base = 10;
-        return getRuntime().newString(getValue().toString(base));
+        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(base));
     }
 
     @JRubyMethod(name = "to_s")
@@ -256,7 +256,7 @@ public class RubyBignum extends RubyInteger {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        return getRuntime().newString(getValue().toString(base));
+        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(base));
     }
 
     /** rb_big_coerce
