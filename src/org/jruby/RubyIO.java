@@ -3444,6 +3444,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             } finally {
                 io.close();
+                runtime.getGlobalVariables().clear("$_");
             }
         }
 
