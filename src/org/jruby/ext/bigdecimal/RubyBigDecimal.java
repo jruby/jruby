@@ -1094,6 +1094,10 @@ public class RubyBigDecimal extends RubyNumeric {
             return newZero(getRuntime(), val.infinitySign);
         }
 
+        if (isZero() || val.isZero()) {
+            throw context.runtime.newZeroDivisionError();
+        }
+
         return op_div(context, r);
     }
 
