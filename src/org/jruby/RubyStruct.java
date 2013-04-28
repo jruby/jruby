@@ -537,25 +537,32 @@ public class RubyStruct extends RubyObject {
     /** inspect_struct
     *
     */
-    private IRubyObject inspectStruct(final ThreadContext context) {    
+    private IRubyObject inspectStruct(final ThreadContext context) {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
         ByteList buffer = new ByteList("#<struct ".getBytes());
-        buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
-        buffer.append(' ');
+
+        if (is1_8() || getMetaClass().getRealClass().getBaseName() != null) {
+            buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
+            buffer.append(' ');
+        }
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) buffer.append(',').append(' ');
-            // FIXME: MRI has special case for constants here 
+            // FIXME: MRI has special case for constants here
             buffer.append(RubyString.objAsString(context, member.eltInternal(i)).getByteList());
             buffer.append('=');
             buffer.append(inspect(context, values[i]).getByteList());
         }
 
         buffer.append('>');
-        return getRuntime().newString(buffer); // OBJ_INFECT        
+        return getRuntime().newString(buffer); // OBJ_INFECT
+    }
+
+    private boolean is1_8() {
+        return !(getRuntime().is1_9() || getRuntime().is2_0());
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -738,10 +745,10 @@ public class RubyStruct extends RubyObject {
             result = newStruct(rbClass, values, Block.NULL_BLOCK);
         }
         input.registerLinkTarget(result);
-        
-        for(int i = 0; i < len; i++) {
+
+        for (int i = 0; i < len; i++) {
             IRubyObject slot = input.unmarshalObject(false);
-            if(!mem.eltInternal(i).toString().equals(slot.toString())) {
+            if (!mem.eltInternal(i).toString().equals(slot.toString())) {
                 throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + mem.eltInternal(i) + ")");
             }
             result.aset(runtime.newFixnum(i), input.unmarshalObject());
