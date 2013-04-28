@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
@@ -824,12 +825,29 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "round", optional = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) return round();
-        double digits = num2dbl(args[0]);
+        // truncate floats.
+        double digits = num2long(args[0]);
+        
         double magnifier = Math.pow(10.0, Math.abs(digits));
         double number = value;
         
         if (Double.isInfinite(value)) {
+            if (digits <= 0) throw getRuntime().newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
             return this;
+        }
+        
+        if (Double.isNaN(value)) {
+            if (digits <= 0) throw getRuntime().newFloatDomainError("NaN");
+            return this;
+        }
+        
+        // MRI flo_round logic to deal with huge precision numbers.
+        double binexp = Math.ceil(Math.log(value)/Math.log(2));
+        if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
+            return RubyFloat.newFloat(context.runtime, number);
+        }
+        if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
+            return RubyFixnum.zero(context.runtime);
         }
         
         if (Double.isInfinite(magnifier)) {
@@ -840,7 +858,8 @@ public class RubyFloat extends RubyNumeric {
             } else {
                 number *= magnifier;
             }
-            number = Math.round(number);
+
+            number = Math.round(Math.abs(number))*Math.signum(number);
             if (digits < 0) {
                 number *= magnifier;
             } else {
@@ -851,6 +870,12 @@ public class RubyFloat extends RubyNumeric {
         if (digits > 0) {
             return RubyFloat.newFloat(context.runtime, number);
         } else {
+            if (number > Long.MAX_VALUE || number < Long.MIN_VALUE) {
+                // The only way to get huge precise values with BigDecimal is 
+                // to convert the double to String first.
+                BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
+                return RubyBignum.newBignum(context.runtime, roundedNumber.toBigInteger());
+            }
             return dbl2num(context.runtime, (long)number);
         }
     }
