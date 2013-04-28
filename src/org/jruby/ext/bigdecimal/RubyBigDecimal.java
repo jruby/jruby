@@ -1082,9 +1082,13 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_div19(ThreadContext context, IRubyObject r) {
-        IRubyObject b = getVpValue19(context, r, true);
+        RubyBigDecimal val = getVpValue19(context, r, true);
         
-        if (b == null) return cannotBeCoerced(context, b, true);
+        if (val == null) return cannotBeCoerced(context, val, true);
+
+        if (isNaN() || val.isNaN()) {
+            throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
+        }
         
         return op_div(context, r);
     }
