@@ -113,6 +113,7 @@ public class RubyGlobal {
         case RUBY1_8:
             version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
             patchlevel = runtime.newFixnum(Constants.RUBY_PATCHLEVEL);
+            runtime.defineGlobalConstant("VERSION", version);
             break;
         case RUBY1_9:
             version = runtime.newString(Constants.RUBY1_9_VERSION).freeze(context);
@@ -135,7 +136,6 @@ public class RubyGlobal {
         IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString()).freeze(context);
         runtime.defineGlobalConstant("RUBY_COPYRIGHT", copyright);
 
-        runtime.defineGlobalConstant("VERSION", version);
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
         
