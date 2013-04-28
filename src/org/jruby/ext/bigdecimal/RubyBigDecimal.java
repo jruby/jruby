@@ -1082,10 +1082,26 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_div19(ThreadContext context, IRubyObject r) {
-        IRubyObject b = getVpValue19(context, r, true);
+        RubyBigDecimal val = getVpValue19(context, r, true);
         
-        if (b == null) return cannotBeCoerced(context, b, true);
+        if (val == null) return cannotBeCoerced(context, val, true);
+
+        if (isNaN() || val.isNaN()) {
+            throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
+        }
+
+        if (isInfinity() && val.isOne()) {
+            throw context.runtime.newFloatDomainError("Computation results to 'Infinity'");
+        }
         
+        if (val.isInfinity()) {
+            return newZero(getRuntime(), val.infinitySign);
+        }
+
+        if (isZero() || val.isZero()) {
+            throw context.runtime.newZeroDivisionError();
+        }
+
         return op_div(context, r);
     }
 
@@ -1750,6 +1766,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private boolean isZero() {
         return !isNaN() && !isInfinity() && (value.signum() == 0);
+    }
+
+    private boolean isOne() {
+        return value.abs().compareTo(BigDecimal.ONE) == 0;
     }
 
     private boolean isNaN() {
