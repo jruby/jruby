@@ -922,7 +922,8 @@ module Net   #:nodoc:
           if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
             s.post_connection_check(@address)
           end
-          @ssl_session = s.session
+          # Commented out until JRuby implements OpenSSL::SSL::Session
+          #@ssl_session = s.session
         rescue => exception
           D "Conn close because of connect error #{exception}"
           @socket.close if @socket and not @socket.closed?
