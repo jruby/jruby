@@ -227,9 +227,6 @@ public class RubyNumeric extends RubyObject {
     /** rb_dbl2big + LONG2FIX at once (numeric.c)
      * 
      */
-    /** rb_dbl2big + LONG2FIX at once (numeric.c)
-     * 
-     */
     public static IRubyObject dbl2num(Ruby runtime, double val) {
         if (Double.isInfinite(val)) {
             throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
@@ -237,7 +234,7 @@ public class RubyNumeric extends RubyObject {
         if (Double.isNaN(val)) {
             throw runtime.newFloatDomainError("NaN");
         }
-        return convertToNum(val,runtime);
+        return convertToNum(val, runtime);
     }
 
     /** rb_num2dbl and NUM2DBL
