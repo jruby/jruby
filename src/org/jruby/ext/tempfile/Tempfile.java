@@ -323,7 +323,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
         return context.runtime.getNil();
     }
 
-    @JRubyMethod(name = {"size", "length"})
+    @JRubyMethod(name = {"size", "length"}, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject size(ThreadContext context) {
         if (!isClosed()) {
@@ -332,6 +332,14 @@ public class Tempfile extends org.jruby.RubyTempfile {
         }
 
         return RubyFixnum.zero(context.runtime);
+    }
+
+    @JRubyMethod(name = {"size", "length"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject size19(ThreadContext context) {
+        if (!isClosed()) {
+            flush();
+        }
+        return context.runtime.newFileStat(path, false).size();
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
