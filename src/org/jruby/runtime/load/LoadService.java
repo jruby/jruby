@@ -338,7 +338,7 @@ public class LoadService {
 
     public void load(String file, boolean wrap) {
         if(!runtime.getProfile().allowLoad(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file);
+            throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
         SearchState state = new SearchState(file);
@@ -350,7 +350,7 @@ public class LoadService {
         if (library == null) {
             library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
             if (library == null) {
-                throw runtime.newLoadError("no such file to load -- " + file);
+                throw runtime.newLoadError("no such file to load -- " + file, file);
             }
         }
         try {
@@ -433,7 +433,7 @@ public class LoadService {
         }
         try {
             if (!runtime.getProfile().allowRequire(requireName)) {
-                throw runtime.newLoadError("no such file to load -- " + requireName);
+                throw runtime.newLoadError("no such file to load -- " + requireName, requireName);
             }
 
             // check for requiredName again now that we're locked
@@ -552,7 +552,7 @@ public class LoadService {
             return false;
         }
         if (state.library == null) {
-            throw runtime.newLoadError("no such file to load -- " + state.searchFile);
+            throw runtime.newLoadError("no such file to load -- " + state.searchFile, state.searchFile);
         }
 
         // check with long name
@@ -623,13 +623,13 @@ public class LoadService {
                 service.basicLoad(runtime);
             } else {
                 // invalid type of library, raise error
-                throw runtime.newLoadError("library `" + libraryName + "' is not of type Library or BasicLibraryService");
+                throw runtime.newLoadError("library `" + libraryName + "' is not of type Library or BasicLibraryService", libraryName);
             }
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
             if (runtime.getDebug().isTrue()) e.printStackTrace();
-            throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e);
+            throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e, libraryName);
         }
     }
 
@@ -808,13 +808,13 @@ public class LoadService {
                 // we ignore this and assume the jar is not an extension
             } catch (UnsupportedClassVersionError ucve) {
                 if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve);
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
             } catch (IOException ioe) {
                 if (runtime.isDebug()) ioe.printStackTrace();
-                throw runtime.newLoadError("IOException loading extension `" + finName + "`: " + ioe);
+                throw runtime.newLoadError("IOException loading extension `" + finName + "`: " + ioe, finName.toString());
             } catch (Exception e) {
                 if (runtime.isDebug()) e.printStackTrace();
-                throw runtime.newLoadError("Exception loading extension `" + finName + "`: " + e);
+                throw runtime.newLoadError("Exception loading extension `" + finName + "`: " + e, finName.toString());
             }
 
             // If there was a good library before, we go back to that
@@ -967,7 +967,7 @@ public class LoadService {
     private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
         if (RubyInstanceConfig.DEBUG_PARSER) t.printStackTrace();
         
-        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()));
+        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
     // Using the BailoutSearch twice, once only for source files and once for state suffixes,
@@ -994,7 +994,7 @@ public class LoadService {
 
     protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.equals("")) {
-            throw runtime.newLoadError("no such file to load -- " + file);
+            throw runtime.newLoadError("no such file to load -- " + file, file);
         }
     }
 
@@ -1087,7 +1087,7 @@ public class LoadService {
             if (runtime.getInstanceConfig().isCextEnabled()) {
                 return new CExtension(resource);
             } else {
-                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'");
+                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
             }
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);

@@ -3562,6 +3562,12 @@ public final class Ruby {
         return newRaiseException(getLoadError(), message);
     }
 
+    public RaiseException newLoadError(String message, String path) {
+        RaiseException loadError = newRaiseException(getLoadError(), message);
+        if (is2_0()) loadError.getException().setInstanceVariable("@path", newString(path));
+        return loadError;
+    }
+
     public RaiseException newFrozenError(String objectType) {
         return newFrozenError(objectType, false);
     }
