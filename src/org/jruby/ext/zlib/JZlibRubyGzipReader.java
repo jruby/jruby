@@ -99,6 +99,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             }
             throw re;
         }
+        position = 0;
+        line = 0;
         bufferedStream = new BufferedInputStream(io);
         return this;
     }
