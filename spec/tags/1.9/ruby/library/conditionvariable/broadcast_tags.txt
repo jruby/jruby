@@ -1,1 +1,0 @@
-fails:ConditionVariable#broadcast returns self if something is waiting for a broadcast
