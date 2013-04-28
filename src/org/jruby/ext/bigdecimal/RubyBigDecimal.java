@@ -1090,6 +1090,10 @@ public class RubyBigDecimal extends RubyNumeric {
             throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
         }
         
+        if (val.isInfinity()) {
+            return newZero(getRuntime(), val.infinitySign);
+        }
+
         return op_div(context, r);
     }
 
