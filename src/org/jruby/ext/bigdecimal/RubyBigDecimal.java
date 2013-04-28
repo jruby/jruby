@@ -1089,6 +1089,10 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN()) {
             throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
         }
+
+        if (isInfinity() && val.isOne()) {
+            throw context.runtime.newFloatDomainError("Computation results to 'Infinity'");
+        }
         
         if (val.isInfinity()) {
             return newZero(getRuntime(), val.infinitySign);
@@ -1762,6 +1766,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private boolean isZero() {
         return !isNaN() && !isInfinity() && (value.signum() == 0);
+    }
+
+    private boolean isOne() {
+        return value.abs().compareTo(BigDecimal.ONE) == 0;
     }
 
     private boolean isNaN() {

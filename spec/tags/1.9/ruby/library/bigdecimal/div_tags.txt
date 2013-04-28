@@ -1,1 +1,0 @@
-fails:BigDecimal#div raises FloatDomainError if (+|-) Infinity divided by 1 and no precision given
