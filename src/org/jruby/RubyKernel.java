@@ -70,6 +70,8 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -77,8 +79,10 @@ import java.util.Map;
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.CompatVersion.RUBY2_0;
+import org.jruby.anno.FrameField;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1857,6 +1861,13 @@ public class RubyKernel {
             return context.nil;
         }
         return context.runtime.newSymbol(frameName);
+    }
+    
+    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME, compat = RUBY2_0)
+    public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
+        String dir = new File(context.getFile()).getParent();
+        if (dir == null) return context.nil;
+        return RubyString.newString(context.runtime, dir);
     }
 
     @JRubyMethod(module = true, compat = RUBY1_9)
