@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="org/jruby/runtime/Constants.java" kind="src" path="src"/>
-	<classpathentry excluding="*.java" kind="src" path="build/src_gen"/>
+	<classpathentry excluding="org/jruby/gen/*.java" kind="src" path="build/src_gen"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="lib" path="build_lib/junit.jar"/>
 	<classpathentry kind="lib" path="build_lib/bsf.jar"/>
