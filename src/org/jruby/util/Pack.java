@@ -986,6 +986,8 @@ public class Pack {
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
+                
+                if (next == '_' || next == '!') next = safeGet(format);
             }
 
             // How many occurrences of 'type' we want
