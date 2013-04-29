@@ -22,6 +22,8 @@
         <exclude name="lib/ruby/1.8/openssl/**" if="exclude_openssl"/>
         <include name="lib/ruby/1.9/**"/>
         <exclude name="lib/ruby/1.9/openssl/**" if="exclude_openssl"/>
+        <include name="lib/ruby/2.0/**"/>
+        <exclude name="lib/ruby/2.0/openssl/**" if="exclude_openssl"/>
         <include name="lib/ruby/shared/**"/>
         <exclude name="lib/ruby/shared/bc*.jar" if="exclude_openssl"/>
         <exclude name="lib/ruby/shared/bouncy-castle-java.rb" if="exclude_openssl"/>
