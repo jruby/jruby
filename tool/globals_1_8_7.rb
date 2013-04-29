@@ -80,7 +80,6 @@ STDLIB_FILES = %w[
   test
   thwait.rb
   time.rb
-  tmpdir.rb
   tracer.rb
   tsort.rb
   un.rb

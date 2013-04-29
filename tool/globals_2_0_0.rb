@@ -39,7 +39,6 @@ STDLIB_FILES = %w[
   test
   thread.rb
   time.rb
-  tmpdir.rb
   tracer.rb
   un.rb
   uri
