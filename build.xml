@@ -625,13 +625,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <property name="jar-jruby-complete.hasrun" value="true"/>
     </target>
 
-    <target name="dist-jar-complete" depends="jar-jruby-complete">
-        <mkdir dir="${dist.dir}"/>
-        <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
-        <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
-        <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="sha1"/>
-    </target>
-
     <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
         <antcall target="jar-jruby-complete">
             <param name="mainclass" value="org.jruby.demo.IRBConsole"/>

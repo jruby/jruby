@@ -283,6 +283,13 @@
         <rake task="installer"/>
     </target>
 
+    <target name="dist-jar-complete" depends="jar-jruby-complete">
+        <mkdir dir="${dist.dir}"/>
+        <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
+        <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
+        <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="sha1"/>
+    </target>
+
     <target name="dist-gem" depends="install-dev-gems,dist-jar-complete">
         <rake task="gem:jruby-jars"/>
         <rake task="gem:jruby-openssl"/>
