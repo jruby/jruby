@@ -950,11 +950,19 @@ public class Pack {
         int type = 0;
         int next = safeGet(format);
 
-        while (next != 0) {
+        mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
             if (UNPACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
                 next = safeGetIgnoreNull(format);
+            }
+            
+            if (type == '#') {
+                while (type != '\n') {
+                    if (next == 0) break mainLoop;
+                    type = next;
+                    next = safeGet(format);
+                }
             }
 
             // Next indicates to decode using native encoding format
