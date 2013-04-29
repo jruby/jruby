@@ -1,4 +1,4 @@
-package org.jruby.parser;
+package org.jruby.ext.ripper;
 
 public class Ripper19YyTables {
    private static short[] combine(short[] t1, short[] t2, 
