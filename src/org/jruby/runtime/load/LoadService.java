@@ -337,48 +337,58 @@ public class LoadService {
     }
 
     public void load(String file, boolean wrap) {
-        if(!runtime.getProfile().allowLoad(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
-        }
-
-        SearchState state = new SearchState(file);
-        state.prepareLoadSearch(file);
-
-        Library library = findBuiltinLibrary(state, state.searchFile, state.suffixType);
-        if (library == null) library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
-
-        if (library == null) {
-            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-            if (library == null) {
+        long startTime = loadTimer.startLoad(file);
+        try {
+            if(!runtime.getProfile().allowLoad(file)) {
                 throw runtime.newLoadError("no such file to load -- " + file, file);
             }
-        }
-        try {
-            library.load(runtime, wrap);
-        } catch (IOException e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
-            throw newLoadErrorFromThrowable(runtime, file, e);
+
+            SearchState state = new SearchState(file);
+            state.prepareLoadSearch(file);
+
+            Library library = findBuiltinLibrary(state, state.searchFile, state.suffixType);
+            if (library == null) library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
+
+            if (library == null) {
+                library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+                if (library == null) {
+                    throw runtime.newLoadError("no such file to load -- " + file, file);
+                }
+            }
+            try {
+                library.load(runtime, wrap);
+            } catch (IOException e) {
+                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                throw newLoadErrorFromThrowable(runtime, file, e);
+            }
+        } finally {
+            loadTimer.endLoad(file, startTime);
         }
     }
 
     public void loadFromClassLoader(ClassLoader classLoader, String file, boolean wrap) {
-        SearchState state = new SearchState(file);
-        state.prepareLoadSearch(file);
-
-        Library library = null;
-        LoadServiceResource resource = getClassPathResource(classLoader, file);
-        if (resource != null) {
-            state.loadName = resolveLoadName(resource, file);
-            library = createLibrary(state, resource);
-        }
-        if (library == null) {
-            throw runtime.newLoadError("no such file to load -- " + file);
-        }
+        long startTime = loadTimer.startLoad("classloader:" + file);
         try {
-            library.load(runtime, wrap);
-        } catch (IOException e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
-            throw newLoadErrorFromThrowable(runtime, file, e);
+            SearchState state = new SearchState(file);
+            state.prepareLoadSearch(file);
+
+            Library library = null;
+            LoadServiceResource resource = getClassPathResource(classLoader, file);
+            if (resource != null) {
+                state.loadName = resolveLoadName(resource, file);
+                library = createLibrary(state, resource);
+            }
+            if (library == null) {
+                throw runtime.newLoadError("no such file to load -- " + file);
+            }
+            try {
+                library.load(runtime, wrap);
+            } catch (IOException e) {
+                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                throw newLoadErrorFromThrowable(runtime, file, e);
+            }
+        } finally {
+            loadTimer.endLoad("classloader:" + file, startTime);
         }
     }
 
