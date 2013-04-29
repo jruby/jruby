@@ -25,7 +25,7 @@
 	<classpathentry kind="lib" path="build_lib/asm-tree-4.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-util-4.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/snakeyaml-1.11.jar"/>
-	<classpathentry kind="lib" path="build_lib/jzlib-1.1.0.jar"/>
+	<classpathentry kind="lib" path="build_lib/jzlib-1.1.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/coro-mock-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-ffi.jar"/>
 	<classpathentry kind="lib" path="build_lib/invokebinder.jar"/>
