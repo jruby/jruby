@@ -53,6 +53,9 @@ public class RubyEtc {
         };
         
         runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
+        if (runtime.is1_9()) {
+            runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
+        }
     }
 
     private static void defineGroupStruct(Ruby runtime) {
@@ -65,6 +68,9 @@ public class RubyEtc {
         };
         
         runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
+        if (runtime.is1_9()) {
+            runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
+        }
     }
     
     private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
