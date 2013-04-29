@@ -591,7 +591,13 @@ public class RubyFileStat extends RubyObject {
     
     @JRubyMethod(name = "sticky?")
     public IRubyObject sticky_p() {
-        return getRuntime().newBoolean(stat.isSticky());
+        Ruby runtime = getRuntime();
+        
+        if (runtime.getPosix().isNative()) {
+            return runtime.newBoolean(stat.isSticky());
+        }
+        
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "symlink?")
