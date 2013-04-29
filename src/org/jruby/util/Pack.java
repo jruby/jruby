@@ -1582,11 +1582,8 @@ public class Pack {
             result.append(converter.decode(runtime, encode));
         }
 
-        // MRI behavior:  for 'Q', do not add trailing nils
-        if (converter != converters['Q']) {
-            for (; lPadLength-- > 0;)
+        for (; lPadLength-- > 0;)
             result.append(runtime.getNil());
-        }
     }
 
     public static int encode(Ruby runtime, int occurrences, ByteList result,
