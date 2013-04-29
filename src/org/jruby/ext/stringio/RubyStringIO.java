@@ -827,7 +827,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
      * readpartial(length, [buffer])
      *
      */
-    @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
+    @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, optional = 2)
     @Override
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         return sysreadCommon(args);
