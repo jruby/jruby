@@ -90,7 +90,7 @@ class Dir
   #  end
   #
   def Dir.mktmpdir(prefix_suffix=nil, *rest)
-    path = Tmpname.create(prefix_suffix || "d", *rest) {|n, *| p n ; mkdir(n, 0700)}
+    path = Tmpname.create(prefix_suffix || "d", *rest) {|n, *| mkdir(n, 0700)}
     if block_given?
       begin
         yield path
