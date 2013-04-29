@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="org/jruby/runtime/Constants.java" kind="src" path="src"/>
-	<classpathentry excluding="*.java" kind="src" path="build/src_gen"/>
+	<classpathentry excluding="org/jruby/gen/*.java" kind="src" path="build/src_gen"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="lib" path="build_lib/junit.jar"/>
 	<classpathentry kind="lib" path="build_lib/bsf.jar"/>
@@ -25,7 +25,7 @@
 	<classpathentry kind="lib" path="build_lib/asm-tree-4.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-util-4.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/snakeyaml-1.11.jar"/>
-	<classpathentry kind="lib" path="build_lib/jzlib-1.1.0.jar"/>
+	<classpathentry kind="lib" path="build_lib/jzlib-1.1.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/coro-mock-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-ffi.jar"/>
 	<classpathentry kind="lib" path="build_lib/invokebinder.jar"/>
