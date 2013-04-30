@@ -106,6 +106,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.io.IOEncodable;
+import static org.jruby.util.StringSupport.isIncompleteChar;
 
 /**
  * 
@@ -664,6 +665,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
                                     n = readStream.getline(buf, (byte) newline);
                                 } else {
                                     n = readStream.getline(buf, (byte) newline, limit);
+
+                                    if (buf.length() > 0 && isIncompleteChar(buf.get(buf.length() - 1))) {
+                                        buf.append((byte)readStream.fgetc());
+                                    }
+
                                     limit -= n;
                                     if (limit <= 0) {
                                         update = limitReached = true;
