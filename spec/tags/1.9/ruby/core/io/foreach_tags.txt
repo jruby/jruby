@@ -1,2 +1,1 @@
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -
-fails:IO.foreach when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum

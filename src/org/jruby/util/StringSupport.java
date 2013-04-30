@@ -524,4 +524,9 @@ public final class StringSupport {
         return format;
     }
 
+    // mri: ONIGENC_MBCLEN_NEEDMORE_P - onigurama.h
+    public static boolean isIncompleteChar(int b) {
+        return b < -1;
+    }
+
 }
