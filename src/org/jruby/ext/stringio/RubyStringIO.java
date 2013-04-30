@@ -1069,6 +1069,9 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @JRubyMethod(compat = RUBY1_9)
     @Override
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc) {
+        if (enc.isNil()) {
+            enc = context.runtime.getEncodingService().getDefaultExternal();
+        }
         Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         data.internal.setEncoding(encoding);
         return this;
