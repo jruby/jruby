@@ -8,5 +8,3 @@ fails:String#encode when passed to, from, options calls #to_hash to convert the 
 fails:String#encode! when passed options calls #to_hash to convert the object
 fails:String#encode! when passed to, options calls #to_hash to convert the options object
 fails:String#encode! when passed to, from, options calls #to_hash to convert the options object
-fails:String#encode! when passed no options returns self when Encoding.default_internal is nil
-fails:String#encode! when passed no options returns self for a ASCII-only String when Encoding.default_internal is nil
