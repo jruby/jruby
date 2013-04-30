@@ -63,8 +63,8 @@ public class CharsetTranscoder {
         String toName = encoding.toString();
         String fromName = fromEncoding.toString();
         
-        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName);
-        Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName);
+        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName, value);
+        Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName, value);
 
         CharsetEncoder encoder = getCharsetEncoder(to);
         CharsetDecoder decoder = getCharsetDecoder(from);
@@ -204,7 +204,7 @@ public class CharsetTranscoder {
         return encoder;
     } 
 
-    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
+    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName, ByteList value) {
         if (encoding == ASCIIEncoding.INSTANCE) {
             return ISO8859_1Encoding.INSTANCE.getCharset();
         }
@@ -239,9 +239,18 @@ public class CharsetTranscoder {
         } catch (Exception e) {}
         
         if (from == null) {
-            throw runtime.newConverterNotFoundError("code converter not found (" + fromName + " to " + toName + ")");
+            if (checkIf7BitCompatible(value)) from = Charset.forName("US-ASCII");
+            else throw runtime.newConverterNotFoundError("code converter not found (" + fromName + " to " + toName + ")");
         }
 
         return from;
     }    
+    
+    private static boolean checkIf7BitCompatible(ByteList value) {
+        for (int byteidx = 0; byteidx < value.length(); byteidx++) {
+            byte b = (byte) value.get(byteidx);
+            if (b >= 0x80) return false;
+        }
+        return true;
+    }
 }

@@ -1,40 +1,10 @@
-fails:String#encode raises ArgumentError if the value of the :xml option is not :text or :attr
-fails:String#encode given the :xml => :text option replaces all instances of '&' with '&amp;'
-fails:String#encode given the :xml => :text option replaces all instances of '<' with '&lt;'
-fails:String#encode given the :xml => :text option replaces all instances of '>' with '&gt;'
 fails:String#encode given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode given the :xml => :attr option surrounds the encoded text with double-quotes
-fails:String#encode given the :xml => :attr option replaces all instances of '&' with '&amp;'
-fails:String#encode given the :xml => :attr option replaces all instances of '<' with '&lt;'
-fails:String#encode given the :xml => :attr option replaces all instances of '>' with '&gt;'
-fails:String#encode given the :xml => :attr option replaces all instances of '"' with '&quot;'
 fails:String#encode given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode! raises ArgumentError if the value of the :xml option is not :text or :attr
-fails:String#encode! given the :xml => :text option replaces all instances of '&' with '&amp;'
-fails:String#encode! given the :xml => :text option replaces all instances of '<' with '&lt;'
-fails:String#encode! given the :xml => :text option replaces all instances of '>' with '&gt;'
 fails:String#encode! given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode! given the :xml => :attr option surrounds the encoded text with double-quotes
-fails:String#encode! given the :xml => :attr option replaces all instances of '&' with '&amp;'
-fails:String#encode! given the :xml => :attr option replaces all instances of '<' with '&lt;'
-fails:String#encode! given the :xml => :attr option replaces all instances of '>' with '&gt;'
-fails:String#encode! given the :xml => :attr option replaces all instances of '"' with '&quot;'
 fails:String#encode! given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode when passed no options transcodes a 7-bit String despite no generic converting being available
-fails:String#encode when passed no options raises an Encoding::ConverterNotFoundError when no conversion is possible
-fails:String#encode when passed to encoding transcodes a 7-bit String despite no generic converting being available
-fails:String#encode when passed to encoding raises an Encoding::ConverterNotFoundError when no conversion is possible
 fails:String#encode when passed options calls #to_hash to convert the object
-fails:String#encode when passed options raises an Encoding::ConverterNotFoundError when no conversion is possible despite ':invalid => :replace, :undef => :replace'
 fails:String#encode when passed to, options calls #to_hash to convert the options object
 fails:String#encode when passed to, from, options calls #to_hash to convert the options object
-fails:String#encode! when passed no options transcodes a 7-bit String despite no generic converting being available
-fails:String#encode! when passed no options raises an Encoding::ConverterNotFoundError when no conversion is possible
-fails:String#encode! when passed to encoding transcodes a 7-bit String despite no generic converting being available
-fails:String#encode! when passed to encoding raises an Encoding::ConverterNotFoundError when no conversion is possible
 fails:String#encode! when passed options calls #to_hash to convert the object
-fails:String#encode! when passed options raises an Encoding::ConverterNotFoundError when no conversion is possible despite ':invalid => :replace, :undef => :replace'
 fails:String#encode! when passed to, options calls #to_hash to convert the options object
 fails:String#encode! when passed to, from, options calls #to_hash to convert the options object
-fails:String#encode! when passed no options returns self when Encoding.default_internal is nil
-fails:String#encode! when passed no options returns self for a ASCII-only String when Encoding.default_internal is nil

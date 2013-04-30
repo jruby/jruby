@@ -42,6 +42,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="Converter")
@@ -90,11 +91,23 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest) {
-        srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
-        destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
+        
+        if (src instanceof RubyEncoding) srcEncoding = (RubyEncoding)src;
+        else srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
 
-        srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
-        destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
+        
+        if (dest instanceof RubyEncoding) destEncoding = (RubyEncoding)dest; 
+        else destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
+
+        
+        try {
+            srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
+            destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
+        } catch (RaiseException e) {
+            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError"))
+                throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
+            else throw e;
+        }
 
         return context.runtime.getNil();
     }
