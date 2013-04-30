@@ -103,6 +103,7 @@ import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.XMLConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.string.JavaCrypt;
@@ -7468,7 +7469,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
 
-        if (defaultInternal == null) return dup();
+        if (defaultInternal == null) return this;
 
         value = transcode(context, value, null, defaultInternal, runtime.getNil());
 
@@ -7593,6 +7594,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return new ByteList(value.bytes(), toEncoding);
         }
         
+        if (!(opts instanceof RubyHash)) {
+            opts = TypeConverter.convertToTypeWithCheck(opts, context.runtime.getHash(), "to_hash");
+        }
+        
         // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
         if (fromName.equals("ASCII-8BIT") && toEncoding.maxLength() > 1) {
             int length = value.length();
@@ -7600,15 +7605,23 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             for (int byteidx = 0; byteidx < length; byteidx++) {
                 byte b = (byte) value.get(byteidx);
                 if ((b & 0xFF) > 0x7F) {
-                    throw context.runtime.newUndefinedConversionError(
-                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
-                                    "\" from " + fromName +
-                                    " to " + toName);
+                    throw context.runtime.newConverterNotFoundError(
+                            "code converter not found (" 
+                            + fromName + " to " + toName + ")");
                 }
             }
         }
         
-        return CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts);
+        
+        ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts);
+        
+        boolean xmlConversion = false;
+        xmlConversion = !opts.isNil() && ((RubyHash)opts).fastARef(context.runtime.newSymbol("xml")) != null;
+        if (xmlConversion) {
+            output = XMLConverter.convert(context, output, opts);
+        }
+        
+        return output;
     }
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
