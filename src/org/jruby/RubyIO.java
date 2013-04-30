@@ -4296,7 +4296,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static long transfer(ReadableByteChannel from, FileChannel to) throws IOException {
         long transferred = 0;
         long bytes;
-        while ((bytes = to.transferFrom(from, to.position(), 4196)) > 0) {
+        long startPosition = to.position();
+        while ((bytes = to.transferFrom(from, startPosition+transferred, 4196)) > 0) {
             transferred += bytes;
         }
 
