@@ -7469,7 +7469,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
 
-        if (defaultInternal == null) return dup();
+        if (defaultInternal == null) return this;
 
         value = transcode(context, value, null, defaultInternal, runtime.getNil());
 
@@ -7608,10 +7608,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     throw context.runtime.newConverterNotFoundError(
                             "code converter not found (" 
                             + fromName + " to " + toName + ")");
-                    /*throw context.runtime.newUndefinedConversionError(
-                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
-                                    "\" from " + fromName +
-                                    " to " + toName);*/
                 }
             }
         }
