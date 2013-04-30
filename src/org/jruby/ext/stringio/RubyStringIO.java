@@ -661,10 +661,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         }
 
         for (int i = 0; i < args.length; i++) {
-            RubyString line;
+            RubyString line = getRuntime().newString();
 
             if (args[i].isNil()) {
-                line = getRuntime().newString("nil");
+                if (!getRuntime().is1_9()) {
+                    line = getRuntime().newString("nil");
+                }
             } else {
                 IRubyObject tmp = args[i].checkArrayType();
                 if (!tmp.isNil()) {

@@ -1,1 +1,0 @@
-fails:StringIO#puts when passed 1 or more objects prints a newline when passed nil
