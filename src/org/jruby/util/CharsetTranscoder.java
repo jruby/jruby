@@ -239,8 +239,11 @@ public class CharsetTranscoder {
         } catch (Exception e) {}
         
         if (from == null) {
-            if (checkIf7BitCompatible(value)) from = Charset.forName("US-ASCII");
-            else throw runtime.newConverterNotFoundError("code converter not found (" + fromName + " to " + toName + ")");
+            if (checkIf7BitCompatible(value)) {
+                from = Charset.forName("US-ASCII");
+            } else {
+                throw runtime.newConverterNotFoundError("code converter not found (" + fromName + " to " + toName + ")");
+            }
         }
 
         return from;

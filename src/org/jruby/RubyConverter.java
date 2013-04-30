@@ -92,21 +92,29 @@ public class RubyConverter extends RubyObject {
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest) {
         
-        if (src instanceof RubyEncoding) srcEncoding = (RubyEncoding)src;
-        else srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
+        if (src instanceof RubyEncoding) {
+            srcEncoding = (RubyEncoding)src;
+        } else {
+            srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
+        }
 
         
-        if (dest instanceof RubyEncoding) destEncoding = (RubyEncoding)dest; 
-        else destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
+        if (dest instanceof RubyEncoding) {
+            destEncoding = (RubyEncoding)dest;
+        } else {
+            destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
+        }
 
         
         try {
             srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
             destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
         } catch (RaiseException e) {
-            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError"))
+            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
                 throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
-            else throw e;
+            } else {
+                throw e;
+            }
         }
 
         return context.runtime.getNil();
