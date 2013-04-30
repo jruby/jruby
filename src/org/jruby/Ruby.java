@@ -4076,6 +4076,10 @@ public final class Ruby {
         return config;
     }
 
+    public boolean is1_8() {
+        return !(is1_9() || is2_0());
+    }
+
     public boolean is1_9() {
         return is1_9;
     }
