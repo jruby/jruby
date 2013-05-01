@@ -137,6 +137,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
+    
+    private String[][] opTable19 = {
+        { "+", "+(binary)" }, 
+        { "-", "-(binary)" }
+    };
+    
+    private String[][] opTable18 = {
+        { "!", "!@" },
+        { "~", "~@" },
+        { "+", "+(binary)" }, 
+        { "-", "-(binary)" },
+        { "+@", "+(unary)" }, 
+        { "-@", "-(unary)" },
+        { "!", "!(unary)" }, 
+        { "~", "~(unary)" }
+    };
 
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
@@ -7331,9 +7347,25 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      *
      */
     private RubySymbol to_sym() {
+        RubySymbol specialCaseIntern = checkSpecialCasesIntern(value);
+        if (specialCaseIntern != null) return specialCaseIntern;
+        
         RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
+    }
+    
+    private RubySymbol checkSpecialCasesIntern(ByteList value) {
+        String[][] opTable = getRuntime().is1_8() ? opTable18 : opTable19;
+        
+        for (int i = 0; i < opTable.length; i++) {
+            String op = opTable[i][1];
+            if (value.toString().equals(op)) {
+                return getRuntime().getSymbolTable().getSymbol(opTable[i][0]);
+            }
+        }
+        
+        return null;
     }
 
     @JRubyMethod(name = {"to_sym", "intern"}, compat = RUBY1_8)
@@ -7342,6 +7374,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         for (int i = 0; i < value.getRealSize(); i++) {
             if (value.getUnsafeBytes()[value.getBegin() + i] == 0) throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
         }
+
         return to_sym();
     }
 
@@ -7349,7 +7382,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public RubySymbol intern19() {
         return to_sym();
     }
-
+    
     @JRubyMethod(name = "ord", compat = RUBY1_9)
     public IRubyObject ord(ThreadContext context) {
         Ruby runtime = context.runtime;
