@@ -590,6 +590,21 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
         File newDir = getDir(runtime, path, false);
+        
+        
+        String name = path.replace('\\', '/');
+
+        boolean startsWithDriveLetterOnWindows = RubyFile.startsWithDriveLetterOnWindows(name);
+        
+        // don't attempt to create a dir for drive letters
+        if (startsWithDriveLetterOnWindows) {
+            // path is just drive letter plus :
+            if (path.length() == 2) return RubyFixnum.zero(runtime);
+            // path is drive letter plus : plus leading or trailing /
+            if (path.length() == 3 && (path.charAt(0) == '/' || path.charAt(2) == '/')) return RubyFixnum.zero(runtime);
+            // path is drive letter plus : plus leading and trailing /
+            if (path.length() == 4 && (path.charAt(0) == '/' && path.charAt(3) == '/')) return RubyFixnum.zero(runtime);
+        }
 
         if (File.separatorChar == '\\') newDir = new File(newDir.getPath());
 

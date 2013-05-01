@@ -1412,7 +1412,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return entry;
     }
 
-    private static boolean startsWithDriveLetterOnWindows(String path) {
+    public static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
                 && Platform.IS_WINDOWS &&
                 ((path.length()>1 && path.charAt(0) == '/') ?
@@ -1423,6 +1423,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                                 && isWindowsDriveLetter(path.charAt(0))
                                 && path.charAt(1) == ':'));
     }
+    
     // adjusts paths started with '/' or '\\', on windows.
     static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
         if (path == null || !Platform.IS_WINDOWS) return path;
