@@ -421,6 +421,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
+        if (threadImpl != null) throw runtime.newThreadError("already initialized thread");
 
         try {
             RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
