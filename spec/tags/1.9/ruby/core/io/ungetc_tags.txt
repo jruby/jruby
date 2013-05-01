@@ -1,3 +1,0 @@
-fails:IO#ungetc does not affect the stream and returns nil when passed nil
-fails:IO#ungetc puts one or more characters back in the stream
-fails:IO#ungetc calls #to_str to convert the argument if it is not an Integer

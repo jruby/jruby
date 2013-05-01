@@ -2619,27 +2619,28 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject ungetc19(IRubyObject number) {
+    public IRubyObject ungetc19(IRubyObject character) {
         Ruby runtime = getRuntime();
-        OpenFile myOpenFile = getOpenFileChecked();
 
-        if (!myOpenFile.isReadBuffered()) {
+        if(character.isNil()) {
             return runtime.getNil();
         }
 
-        if (number instanceof RubyFixnum) {
-            int c = (int)number.convertToInteger().getLongValue();
-
+        if (character instanceof RubyFixnum) {
+            int c = (int)character.convertToInteger().getLongValue();
             ungetcCommon(c);
-        } else if (number instanceof RubyString) {
-            RubyString str = (RubyString) number;
+        } else if (character instanceof RubyString || character.respondsTo("to_str")) {
+            RubyString str = (RubyString) character.callMethod(runtime.getCurrentContext(), "to_str");
             if (str.isEmpty()) return runtime.getNil();
 
-            int c =  str.getEncoding().mbcToCode(str.getBytes(), 0, 1);
+            byte[] bytes = str.getBytes();
+            for(int i = bytes.length - 1; i >= 0; i-- ) {
+                int c =  bytes[i];
+                ungetcCommon(c);
+            }
 
-            ungetcCommon(c);
         } else {
-            throw runtime.newTypeError(number, runtime.getFixnum());
+            throw runtime.newTypeError(character, runtime.getFixnum());
         }
 
         return runtime.getNil();
