@@ -7471,7 +7471,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (defaultInternal == null) return this;
 
-        value = transcode(context, value, null, defaultInternal, runtime.getNil());
+        value = transcode(context, value, null, defaultInternal, runtime.getNil(), isAsciiOnly());
 
         return this;
     }
@@ -7492,7 +7492,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             options = runtime.getNil();
         }
 
-        value = transcode(context, value, null, toEncoding, options);
+        value = transcode(context, value, null, toEncoding, options, isAsciiOnly());
 
         return this;
     }
@@ -7512,7 +7512,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             options = runtime.getNil();
         }
 
-        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
+        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options, isAsciiOnly());
 
         return this;
     }
@@ -7523,7 +7523,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modify19();
 
         value = transcode(context, value, getEncoding(runtime, forceEncoding),
-                getEncoding(runtime, toEncoding), opts);
+                getEncoding(runtime, toEncoding), opts, isAsciiOnly());
 
         return this;
     }
@@ -7535,7 +7535,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (defaultInternal == null) return dup();
 
-        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil()));
+        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil(), isAsciiOnly()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7554,7 +7554,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, null, toEncoding, options));
+        return runtime.newString(transcode(context, value, null, toEncoding, options, isAsciiOnly()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7572,7 +7572,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         return runtime.newString(transcode(context, value, forceEncoding,
-                getEncoding(runtime, toEncoding), options));
+                getEncoding(runtime, toEncoding), options, isAsciiOnly()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7581,11 +7581,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
 
         return runtime.newString(transcode(context, value, getEncoding(runtime, forcedEncoding),
-                getEncoding(runtime, toEncoding), opts));
+                getEncoding(runtime, toEncoding), opts, isAsciiOnly()));
     }
 
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
-            Encoding toEncoding, IRubyObject opts) {
+            Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
         String toName = toEncoding.toString();
         String fromName = fromEncoding.toString();
@@ -7613,7 +7613,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         
         
-        ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts);
+        ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts, is7BitASCII);
         
         boolean xmlConversion = false;
         xmlConversion = !opts.isNil() && ((RubyHash)opts).fastARef(context.runtime.newSymbol("xml")) != null;
