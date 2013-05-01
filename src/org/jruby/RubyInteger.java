@@ -336,11 +336,16 @@ public abstract class RubyInteger extends RubyNumeric {
         } catch (EncodingException ee) {
             n = 0;
         }
-        
+
         if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
         
         ByteList bytes = new ByteList(n);
-        enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
+        
+        try {
+            enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
+        } catch (EncodingException e) {
+            throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", value) + enc.getCharsetName());
+        }
         bytes.setRealSize(n);
         return bytes;
     }
