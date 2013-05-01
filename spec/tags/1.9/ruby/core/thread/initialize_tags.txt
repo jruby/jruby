@@ -1,1 +1,0 @@
-fails:Thread#initialize already initialized raises a ThreadError
