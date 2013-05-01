@@ -138,12 +138,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private ByteList value;
     
-    private String[][] opTable19 = {
+    private static final String[][] opTable19 = {
         { "+", "+(binary)" }, 
         { "-", "-(binary)" }
     };
     
-    private String[][] opTable18 = {
+    private static final String[][] opTable18 = {
         { "!", "!@" },
         { "~", "~@" },
         { "+", "+(binary)" }, 
