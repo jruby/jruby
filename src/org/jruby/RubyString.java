@@ -131,9 +131,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     // string doesn't have it's own ByteList (values)
     private static final int SHARE_LEVEL_BYTELIST = 2;
 
-    // FIXME: Using a cached StaticScope for to_r and to_c that call backref-sensitive methods
-    private static final StaticScope INTERNAL_STATIC_SCOPE = new LocalStaticScope(null);
-
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
