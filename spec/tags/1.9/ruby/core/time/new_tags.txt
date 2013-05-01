@@ -1,9 +1,5 @@
 fails:Time.new creates a time based on given values, interpreted in the local time zone
 fails:Time.new respects rare old timezones
-fails:Time.new coerces the day with #to_int
-fails:Time.new coerces the hour with #to_int
-fails:Time.new coerces the minute with #to_int
-fails:Time.new coerces the second with #to_int
 fails:Time.new with a utc_offset argument returns a Time with a UTC offset of the specified number of Rational seconds
 fails:Time.new with a utc_offset argument returns a local Time if the argument is nil
 fails:Time.new with a utc_offset argument raises ArgumentError if the String argument is not in an ASCII-compatible encoding
