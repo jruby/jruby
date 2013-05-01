@@ -1267,8 +1267,13 @@ public class RubyTime extends RubyObject {
         for (int i = 0; int_args.length >= i + 2; i++) {
             if (!args[i + 2].isNil()) {
                 if (!(args[i + 2] instanceof RubyNumeric)) {
-                    args[i + 2] = args[i + 2].callMethod(
-                            runtime.getCurrentContext(), "to_i");
+                    if (args[i + 2].respondsTo("to_int")) {
+                        args[i + 2] = args[i + 2].callMethod(
+                                runtime.getCurrentContext(), "to_int");
+                    } else {
+                        args[i + 2] = args[i + 2].callMethod(
+                                runtime.getCurrentContext(), "to_i");
+                    }
                 }
 
                 long value = RubyNumeric.num2long(args[i + 2]);
