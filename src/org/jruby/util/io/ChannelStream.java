@@ -104,7 +104,7 @@ public class ChannelStream implements Stream, Finalizable {
     protected boolean reading; // are we reading or writing?
     private ChannelDescriptor descriptor;
     private boolean blocking = true;
-    private LinkedList<Byte> ungotChars = new LinkedList<Byte>();
+    private ByteList ungotChars = new ByteList();
     private volatile boolean closedExplicitly = false;
 
     private volatile boolean eof = false;
@@ -187,7 +187,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     private boolean hasUngotChars() {
-        return ungotChars.size() > 0;
+        return ungotChars.length() > 0;
     }
 
     public boolean writeDataBuffered() {
@@ -292,12 +292,13 @@ public class ChannelStream implements Stream, Finalizable {
         boolean found = false;
         
         if (hasUngotChars()) {
-            Byte ungotc;
-            while((ungotc = ungotChars.poll()) != null){
+            for(int i = 0; i < ungotChars.length(); i++){
+                byte ungotc = (byte) ungotChars.get(i);
                 dst.append(ungotc);
                 found = ungotc == terminator;
                 ++totalRead;
             }
+            clearUngotChars();
         }
         
         while (!found) {
@@ -335,13 +336,14 @@ public class ChannelStream implements Stream, Finalizable {
         boolean found = false;
         
         if (hasUngotChars()) {
-            Byte ungotc;
-            while((ungotc = ungotChars.poll()) != null){
+            for(int i = 0; i < ungotChars.length(); i++){
+                byte ungotc = (byte) ungotChars.get(i);
                 dst.append(ungotc);
                 found = ungotc == terminator;
                 limit--;
                 ++totalRead;
             }
+            clearUngotChars();
         }
         
         while (!found) {
@@ -370,6 +372,15 @@ public class ChannelStream implements Stream, Finalizable {
             }
         }
         return totalRead;
+    }
+
+    /**
+     * 
+     */
+    private void clearUngotChars() {
+        if(ungotChars.length() > 0) {
+            ungotChars.delete(0, ungotChars.length());
+        }
     }
 
     /**
@@ -465,12 +476,13 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private final int copyBufferedBytes(ByteBuffer dst) {
         final int bytesToCopy = dst.remaining();
-
+        
         if (hasUngotChars() && dst.hasRemaining()) {
-            Byte ungotc;
-            while((ungotc = ungotChars.poll()) != null){
+            for(int i = 0; i < ungotChars.length(); i++){
+                byte ungotc = (byte) ungotChars.get(i);
                 dst.put(ungotc);
             }
+            clearUngotChars();
         }
 
         if (buffer.hasRemaining() && dst.hasRemaining()) {
@@ -505,11 +517,12 @@ public class ChannelStream implements Stream, Finalizable {
         int bytesCopied = 0;
         
         if (hasUngotChars() && len > 0) {
-            Byte ungotc;
-            while((ungotc = ungotChars.poll()) != null){
+            for(int i = 0; i < ungotChars.length(); i++){
+                byte ungotc = (byte) ungotChars.get(i);
                 dst[off++] = ungotc;
                 ++bytesCopied;
             }
+            clearUngotChars();
         }
 
         final int n = Math.min(len - bytesCopied, buffer.remaining());
@@ -531,12 +544,13 @@ public class ChannelStream implements Stream, Finalizable {
 
         dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
         
-        if (bytesCopied < len && hasUngotChars()) {
-            Byte ungotc;
-            while((ungotc = ungotChars.poll()) != null){
+        if (hasUngotChars() && hasUngotChars()) {
+            for(int i = 0; i < ungotChars.length(); i++){
+                byte ungotc = (byte) ungotChars.get(i);
                 ++bytesCopied;
                 dst.append(ungotc);
             }
+            clearUngotChars();
         }
 
         //
@@ -557,7 +571,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @return The number of bytes that can be read without reading the underlying stream.
      */
     private final int bufferedInputBytesRemaining() {
-        return reading ? (buffer.remaining() + (ungotChars.size())) : 0;
+        return reading ? (buffer.remaining() + (ungotChars.length())) : 0;
     }
 
     /**
@@ -745,7 +759,7 @@ public class ChannelStream implements Stream, Finalizable {
             // Adjust for buffered data
             if (reading) {
                 pos -= buffer.remaining();
-                return pos - (pos > 0 && hasUngotChars() ? 1 : 0);
+                return pos - (pos > 0 && hasUngotChars() ? ungotChars.length() : 0);
             } else {
                 return pos + buffer.position();
             }
@@ -767,7 +781,7 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-            ungotChars.clear();
+            clearUngotChars();
             int adj = 0;
             if (reading) {
                 // for SEEK_CUR, need to adjust for buffered data
@@ -1232,7 +1246,7 @@ public class ChannelStream implements Stream, Finalizable {
         eof = false;
 
         // save the ungot
-        ungotChars.push((byte) c);
+        ungotChars.prepend((byte)c);
 
         return c;
     }
@@ -1368,8 +1382,8 @@ public class ChannelStream implements Stream, Finalizable {
             descriptor.checkOpen();
 
             if (hasUngotChars()) {
-                int c = ungotChars.poll();
-                ungotChars.clear();
+                int c = ungotChars.get(0);
+                ungotChars.delete(0,1);
                 return c;
             }
 
