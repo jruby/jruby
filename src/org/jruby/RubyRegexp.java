@@ -1688,7 +1688,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "options")
     public IRubyObject options() {
-        return getRuntime().newFixnum(getOptions().toJoniOptions());
+        return getRuntime().newFixnum(getOptions().toOptions());
     }
 
     @JRubyMethod(name = "casefold?")
