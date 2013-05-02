@@ -428,7 +428,7 @@ public class JITCompiler implements JITCompilerMBean {
                     String key = SexpMaker.create(methodName, method.getArgsNode(), method.getBodyNode());
                     JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts);
 
-                    Class<Script> sourceClass = (Class<Script>) config.getClassCache().cacheClassByKey(key, generator);
+                    Class<Script> sourceClass = (Class<Script>) config.getClassCache().cacheClassByKey(generator.digestString, generator);
 
                     if (sourceClass == null) {
                         // class could not be found nor generated; give up on JIT and bail out
