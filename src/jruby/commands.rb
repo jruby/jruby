@@ -41,7 +41,6 @@ module JRuby
         Object.class_eval { remove_method :__gem }
 
         unless ARGV.reject{|a| a =~ /^-/}.empty?
-          p ENV
           ARGV.unshift "install"
           begin
             load RbConfig::CONFIG['bindir'] + "/gem"
