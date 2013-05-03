@@ -15,11 +15,7 @@ module JRuby
 
       def maybe_install_gems
         require 'rubygems'
-        require 'rubygems/format'
-
-        # Want the kernel gem method here; expose a backdoor b/c RubyGems 1.3.1 made it private
-        Object.class_eval { def __gem(g); gem(g); end }
-        gem_loader = Object.new
+        require 'rubygems/package'
 
         ARGV.delete_if do |g|
           # skip options
@@ -27,36 +23,25 @@ module JRuby
 
           if File.exist?(g) # local gem
             begin
-              gem = Gem::Format.from_file_by_path(g)
+              gem = Gem::Package.new(g)
               name = gem.spec.name
               ver = gem.spec.version
               dep = Gem::Dependency.new(name, ver)
 
               # check, whether the same gem is already installed
-              if Gem.source_index.search(dep).empty?
-                false
-              else
-                puts "#{g} already installed"
-                true
-              end
+              Gem::DependencyResolver.for_current_gems([dep]).resolve
             rescue Gem::Exception
               false
             end
           else
-            # remote gem
-            begin
-              gem_loader.__gem(g)
-              puts "#{g} already installed"
-              true
-            rescue Gem::LoadError
-              false
-            end
+            raise "no local gem found for #{g}"
           end
         end
 
         Object.class_eval { remove_method :__gem }
 
         unless ARGV.reject{|a| a =~ /^-/}.empty?
+          p ENV
           ARGV.unshift "install"
           begin
             load RbConfig::CONFIG['bindir'] + "/gem"
