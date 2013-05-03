@@ -1321,6 +1321,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_initialize_str
     private RubyRegexp initializeCommon19(RubyString str, RegexpOptions options) {
+        if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
         ByteList bytes = str.getByteList();
         Encoding enc = bytes.getEncoding();
         if (options.isEncodingNone()) {
