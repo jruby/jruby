@@ -38,8 +38,6 @@ module JRuby
           end
         end
 
-        Object.class_eval { remove_method :__gem }
-
         unless ARGV.reject{|a| a =~ /^-/}.empty?
           ARGV.unshift "install"
           begin
