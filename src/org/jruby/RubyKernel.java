@@ -1755,8 +1755,17 @@ public class RubyKernel {
     
     private static IRubyObject execCommon(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
         // This is a fairly specific hack for empty string, but it does the job
-        if (args.length == 1 && args[0].convertToString().isEmpty()) {
-            throw runtime.newErrnoENOENTError(args[0].convertToString().toString());
+        if (args.length == 1) {
+            RubyString command = args[0].convertToString();
+            if (command.isEmpty()) {
+                throw runtime.newErrnoENOENTError(command.toString());
+            } else {
+                for(byte b : command.getBytes()) {
+                    if (b == 0x00) {
+                        throw runtime.newArgumentError("string contains null byte");
+                    }
+                }
+            }
         }
 
         ThreadContext context = runtime.getCurrentContext();
