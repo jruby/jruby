@@ -354,11 +354,13 @@ public class RubyKernel {
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
+        RubyString message = null;
         if(args.length == 1) {
-            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0].convertToString());
+            message = args[0].convertToString();
+            runtime.getGlobalVariables().get("$stderr").callMethod(context, "puts", message);
         }
         
-        exit(runtime, new IRubyObject[] { runtime.getFalse() }, false);
+        exit(runtime, new IRubyObject[] { runtime.getFalse(), message }, false);
         return runtime.getNil(); // not reached
     }
 
@@ -827,6 +829,7 @@ public class RubyKernel {
 
     private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
         int status = hard ? 1 : 0;
+        String message = null;
 
         if (args.length > 0) {
             RubyObject argument = (RubyObject) args[0];
@@ -837,6 +840,12 @@ public class RubyKernel {
             }
         }
 
+        if (args.length == 2) {
+            if (args[1] instanceof RubyString) {
+                message = ((RubyString) args[1]).toString();
+            }
+        }
+
         if (hard) {
             if (runtime.getInstanceConfig().isHardExit()) {
                 System.exit(status);
@@ -844,7 +853,11 @@ public class RubyKernel {
                 throw new MainExitException(status, true);
             }
         } else {
-            throw runtime.newSystemExit(status);
+            if (message == null) {
+                throw runtime.newSystemExit(status);
+            } else {
+                throw runtime.newSystemExit(status, message);
+            }
         }
     }
 
