@@ -1,1 +1,0 @@
-fails:Numeric#div raises ZeroDivisionError for 0

@@ -621,6 +621,12 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "div", compat = RUBY1_9)
     public IRubyObject div19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            RubyNumeric numeric = (RubyNumeric) other;
+            if (numeric.zero_p(context).isTrue()) {
+                throw context.runtime.newZeroDivisionError();
+            }
+        }
         return callMethod(context, "/", other).callMethod(context, "floor");
     }
 
