@@ -453,7 +453,9 @@ public class RubyRange extends RubyObject {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) return enumeratorize(runtime, this, "each");
 
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+        if (begin instanceof RubyTime) {
+            throw runtime.newTypeError("can't iterate from Time");
+        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).uptoCommon19(context, end, isExclusive, block);
