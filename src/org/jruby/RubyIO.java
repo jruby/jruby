@@ -2618,7 +2618,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"ungetc", "ungetbyte"}, required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject ungetc19(IRubyObject character) {
         Ruby runtime = getRuntime();
 
