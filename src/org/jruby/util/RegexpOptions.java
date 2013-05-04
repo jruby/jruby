@@ -193,6 +193,19 @@ public class RegexpOptions implements Cloneable {
         return options;
     }
     
+    /**
+     * This int value is used by Regex#options
+     */
+    public int toOptions() {
+        int options = 0;
+        if (multiline) options |= RubyRegexp.RE_OPTION_MULTILINE;
+        if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
+        if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
+        if (fixed) options |= RubyRegexp.RE_FIXED;
+        if (encodingNone) options |= RubyRegexp.ARG_ENCODING_NONE;
+        return options;
+    }
+
     public static RegexpOptions fromEmbeddedOptions(int embeddedOptions) {
         RegexpOptions options = fromJoniOptions(embeddedOptions);
 
