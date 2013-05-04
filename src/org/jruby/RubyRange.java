@@ -696,6 +696,9 @@ public class RubyRange extends RubyObject {
     public IRubyObject first(ThreadContext context, IRubyObject arg) {
         final Ruby runtime = context.runtime;
         final int num = RubyNumeric.num2int(arg);
+        if (num < 0) {
+            throw context.runtime.newArgumentError("negative array size (or size too big)");
+        }
         final RubyArray result = runtime.newArray(num);
         try {
             RubyEnumerable.callEach(runtime, context, this, Arity.ONE_ARGUMENT, new BlockCallback() {

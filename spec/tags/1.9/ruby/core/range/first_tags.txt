@@ -1,1 +1,0 @@
-fails:Range#first raises an ArgumentError when count is negative
