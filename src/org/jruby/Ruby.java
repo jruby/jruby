@@ -3589,7 +3589,11 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        return new RaiseException(RubySystemExit.newInstance(this, status));
+        return new RaiseException(RubySystemExit.newInstance(this, status, "exit"));
+    }
+
+    public RaiseException newSystemExit(int status, String message) {
+        return new RaiseException(RubySystemExit.newInstance(this, status, message));
     }
 
     public RaiseException newIOError(String message) {

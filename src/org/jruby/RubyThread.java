@@ -1099,9 +1099,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             if (!runtime.is1_9()) {
                 runtime.printError(rubyException);
-
-                systemExit = RubySystemExit.newInstance(runtime, 1);
-                systemExit.message = rubyException.message;
+                String message =  rubyException.message.convertToString().toString();
+                systemExit = RubySystemExit.newInstance(runtime, 1, message);
                 systemExit.set_backtrace(rubyException.backtrace());
             } else {
                 systemExit = rubyException;

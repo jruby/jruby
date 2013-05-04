@@ -51,11 +51,11 @@ public class RubySystemExit extends RubyException {
         return systemExitClass;
     }  
     
-    public static RubySystemExit newInstance(Ruby runtime, int status) {
+    public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
         RubyClass exc = runtime.getSystemExit();
         IRubyObject[] exArgs = new IRubyObject[] {
                 runtime.newFixnum(status),
-                runtime.newString("exit") };
+                runtime.newString(message) };
         return (RubySystemExit) exc.newInstance(runtime.getCurrentContext(), exArgs, Block.NULL_BLOCK);
     }
 
