@@ -320,12 +320,21 @@ public class RubyKernel {
         return RubyFile.open(context, runtime.getFile(), args, block);
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 2, module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         if (args[0].respondsTo("to_open")) {
-            args[0] = args[0].callMethod(context, "to_open");
-            return RubyFile.open(context, runtime.getFile(), args, block);
+            if (args.length > 1) {
+                IRubyObject[] toOpenArgs = Arrays.copyOfRange(args, 1, args.length);
+                args[0] = args[0].callMethod(context, "to_open", toOpenArgs);
+            } else {
+                args[0] = args[0].callMethod(context, "to_open");
+            }
+            if (block.isGiven()) {
+                return block.yield(context, args[0]);
+            } else {
+                return args[0];
+            }
         } else {
             args[0] = RubyFile.get_path(context, args[0]);
         }
