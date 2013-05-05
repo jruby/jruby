@@ -2540,10 +2540,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             all = args[0].isTrue();
         }
 
-        RubyArray singletonMethods;
         if (getMetaClass().isSingleton()) {
             IRubyObject[] methodsArgs = new IRubyObject[]{context.runtime.getFalse()};
-            singletonMethods = collect.instanceMethods(getMetaClass(), methodsArgs);
+            RubyArray singletonMethods = collect.instanceMethods(getMetaClass(), methodsArgs);
 
             if (all) {
                 RubyClass superClass = getMetaClass().getSuperClass();
@@ -2552,11 +2551,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     superClass = superClass.getSuperClass();
                 }
             }
-        } else {
-            singletonMethods = context.runtime.newEmptyArray();
+
+            singletonMethods.uniq_bang(context);
+            return singletonMethods;
         }
 
-        return singletonMethods;
+        return context.runtime.newEmptyArray();
     }
 
     private abstract static class MethodsCollector {
