@@ -121,12 +121,16 @@ public class RubyEncoding extends RubyObject {
 
         if (obj1 instanceof RubyEncoding) {
           enc1 = ((RubyEncoding)obj1).getEncoding();
+        } else if (obj1 instanceof RubySymbol) {
+            enc1 = ((RubySymbol)obj1).asString().getEncoding();
         } else if (obj1 instanceof EncodingCapable) {
           enc1 = ((EncodingCapable)obj1).getEncoding();
         }
 
         if (obj2 instanceof RubyEncoding) {
           enc2 = ((RubyEncoding)obj2).getEncoding();
+        } else if (obj2 instanceof RubySymbol) {
+            enc2 = ((RubySymbol)obj2).asString().getEncoding();
         } else if (obj2 instanceof EncodingCapable) {
           enc2 = ((EncodingCapable)obj2).getEncoding();
         }
@@ -171,7 +175,6 @@ public class RubyEncoding extends RubyObject {
             if (cr2 == StringSupport.CR_7BIT) return enc1;
         }
         if (cr2 == StringSupport.CR_7BIT) {
-            if (enc1 instanceof ASCIIEncoding) return enc2;
             return enc1;
         }
         if (cr1 == StringSupport.CR_7BIT) return enc2;
