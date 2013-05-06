@@ -1,3 +1,4 @@
+exclude :test_addr, "needs investigation"
 exclude :test_dgram_pair, "needs investigation"
 exclude :test_epipe, "needs investigation"
 exclude :test_fd_passing_race_condition, "needs investigation"
