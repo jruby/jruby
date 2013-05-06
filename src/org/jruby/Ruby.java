@@ -3250,7 +3250,7 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoEINPROGRESSWritableError() {
-        return newLightweightErrnoException(getModule("JRuby").getClass("EINPROGRESSWritable"), "");
+        return newLightweightErrnoException(getIO().getClass("EINPROGRESSWaitWritable"), "");
     }
 
     public RaiseException newErrnoENOPROTOOPTError() {
@@ -3335,7 +3335,7 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoEINPROGRESSWritableError(String message) {
-        return newLightweightErrnoException(getModule("JRuby").getClass("EINPROGRESSWritable"), message);
+        return newLightweightErrnoException(getIO().getClass("EINPROGRESSWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISCONNError(String message) {
