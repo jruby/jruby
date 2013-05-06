@@ -35,7 +35,6 @@ import java.nio.charset.CodingErrorAction;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
@@ -80,7 +79,7 @@ public class RubyEncoding extends RubyObject {
     private final ByteList name;
     private final boolean isDummy;
 
-    private RubyEncoding(Ruby runtime, byte[]name, int p, int end, boolean isDummy) {
+    private RubyEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         super(runtime, runtime.getEncoding());
         this.name = new ByteList(name, p, end);
         this.isDummy = isDummy;
@@ -97,11 +96,11 @@ public class RubyEncoding extends RubyObject {
         this.encoding = encoding;
     }
 
-    public static RubyEncoding newEncoding(Ruby runtime, byte[]name, int p, int end, boolean isDummy) {
+    public static RubyEncoding newEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         return new RubyEncoding(runtime, name, p, end, isDummy);
     }
 
-    public static RubyEncoding newEncoding(Ruby runtime, byte[]name, boolean isDummy) {
+    public static RubyEncoding newEncoding(Ruby runtime, byte[] name, boolean isDummy) {
         return new RubyEncoding(runtime, name, isDummy);
     }
 
@@ -120,15 +119,19 @@ public class RubyEncoding extends RubyObject {
         Encoding enc2 = null;
 
         if (obj1 instanceof RubyEncoding) {
-          enc1 = ((RubyEncoding)obj1).getEncoding();
+            enc1 = ((RubyEncoding)obj1).getEncoding();
+        } else if (obj1 instanceof RubySymbol) {
+            enc1 = ((RubySymbol)obj1).asString().getEncoding();
         } else if (obj1 instanceof EncodingCapable) {
-          enc1 = ((EncodingCapable)obj1).getEncoding();
+            enc1 = ((EncodingCapable)obj1).getEncoding();
         }
 
         if (obj2 instanceof RubyEncoding) {
-          enc2 = ((RubyEncoding)obj2).getEncoding();
+            enc2 = ((RubyEncoding)obj2).getEncoding();
+        } else if (obj2 instanceof RubySymbol) {
+            enc2 = ((RubySymbol)obj2).asString().getEncoding();
         } else if (obj2 instanceof EncodingCapable) {
-          enc2 = ((EncodingCapable)obj2).getEncoding();
+            enc2 = ((EncodingCapable)obj2).getEncoding();
         }
 
         if (enc1 != null && enc2 != null) {
@@ -142,7 +145,7 @@ public class RubyEncoding extends RubyObject {
             if (!(obj2 instanceof RubyString) && enc2 instanceof USASCIIEncoding) return enc1;
             if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
 
-            if(!(obj1 instanceof RubyString)) {
+            if (!(obj1 instanceof RubyString)) {
                 IRubyObject objTmp = obj1;
                 obj1 = obj2;
                 obj1 = objTmp;
@@ -170,10 +173,7 @@ public class RubyEncoding extends RubyObject {
             if (cr1 == StringSupport.CR_7BIT) return enc2;
             if (cr2 == StringSupport.CR_7BIT) return enc1;
         }
-        if (cr2 == StringSupport.CR_7BIT) {
-            if (enc1 instanceof ASCIIEncoding) return enc2;
-            return enc1;
-        }
+        if (cr2 == StringSupport.CR_7BIT) return enc1;
         if (cr1 == StringSupport.CR_7BIT) return enc2;
         return null;
     }
