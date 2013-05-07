@@ -188,7 +188,11 @@ public class JavaInterfaceTemplate {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    return ((JavaObject) self.dataGetStruct()).java_class();
+                    if (self.dataGetStruct() != null) {
+                        return ((JavaObject) self.dataGetStruct()).java_class();
+                    } else {
+                        return JavaClass.get(context.runtime, self.getClass());
+                    }
                 }
             });
 
