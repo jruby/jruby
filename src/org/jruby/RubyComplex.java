@@ -577,10 +577,15 @@ public class RubyComplex extends RubyNumeric {
                 return f_quo(context, f_mul(context, this, f_conjugate(context, tmp)), magn);
             }
             return f_quo(context, f_mul(context, this, f_conjugate(context, other)), f_abs2(context, other));
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
-            return newComplex(context, getMetaClass(),
-                    f_quo(context, real, other),
-                    f_quo(context, image, other));
+        } else if (other instanceof RubyNumeric) {
+            if (f_real_p(context, other).isTrue()) {
+                return newComplex(context, getMetaClass(),
+                        f_quo(context, real, other),
+                        f_quo(context, image, other));
+            } else {
+                RubyArray coercedOther = doCoerce(context, other, true);
+                return RubyRational.newInstance(context, context.runtime.getRational(), coercedOther.first(), coercedOther.last());
+            }
         }
         return coerceBin(context, "/", other);
     }
