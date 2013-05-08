@@ -49,7 +49,6 @@ class MSpecScript
 
     # excluded for some reason, see JRUBY-4020
     '^' + SPEC_DIR + '/library/drb',
-    '^' + SPEC_DIR + '/library/etc',
     '^' + SPEC_DIR + '/library/net',
     '^' + SPEC_DIR + '/library/openssl',
     '^' + SPEC_DIR + '/library/ping',
