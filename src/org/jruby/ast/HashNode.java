@@ -40,6 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 /**
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
@@ -85,15 +86,27 @@ public class HashNode extends Node {
         if (list != null) {
             int size = list.size();
 
-            hash = size <= 10 ?
+            // Enebo: Innefficient impl here should not matter since this interp will not be used in 9k
+            hash = size <= 10 && !runtime.is2_0() ?
                     RubyHash.newSmallHash(runtime) :
                     RubyHash.newHash(runtime);
 
             for (int i = 0; i < size;) {
                 // insert all nodes in sequence, hash them in the final instruction
                 // KEY
-                IRubyObject key = list.get(i++).interpret(runtime, context, self, aBlock);
-                IRubyObject value = list.get(i++).interpret(runtime, context, self, aBlock);
+                Node keyNode = list.get(i++);
+                Node valueNode = list.get(i++);
+
+                if (valueNode instanceof NilImplicitNode) {
+                    IRubyObject kwargsVar = keyNode.interpret(runtime, context, self, aBlock);
+                    IRubyObject kwargsHash = TypeConverter.convertToType19(kwargsVar, runtime.getHash(), "to_hash");
+
+                    hash.merge_bang19(context, kwargsHash, aBlock);
+                    continue;
+                } 
+                    
+                IRubyObject key = keyNode.interpret(runtime, context, self, aBlock);
+                IRubyObject value = valueNode.interpret(runtime, context, self, aBlock);
 
                 if (size <= 10) {
                     asetSmall(runtime, hash, key, value);
