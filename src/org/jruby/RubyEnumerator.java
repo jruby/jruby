@@ -43,6 +43,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallBlock;
 import static org.jruby.runtime.Visibility.*;
+import org.jruby.util.cli.Options;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -465,7 +466,15 @@ public class RubyEnumerator extends RubyObject {
     
     private void ensureNexter(ThreadContext context) {
         if (nexter == null) {
-            nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+            if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
+                if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
+                    nexter = new ArrayNexter(context.runtime, object, method, methodArgs);
+                } else {
+                    nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+                }
+            } else {
+                nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+            }
         }
     }
     
@@ -504,6 +513,42 @@ public class RubyEnumerator extends RubyObject {
         public abstract IRubyObject peek();
     }
     
+    private static class ArrayNexter extends Nexter {
+        private final RubyArray array;
+        private int index = 0;
+        
+        public ArrayNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
+            super(runtime, object, method, methodArgs);
+            array = (RubyArray)object;
+        }
+
+        @Override
+        public IRubyObject next() {
+            IRubyObject obj = peek();
+            index += 1;
+            return obj;
+        }
+
+        @Override
+        public void rewind() {
+            index = 0;
+        }
+
+        @Override
+        public IRubyObject peek() {
+            checkIndex();
+            
+            return get();
+        }
+        
+        protected IRubyObject get() {
+            return array.eltOk(index);
+        }
+
+        private void checkIndex() throws RaiseException {
+            if (index >= array.size()) throw runtime.newLightweightStopIterationError("stop iteration");
+        }
+    }
     
     private static class ThreadedNexter extends Nexter implements Runnable {
         private static final boolean DEBUG = false;
