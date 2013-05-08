@@ -999,6 +999,7 @@ public class RubyYaccLexer {
                     ((Token) value()).getValue() +":),"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
+            case Tokens.tDSTAR: System.err.print("tDSTAR"); break;
             default: System.err.print("'" + (char)token + "',"); break;
         }
     }
