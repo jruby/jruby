@@ -159,6 +159,10 @@ public class ASTCompiler19 extends ASTCompiler {
 
     public void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
         final ArgsNode argsNode = (ArgsNode) node;
+        
+        if (argsNode.getKeyRest() != null || argsNode.getKeywords() != null) {
+            throw new NotCompilableException("keyword args not supported in JIT yet: " + argsNode);
+        }
 
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
