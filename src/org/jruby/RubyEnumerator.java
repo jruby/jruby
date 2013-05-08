@@ -439,14 +439,14 @@ public class RubyEnumerator extends RubyObject {
     private volatile Nexter nexter = null;
     
     @JRubyMethod
-    public IRubyObject next(ThreadContext context) throws InterruptedException {
+    public IRubyObject next(ThreadContext context) {
         ensureNexter(context);
         
         return nexter.next();
     }
     
     @JRubyMethod
-    public IRubyObject rewind(ThreadContext context) throws InterruptedException {
+    public IRubyObject rewind(ThreadContext context) {
         if (object.respondsTo("rewind")) object.callMethod(context, "rewind");
         
         if (nexter != null) {
@@ -457,7 +457,7 @@ public class RubyEnumerator extends RubyObject {
     }
     
     @JRubyMethod
-    public IRubyObject peek(ThreadContext context) throws InterruptedException {
+    public IRubyObject peek(ThreadContext context) {
         ensureNexter(context);
         
         return nexter.peek();
@@ -593,33 +593,38 @@ public class RubyEnumerator extends RubyObject {
             IRubyObject finalObject = NEVER;
             
             try {
-                object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                        boolean advance;
-                        do {
-                            try {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
-                                advance = myExchanger.exchange(args[0]).isTrue();
-                            } catch (InterruptedException ie) {
-                                throw new JumpException.BreakJump(-1, NEVER);
-                            }
-                        } while (!advance);
+                try {
+                    object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
+                        @Override
+                        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                            boolean advance;
+                            do {
+                                try {
+                                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
+                                    advance = myExchanger.exchange(args[0]).isTrue();
+                                } catch (InterruptedException ie) {
+                                    throw new JumpException.BreakJump(-1, NEVER);
+                                }
+                            } while (!advance);
 
-                        return context.nil;
-                    }
-                }, context));
-            } catch (JumpException.BreakJump bj) {
-                // ignore, we're shutting down
-            } catch (RaiseException re) {
-                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
-                finalObject = re.getException();
-            }
-            
-            try {
-                myExchanger.exchange(finalObject);
-            } catch (InterruptedException ie) {
-                // ignore
+                            return context.nil;
+                        }
+                    }, context));
+                } catch (JumpException.BreakJump bj) {
+                    // ignore, we're shutting down
+                } catch (RaiseException re) {
+                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
+                    finalObject = re.getException();
+                }
+
+                try {
+                    myExchanger.exchange(finalObject);
+                } catch (InterruptedException ie) {
+                    // ignore
+                }
+            } finally {
+                // disassociate this Nexter with the thread running it
+                thread = null;
             }
         }
     }
