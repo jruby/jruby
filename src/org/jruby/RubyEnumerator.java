@@ -38,6 +38,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallBlock;
@@ -498,7 +499,7 @@ public class RubyEnumerator extends RubyObject {
         private volatile Thread thread;
         
         /** whether we're done iterating */
-        private volatile boolean done = false;
+        private IRubyObject doneObject;
         
         public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             this.object = object;
@@ -508,8 +509,8 @@ public class RubyEnumerator extends RubyObject {
         }
         
         public synchronized IRubyObject next() throws InterruptedException {
-            if (done) {
-                throw runtime.newLightweightStopIterationError("stop iteration");
+            if (doneObject != null) {
+                return returnValue(doneObject);
             }
             
             ensureStarted();
@@ -518,12 +519,19 @@ public class RubyEnumerator extends RubyObject {
         }
         
         private IRubyObject returnValue(IRubyObject value) {
-            if (value == null) {
+            // if it's the NEVER object, raise StopIteration
+            if (value == NEVER) {
+                doneObject = value;
                 throw runtime.newLightweightStopIterationError("stop iteration");
-            } else if (value instanceof RubyException) {
+            }
+            
+            // if it's an exception, raise it
+            if (value instanceof RubyException) {
+                doneObject = value;
                 throw new RaiseException((RubyException)value);
             }
             
+            // otherwise, just return it
             return value;
         }
         
@@ -533,16 +541,15 @@ public class RubyEnumerator extends RubyObject {
                 thread.interrupt();
                 exchanger = new Exchanger<IRubyObject>();
                 thread = null;
-                done = false;
-                exchanger = new Exchanger<IRubyObject>();
+                doneObject = null;
             }
             
             // do nothing; we are not running
         }
         
         public synchronized IRubyObject peek() throws InterruptedException {
-            if (done) {
-                throw runtime.newLightweightStopIterationError("stop iteration");
+            if (doneObject != null) {
+                return returnValue(doneObject);
             }
             
             ensureStarted();
@@ -562,47 +569,37 @@ public class RubyEnumerator extends RubyObject {
             
             final Exchanger<IRubyObject> myExchanger = exchanger;
             
+            IRubyObject finalObject = NEVER;
+            
             try {
                 object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                        try {
-                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
-                            boolean advance;
-                            do {
+                        boolean advance;
+                        do {
+                            try {
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
                                 advance = myExchanger.exchange(args[0]).isTrue();
-                            } while (!advance);
-                        } catch (InterruptedException ie) {
-                            try {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + null);
-                                myExchanger.exchange(null);
-                            } catch (InterruptedException ie2) {
-                                // ignore
-                            }
-                            throw runtime.newThreadError(ie.getLocalizedMessage());
-                        } catch (RaiseException re) {
-                            try {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + re.getException());
-                                myExchanger.exchange(re.getException());
                             } catch (InterruptedException ie) {
-                                // ignore
+                                throw new JumpException.BreakJump(-1, NEVER);
                             }
-                            throw re;
-                        }
+                        } while (!advance);
 
                         return context.nil;
                     }
                 }, context));
+            } catch (JumpException.BreakJump bj) {
+                // ignore, we're shutting down
             } catch (RaiseException re) {
-                try {
-                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging at toplevel: " + re.getException());
-                    myExchanger.exchange(re.getException());
-                } catch (InterruptedException ie) {
-                    // ignore
-                }
+                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
+                finalObject = re.getException();
             }
             
-            done = true;
+            try {
+                myExchanger.exchange(finalObject);
+            } catch (InterruptedException ie) {
+                // ignore
+            }
         }
     }
 }
