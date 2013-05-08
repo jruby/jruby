@@ -148,7 +148,7 @@ public class ArgsNode extends Node {
     }
 
     protected Arity calculateArity() {
-        if (getOptArgs() != null || getRestArg() >= 0 || getKeyRest() != null) return Arity.required(getRequiredArgsCount());
+        if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
 
         return Arity.createArity(getRequiredArgsCount());
     }
@@ -509,6 +509,10 @@ public class ArgsNode extends Node {
 
                 kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
             }
+        }
+        
+        if (keyRest != null) {
+            scope.setValue(keyRest.getIndex(), RubyHash.newSmallHash(runtime), keyRest.getDepth());
         }
     }
 
