@@ -1323,23 +1323,29 @@ public class ParserSupport {
     
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
+        if (tail == null) return new_args(position, pre, optional, rest, post, (BlockArgNode) null);
+        
         // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && (tail == null || (tail.getBlockArg() == null && tail.getKeywordArgs() == null))) {
+        if (optional == null && rest == null && post == null && !tail.hasKeywordArgs()) {
             if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
             if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
             if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
         }
 
-        if (tail == null) return new ArgsNode(position, pre, optional, rest, post, null);
-        
         return new ArgsNode(position, pre, optional, rest, post, 
                 tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
-    }    
+    }
     
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
             Token keywordRestArgName, BlockArgNode blockArg) {
-        KeywordRestArgNode keywordRestArg = keywordRestArgName != null ? new KeywordRestArgNode(position,
-                currentScope.assign(position, (String) keywordRestArgName.getValue(), new HashNode(position, null))) : null;
+        if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
+        
+        String restKwargsName = (String) keywordRestArgName.getValue();
+
+        int slot = currentScope.exists(restKwargsName);
+        if (slot == -1) slot = currentScope.addVariable(restKwargsName);
+
+        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
         
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }    

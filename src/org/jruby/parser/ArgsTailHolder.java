@@ -37,4 +37,11 @@ public class ArgsTailHolder {
     public KeywordRestArgNode getKeywordRestArgNode() {
         return keywordRestArg;
     }
+    
+    /**
+     * Does this holder support either keyword argument types
+     */
+    public boolean hasKeywordArgs() {
+        return keywordArgs != null || keywordRestArg != null;
+    }
 }

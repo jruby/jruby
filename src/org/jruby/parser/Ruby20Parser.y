@@ -148,7 +148,6 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <Token> sym symbol operation operation2 operation3 cname fname op 
 %type <Token> f_norm_arg dot_or_colon restarg_mark blkarg_mark
-%type <Token> kwrest_mark, f_kwrest
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
 %token <Token> tUMINUS_NUM    /* unary- */
@@ -249,6 +248,7 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tQSYMBOLS_BEG
 %token <Token> tDSTAR
 %token <Token> tSTRING_DEND
+%type <Token> kwrest_mark, f_kwrest
 
 /*
  *    precedence table
