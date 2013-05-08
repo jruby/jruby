@@ -1431,7 +1431,6 @@ public class RubyModule extends RubyObject {
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
 
-        System.out.println("BLOCK = " + block);
         RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda
