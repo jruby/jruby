@@ -1662,6 +1662,7 @@ public class RubyInstanceConfig {
     public static final boolean LOG_WARNINGS = Options.LOG_WARNINGS.load();
     
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
+    public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
     
     public static boolean IR_DEBUG = Options.IR_DEBUG.load();
     public static boolean IR_PROFILE = Options.IR_PROFILE.load();

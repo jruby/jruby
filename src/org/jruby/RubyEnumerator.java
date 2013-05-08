@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.concurrent.Exchanger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Helpers;
@@ -37,8 +38,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallBlock;
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.runtime.Helpers.toArray;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -430,5 +433,176 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "with_index", compat = RUBY1_9)
     public static IRubyObject with_index19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         return with_index_common(context, self, block, "with_index", arg);
+    }
+    
+    private volatile Nexter nexter = null;
+    
+    @JRubyMethod
+    public IRubyObject next(ThreadContext context) throws InterruptedException {
+        ensureNexter(context);
+        
+        return nexter.next();
+    }
+    
+    @JRubyMethod
+    public IRubyObject rewind(ThreadContext context) throws InterruptedException {
+        if (object.respondsTo("rewind")) object.callMethod(context, "rewind");
+        
+        if (nexter != null) {
+            nexter.rewind();
+        }
+        
+        return this;
+    }
+    
+    @JRubyMethod
+    public IRubyObject peek(ThreadContext context) throws InterruptedException {
+        ensureNexter(context);
+        
+        return nexter.peek();
+    }
+    
+    private void ensureNexter(ThreadContext context) {
+        if (nexter == null) {
+            nexter = new Nexter(context.runtime, object, method, methodArgs);
+        }
+    }
+    
+    public void finalize() {
+        Nexter nexter = this.nexter;
+        if (nexter != null) {
+            nexter.rewind();
+        }
+        this.nexter = null;
+    }
+    
+    private static class Nexter implements Runnable {
+        private static final boolean DEBUG = false;
+        
+        /** target for each operation */
+        private final IRubyObject object;
+
+        /** method to invoke for each operation */
+        private final String method;
+
+        /** args to each method */
+        private final IRubyObject[] methodArgs;
+        
+        /** the runtime associated with all objects */
+        private final Ruby runtime;
+        
+        /** exchanger to wait for values */
+        private Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
+        
+        /** thread that's executing this Nexter */
+        private volatile Thread thread;
+        
+        /** whether we're done iterating */
+        private volatile boolean done = false;
+        
+        public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
+            this.object = object;
+            this.method = method;
+            this.methodArgs = methodArgs;
+            this.runtime = runtime;
+        }
+        
+        public synchronized IRubyObject next() throws InterruptedException {
+            if (done) {
+                throw runtime.newLightweightStopIterationError("stop iteration");
+            }
+            
+            ensureStarted();
+            
+            return returnValue(exchanger.exchange(runtime.getTrue()));
+        }
+        
+        private IRubyObject returnValue(IRubyObject value) {
+            if (value == null) {
+                throw runtime.newLightweightStopIterationError("stop iteration");
+            } else if (value instanceof RubyException) {
+                throw new RaiseException((RubyException)value);
+            }
+            
+            return value;
+        }
+        
+        public synchronized void rewind() {
+            if (thread != null) {
+                if (DEBUG) System.out.println("clearing for rewind");
+                thread.interrupt();
+                exchanger = new Exchanger<IRubyObject>();
+                thread = null;
+                done = false;
+                exchanger = new Exchanger<IRubyObject>();
+            }
+            
+            // do nothing; we are not running
+        }
+        
+        public synchronized IRubyObject peek() throws InterruptedException {
+            if (done) {
+                throw runtime.newLightweightStopIterationError("stop iteration");
+            }
+            
+            ensureStarted();
+            
+            return returnValue(exchanger.exchange(runtime.getFalse()));
+        }
+        
+        private void ensureStarted() throws InterruptedException {
+            if (thread == null) runtime.getExecutor().submit(this);
+        }
+        
+        public void run() {
+            thread = Thread.currentThread();
+            ThreadContext context = runtime.getCurrentContext();
+            
+            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": starting up nexter thread");
+            
+            final Exchanger<IRubyObject> myExchanger = exchanger;
+            
+            try {
+                object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                        try {
+                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
+                            boolean advance;
+                            do {
+                                advance = myExchanger.exchange(args[0]).isTrue();
+                            } while (!advance);
+                        } catch (InterruptedException ie) {
+                            try {
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + null);
+                                myExchanger.exchange(null);
+                            } catch (InterruptedException ie2) {
+                                // ignore
+                            }
+                            throw runtime.newThreadError(ie.getLocalizedMessage());
+                        } catch (RaiseException re) {
+                            try {
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + re.getException());
+                                myExchanger.exchange(re.getException());
+                            } catch (InterruptedException ie) {
+                                // ignore
+                            }
+                            throw re;
+                        }
+
+                        return context.nil;
+                    }
+                }, context));
+            } catch (RaiseException re) {
+                try {
+                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging at toplevel: " + re.getException());
+                    myExchanger.exchange(re.getException());
+                } catch (InterruptedException ie) {
+                    // ignore
+                }
+            }
+            
+            done = true;
+        }
     }
 }

@@ -26,30 +26,30 @@ class Enumerator
   # Note that enumeration sequence by next method does not affect other
   # non-external enumeration methods, unless underlying iteration
   # methods itself has side-effect, e.g. IO#each_line.
-  def next
-    g = __generator
-    begin
-      g.next
-    rescue EOFError
-      raise StopIteration, 'iteration reached at end'
-    end
-  end
+#  def next
+#    g = __generator
+#    begin
+#      g.next
+#    rescue EOFError
+#      raise StopIteration, 'iteration reached at end'
+#    end
+#  end
 
   # call-seq:
   #   e.rewind   => e
   #
   # Rewinds the enumeration sequence by the next method.
-  def rewind
-    @__object__.rewind if @__object__.respond_to? :rewind
-    __generator.rewind
-    self
-  end
+#  def rewind
+#    @__object__.rewind if @__object__.respond_to? :rewind
+#    __generator.rewind
+#    self
+#  end
 
-  def peek
-    begin
-      __generator.current
-    rescue EOFError
-      raise StopIteration, 'iteration reached at end'
-    end
-  end
+#  def peek
+#    begin
+#      __generator.current
+#    rescue EOFError
+#      raise StopIteration, 'iteration reached at end'
+#    end
+#  end
 end
