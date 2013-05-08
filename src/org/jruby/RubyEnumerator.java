@@ -465,7 +465,7 @@ public class RubyEnumerator extends RubyObject {
     
     private void ensureNexter(ThreadContext context) {
         if (nexter == null) {
-            nexter = new Nexter(context.runtime, object, method, methodArgs);
+            nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
         }
     }
     
@@ -477,20 +477,36 @@ public class RubyEnumerator extends RubyObject {
         this.nexter = null;
     }
     
-    private static class Nexter implements Runnable {
-        private static final boolean DEBUG = false;
+    private static abstract class Nexter {
+        /** the runtime associated with all objects */
+        protected final Ruby runtime;
         
         /** target for each operation */
-        private final IRubyObject object;
+        protected final IRubyObject object;
 
         /** method to invoke for each operation */
-        private final String method;
+        protected final String method;
 
         /** args to each method */
-        private final IRubyObject[] methodArgs;
+        protected final IRubyObject[] methodArgs;
         
-        /** the runtime associated with all objects */
-        private final Ruby runtime;
+        public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
+            this.object = object;
+            this.method = method;
+            this.methodArgs = methodArgs;
+            this.runtime = runtime;
+        }
+        
+        public abstract IRubyObject next();
+        
+        public abstract void rewind();
+        
+        public abstract IRubyObject peek();
+    }
+    
+    
+    private static class ThreadedNexter extends Nexter implements Runnable {
+        private static final boolean DEBUG = false;
         
         /** exchanger to wait for values */
         private Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
@@ -501,21 +517,52 @@ public class RubyEnumerator extends RubyObject {
         /** whether we're done iterating */
         private IRubyObject doneObject;
         
-        public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
-            this.object = object;
-            this.method = method;
-            this.methodArgs = methodArgs;
-            this.runtime = runtime;
+        public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
+            super(runtime, object, method, methodArgs);
         }
         
-        public synchronized IRubyObject next() throws InterruptedException {
+        public synchronized IRubyObject next() {
             if (doneObject != null) {
                 return returnValue(doneObject);
             }
             
             ensureStarted();
             
-            return returnValue(exchanger.exchange(runtime.getTrue()));
+            return returnValue(exchange(runtime.getTrue()));
+        }
+        
+        public synchronized void rewind() {
+            if (thread != null) {
+                if (DEBUG) System.out.println("clearing for rewind");
+                thread.interrupt();
+                exchanger = new Exchanger<IRubyObject>();
+                thread = null;
+                doneObject = null;
+            }
+            
+            // do nothing; we are not running
+        }
+        
+        public synchronized IRubyObject peek() {
+            if (doneObject != null) {
+                return returnValue(doneObject);
+            }
+            
+            ensureStarted();
+            
+            return returnValue(exchange(runtime.getFalse()));
+        }
+        
+        private void ensureStarted() {
+            if (thread == null) runtime.getExecutor().submit(this);
+        }
+        
+        private IRubyObject exchange(IRubyObject up) {
+            try {
+                return exchanger.exchange(up);
+            } catch (InterruptedException ie) {
+                throw runtime.newThreadError("interrupted during iteration");
+            }
         }
         
         private IRubyObject returnValue(IRubyObject value) {
@@ -533,32 +580,6 @@ public class RubyEnumerator extends RubyObject {
             
             // otherwise, just return it
             return value;
-        }
-        
-        public synchronized void rewind() {
-            if (thread != null) {
-                if (DEBUG) System.out.println("clearing for rewind");
-                thread.interrupt();
-                exchanger = new Exchanger<IRubyObject>();
-                thread = null;
-                doneObject = null;
-            }
-            
-            // do nothing; we are not running
-        }
-        
-        public synchronized IRubyObject peek() throws InterruptedException {
-            if (doneObject != null) {
-                return returnValue(doneObject);
-            }
-            
-            ensureStarted();
-            
-            return returnValue(exchanger.exchange(runtime.getFalse()));
-        }
-        
-        private void ensureStarted() throws InterruptedException {
-            if (thread == null) runtime.getExecutor().submit(this);
         }
         
         public void run() {
