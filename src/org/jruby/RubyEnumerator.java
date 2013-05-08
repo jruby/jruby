@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.concurrent.Exchanger;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.locks.LockSupport;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Helpers;
@@ -554,7 +554,7 @@ public class RubyEnumerator extends RubyObject {
     }
     
     private static class ThreadedNexter extends Nexter implements Runnable {
-        private static final boolean DEBUG = false;
+        private static final boolean DEBUG = true;
         
         /** sync queue to wait for values */
         private SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
@@ -585,7 +585,19 @@ public class RubyEnumerator extends RubyObject {
         public synchronized void shutdown() {
             if (thread != null) {
                 if (DEBUG) System.out.println("clearing for shutdown");
+                // try to interrupt
                 thread.interrupt();
+                LockSupport.unpark(thread);
+                Thread.yield();
+                
+                // try again
+                thread.interrupt();
+                LockSupport.unpark(thread);
+                Thread.yield();
+                
+                // do the deed if it's still alive
+                if (thread.isAlive()) thread.stop(new ThreadDeath());
+                
                 thread = null;
                 doneObject = null;
             }
