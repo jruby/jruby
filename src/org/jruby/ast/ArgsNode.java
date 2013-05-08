@@ -132,7 +132,7 @@ public class ArgsNode extends Node {
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
 
-        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0 || keywords != null);
+        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0 || hasKwargs);
     }
     
     private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
