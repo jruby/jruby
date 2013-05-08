@@ -1326,7 +1326,7 @@ public class ParserSupport {
         if (tail == null) return new_args(position, pre, optional, rest, post, (BlockArgNode) null);
         
         // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && !tail.hasKeywordArgs()) {
+        if (optional == null && rest == null && post == null && !tail.hasKeywordArgs() && tail.getBlockArg() == null) {
             if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
             if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
             if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
