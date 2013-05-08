@@ -51,7 +51,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/drb',
     '^' + SPEC_DIR + '/library/net',
     '^' + SPEC_DIR + '/library/openssl',
-    '^' + SPEC_DIR + '/library/ping',
 
     # unstable
     '^' + SPEC_DIR + '/library/syslog',
