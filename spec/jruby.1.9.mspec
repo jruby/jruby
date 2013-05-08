@@ -85,8 +85,8 @@ class MSpecScript
     get(:ci_xtags) << 'windows'
   end
 
-  # FIXME: add 1.9 library back at a later date
-  set :ci_files, get(:language) + get(:core) + get(:command_line) #+ get(:library)
+  # This set of files is run by mspec ci
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
   # Optional library specs
   set :ffi, SPEC_DIR + '/optional/ffi'
