@@ -29,6 +29,7 @@ package org.jruby;
 
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Helpers;
@@ -484,8 +485,8 @@ public class RubyEnumerator extends RubyObject {
         Nexter nexter = this.nexter;
         if (nexter != null) {
             nexter.shutdown();
+            nexter = null;
         }
-        this.nexter = null;
     }
     
     private static abstract class Nexter {
@@ -533,7 +534,7 @@ public class RubyEnumerator extends RubyObject {
 
         @Override
         public void shutdown() {
-            // not really anything to do here
+            // not really anything to do
             index = 0;
         }
 
@@ -556,8 +557,8 @@ public class RubyEnumerator extends RubyObject {
     private static class ThreadedNexter extends Nexter implements Runnable {
         private static final boolean DEBUG = false;
         
-        /** exchanger to wait for values */
-        private Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
+        /** sync queue to wait for values */
+        private SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
         
         /** thread that's executing this Nexter */
         private volatile Thread thread;
@@ -570,6 +571,9 @@ public class RubyEnumerator extends RubyObject {
         
         /** death mark */
         protected volatile boolean die = false;
+
+        /** the last value we got, used for peek */
+        private IRubyObject lastValue;
         
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
@@ -582,7 +586,7 @@ public class RubyEnumerator extends RubyObject {
             
             ensureStarted();
             
-            return returnValue(exchange(runtime.getTrue()));
+            return returnValue(take());
         }
         
         public synchronized void shutdown() {
@@ -593,7 +597,7 @@ public class RubyEnumerator extends RubyObject {
             die = true;
             
             if (thread != null) {
-                if (DEBUG) System.out.println("clearing for rewind");
+                if (DEBUG) System.out.println("clearing for shutdown");
                 
                 // we interrupt twice, to break out of iteration and
                 // (potentially) break out of final exchange
@@ -604,8 +608,6 @@ public class RubyEnumerator extends RubyObject {
                 thread = null;
                 doneObject = null;
             }
-            
-            // do nothing; we are not running
         }
         
         public synchronized IRubyObject peek() {
@@ -615,18 +617,38 @@ public class RubyEnumerator extends RubyObject {
             
             ensureStarted();
             
-            return returnValue(exchange(runtime.getFalse()));
+            if (lastValue != null) {
+                return lastValue;
+            }
+            
+            peekTake();
+            
+            return lastValue;
         }
         
         private void ensureStarted() {
             if (thread == null) future = runtime.getExecutor().submit(this);
         }
         
-        private IRubyObject exchange(IRubyObject up) {
+        private IRubyObject peekTake() {
             try {
-                return exchanger.exchange(up);
+                return lastValue = out.take();
             } catch (InterruptedException ie) {
                 throw runtime.newThreadError("interrupted during iteration");
+            }
+        }
+        
+        private IRubyObject take() {
+            try {
+                if (lastValue != null) {
+                    return lastValue;
+                }
+                
+                return out.take();
+            } catch (InterruptedException ie) {
+                throw runtime.newThreadError("interrupted during iteration");
+            } finally {
+                lastValue = null;
             }
         }
         
@@ -655,8 +677,6 @@ public class RubyEnumerator extends RubyObject {
             
             if (DEBUG) System.out.println(Thread.currentThread().getName() + ": starting up nexter thread");
             
-            final Exchanger<IRubyObject> myExchanger = exchanger;
-            
             IRubyObject finalObject = NEVER;
             
             try {
@@ -664,21 +684,16 @@ public class RubyEnumerator extends RubyObject {
                     object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                            boolean advance;
-                            do {
-                                try {
-                                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
-                                    
-                                    if (die) throw new JumpException.BreakJump(-1, NEVER);
-                                    advance = myExchanger.exchange(args[0]).isTrue();
-                                    if (die) throw new JumpException.BreakJump(-1, NEVER);
-                                    
-                                } catch (InterruptedException ie) {
-                                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
-                                    
-                                    throw new JumpException.BreakJump(-1, NEVER);
-                                }
-                            } while (!advance);
+                            try {
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
+                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                                out.put(args[0]);
+                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                            } catch (InterruptedException ie) {
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
+
+                                throw new JumpException.BreakJump(-1, NEVER);
+                            }
 
                             return context.nil;
                         }
@@ -691,7 +706,7 @@ public class RubyEnumerator extends RubyObject {
                 }
 
                 try {
-                    if (!die) myExchanger.exchange(finalObject);
+                    if (!die) out.put(finalObject);
                 } catch (InterruptedException ie) {
                     // ignore
                 }
