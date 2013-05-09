@@ -49,10 +49,8 @@ class MSpecScript
 
     # excluded for some reason, see JRUBY-4020
     '^' + SPEC_DIR + '/library/drb',
-    '^' + SPEC_DIR + '/library/etc',
     '^' + SPEC_DIR + '/library/net',
     '^' + SPEC_DIR + '/library/openssl',
-    '^' + SPEC_DIR + '/library/ping',
 
     # unstable
     '^' + SPEC_DIR + '/library/syslog',
@@ -86,8 +84,8 @@ class MSpecScript
     get(:ci_xtags) << 'windows'
   end
 
-  # FIXME: add 1.9 library back at a later date
-  set :ci_files, get(:language) + get(:core) + get(:command_line) #+ get(:library)
+  # This set of files is run by mspec ci
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
   # Optional library specs
   set :ffi, SPEC_DIR + '/optional/ffi'
