@@ -331,7 +331,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return openFile19(context, args);
+        RubyBoolean hasOffset = context.runtime.newBoolean(false);
+        if (args[args.length - 1] instanceof RubyBoolean) {
+            hasOffset = (RubyBoolean) args[args.length - 1];
+            IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 0, newArgs, 0, newArgs.length);
+            args = newArgs;
+        }
+
+        if(hasOffset.isTrue()) {
+            return openFile19(context, args, true);
+        } else {
+            return openFile19(context, args, false);
+        }
     }
 
     @JRubyMethod(required = 1)
@@ -1104,8 +1116,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // :)
     }
 
-    // mri: rb_open_file + rb_scan_open_args
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
+        return openFile19(context, args, false);
+    }
+    // mri: rb_open_file + rb_scan_open_args
+    private IRubyObject openFile19(ThreadContext context, IRubyObject args[], boolean hasOffeset) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
@@ -1147,7 +1162,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
                 RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
         
-        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm);
+        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm, hasOffeset);
 
         return this;
     }
@@ -1184,8 +1199,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
-    // mri: rb_file_open_generic
     protected void sysopenInternal(String path, ModeFlags modes, int perm) {
+        sysopenInternal(path, modes, perm, false);
+    }
+
+    // mri: rb_file_open_generic
+    protected void sysopenInternal(String path, ModeFlags modes, int perm, boolean hasOffset) {
         if (path.startsWith("jar:")) path = path.substring(4);
         
         openFile = new OpenFile();
@@ -1196,7 +1215,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
 
-        ChannelDescriptor descriptor = sysopen(path, modes, perm);
+        ChannelDescriptor descriptor = sysopen(path, modes, perm, hasOffset);
         openFile.setMainStream(fdopen(descriptor, modes));
         if (hasBom) {
             // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
@@ -1238,6 +1257,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
+        return sysopen(path,modes,perm,false);
+    }
+
+    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm, boolean hasOffset) {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.open(
                     getRuntime().getCurrentDirectory(),
@@ -1245,7 +1268,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     modes,
                     perm,
                     getRuntime().getPosix(),
-                    getRuntime().getJRubyClassLoader());
+                    getRuntime().getJRubyClassLoader(),
+                    hasOffset);
 
             // TODO: check if too many open files, GC and try again
 
