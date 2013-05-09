@@ -554,7 +554,7 @@ public class RubyEnumerator extends RubyObject {
     }
     
     private static class ThreadedNexter extends Nexter implements Runnable {
-        private static final boolean DEBUG = true;
+        private static final boolean DEBUG = false;
         
         /** sync queue to wait for values */
         private SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
