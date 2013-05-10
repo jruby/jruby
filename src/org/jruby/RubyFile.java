@@ -1120,7 +1120,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return openFile19(context, args, false);
     }
     // mri: rb_open_file + rb_scan_open_args
-    private IRubyObject openFile19(ThreadContext context, IRubyObject args[], boolean hasOffeset) {
+    private IRubyObject openFile19(ThreadContext context, IRubyObject args[], boolean hasOffset) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
@@ -1162,7 +1162,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
                 RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
         
-        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm, hasOffeset);
+        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm, hasOffset);
 
         return this;
     }
