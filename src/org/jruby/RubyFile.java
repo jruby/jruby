@@ -338,12 +338,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             System.arraycopy(args, 0, newArgs, 0, newArgs.length);
             args = newArgs;
         }
-
-        if(hasOffset.isTrue()) {
-            return openFile19(context, args, true);
-        } else {
-            return openFile19(context, args, false);
-        }
+        
+        return openFile19(context, args, hasOffset.isTrue());
     }
 
     @JRubyMethod(required = 1)
