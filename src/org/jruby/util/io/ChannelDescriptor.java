@@ -867,9 +867,22 @@ public class ChannelDescriptor {
 
             FileDescriptor fileDescriptor;
             FileChannel fileChannel;
+            
+            /* Because RandomAccessFile does not provide a way to pass append
+             * mode, we must manually seek if using RAF. FileOutputStream,
+             * however, does properly honor append mode at the lowest levels,
+             * reducing append write costs when we're only doing writes.
+             * 
+             * The code here will use a FileOutputStream if we're only writing,
+             * setting isInAppendMode to true to disable our manual seeking.
+             * 
+             * RandomAccessFile does not handle append for us, so if we must
+             * also be readable we pass false for isInAppendMode to indicate
+             * we need manual seeking.
+             */
             boolean isInAppendMode;
             if (flags.isWritable() && !flags.isReadable()) {
-                RandomAccessFile fos = new RandomAccessFile(theFile, flags.toJavaModeString());
+                FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
                 fileChannel = fos.getChannel();
                 fileDescriptor = fos.getFD();
                 isInAppendMode = true;
