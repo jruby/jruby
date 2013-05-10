@@ -441,25 +441,26 @@ public class RubyEnumerator extends RubyObject {
     private volatile Nexter nexter = null;
     
     @JRubyMethod
-    public IRubyObject next(ThreadContext context) {
+    public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
         
         return nexter.next();
     }
     
     @JRubyMethod
-    public IRubyObject rewind(ThreadContext context) {
+    public synchronized IRubyObject rewind(ThreadContext context) {
         if (object.respondsTo("rewind")) object.callMethod(context, "rewind");
         
         if (nexter != null) {
-            nexter.rewind();
+            nexter.shutdown();
+            nexter = null;
         }
         
         return this;
     }
     
     @JRubyMethod
-    public IRubyObject peek(ThreadContext context) {
+    public synchronized IRubyObject peek(ThreadContext context) {
         ensureNexter(context);
         
         return nexter.peek();
@@ -482,7 +483,7 @@ public class RubyEnumerator extends RubyObject {
     public void finalize() {
         Nexter nexter = this.nexter;
         if (nexter != null) {
-            nexter.rewind();
+            nexter.shutdown();
         }
         this.nexter = null;
     }
@@ -509,7 +510,7 @@ public class RubyEnumerator extends RubyObject {
         
         public abstract IRubyObject next();
         
-        public abstract void rewind();
+        public abstract void shutdown();
         
         public abstract IRubyObject peek();
     }
@@ -531,7 +532,8 @@ public class RubyEnumerator extends RubyObject {
         }
 
         @Override
-        public void rewind() {
+        public void shutdown() {
+            // not really anything to do here
             index = 0;
         }
 
@@ -583,7 +585,7 @@ public class RubyEnumerator extends RubyObject {
             return returnValue(exchange(runtime.getTrue()));
         }
         
-        public synchronized void rewind() {
+        public synchronized void shutdown() {
             // cancel future in case we have not been started
             future.cancel(true);
                 
