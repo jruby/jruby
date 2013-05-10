@@ -790,6 +790,10 @@ public class ChannelDescriptor {
      * @throws java.io.IOException if there is an exception during IO
      */
     public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+        return open(cwd, path, flags, perm, posix, classLoader, false);
+    }
+
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader, boolean hasOffset) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         boolean fileCreated = false;
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             Channel nullChannel = new NullChannel();
@@ -865,7 +869,7 @@ public class ChannelDescriptor {
             FileChannel fileChannel;
             boolean isInAppendMode;
             if (flags.isWritable() && !flags.isReadable()) {
-                FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
+                RandomAccessFile fos = new RandomAccessFile(theFile, flags.toJavaModeString());
                 fileChannel = fos.getChannel();
                 fileDescriptor = fos.getFD();
                 isInAppendMode = true;
@@ -887,7 +891,7 @@ public class ChannelDescriptor {
             }
 
             try {
-                if (flags.isTruncate()) fileChannel.truncate(0);
+                if (flags.isTruncate() && !hasOffset) fileChannel.truncate(0);
             } catch (IOException ioe) {
                 if (ioe.getMessage().equals("Illegal seek")) {
                     // ignore; it's a pipe or fifo that can't be truncated
