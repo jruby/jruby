@@ -16,10 +16,6 @@ env:
     - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
     - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
 
-matrix:
-  allow_failures:
-    - env: TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
-
 script: "ant $TARGET"
 install: /bin/true
 notifications:
@@ -29,4 +25,4 @@ notifications:
     on_success: change
     on_failure: always
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})" 
+      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
