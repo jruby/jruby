@@ -3689,28 +3689,42 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject nil = context.runtime.getNil();
         IRubyObject path = args[0];
         IRubyObject str = args[1];
-        IRubyObject offset = nil;
+        RubyInteger offset = null;
+        RubyHash options = null;
         Ruby runtime = context.runtime;
 
         if (args.length > 2) {
-            offset = args[2];
+            if (args[2] instanceof RubyHash) {
+                options = args[2].convertToHash();
+            } else {
+                offset = args[2].convertToInteger();
+            }
         }
 
-        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
+        if (args.length > 3) {
+            options = args[3].convertToHash();
+        }
 
-        if (offset.isNil()) {
-            mode |= ModeFlags.WRONLY;
+        RubyIO file = null;
+
+        if (options == null || (options != null && options.isEmpty())) {
+            long mode = ModeFlags.CREAT | ModeFlags.BINARY;
+
+            if (offset == null) {
+                mode |= ModeFlags.WRONLY;
+            } else {
+                mode |= ModeFlags.RDWR;
+            }
+
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
         } else {
-            mode |= ModeFlags.RDWR;
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
         }
-
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
 
         try {
-            if (!offset.isNil()) file.seek(context, offset);
+            if (offset != null) file.seek(context, offset);
             return file.write(context, str);
         } finally  {
             file.close();
