@@ -881,7 +881,7 @@ public class ChannelDescriptor {
              * we need manual seeking.
              */
             boolean isInAppendMode;
-            if (flags.isWritable() && !flags.isReadable()) {
+            if (flags.isWritable() && !flags.isReadable() && !hasOffset) {
                 FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
                 fileChannel = fos.getChannel();
                 fileDescriptor = fos.getFD();
