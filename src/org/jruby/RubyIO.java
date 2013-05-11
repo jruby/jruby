@@ -3603,13 +3603,58 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *    mode: string
      *    open_args: array of string
      */
-    private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
-        // FIXME: process options
+    private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject nil = runtime.getNil();
+        IRubyObject path = args[0];
+        IRubyObject str = args[1];
+        IRubyObject offset = nil;
+        RubyHash options = null;
+        RubyString mode = runtime.newString("");
+        int oflags = ModeFlags.WRONLY;
 
         RubyString pathStr = RubyFile.get_path(context, path);
-        Ruby runtime = context.runtime;
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
+
+        if (args.length > 2 && args[2] instanceof RubyHash) {
+            options = (RubyHash) args[2];
+            RubySymbol key = runtime.newSymbol("mode");
+
+            if(options.containsKey(key)) {
+                mode = (RubyString) options.fastARef(key);
+            }
+
+        } else if(args.length > 2) {
+            offset = args[2];
+        }
+
+        if (args.length > 3) {
+            if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
+            options = (RubyHash) args[3];
+            RubySymbol key = runtime.newSymbol("mode");
+
+            if(options.containsKey(key)) {
+                mode = (RubyString) options.fastARef(key);
+            }
+        }
+
+        long fmode = ModeFlags.CREAT | ModeFlags.BINARY;
+
+        if (!offset.isNil() && mode.isEmpty()) {
+            fmode |= ModeFlags.RDWR;
+        } else {
+            if(!mode.isEmpty()) {
+                try {
+                    oflags = OpenFile.getModeFlagsAsIntFrom(OpenFile.getFModeFromString(mode.asJavaString()));
+                } catch (InvalidValueException e) {
+                    throw runtime.newArgumentError("invalid access mode " + mode.asJavaString());
+                }
+            }
+            fmode |= oflags;
+        }
+
+        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, fmode));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3689,56 +3734,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject nil = context.runtime.getNil();
-        IRubyObject path = args[0];
-        IRubyObject str = args[1];
-        IRubyObject offset = nil;
-        Ruby runtime = context.runtime;
-
-        if (args.length > 2) {
-            offset = args[2];
-        }
-
-        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
-
-        if (offset.isNil()) {
-            mode |= ModeFlags.WRONLY;
-        } else {
-            mode |= ModeFlags.RDWR;
-        }
-
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
-
-        try {
-            if (!offset.isNil()) file.seek(context, offset);
-            return file.write(context, str);
-        } finally  {
-            file.close();
-        }
+       return write19(context, recv, args);
     }
 
     @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        IRubyObject nil = context.nil;
-        IRubyObject path = args[0];
-        IRubyObject str = args[1];
-        IRubyObject offset = nil;
-        RubyHash options = null;
-        if (args.length > 3) {
-            if (!(args[3] instanceof RubyHash)) {
-                throw context.runtime.newTypeError("Must be a hash");
-            }
-            options = (RubyHash) args[3];
-            offset = args[2];
-        } else if (args.length > 2) {
-            if (args[2] instanceof RubyHash) {
-                options = (RubyHash) args[2];
-            } else {
-                offset = args[2];
-            }
-        }
-
-        return write19(context, recv, path, str, offset, (RubyHash) options);
+        return write19(context, recv, args);
     }
     
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true, compat = RUBY1_8)
