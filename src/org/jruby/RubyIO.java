@@ -3605,17 +3605,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
         // FIXME: process options
-        Ruby runtime = context.runtime;
-
-        IRubyObject hasOffset = runtime.getNil();
-
-        if (!offset.isNil()) hasOffset = runtime.newBoolean(true);
-        else hasOffset = runtime.newBoolean(false);
 
         RubyString pathStr = RubyFile.get_path(context, path);
-
+        Ruby runtime = context.runtime;
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"), hasOffset);
+        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3693,7 +3687,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return read19(context, recv, path, length, offset, options);
     }
 
-    @JRubyMethod(meta = true, required = 2, optional = 1, compat = RUBY1_9)
+    @JRubyMethod(meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject nil = context.runtime.getNil();
         IRubyObject path = args[0];
@@ -3704,7 +3698,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (args.length > 2) {
             offset = args[2];
         }
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("wb:ASCII-8BIT"));
+
+        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
+
+        if (offset.isNil()) {
+            mode |= ModeFlags.WRONLY;
+        } else {
+            mode |= ModeFlags.RDWR;
+        }
+
+        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
