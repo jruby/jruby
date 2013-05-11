@@ -3687,7 +3687,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return read19(context, recv, path, length, offset, options);
     }
 
-    @JRubyMethod(meta = true, required = 2, optional = 1, compat = RUBY1_9)
+    @JRubyMethod(meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject nil = context.runtime.getNil();
         IRubyObject path = args[0];
@@ -3698,7 +3698,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (args.length > 2) {
             offset = args[2];
         }
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("wb:ASCII-8BIT"));
+
+        RubyString mode = null;
+
+        if (offset.isNil()) {
+            mode = runtime.newString("wb:ASCII-8BIT");
+        } else {
+            mode = runtime.newString("r+b:ASCII-8BIT");
+        }
+
+        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, mode);
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
