@@ -73,6 +73,7 @@ public class RubyStringScanner extends RubyObject {
     private static final int MATCHED_STR_SCN_F = 1 << 11;     
     
     private static ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyStringScanner(runtime, klass);
         }
@@ -244,9 +245,9 @@ public class RubyStringScanner extends RubyObject {
 
         final int ret;
         if (headonly) {
-            ret = matcher.match(value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
+            ret = RubyRegexp.matcherMatch(runtime, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
         } else {
-            ret = matcher.search(value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
+            ret = RubyRegexp.matcherSearch(runtime, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
         }
 
         regs = matcher.getRegion(); 

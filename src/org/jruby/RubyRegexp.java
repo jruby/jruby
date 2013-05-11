@@ -42,6 +42,8 @@ import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -120,19 +122,23 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return options.getKCode();
     }
 
+    @Override
     public Encoding getEncoding() {
         return pattern.getEncoding();
     }
 
+    @Override
     public void setEncoding(Encoding encoding) {
         // FIXME: Which encoding should be changed here?  
         // FIXME: transcode?
     }
 
+    @Override
     public boolean shouldMarshalEncoding() {
         return getEncoding() != ASCIIEncoding.INSTANCE;
     }
 
+    @Override
     public Encoding getMarshalEncoding() {
         return getEncoding();
     }
@@ -237,10 +243,27 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRegexp(runtime, klass);
         }
     };
+    
+    public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
+        try {
+            return matcher.searchInterruptible(start, range, option);
+        } catch (InterruptedException e) {
+            throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
+        }
+    }
+    
+    public static int matcherMatch(Ruby runtime, Matcher matcher, int at, int range, int option) {
+        try {
+            return matcher.matchInterruptible(at, range, option);
+        } catch (InterruptedException e) {
+            throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
+        }
+    }
 
     @Override
     public int getNativeTypeIndex() {
@@ -1584,7 +1607,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int begin = value.getBegin();
             Matcher matcher = pattern.matcher(value.getUnsafeBytes(), begin, begin + realSize);
 
-            int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
+            int result = matcherSearch(context.runtime, matcher, begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
                 updateBackRef(context, str, scope, matcher, true);
                 return result;
@@ -1661,7 +1684,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int begin = value.getBegin();
             Matcher matcher = preparePattern(str).matcher(value.getUnsafeBytes(), begin, begin + realSize);
 
-            int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
+            int result = matcherSearch(context.runtime, matcher, begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
                 RubyMatchData matchData = updateBackRef(context, str, scope, matcher, backrefHolder == null);
                 matchData.charOffsetUpdated = false;

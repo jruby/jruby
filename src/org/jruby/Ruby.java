@@ -1497,6 +1497,7 @@ public final class Ruby {
         securityError = defineClassIfAllowed("SecurityError", standardError);
         noMemoryError = defineClassIfAllowed("NoMemoryError", exceptionClass);
         regexpError = defineClassIfAllowed("RegexpError", standardError);
+        interruptedRegexpError = defineClassIfAllowed("InterruptedRegexpError", regexpError); // Proposal to RubyCommons for interrupting Regexps
         eofError = defineClassIfAllowed("EOFError", ioError);
         threadError = defineClassIfAllowed("ThreadError", standardError);
         concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
@@ -2336,6 +2337,10 @@ public final class Ruby {
 
     public RubyClass getRegexpError() {
         return regexpError;
+    }
+    
+    public RubyClass getInterruptedRegexpError() {
+        return interruptedRegexpError;
     }
 
     public RubyClass getEOFError() {
@@ -3497,6 +3502,10 @@ public final class Ruby {
     public RaiseException newRegexpError(String message) {
         return newRaiseException(getRegexpError(), message);
     }
+    
+    public RaiseException newInterruptedRegexpError(String message) {
+        return newRaiseException(getInterruptedRegexpError(), message);
+    }    
 
     public RaiseException newRangeError(String message) {
         return newRaiseException(getRangeError(), message);
@@ -4501,7 +4510,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass;
+            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass, interruptedRegexpError;
 
     /**
      * All the core modules we keep direct references to, for quick access and

@@ -40,6 +40,7 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
+import org.jruby.RubyRegexp;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -807,7 +808,7 @@ public class RipperLexer implements Warnings {
         int realSize = magicLine.getRealSize();
         int begin = magicLine.getBegin();
         Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = matcher.search(begin, begin + realSize, Option.NONE);
+        int result = RubyRegexp.matcherSearch(getRuntime(), matcher, begin, begin + realSize, Option.NONE);
 
         if (result < 0) return false;
 
@@ -831,7 +832,7 @@ public class RipperLexer implements Warnings {
         int realSize = encodingLine.getRealSize();
         int begin = encodingLine.getBegin();
         Matcher matcher = encodingRegexp.matcher(encodingLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = matcher.search(begin, begin + realSize, Option.IGNORECASE);
+        int result = RubyRegexp.matcherSearch(getRuntime(), matcher, begin, begin + realSize, Option.IGNORECASE);
 
         if (result < 0) return;
 
