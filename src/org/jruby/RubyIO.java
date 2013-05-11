@@ -3689,25 +3689,54 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject nil = context.runtime.getNil();
+        Ruby runtime = context.runtime;
+        IRubyObject nil = runtime.getNil();
         IRubyObject path = args[0];
         IRubyObject str = args[1];
         IRubyObject offset = nil;
-        Ruby runtime = context.runtime;
-
-        if (args.length > 2) {
+        RubyHash options = null;
+        RubyString mode = runtime.newString("");
+        int oflags = ModeFlags.WRONLY;
+        
+        if (args.length > 2 && args[2] instanceof RubyHash) {
+            options = (RubyHash) args[2];
+            RubySymbol key = runtime.newSymbol("mode");
+            
+            if(options.containsKey(key)) {
+                mode = (RubyString) options.fastARef(key);   
+            }
+            
+        } else if(args.length > 2) {
             offset = args[2];
         }
-
-        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
-
-        if (offset.isNil()) {
-            mode |= ModeFlags.WRONLY;
-        } else {
-            mode |= ModeFlags.RDWR;
+        
+        if (args.length > 3) {
+            if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
+            options = (RubyHash) args[3];
+            RubySymbol key = runtime.newSymbol("mode");
+            
+            if(options.containsKey(key)) {
+                mode = (RubyString) options.fastARef(key);   
+            }
         }
 
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
+
+        long fmode = ModeFlags.CREAT | ModeFlags.BINARY;
+
+        if (!offset.isNil() && mode.isEmpty()) {
+            fmode |= ModeFlags.RDWR;
+        } else {
+            if(!mode.isEmpty()) {
+                try {
+                    oflags = OpenFile.getModeFlagsAsIntFrom(OpenFile.getFModeFromString(mode.asJavaString()));
+                } catch (InvalidValueException e) {
+                    throw runtime.newArgumentError("invalid access mode " + mode.asJavaString());
+                }   
+            }
+            fmode |= oflags;
+        }
+
+        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, fmode));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
