@@ -3699,15 +3699,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
             offset = args[2];
         }
 
-        RubyString mode = null;
+        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
 
         if (offset.isNil()) {
-            mode = runtime.newString("wb:ASCII-8BIT");
+            mode |= ModeFlags.WRONLY;
         } else {
-            mode = runtime.newString("r+b:ASCII-8BIT");
+            mode |= ModeFlags.RDWR;
         }
 
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, mode);
+        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
