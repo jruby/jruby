@@ -3605,17 +3605,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
         // FIXME: process options
-        Ruby runtime = context.runtime;
-
-        IRubyObject hasOffset = runtime.getNil();
-
-        if (!offset.isNil()) hasOffset = runtime.newBoolean(true);
-        else hasOffset = runtime.newBoolean(false);
 
         RubyString pathStr = RubyFile.get_path(context, path);
-
+        Ruby runtime = context.runtime;
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"), hasOffset);
+        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
