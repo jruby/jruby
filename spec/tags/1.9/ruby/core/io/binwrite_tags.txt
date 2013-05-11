@@ -1,3 +1,0 @@
-fails:IO.binwrite accepts a :mode option
-fails:IO.binwrite raises an error if readonly mode is specified
-fails:IO.binwrite truncates if empty :opts provided and offset skipped
