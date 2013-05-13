@@ -446,7 +446,7 @@ public class ArgsNode extends Node {
     protected void prepareRestArg(ThreadContext context, Ruby runtime, DynamicScope scope,
             IRubyObject[] args, int givenArgsCount) {
         if (restArg >= 0) {
-            int sizeOfRestArg = args.length - postCount - givenArgsCount;
+            int sizeOfRestArg = args.length - postCount - givenArgsCount - (keyRest != null ? 1 : 0);
             if (sizeOfRestArg <= 0) { // no more values to stick in rest arg
                 scope.setValue(restArg, RubyArray.newArray(runtime), 0);
             } else {
