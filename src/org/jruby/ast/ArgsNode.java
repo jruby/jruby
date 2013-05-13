@@ -40,6 +40,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -479,16 +480,24 @@ public class ArgsNode extends Node {
 
                 if (keywords != null) {
                     for (Node knode : keywords.childNodes()) {
-                        KeywordArgNode kwarg = (KeywordArgNode)knode;
-                        LocalAsgnNode kasgn = (LocalAsgnNode)kwarg.getAssignable();
-                        String name = kasgn.getName();
+                        KeywordArgNode kwarg = (KeywordArgNode) knode;
+                        AssignableNode kasgn = (AssignableNode) kwarg.getAssignable();
+                        String name = ((INameNode) kasgn).getName();
                         RubySymbol sym = runtime.newSymbol(name);
 
                         if (keyValues.op_aref(context, sym).isNil()) {
                             kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
                         } else {
                             IRubyObject value = keyValues.delete(context, sym, Block.NULL_BLOCK);
-                            scope.setValue(kasgn.getIndex(), value, kasgn.getDepth());
+                            // Enebo: This casting is gruesome but IR solution will replace it in 9k.
+                            if (kasgn instanceof LocalAsgnNode) {
+                                scope.setValue(((LocalAsgnNode) kasgn).getIndex(), value, ((LocalAsgnNode) kasgn).getDepth());    
+                            } else if (kasgn instanceof DAsgnNode) {
+                                scope.setValue(((DAsgnNode) kasgn).getIndex(), value, ((DAsgnNode) kasgn).getDepth());
+                            } else {
+                                assert false: "Should never happen";
+                            }
+                            
                         }
                     }
                 }
@@ -505,9 +514,11 @@ public class ArgsNode extends Node {
         if (keywords != null) {
             for (Node knode : keywords.childNodes()) {
                 KeywordArgNode kwarg = (KeywordArgNode)knode;
-                LocalAsgnNode kasgn = (LocalAsgnNode)kwarg.getAssignable();
-
-                kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+                if (kwarg.getAssignable() instanceof LocalAsgnNode) {
+                    ((LocalAsgnNode)kwarg.getAssignable()).interpret(runtime, context, self, Block.NULL_BLOCK);
+                } else if (kwarg.getAssignable() instanceof DAsgnNode) {
+                    ((DAsgnNode)kwarg.getAssignable()).interpret(runtime, context, self, Block.NULL_BLOCK);                    
+                }
             }
         }
         
