@@ -108,17 +108,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     private static final boolean DEBUG = false;
     
-    // The class of this object
+    /** The class of this object */
     protected transient RubyClass metaClass;
 
-    // zeroed by jvm
+    /** object flags */
     protected int flags;
 
-    // variable table, lazily allocated as needed (if needed)
-    transient Object[] varTable;
+    /** variable table, lazily allocated as needed (if needed) */
+    public transient Object[] varTable;
     
-    // locking stamp for Unsafe ops updating the vartable
-    transient volatile int varTableStamp;
+    /** locking stamp for Unsafe ops updating the vartable */
+    public transient volatile int varTableStamp;
+    
+    /** offset of the varTable field in RubyBasicObject */
+    public static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
+    
+    /** offset of the varTableTamp field in RubyBasicObject */
+    public static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
 
     /**
      * The error message used when some one tries to modify an
@@ -1456,13 +1462,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (!isFrozen()) {
             return;
         }
+        raiseFrozenError();
+    }
 
-        if (isFrozen()) {
-            if (this instanceof RubyModule) {
-                throw getRuntime().newFrozenError("class/module ");
-            } else {
-                throw getRuntime().newFrozenError("");
-            }
+    private void raiseFrozenError() throws RaiseException {
+        if (this instanceof RubyModule) {
+            throw getRuntime().newFrozenError("class/module ");
+        } else {
+            throw getRuntime().newFrozenError("");
         }
     }
 

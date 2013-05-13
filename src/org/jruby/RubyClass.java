@@ -250,17 +250,17 @@ public class RubyClass extends RubyModule {
         return variableTableManager.hasObjectID();
     }
 
-    public Map<String, org.jruby.runtime.ivars.VariableAccessor> getVariableAccessorsForRead() {
+    public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableTableManager.getVariableAccessorsForRead();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getVariableAccessorForWrite(String name) {
+    public VariableAccessor getVariableAccessorForWrite(String name) {
         return variableTableManager.getVariableAccessorForWrite(name, id);
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getVariableAccessorForRead(String name) {
-        org.jruby.runtime.ivars.VariableAccessor accessor = getVariableAccessorsForRead().get(name);
-        if (accessor == null) accessor = org.jruby.runtime.ivars.VariableAccessor.DUMMY_ACCESSOR;
+    public VariableAccessor getVariableAccessorForRead(String name) {
+        VariableAccessor accessor = getVariableAccessorsForRead().get(name);
+        if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
         return accessor;
     }
 
@@ -272,7 +272,7 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getNativeHandleAccessorField();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getNativeHandleAccessorForWrite() {
+    public VariableAccessor getNativeHandleAccessorForWrite() {
         return variableTableManager.getNativeHandleAccessorForWrite();
     }
 
@@ -280,11 +280,11 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getFFIHandleAccessorField();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getFFIHandleAccessorForRead() {
+    public VariableAccessor getFFIHandleAccessorForRead() {
         return variableTableManager.getFFIHandleAccessorForRead();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getFFIHandleAccessorForWrite() {
+    public VariableAccessor getFFIHandleAccessorForWrite() {
         return variableTableManager.getFFIHandleAccessorForWrite();
     }
 
@@ -292,11 +292,11 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getObjectGroupAccessorField();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getObjectGroupAccessorForRead() {
+    public VariableAccessor getObjectGroupAccessorForRead() {
         return variableTableManager.getObjectGroupAccessorForRead();
     }
 
-    public org.jruby.runtime.ivars.VariableAccessor getObjectGroupAccessorForWrite() {
+    public VariableAccessor getObjectGroupAccessorForWrite() {
         return variableTableManager.getObjectGroupAccessorForWrite();
     }
 
@@ -319,8 +319,8 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getVariableNames();
     }
 
-    public Map<String, org.jruby.runtime.ivars.VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, org.jruby.runtime.ivars.VariableAccessor>(getVariableAccessorsForRead());
+    public Map<String, VariableAccessor> getVariableTableCopy() {
+        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
     @Override
@@ -1799,13 +1799,6 @@ public class RubyClass extends RubyModule {
                 throw runtime.newTypeError("class " + getName() + " needs to have method `_load'");
 
             }
-        }
-    }
-    
-    @Deprecated
-    public static class VariableAccessor extends org.jruby.runtime.ivars.VariableAccessor {
-        public VariableAccessor(String name, int index, int classId) {
-            super(name, index, classId);
         }
     }
 

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.StampedVariableAccessor;
+import org.jruby.runtime.ivars.SynchronizedVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -22,9 +24,6 @@ public class VariableTableManager {
     private final VariableAccessorField cextHandleVariableAccessorField = new VariableAccessorField("cext");
     private final VariableAccessorField ffiHandleVariableAccessorField = new VariableAccessorField("ffi");
     private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
-    
-    private static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
-    private static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
     
     public VariableTableManager(RubyClass realClass) {
         this.realClass = realClass;
@@ -83,77 +82,23 @@ public class VariableTableManager {
 
     private void setObjectId(RubyBasicObject self, int index, long value) {
         if (index < 0) return;
-        setVariableInternal(self, index, value);
+        setVariableInternal(realClass, self, index, value);
     }
     
-    protected final void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null)
-            setVariableSynchronized(self,index,value);
-        else
-            setVariableStamped(self,index,value);
-    }
-
-    private static void setVariableSynchronized(RubyBasicObject self, int index, Object value) {
-        synchronized (self) {
-            Object[] currentTable = self.varTable;
-
-            if (currentTable == null) {
-                self.varTable = currentTable = new Object[self.getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-            } else if (currentTable.length <= index) {
-                Object[] newTable = new Object[self.getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
-                self.varTable = newTable;
-            }
-            
-            self.varTable[index] = value;
+    public void setVariableInternal(RubyBasicObject self, int index, Object value) {
+        if(UnsafeHolder.U == null) {
+            SynchronizedVariableAccessor.setVariableSynchronized(realClass,self,index,value);
+        } else {
+            StampedVariableAccessor.setVariableStamped(realClass,self,index,value);
         }
     }
     
-    private static void setVariableStamped(RubyBasicObject self, int index, Object value) {
-        
-        for(;;) {
-            int currentStamp = self.varTableStamp;
-            // spin-wait if odd
-            if((currentStamp & 0x01) != 0)
-               continue;
-            
-            Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, VAR_TABLE_OFFSET);
-            
-            if(currentTable == null || index >= currentTable.length)
-            {
-                // try to acquire exclusive access to the varTable field
-                if(!UnsafeHolder.U.compareAndSwapInt(self, STAMP_OFFSET, currentStamp, ++currentStamp))
-                    continue;
-                
-                Object[] newTable = new Object[self.getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                if(currentTable != null)
-                    System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
-                newTable[index] = value;
-                UnsafeHolder.U.putOrderedObject(self, VAR_TABLE_OFFSET, newTable);
-                
-                // release exclusive access
-                self.varTableStamp = currentStamp + 1;
-            } else {
-                // shared access to varTable field.
-                
-                if(UnsafeHolder.SUPPORTS_FENCES) {
-                    currentTable[index] = value;
-                    UnsafeHolder.fullFence();
-                } else {
-                    // TODO: maybe optimize by read and checking current value before setting
-                    UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
-                }
-                
-                // validate stamp. redo on concurrent modification
-                if(self.varTableStamp != currentStamp)
-                    continue;
-                
-            }
-            
-            break;
+    public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
+        if(UnsafeHolder.U == null) {
+            SynchronizedVariableAccessor.setVariableSynchronized(realClass,self,index,value);
+        } else {
+            StampedVariableAccessor.setVariableStamped(realClass,self,index,value);
         }
-        
-        
     }
     
     /**
@@ -181,13 +126,13 @@ public class VariableTableManager {
                     if((oldStamp & 0x01) == 1)
                         continue;
                     // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(self, STAMP_OFFSET, oldStamp, ++oldStamp))
+                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
                         continue;
                     
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, VAR_TABLE_OFFSET);
+                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
                     Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
                     
-                    UnsafeHolder.U.putOrderedObject(self, VAR_TABLE_OFFSET, newTable);
+                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
                     
                     // release write mode
                     self.varTableStamp = oldStamp+1;
@@ -233,7 +178,12 @@ public class VariableTableManager {
         int newIndex = myVariableNames.length;
         String[] newVariableNames = new String[newIndex + 1];
 
-        VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, id);
+        VariableAccessor newVariableAccessor;
+        if (UnsafeHolder.U == null) {
+            newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
+        } else {
+            newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+        }
 
         System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
 
@@ -318,7 +268,7 @@ public class VariableTableManager {
 
     public final void setNativeHandle(RubyBasicObject self, Object value) {
         int index = getNativeHandleAccessorForRead().getIndex();
-        setVariableInternal(self, index, value);
+        setVariableInternal(realClass, self, index, value);
     }
 
     public final Object getFFIHandle(RubyBasicObject self) {
@@ -327,7 +277,7 @@ public class VariableTableManager {
 
     public final void setFFIHandle(RubyBasicObject self, Object value) {
         int index = getFFIHandleAccessorForWrite().getIndex();
-        setVariableInternal(self, index, value);
+        setVariableInternal(realClass, self, index, value);
     }
 
     public int getVariableTableSize() {
