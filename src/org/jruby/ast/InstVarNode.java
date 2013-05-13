@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyClass.VariableAccessor;
 import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
@@ -47,7 +46,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.DefinedMessage;
 
 /** 

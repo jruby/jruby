@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -40,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class AttrWriterMethod extends JavaMethodOne {
     private final String variableName;
-    private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
+    private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String variableName) {
         super(implementationClass, visibility, callConfig, variableName + "=");
@@ -56,8 +57,8 @@ public class AttrWriterMethod extends JavaMethodOne {
         return variableName;
     }
 
-    private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
-        RubyClass.VariableAccessor localAccessor = accessor;
+    private VariableAccessor verifyAccessor(RubyClass cls) {
+        VariableAccessor localAccessor = accessor;
         if (localAccessor.getClassId() != cls.id) {
             localAccessor = cls.getVariableAccessorForWrite(variableName);
             accessor = localAccessor;

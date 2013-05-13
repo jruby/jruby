@@ -36,7 +36,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyClass.VariableAccessor;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;

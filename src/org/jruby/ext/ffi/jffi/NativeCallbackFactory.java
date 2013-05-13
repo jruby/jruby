@@ -5,7 +5,6 @@ import com.kenai.jffi.ClosurePool;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
-import org.jruby.RubyProc;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -58,9 +57,8 @@ public class NativeCallbackFactory {
 
         closures.put(callable, cbptr = newCallback(callable, callSite));
 
-        RubyClass.VariableAccessorField ffiField = callable.getMetaClass().getRealClass().getFFIHandleAccessorField();
-        if (ffiField.getVariableAccessorForRead().get(callable) == null) {
-            ffiField.getVariableAccessorForWrite().set(callable, cbptr);
+        if (callable.getMetaClass().getFFIHandleAccessorForRead().get(callable) == null) {
+            callable.getMetaClass().getFFIHandleAccessorForWrite().set(callable, cbptr);
         }
 
         return cbptr;

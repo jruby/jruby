@@ -279,7 +279,7 @@ public class ObjectSpace {
         private int nextIndex = 0;
 
         public boolean add(IRubyObject obj) {
-            obj.getMetaClass().getRealClass().getObjectGroupAccessorField().getVariableAccessorForWrite().set(obj, this);
+            obj.getMetaClass().getObjectGroupAccessorForWrite().set(obj, this);
             objects.set(nextIndex, obj);
             ++nextIndex;
             return true;

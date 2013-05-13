@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.invokedynamic;
 
+import org.jruby.runtime.ivars.VariableAccessor;
 import java.lang.invoke.*;
 
 import static java.lang.invoke.MethodHandles.*;
@@ -1548,7 +1549,7 @@ public class InvocationLinker {
         String varName = attrReader.getVariableName();
 
         // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
-        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
+        VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
 
         MethodHandle filter = Binder
                 .from(IRubyObject.class, IRubyObject.class)
@@ -1580,7 +1581,7 @@ public class InvocationLinker {
         AttrWriterMethod attrWriter = (AttrWriterMethod)method;
         String varName = attrWriter.getVariableName();
         
-        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
+        VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
 
         MethodHandle filter = Binder
                 .from(IRubyObject.class, Object.class)

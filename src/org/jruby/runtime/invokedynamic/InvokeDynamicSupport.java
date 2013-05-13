@@ -27,6 +27,7 @@
 
 package org.jruby.runtime.invokedynamic;
 
+import org.jruby.runtime.ivars.VariableAccessor;
 import com.headius.invokebinder.Binder;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -465,7 +466,7 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject getVariableFallback(VariableSite site, IRubyObject self) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
-        RubyClass.VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name);
+        VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name);
         
         // produce nil if the variable has not been initialize
         MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
@@ -509,7 +510,7 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject setVariableFallback(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
-        RubyClass.VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
+        VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
 
         // return provided value
         MethodHandle returnValue = identity(IRubyObject.class);

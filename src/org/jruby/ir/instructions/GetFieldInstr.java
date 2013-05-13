@@ -2,7 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyClass.VariableAccessor;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;

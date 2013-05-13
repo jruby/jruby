@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -39,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
 public class AttrReaderMethod extends JavaMethodZero {
-    private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
+    private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String variableName) {
         super(implementationClass, visibility, callConfig, variableName);
@@ -54,8 +55,8 @@ public class AttrReaderMethod extends JavaMethodZero {
         return name;
     }
 
-    private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
-        RubyClass.VariableAccessor localAccessor = accessor;
+    private VariableAccessor verifyAccessor(RubyClass cls) {
+        VariableAccessor localAccessor = accessor;
         if (localAccessor.getClassId() != cls.id) {
             localAccessor = cls.getVariableAccessorForRead(name);
             accessor = localAccessor;

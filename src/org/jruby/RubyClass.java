@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ivars.VariableAccessor;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -75,6 +76,7 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -239,140 +241,71 @@ public class RubyClass extends RubyModule {
     public CallSite[] getExtraCallSites() {
         return extraCallSites;
     }
-
-    public static class VariableAccessor {
-        private final String name;
-        private final int index;
-        private final int classId;
-        public VariableAccessor(String name, int index, int classId) {
-            this.index = index;
-            this.classId = classId;
-            this.name = name;
-        }
-        public int getClassId() {
-            return classId;
-        }
-        public int getIndex() {
-            return index;
-        }
-        public String getName() {
-            return name;
-        }
-        public Object get(Object object) {
-            return ((IRubyObject)object).getVariable(index);
-        }
-        public void set(Object object, Object value) {
-            ((IRubyObject)object).setVariable(index, value);
-        }
-        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, -1, -1);
-    }
-
-    public Map<String, VariableAccessor> getVariableAccessorsForRead() {
-        return variableAccessors;
+    
+    public VariableTableManager getVariableTableManager() {
+        return variableTableManager;
     }
     
-    private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
-    private final VariableAccessorField cextHandleVariableAccessorField = new VariableAccessorField("cext");
-    private final VariableAccessorField ffiHandleVariableAccessorField = new VariableAccessorField("ffi");
-    private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
-
-    private synchronized final VariableAccessor allocateVariableAccessor(String name) {
-        String[] myVariableNames = variableNames;
-
-        int newIndex = myVariableNames.length;
-        String[] newVariableNames = new String[newIndex + 1];
-
-        VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, this.id);
-
-        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
-
-        newVariableNames[newIndex] = name;
-        variableNames = newVariableNames;
-
-        return newVariableAccessor;
+    public boolean hasObjectID() {
+        return variableTableManager.hasObjectID();
     }
 
-    public VariableAccessor getVariableAccessorForWrite(String name) {
-        VariableAccessor ivarAccessor = variableAccessors.get(name);
-        if (ivarAccessor == null) {
-
-            synchronized (this) {
-                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
-                ivarAccessor = myVariableAccessors.get(name);
-
-                if (ivarAccessor == null) {
-                    // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessor(name);
-                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
-
-                    newVariableAccessors.putAll(myVariableAccessors);
-                    newVariableAccessors.put(name, ivarAccessor);
-
-                    variableAccessors = newVariableAccessors;
-                }
-            }
-        }
-        return ivarAccessor;
+    public Map<String, org.jruby.runtime.ivars.VariableAccessor> getVariableAccessorsForRead() {
+        return variableTableManager.getVariableAccessorsForRead();
     }
 
-    public final class VariableAccessorField {
-        private final String name;
-        private volatile VariableAccessor variableAccessor = VariableAccessor.DUMMY_ACCESSOR;
-
-        private VariableAccessorField(String name) {
-            this.name = name;
-        }
-
-        public VariableAccessor getVariableAccessorForRead() {
-            return variableAccessor;
-        }
-
-        public VariableAccessor getVariableAccessorForWrite() {
-            return variableAccessor != VariableAccessor.DUMMY_ACCESSOR
-                    ? variableAccessor : allocateVariableAccessor();
-        }
-
-        private synchronized VariableAccessor allocateVariableAccessor() {
-            if (variableAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-                variableAccessor = RubyClass.this.allocateVariableAccessor(name);
-            }
-
-            return variableAccessor;
-        }
+    public org.jruby.runtime.ivars.VariableAccessor getVariableAccessorForWrite(String name) {
+        return variableTableManager.getVariableAccessorForWrite(name, id);
     }
 
-    public VariableAccessor getVariableAccessorForRead(String name) {
-        VariableAccessor accessor = getVariableAccessorsForRead().get(name);
-        if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
+    public org.jruby.runtime.ivars.VariableAccessor getVariableAccessorForRead(String name) {
+        org.jruby.runtime.ivars.VariableAccessor accessor = getVariableAccessorsForRead().get(name);
+        if (accessor == null) accessor = org.jruby.runtime.ivars.VariableAccessor.DUMMY_ACCESSOR;
         return accessor;
     }
 
     public VariableAccessorField getObjectIdAccessorField() {
-        return objectIdVariableAccessorField;
+        return variableTableManager.getObjectIdAccessorField();
     }
 
     public VariableAccessorField getNativeHandleAccessorField() {
-        return cextHandleVariableAccessorField;
+        return variableTableManager.getNativeHandleAccessorField();
+    }
+
+    public org.jruby.runtime.ivars.VariableAccessor getNativeHandleAccessorForWrite() {
+        return variableTableManager.getNativeHandleAccessorForWrite();
     }
 
     public VariableAccessorField getFFIHandleAccessorField() {
-        return ffiHandleVariableAccessorField;
+        return variableTableManager.getFFIHandleAccessorField();
+    }
+
+    public org.jruby.runtime.ivars.VariableAccessor getFFIHandleAccessorForRead() {
+        return variableTableManager.getFFIHandleAccessorForRead();
+    }
+
+    public org.jruby.runtime.ivars.VariableAccessor getFFIHandleAccessorForWrite() {
+        return variableTableManager.getFFIHandleAccessorForWrite();
     }
 
     public VariableAccessorField getObjectGroupAccessorField() {
-        return objectGroupVariableAccessorField;
+        return variableTableManager.getObjectGroupAccessorField();
+    }
+
+    public org.jruby.runtime.ivars.VariableAccessor getObjectGroupAccessorForRead() {
+        return variableTableManager.getObjectGroupAccessorForRead();
+    }
+
+    public org.jruby.runtime.ivars.VariableAccessor getObjectGroupAccessorForWrite() {
+        return variableTableManager.getObjectGroupAccessorForWrite();
     }
 
     public int getVariableTableSize() {
-        return variableAccessors.size();
+        return variableTableManager.getVariableTableSize();
     }
 
     public int getVariableTableSizeWithExtras() {
-        return variableNames.length;
-    }
-
-    public Map<String, VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+        return variableTableManager.getVariableTableSizeWithExtras();
     }
 
     /**
@@ -383,10 +316,11 @@ public class RubyClass extends RubyModule {
      * @return a copy of the array of known instance variable names
      */
     public String[] getVariableNames() {
-        String[] original = variableNames;
-        String[] copy = new String[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
+        return variableTableManager.getVariableNames();
+    }
+
+    public Map<String, org.jruby.runtime.ivars.VariableAccessor> getVariableTableCopy() {
+        return new HashMap<String, org.jruby.runtime.ivars.VariableAccessor>(getVariableAccessorsForRead());
     }
 
     @Override
@@ -437,7 +371,23 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), objectSpace);
         this.runtime = runtime;
-        this.realClass = superClass == null ? null : superClass.getRealClass();
+        
+        // Since this path is for included wrappers and singletons, use parent
+        // class's realClass and varTableMgr. If the latter is null, create a
+        // dummy, since we won't be using it anyway (we're above BasicObject
+        // so variable requests won't reach us).
+        if (superClass == null) {
+            this.realClass = null;
+            this.variableTableManager = new VariableTableManager(this);
+        } else {
+            this.realClass = superClass.realClass;
+            if (realClass != null) {
+                this.variableTableManager = realClass.variableTableManager;
+            } else {
+                this.variableTableManager = new VariableTableManager(this);
+            }
+        }
+        
         setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
     
@@ -448,6 +398,7 @@ public class RubyClass extends RubyModule {
         super(runtime, runtime.getClassClass());
         this.runtime = runtime;
         this.realClass = this;
+        this.variableTableManager = new VariableTableManager(this);
         index = ClassIndex.CLASS;
     }
     
@@ -1850,6 +1801,13 @@ public class RubyClass extends RubyModule {
             }
         }
     }
+    
+    @Deprecated
+    public static class VariableAccessor extends org.jruby.runtime.ivars.VariableAccessor {
+        public VariableAccessor(String name, int index, int classId) {
+            super(name, index, classId);
+        }
+    }
 
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
@@ -1870,16 +1828,6 @@ public class RubyClass extends RubyModule {
 
     private Class reifiedClass;
 
-    @SuppressWarnings("unchecked")
-    private static String[] EMPTY_STRING_ARRAY = new String[0];
-    private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
-    private volatile String[] variableNames = EMPTY_STRING_ARRAY;
-
-    private volatile boolean hasObjectID = false;
-    public boolean hasObjectID() {
-        return hasObjectID;
-    }
-
     private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
 
     private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
@@ -1896,4 +1844,7 @@ public class RubyClass extends RubyModule {
 
     /** The "real" class, used by includes and singletons to locate the actual type of the object */
     private final RubyClass realClass;
+    
+    /** Variable table manager for this class */
+    private final VariableTableManager variableTableManager;
 }

@@ -40,6 +40,7 @@ import java.lang.invoke.SwitchPoint;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import org.jruby.RubyFloat;
+import org.jruby.runtime.ivars.VariableAccessor;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -653,7 +654,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
-        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
+        VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
 
         // produce nil if the variable has not been initialize
         MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
@@ -691,7 +692,7 @@ public class Bootstrap {
     }
 
     public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
-        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForWrite(site.name);
+        VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForWrite(site.name);
 
         // set variable value and fold by returning value
         MethodHandle setValue = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));

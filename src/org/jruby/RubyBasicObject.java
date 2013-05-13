@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -114,13 +115,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected int flags;
 
     // variable table, lazily allocated as needed (if needed)
-    private transient Object[] varTable;
+    transient Object[] varTable;
     
     // locking stamp for Unsafe ops updating the vartable
-    private transient volatile int varTableStamp;
-    
-    private static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
-    private static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
+    transient volatile int varTableStamp;
 
     /**
      * The error message used when some one tries to modify an
@@ -974,47 +972,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * object is frozen.
      */
     protected long getObjectId() {
-        RubyClass realClass = metaClass.getRealClass();
-        RubyClass.VariableAccessor objectIdAccessor = realClass.getObjectIdAccessorField().getVariableAccessorForRead();
-        Long id = (Long)objectIdAccessor.get(this);
-        if (id != null) return id;
-        
-        synchronized (this) {
-            objectIdAccessor = realClass.getObjectIdAccessorField().getVariableAccessorForRead();
-            id = (Long)objectIdAccessor.get(this);
-            if (id != null) return id;
-
-            return initObjectId(realClass.getObjectIdAccessorField().getVariableAccessorForWrite());
-        }
-    }
-
-    /**
-     * We lazily stand up the object ID since it forces us to stand up
-     * per-object state for a given object. We also check for ObjectSpace here,
-     * and normally we do not register a given object ID into ObjectSpace due
-     * to the high cost associated with constructing the related weakref. Most
-     * uses of id/object_id will only ever need it to be a unique identifier,
-     * and the id2ref behavior provided by ObjectSpace is considered internal
-     * and not generally supported.
-     * 
-     * @param objectIdAccessor The variable accessor to use for storing the
-     * generated object ID
-     * @return The generated object ID
-     */
-    protected synchronized long initObjectId(RubyClass.VariableAccessor objectIdAccessor) {
-        Ruby runtime = getRuntime();
-        long id;
-        
-        if (runtime.isObjectSpaceEnabled()) {
-            id = runtime.getObjectSpace().createAndRegisterObjectId(this);
-        } else {
-            id = ObjectSpace.calculateObjectId(this);
-        }
-        
-        // we use a direct path here to avoid frozen checks
-        setObjectId(objectIdAccessor.getIndex(), id);
-
-        return id;
+        return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
     }
 
     /** rb_obj_inspect
@@ -1080,7 +1038,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ThreadContext context = getRuntime().getCurrentContext();
         String sep = "";
 
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : getMetaClass().getRealClass().getVariableAccessorsForRead().entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
             
@@ -1227,101 +1185,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
         if (index < 0) return;
-        setVariableInternal(index, value);
-    }
-    
-    protected final void setVariableInternal(int index, Object value) {
-        if(UnsafeHolder.U == null)
-            setVariableSynchronized(index,value);
-        else
-            setVariableStamped(index,value);
-    }
-
-    private void setVariableSynchronized(int index, Object value) {
-        synchronized (this) {
-            Object[] currentTable = varTable;
-
-            if (currentTable == null) {
-                varTable = currentTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-            } else if (currentTable.length <= index) {
-                Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
-                varTable = newTable;
-            }
-            
-            varTable[index] = value;
-        }
-    }
-    
-    private void setVariableStamped(int index, Object value) {
-        
-        for(;;) {
-            int currentStamp = varTableStamp;
-            // spin-wait if odd
-            if((currentStamp & 0x01) != 0)
-               continue;
-            
-            Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET);
-            
-            if(currentTable == null || index >= currentTable.length)
-            {
-                // try to acquire exclusive access to the varTable field
-                if(!UnsafeHolder.U.compareAndSwapInt(this, STAMP_OFFSET, currentStamp, ++currentStamp))
-                    continue;
-                
-                Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                if(currentTable != null)
-                    System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
-                newTable[index] = value;
-                UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, newTable);
-                
-                // release exclusive access
-                varTableStamp = currentStamp + 1;
-            } else {
-                // shared access to varTable field.
-                
-                if(UnsafeHolder.SUPPORTS_FENCES) {
-                    currentTable[index] = value;
-                    UnsafeHolder.fullFence();
-                } else {
-                    // TODO: maybe optimize by read and checking current value before setting
-                    UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
-                }
-                
-                // validate stamp. redo on concurrent modification
-                if(varTableStamp != currentStamp)
-                    continue;
-                
-            }
-            
-            break;
-        }
-        
-        
-    }
-    
-
-    private void setObjectId(int index, long value) {
-        if (index < 0) return;
-        setVariableInternal(index, value);
+        metaClass.getVariableTableManager().setVariableInternal(this, index, value);
     }
     
     public final Object getNativeHandle() {
-        return getMetaClass().getRealClass().getNativeHandleAccessorField().getVariableAccessorForRead().get(this);
+        return metaClass.getVariableTableManager().getNativeHandle(this);
     }
 
     public final void setNativeHandle(Object value) {
-        int index = getMetaClass().getRealClass().getNativeHandleAccessorField().getVariableAccessorForWrite().getIndex();
-        setVariableInternal(index, value);
+        metaClass.getVariableTableManager().setNativeHandle(this, value);
     }
 
     public final Object getFFIHandle() {
-        return getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(this);
+        return metaClass.getVariableTableManager().getFFIHandle(this);
     }
 
     public final void setFFIHandle(Object value) {
-        int index = getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForWrite().getIndex();
-        setVariableInternal(index, value);
+        metaClass.getVariableTableManager().setFFIHandle(this, value);
     }
 
     //
@@ -1340,7 +1220,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public boolean hasVariables() {
         // we check both to exclude object_id
-        return getMetaClass().getRealClass().getVariableTableSize() > 0 && varTable != null && varTable.length > 0;
+        return metaClass.getVariableTableSize() > 0 && varTable != null && varTable.length > 0;
     }
 
     /**
@@ -1348,9 +1228,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<Object>> getVariableList() {
-        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
         ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
             list.add(new VariableEntry<Object>(entry.getKey(), value));
@@ -1363,9 +1243,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    // TODO: must override in RubyModule to pick up constants
    public List<String> getVariableNameList() {
-        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
         ArrayList<String> list = new ArrayList<String>();
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
             list.add(entry.getKey());
@@ -1378,7 +1258,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * specified name.
      */
     protected boolean variableTableContains(String name) {
-        return getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this) != null;
+        return metaClass.getVariableAccessorForRead(name).get(this) != null;
     }
 
     /**
@@ -1387,14 +1267,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the object or null if not found
      */
     protected Object variableTableFetch(String name) {
-        return getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
+        return metaClass.getVariableAccessorForRead(name).get(this);
     }
 
     /**
      * Store a value in the variable store under the specific name.
      */
     protected Object variableTableStore(String name, Object value) {
-        getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, value);
+        metaClass.getVariableAccessorForWrite(name).set(this, value);
         return value;
     }
 
@@ -1404,8 +1284,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     protected Object variableTableRemove(String name) {
         synchronized(this) {
-            Object value = getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
-            getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, null);
+            Object value = metaClass.getVariableAccessorForRead(name).get(this);
+            metaClass.getVariableAccessorForWrite(name).set(this, null);
             
             // if there's no values set anymore, null out the table
             for (Object var : varTable) {
@@ -1478,72 +1358,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * rbClone work correctly.
      */
     public void syncVariables(IRubyObject other) {
-        RubyClass realClass = metaClass.getRealClass();
-        RubyClass otherRealClass = other.getMetaClass().getRealClass();
-        boolean sameTable = otherRealClass == realClass;
-
-        if (sameTable) {
-            int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
-            
-            
-            Object[] otherVars = ((RubyBasicObject) other).varTable;
-            
-            if(UnsafeHolder.U == null)
-            {
-                synchronized (this) {
-                    varTable = makeSyncedTable(varTable, otherVars, idIndex);
-                }
-            } else {
-                for(;;) {
-                    int oldStamp = varTableStamp;
-                    // wait for read mode
-                    if((oldStamp & 0x01) == 1)
-                        continue;
-                    // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(this, STAMP_OFFSET, oldStamp, ++oldStamp))
-                        continue;
-                    
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(this, VAR_TABLE_OFFSET);
-                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
-                    
-                    UnsafeHolder.U.putOrderedObject(this, VAR_TABLE_OFFSET, newTable);
-                    
-                    // release write mode
-                    varTableStamp = oldStamp+1;
-                    break;
-                }
-
-                
-            }
-
-        } else {
-            for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
-                RubyClass.VariableAccessor accessor = entry.getValue();
-                Object value = accessor.get(other);
-
-                if (value != null) {
-                    if (sameTable) {
-                        accessor.set(this, value);
-                    } else {
-                        realClass.getVariableAccessorForWrite(accessor.getName()).set(this, value);
-                    }
-                }
-            }
-        }
-    }
-
-    private static Object[] makeSyncedTable(Object[] currentTable, Object[] otherTable, int objectIdIdx) {
-        if(currentTable == null || currentTable.length < otherTable.length)
-            currentTable = otherTable.clone();
-        else
-            System.arraycopy(otherTable, 0, currentTable, 0, otherTable.length);
-    
-        // null out object ID so we don't share it
-        if (objectIdIdx >= 0 && objectIdIdx < currentTable.length) {
-            currentTable[objectIdIdx] = null;
-        }
-        
-        return currentTable;
+        metaClass.getVariableTableManager().syncVariables(this, other);
     }
     
     //
@@ -1596,9 +1411,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getInstanceVariableList() {
-        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
         ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
             list.add(new VariableEntry<IRubyObject>(entry.getKey(), (IRubyObject)value));
@@ -1611,9 +1426,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    // TODO: must override in RubyModule to pick up constants
    public List<String> getInstanceVariableNameList() {
-        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
         ArrayList<String> list = new ArrayList<String>();
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
             list.add(entry.getKey());
@@ -3042,9 +2857,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         oos.writeUTF(metaClass.getName());
         
         if (varTable != null) {
-            Map<String, RubyClass.VariableAccessor> accessors = metaClass.getVariableAccessorsForRead();
+            Map<String, VariableAccessor> accessors = metaClass.getVariableAccessorsForRead();
             oos.writeInt(accessors.size());
-            for (RubyClass.VariableAccessor accessor : accessors.values()) {
+            for (VariableAccessor accessor : accessors.values()) {
                 oos.writeUTF(ERR_INSECURE_SET_INST_VAR);
                 oos.writeObject(accessor.get(this));
             }

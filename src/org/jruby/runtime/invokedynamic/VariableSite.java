@@ -8,10 +8,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import org.jruby.runtime.ivars.VariableAccessor;
 
 public class VariableSite extends MutableCallSite {
     public final String name;
-    private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
+    private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
     private final String file;
     private final int line;
     private int chainCount;
@@ -37,7 +38,7 @@ public class VariableSite extends MutableCallSite {
     }
 
     public final IRubyObject getVariable(IRubyObject object) {
-        RubyClass.VariableAccessor variableAccessor = accessor;
+        VariableAccessor variableAccessor = accessor;
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
             accessor = variableAccessor = cls.getVariableAccessorForRead(name);
@@ -50,7 +51,7 @@ public class VariableSite extends MutableCallSite {
     }
 
     public final IRubyObject setVariable(IRubyObject object, IRubyObject value) {
-        RubyClass.VariableAccessor variableAccessor = accessor;
+        VariableAccessor variableAccessor = accessor;
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
             accessor = variableAccessor = cls.getVariableAccessorForWrite(name);

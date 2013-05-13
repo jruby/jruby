@@ -45,6 +45,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.java.proxies.JavaProxy;
@@ -63,7 +64,7 @@ import org.jruby.util.JRubyObjectInputStream;
 public class JavaObject extends RubyObject {
 
     private static Object NULL_LOCK = new Object();
-    private final RubyClass.VariableAccessor objectAccessor;
+    private final VariableAccessor objectAccessor;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
         super(runtime, rubyClass);
