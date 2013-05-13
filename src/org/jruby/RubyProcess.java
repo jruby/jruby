@@ -29,10 +29,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import jnr.ffi.*;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
-import jnr.ffi.Runtime;
 import jnr.ffi.byref.IntByReference;
 import jnr.posix.Times;
 import org.jruby.anno.JRubyClass;
@@ -111,13 +109,11 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
         
-        // Bunch of methods still not implemented
-        @JRubyMethod(name = "to_int")
-        public IRubyObject not_implemented() {
-            String error = "Process::Status#to_int not implemented";
-            throw getRuntime().newNotImplementedError(error);
+        public IRubyObject to_int() {
+            return to_i(getRuntime());
         }
 
+        // Bunch of methods still not implemented
         @JRubyMethod(name = "stopped?")
         public IRubyObject not_implemented0() {
             String error = "Process::Status#stopped? not implemented";
