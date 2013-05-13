@@ -109,10 +109,6 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
         
-        public IRubyObject to_int() {
-            return to_i(getRuntime());
-        }
-
         // Bunch of methods still not implemented
         @JRubyMethod(name = "stopped?")
         public IRubyObject not_implemented0() {
@@ -174,7 +170,7 @@ public class RubyProcess {
         public IRubyObject to_i() {
             return to_i(getRuntime());
         }
-        @JRubyMethod
+        @JRubyMethod(name = {"to_i", "to_int"})
         public IRubyObject to_i(ThreadContext context) {
             return to_i(context.runtime);
         }
