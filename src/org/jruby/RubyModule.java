@@ -848,8 +848,6 @@ public class RubyModule extends RubyObject {
 
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
-        Ruby runtime = getRuntime();
-
         testFrozen("class/module");
 
         addMethodInternal(name, method);
