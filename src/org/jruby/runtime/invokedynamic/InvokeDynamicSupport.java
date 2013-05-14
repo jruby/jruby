@@ -201,6 +201,8 @@ public class InvokeDynamicSupport {
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
     
+    // <editor-fold desc="bootstraps">
+    
     public static CallSite contextFieldBootstrap(Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
         MutableCallSite site = new MutableCallSite(type);
         
@@ -715,11 +717,13 @@ public class InvokeDynamicSupport {
         
         site.setTarget(target);
     }
-
+    
+    // </editor-fold>
+    
     ////////////////////////////////////////////////////////////////////////////
     // INITIAL AND FALLBACK METHODS FOR POST BOOTSTRAP
     ////////////////////////////////////////////////////////////////////////////
-
+    
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
             AbstractScript script, ThreadContext context, int scopeIndex) {
         SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
