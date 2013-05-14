@@ -60,6 +60,7 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import org.jruby.ast.visitor.InstanceVariableFinder;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -139,6 +140,24 @@ public class RubyObject extends RubyBasicObject {
      */
     public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObject(runtime, klass);
+        }
+    };
+    
+    /**
+     * Allocator that inspects all methods for instance variables and chooses
+     * a concrete class to construct based on that. This allows using
+     * specialized subclasses to hold instance variables in fields rather than
+     * always holding them in an array.
+     */
+    public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            InstanceVariableFinder discoverer = new InstanceVariableFinder();
+            klass.visitInterpretedMethods(discoverer);
+
+            // TODO: select appropriate subclass and set up appropriate
+            // allocator and variable table logic.
+            klass.setAllocator(OBJECT_ALLOCATOR);
             return new RubyObject(runtime, klass);
         }
     };
