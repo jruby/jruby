@@ -129,7 +129,7 @@ module GC
           end
 
           def enabled?
-            @gc_beans != nil
+            @gc_listener != nil
           end
 
           def enable
@@ -141,8 +141,13 @@ module GC
 
           def disable
             java.lang.management.ManagementFactory.garbage_collector_mx_beans.each do |gc_bean|
-              gc_bean.remove_notification_listener @gc_listener
+              begin
+                gc_bean.remove_notification_listener @gc_listener
+              rescue javax.management.ListenerNotFoundException
+                # ignore missing listeners
+              end
             end
+            @gc_listener = nil
           end
 
           def clear
@@ -231,7 +236,6 @@ module GC
         end
 
         def enable
-          require 'java'
           @gc_beans ||= java.lang.management.ManagementFactory.garbage_collector_mx_beans
           clear
         end
