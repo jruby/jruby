@@ -130,7 +130,7 @@ public class ListNode extends Node {
     }
     
     public Object accept(NodeVisitor visitor) {
-        throw new RuntimeException("Base class ListNode should never be evaluated");
+        return visitor.visitListNode(this);
     }
     
     public Node get(int idx) {

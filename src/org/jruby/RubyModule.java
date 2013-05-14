@@ -66,13 +66,17 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
+import org.jruby.ast.Node;
+import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CacheableMethod;
+import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
@@ -3766,6 +3770,51 @@ public class RubyModule extends RubyObject {
      */
     public void setCacheProxy(boolean cacheProxy) {
         setFlag(USER0_F, cacheProxy);
+    }
+    
+    /**
+     * Visit all interpreted methods in this module (and superclasses, if this
+     * is a class with superclasses) using the given visitor.
+     * 
+     * @param visitor the visitor to use
+     */
+    public void visitInterpretedMethods(NodeVisitor visitor) {
+        RubyModule cls = this;
+        while (cls != null) {
+            visitMethods(visitor, cls);
+            if (cls instanceof RubyClass) {
+                cls = ((RubyClass)cls).getSuperClass();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Visit methods contained in the specified class using the given visitor.
+     * 
+     * @param visitor the visitor to use
+     * @param mod the module/class whose methods to visit
+     */
+    private static void visitMethods(NodeVisitor visitor, RubyModule mod) {
+        for (DynamicMethod method : mod.getNonIncludedClass().getMethods().values()) {
+            DynamicMethod realMethod = method.getRealMethod();
+            if (method instanceof DefaultMethod) {
+                for (Node node : ((DefaultMethod) realMethod).getArgsNode().childNodes()) {
+                    node.accept(visitor);
+                }
+                for (Node node : ((DefaultMethod) realMethod).getBodyNode().childNodes()) {
+                    node.accept(visitor);
+                }
+            } else if (method instanceof InterpretedMethod) {
+                for (Node node : ((InterpretedMethod) realMethod).getArgsNode().childNodes()) {
+                    node.accept(visitor);
+                }
+                for (Node node : ((InterpretedMethod) realMethod).getBodyNode().childNodes()) {
+                    node.accept(visitor);
+                }
+            }
+        }
     }
 
     @Deprecated
