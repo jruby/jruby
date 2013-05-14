@@ -77,6 +77,7 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessorField;
+import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -255,7 +256,7 @@ public class RubyClass extends RubyModule {
     }
 
     public VariableAccessor getVariableAccessorForWrite(String name) {
-        return variableTableManager.getVariableAccessorForWrite(name, id);
+        return variableTableManager.getVariableAccessorForWrite(name);
     }
 
     public VariableAccessor getVariableAccessorForRead(String name) {
