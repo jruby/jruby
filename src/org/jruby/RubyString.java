@@ -3512,11 +3512,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /* str_byte_substr */
     private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
         int length = value.length();
-        int s = value.getBegin();
         
         if (len < 0 || beg > length) return runtime.getNil();
 
-        int p;
         if (beg < 0) {
             beg += length;
             if (beg < 0) return runtime.getNil();
@@ -3525,13 +3523,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             
         if (len <= 0) {
             len = 0;
-            p = 0;
-        }
-        else {
-            p = s + beg;
         }
 
-        return makeShared19(runtime, p, len);
+        return makeShared19(runtime, beg, len);
     }
 
     /* str_byte_aref */
