@@ -1562,8 +1562,8 @@ public class InvocationLinker {
                 .permute(2)
                 .filterReturn(filter)
                 .insert(1, accessor.getIndex())
-                .cast(Object.class, IRubyObject.class, int.class)
-                .invokeVirtualQuiet(lookup(), "getVariable");
+                .cast(Object.class, RubyBasicObject.class, int.class)
+                .invokeStaticQuiet(lookup(), VariableAccessor.class, "getVariable");
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
 
@@ -1592,9 +1592,9 @@ public class InvocationLinker {
                 .from(site.type())
                 .permute(2, 3)
                 .filterReturn(filter)
-                .insert(1, accessor.getIndex())
-                .cast(void.class, IRubyObject.class, int.class, Object.class)
-                .invokeVirtualQuiet(lookup(), "setVariable");
+                .insert(1, cls.getRealClass(), accessor.getIndex())
+                .cast(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class)
+                .invokeStaticQuiet(lookup(), accessor.getClass(), "setVariable");
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
 

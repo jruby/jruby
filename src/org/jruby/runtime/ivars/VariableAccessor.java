@@ -3,7 +3,6 @@ package org.jruby.runtime.ivars;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.VariableTableManager;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class VariableAccessor {
     protected final String name;
@@ -31,7 +30,14 @@ public class VariableAccessor {
     }
 
     public Object get(Object object) {
-        return ((RubyBasicObject) object).getVariable(index);
+        return getVariable((RubyBasicObject)object, index);
+    }
+
+    public static Object getVariable(RubyBasicObject object, int index) {
+		Object[] ivarTable;
+        if (index < 0 || (ivarTable = object.varTable) == null) return null;
+        if (ivarTable.length > index) return ivarTable[index];
+        return null;
     }
 
     public void set(Object object, Object value) {

@@ -2,7 +2,6 @@ package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.VariableTableManager;
 
 public class SynchronizedVariableAccessor extends VariableAccessor {
     public SynchronizedVariableAccessor(RubyClass realClass, String name, int index, int classId) {
@@ -10,10 +9,10 @@ public class SynchronizedVariableAccessor extends VariableAccessor {
     }
 
     public void set(Object object, Object value) {
-        setVariableSynchronized(realClass, (RubyBasicObject)object, index, value);
+        setVariable((RubyBasicObject)object, realClass, index, value);
     }
 
-    public static void setVariableSynchronized(RubyClass realClass, RubyBasicObject self, int index, Object value) {
+    public static void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value) {
         synchronized (self) {
             ensureTable(self, realClass, index)[index] = value;
         }

@@ -474,7 +474,8 @@ public class InvokeDynamicSupport {
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
         
         // get variable value and filter with nullToNil
-        MethodHandle getValue = findVirtual(IRubyObject.class, "getVariable", methodType(Object.class, int.class));
+        MethodHandle getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
+        getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
         getValue = insertArguments(getValue, 1, accessor.getIndex());
         getValue = filterReturnValue(getValue, nullToNil);
         
@@ -517,9 +518,9 @@ public class InvokeDynamicSupport {
         returnValue = dropArguments(returnValue, 0, IRubyObject.class);
 
         // set variable value and fold by returning value
-        MethodHandle setValue = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));
-        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, int.class, IRubyObject.class));
-        setValue = insertArguments(setValue, 1, accessor.getIndex());
+        MethodHandle setValue = findStatic(accessor.getClass(), "setVariable", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
+        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
+        setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
         setValue = foldArguments(returnValue, setValue);
 
         // prepare fallback

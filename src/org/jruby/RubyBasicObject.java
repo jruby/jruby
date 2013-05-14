@@ -1174,18 +1174,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
-    /**
-     * Get variable table for read purposes. May return null if uninitialized.
-     */
-    protected final Object[] getVariableTableForRead() {
-        return varTable;
-    }
-
     public Object getVariable(int index) {
-		Object[] ivarTable;
-        if (index < 0 || (ivarTable = getVariableTableForRead()) == null) return null;
-        if (ivarTable.length > index) return ivarTable[index];
-        return null;
+        return VariableAccessor.getVariable(this, index);
     }
     
     public void setVariable(int index, Object value) {

@@ -87,17 +87,17 @@ public class VariableTableManager {
     
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
         if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariableSynchronized(realClass,self,index,value);
+            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
         } else {
-            StampedVariableAccessor.setVariableStamped(realClass,self,index,value);
+            StampedVariableAccessor.setVariable(self,realClass,index,value);
         }
     }
     
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
         if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariableSynchronized(realClass,self,index,value);
+            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
         } else {
-            StampedVariableAccessor.setVariableStamped(realClass,self,index,value);
+            StampedVariableAccessor.setVariable(self,realClass,index,value);
         }
     }
     
