@@ -516,7 +516,7 @@ ary
   end
   
   it "clears $! when doing a hard return from a method-level rescue" do
-    result = compile_and_run <<-EOC
+    compile_and_run("
       $! = nil
       def foo
         raise
@@ -525,9 +525,25 @@ ary
       end
       foo
       $!
-    EOC
-    
-    result.should == nil
+    ").should == nil
+  end
+  
+  it "clears $! when doing a hard return from a class-level rescue" do
+    compile_and_run("
+      $! = nil
+      class ClearErrorInfoOnReturnFromClass
+        raise
+      rescue RuntimeError
+        return
+      end
+      $!
+    ").should == nil
+  end
+  
+  it "properly handles method-root rescue logic with returns (GH\#733)" do
+    compile_and_run("def foo; return 1; rescue; return 2; else; return 3; end; foo").should == 1
+    compile_and_run("def foo; 1; rescue; return 2; else; return 3; end; foo").should == 3
+    compile_and_run("def foo; raise; rescue; return 2; else; return 3; end; foo").should == 2
   end
   
   it "does a bunch of other stuff" do

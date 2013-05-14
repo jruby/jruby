@@ -88,6 +88,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     protected Label scopeEnd = new Label();
     protected Label redoJump;
     protected boolean inNestedMethod = false;
+    protected boolean inRescue = false;
     private int lastLine = -1;
     private int lastPositionLine = -1;
     protected StaticScope scope;
@@ -1878,11 +1879,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry) {
         String mname = getNewRescueName();
         BaseBodyCompiler rescueMethod = outline(mname);
-        rescueMethod.performRescueLight(regularCode, rubyCatchCode, rubyElseCode, needsRetry);
+        rescueMethod.performRescueInternal(regularCode, rubyCatchCode, rubyElseCode, needsRetry, false);
         rescueMethod.endBody();
     }
 
     public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry) {
+        performRescueInternal(regularCode, rubyCatchCode, rubyElseCode, needsRetry, true);
+    }
+
+    public void performRescueInternal(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry, boolean light) {
         Label afterRubyCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
@@ -1892,7 +1897,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         // this method as a "nested" method, and use full exception logic for
         // return, break, etc.
         boolean oldInNested = inNestedMethod;
-        inNestedMethod = true;
+        inNestedMethod = !light;
 
         try {
             // store previous exception for restoration if we rescue something
@@ -1931,9 +1936,18 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // Handle Ruby exceptions (RaiseException)
             method.label(rubyCatchBlock);
             {
-                method.astore(getExceptionIndex());
+                // if in rescue and we do a hard return, must clear $!
+                boolean oldInRescue = inRescue;
+                inRescue = true;
+                
+                try {
+                    method.astore(getExceptionIndex());
 
-                rubyCatchCode.branch(this);
+                    rubyCatchCode.branch(this);
+                } finally {
+                    inRescue = oldInRescue;
+                }
+                
                 method.label(afterRubyCatchBody);
                 method.go_to(exitRescue);
             }

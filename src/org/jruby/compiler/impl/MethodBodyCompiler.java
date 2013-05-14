@@ -4,7 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -116,6 +115,11 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
 
     @Override
     public void performReturn() {
+        if (inRescue) {
+            // returning from rescue, clear $!
+            clearErrorInfo();
+        }
+        
         // normal return for method body. return jump for within a begin/rescue/ensure
         if (inNestedMethod) {
             loadThreadContext();

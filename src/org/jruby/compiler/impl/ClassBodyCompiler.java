@@ -2,7 +2,6 @@ package org.jruby.compiler.impl;
 
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,6 +24,11 @@ public class ClassBodyCompiler extends RootScopedBodyCompiler {
 
     @Override
     public void performReturn() {
+        if (inRescue) {
+            // returning from rescue, clear $!
+            clearErrorInfo();
+        }
+        
         // return in a class body raises error
         loadThreadContext();
         invokeUtilityMethod("throwReturnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
