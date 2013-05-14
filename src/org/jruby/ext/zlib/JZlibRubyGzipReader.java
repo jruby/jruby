@@ -226,14 +226,15 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         // StringIO.new("あいう").gets(5) => "あい"
         // StringIO.new("あいう").gets(6) => "あい"
         // StringIO.new("あいう").gets(7) => "あいう"
-        while (result.indexOf(sep) == -1) {
+        while (limit <= 0 || result.length() < limit) {
+            int sepOffset = result.length() - sep.getRealSize();
+            if (sepOffset >= 0 && result.startsWith(sep, sepOffset)) break;
+
             ce = bufferedStream.read();
 
             if (ce == -1) break;
 
             result.append(ce);
-            
-            if (limit > 0 && result.length() >= limit) break;
         }
         
         // io.available() only returns 0 after EOF is encountered
