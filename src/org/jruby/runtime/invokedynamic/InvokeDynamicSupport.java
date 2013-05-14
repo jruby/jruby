@@ -189,6 +189,10 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("globalBooleanBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
+    public static Handle getLoadBooleanHandle() {
+        return getBootstrapHandle("loadBooleanBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+    
     public static Handle checkpointHandle() {
         return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
     }
@@ -591,6 +595,25 @@ public class InvokeDynamicSupport {
         
         return site;
     }
+
+    public static CallSite loadBooleanBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        boolean value = Boolean.parseBoolean(names[1]);
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle;
+        
+        if (operation.equals("loadBoolean")) {
+            handle = lookup.findStatic(InvokeDynamicSupport.class, "loadBoolean", methodType(RubyBoolean.class, MutableCallSite.class, boolean.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+        
+        handle = insertArguments(handle, 0, site, value);
+        site.setTarget(handle);
+        
+        return site;
+    }
     
     public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
@@ -814,6 +837,12 @@ public class InvokeDynamicSupport {
         BlockBody body = Helpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
         site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class, StaticScope.class));
         return body;
+    }
+    
+    public static RubyBoolean loadBoolean(MutableCallSite site, boolean value, ThreadContext context) {
+        RubyBoolean rubyBoolean = context.runtime.newBoolean(value);
+        site.setTarget(dropArguments(constant(RubyBoolean.class, rubyBoolean), 0, ThreadContext.class));
+        return rubyBoolean;
     }
     
     ////////////////////////////////////////////////////////////////////////////

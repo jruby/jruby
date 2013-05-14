@@ -75,6 +75,8 @@ public interface CacheCompiler {
     public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName);
     
     public void cacheConstantBoolean(BaseBodyCompiler method, String globalName);
+    
+    public void cacheBoolean(BaseBodyCompiler method, boolean tru);
 
     public void finish();
 }

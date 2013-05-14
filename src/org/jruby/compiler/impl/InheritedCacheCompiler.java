@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -624,6 +625,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName) {
         cacheGlobal(method, globalName);
         method.method.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+    }
+    
+    public void cacheBoolean(BaseBodyCompiler method, boolean tru) {
+        // no savings to cache under non-indy
+        method.loadRuntime();
+        method.invokeRuby(tru ? "getTrue" : "getFalse", sig(RubyBoolean.class));
     }
 
     public void finish() {

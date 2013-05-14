@@ -1269,15 +1269,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void loadFalse() {
-        // TODO: cache?
-        loadRuntime();
-        invokeRuby("getFalse", sig(RubyBoolean.class));
+        script.getCacheCompiler().cacheBoolean(this, false);
     }
 
     public void loadTrue() {
-        // TODO: cache?
-        loadRuntime();
-        invokeRuby("getTrue", sig(RubyBoolean.class));
+        script.getCacheCompiler().cacheBoolean(this, true);
     }
 
     public void loadCurrentModule() {

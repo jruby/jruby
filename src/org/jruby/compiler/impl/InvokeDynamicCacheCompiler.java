@@ -28,6 +28,7 @@ package org.jruby.compiler.impl;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -487,5 +488,13 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 InvokeDynamicSupport.getGlobalBooleanHandle(),
                 method.getScriptCompiler().getSourcename(), 
                 method.getLastLine() + 1);
+    }
+    
+    public void cacheBoolean(BaseBodyCompiler method, boolean tru) {
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                "loadBoolean:" + tru,
+                sig(RubyBoolean.class, ThreadContext.class),
+                InvokeDynamicSupport.getLoadBooleanHandle());
     }
 }
