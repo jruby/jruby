@@ -1,21 +1,23 @@
 module Kernel
   module_function
-  def require_relative(relative_feature)
-    if relative_feature.respond_to? :to_path
-      relative_feature = relative_feature.to_path
-    else
-      relative_feature = relative_feature
-    end
-
-    relative_feature = JRuby::Type.convert_to_str(relative_feature)
+  def require_relative(relative_arg)
+    relative_arg = relative_arg.to_path if relative_arg.respond_to? :to_path
+    relative_arg = JRuby::Type.convert_to_str(relative_arg)
     
-    c = caller.first
-    e = c.rindex(/:\d+:in /) 
+    caller.first.rindex(/:\d+:in /) 
     file = $` # just the filename
-    if /\A\((.*)\)/ =~ file # eval, etc.
-      raise LoadError, "cannot infer basepath"
+    raise LoadError, "cannot infer basepath" if /\A\((.*)\)/ =~ file # eval etc.
+
+    # FIXME: Classpath-path can be removed if we make expand_path+dirname
+    # know about classpath: paths.
+    if file =~ /^classpath:(.*)/
+      dir = File.dirname($1)
+      dir = dir == '.' ? "" : dir + "/"
+      absolute_feature = "classpath:#{dir}#{relative_arg}"
+    else
+      absolute_feature = File.expand_path(relative_arg, File.dirname(file))
     end
-    absolute_feature = File.expand_path(relative_feature, File.dirname(file))
+    
     require absolute_feature
   end
 
