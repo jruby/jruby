@@ -1142,6 +1142,9 @@ public final class Ruby {
         // set up defined messages
         initDefinedMessages();
         
+        // set up thread statuses
+        initThreadStatuses();
+        
         irManager = new IRManager();
         
         // Initialize the "dummy" class used as a marker
@@ -1211,6 +1214,14 @@ public final class Ruby {
             RubyString str = RubyString.newString(this, ByteList.create(definedMessage.getText()));
             str.setFrozen(true);
             definedMessages.put(definedMessage, str);
+        }
+    }
+
+    private void initThreadStatuses() {
+        for (RubyThread.Status status : RubyThread.Status.values()) {
+            RubyString str = RubyString.newString(this, status.bytes);
+            str.setFrozen(true);
+            threadStatuses.put(status, str);
         }
     }
 
@@ -4430,6 +4441,10 @@ public final class Ruby {
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
         return definedMessages.get(definedMessage);
     }
+    
+    public RubyString getThreadStatus(RubyThread.Status status) {
+        return threadStatuses.get(status);
+    }
 
     @Deprecated
     public int getSafeLevel() {
@@ -4703,6 +4718,7 @@ public final class Ruby {
     private JavaProxyClassFactory javaProxyClassFactory;
 
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
+    private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
     private interface ObjectSpacer {
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
