@@ -51,7 +51,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
@@ -74,6 +73,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
+import org.jruby.runtime.ivars.VariableTableManager;
 
 /**
  * RubyBasicObject is the only implementation of the
@@ -130,7 +130,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The error message used when some one tries to modify an
      * instance variable in a high security setting.
      */
-    protected static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
+    public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
     public static final int ALL_F = -1;
     public static final int FALSE_F = 1 << 0;
@@ -1205,18 +1205,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     //
 
     /**
-     * Returns true if object has any variables, defined as:
-     * <ul>
-     * <li> instance variables
-     * <li> class variables
-     * <li> constants
-     * <li> internal variables, such as those used when marshaling Ranges and Exceptions
-     * </ul>
-     * @return true if object has any variables, else false
+     * Returns true if object has any variables
+     * 
+     * @see VariableTableManager#hasVariables(org.jruby.RubyBasicObject) 
      */
     public boolean hasVariables() {
-        // we check both to exclude object_id
-        return metaClass.getVariableTableSize() > 0 && varTable != null && varTable.length > 0;
+        return metaClass.getVariableTableManager().hasVariables(this);
     }
 
     /**
@@ -1279,17 +1273,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * table, and returning the removed value.
      */
     protected Object variableTableRemove(String name) {
-        synchronized(this) {
-            Object value = metaClass.getVariableAccessorForRead(name).get(this);
-            metaClass.getVariableAccessorForWrite(name).set(this, null);
-            
-            // if there's no values set anymore, null out the table
-            for (Object var : varTable) {
-                if (var != null) return value;
-            }
-            varTable = null;
-            return value;
-        }
+        return metaClass.getVariableTableManager().clearVariable(this, name);
     }
 
     /**
@@ -2853,16 +2837,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         oos.defaultWriteObject();
         oos.writeUTF(metaClass.getName());
         
-        if (varTable != null) {
-            Map<String, VariableAccessor> accessors = metaClass.getVariableAccessorsForRead();
-            oos.writeInt(accessors.size());
-            for (VariableAccessor accessor : accessors.values()) {
-                oos.writeUTF(ERR_INSECURE_SET_INST_VAR);
-                oos.writeObject(accessor.get(this));
-            }
-        } else {
-            oos.writeInt(0);
-        }
+        metaClass.getVariableTableManager().serializeVariables(this, oos);
     }
     
     /**
@@ -2888,12 +2863,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ois.defaultReadObject();
         metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
         
-        int varCount = ois.readInt();
-        for (int i = 0; i < varCount; i++) {
-            String name = ois.readUTF();
-            Object value = ois.readObject();
-            metaClass.getVariableAccessorForWrite(name).set(this, value);
-        }
+        metaClass.getVariableTableManager().deserializeVariables(this, ois);
     }
 
     // Deprecated methods below this line
@@ -2930,8 +2900,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Deprecated
     public int getVariableCount() {
-        // we use min to exclude object_id
-        return varTable == null ? 0 : Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
+        return getMetaClass().getVariableTableSize();
     }
 
     @Deprecated

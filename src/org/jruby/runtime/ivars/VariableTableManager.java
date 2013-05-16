@@ -26,6 +26,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.ivars;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -428,6 +431,59 @@ public class VariableTableManager {
                     }
                 }
             }
+        }
+    }
+    
+    /**
+     * Returns true if object has any variables, defined as:
+     * <ul>
+     * <li> instance variables
+     * <li> class variables
+     * <li> constants
+     * <li> internal variables, such as those used when marshaling Ranges and Exceptions
+     * </ul>
+     * @return true if object has any variables, else false
+     */
+    public boolean hasVariables(RubyBasicObject object) {
+        // we check both to exclude object_id
+        Object[] myVarTable;
+        return getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
+    }
+
+    public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
+        if (object.varTable != null) {
+            Map<String, VariableAccessor> accessors = getVariableAccessorsForRead();
+            oos.writeInt(accessors.size());
+            for (VariableAccessor accessor : accessors.values()) {
+                oos.writeUTF(RubyBasicObject.ERR_INSECURE_SET_INST_VAR);
+                oos.writeObject(accessor.get(object));
+            }
+        } else {
+            oos.writeInt(0);
+        }
+    }
+
+    public void deserializeVariables(RubyBasicObject object, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        int varCount = ois.readInt();
+        for (int i = 0; i < varCount; i++) {
+            String name = ois.readUTF();
+            Object value = ois.readObject();
+            getVariableAccessorForWrite(name).set(object, value);
+        }
+    }
+    
+    public Object clearVariable(RubyBasicObject object, String name) {
+        synchronized(object) {
+            Object value = getVariableAccessorForRead(name).get(object);
+            getVariableAccessorForWrite(name).set(object, null);
+            
+            // if there's no values set anymore, null out the table
+            // FIXME: This should enlist in volatility logic or be removed
+            for (Object var : object.varTable) {
+                if (var != null) return value;
+            }
+            object.varTable = null;
+            return value;
         }
     }
 
