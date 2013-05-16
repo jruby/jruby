@@ -1783,8 +1783,7 @@ class Time
   def to_time() getlocal end
 
   def to_date
-    jd = Date.__send__(:civil_to_jd, year, mon, mday, Date::ITALY)
-    Date.new!(Date.__send__(:jd_to_ajd, jd, 0, 0), 0, Date::ITALY)
+    Date.jd(Date.__send__(:civil_to_jd, year, mon, mday, Date::GREGORIAN))
   end
 
   def to_datetime
