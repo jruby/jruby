@@ -28,9 +28,11 @@ package org.jruby.embed.osgi.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
+
+import java.io.File;
 
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
@@ -52,7 +54,8 @@ public class JRubyOsgiEmbedTest {
 
     @Configuration
     public Option[] config() {
-        return options(junitBundles(), mavenBundle("org.jruby", "jruby-complete", "1.7.3"));
+        File f = new File("../../lib/jruby-complete.jar");
+        return options(junitBundles(), bundle(f.toURI().toString()));
     }
 
     @Test
@@ -61,6 +64,7 @@ public class JRubyOsgiEmbedTest {
         assertNotNull(b);
         OSGiScriptingContainer scriptingContainer = new OSGiScriptingContainer(b, LocalContextScope.CONCURRENT,
                 LocalVariableBehavior.TRANSIENT);
+        // Ensure that we can load this class in the created ScriptingContainer.
         String result = (String) scriptingContainer.runScriptlet(String.format(
                 "require 'java'; java_import '%s'; %s.new.result.to_java :string", JRubyOsgiEmbedTest.class.getName(),
                 JRubyOsgiEmbedTest.class.getSimpleName()));

@@ -18,7 +18,7 @@
 	<classpathentry kind="lib" path="build_lib/jnr-posix.jar"/>
 	<classpathentry kind="lib" path="build_lib/livetribe-jsr223-2.0.6.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-netdb.jar"/>
-	<classpathentry kind="lib" path="build_lib/org.osgi.core-4.2.0.jar"/>
+	<classpathentry kind="lib" path="build_lib/org.osgi.core-4.3.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-4.0.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-analysis-4.0.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-commons-4.0.jar"/>

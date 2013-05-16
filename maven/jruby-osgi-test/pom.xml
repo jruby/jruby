@@ -79,6 +79,17 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>felix4</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>org.apache.felix.framework</artifactId>
+                    <version>4.2.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
     <build>
