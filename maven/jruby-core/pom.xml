@@ -91,7 +91,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.2-SNAPSHOT</version>
+      <version>1.2</version>
     </dependency>
     <!-- to use this explicitly allows to exclude the asm deps
     which are repacked inside jruby-core itself -->
