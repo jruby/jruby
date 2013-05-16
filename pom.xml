@@ -5,7 +5,7 @@
   <groupId>org.jruby</groupId>
   <artifactId>shared</artifactId>
   <packaging>pom</packaging>
-  <version>1.7.4.dev</version>
+  <version>1.7.4</version>
   <name>JRuby Shared</name>
   <url>http://www.jruby.org/</url>
   <description>A 1.9.3 compatible Ruby interpreter for the JVM</description>

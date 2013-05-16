@@ -8,7 +8,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>1.7.4.dev</version>
+      <version>1.7.4</version>
     </dependency>       
   </dependencies>
 
