@@ -55,6 +55,7 @@ public class SynchronizedVariableAccessor extends VariableAccessor {
      * @param value the variable's value
      */
     public void set(Object object, Object value) {
+        ((RubyBasicObject)object).checkFrozen();
         setVariable((RubyBasicObject)object, realClass, index, value);
     }
 
