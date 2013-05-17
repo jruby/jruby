@@ -72,12 +72,7 @@ public class RubyFixnum extends RubyInteger {
         fixnum.index = ClassIndex.FIXNUM;
         fixnum.setReifiedClass(RubyFixnum.class);
         
-        fixnum.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyFixnum;
-            }
-        };
+        fixnum.kindOf = new RubyModule.JavaClassKindOf(RubyFixnum.class);
 
         if (!runtime.is1_9()) {
             fixnum.includeModule(runtime.getPrecision());

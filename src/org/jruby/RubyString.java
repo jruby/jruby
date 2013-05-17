@@ -155,12 +155,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         runtime.setString(stringClass);
         stringClass.index = ClassIndex.STRING;
         stringClass.setReifiedClass(RubyString.class);
-        stringClass.kindOf = new RubyModule.KindOf() {
-            @Override
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyString;
-                }
-            };
+        stringClass.kindOf = new RubyModule.JavaClassKindOf(RubyString.class);
 
         stringClass.includeModule(runtime.getComparable());
         if (!runtime.is1_9()) stringClass.includeModule(runtime.getEnumerable());

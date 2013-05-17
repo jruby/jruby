@@ -57,12 +57,7 @@ public class RubyConverter extends RubyObject {
         runtime.setConverter(converterc);
         converterc.index = ClassIndex.CONVERTER;
         converterc.setReifiedClass(RubyConverter.class);
-        converterc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyConverter;
-            }
-        };
+        converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 
         converterc.defineAnnotatedMethods(RubyConverter.class);
         return converterc;

@@ -102,12 +102,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         arrayc.index = ClassIndex.ARRAY;
         arrayc.setReifiedClass(RubyArray.class);
         
-        arrayc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyArray;
-            }
-        };
+        arrayc.kindOf = new RubyModule.JavaClassKindOf(RubyArray.class);
 
         arrayc.includeModule(runtime.getEnumerable());
         arrayc.defineAnnotatedMethods(RubyArray.class);

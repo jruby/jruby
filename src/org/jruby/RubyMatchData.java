@@ -74,12 +74,7 @@ public class RubyMatchData extends RubyObject {
         matchDataClass.setReifiedClass(RubyMatchData.class);
         
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
-        matchDataClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyMatchData;
-            }
-        };
+        matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
 
         matchDataClass.getMetaClass().undefineMethod("new");
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);

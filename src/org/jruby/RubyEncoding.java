@@ -62,12 +62,7 @@ public class RubyEncoding extends RubyObject {
         runtime.setEncoding(encodingc);
         encodingc.index = ClassIndex.ENCODING;
         encodingc.setReifiedClass(RubyEncoding.class);
-        encodingc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyEncoding;
-            }
-        };
+        encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
 
         encodingc.getSingletonClass().undefineMethod("allocate");
         encodingc.defineAnnotatedMethods(RubyEncoding.class);

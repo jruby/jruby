@@ -105,12 +105,7 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.setReifiedClass(RubyClass.class);
-        classClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyClass;
-            }
-        };
+        classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
         
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
