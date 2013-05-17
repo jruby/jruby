@@ -401,7 +401,6 @@ public class RubyDateFormat extends DateFormat {
     private String formatOutput(TimeOutputFormatter formatter, String output) {
         if (formatter == null) return output;
         output = formatter.format(output);
-        formatter = null;
         return output;
     }
 
@@ -614,7 +613,11 @@ public class RubyDateFormat extends DateFormat {
             }
 
             if (output != null) {
-                toAppendTo.append(format ? formatOutput(formatter, output) : output);
+                if (format) {
+                    output = formatOutput(formatter, output);
+                    formatter = null;
+                }
+                toAppendTo.append(output);
             }
         }
 

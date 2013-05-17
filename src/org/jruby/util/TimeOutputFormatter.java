@@ -25,9 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
 /**
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
