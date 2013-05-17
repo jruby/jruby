@@ -87,11 +87,7 @@ public class RubyRange extends RubyObject {
         result.index = ClassIndex.RANGE;
         result.setReifiedClass(RubyRange.class);
 
-        result.kindOf = new RubyModule.KindOf() {
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyRange;
-            }
-        };
+        result.kindOf = new RubyModule.JavaClassKindOf(RubyRange.class);
         
         result.setMarshal(RANGE_MARSHAL);
         result.includeModule(runtime.getEnumerable());

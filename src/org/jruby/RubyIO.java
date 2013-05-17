@@ -267,12 +267,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ioClass.index = ClassIndex.IO;
         ioClass.setReifiedClass(RubyIO.class);
 
-        ioClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyIO;
-            }
-        };
+        ioClass.kindOf = new RubyModule.JavaClassKindOf(RubyIO.class);
 
         ioClass.includeModule(runtime.getEnumerable());
         

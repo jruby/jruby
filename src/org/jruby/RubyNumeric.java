@@ -78,12 +78,7 @@ public class RubyNumeric extends RubyObject {
         numeric.index = ClassIndex.NUMERIC;
         numeric.setReifiedClass(RubyNumeric.class);
 
-        numeric.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyNumeric;
-            }
-        };
+        numeric.kindOf = new RubyModule.JavaClassKindOf(RubyNumeric.class);
 
         numeric.includeModule(runtime.getComparable());
         numeric.defineAnnotatedMethods(RubyNumeric.class);

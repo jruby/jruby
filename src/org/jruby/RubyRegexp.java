@@ -221,12 +221,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         regexpClass.index = ClassIndex.REGEXP;
         regexpClass.setReifiedClass(RubyRegexp.class);
         
-        regexpClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyRegexp;
-            }
-        };
+        regexpClass.kindOf = new RubyModule.JavaClassKindOf(RubyRegexp.class);
 
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));

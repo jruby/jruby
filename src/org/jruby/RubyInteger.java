@@ -69,13 +69,7 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.index = ClassIndex.INTEGER;
         integer.setReifiedClass(RubyInteger.class);
         
-        integer.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyInteger;
-            }
-
-        };
+        integer.kindOf = new RubyModule.JavaClassKindOf(RubyInteger.class);
 
         integer.getSingletonClass().undefineMethod("new");
 

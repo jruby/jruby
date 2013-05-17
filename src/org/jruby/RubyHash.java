@@ -120,12 +120,7 @@ public class RubyHash extends RubyObject implements Map {
         hashc.index = ClassIndex.HASH;
         hashc.setReifiedClass(RubyHash.class);
         
-        hashc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyHash;
-            }
-        };
+        hashc.kindOf = new RubyModule.JavaClassKindOf(RubyHash.class);
 
         hashc.includeModule(runtime.getEnumerable());
 

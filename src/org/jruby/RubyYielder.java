@@ -42,12 +42,7 @@ public class RubyYielder extends RubyObject {
         RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
         runtime.setYielder(yielderc);
         yielderc.index = ClassIndex.YIELDER;
-        yielderc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyYielder;
-            }
-        };
+        yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
 
         yielderc.defineAnnotatedMethods(RubyYielder.class);
         return yielderc;

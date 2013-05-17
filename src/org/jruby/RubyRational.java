@@ -89,12 +89,7 @@ public class RubyRational extends RubyNumeric {
         rationalc.index = ClassIndex.RATIONAL;
         rationalc.setReifiedClass(RubyRational.class);
         
-        rationalc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyRational;
-            }
-        };
+        rationalc.kindOf = new RubyModule.JavaClassKindOf(RubyRational.class);
 
         rationalc.defineAnnotatedMethods(RubyRational.class);
 

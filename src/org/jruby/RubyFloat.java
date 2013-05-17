@@ -98,12 +98,7 @@ public class RubyFloat extends RubyNumeric {
         floatc.index = ClassIndex.FLOAT;
         floatc.setReifiedClass(RubyFloat.class);
         
-        floatc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyFloat;
-            }
-        };        
+        floatc.kindOf = new RubyModule.JavaClassKindOf(RubyFloat.class);
 
         floatc.getSingletonClass().undefineMethod("new");
 

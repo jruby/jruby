@@ -88,12 +88,7 @@ public class RubyComplex extends RubyNumeric {
         complexc.index = ClassIndex.COMPLEX;
         complexc.setReifiedClass(RubyComplex.class);
         
-        complexc.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyComplex;
-            }
-        };
+        complexc.kindOf = new RubyModule.JavaClassKindOf(RubyComplex.class);
 
         complexc.defineAnnotatedMethods(RubyComplex.class);
 

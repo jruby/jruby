@@ -102,12 +102,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.index = ClassIndex.FILE;
         fileClass.setReifiedClass(RubyFile.class);
 
-        fileClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyFile;
-            }
-        };
+        fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
 
         // file separator constants
         RubyString separator = runtime.newString("/");
