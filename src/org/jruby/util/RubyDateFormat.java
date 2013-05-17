@@ -565,10 +565,7 @@ public class RubyDateFormat extends DateFormat {
                     value = Math.abs(value);
 
                     // hours
-                    if (value / 3600000 < 10) {
-                        output += "0";
-                    }
-                    output += (value / 3600000);
+                    output += twoCharDigit(value / 3600000);
 
                     // :::z just shows hour
                     if (token.getFormat() == FORMAT_COLON_COLON_COLON_ZONE_OFF) break;
@@ -578,18 +575,14 @@ public class RubyDateFormat extends DateFormat {
                             token.getFormat() == FORMAT_COLON_COLON_ZONE_OFF) output += ':';
 
                     // minutes
-                    if ((value % 3600000 / 60000) < 10) {
-                        output += "0";
-                    }
-                    output += value % 3600000 / 60000;
+                    output += twoCharDigit(value % 3600000 / 60000);
 
                     // ::z includes colon and seconds
                     if (token.getFormat() == FORMAT_COLON_COLON_ZONE_OFF) {
+                        output += ':';
+
                         // seconds
-                        if ((value % 60000) < 10) {
-                            output += "0";
-                        }
-                        output += value % 60000;
+                        output += twoCharDigit(value % 60000 / 1000);
                     }
                     break;
                 case FORMAT_ZONE_ID:
