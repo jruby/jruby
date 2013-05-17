@@ -3450,7 +3450,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_take
      * 
      */
-    @JRubyMethod(name = "take", compat = RUBY1_9)
+    @JRubyMethod(name = "take")
     public IRubyObject take(ThreadContext context, IRubyObject n) {
         Ruby runtime = context.runtime;
         long len = RubyNumeric.num2long(n);
@@ -3462,7 +3462,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_take_while
      * 
      */
-    @JRubyMethod(name = "take_while", compat = RUBY1_9)
+    @JRubyMethod(name = "take_while")
     public IRubyObject take_while(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) return enumeratorize(runtime, this, "take_while");
@@ -3477,7 +3477,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_take
      * 
      */
-    @JRubyMethod(name = "drop", compat = RUBY1_9)
+    @JRubyMethod(name = "drop")
     public IRubyObject drop(ThreadContext context, IRubyObject n) {
         Ruby runtime = context.runtime;
         long pos = RubyNumeric.num2long(n);
@@ -3490,7 +3490,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_take_while
      * 
      */
-    @JRubyMethod(name = "drop_while", compat = RUBY1_9)
+    @JRubyMethod(name = "drop_while")
     public IRubyObject drop_while(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) return enumeratorize(runtime, this, "drop_while");
