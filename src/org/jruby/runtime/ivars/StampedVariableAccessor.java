@@ -70,7 +70,6 @@ public class StampedVariableAccessor extends VariableAccessor {
      */
     public static void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value) {
         while (true) {
-            self.checkFrozen();
             int currentStamp = self.varTableStamp;
             // spin-wait if odd
             if((currentStamp & 0x01) != 0)

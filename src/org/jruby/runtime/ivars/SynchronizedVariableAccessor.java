@@ -69,7 +69,6 @@ public class SynchronizedVariableAccessor extends VariableAccessor {
      */
     public static void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value) {
         synchronized (self) {
-            self.checkFrozen();
             ensureTable(self, realClass, index)[index] = value;
         }
     }
