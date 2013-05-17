@@ -1137,6 +1137,10 @@ public class RubyBigDecimal extends RubyNumeric {
             return newNaN(getRuntime());
         }
 
+        if (isZero()) {
+            return newZero(getRuntime(), zeroSign * val.value.signum());
+        }
+
         if (scale == 0) {
             // MRI behavior: "If digits is 0, the result is the same as the / operator."
             return op_quo(context, other);
