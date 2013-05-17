@@ -668,7 +668,7 @@ public class Bootstrap {
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+        if (site.getTarget() == null || site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget triggered site rebind " + self.getMetaClass().id);
             fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
@@ -701,7 +701,7 @@ public class Bootstrap {
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+        if (site.getTarget() == null || site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset triggered site rebind " + self.getMetaClass().id);
             fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);

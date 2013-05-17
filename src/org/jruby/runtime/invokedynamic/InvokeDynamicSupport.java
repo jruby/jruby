@@ -487,7 +487,7 @@ public class InvokeDynamicSupport {
         
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+        if (site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "getVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
@@ -531,7 +531,7 @@ public class InvokeDynamicSupport {
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+        if (site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "setVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);

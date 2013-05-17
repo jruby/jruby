@@ -334,7 +334,7 @@ public class InvocationLinker {
         if (target == null ||
                 site.clearCount() > RubyInstanceConfig.MAX_FAIL_COUNT ||
                 (!site.hasSeenType(selfClass.id)
-                && site.seenTypesCount() > RubyInstanceConfig.MAX_POLY_COUNT)) {
+                && site.seenTypesCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT)) {
             site.setTarget(target = createFail((block?FAILS_B:FAILS)[arity], site, name, entry.method));
         } else {
             target = postProcess(site, target);
