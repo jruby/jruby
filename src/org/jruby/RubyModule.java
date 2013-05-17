@@ -202,6 +202,18 @@ public class RubyModule extends RubyObject {
             return obj.getMetaClass().hasModuleInHierarchy(type);
         }
     }
+
+		public static final class JavaClassKindOf extends RubyModule.KindOf {
+			private final Class klass;
+			public JavaClassKindOf(Class klass) { 
+				this.klass = klass;
+			}
+
+			@Override
+			public boolean isKindOf(IRubyObject obj, RubyModule type) {
+				return klass.isInstance(obj);
+			}
+		}
     
     public boolean isInstance(IRubyObject object) {
         return kindOf.isKindOf(object, this);
