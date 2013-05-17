@@ -37,7 +37,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.embed.osgi.utils.OSGiBundleClassLoaderHelper;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleReference;
 import org.osgi.framework.FrameworkUtil;
@@ -50,6 +51,25 @@ import org.osgi.framework.FrameworkUtil;
  *
  */
 public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleReference {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JRubyOSGiBundleClassLoader.class.getName());
+    private static final IOSGiClassLoaderAdapter ADAPTER;
+
+    static {
+        IOSGiClassLoaderAdapter chosenAdapter = null;
+        try {
+            Bundle b = FrameworkUtil.getBundle(JRubyOSGiBundleClassLoader.class);
+            // I don't want to actually reference this class, in case it's unavailable
+            b.loadClass("org.osgi.framework.wiring.BundleWiring");
+            // But, if it can be loaded, we know we can use the BundleWiringOSGiClassLoaderAdapter
+            chosenAdapter = new BundleWiringOSGiClassLoaderAdapter();
+        } catch (Exception e) {
+            LOG.warn("Could not load BundleWiring.  Falling back to reflection.");
+            // Otherwise, just use the old method.
+            chosenAdapter = new ReflectiveOSGiClassLoaderAdapter();
+        }
+        ADAPTER = chosenAdapter;
+    }
 
     /**
      * look in OSGi first? true by default for now.
@@ -100,7 +120,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
      */
     public boolean addBundle(Bundle bundle)
     {
-        return _libraries.put(bundle, OSGiBundleClassLoaderHelper.getBundleClassLoader(bundle)) != null;
+        return _libraries.put(bundle, ADAPTER.getClassLoader(bundle)) != null;
     }
     
     /**
