@@ -4256,6 +4256,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io1 = null;
         RubyIO io2 = null;
 
+        RubyString read = null;
+
         if (args.length >= 3) {
             length = args[2].convertToInteger();
             if (args.length == 4) {
@@ -4271,6 +4273,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else if (arg1.respondsTo("to_path")) {
                 RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path}, Block.NULL_BLOCK);
+            } else if (arg1.respondsTo("read")) {
+                if (length == null) {
+                    read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
+                } else {
+                    read = arg1.callMethod(context, "read", length).convertToString();
+                }
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
@@ -4282,8 +4290,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else if (arg2.respondsTo("to_path")) {
                 RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path, runtime.newString("w")}, Block.NULL_BLOCK);
+            } else if (arg2.respondsTo("write")) {
+                if (read == null) {
+                    if (length == null) {
+                        read = io1.read(context, runtime.getNil()).convertToString();
+                    } else {
+                        read = io1.read(context, length).convertToString();
+                    }
+                }
+                return arg2.callMethod(context, "write", read);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
+            }
+
+            if (io1 == null) {
+                IRubyObject size = io2.write(context, read);
+                io2.flush();
+                return size;
             }
 
             if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");

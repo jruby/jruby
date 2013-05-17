@@ -7,5 +7,3 @@ fails:IO.copy_stream from a pipe IO to an IO starts writing at the destination I
 fails:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
 fails:IO.copy_stream from a pipe IO to an IO copies only length bytes when specified
 fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined
-fails:IO.copy_stream with non-IO Objects calls #read on the source Object
-fails:IO.copy_stream with non-IO Objects calls #write on the destination Object
