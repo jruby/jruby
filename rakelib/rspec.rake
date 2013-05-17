@@ -6,7 +6,7 @@
 #  RUNTIME:
 #    interpreted  - -X-C (or OFF)
 #    compiled     - JIT w/ threshold 0
-#    precompiled  - AOT (or FORCE) 
+#    precompiled  - AOT (or FORCE)
 #  RUBYSPEC:
 #    latest       - grab head of rubyspecs
 #    stable       - get saved blessed version (see RUBYSPECS_VERSION)
@@ -18,7 +18,7 @@ namespace :spec do
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
   gem 'rspec'
   require 'rspec/core/rake_task'
-  
+
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
@@ -55,6 +55,11 @@ namespace :spec do
       t.ruby_opts = [version_arg]
       t.rspec_opts = "--options spec/java_integration/spec.quiet.opts"
       t.pattern = 'spec/grammar/**/*_spec.rb'
+    end
+
+    permute_specs "ir#{version_suffix}", compile_flags do |t|
+      t.ruby_opts = [version_arg]
+      t.pattern = 'spec/ir/**/*_spec.rb'
     end
 
     permute_specs "regression#{version_suffix}", compile_flags do |t|
