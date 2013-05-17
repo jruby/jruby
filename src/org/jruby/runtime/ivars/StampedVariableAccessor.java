@@ -62,6 +62,21 @@ public class StampedVariableAccessor extends VariableAccessor {
     
     /**
      * Set the given variable index into the specified object. The "real" class
+     * and index are pass in to provide functional access. This version checks
+     * if self has been frozen before proceeding to set the variable.
+     * 
+     * @param self the object into which to set the variable
+     * @param realClass the "real" class for the object
+     * @param index the index of the variable
+     * @param value the variable's value
+     */
+    public static void setVariableChecked(RubyBasicObject self, RubyClass realClass, int index, Object value) {
+        self.ensureInstanceVariablesSettable();
+        setVariable(self, realClass, index, value);
+    }
+    
+    /**
+     * Set the given variable index into the specified object. The "real" class
      * and index are pass in to provide functional access.
      * 
      * @param self the object into which to set the variable

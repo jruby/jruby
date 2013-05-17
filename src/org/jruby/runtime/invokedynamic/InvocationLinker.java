@@ -1594,8 +1594,7 @@ public class InvocationLinker {
                 .filterReturn(filter)
                 .insert(1, cls.getRealClass(), accessor.getIndex())
                 .cast(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class)
-                .foldVoid(dropArguments(findVirtual(RubyBasicObject.class, "ensureInstanceVariablesSettable", methodType(void.class)), 1, RubyClass.class, int.class, Object.class))
-                .invokeStaticQuiet(lookup(), accessor.getClass(), "setVariable");
+                .invokeStaticQuiet(lookup(), accessor.getClass(), "setVariableChecked");
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
 

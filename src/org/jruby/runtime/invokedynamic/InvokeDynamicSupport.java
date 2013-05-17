@@ -524,9 +524,7 @@ public class InvokeDynamicSupport {
         returnValue = dropArguments(returnValue, 0, IRubyObject.class);
 
         // set variable value and fold by returning value
-        MethodHandle setValue = findStatic(accessor.getClass(), "setVariable", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
-        MethodHandle frozenCheck = dropArguments(findVirtual(RubyBasicObject.class, "ensureInstanceVariablesSettable", methodType(void.class)), 1, RubyClass.class, int.class, Object.class);
-        setValue = foldArguments(setValue, frozenCheck);
+        MethodHandle setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
         setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
         setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
         setValue = foldArguments(returnValue, setValue);
