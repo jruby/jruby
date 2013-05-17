@@ -1432,7 +1432,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * including information about whether this object is frozen, or
      * tainted. Will throw a suitable exception in that case.
      */
-    protected final void ensureInstanceVariablesSettable() {
+    public final void ensureInstanceVariablesSettable() {
         if (!isFrozen()) {
             return;
         }
