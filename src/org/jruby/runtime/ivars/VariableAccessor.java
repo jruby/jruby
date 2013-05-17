@@ -121,6 +121,7 @@ public class VariableAccessor {
      * @param value the value of the variable
      */
     public void set(Object object, Object value) {
+        ((RubyBasicObject)object).checkFrozen();
         VariableTableManager.setVariableInternal(realClass, (RubyBasicObject)object, index, value);
     }
     
