@@ -135,6 +135,15 @@ externals/ruby1.9/bigdecimal/test_bigdecimal
 externals/ruby1.9/bigdecimal/test_bigdecimal_util
 externals/ruby1.9/bigdecimal/test_bigmath
 
+externals/ruby1.9/cgi/test_cgi_cookie
+externals/ruby1.9/cgi/test_cgi_core
+externals/ruby1.9/cgi/test_cgi_header
+externals/ruby1.9/cgi/test_cgi_modruby
+externals/ruby1.9/cgi/test_cgi_multipart
+externals/ruby1.9/cgi/test_cgi_session
+externals/ruby1.9/cgi/test_cgi_tag_helper
+externals/ruby1.9/cgi/test_cgi_util
+
 externals/ruby1.9/date/test_date
 externals/ruby1.9/date/test_date_arith
 externals/ruby1.9/date/test_date_attr
