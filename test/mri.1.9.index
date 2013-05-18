@@ -180,6 +180,11 @@ externals/ruby1.9/erb/test_erb_m17n
 
 externals/ruby1.9/etc/test_etc
 
+externals/ruby1.9/fileutils/test_dryrun
+externals/ruby1.9/fileutils/test_fileutils
+externals/ruby1.9/fileutils/test_nowrite
+externals/ruby1.9/fileutils/test_verbose
+
 externals/ruby1.9/iconv/test_basic
 externals/ruby1.9/iconv/test_option
 externals/ruby1.9/iconv/test_partial
