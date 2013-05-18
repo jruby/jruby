@@ -144,6 +144,8 @@ externals/ruby1.9/cgi/test_cgi_session
 externals/ruby1.9/cgi/test_cgi_tag_helper
 externals/ruby1.9/cgi/test_cgi_util
 
+externals/ruby1.9/coverage/test_coverage
+
 externals/ruby1.9/csv/test_csv_parsing
 externals/ruby1.9/csv/test_csv_writing
 externals/ruby1.9/csv/test_data_converters
