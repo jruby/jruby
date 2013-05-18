@@ -131,19 +131,19 @@ externals/ruby1.9/bigdecimal/test_bigdecimal
 externals/ruby1.9/bigdecimal/test_bigdecimal_util
 externals/ruby1.9/bigdecimal/test_bigmath
 
-externals/ruby1.9/date/test_date.rb
-externals/ruby1.9/date/test_date_arith.rb
-externals/ruby1.9/date/test_date_attr.rb
-externals/ruby1.9/date/test_date_base.rb
-externals/ruby1.9/date/test_date_compat.rb
-externals/ruby1.9/date/test_date_conv.rb
-externals/ruby1.9/date/test_date_marshal.rb
-externals/ruby1.9/date/test_date_new.rb
-externals/ruby1.9/date/test_date_parse.rb
-externals/ruby1.9/date/test_date_strftime.rb
-externals/ruby1.9/date/test_date_strptime.rb
-externals/ruby1.9/date/test_date_parse.rb
-externals/ruby1.9/date/test_switch_hitter.rb
+externals/ruby1.9/date/test_date
+externals/ruby1.9/date/test_date_arith
+externals/ruby1.9/date/test_date_attr
+externals/ruby1.9/date/test_date_base
+externals/ruby1.9/date/test_date_compat
+externals/ruby1.9/date/test_date_conv
+externals/ruby1.9/date/test_date_marshal
+externals/ruby1.9/date/test_date_new
+externals/ruby1.9/date/test_date_parse
+externals/ruby1.9/date/test_date_strftime
+externals/ruby1.9/date/test_date_strptime
+externals/ruby1.9/date/test_date_parse
+externals/ruby1.9/date/test_switch_hitter
 
 externals/ruby1.9/digest/test_digest
 externals/ruby1.9/digest/test_digest_extend
@@ -278,17 +278,17 @@ externals/ruby1.9/thread/test_queue
 
 externals/ruby1.9/zlib/test_zlib
 
-externals/ruby1.9/ruby/enc/test_big5.rb
-externals/ruby1.9/ruby/enc/test_cp949.rb
-externals/ruby1.9/ruby/enc/test_emoji.rb
-externals/ruby1.9/ruby/enc/test_euc_jp.rb
-externals/ruby1.9/ruby/enc/test_euc_kr.rb
-externals/ruby1.9/ruby/enc/test_euc_tw.rb
-externals/ruby1.9/ruby/enc/test_gb18030.rb
-externals/ruby1.9/ruby/enc/test_gbk.rb
-externals/ruby1.9/ruby/enc/test_iso_8859.rb
-externals/ruby1.9/ruby/enc/test_koi8.rb
-externals/ruby1.9/ruby/enc/test_shift_jis.rb
-externals/ruby1.9/ruby/enc/test_utf16.rb
-externals/ruby1.9/ruby/enc/test_utf32.rb
-externals/ruby1.9/ruby/enc/test_windows_1251.rb
+externals/ruby1.9/ruby/enc/test_big5
+externals/ruby1.9/ruby/enc/test_cp949
+externals/ruby1.9/ruby/enc/test_emoji
+externals/ruby1.9/ruby/enc/test_euc_jp
+externals/ruby1.9/ruby/enc/test_euc_kr
+externals/ruby1.9/ruby/enc/test_euc_tw
+externals/ruby1.9/ruby/enc/test_gb18030
+externals/ruby1.9/ruby/enc/test_gbk
+externals/ruby1.9/ruby/enc/test_iso_8859
+externals/ruby1.9/ruby/enc/test_koi8
+externals/ruby1.9/ruby/enc/test_shift_jis
+externals/ruby1.9/ruby/enc/test_utf16
+externals/ruby1.9/ruby/enc/test_utf32
+externals/ruby1.9/ruby/enc/test_windows_1251
