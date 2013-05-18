@@ -200,6 +200,8 @@ externals/ruby1.9/json/test_json_generic_object
 externals/ruby1.9/json/test_json_string_matching
 externals/ruby1.9/json/test_json_unicode
 
+externals/ruby1.9/logger/test_logger
+
 externals/ruby1.9/monitor/test_monitor
 
 externals/ruby1.9/nkf/test_kconv
