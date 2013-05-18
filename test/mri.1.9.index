@@ -144,6 +144,17 @@ externals/ruby1.9/cgi/test_cgi_session
 externals/ruby1.9/cgi/test_cgi_tag_helper
 externals/ruby1.9/cgi/test_cgi_util
 
+externals/ruby1.9/csv/test_csv_parsing
+externals/ruby1.9/csv/test_csv_writing
+externals/ruby1.9/csv/test_data_converters
+externals/ruby1.9/csv/test_encodings
+externals/ruby1.9/csv/test_features
+externals/ruby1.9/csv/test_headers
+externals/ruby1.9/csv/test_interface
+externals/ruby1.9/csv/test_row
+externals/ruby1.9/csv/test_serialization
+externals/ruby1.9/csv/test_table
+
 externals/ruby1.9/date/test_date
 externals/ruby1.9/date/test_date_arith
 externals/ruby1.9/date/test_date_attr
