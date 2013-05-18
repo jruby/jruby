@@ -175,6 +175,9 @@ externals/ruby1.9/digest/test_digest
 externals/ruby1.9/digest/test_digest_extend
 externals/ruby1.9/digest/test_digest_hmac
 
+externals/ruby1.9/erb/test_erb
+externals/ruby1.9/erb/test_erb_m17n
+
 externals/ruby1.9/etc/test_etc
 
 externals/ruby1.9/iconv/test_basic
