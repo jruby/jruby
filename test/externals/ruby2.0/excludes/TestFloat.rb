@@ -1,5 +1,4 @@
 exclude :test_Float, "needs investigation"
-exclude :test_cmp, "needs investigation"
 exclude :test_cmp_int, "needs investigation"
 exclude :test_floor_ceil_round_truncate, "needs investigation"
 exclude :test_invalid_str, "needs investigation"
