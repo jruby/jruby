@@ -127,6 +127,8 @@ externals/ruby1.9/test_timeout
 #externals/ruby1.9/test_tracer
 externals/ruby1.9/test_tsort
 
+externals/ruby1.9/benchmark/test_benchmark
+
 externals/ruby1.9/bigdecimal/test_bigdecimal
 externals/ruby1.9/bigdecimal/test_bigdecimal_util
 externals/ruby1.9/bigdecimal/test_bigmath
