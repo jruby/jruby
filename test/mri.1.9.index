@@ -202,6 +202,9 @@ externals/ruby1.9/json/test_json_unicode
 
 externals/ruby1.9/logger/test_logger
 
+externals/ruby1.9/matrix/test_matrix
+externals/ruby1.9/matrix/test_vector
+
 externals/ruby1.9/monitor/test_monitor
 
 externals/ruby1.9/nkf/test_kconv
