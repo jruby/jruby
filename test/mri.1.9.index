@@ -280,6 +280,7 @@ externals/ruby1.9/psych/test_nil
 externals/ruby1.9/psych/test_null
 externals/ruby1.9/psych/test_numeric
 externals/ruby1.9/psych/test_object
+externals/ruby1.9/psych/test_object_references
 externals/ruby1.9/psych/test_omap
 externals/ruby1.9/psych/test_parser
 externals/ruby1.9/psych/test_psych
@@ -295,6 +296,7 @@ externals/ruby1.9/psych/test_tainted
 externals/ruby1.9/psych/test_to_yaml_properties
 externals/ruby1.9/psych/test_tree_builder
 externals/ruby1.9/psych/test_yaml
+externals/ruby1.9/psych/test_yamlstore
 externals/ruby1.9/psych/json/test_stream
 externals/ruby1.9/psych/nodes/test_enumerable
 externals/ruby1.9/psych/visitors/test_depth_first
