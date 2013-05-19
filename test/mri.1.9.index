@@ -257,6 +257,8 @@ externals/ruby1.9/optparse/test_reqarg
 externals/ruby1.9/optparse/test_summary
 externals/ruby1.9/optparse/test_zsh_completion
 
+externals/ruby1.9/ostruct/test_ostruct
+
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
 externals/ruby1.9/psych/test_boolean
