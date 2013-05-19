@@ -316,17 +316,16 @@ externals/ruby1.9/scanf/test_scanfblocks
 # No AddrInfo
 #externals/ruby1.9/socket/test_addrinfo
 # No Socket::AncillaryData
-#externals/ruby1.9/psych/socket/test_ancdata
-externals/ruby1.9/psych/socket/test_basicsocket
-# 100% fail or error
-#externals/ruby1.9/psych/socket/test_nonblock
-externals/ruby1.9/psych/socket/test_socket
+#externals/ruby1.9/socket/test_ancdata
+externals/ruby1.9/socket/test_basicsocket
+externals/ruby1.9/socket/test_nonblock
+externals/ruby1.9/socket/test_socket
 # No Socket::Option
-#externals/ruby1.9/psych/socket/test_sockopt
+#externals/ruby1.9/socket/test_sockopt
 # 100% fail
-externals/ruby1.9/psych/socket/test_tcp
-externals/ruby1.9/psych/socket/test_udp
-externals/ruby1.9/psych/socket/test_unix
+#externals/ruby1.9/socket/test_tcp
+#externals/ruby1.9/socket/test_udp
+#externals/ruby1.9/socket/test_unix
 
 externals/ruby1.9/stringio/test_stringio
 
