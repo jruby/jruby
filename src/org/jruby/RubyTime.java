@@ -520,7 +520,7 @@ public class RubyTime extends RubyObject {
         long newNanosPart = nsec + adjustNanosLeft;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-        newTime.dt = new DateTime((long)newMillisPart).withZone(dt.getZone());
+        newTime.dt = new DateTime(newMillisPart).withZone(dt.getZone());
         newTime.setNSec(newNanosPart);
 
         return newTime;
@@ -536,7 +536,7 @@ public class RubyTime extends RubyObject {
         long newNanosPart = nsec + adjustNanosLeft;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-        newTime.dt = new DateTime((long)newMillisPart).withZone(dt.getZone());
+        newTime.dt = new DateTime(newMillisPart).withZone(dt.getZone());
         newTime.setNSec(newNanosPart);
 
         return newTime;
