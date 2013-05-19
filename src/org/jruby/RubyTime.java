@@ -573,18 +573,18 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opMinusCommon(IRubyObject other) {
-        long time = getTimeInMillis();
-        long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
-        long nano = (adjustment % 1000) * 1000;
-        adjustment = adjustment / 1000;
-
-        time -= adjustment;
-
-        if (getNSec() < nano) {
+        long adjustmentInNanos = (long)(RubyNumeric.num2dbl(other)*1000000000);
+        long adjustmentInMillis = adjustmentInNanos/1000000;
+        long adjustmentInNanosLeft = adjustmentInNanos%1000000;
+        
+        long time = getTimeInMillis() - adjustmentInMillis;
+        
+        long nano;
+        if (nsec < adjustmentInNanosLeft) {
             time--;
-            nano = 1000000 - (nano - getNSec());
+            nano = 1000000 - (adjustmentInNanosLeft - nsec);
         } else {
-            nano = getNSec() - nano;
+            nano = nsec - adjustmentInNanosLeft;
         }
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
