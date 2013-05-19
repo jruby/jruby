@@ -118,7 +118,10 @@ public class ArgumentProcessor {
                 arg = arg.substring(1);
                 if (arg.indexOf('=') > 0) {
                     String[] keyvalue = arg.split("=", 2);
-                    config.getOptionGlobals().put(keyvalue[0], keyvalue[1]);
+
+                    // argv globals get their dashes replaced with underscores
+                    String globalName = keyvalue[0].replaceAll("-", "_");
+                    config.getOptionGlobals().put(globalName, keyvalue[1]);
                 } else {
                     config.getOptionGlobals().put(arg, null);
                 }
