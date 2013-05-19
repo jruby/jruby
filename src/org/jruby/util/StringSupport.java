@@ -311,7 +311,7 @@ public final class StringSupport {
 
     public static int codeLength(Ruby runtime, Encoding enc, int c) {
         int n = enc.codeToMbcLength(c);
-        if (n == 0) throw runtime.newArgumentError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
+        if (n == 0) throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
         return n;
     }
 
