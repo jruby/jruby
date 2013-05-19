@@ -310,6 +310,9 @@ externals/ruby1.9/ripper/test_parser_events
 externals/ruby1.9/ripper/test_ripper
 externals/ruby1.9/ripper/test_scanner_event
 
+externals/ruby1.9/scanf/test_scanf
+externals/ruby1.9/scanf/test_scanfblocks
+
 # No AddrInfo
 #externals/ruby1.9/socket/test_addrinfo
 # No Socket::AncillaryData
