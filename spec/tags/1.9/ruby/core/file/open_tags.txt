@@ -1,6 +1,1 @@
-fails:File.open raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode
-fails(JRUBY-5663):File.open raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode
-fails(JRUBY-5663):File.open raises an IOError if the file exists when open with File::RDONLY|File::APPEND
-fails:File.open raises an IOError if the file exists when open with File::RDONLY|File::APPEND
 fails:File.open opens directories
-fails:File.open opens a file with mode and permission as nil
