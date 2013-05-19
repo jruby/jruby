@@ -247,6 +247,16 @@ externals/ruby1.9/openssl/test_x509name
 externals/ruby1.9/openssl/test_x509req
 externals/ruby1.9/openssl/test_x509store
 
+externals/ruby1.9/optparse/test_bash_completion
+externals/ruby1.9/optparse/test_getopts
+externals/ruby1.9/optparse/test_noarg
+externals/ruby1.9/optparse/test_optarg
+externals/ruby1.9/optparse/test_optparse
+externals/ruby1.9/optparse/test_placearg
+externals/ruby1.9/optparse/test_reqarg
+externals/ruby1.9/optparse/test_summary
+externals/ruby1.9/optparse/test_zsh_completion
+
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
 externals/ruby1.9/psych/test_boolean
