@@ -95,7 +95,7 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
-            returnValue = readValue.convertToString().getByteList().get(0);
+            returnValue = readValue.convertToString().getByteList().get(0) & 0xff;
         }
         return returnValue;
     }
