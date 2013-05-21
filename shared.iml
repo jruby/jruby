@@ -508,7 +508,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/jline-2.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/jline-2.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
