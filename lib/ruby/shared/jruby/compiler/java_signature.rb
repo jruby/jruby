@@ -16,11 +16,16 @@ module JRuby
       type = primitive? string
       return type if type
 
+      if string.is_a?(Java::OrgJrubyAstJava_signature::ReferenceTypeNode)
+        return eval make_class_jiable(string.getFullyTypedName())
+      end
+
       # If annotation makes it in strip @ before we try and match it.
       string = string[1..-1] if string.start_with? '@'
 
-      eval "Java::#{make_class_jiable(string)}"
+      eval make_class_jiable(string)
     end
+
 
     ##
     # return live JI proxy for return type
@@ -116,7 +121,7 @@ return_type: #{return_type}
           last_cap = false
         end
       end
-      new_list.join("")[1..-1]
+      "Java::#{new_list.join("")[1..-1]}"
     end
   end
 end
