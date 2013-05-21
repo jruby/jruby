@@ -3073,7 +3073,7 @@ public final class Ruby {
         printProfileData(profileData, config.getProfileOutput());
     }
 
-    public void printProfileData(ProfileData profileData, ProfileOutput output) {
+    public synchronized void printProfileData(ProfileData profileData, ProfileOutput output) {
         ProfilePrinter profilePrinter = ProfilePrinter.newPrinter(config.getProfilingMode(), profileData);
         if (profilePrinter != null) {
             output.printProfile(profilePrinter);
