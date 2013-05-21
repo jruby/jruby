@@ -373,7 +373,7 @@ public class RubyTime extends RubyObject {
         } else {
             // Java needs the sign inverted
             String sgn = "+".equals(sign) ? "-" : "+";
-            zone = "GMT" + sgn + hours + minutes;
+            zone = "GMT" + sgn + hours + ":" + minutes;
         }
 
         DateTimeZone dtz = getTimeZone(context.runtime, zone);
