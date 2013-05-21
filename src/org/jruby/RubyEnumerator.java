@@ -596,13 +596,14 @@ public class RubyEnumerator extends RubyObject {
             // mark for death
             die = true;
             
-            if (thread != null) {
+            Thread myThread = thread;
+            if (myThread != null) {
                 if (DEBUG) System.out.println("clearing for shutdown");
                 
                 // we interrupt twice, to break out of iteration and
                 // (potentially) break out of final exchange
-                thread.interrupt();
-                thread.interrupt();
+                myThread.interrupt();
+                myThread.interrupt();
                 
                 // release references
                 thread = null;
