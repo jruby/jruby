@@ -37,7 +37,7 @@ frame = JFrame.new(FRAME_TITLE).tap do |frame|
       text.background = Color.new(0xf2, 0xf2, 0xf2)
       text.foreground = Color.new(0xa4, 0x00, 0x00)
 
-      tar = org.jruby.demo.TextAreaReadline.new(text, HEADER)
+      tar = org.jruby.demo.readline.TextAreaReadline.new(text, HEADER)
       tar.hook_into_runtime_with_streams(JRuby.runtime)
     end
   end)

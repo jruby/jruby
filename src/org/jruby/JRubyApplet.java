@@ -48,7 +48,7 @@ import java.util.Arrays;
 import java.lang.reflect.InvocationTargetException;
 
 import org.jruby.anno.JRubyMethod;
-import org.jruby.demo.TextAreaReadline;
+import org.jruby.demo.readline.TextAreaReadline;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;

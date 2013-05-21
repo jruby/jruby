@@ -1,4 +1,4 @@
-package org.jruby.demo;
+package org.jruby.demo.readline;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -32,12 +32,9 @@ import org.jruby.RubyString;
 import org.jruby.ext.readline.Readline;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.Join;
 
 public class TextAreaReadline implements KeyListener {

@@ -408,8 +408,9 @@
             <fileset dir="${jruby.classes.dir}">
                 <exclude name="**/*openssl*/**/*"/>
                 <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**"/>
-                <exclude name="**/*readline*/**/*"/>
+                <exclude name="org/jruby/ext/readline/**/*"/>
+                <exclude name="org/jruby/demo/readline/**/*"/>
+                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
             </fileset>
             
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
@@ -443,6 +444,7 @@
         <jar destfile="${lib.dir}/ruby/shared/readline/readline.jar" compress="true" index="true" update="true">
             <fileset dir="${jruby.classes.dir}">
                 <include name="org/jruby/ext/readline/**"/>
+                <include name="org/jruby/demo/readline/**/*"/>
                 <include name="**/*readline*/**/*"/>
             </fileset>
         </jar>
@@ -463,8 +465,9 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${jruby.classes.dir}">
                 <exclude name="**/*openssl*/**/*"/>
                 <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**"/>
-                <exclude name="**/*readline*/**/*"/>
+                <exclude name="org/jruby/ext/readline/**/*"/>
+                <exclude name="org/jruby/demo/readline/**/*"/>
+                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
             </fileset>
             <zipfileset src="${build.lib.dir}/${asm.jar}"/>
             <zipfileset src="${build.lib.dir}/${asm.util.jar}"/>
@@ -501,8 +504,9 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${jruby.classes.dir}">
                 <exclude name="**/*openssl*/**/*"/>
                 <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**"/>
-                <exclude name="**/*readline*/**/*"/>
+                <exclude name="org/jruby/ext/readline/**/*"/>
+                <exclude name="org/jruby/demo/readline/**/*"/>
+                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
             </fileset>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
 
@@ -628,8 +632,9 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${jruby.classes.dir}">
                 <exclude name="**/*openssl*/**/*"/>
                 <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**"/>
-                <exclude name="**/*readline*/**/*"/>
+                <exclude name="org/jruby/ext/readline/**/*"/>
+                <exclude name="org/jruby/demo/readline/**/*"/>
+                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
             </fileset>
             <fileset dir="${build.dir}/jar-complete"/>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
@@ -653,10 +658,19 @@ other than ASM, which is rewritten to avoid conflicts. -->
     </target>
 
     <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
-        <antcall target="jar-jruby-complete">
-            <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
-            <param name="filename" value="jruby-console.jar"/>
-        </antcall>
+        <antcall target="jar-jruby-complete"/>
+        
+        <!-- roll the readline and jline jars into jruby-console.jar -->
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+                 classpath="${build.lib.dir}/jarjar-1.0.jar"/>
+        <jarjar destfile="lib/jruby-console.jar" update="true" compress="true">
+            <manifest>
+                <attribute name="Main-Class" value="org.jruby.demo.readline.IRBConsole"/>
+            </manifest>
+            <zipfileset src="${lib.dir}/jruby-complete.jar"/>
+            <zipfileset src="${lib.dir}/ruby/shared/readline/readline.jar"/>
+            <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
+        </jarjar>
     </target>
 
     <target name="jar" depends="init" description="Create the jruby.jar file. Used during dev.">
