@@ -60,7 +60,7 @@ class Class
   #   become_java!(child_loader, dump_dir)
   def become_java!(*args)
     self_r = JRuby.reference0(self)
-    
+
     if args.size > 0
       dump_dir = nil
       child_loader = true
@@ -80,7 +80,9 @@ class Class
     else
       self_r.reify_with_ancestors
     end
-    
+
+    generate_java_fields
+
     self_r.reified_class
   end
   
@@ -181,5 +183,51 @@ class Class
     self_r.add_method_signature(name, types.to_java(JClass))
     
     nil
+  end
+
+  def java_field(signature)
+    signature = signature.to_s
+
+    signature = signature.split(/\s/)
+
+    raise "Java Field must be specified as a string with the format <Type Name>" if signature.size != 2
+
+    type, name = signature
+    java_fields << name
+    add_field_signature(name, type)
+  end
+
+
+  def add_field_signature(name, type)
+    self_r = JRuby.reference0(self)
+
+    signature = JRuby::JavaSignature.new(nil, nil)
+    java_return_type = signature.as_java_type(type)
+
+    self_r.add_field_signature(name, java_return_type.to_java(JClass))
+  end
+
+  def add_field_annotation(name, annotations = {})
+    name = name.to_s
+    self_r = JRuby.reference0(self)
+
+    for cls, params in annotations
+      params ||= {}
+      self_r.add_field_annotation(name, _anno_class(cls), params)
+    end
+
+    nil
+  end
+
+  def generate_java_fields
+    java_fields.each do |field_name|
+      field = java_class.get_declared_field(field_name)
+      define_method(field_name) { field.get(self) }
+      define_method(:"#{field_name}=") { |v| field.set(self, v) }
+    end
+  end
+
+  def java_fields
+    @java_fields ||= []
   end
 end

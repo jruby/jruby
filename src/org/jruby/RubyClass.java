@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,6 +91,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 
 /**
  *
@@ -1296,6 +1298,26 @@ public class RubyClass extends RubyModule {
         m.voidreturn();
         m.end();
 
+        // define fields
+        for (Map.Entry<String, Class> fieldSignature : getFieldSignatures().entrySet()) {
+            String fieldName = fieldSignature.getKey();
+            Class type = fieldSignature.getValue();
+            Map<Class, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
+
+            FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
+
+            if (fieldAnnos == null) {
+              continue;
+            }
+
+            for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
+                Class annoType = fieldAnno.getKey();
+                AnnotationVisitor av = fieldVisitor.visitAnnotation(ci(annoType), true);
+                CodegenUtils.visitAnnotationFields(av, fieldAnno.getValue());
+            }
+            fieldVisitor.visitEnd();
+        }
+
         // gather a list of instance methods, so we don't accidentally make static ones that conflict
         Set<String> instanceMethods = new HashSet<String>();
 
@@ -1513,6 +1535,12 @@ public class RubyClass extends RubyModule {
         return methodAnnotations;
     }
 
+    public Map<String,Map<Class,Map<String,Object>>> getFieldAnnotations() {
+        if (fieldAnnotations == null) return Collections.EMPTY_MAP;
+
+        return fieldAnnotations;
+    }
+
     public synchronized void addMethodAnnotation(String methodName, Class annotation, Map fields) {
         if (methodAnnotations == null) methodAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
 
@@ -1525,16 +1553,41 @@ public class RubyClass extends RubyModule {
         annos.put(annotation, fields);
     }
 
+    public synchronized void addFieldAnnotation(String fieldName, Class annotation, Map fields) {
+        if (fieldAnnotations == null) fieldAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
+
+        Map<Class,Map<String,Object>> annos = fieldAnnotations.get(fieldName);
+        if (annos == null) {
+            annos = new Hashtable<Class,Map<String,Object>>();
+            fieldAnnotations.put(fieldName, annos);
+        }
+
+        annos.put(annotation, fields);
+    }
+
+
     public Map<String,Class[]> getMethodSignatures() {
         if (methodSignatures == null) return Collections.EMPTY_MAP;
 
         return methodSignatures;
     }
 
+    public Map<String, Class> getFieldSignatures() {
+        if (fieldSignatures == null) return Collections.EMPTY_MAP;
+
+        return fieldSignatures;
+    }
+
     public synchronized void addMethodSignature(String methodName, Class[] types) {
         if (methodSignatures == null) methodSignatures = new Hashtable<String,Class[]>();
 
         methodSignatures.put(methodName, types);
+    }
+
+    public synchronized void addFieldSignature(String fieldName, Class type) {
+        if (fieldSignatures == null) fieldSignatures = new LinkedHashMap<String, Class>();
+
+        fieldSignatures.put(fieldName, type);
     }
 
     public Map<Class,Map<String,Object>> getClassAnnotations() {
@@ -1826,7 +1879,11 @@ public class RubyClass extends RubyModule {
 
     private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
 
+    private Map<String, Map<Class, Map<String,Object>>> fieldAnnotations;
+
     private Map<String, Class[]> methodSignatures;
+
+    private Map<String, Class> fieldSignatures;
 
     private Map<Class, Map<String,Object>> classAnnotations;
 
