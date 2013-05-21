@@ -1678,7 +1678,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.consistent.hashing.enabled</tt> system property.
      */
-    public static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING_ENABLED.load();
+    public static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING.load();
 
     private static volatile boolean loadedNativeExtensions = false;
     
