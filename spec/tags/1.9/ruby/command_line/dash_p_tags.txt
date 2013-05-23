@@ -1,2 +1,0 @@
-fails(gh-631):The -p command line option runs the code in loop conditional on Kernel.gets() and prints $_
-fails(gh-631):The -p command line option sets $-p

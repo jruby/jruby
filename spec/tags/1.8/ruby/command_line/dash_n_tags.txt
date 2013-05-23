@@ -1,1 +1,0 @@
-fails(gh-631):The -n command line option runs the code in loop conditional on Kernel.gets()

@@ -1,2 +1,0 @@
-fails(gh-631):ARGF.filename returns the current file name on each file
-fails(gh-631):ARGF.filename it sets the $FILENAME global variable with the current file name on each file
