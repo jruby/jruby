@@ -37,20 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.File;
-import java.io.FileDescriptor;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -63,6 +49,20 @@ import org.jruby.util.SimpleSampler;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Class used to launch the interpreter.
@@ -429,14 +429,13 @@ public class Main {
     }
     
     private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
-        PrintStream error = config.getError();
         try {
             runtime.parseFromMain(in, filename);
-            error.println("Syntax OK for " + filename);
+            config.getOutput().println("Syntax OK");
             return true;
         } catch (RaiseException re) {
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                error.println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
             } else {
                 throw re;
             }

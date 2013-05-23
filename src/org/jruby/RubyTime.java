@@ -373,7 +373,7 @@ public class RubyTime extends RubyObject {
         } else {
             // Java needs the sign inverted
             String sgn = "+".equals(sign) ? "-" : "+";
-            zone = "GMT" + sgn + hours + minutes;
+            zone = "GMT" + sgn + hours + ":" + minutes;
         }
 
         DateTimeZone dtz = getTimeZone(context.runtime, zone);
@@ -511,13 +511,13 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opPlusMicros(long adjustMicros) {
-        long adjustNanos = adjustMicros * 1000;
-
-        long currentNanos = getTimeInMillis() * 1000000 + nsec;
-
-        long newNanos = currentNanos += adjustNanos;
-        long newMillisPart = newNanos / 1000000;
-        long newNanosPart = newNanos % 1000000;
+        long currentMillis = getTimeInMillis();
+        
+        long adjustMillis = adjustMicros/1000;
+        long adjustNanosLeft = adjustMicros - (adjustMillis*1000);
+        
+        long newMillisPart = currentMillis + adjustMillis;
+        long newNanosPart = nsec + adjustNanosLeft;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
         newTime.dt = new DateTime(newMillisPart).withZone(dt.getZone());
@@ -527,14 +527,16 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opPlusNanos(long adjustNanos) {
-        long currentNanos = getTimeInMillis() * 1000000 + nsec;
-
-        long newNanos = currentNanos + adjustNanos;
-        long newMillisPart = newNanos / 1000000;
-        long newNanosPart = newNanos % 1000000;
+        long currentMillis = getTimeInMillis();
+        
+        long adjustMillis = adjustNanos/1000000;
+        long adjustNanosLeft = adjustNanos - (adjustMillis*1000000);
+        
+        long newMillisPart = currentMillis + adjustMillis;
+        long newNanosPart = nsec + adjustNanosLeft;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-        newTime.dt = new DateTime((long)newMillisPart).withZone(dt.getZone());
+        newTime.dt = new DateTime(newMillisPart).withZone(dt.getZone());
         newTime.setNSec(newNanosPart);
 
         return newTime;
@@ -551,11 +553,10 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opMinus(RubyTime other) {
-        long time = getTimeInMillis() * 1000000 + getNSec();
-
-        time -= other.getTimeInMillis() * 1000000 + other.getNSec();
+        long timeInMillis = (getTimeInMillis() - other.getTimeInMillis());
+        double timeInSeconds = timeInMillis/1000.0 + (getNSec() - other.getNSec())/1000000000.0;
         
-        return RubyFloat.newFloat(getRuntime(), time / 1000000000.0); // float number of seconds
+        return RubyFloat.newFloat(getRuntime(), timeInSeconds); // float number of seconds
     }
 
     @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_8)
@@ -572,18 +573,18 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opMinusCommon(IRubyObject other) {
-        long time = getTimeInMillis();
-        long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
-        long nano = (adjustment % 1000) * 1000;
-        adjustment = adjustment / 1000;
-
-        time -= adjustment;
-
-        if (getNSec() < nano) {
+        long adjustmentInNanos = (long)(RubyNumeric.num2dbl(other)*1000000000);
+        long adjustmentInMillis = adjustmentInNanos/1000000;
+        long adjustmentInNanosLeft = adjustmentInNanos%1000000;
+        
+        long time = getTimeInMillis() - adjustmentInMillis;
+        
+        long nano;
+        if (nsec < adjustmentInNanosLeft) {
             time--;
-            nano = 1000000 - (nano - getNSec());
+            nano = 1000000 - (adjustmentInNanosLeft - nsec);
         } else {
-            nano = getNSec() - nano;
+            nano = nsec - adjustmentInNanosLeft;
         }
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());

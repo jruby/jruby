@@ -69,6 +69,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -2633,9 +2634,23 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private RubyString concatNumeric(Ruby runtime, int c) {
         Encoding enc = value.getEncoding();
-        int cl = codeLength(runtime, enc, c);
-        modify19(value.getRealSize() + cl);
-        enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
+        int cl;
+
+        try {
+            cl = codeLength(runtime, enc, c);
+            modify19(value.getRealSize() + cl);
+
+            if (enc == USASCIIEncoding.INSTANCE) {
+                if (c > 0xff) runtime.newRangeError(c + " out of char range");
+                if (c > 0x79) {
+                    value.setEncoding(ASCIIEncoding.INSTANCE);
+                    enc = value.getEncoding();
+                }
+            }
+            enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
+        } catch (EncodingException e) {
+            throw runtime.newRangeError(c + " out of char range");
+        }
         value.setRealSize(value.getRealSize() + cl);
         return this;
     }
@@ -3507,11 +3522,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /* str_byte_substr */
     private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
         int length = value.length();
-        int s = value.getBegin();
         
         if (len < 0 || beg > length) return runtime.getNil();
 
-        int p;
         if (beg < 0) {
             beg += length;
             if (beg < 0) return runtime.getNil();
@@ -3520,13 +3533,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             
         if (len <= 0) {
             len = 0;
-            p = 0;
-        }
-        else {
-            p = s + beg;
         }
 
-        return makeShared19(runtime, p, len);
+        return makeShared19(runtime, beg, len);
     }
 
     /* str_byte_aref */

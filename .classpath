@@ -32,7 +32,7 @@
 	<classpathentry kind="lib" path="build_lib/joda-time-2.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-unixsocket.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-enxio.jar"/>
-	<classpathentry kind="lib" path="build_lib/jline-2.7.jar"/>
+	<classpathentry kind="lib" path="build_lib/jline-2.11.jar"/>
 	<classpathentry kind="lib" path="build_lib/ant.jar"/>
 	<classpathentry kind="lib" path="build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>

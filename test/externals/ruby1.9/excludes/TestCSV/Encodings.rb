@@ -1,0 +1,5 @@
+exclude :test_auto_line_ending_detection, "needs investigation"
+exclude :test_can_write_csv_in_any_encoding, "needs investigation"
+exclude :test_read_with_default_encoding, "needs investigation"
+exclude :test_reading_with_most_encodings, "needs investigation"
+exclude :test_regular_expression_escaping, "needs investigation"

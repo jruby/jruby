@@ -50,4 +50,24 @@ describe "JRuby annotation processing:" do
       Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods2).size.should == 2
     end
   end
+
+  context "field annotations using #add_field_annotation" do
+    let(:cls) do
+      Class.new do
+        java_field "java.lang.String foo"
+        add_field_annotation(:foo, Java::java_integration.fixtures.FieldAnnotations::Annotated => {})
+
+        java_field "java.lang.String bar"
+        add_field_annotation(:bar, Java::java_integration.fixtures.FieldAnnotations::Annotated => {})
+
+        java_field "java.lang.String baz"
+
+        become_java!
+      end
+    end
+
+    it "has two annotated fields" do
+      Java::java_integration.fixtures.FieldAnnotations.countAnnotated(cls).size.should == 2
+    end
+  end
 end

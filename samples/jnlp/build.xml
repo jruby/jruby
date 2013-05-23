@@ -33,7 +33,7 @@
   </target>  
 
   <target name="copy-jars" description="copy selected jars to the jars directory">
-    <copy file="../../lib/jruby-complete.jar" todir="jars" />
+    <copy file="../../lib/jruby-console.jar" todir="jars" />
   </target>
 
   <target name="sign-jars" depends="copy-jars, generate-keystore">

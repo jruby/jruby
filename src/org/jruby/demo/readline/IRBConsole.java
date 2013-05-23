@@ -1,4 +1,4 @@
-package org.jruby.demo;
+package org.jruby.demo.readline;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

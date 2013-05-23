@@ -529,6 +529,28 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return dbl_cmp(getRuntime(), value, b);
         default:
+            if (Double.isInfinite(value) && other.respondsTo("infinite?")) {
+                IRubyObject infinite = other.callMethod(context, "infinite?");
+                if (infinite.isNil()) {
+                    return value > 0.0 ? RubyFixnum.one(getRuntime()) : RubyFixnum.minus_one(getRuntime());
+                } else {
+                    int sign = RubyFixnum.fix2int(infinite);
+
+                    if (sign > 0) {
+                        if (value > 0.0) {
+                            return RubyFixnum.zero(getRuntime());
+                        } else {
+                            return RubyFixnum.minus_one(getRuntime());
+                        }
+                    } else {
+                        if (value < 0.0) {
+                            return RubyFixnum.zero(getRuntime());
+                        } else {
+                            return RubyFixnum.one(getRuntime());
+                        }
+                    }
+                }
+            }
             return coerceCmp(context, "<=>", other);
         }
     }

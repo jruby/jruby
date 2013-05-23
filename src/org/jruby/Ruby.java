@@ -205,8 +205,14 @@ public final class Ruby {
             myRandom = new Random();
         }
         this.random = myRandom;
-        this.hashSeedK0 = this.random.nextLong();
-        this.hashSeedK1 = this.random.nextLong();
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            this.hashSeedK0 = -561135208506705104l;
+            this.hashSeedK1 = 7114160726623585955l;
+        } else {
+            this.hashSeedK0 = this.random.nextLong();
+            this.hashSeedK1 = this.random.nextLong();
+        }
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
@@ -1113,9 +1119,6 @@ public final class Ruby {
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         javaSupport = new JavaSupport(this);
 
-        // HACK HACK HACK (jansi (part of jline) + classloader + windows == stacktrace barf)
-        if (Platform.IS_WINDOWS) System.setProperty("jline.terminal", "none");
-
         executor = new ThreadPoolExecutor(
                 RubyInstanceConfig.POOL_MIN,
                 RubyInstanceConfig.POOL_MAX,
@@ -1610,7 +1613,6 @@ public final class Ruby {
         addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
         addLazyBuiltin("zlib.jar", "zlib", "org.jruby.ext.zlib.ZlibLibrary");
         addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.ext.enumerator.EnumeratorLibrary");
-        addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.readline.ReadlineService");
         addLazyBuiltin("thread.jar", "thread", "org.jruby.ext.thread.ThreadLibrary");
         addLazyBuiltin("thread.rb", "thread", "org.jruby.ext.thread.ThreadLibrary");
         addLazyBuiltin("digest.jar", "digest.so", "org.jruby.ext.digest.DigestLibrary");
@@ -3073,7 +3075,7 @@ public final class Ruby {
         printProfileData(profileData, config.getProfileOutput());
     }
 
-    public void printProfileData(ProfileData profileData, ProfileOutput output) {
+    public synchronized void printProfileData(ProfileData profileData, ProfileOutput output) {
         ProfilePrinter profilePrinter = ProfilePrinter.newPrinter(config.getProfilingMode(), profileData);
         if (profilePrinter != null) {
             output.printProfile(profilePrinter);
