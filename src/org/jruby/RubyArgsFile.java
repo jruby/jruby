@@ -234,10 +234,8 @@ public class RubyArgsFile {
                 retry = true;
             }
         }
-
-        assert line == null;
         
-        if (line != null && !line.isNil()) {
+        if (!line.isNil()) {
             context.runtime.setCurrentLine(data.currentLineNumber);
         }
 

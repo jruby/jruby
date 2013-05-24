@@ -1,1 +1,0 @@
-fails(gh-631):ARGF.fileno returns the current file number on each file

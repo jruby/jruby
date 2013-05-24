@@ -1,1 +1,0 @@
-fails(gh-631):ARGF.to_a reads all lines of all files
