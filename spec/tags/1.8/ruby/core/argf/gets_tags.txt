@@ -1,8 +1,0 @@
-fails(gh-631):ARGF.gets reads one line of a file
-fails(gh-631):ARGF.gets reads all lines of a file
-fails(gh-631):ARGF.gets reads all lines of stdin
-fails(gh-631):ARGF.gets reads all lines of two files
-fails(gh-631):ARGF.gets sets $_ global variable with each line read
-fails(gh-631):ARGF.gets modifies the files when in place edit mode is on
-fails(gh-631):ARGF.gets modifies and backups two files when in place edit mode is on
-fails(gh-631):ARGF.gets returns nil when reaching end of files
