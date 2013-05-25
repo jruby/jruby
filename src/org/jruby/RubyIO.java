@@ -1185,13 +1185,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IOOptions modes;
         int perms = -1; // -1 == don't set permissions
 
-        if (args.length > 1) {
+        if (args.length > 1 && !args[1].isNil()) {
             IRubyObject modeString = args[1].convertToString();
             modes = newIOOptions(runtime, modeString.toString());
         } else {
             modes = newIOOptions(runtime, "r");
         }
-        if (args.length > 2) {
+
+        if (args.length > 2 && !args[2].isNil()) {
             RubyInteger permsInt =
                 args.length >= 3 ? args[2].convertToInteger() : null;
             perms = RubyNumeric.fix2int(permsInt);
