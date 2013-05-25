@@ -104,6 +104,7 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1225,11 +1226,21 @@ public class RubyModule extends RubyObject {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
-            if (superClazz == runtime.getObject() && RubyInstanceConfig.REIFY_RUBY_CLASSES) {
-                clazz = RubyClass.newClass(runtime, superClazz, name, REIFYING_OBJECT_ALLOCATOR, this, true);
+            
+            ObjectAllocator allocator;
+            if (superClazz == runtime.getObject()) {
+                if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                    allocator = REIFYING_OBJECT_ALLOCATOR;
+                } else if (Options.REIFY_VARIABLES.load()) {
+                    allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+                } else {
+                    allocator = OBJECT_ALLOCATOR;
+                }
             } else {
-                clazz = RubyClass.newClass(runtime, superClazz, name, superClazz.getAllocator(), this, true);
+                allocator = superClazz.getAllocator();
             }
+            
+            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true);
         }
 
         return clazz;

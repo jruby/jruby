@@ -35,7 +35,11 @@ import static org.jruby.RubyFile.file;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.util.zip.ZipEntry;
+import jnr.constants.platform.Errno;
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -347,13 +351,31 @@ public class RubyFileTest {
 
         return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSocket());
     }
+    
+    private static final ThreadLocal<SoftReference<FileStat>> statCache = new ThreadLocal();
+    
+    private static FileStat localStat(POSIX posix) {
+        FileStat stat;
+        SoftReference<FileStat> ref = statCache.get();
+        if (ref == null || (stat = ref.get()) == null) {
+            stat = posix.allocateStat();
+            ref = new SoftReference(stat);
+            statCache.set(ref);
+        }
+        return stat;
+    }
 
     @JRubyMethod(name = "sticky?", required = 1, module = true)
     public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
         JRubyFile file = file(filename);
+        POSIX posix = runtime.getPosix();
+        FileStat stat = localStat(posix);
 
-        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isSticky());
+        if (posix.stat(file.getAbsolutePath(), stat) != 0 && posix.errno() == Errno.ENOENT.intValue()) {
+            return runtime.getFalse();
+        }
+        return runtime.newBoolean(stat.isSticky());
     }
 
     @JRubyMethod(name = "symlink?", required = 1, module = true)

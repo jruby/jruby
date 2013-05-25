@@ -43,6 +43,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -61,6 +64,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import org.jruby.ast.visitor.InstanceVariableFinder;
+import org.jruby.util.cli.Options;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -154,6 +158,11 @@ public class RubyObject extends RubyBasicObject {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             InstanceVariableFinder discoverer = new InstanceVariableFinder();
             klass.visitInterpretedMethods(discoverer);
+            Set<String> found = discoverer.getFoundVariables();
+
+            if (Options.DUMP_INSTANCE_VARS.load()) {
+                System.err.println(klass + ";" + found);
+            }
 
             // TODO: select appropriate subclass and set up appropriate
             // allocator and variable table logic.
