@@ -3709,8 +3709,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO file = null;
 
+        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
         if (options == null || (options != null && options.isEmpty())) {
-            long mode = ModeFlags.CREAT | ModeFlags.BINARY;
 
             if (offset == null) {
                 mode |= ModeFlags.WRONLY;
@@ -3719,6 +3719,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
+        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
+            mode |= ModeFlags.WRONLY;
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options);
         } else {
             file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
         }
