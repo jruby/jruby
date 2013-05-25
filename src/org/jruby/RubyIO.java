@@ -3604,12 +3604,28 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *    open_args: array of string
      */
     private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
-        // FIXME: process options
-
         RubyString pathStr = RubyFile.get_path(context, path);
         Ruby runtime = context.runtime;
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
+
+        RubyIO file = null;
+
+        long mode = ModeFlags.CREAT;
+
+        if (options == null || (options != null && options.isEmpty())) {
+            if (offset.isNil()) {
+                mode |= ModeFlags.WRONLY;
+            } else {
+                mode |= ModeFlags.RDWR;
+            }
+
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
+        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
+            mode |= ModeFlags.WRONLY;
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options); 
+        } else {
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
+        }
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
