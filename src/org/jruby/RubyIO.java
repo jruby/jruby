@@ -859,6 +859,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject options) {
         Ruby runtime = context.runtime;
 
+        if(options != null && !options.isNil() && !(options instanceof RubyHash) && !(options.respondsTo("to_hash"))) {
+            throw runtime.newArgumentError("last argument must be a hash!");
+        }
+
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
 
