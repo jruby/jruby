@@ -247,8 +247,20 @@ class TestBigDecimal < Test::Unit::TestCase
   #JRUBY-5190
   def test_large_precisions 
     a = BigDecimal("1").div(BigDecimal("3"), 307)
-    b = BigDecimal("1").div(BigDecimal("3") , 308)
+    b = BigDecimal("1").div(BigDecimal("3"), 308)
     assert_equal a.to_f, b.to_f
   end
-  
+
+  if RUBY_VERSION =~ /1\.9/ || RUBY_VERSION =~ /2\.0/
+    # GH-644, GH-648
+    def test_div_by_float_precision_gh644
+      a = BigDecimal.new(11023)/2.2046
+      assert_equal 5_000, a.to_f
+    end
+
+    def test_div_by_float_precision_gh648
+      b = BigDecimal.new(1.05, 10)/1.48
+      assert (b.to_f - 0.7094594594594595) < Float::EPSILON
+    end
+  end
 end
