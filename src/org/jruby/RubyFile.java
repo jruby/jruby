@@ -1358,8 +1358,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
+            ByteList pathByteList = pathStr.getByteList();
 
-            if (pathStr.getByteList().startsWith(FILE_URL_START)) {
+            if ((pathByteList.bytes().length > FILE_URL_START.bytes().length) && pathByteList.startsWith(FILE_URL_START)) {
                 String path = pathStr.asJavaString();
                 String[] pathParts = splitURI(path);
                 if (pathParts != null && pathParts[0].equals("file:")) {
