@@ -185,6 +185,29 @@ public class VariableTableManager {
         }
         return ivarAccessor;
     }
+    
+    public VariableAccessor getVariableAccessorForVar(String name, int index) {
+        VariableAccessor ivarAccessor = variableAccessors.get(name);
+        if (ivarAccessor == null) {
+
+            synchronized (realClass) {
+                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
+                ivarAccessor = myVariableAccessors.get(name);
+
+                if (ivarAccessor == null) {
+                    // allocate a new accessor and populate a new table
+                    ivarAccessor = allocateVariableAccessorForVar(name, index);
+                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+
+                    newVariableAccessors.putAll(myVariableAccessors);
+                    newVariableAccessors.put(name, ivarAccessor);
+
+                    variableAccessors = newVariableAccessors;
+                }
+            }
+        }
+        return ivarAccessor;
+    }
 
     /**
      * Get the variable accessor for the given name with intent to use it for
@@ -570,6 +593,42 @@ public class VariableTableManager {
             newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
         } else {
             newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+        }
+
+        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+
+        return newVariableAccessor;
+    }
+    
+    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
+        int id = realClass.id;
+        String[] myVariableNames = variableNames;
+
+        int newIndex = myVariableNames.length;
+        String[] newVariableNames = new String[newIndex + 1];
+
+        VariableAccessor newVariableAccessor;
+        switch (index) {
+            case 0:
+                newVariableAccessor = new VariableAccessorVar0(realClass, name, newIndex, id);
+                break;
+            case 1:
+                newVariableAccessor = new VariableAccessorVar1(realClass, name, newIndex, id);
+                break;
+            case 2:
+                newVariableAccessor = new VariableAccessorVar2(realClass, name, newIndex, id);
+                break;
+            case 3:
+                newVariableAccessor = new VariableAccessorVar3(realClass, name, newIndex, id);
+                break;
+            case 4:
+                newVariableAccessor = new VariableAccessorVar4(realClass, name, newIndex, id);
+                break;
+            default:
+                throw new RuntimeException("unsupported var index in " + realClass + ": " + index);
         }
 
         System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);

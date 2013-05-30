@@ -65,6 +65,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.runtime.Arity;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
+import org.jruby.runtime.ivars.FieldVariableAccessor;
 
 /**
  * Bootstrapping logic for invokedynamic-based invocation.
@@ -1556,14 +1557,52 @@ public class InvocationLinker {
                 .insert(1, cls.getRuntime().getNil())
                 .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
                 .invokeStaticQuiet(lookup(), InvocationLinker.class, "valueOrNil");
-
-        nativeTarget = Binder
-                .from(site.type())
-                .permute(2)
-                .filterReturn(filter)
-                .insert(1, accessor.getIndex())
-                .cast(Object.class, RubyBasicObject.class, int.class)
-                .invokeStaticQuiet(lookup(), VariableAccessor.class, "getVariable");
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            Binder b = Binder
+                    .from(site.type())
+                    .permute(2)
+                    .filterReturn(filter);
+            
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            switch (offset) {
+                case 0:
+                    nativeTarget = b
+                            .cast(Object.class, RubyObjectVar0.class)
+                            .getFieldQuiet(lookup(), "var0");
+                    break;
+                case 1:
+                    nativeTarget = b
+                            .cast(Object.class, RubyObjectVar1.class)
+                            .getFieldQuiet(lookup(), "var1");
+                    break;
+                case 2:
+                    nativeTarget = b
+                            .cast(Object.class, RubyObjectVar2.class)
+                            .getFieldQuiet(lookup(), "var2");
+                    break;
+                case 3:
+                    nativeTarget = b
+                            .cast(Object.class, RubyObjectVar3.class)
+                            .getFieldQuiet(lookup(), "var3");
+                    break;
+                case 4:
+                    nativeTarget = b
+                            .cast(Object.class, RubyObjectVar4.class)
+                            .getFieldQuiet(lookup(), "var4");
+                    break;
+                default:
+                    throw new RuntimeException("invalid field offset: " + offset);
+            }
+        } else {
+            nativeTarget = Binder
+                    .from(site.type())
+                    .permute(2)
+                    .filterReturn(filter)
+                    .insert(1, accessor.getIndex())
+                    .cast(Object.class, RubyBasicObject.class, int.class)
+                    .invokeStaticQuiet(lookup(), VariableAccessor.class, "getVariable");
+        }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
 
@@ -1587,14 +1626,52 @@ public class InvocationLinker {
                 .from(IRubyObject.class, Object.class)
                 .drop(0)
                 .constant(cls.getRuntime().getNil());
-
-        nativeTarget = Binder
-                .from(site.type())
-                .permute(2, 3)
-                .filterReturn(filter)
-                .insert(1, cls.getRealClass(), accessor.getIndex())
-                .cast(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class)
-                .invokeStaticQuiet(lookup(), accessor.getClass(), "setVariableChecked");
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            Binder b = Binder
+                    .from(site.type())
+                    .permute(2, 3)
+                    .filterReturn(filter);
+            
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            switch (offset) {
+                case 0:
+                    nativeTarget = b
+                            .cast(void.class, RubyObjectVar0.class, Object.class)
+                            .invokeStaticQuiet(lookup(), RubyObjectVar0.class, "setVariableChecked");
+                    break;
+                case 1:
+                    nativeTarget = b
+                            .cast(void.class, RubyObjectVar1.class, Object.class)
+                            .invokeStaticQuiet(lookup(), RubyObjectVar1.class, "setVariableChecked");
+                    break;
+                case 2:
+                    nativeTarget = b
+                            .cast(void.class, RubyObjectVar2.class, Object.class)
+                            .invokeStaticQuiet(lookup(), RubyObjectVar2.class, "setVariableChecked");
+                    break;
+                case 3:
+                    nativeTarget = b
+                            .cast(void.class, RubyObjectVar3.class, Object.class)
+                            .invokeStaticQuiet(lookup(), RubyObjectVar3.class, "setVariableChecked");
+                    break;
+                case 4:
+                    nativeTarget = b
+                            .cast(void.class, RubyObjectVar4.class, Object.class)
+                            .invokeStaticQuiet(lookup(), RubyObjectVar4.class, "setVariableChecked");
+                    break;
+                default:
+                    throw new RuntimeException("invalid field offset: " + offset);
+            }
+        } else {
+            nativeTarget = Binder
+                    .from(site.type())
+                    .permute(2, 3)
+                    .filterReturn(filter)
+                    .insert(1, cls.getRealClass(), accessor.getIndex())
+                    .cast(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class)
+                    .invokeStaticQuiet(lookup(), accessor.getClass(), "setVariableChecked");
+        }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
 

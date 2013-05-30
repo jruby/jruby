@@ -63,6 +63,7 @@ import org.jruby.util.log.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
@@ -480,9 +481,36 @@ public class InvokeDynamicSupport {
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
         
         // get variable value and filter with nullToNil
-        MethodHandle getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
-        getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
-        getValue = insertArguments(getValue, 1, accessor.getIndex());
+        MethodHandle getValue;
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            switch (offset) {
+                case 0:
+                    getValue = lookup().findGetter(RubyObjectVar0.class, "var0", Object.class);
+                    break;
+                case 1:
+                    getValue = lookup().findGetter(RubyObjectVar1.class, "var1", Object.class);
+                    break;
+                case 2:
+                    getValue = lookup().findGetter(RubyObjectVar2.class, "var2", Object.class);
+                    break;
+                case 3:
+                    getValue = lookup().findGetter(RubyObjectVar3.class, "var3", Object.class);
+                    break;
+                case 4:
+                    getValue = lookup().findGetter(RubyObjectVar4.class, "var4", Object.class);
+                    break;
+                default:
+                    throw new RuntimeException("invalid field offset: " + offset);
+            }
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
+        } else {
+            getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
+            getValue = insertArguments(getValue, 1, accessor.getIndex());
+        }
+        
         getValue = filterReturnValue(getValue, nullToNil);
         
         // prepare fallback
@@ -524,9 +552,37 @@ public class InvokeDynamicSupport {
         returnValue = dropArguments(returnValue, 0, IRubyObject.class);
 
         // set variable value and fold by returning value
-        MethodHandle setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
-        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
-        setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
+        MethodHandle setValue;
+        
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            switch (offset) {
+                case 0:
+                    setValue = findStatic(RubyObjectVar0.class, "setVariableChecked", methodType(void.class, RubyObjectVar0.class, Object.class));
+                    break;
+                case 1:
+                    setValue = findStatic(RubyObjectVar1.class, "setVariableChecked", methodType(void.class, RubyObjectVar1.class, Object.class));
+                    break;
+                case 2:
+                    setValue = findStatic(RubyObjectVar2.class, "setVariableChecked", methodType(void.class, RubyObjectVar2.class, Object.class));
+                    break;
+                case 3:
+                    setValue = findStatic(RubyObjectVar3.class, "setVariableChecked", methodType(void.class, RubyObjectVar3.class, Object.class));
+                    break;
+                case 4:
+                    setValue = findStatic(RubyObjectVar4.class, "setVariableChecked", methodType(void.class, RubyObjectVar4.class, Object.class));
+                    break;
+                default:
+                    throw new RuntimeException("invalid field offset: " + offset);
+            }
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
+            setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
+        }
+        
         setValue = foldArguments(returnValue, setValue);
 
         // prepare fallback

@@ -148,6 +148,36 @@ public class RubyObject extends RubyBasicObject {
         }
     };
     
+    public static final ObjectAllocator OBJECT_VAR0_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar0(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR1_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar1(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR2_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar2(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR3_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar3(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR4_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar4(runtime, klass);
+        }
+    };
+    
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -163,11 +193,35 @@ public class RubyObject extends RubyBasicObject {
             if (Options.DUMP_INSTANCE_VARS.load()) {
                 System.err.println(klass + ";" + found);
             }
-
-            // TODO: select appropriate subclass and set up appropriate
-            // allocator and variable table logic.
-            klass.setAllocator(OBJECT_ALLOCATOR);
-            return new RubyObject(runtime, klass);
+            
+            if (found.size() > 0 && found.size() <= 5) {
+                int i = 0;
+                for (String name : found) {
+                    klass.getVariableTableManager().getVariableAccessorForVar(name, i);
+                    i++;
+                }
+            }
+            
+            switch (found.size()) {
+                case 1:
+                    klass.setAllocator(OBJECT_VAR0_ALLOCATOR);
+                    return new RubyObjectVar0(runtime, klass);
+                case 2:
+                    klass.setAllocator(OBJECT_VAR1_ALLOCATOR);
+                    return new RubyObjectVar1(runtime, klass);
+                case 3:
+                    klass.setAllocator(OBJECT_VAR2_ALLOCATOR);
+                    return new RubyObjectVar2(runtime, klass);
+                case 4:
+                    klass.setAllocator(OBJECT_VAR3_ALLOCATOR);
+                    return new RubyObjectVar3(runtime, klass);
+                case 5:
+                    klass.setAllocator(OBJECT_VAR4_ALLOCATOR);
+                    return new RubyObjectVar4(runtime, klass);
+                default:
+                    klass.setAllocator(OBJECT_ALLOCATOR);
+                    return new RubyObject(runtime, klass);
+            }
         }
     };
 
