@@ -1,0 +1,1 @@
+fails(JRUBY-4110,linux,intermittent failure):IO#close on an IO.popen stream sets $?
