@@ -12,19 +12,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
- * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
- * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * Copyright (C) 2007 MenTaLguY <mental@rydia.net>
- * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -40,7 +27,7 @@
 package org.jruby;
 
 /**
- * A RubyObject that provides a direct field for four stored variables, to avoid
+ * A RubyObject that provides a direct field for five stored variables, to avoid
  * the overhead of creating and managing a separate array and reference.
  */
 public class RubyObjectVar4 extends RubyObjectVar3 {

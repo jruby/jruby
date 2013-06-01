@@ -97,6 +97,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -3799,6 +3800,24 @@ public class RubyModule extends RubyObject {
                 break;
             }
         }
+    }
+    
+    public Set<String> discoverInstanceVariables() {
+        HashSet<String> set = new HashSet();
+        RubyModule cls = this;
+        while (cls != null) {
+            for (DynamicMethod method : cls.getNonIncludedClass().getMethods().values()) {
+                MethodData methodData = method.getMethodData();
+                set.addAll(methodData.getIvarNames());
+            }
+            
+            if (cls instanceof RubyClass) {
+                cls = ((RubyClass)cls).getSuperClass();
+            } else {
+                break;
+            }
+        }
+        return set;
     }
 
     /**

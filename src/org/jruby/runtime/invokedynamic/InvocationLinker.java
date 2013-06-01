@@ -1565,35 +1565,10 @@ public class InvocationLinker {
                     .filterReturn(filter);
             
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            switch (offset) {
-                case 0:
-                    nativeTarget = b
-                            .cast(Object.class, RubyObjectVar0.class)
-                            .getFieldQuiet(lookup(), "var0");
-                    break;
-                case 1:
-                    nativeTarget = b
-                            .cast(Object.class, RubyObjectVar1.class)
-                            .getFieldQuiet(lookup(), "var1");
-                    break;
-                case 2:
-                    nativeTarget = b
-                            .cast(Object.class, RubyObjectVar2.class)
-                            .getFieldQuiet(lookup(), "var2");
-                    break;
-                case 3:
-                    nativeTarget = b
-                            .cast(Object.class, RubyObjectVar3.class)
-                            .getFieldQuiet(lookup(), "var3");
-                    break;
-                case 4:
-                    nativeTarget = b
-                            .cast(Object.class, RubyObjectVar4.class)
-                            .getFieldQuiet(lookup(), "var4");
-                    break;
-                default:
-                    throw new RuntimeException("invalid field offset: " + offset);
-            }
+            Class objCls = InvokeDynamicSupport.REIFIED_OBJECT_CLASSES[offset];
+            nativeTarget = b
+                    .cast(Object.class, objCls)
+                    .getFieldQuiet(lookup(), "var" + offset);
         } else {
             nativeTarget = Binder
                     .from(site.type())
@@ -1634,35 +1609,10 @@ public class InvocationLinker {
                     .filterReturn(filter);
             
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            switch (offset) {
-                case 0:
-                    nativeTarget = b
-                            .cast(void.class, RubyObjectVar0.class, Object.class)
-                            .invokeStaticQuiet(lookup(), RubyObjectVar0.class, "setVariableChecked");
-                    break;
-                case 1:
-                    nativeTarget = b
-                            .cast(void.class, RubyObjectVar1.class, Object.class)
-                            .invokeStaticQuiet(lookup(), RubyObjectVar1.class, "setVariableChecked");
-                    break;
-                case 2:
-                    nativeTarget = b
-                            .cast(void.class, RubyObjectVar2.class, Object.class)
-                            .invokeStaticQuiet(lookup(), RubyObjectVar2.class, "setVariableChecked");
-                    break;
-                case 3:
-                    nativeTarget = b
-                            .cast(void.class, RubyObjectVar3.class, Object.class)
-                            .invokeStaticQuiet(lookup(), RubyObjectVar3.class, "setVariableChecked");
-                    break;
-                case 4:
-                    nativeTarget = b
-                            .cast(void.class, RubyObjectVar4.class, Object.class)
-                            .invokeStaticQuiet(lookup(), RubyObjectVar4.class, "setVariableChecked");
-                    break;
-                default:
-                    throw new RuntimeException("invalid field offset: " + offset);
-            }
+            Class objCls = InvokeDynamicSupport.REIFIED_OBJECT_CLASSES[offset];
+            nativeTarget = b
+                    .cast(void.class, objCls, Object.class)
+                    .invokeStaticQuiet(lookup(), objCls, "setVariableChecked");
         } else {
             nativeTarget = Binder
                     .from(site.type())

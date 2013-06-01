@@ -27,22 +27,22 @@
 package org.jruby;
 
 /**
- * A RubyObject that provides a direct field for four stored variables, to avoid
+ * A RubyObject that provides a direct field for ten stored variables, to avoid
  * the overhead of creating and managing a separate array and reference.
  */
-public class RubyObjectVar3 extends RubyObjectVar2 {
+public class RubyObjectVar9 extends RubyObjectVar8 {
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
      */
-    public RubyObjectVar3(Ruby runtime, RubyClass metaClass) {
+    public RubyObjectVar9(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
     
-    public static void setVariableChecked(RubyObjectVar3 self, Object value) {
+    public static void setVariableChecked(RubyObjectVar9 self, Object value) {
         self.ensureInstanceVariablesSettable();
-        self.var3 = value;
+        self.var9 = value;
     }
     
-    public Object var3;
+    public Object var9;
 }

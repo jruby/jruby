@@ -603,6 +603,19 @@ public class VariableTableManager {
         return newVariableAccessor;
     }
     
+    private static final Class[] FIELD_VARIABLE_ACCESSORS = {
+        VariableAccessorVar0.class,
+        VariableAccessorVar1.class,
+        VariableAccessorVar2.class,
+        VariableAccessorVar3.class,
+        VariableAccessorVar4.class,
+        VariableAccessorVar5.class,
+        VariableAccessorVar6.class,
+        VariableAccessorVar7.class,
+        VariableAccessorVar8.class,
+        VariableAccessorVar9.class
+    };
+    
     synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
         int id = realClass.id;
         String[] myVariableNames = variableNames;
@@ -626,6 +639,21 @@ public class VariableTableManager {
                 break;
             case 4:
                 newVariableAccessor = new VariableAccessorVar4(realClass, name, newIndex, id);
+                break;
+            case 5:
+                newVariableAccessor = new VariableAccessorVar5(realClass, name, newIndex, id);
+                break;
+            case 6:
+                newVariableAccessor = new VariableAccessorVar6(realClass, name, newIndex, id);
+                break;
+            case 7:
+                newVariableAccessor = new VariableAccessorVar7(realClass, name, newIndex, id);
+                break;
+            case 8:
+                newVariableAccessor = new VariableAccessorVar8(realClass, name, newIndex, id);
+                break;
+            case 9:
+                newVariableAccessor = new VariableAccessorVar9(realClass, name, newIndex, id);
                 break;
             default:
                 throw new RuntimeException("unsupported var index in " + realClass + ": " + index);

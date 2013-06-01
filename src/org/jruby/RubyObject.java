@@ -178,6 +178,49 @@ public class RubyObject extends RubyBasicObject {
         }
     };
     
+    public static final ObjectAllocator OBJECT_VAR5_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar5(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR6_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar6(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR7_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar7(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR8_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar8(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR9_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar9(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator[] FIELD_ALLOCATORS = {
+        OBJECT_VAR0_ALLOCATOR,
+        OBJECT_VAR1_ALLOCATOR,
+        OBJECT_VAR2_ALLOCATOR,
+        OBJECT_VAR3_ALLOCATOR,
+        OBJECT_VAR4_ALLOCATOR,
+        OBJECT_VAR5_ALLOCATOR,
+        OBJECT_VAR6_ALLOCATOR,
+        OBJECT_VAR7_ALLOCATOR,
+        OBJECT_VAR8_ALLOCATOR,
+        OBJECT_VAR9_ALLOCATOR,
+    };
+    
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -186,42 +229,27 @@ public class RubyObject extends RubyBasicObject {
      */
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            InstanceVariableFinder discoverer = new InstanceVariableFinder();
-            klass.visitInterpretedMethods(discoverer);
-            Set<String> found = discoverer.getFoundVariables();
+            Set<String> foundVariables = klass.discoverInstanceVariables();
 
             if (Options.DUMP_INSTANCE_VARS.load()) {
-                System.err.println(klass + ";" + found);
+                System.err.println(klass + ";" + foundVariables);
             }
             
-            if (found.size() > 0 && found.size() <= 5) {
-                int i = 0;
-                for (String name : found) {
-                    klass.getVariableTableManager().getVariableAccessorForVar(name, i);
-                    i++;
-                }
+            int i = 0;
+            for (String name : foundVariables) {
+                klass.getVariableTableManager().getVariableAccessorForVar(name, i);
+                i++;
+                if (i >= 10) break;
             }
             
-            switch (found.size()) {
-                case 1:
-                    klass.setAllocator(OBJECT_VAR0_ALLOCATOR);
-                    return new RubyObjectVar0(runtime, klass);
-                case 2:
-                    klass.setAllocator(OBJECT_VAR1_ALLOCATOR);
-                    return new RubyObjectVar1(runtime, klass);
-                case 3:
-                    klass.setAllocator(OBJECT_VAR2_ALLOCATOR);
-                    return new RubyObjectVar2(runtime, klass);
-                case 4:
-                    klass.setAllocator(OBJECT_VAR3_ALLOCATOR);
-                    return new RubyObjectVar3(runtime, klass);
-                case 5:
-                    klass.setAllocator(OBJECT_VAR4_ALLOCATOR);
-                    return new RubyObjectVar4(runtime, klass);
-                default:
-                    klass.setAllocator(OBJECT_ALLOCATOR);
-                    return new RubyObject(runtime, klass);
+            ObjectAllocator allocator;
+            if (foundVariables.size() <= 10) {
+                allocator = FIELD_ALLOCATORS[foundVariables.size() - 1];
+            } else {
+                allocator = OBJECT_VAR9_ALLOCATOR;
             }
+            klass.setAllocator(allocator);
+            return allocator.allocate(runtime, klass);
         }
     };
 

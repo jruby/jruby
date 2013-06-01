@@ -1,5 +1,4 @@
-/*
- ***** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -24,25 +23,37 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+
+package org.jruby.runtime.ivars;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
- * A RubyObject that provides a direct field for four stored variables, to avoid
- * the overhead of creating and managing a separate array and reference.
+ * Abstraction of all metadata about a method.
  */
-public class RubyObjectVar3 extends RubyObjectVar2 {
-    /**
-     * Standard path for object creation. Objects are entered into ObjectSpace
-     * only if ObjectSpace is enabled.
-     */
-    public RubyObjectVar3(Ruby runtime, RubyClass metaClass) {
-        super(runtime, metaClass);
+public class MethodData {
+    public static final MethodData NULL = new MethodData("", "", Collections.EMPTY_LIST);
+    
+    public MethodData(String name, String filename, Collection<String> ivarNames) {
+        this.name = name;
+        this.filename = filename;
+        this.ivarNames = ivarNames;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public Collection<String> getIvarNames() {
+        return ivarNames;
     }
     
-    public static void setVariableChecked(RubyObjectVar3 self, Object value) {
-        self.ensureInstanceVariablesSettable();
-        self.var3 = value;
-    }
-    
-    public Object var3;
+    private final String name;
+    private final String filename;
+    private final Collection<String> ivarNames;
 }

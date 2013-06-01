@@ -485,25 +485,8 @@ public class InvokeDynamicSupport {
         
         if (accessor instanceof FieldVariableAccessor) {
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            switch (offset) {
-                case 0:
-                    getValue = lookup().findGetter(RubyObjectVar0.class, "var0", Object.class);
-                    break;
-                case 1:
-                    getValue = lookup().findGetter(RubyObjectVar1.class, "var1", Object.class);
-                    break;
-                case 2:
-                    getValue = lookup().findGetter(RubyObjectVar2.class, "var2", Object.class);
-                    break;
-                case 3:
-                    getValue = lookup().findGetter(RubyObjectVar3.class, "var3", Object.class);
-                    break;
-                case 4:
-                    getValue = lookup().findGetter(RubyObjectVar4.class, "var4", Object.class);
-                    break;
-                default:
-                    throw new RuntimeException("invalid field offset: " + offset);
-            }
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            getValue = lookup().findGetter(cls, "var" + offset, Object.class);
             getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
         } else {
             getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
@@ -543,6 +526,19 @@ public class InvokeDynamicSupport {
         return site.getVariable(self);
     }
     
+    public static final Class[] REIFIED_OBJECT_CLASSES = {
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
+    
     public static IRubyObject setVariableFallback(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
         VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
@@ -554,28 +550,10 @@ public class InvokeDynamicSupport {
         // set variable value and fold by returning value
         MethodHandle setValue;
         
-        
         if (accessor instanceof FieldVariableAccessor) {
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            switch (offset) {
-                case 0:
-                    setValue = findStatic(RubyObjectVar0.class, "setVariableChecked", methodType(void.class, RubyObjectVar0.class, Object.class));
-                    break;
-                case 1:
-                    setValue = findStatic(RubyObjectVar1.class, "setVariableChecked", methodType(void.class, RubyObjectVar1.class, Object.class));
-                    break;
-                case 2:
-                    setValue = findStatic(RubyObjectVar2.class, "setVariableChecked", methodType(void.class, RubyObjectVar2.class, Object.class));
-                    break;
-                case 3:
-                    setValue = findStatic(RubyObjectVar3.class, "setVariableChecked", methodType(void.class, RubyObjectVar3.class, Object.class));
-                    break;
-                case 4:
-                    setValue = findStatic(RubyObjectVar4.class, "setVariableChecked", methodType(void.class, RubyObjectVar4.class, Object.class));
-                    break;
-                default:
-                    throw new RuntimeException("invalid field offset: " + offset);
-            }
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
             setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
         } else {
             setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
