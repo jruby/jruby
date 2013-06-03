@@ -565,8 +565,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <env key="RUBYOPT" value=""/>
             <env key="GEM_HOME" value="${basedir}${jar-stdlib-home}/lib/ruby/gems/shared"/>
             <jvmarg line="${java.opts}"/>
-            <arg line="-S gem install ${complete.jar.gems}"/>
-            <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
+            <arg line="-S gem install --no-ri --no-rdoc --ignore-dependencies --env-shebang --local ${complete.jar.gems}"/>
         </java>
         <delete dir="${jar-stdlib-home}/lib/ruby/gems/shared/cache"/>
 
@@ -621,8 +620,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <env key="RUBYOPT" value=""/>
             <env key="GEM_HOME" value="${basedir}/${jar-complete-home}/lib/ruby/gems/shared"/>
             <jvmarg line="${java.opts}"/>
-            <arg line="-S gem install ${complete.jar.gems}"/>
-            <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
+            <arg line="-S gem install --no-ri --no-rdoc --ignore-dependencies --env-shebang ${complete.jar.gems}"/>
         </java>
         <delete dir="${jar-complete-home}/lib/ruby/gems/shared/cache"/>
 
@@ -776,31 +774,13 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <classpath refid="build.classpath"/>
             <classpath path="${jruby.classes.dir}"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
-            <env key="GEM_PATH" value=""/>
-            <!-- to ignore any gems installed in ~/.gem -->
-            <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/>
-            <!-- to make sure we are working with JRuby and not RVM's gems -->
-            <arg line="-e 'require %q/rubygems/; require %q/yaml/; puts %Q/Gem.ruby #{Gem.ruby}/; puts %Q/Gem.bindir #{Gem.bindir}/'"/>
-        </java>
-        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
-            <classpath refid="build.classpath"/>
-            <classpath path="${jruby.classes.dir}"/>
-            <sysproperty key="jruby.home" value="${basedir}"/>
-            <env key="GEM_PATH" value=""/>
-            <!-- to ignore any gems installed in ~/.gem -->
-            <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/>
-            <!-- to make sure we are working with JRuby and not RVM's gems -->
-            <arg line="-S gem uninstall --all ${dev.gem.names}"/>
+            <arg line="-S gem uninstall --all --force ${dev.gem.names}"/>
         </java>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
             <classpath refid="build.classpath"/>
             <classpath path="${jruby.classes.dir}"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
-            <env key="GEM_PATH" value=""/>
-            <!-- to ignore any gems installed in ~/.gem -->
-            <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/>
-            <!-- to make sure we are working with JRuby and not RVM's gems -->
-            <arg line="-S gem install -n ${basedir}/bin ${dev.gems}"/>
+            <arg line="-S gem install --local --ignore-dependencies ${dev.gems}"/>
         </java>
     </target>
 
@@ -823,18 +803,14 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <classpath refid="build.classpath"/>
             <classpath path="${jruby.classes.dir}"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
-            <env key="GEM_PATH" value=""/>
-            <!-- to ignore any gems installed in ~/.gem -->
-            <arg line="-S gem uninstall --all jruby-launcher"/>
+            <arg line="-S gem uninstall --all --force jruby-launcher"/>
         </java>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
             <classpath refid="build.classpath"/>
             <classpath path="${jruby.classes.dir}"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <env key="PATH" value="${basedir}/lib/ruby/gems/shared/bin:${env.PATH}"/>
-            <env key="GEM_PATH" value=""/>
-            <!-- to ignore any gems installed in ~/.gem -->
-            <arg line="-S gem install ${jruby.launcher.gem}"/>
+            <arg line="-S gem install --local --ignore-dependencies ${jruby.launcher.gem}"/>
         </java>
     </target>
 
