@@ -26,9 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.ivars;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.RubyObjectVar0;
 
 /**
  * A variable accessor that accesses a field directly;

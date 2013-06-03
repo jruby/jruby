@@ -43,9 +43,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -63,7 +61,6 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
-import org.jruby.ast.visitor.InstanceVariableFinder;
 import org.jruby.util.cli.Options;
 
 /**

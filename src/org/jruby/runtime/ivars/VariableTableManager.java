@@ -68,6 +68,9 @@ public class VariableTableManager {
     /** whether a slot has been allocated to object_id */
     private volatile boolean hasObjectID = false;
     
+    /** whether objects associated with this table use fields */
+    private volatile int fieldVariables = 0;
+    
     /** a lazy accessor for object_id */
     private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
     /** a lazy accessor for C ext handle */
@@ -408,7 +411,7 @@ public class VariableTableManager {
         RubyClass otherRealClass = other.getMetaClass().getRealClass();
         boolean sameTable = otherRealClass == realClass;
 
-        if (sameTable) {
+        if (sameTable && fieldVariables == 0) {
             int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
             
             Object[] otherVars = ((RubyBasicObject) other).varTable;
@@ -470,7 +473,7 @@ public class VariableTableManager {
     public boolean hasVariables(RubyBasicObject object) {
         // we check both to exclude object_id
         Object[] myVarTable;
-        return getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
+        return fieldVariables > 0 || getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
     }
 
     public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
@@ -500,12 +503,6 @@ public class VariableTableManager {
             Object value = getVariableAccessorForRead(name).get(object);
             getVariableAccessorForWrite(name).set(object, null);
             
-            // if there's no values set anymore, null out the table
-            // FIXME: This should enlist in volatility logic or be removed
-            for (Object var : object.varTable) {
-                if (var != null) return value;
-            }
-            object.varTable = null;
             return value;
         }
     }
@@ -603,25 +600,14 @@ public class VariableTableManager {
         return newVariableAccessor;
     }
     
-    private static final Class[] FIELD_VARIABLE_ACCESSORS = {
-        VariableAccessorVar0.class,
-        VariableAccessorVar1.class,
-        VariableAccessorVar2.class,
-        VariableAccessorVar3.class,
-        VariableAccessorVar4.class,
-        VariableAccessorVar5.class,
-        VariableAccessorVar6.class,
-        VariableAccessorVar7.class,
-        VariableAccessorVar8.class,
-        VariableAccessorVar9.class
-    };
-    
     synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
         int id = realClass.id;
         String[] myVariableNames = variableNames;
 
         int newIndex = myVariableNames.length;
         String[] newVariableNames = new String[newIndex + 1];
+        
+        fieldVariables += 1;
 
         VariableAccessor newVariableAccessor;
         switch (index) {
