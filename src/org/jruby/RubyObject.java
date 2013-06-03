@@ -209,6 +209,7 @@ public class RubyObject extends RubyBasicObject {
     };
     
     public static final ObjectAllocator[] FIELD_ALLOCATORS = {
+        OBJECT_ALLOCATOR,
         OBJECT_VAR0_ALLOCATOR,
         OBJECT_VAR1_ALLOCATOR,
         OBJECT_VAR2_ALLOCATOR,
@@ -218,7 +219,7 @@ public class RubyObject extends RubyBasicObject {
         OBJECT_VAR6_ALLOCATOR,
         OBJECT_VAR7_ALLOCATOR,
         OBJECT_VAR8_ALLOCATOR,
-        OBJECT_VAR9_ALLOCATOR,
+        OBJECT_VAR9_ALLOCATOR
     };
     
     /**
@@ -235,20 +236,16 @@ public class RubyObject extends RubyBasicObject {
                 System.err.println(klass + ";" + foundVariables);
             }
             
-            int i = 0;
+            int count = 0;
             for (String name : foundVariables) {
-                klass.getVariableTableManager().getVariableAccessorForVar(name, i);
-                i++;
-                if (i >= 10) break;
+                klass.getVariableTableManager().getVariableAccessorForVar(name, count);
+                count++;
+                if (count >= 10) break;
             }
             
-            ObjectAllocator allocator;
-            if (foundVariables.size() <= 10) {
-                allocator = FIELD_ALLOCATORS[foundVariables.size() - 1];
-            } else {
-                allocator = OBJECT_VAR9_ALLOCATOR;
-            }
+            ObjectAllocator allocator = FIELD_ALLOCATORS[count];
             klass.setAllocator(allocator);
+            
             return allocator.allocate(runtime, klass);
         }
     };
