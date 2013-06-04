@@ -219,6 +219,20 @@ public class RubyObject extends RubyBasicObject {
         OBJECT_VAR9_ALLOCATOR
     };
     
+    public static final Class[] FIELD_ALLOCATED_CLASSES = {
+        RubyObject.class,
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
+    
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -241,7 +255,9 @@ public class RubyObject extends RubyBasicObject {
             }
             
             ObjectAllocator allocator = FIELD_ALLOCATORS[count];
+            Class reified = FIELD_ALLOCATED_CLASSES[count];
             klass.setAllocator(allocator);
+            klass.setReifiedClass(reified);
             
             return allocator.allocate(runtime, klass);
         }
