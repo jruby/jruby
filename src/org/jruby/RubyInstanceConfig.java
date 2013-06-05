@@ -176,31 +176,6 @@ public class RubyInstanceConfig {
         return creator.create(runtime);
     }
 
-    @Deprecated
-    public String getBasicUsageHelp() {
-        return OutputStrings.getBasicUsageHelp();
-    }
-
-    @Deprecated
-    public String getExtendedHelp() {
-        return OutputStrings.getExtendedHelp();
-    }
-
-    @Deprecated
-    public String getPropertyHelp() {
-        return OutputStrings.getPropertyHelp();
-    }
-
-    @Deprecated
-    public String getVersionString() {
-        return OutputStrings.getVersionString(compatVersion);
-    }
-
-    @Deprecated
-    public String getCopyrightString() {
-        return OutputStrings.getCopyrightString();
-    }
-
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments, this).processArguments();
         tryProcessArgumentsWithRubyopts();
@@ -714,18 +689,8 @@ public class RubyInstanceConfig {
     public Collection<String> getRequiredLibraries() {
         return requiredLibraries;
     }
-
-    @Deprecated
-    public Collection<String> requiredLibraries() {
-        return requiredLibraries;
-    }
     
     public List<String> getLoadPaths() {
-        return loadPaths;
-    }
-
-    @Deprecated
-    public List<String> loadPaths() {
         return loadPaths;
     }
 
@@ -740,22 +705,12 @@ public class RubyInstanceConfig {
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
     }
-
-    @Deprecated
-    public boolean shouldPrintUsage() {
-        return shouldPrintUsage;
-    }
     
     public void setShouldPrintProperties(boolean shouldPrintProperties) {
         this.shouldPrintProperties = shouldPrintProperties;
     }
     
     public boolean getShouldPrintProperties() {
-        return shouldPrintProperties;
-    }
-
-    @Deprecated
-    public boolean shouldPrintProperties() {
         return shouldPrintProperties;
     }
 
@@ -828,11 +783,6 @@ public class RubyInstanceConfig {
         return verbosity == Verbosity.TRUE;
     }
 
-    @Deprecated
-    public Boolean getVerbose() {
-        return isVerbose();
-    }
-
     public boolean isDebug() {
         return debug;
     }
@@ -875,16 +825,6 @@ public class RubyInstanceConfig {
     
     public boolean getShouldRunInterpreter() {
         return shouldRunInterpreter && (hasScriptArgv || !showVersion);
-    }
-
-    @Deprecated
-    public boolean shouldRunInterpreter() {
-        return isShouldRunInterpreter();
-    }
-
-    @Deprecated
-    public boolean isShouldRunInterpreter() {
-        return shouldRunInterpreter;
     }
     
     public void setShouldCheckSyntax(boolean shouldSetSyntax) {
@@ -1111,11 +1051,6 @@ public class RubyInstanceConfig {
     }
 
     public boolean isXFlag() {
-        return xFlag;
-    }
-    
-    @Deprecated
-    public boolean isxFlag() {
         return xFlag;
     }
     
@@ -1375,33 +1310,9 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     
     /**
-     * The max count of active methods eligible for JIT-compilation.
-     */
-    @Deprecated
-    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
-
-    /**
-     * The max size of JIT-compiled methods (full class size) allowed.
-     */
-    @Deprecated
-    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
-
-    /**
-     * The JIT threshold to the specified method invocation count.
-     */
-    @Deprecated
-    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-    
-    /**
      * The version to use for generated classes. Set to current JVM version by default
      */
     public static final int JAVA_VERSION = initGlobalJavaVersion();
-    
-    /**
-     * Default size for chained compilation.
-     */
-    @Deprecated
-    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
     
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1530,9 +1441,6 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
-
-    @Deprecated
-    public static final boolean nativeEnabled = NATIVE_ENABLED;
 
     /**
      * Indicates the global default for whether C extensions are enabled.
@@ -1710,4 +1618,96 @@ public class RubyInstanceConfig {
     public String getInPlaceBackupExtention() {
         return inPlaceBackupExtension;
     }
+
+    @Deprecated
+    public String getBasicUsageHelp() {
+        return OutputStrings.getBasicUsageHelp();
+    }
+
+    @Deprecated
+    public String getExtendedHelp() {
+        return OutputStrings.getExtendedHelp();
+    }
+
+    @Deprecated
+    public String getPropertyHelp() {
+        return OutputStrings.getPropertyHelp();
+    }
+
+    @Deprecated
+    public String getVersionString() {
+        return OutputStrings.getVersionString(compatVersion);
+    }
+
+    @Deprecated
+    public String getCopyrightString() {
+        return OutputStrings.getCopyrightString();
+    }
+
+    @Deprecated
+    public Collection<String> requiredLibraries() {
+        return requiredLibraries;
+    }
+
+    @Deprecated
+    public List<String> loadPaths() {
+        return loadPaths;
+    }
+
+    @Deprecated
+    public boolean shouldPrintUsage() {
+        return shouldPrintUsage;
+    }
+
+    @Deprecated
+    public boolean shouldPrintProperties() {
+        return shouldPrintProperties;
+    }
+
+    @Deprecated
+    public Boolean getVerbose() {
+        return isVerbose();
+    }
+
+    @Deprecated
+    public boolean shouldRunInterpreter() {
+        return isShouldRunInterpreter();
+    }
+
+    @Deprecated
+    public boolean isShouldRunInterpreter() {
+        return shouldRunInterpreter;
+    }
+    
+    @Deprecated
+    public boolean isxFlag() {
+        return xFlag;
+    }
+    
+    /**
+     * The max count of active methods eligible for JIT-compilation.
+     */
+    @Deprecated
+    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
+
+    /**
+     * The max size of JIT-compiled methods (full class size) allowed.
+     */
+    @Deprecated
+    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
+
+    /**
+     * The JIT threshold to the specified method invocation count.
+     */
+    @Deprecated
+    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
+    
+    /**
+     * Default size for chained compilation.
+     */
+    @Deprecated
+    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
+
+    @Deprecated
+    public static final boolean nativeEnabled = NATIVE_ENABLED;
 }
