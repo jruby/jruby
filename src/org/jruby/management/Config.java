@@ -95,10 +95,6 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getScriptFileName();
     }
 
-    public boolean isBenchmarking() {
-        return ruby.get().getInstanceConfig().isBenchmarking();
-    }
-
     public boolean isAssumeLoop() {
         return ruby.get().getInstanceConfig().isAssumeLoop();
     }

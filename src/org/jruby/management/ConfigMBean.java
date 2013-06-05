@@ -21,7 +21,6 @@ public interface ConfigMBean {
     public String getLoadPaths();
     public String getDisplayedFileName();
     public String getScriptFileName();
-    public boolean isBenchmarking();
     public boolean isAssumeLoop();
     public boolean isAssumePrinting();
     public boolean isProcessLineEnds();

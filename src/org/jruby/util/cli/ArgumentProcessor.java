@@ -172,9 +172,6 @@ public class ArgumentProcessor {
                 case 'a':
                     config.setSplit(true);
                     break;
-                case 'b':
-                    config.setBenchmarking(true);
-                    break;
                 case 'c':
                     config.setShouldCheckSyntax(true);
                     break;

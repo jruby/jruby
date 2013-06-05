@@ -376,19 +376,9 @@ public class Main {
     private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
         long now = -1;
         try {
-            if (config.isBenchmarking()) {
-                now = System.currentTimeMillis();
-            }
-
             doCheckSecurityManager();
 
-            try {
-                runtime.runFromMain(in, filename);
-            } finally {
-                if (config.isBenchmarking()) {
-                    config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
-                }
-            }
+            runtime.runFromMain(in, filename);
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }

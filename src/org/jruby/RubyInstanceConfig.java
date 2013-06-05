@@ -725,14 +725,6 @@ public class RubyInstanceConfig {
         return scriptFileName;
     }
     
-    public void setBenchmarking(boolean benchmarking) {
-        this.benchmarking = benchmarking;
-    }
-
-    public boolean isBenchmarking() {
-        return benchmarking;
-    }
-    
     public void setAssumeLoop(boolean assumeLoop) {
         this.assumeLoop = assumeLoop;
     }
@@ -1192,7 +1184,6 @@ public class RubyInstanceConfig {
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
     private Collection<String> requiredLibraries = new LinkedHashSet<String>();
-    private boolean benchmarking = false;
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = false;
     private boolean assumePrinting = false;
@@ -1706,6 +1697,15 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public boolean isSamplingEnabled() {
+        return false;
+    }
+    
+    @Deprecated
+    public void setBenchmarking(boolean benchmarking) {
+    }
+
+    @Deprecated
+    public boolean isBenchmarking() {
         return false;
     }
 }
