@@ -7,7 +7,6 @@ public interface ConfigMBean {
     public boolean isJitLogging();
     public boolean isJitLoggingVerbose();
     public int getJitLogEvery();
-    public boolean isSamplingEnabled();
     public int getJitThreshold();
     public int getJitMax();
     public int getJitMaxSize();

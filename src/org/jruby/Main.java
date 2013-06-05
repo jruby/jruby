@@ -45,7 +45,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.SimpleSampler;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -380,9 +379,6 @@ public class Main {
             if (config.isBenchmarking()) {
                 now = System.currentTimeMillis();
             }
-            if (config.isSamplingEnabled()) {
-                SimpleSampler.startSampleThread();
-            }
 
             doCheckSecurityManager();
 
@@ -391,9 +387,6 @@ public class Main {
             } finally {
                 if (config.isBenchmarking()) {
                     config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
-                }
-                if (config.isSamplingEnabled()) {
-                    org.jruby.util.SimpleSampler.report();
                 }
             }
         } catch (RaiseException rj) {

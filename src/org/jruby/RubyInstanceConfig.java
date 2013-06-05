@@ -82,7 +82,6 @@ import org.objectweb.asm.Opcodes;
 public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
-        samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
         String compatString = Options.COMPAT_VERSION.load();
         compatVersion = CompatVersion.getVersionFromString(compatString);
@@ -147,7 +146,6 @@ public class RubyInstanceConfig {
     
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
-        samplingEnabled = parentConfig.samplingEnabled;
         compatVersion = parentConfig.compatVersion;
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
@@ -540,10 +538,6 @@ public class RubyInstanceConfig {
 
     public void setJitLogEvery(int jitLogEvery) {
         this.jitLogEvery = jitLogEvery;
-    }
-
-    public boolean isSamplingEnabled() {
-        return samplingEnabled;
     }
 
     public int getJitThreshold() {
@@ -1178,7 +1172,6 @@ public class RubyInstanceConfig {
     private int jitThreshold;
     private int jitMax;
     private int jitMaxSize;
-    private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
     private String internalEncoding = null;
@@ -1710,4 +1703,9 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;
+
+    @Deprecated
+    public boolean isSamplingEnabled() {
+        return false;
+    }
 }

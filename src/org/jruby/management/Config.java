@@ -39,10 +39,6 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getJitLogEvery();
     }
 
-    public boolean isSamplingEnabled() {
-        return ruby.get().getInstanceConfig().isSamplingEnabled();
-    }
-
     public int getJitThreshold() {
         return ruby.get().getInstanceConfig().getJitThreshold();
     }
