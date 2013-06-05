@@ -1424,7 +1424,7 @@ public class Pack {
                                     big = (RubyBignum)v;
                                 }
                                 if((encode.get(pos++) & 0x80) == 0) {
-                                    result.add(big);
+                                    result.add(RubyBignum.bignorm(runtime, big.getValue()));
                                     occurrences--;
                                     ul = 0;
                                     break;
