@@ -277,7 +277,9 @@ public class ArgumentProcessor {
                 case 'W':
                     {
                         String temp = grabOptionalValue();
-                        if (temp != null) {
+                        if (temp == null) {
+                            config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                        } else {
                             if (temp.equals("0")) {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.NIL);
                             } else if (temp.equals("1")) {
