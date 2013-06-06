@@ -196,7 +196,8 @@ public class RubyTime extends RubyObject {
             String hours = tzMatcher.group(3);
             String minutes = tzMatcher.group(4);
             
-            if (Integer.parseInt(hours) > 23 || Integer.parseInt(minutes) > 59) {
+            if (Integer.parseInt(hours) > 23 ||
+                    (minutes != null && Integer.parseInt(minutes) > 59)) {
                 throw runtime.newArgumentError("utc_offset out of range");
             }
             
