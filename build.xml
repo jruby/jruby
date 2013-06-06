@@ -277,14 +277,7 @@
             <include name="org/jruby/CompatVersion.java"/>
             <include name="org/jruby/runtime/Visibility.java"/>
             <include name="org/jruby/util/CodegenUtils.java"/>
-            <include name="org/jruby/util/log/*.java"/>
             <include name="org/jruby/util/SafePropertyAccessor.java"/>
-            <include name="org/jruby/util/cli/Options.java"/>
-            <include name="org/jruby/util/cli/Option.java"/>
-            <include name="org/jruby/util/cli/Category.java"/>
-            <include name="org/jruby/util/cli/StringOption.java"/>
-            <include name="org/jruby/util/cli/IntegerOption.java"/>
-            <include name="org/jruby/util/cli/BooleanOption.java"/>
         </javac>
     </target>
 

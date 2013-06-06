@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2011 The JRuby Community (and contribs)
+ * Copyright (C) 2013 The JRuby Community (and contribs)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,24 +29,24 @@
 package org.jruby.util.cli;
 
 /**
- * An Integer-based Option.
+ * An Enum-based Option.
  */
-public class IntegerOption extends Option<Integer> {
-    public IntegerOption(Category category, String prefix, String name, Integer defval, String description) {
-        super(category, prefix, name, Integer.class, null, defval, description);
+public class EnumerationOption<T extends Enum<T>> extends Option<T> {
+    public EnumerationOption(Category category, String prefix, String name, Class<T> enumType, T defval, String description) {
+        super(category, prefix, name, enumType, (T[])enumType.getEnumConstants(), defval, description);
     }
     
-    public IntegerOption(Category category, String longName, Integer defval, String description) {
-        super(category, longName, Integer.class, null, defval, description);
+    public EnumerationOption(Category category, String longName, Class<T> enumType, T defval, String description) {
+        super(category, longName, enumType, (T[])enumType.getEnumConstants(), defval, description);
     }
 
-    public Integer load() {
+    public T load() {
         String value = super.loadProperty();
 
         if (value == null) {
             return defval;
         }
 
-        return Integer.parseInt(value);
+        return Enum.valueOf((Class<T>)type, value);
     }
 }

@@ -28,14 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import org.jruby.util.SafePropertyAccessor;
-
 /**
  * A String-based Option.
  */
 public class StringOption extends Option<String> {
-    public StringOption(Category category, String name, String[] options, String defval, String description) {
-        super(category, name, String.class, options, defval, description);
+    public StringOption(Category category, String prefix, String name, String[] options, String defval, String description) {
+        super(category, prefix, name, String.class, options, defval, description);
+    }
+    
+    public StringOption(Category category, String longName, String[] options, String defval, String description) {
+        super(category, longName, String.class, options, defval, description);
     }
 
     public String load() {

@@ -28,14 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import org.jruby.util.SafePropertyAccessor;
-
 /**
  * A Boolean-based Option.
  */
 public class BooleanOption extends Option<Boolean> {
-    public BooleanOption(Category category, String name, Boolean defval, String description) {
-        super(category, name, Boolean.class, new Boolean[] {true, false}, defval, description);
+    public BooleanOption(Category category, String prefix, String name, Boolean defval, String description) {
+        super(category, prefix, name, Boolean.class, new Boolean[] {true, false}, defval, description);
+    }
+
+    public BooleanOption(Category category, String longName, Boolean defval, String description) {
+        super(category, longName, Boolean.class, new Boolean[] {true, false}, defval, description);
     }
 
     public Boolean load() {

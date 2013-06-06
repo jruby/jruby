@@ -30,10 +30,15 @@ package org.jruby.util.cli;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.jruby.runtime.Constants;
+import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.cli.Category.*;
+import static org.jruby.RubyInstanceConfig.Verbosity;
+import static org.jruby.RubyInstanceConfig.ProfilingMode;
 
 /**
  * Options defines all configuration settings for JRuby in a consistent form.
@@ -43,20 +48,8 @@ import static org.jruby.util.cli.Category.*;
  */
 public class Options {
     public static String dump() {
-        StringBuilder sb = new StringBuilder("# JRuby configuration options with current values\n");
-        Category category = null;
-        for (Option option : _loadedOptions) {
-            if (category != option.category) {
-                category = option.category;
-                sb.append('\n').append(category.desc()).append('\n');
-            }
-            sb
-                    .append(option.name)
-                    .append('=')
-                    .append(option.load())
-                    .append('\n');
-        }
-        return sb.toString();
+        return "# JRuby configuration options with current values\n" +
+                Option.printValues(_loadedOptions);
     }
 
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
@@ -244,23 +237,54 @@ public class Options {
     public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", null, null, "Allow external envs to replace JI proxy class factory");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
+    
+    public static final Option<Boolean> CLI_AUTOSPLIT = bool(CLI, "cli.autosplit", false, "Split $_ into $F for -p or -n. Same as -a.");
+    public static final Option<Boolean> CLI_DEBUG = bool(CLI, "cli.debug", false, "Enable debug mode logging. Same as -d.");
+    public static final Option<Boolean> CLI_PROCESS_LINE_ENDS = bool(CLI, "cli.process.line.ends", false, "Enable line ending processing. Same as -l.");
+    public static final Option<Boolean> CLI_ASSUME_LOOP = bool(CLI, "cli.assume.loop", false, "Wrap execution with a gets() loop. Same as -n.");
+    public static final Option<Boolean> CLI_ASSUME_PRINT = bool(CLI, "cli.assume.print", false, "Print $_ after each execution of script. Same as -p.");
+    public static final Option<Boolean> CLI_VERBOSE = bool(CLI, "cli.verbose", false, "Verbose mode, as -w or -W2. Sets default for cli.warning.level.");
+    public static final Option<Verbosity> CLI_WARNING_LEVEL = enumeration(CLI, "cli.warning.level", Verbosity.class, CLI_VERBOSE.load() ? Verbosity.TRUE : Verbosity.FALSE, "Warning level (off=0,normal=1,on=2). Same as -W.");
+    public static final Option<Boolean> CLI_PARSER_DEBUG = bool(CLI, "cli.parser.debug", false, "Enable parser debug logging. Same as -y.");
+    public static final Option<Boolean> CLI_VERSION = bool(CLI, "cli.version", false, "Print version to stderr. Same as --version.");
+    public static final Option<Boolean> CLI_BYTECODE = bool(CLI, "cli.bytecode", false, "Print target script bytecode to stderr. Same as --bytecode.");
+    public static final Option<Boolean> CLI_COPYRIGHT = bool(CLI, "cli.copyright", false, "Print copyright to stderr. Same as --copyright but runs script.");
+    public static final Option<Boolean> CLI_CHECK_SYNTAX = bool(CLI, "cli.check.syntax", false, "Check syntax of target script. Same as -c but runs script.");
+    public static final Option<String> CLI_AUTOSPLIT_SEPARATOR = string(CLI, "cli.autosplit.separator", null, null, "Set autosplit separator. Same as -F.");
+    public static final Option<KCode> CLI_KCODE = enumeration(CLI, "cli.kcode", KCode.class, KCode.NONE, "Set kcode character set. Same as -K (1.8).");
+    public static final Option<Boolean> CLI_HELP = bool(CLI, "cli.help", false, "Print command-line usage. Same as --help but runs script.");
+    public static final Option<Boolean> CLI_PROPERTIES = bool(CLI, "cli.properties", false, "Print config properties. Same as --properties but runs script.");
+    public static final Option<String> CLI_ENCODING_INTERNAL = string(CLI, "cli.encoding.internal", null, null, "Encoding name to use internally.");
+    public static final Option<String> CLI_ENCODING_EXTERNAL = string(CLI, "cli.encoding.external", null, null, "Encoding name to treat external data.");
+    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", null, "\n", "Default record separator.");
+    public static final Option<String> CLI_BACKUP_EXTENSION = string(CLI, "cli.backup.extension", null, null, "Backup extension for in-place ARGV files. Same as -i.");
+    public static final Option<ProfilingMode> CLI_PROFILING_MODE = enumeration(CLI, "cli.profiling.mode", ProfilingMode.class, ProfilingMode.OFF, "Enable instrumented profiling modes.");
+    public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
+    public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
+    public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
-    public static final Option[] PROPERTIES = _loadedOptions.toArray(new Option[0]);
+    public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
     
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
-        Option<String> option = new StringOption(category, name, options, defval, description);
+        Option<String> option = Option.string(category, "jruby", name, options, defval, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Boolean> bool(Category category, String name, Boolean defval, String description) {
-        Option<Boolean> option = new BooleanOption(category, name, defval, description);
+        Option<Boolean> option = new BooleanOption(category, "jruby", name, defval, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Integer> integer(Category category, String name, Integer defval, String description) {
-        Option<Integer> option = new IntegerOption(category, name, defval, description);
+        Option<Integer> option = new IntegerOption(category, "jruby", name, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static <T extends Enum<T>> Option<T> enumeration(Category category, String name, Class<T> enumClass, T defval, String description) {
+        Option<T> option = new EnumerationOption(category, "jruby", name, enumClass, defval, description);
         _loadedOptions.add(option);
         return option;
     }
