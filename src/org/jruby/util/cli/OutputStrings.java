@@ -100,7 +100,7 @@ public class OutputStrings {
                 .append("# This dump is a valid .jrubyrc file of current settings. Uncomment and modify\n")
                 .append("# settings to customize.\n");
         
-        sb.append(Option.printOptions(Options.PROPERTIES));
+        sb.append(Option.formatOptions(Options.PROPERTIES));
 
         return sb.toString();
     }

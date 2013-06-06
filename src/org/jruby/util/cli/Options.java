@@ -47,80 +47,11 @@ import static org.jruby.RubyInstanceConfig.ProfilingMode;
  * of the built-in structure.
  */
 public class Options {
-    public static String dump() {
-        return "# JRuby configuration options with current values\n" +
-                Option.formatValues(_loadedOptions);
-    }
-
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
-
-    private static final boolean INVOKEDYNAMIC_DEFAULT;
-    static {
-        boolean hotspot24 = false;
-        
-        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotSpot = !vmName.equals("") && 
-                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
-        if (isHotSpot) {
-            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-            if (vmVersionString.equals("")) {
-                // can't get VM version for whatever reason, assume LCD.
-                hotspot24 = false;
-            } else {
-                int version;
-                try {
-                    version = Integer.parseInt(vmVersionString.substring(0, 2));
-                } catch (NumberFormatException nfe) {
-                    version = -1;
-                }
-
-                if (version < 24) {
-                    // if on HotSpot version prior to 24, off by default unless turned on
-                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                    hotspot24 = false;
-                } else {
-                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                    hotspot24 = true;
-                }
-            }
-        }
-
-        if (hotspot24) {
-            INVOKEDYNAMIC_DEFAULT = true;
-        } else if (isHotSpot) {
-            INVOKEDYNAMIC_DEFAULT = false;
-        } else {
-            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-                if (!vmName.contains("ibm j9 vm")) {
-                    // if not on HotSpot or J9, on if specification version supports indy
-                    INVOKEDYNAMIC_DEFAULT = true;
-                } else {        // IBM J9 VM
-                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
-                    int dash = runtimeVersion.indexOf('-');
-                    int dateStamp;
-                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
-                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
-                    } catch (Exception e) {
-                        dateStamp = -1;
-                    }
-                    // The initial release and first few service releases had a crash issue.
-                    // Narrow range so unexpected will tend to default to invokedynamic on.
-                    if (dateStamp > 20110731 && dateStamp < 20121101) {
-                        INVOKEDYNAMIC_DEFAULT = false;
-                    } else {        // SR4 and beyond include APAR IV34500: crash fix
-                        INVOKEDYNAMIC_DEFAULT = true;
-                    }
-                }
-            } else {
-                // on only if forced
-                INVOKEDYNAMIC_DEFAULT = false;
-            }
-        }
-    }
+    private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     
     // This section holds all Options for JRuby. They will be listed in the
-    // --properties output in the order they are constructed here.
+    // --properties output.
     public static final Option<String> COMPILE_MODE = string(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF", "OFFIR"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
@@ -262,6 +193,11 @@ public class Options {
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
+    
+    public static String dump() {
+        return "# JRuby configuration options with current values\n" +
+                Option.formatValues(_loadedOptions);
+    }
 
     public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
     
@@ -305,5 +241,68 @@ public class Options {
         Option<T> option = Option.enumeration("jruby", name, category, enumClass, defval, description);
         _loadedOptions.add(option);
         return option;
+    }
+    private static boolean calculateInvokedynamicDefault() {
+        boolean hotspot24 = false;
+        
+        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
+        boolean isHotSpot = !vmName.equals("") && 
+                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
+        if (isHotSpot) {
+            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+            if (vmVersionString.equals("")) {
+                // can't get VM version for whatever reason, assume LCD.
+                hotspot24 = false;
+            } else {
+                int version;
+                try {
+                    version = Integer.parseInt(vmVersionString.substring(0, 2));
+                } catch (NumberFormatException nfe) {
+                    version = -1;
+                }
+
+                if (version < 24) {
+                    // if on HotSpot version prior to 24, off by default unless turned on
+                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                    hotspot24 = false;
+                } else {
+                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                    hotspot24 = true;
+                }
+            }
+        }
+
+        if (hotspot24) {
+            return true;
+        } else if (isHotSpot) {
+            return false;
+        } else {
+            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+                if (!vmName.contains("ibm j9 vm")) {
+                    // if not on HotSpot or J9, on if specification version supports indy
+                    return true;
+                } else {        // IBM J9 VM
+                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+                    int dash = runtimeVersion.indexOf('-');
+                    int dateStamp;
+                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+                    } catch (Exception e) {
+                        dateStamp = -1;
+                    }
+                    // The initial release and first few service releases had a crash issue.
+                    // Narrow range so unexpected will tend to default to invokedynamic on.
+                    if (dateStamp > 20110731 && dateStamp < 20121101) {
+                        return false;
+                    } else {        // SR4 and beyond include APAR IV34500: crash fix
+                        return true;
+                    }
+                }
+            } else {
+                // on only if forced
+                return false;
+            }
+        }
     }
 }
