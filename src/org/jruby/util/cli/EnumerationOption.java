@@ -32,15 +32,15 @@ package org.jruby.util.cli;
  * An Enum-based Option.
  */
 public class EnumerationOption<T extends Enum<T>> extends Option<T> {
-    public EnumerationOption(Category category, String prefix, String name, Class<T> enumType, T defval, String description) {
-        super(category, prefix, name, enumType, (T[])enumType.getEnumConstants(), defval, description);
+    public EnumerationOption(String prefix, String name, Enum category, Class<T> enumType, T defval, String description) {
+        super(prefix, name, enumType, category, (T[])enumType.getEnumConstants(), defval, description);
     }
     
-    public EnumerationOption(Category category, String longName, Class<T> enumType, T defval, String description) {
-        super(category, longName, enumType, (T[])enumType.getEnumConstants(), defval, description);
+    public EnumerationOption(String longName, Enum category, Class<T> enumType, T defval, String description) {
+        super(longName, enumType, category, (T[])enumType.getEnumConstants(), defval, description);
     }
 
-    public T load() {
+    public T reload() {
         String value = super.loadProperty();
 
         if (value == null) {

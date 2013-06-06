@@ -49,7 +49,7 @@ import static org.jruby.RubyInstanceConfig.ProfilingMode;
 public class Options {
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
-                Option.printValues(_loadedOptions);
+                Option.formatValues(_loadedOptions);
     }
 
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
@@ -164,15 +164,15 @@ public class Options {
     public static final Option<Integer> JIT_LOGEVERY = integer(JIT, "jit.logEvery", 0, "Log a message every n methods JIT compiled.");
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", new String[]{"ClsOrMod","ClsOrMod::method_name","-::method_name"}, "none", "Exclude methods from JIT. Comma delimited.");
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", true, "Cache jitted method in-memory bodies across runtimes and loads.");
-    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, null, "Save jitted methods to <dir> as they're compiled, for future runs.");
+    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
     
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
-    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", null, null, "Specify comma delimeted list of passes to run.");
-    public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", null, null, "Specify comma delimeted list of passes to run after inlining a method.");
+    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", "Specify comma delimeted list of passes to run.");
+    public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
     
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -234,7 +234,7 @@ public class Options {
     public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
     public static final Option<Boolean> JI_NEWSTYLEEXTENSION = bool(JAVA_INTEGRATION, "ji.newStyleExtension", false, "Extend Java classes without using a proxy object.");
     public static final Option<Boolean> JI_OBJECTPROXYCACHE = bool(JAVA_INTEGRATION, "ji.objectProxyCache", true, "Cache Java object wrappers between calls.");
-    public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", null, null, "Allow external envs to replace JI proxy class factory");
+    public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", "Allow external envs to replace JI proxy class factory");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
     
@@ -250,14 +250,14 @@ public class Options {
     public static final Option<Boolean> CLI_BYTECODE = bool(CLI, "cli.bytecode", false, "Print target script bytecode to stderr. Same as --bytecode.");
     public static final Option<Boolean> CLI_COPYRIGHT = bool(CLI, "cli.copyright", false, "Print copyright to stderr. Same as --copyright but runs script.");
     public static final Option<Boolean> CLI_CHECK_SYNTAX = bool(CLI, "cli.check.syntax", false, "Check syntax of target script. Same as -c but runs script.");
-    public static final Option<String> CLI_AUTOSPLIT_SEPARATOR = string(CLI, "cli.autosplit.separator", null, null, "Set autosplit separator. Same as -F.");
+    public static final Option<String> CLI_AUTOSPLIT_SEPARATOR = string(CLI, "cli.autosplit.separator", "Set autosplit separator. Same as -F.");
     public static final Option<KCode> CLI_KCODE = enumeration(CLI, "cli.kcode", KCode.class, KCode.NONE, "Set kcode character set. Same as -K (1.8).");
     public static final Option<Boolean> CLI_HELP = bool(CLI, "cli.help", false, "Print command-line usage. Same as --help but runs script.");
     public static final Option<Boolean> CLI_PROPERTIES = bool(CLI, "cli.properties", false, "Print config properties. Same as --properties but runs script.");
-    public static final Option<String> CLI_ENCODING_INTERNAL = string(CLI, "cli.encoding.internal", null, null, "Encoding name to use internally.");
-    public static final Option<String> CLI_ENCODING_EXTERNAL = string(CLI, "cli.encoding.external", null, null, "Encoding name to treat external data.");
-    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", null, "\n", "Default record separator.");
-    public static final Option<String> CLI_BACKUP_EXTENSION = string(CLI, "cli.backup.extension", null, null, "Backup extension for in-place ARGV files. Same as -i.");
+    public static final Option<String> CLI_ENCODING_INTERNAL = string(CLI, "cli.encoding.internal", "Encoding name to use internally.");
+    public static final Option<String> CLI_ENCODING_EXTERNAL = string(CLI, "cli.encoding.external", "Encoding name to treat external data.");
+    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", "\n", "Default record separator.");
+    public static final Option<String> CLI_BACKUP_EXTENSION = string(CLI, "cli.backup.extension", "Backup extension for in-place ARGV files. Same as -i.");
     public static final Option<ProfilingMode> CLI_PROFILING_MODE = enumeration(CLI, "cli.profiling.mode", ProfilingMode.class, ProfilingMode.OFF, "Enable instrumented profiling modes.");
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
@@ -266,25 +266,43 @@ public class Options {
     public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
     
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
-        Option<String> option = Option.string(category, "jruby", name, options, defval, description);
+        Option<String> option = Option.string("jruby", name, category, options, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String defval, String description) {
+        Option<String> option = Option.string("jruby", name, category, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String[] options, String description) {
+        Option<String> option = Option.string("jruby", name, category, options, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String description) {
+        Option<String> option = Option.string("jruby", name, category, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Boolean> bool(Category category, String name, Boolean defval, String description) {
-        Option<Boolean> option = new BooleanOption(category, "jruby", name, defval, description);
+        Option<Boolean> option = Option.bool("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Integer> integer(Category category, String name, Integer defval, String description) {
-        Option<Integer> option = new IntegerOption(category, "jruby", name, defval, description);
+        Option<Integer> option = Option.integer("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static <T extends Enum<T>> Option<T> enumeration(Category category, String name, Class<T> enumClass, T defval, String description) {
-        Option<T> option = new EnumerationOption(category, "jruby", name, enumClass, defval, description);
+        Option<T> option = Option.enumeration("jruby", name, category, enumClass, defval, description);
         _loadedOptions.add(option);
         return option;
     }

@@ -28,8 +28,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Represents a single option, with a category, name, value type,
@@ -44,16 +48,16 @@ public abstract class Option<T> {
      * Create a new option with the given values.
      * 
      * @param <C> an enumeration type
-     * @param category the category to which this option belongs
      * @param prefix the prefix used for loading this option from properties
      * @param name the rest of the property name
      * @param type the value type of the option
+     * @param category the category to which this option belongs
      * @param options a list of supported for the option, or null if the set is
      *                not applicable
      * @param defval the default value for the option
      * @param description a description for the option
      */
-    public <C extends Enum<C>> Option(C category, String prefix, String name, Class<T> type, T[] options, T defval, String description) {
+    public Option(String prefix, String name, Class<T> type, Enum category, T[] options, T defval, String description) {
         this.category = category;
         this.prefix = prefix;
         this.name = name;
@@ -69,15 +73,15 @@ public abstract class Option<T> {
      * Create a new option with the given values.
      * 
      * @param <C> an enumeration type
-     * @param category the category to which this option belongs
      * @param longName the property name
      * @param type the value type of the option
+     * @param category the category to which this option belongs
      * @param options a list of supported for the option, or null if the set is
      *                not applicable
      * @param defval the default value for the option
      * @param description a description for the option
      */
-    public <C extends Enum<C>> Option(C category, String longName, Class<T> type, T[] options, T defval, String description) {
+    public Option(String longName, Class<T> type, Enum category, T[] options, T defval, String description) {
         this.category = category;
         this.prefix = null;
         this.name = null;
@@ -89,42 +93,101 @@ public abstract class Option<T> {
         this.specified = false;
     }
     
-    public static Option<String> string(Category category, String prefix, String name, String[] options, String defval, String description) {
-        return new StringOption(category, prefix, name, options, defval, description);
+    public static Option<String> string(String prefix, String name, Enum category, String description) {
+        return new StringOption(prefix, name, category, null, null, description);
     }
     
-    public static Option<String> string(Category category, String longName, String[] options, String defval, String description) {
-        return new StringOption(category, longName, options, defval, description);
+    public static Option<String> string(String longName, Enum category, String description) {
+        return new StringOption(longName, category, null, null, description);
     }
     
-    public static Option<Boolean> bool(Category category, String prefix, String name, Boolean defval, String description) {
-        return new BooleanOption(category, prefix, name, defval, description);
+    public static Option<String> string(String prefix, String name, Enum category, String defval, String description) {
+        return new StringOption(prefix, name, category, null, defval, description);
     }
     
-    public static Option<Boolean> bool(Category category, String longName, Boolean defval, String description) {
-        return new BooleanOption(category, longName, defval, description);
+    public static Option<String> string(String longName, Enum category, String defval, String description) {
+        return new StringOption(longName, category, null, defval, description);
     }
     
-    public static Option<Integer> integer(Category category, String prefix, String name, Integer defval, String description) {
-        return new IntegerOption(category, prefix, name, defval, description);
+    public static Option<String> string(String prefix, String name, Enum category, String[] options, String description) {
+        return new StringOption(prefix, name, category, options, null, description);
     }
     
-    public static Option<Integer> integer(Category category, String longName, Integer defval, String description) {
-        return new IntegerOption(category, longName, defval, description);
+    public static Option<String> string(String longName, Enum category, String[] options, String description) {
+        return new StringOption(longName, category, options, null, description);
     }
     
-    public static <T extends Enum<T>> Option<T> enumeration(Category category, String prefix, String name, Class<T> enumClass, T defval, String description) {
-        return new EnumerationOption(category, prefix, name, enumClass, defval, description);
+    public static Option<String> string(String prefix, String name, Enum category, String[] options, String defval, String description) {
+        return new StringOption(prefix, name, category, options, defval, description);
     }
     
-    public static <T extends Enum<T>> Option<T> enumeration(Category category, String longName, Class<T> enumClass, T defval, String description) {
-        return new EnumerationOption(category, longName, enumClass, defval, description);
+    public static Option<String> string(String longName, Enum category, String[] options, String defval, String description) {
+        return new StringOption(longName, category, options, defval, description);
     }
     
-    public static String printValues(Collection<Option> options) {
+    public static Option<Boolean> bool(String prefix, String name, Enum category, String description) {
+        return new BooleanOption(prefix, name, category, null, description);
+    }
+    
+    public static Option<Boolean> bool(String longName, Enum category, String description) {
+        return new BooleanOption(longName, category, null, description);
+    }
+    
+    public static Option<Boolean> bool(String prefix, String name, Enum category, Boolean defval, String description) {
+        return new BooleanOption(prefix, name, category, defval, description);
+    }
+    
+    public static Option<Boolean> bool(String longName, Enum category, Boolean defval, String description) {
+        return new BooleanOption(longName, category, defval, description);
+    }
+    
+    public static Option<Integer> integer(String prefix, String name, Enum category, String description) {
+        return new IntegerOption(prefix, name, category, null, description);
+    }
+    
+    public static Option<Integer> integer(String longName, Enum category, String description) {
+        return new IntegerOption(longName, category, null, description);
+    }
+    
+    public static Option<Integer> integer(String prefix, String name, Enum category, Integer defval, String description) {
+        return new IntegerOption(prefix, name, category, defval, description);
+    }
+    
+    public static Option<Integer> integer(String longName, Enum category, Integer defval, String description) {
+        return new IntegerOption(longName, category, defval, description);
+    }
+    
+    public static Option<Integer> integer(String prefix, String name, Enum category, Integer[] options, Integer defval, String description) {
+        return new IntegerOption(prefix, name, category, options, defval, description);
+    }
+    
+    public static Option<Integer> integer(String longName, Enum category, Integer[] options, Integer defval, String description) {
+        return new IntegerOption(longName, category, options, defval, description);
+    }
+    
+    public static <T extends Enum<T>> Option<T> enumeration(String prefix, String name, Enum category, Class<T> enumClass, String description) {
+        return new EnumerationOption(prefix, name, category, enumClass, null, description);
+    }
+    
+    public static <T extends Enum<T>> Option<T> enumeration(String longName, Enum category, Class<T> enumClass, String description) {
+        return new EnumerationOption(longName, category, enumClass, null, description);
+    }
+    
+    public static <T extends Enum<T>> Option<T> enumeration(String prefix, String name, Enum category, Class<T> enumClass, T defval, String description) {
+        return new EnumerationOption(prefix, name, category, enumClass, defval, description);
+    }
+    
+    public static <T extends Enum<T>> Option<T> enumeration(String longName, Enum category, Class<T> enumClass, T defval, String description) {
+        return new EnumerationOption(longName, category, enumClass, defval, description);
+    }
+    
+    public static String formatValues(Collection<Option> options) {
         StringBuilder sb = new StringBuilder();
+        List<Option> sorted = new ArrayList<Option>(options);
+        Collections.sort(sorted, OptionComparator);
+        
         Enum category = null;
-        for (Option option : options) {
+        for (Option option : sorted) {
             if (category != option.category) {
                 category = option.category;
                 sb.append('\n').append(category).append('\n');
@@ -138,11 +201,13 @@ public abstract class Option<T> {
         return sb.toString();
     }
 
-    public static String printOptions(Collection<Option> options) {
+    public static String formatOptions(Collection<Option> options) {
         StringBuilder sb = new StringBuilder();
+        List<Option> sorted = new ArrayList<Option>(options);
+        Collections.sort(sorted, OptionComparator);
         
         Enum category = null;
-        for (Option option : options) {
+        for (Option option : sorted) {
             if (category != option.category) {
                 category = option.category;
                 sb.append("\n################################################################################");
@@ -165,6 +230,12 @@ public abstract class Option<T> {
 
         return sb.toString();
     }
+    
+    private static Comparator<Option> OptionComparator = new Comparator<Option>() {
+        public int compare(Option o1, Option o2) {
+            return o1.category.compareTo(o2.category);
+        }
+    };
     
     private static String encodeWhitespace(Object obj) {
         if (obj == null) return "null";
@@ -221,7 +292,15 @@ public abstract class Option<T> {
         return specified;
     }
 
-    public abstract T load();
+    public T load() {
+        if (this.value != null) return value;
+        
+        value = reload();
+        
+        return value;
+    }
+    
+    public abstract T reload();
 
     public final Enum category;
     public final String prefix;
@@ -231,5 +310,6 @@ public abstract class Option<T> {
     public final Object[] options;
     public final T defval;
     public final String description;
+    public T value;
     private boolean specified;
 }
