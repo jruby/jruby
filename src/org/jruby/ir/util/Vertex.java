@@ -47,6 +47,12 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
                 getOutgoingEdges().remove(edge);
                 edge.getDestination().getIncomingEdges().remove(edge);
                 graph.edges().remove(edge);
+                if(outDegree() == 0) {
+                    outgoing = null;
+                }
+                if(destination.inDegree() == 0) {
+                    destination.incoming = null;
+                }
                 return true;
             }
         }
