@@ -286,7 +286,7 @@ RUBY_DLLSPEC void xfree(void*);
 #define CHECK_INTS        /* No-op */
 
 /** Test macros */
-#define RTEST(v) (((v) & ~Qnil) != 0)
+#define RTEST(v) (((VALUE)(v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
 #define TYPE(x) rb_type((VALUE)(x))
 #define CLASS_OF(x) rb_class_of((VALUE)(x))
