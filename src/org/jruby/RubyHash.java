@@ -967,7 +967,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-      if (key.getMetaClass().getRealClass() == runtime.getString()) {
+      if (key instanceof RubyString) {
           op_asetForString(runtime, (RubyString) key, value);
       } else {
           internalPut(key, value);
@@ -975,7 +975,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-        if (key.getMetaClass().getRealClass() == runtime.getString()) {
+        if (key instanceof RubyString) {
             op_asetSmallForString(runtime, (RubyString) key, value);
         } else {
             internalPutSmall(key, value);
