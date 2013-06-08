@@ -1248,7 +1248,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static class Found extends RuntimeException {
         @Override
-        public synchronized Throwable fillInStackTrace() {
+        public Throwable fillInStackTrace() {
             return null;
         }
     }
