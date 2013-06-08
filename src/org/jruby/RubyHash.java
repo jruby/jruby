@@ -428,9 +428,11 @@ public class RubyHash extends RubyObject implements Map {
     private final synchronized void resize(int newCapacity) {
         final RubyHashEntry[] oldTable = table;
         final RubyHashEntry[] newTable = new RubyHashEntry[newCapacity];
+        
         for (int j = 0; j < oldTable.length; j++) {
             RubyHashEntry entry = oldTable[j];
             oldTable[j] = null;
+            
             while (entry != null) {
                 RubyHashEntry next = entry.next;
                 int i = bucketIndex(entry.hash, newCapacity);
@@ -439,6 +441,7 @@ public class RubyHash extends RubyObject implements Map {
                 entry = next;
             }
         }
+        
         table = newTable;
     }
 
