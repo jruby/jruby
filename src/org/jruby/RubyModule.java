@@ -557,6 +557,7 @@ public class RubyModule extends RubyObject {
         doIncludeModule(module);
         invalidateCoreClasses();
         invalidateCacheDescendants();
+        invalidateConstantCacheForModuleInclusion(module);
     }
     
     public void defineAnnotatedMethod(Class clazz, String name) {
@@ -973,6 +974,16 @@ public class RubyModule extends RubyObject {
         }
         
         return null;
+    }
+
+    private void invalidateConstantCacheForModuleInclusion(RubyModule module)
+    {
+        for (RubyModule mod : gatherModules(module)) {
+            if (!mod.getConstantMap().isEmpty()) {
+                invalidateConstantCache();
+                break;
+            }
+        }
     }
     
     protected static abstract class CacheEntryFactory {
