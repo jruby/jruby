@@ -322,7 +322,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_aset
      *
      */
-    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = RUBY1_8)
+    @JRubyMethod(name = {"[]=", "store"}, required = 2)
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset(context, key, value);
     }
