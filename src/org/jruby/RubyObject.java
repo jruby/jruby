@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -60,7 +61,7 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
-import org.jruby.ast.visitor.InstanceVariableFinder;
+import org.jruby.util.cli.Options;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -144,6 +145,94 @@ public class RubyObject extends RubyBasicObject {
         }
     };
     
+    public static final ObjectAllocator OBJECT_VAR0_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar0(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR1_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar1(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR2_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar2(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR3_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar3(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR4_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar4(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR5_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar5(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR6_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar6(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR7_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar7(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR8_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar8(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator OBJECT_VAR9_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyObjectVar9(runtime, klass);
+        }
+    };
+    
+    public static final ObjectAllocator[] FIELD_ALLOCATORS = {
+        OBJECT_ALLOCATOR,
+        OBJECT_VAR0_ALLOCATOR,
+        OBJECT_VAR1_ALLOCATOR,
+        OBJECT_VAR2_ALLOCATOR,
+        OBJECT_VAR3_ALLOCATOR,
+        OBJECT_VAR4_ALLOCATOR,
+        OBJECT_VAR5_ALLOCATOR,
+        OBJECT_VAR6_ALLOCATOR,
+        OBJECT_VAR7_ALLOCATOR,
+        OBJECT_VAR8_ALLOCATOR,
+        OBJECT_VAR9_ALLOCATOR
+    };
+    
+    public static final Class[] FIELD_ALLOCATED_CLASSES = {
+        RubyObject.class,
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
+    
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -152,13 +241,25 @@ public class RubyObject extends RubyBasicObject {
      */
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            InstanceVariableFinder discoverer = new InstanceVariableFinder();
-            klass.visitInterpretedMethods(discoverer);
+            Set<String> foundVariables = klass.discoverInstanceVariables();
 
-            // TODO: select appropriate subclass and set up appropriate
-            // allocator and variable table logic.
-            klass.setAllocator(OBJECT_ALLOCATOR);
-            return new RubyObject(runtime, klass);
+            if (Options.DUMP_INSTANCE_VARS.load()) {
+                System.err.println(klass + ";" + foundVariables);
+            }
+            
+            int count = 0;
+            for (String name : foundVariables) {
+                klass.getVariableTableManager().getVariableAccessorForVar(name, count);
+                count++;
+                if (count >= 10) break;
+            }
+            
+            ObjectAllocator allocator = FIELD_ALLOCATORS[count];
+            Class reified = FIELD_ALLOCATED_CLASSES[count];
+            klass.setAllocator(allocator);
+            klass.setReifiedClass(reified);
+            
+            return allocator.allocate(runtime, klass);
         }
     };
 

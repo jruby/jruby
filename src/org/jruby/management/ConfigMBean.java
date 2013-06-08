@@ -7,7 +7,6 @@ public interface ConfigMBean {
     public boolean isJitLogging();
     public boolean isJitLoggingVerbose();
     public int getJitLogEvery();
-    public boolean isSamplingEnabled();
     public int getJitThreshold();
     public int getJitMax();
     public int getJitMaxSize();
@@ -22,7 +21,6 @@ public interface ConfigMBean {
     public String getLoadPaths();
     public String getDisplayedFileName();
     public String getScriptFileName();
-    public boolean isBenchmarking();
     public boolean isAssumeLoop();
     public boolean isAssumePrinting();
     public boolean isProcessLineEnds();

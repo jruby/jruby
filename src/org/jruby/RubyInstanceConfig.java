@@ -82,7 +82,6 @@ import org.objectweb.asm.Opcodes;
 public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
-        samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
         String compatString = Options.COMPAT_VERSION.load();
         compatVersion = CompatVersion.getVersionFromString(compatString);
@@ -147,7 +146,6 @@ public class RubyInstanceConfig {
     
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
-        samplingEnabled = parentConfig.samplingEnabled;
         compatVersion = parentConfig.compatVersion;
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
@@ -174,31 +172,6 @@ public class RubyInstanceConfig {
 
     public LoadService createLoadService(Ruby runtime) {
         return creator.create(runtime);
-    }
-
-    @Deprecated
-    public String getBasicUsageHelp() {
-        return OutputStrings.getBasicUsageHelp();
-    }
-
-    @Deprecated
-    public String getExtendedHelp() {
-        return OutputStrings.getExtendedHelp();
-    }
-
-    @Deprecated
-    public String getPropertyHelp() {
-        return OutputStrings.getPropertyHelp();
-    }
-
-    @Deprecated
-    public String getVersionString() {
-        return OutputStrings.getVersionString(compatVersion);
-    }
-
-    @Deprecated
-    public String getCopyrightString() {
-        return OutputStrings.getCopyrightString();
     }
 
     public void processArguments(String[] arguments) {
@@ -547,58 +520,93 @@ public class RubyInstanceConfig {
         this.compileMode = compileMode;
     }
 
+    /**
+     * @see Options.JIT_LOGGING
+     */
     public boolean isJitLogging() {
         return jitLogging;
     }
 
+    /**
+     * @see Options.JIT_DUMPING
+     */
     public boolean isJitDumping() {
         return jitDumping;
     }
 
+    /**
+     * @see Options.JIT_LOGGING_VERBOSE
+     */
     public boolean isJitLoggingVerbose() {
         return jitLoggingVerbose;
     }
 
+    /**
+     * @see Options.JIT_LOGEVERY
+     */
     public int getJitLogEvery() {
         return jitLogEvery;
     }
 
+    /**
+     * @see Options.JIT_LOGEVERY
+     */
     public void setJitLogEvery(int jitLogEvery) {
         this.jitLogEvery = jitLogEvery;
     }
 
-    public boolean isSamplingEnabled() {
-        return samplingEnabled;
-    }
-
+    /**
+     * @see Options.JIT_THRESHOLD
+     */
     public int getJitThreshold() {
         return jitThreshold;
     }
 
+    /**
+     * @see Options.JIT_THRESHOLD
+     */
     public void setJitThreshold(int jitThreshold) {
         this.jitThreshold = jitThreshold;
     }
 
+    /**
+     * @see Options.JIT_MAX
+     */
     public int getJitMax() {
         return jitMax;
     }
 
+    /**
+     * @see Options.JIT_MAX
+     */
     public void setJitMax(int jitMax) {
         this.jitMax = jitMax;
     }
 
+    /**
+     * @see Options.JIT_MAXSIZE
+     */
     public int getJitMaxSize() {
         return jitMaxSize;
     }
 
+    /**
+     * @see Options.JIT_MAXSIZE
+     */
     public void setJitMaxSize(int jitMaxSize) {
         this.jitMaxSize = jitMaxSize;
     }
 
+    /**
+     * @see Options.LAUNCH_INPROC
+     */
     public boolean isRunRubyInProcess() {
         return runRubyInProcess;
     }
 
+    /**
+     * @see Options.LAUNCH_INPROC
+     */
     public void setRunRubyInProcess(boolean flag) {
         this.runRubyInProcess = flag;
     }
@@ -611,10 +619,16 @@ public class RubyInstanceConfig {
         return input;
     }
 
+    /**
+     * @see Options.COMPAT_VERSION
+     */
     public CompatVersion getCompatVersion() {
         return compatVersion;
     }
 
+    /**
+     * @see Options.COMPAT_VERSION
+     */
     public void setCompatVersion(CompatVersion compatVersion) {
         if (compatVersion == null) compatVersion = CompatVersion.RUBY1_8;
 
@@ -653,18 +667,30 @@ public class RubyInstanceConfig {
         return profile;
     }
 
+    /**
+     * @see Options.OBJECTSPACE_ENABLED
+     */
     public void setObjectSpaceEnabled(boolean newObjectSpaceEnabled) {
         objectSpaceEnabled = newObjectSpaceEnabled;
     }
 
+    /**
+     * @see Options.OBJECTSPACE_ENABLED
+     */
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
     
+    /**
+     * @see Options.SIPHASH_ENABLED
+     */
     public void setSiphashEnabled(boolean newSiphashEnabled) {
         siphashEnabled = newSiphashEnabled;
     }
     
+    /**
+     * @see Options.SIPHASH_ENABLED
+     */
     public boolean isSiphashEnabled() {
         return siphashEnabled;
     }
@@ -714,18 +740,8 @@ public class RubyInstanceConfig {
     public Collection<String> getRequiredLibraries() {
         return requiredLibraries;
     }
-
-    @Deprecated
-    public Collection<String> requiredLibraries() {
-        return requiredLibraries;
-    }
     
     public List<String> getLoadPaths() {
-        return loadPaths;
-    }
-
-    @Deprecated
-    public List<String> loadPaths() {
         return loadPaths;
     }
 
@@ -733,29 +749,31 @@ public class RubyInstanceConfig {
         this.loadPaths = loadPaths;
     }
     
+    /**
+     * @see Options.CLI_HELP
+     */
     public void setShouldPrintUsage(boolean shouldPrintUsage) {
         this.shouldPrintUsage = shouldPrintUsage;
     }
     
+    /**
+     * @see Options.CLI_HELP
+     */
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
     }
-
-    @Deprecated
-    public boolean shouldPrintUsage() {
-        return shouldPrintUsage;
-    }
     
+    /**
+     * @see Options.CLI_PROPERTIES
+     */
     public void setShouldPrintProperties(boolean shouldPrintProperties) {
         this.shouldPrintProperties = shouldPrintProperties;
     }
     
+    /**
+     * @see Options.CLI_PROPERTIES
+     */
     public boolean getShouldPrintProperties() {
-        return shouldPrintProperties;
-    }
-
-    @Deprecated
-    public boolean shouldPrintProperties() {
         return shouldPrintProperties;
     }
 
@@ -776,97 +794,158 @@ public class RubyInstanceConfig {
         return scriptFileName;
     }
     
-    public void setBenchmarking(boolean benchmarking) {
-        this.benchmarking = benchmarking;
-    }
-
-    public boolean isBenchmarking() {
-        return benchmarking;
-    }
-    
+    /**
+     * @see Options.CLI_ASSUME_LOOP
+     */
     public void setAssumeLoop(boolean assumeLoop) {
         this.assumeLoop = assumeLoop;
     }
 
+    /**
+     * @see Options.CLI_ASSUME_LOOP
+     */
     public boolean isAssumeLoop() {
         return assumeLoop;
     }
     
+    /**
+     * @see Options.CLI_ASSUME_PRINT
+     */
     public void setAssumePrinting(boolean assumePrinting) {
         this.assumePrinting = assumePrinting;
     }
 
+    /**
+     * @see Options.CLI_ASSUME_PRINT
+     */
     public boolean isAssumePrinting() {
         return assumePrinting;
     }
     
+    /**
+     * @see Options.CLI_PROCESS_LINE_ENDS
+     */
     public void setProcessLineEnds(boolean processLineEnds) {
         this.processLineEnds = processLineEnds;
     }
 
+    /**
+     * @see Options.CLI_PROCESS_LINE_ENDS
+     */
     public boolean isProcessLineEnds() {
         return processLineEnds;
     }
     
+    /**
+     * @see Options.CLI_AUTOSPLIT
+     */
     public void setSplit(boolean split) {
         this.split = split;
     }
 
+    /**
+     * @see Options.CLI_AUTOSPLIT
+     */
     public boolean isSplit() {
         return split;
     }
     
+    /**
+     * @see Options.CLI_WARNING_LEVEL
+     */
     public Verbosity getVerbosity() {
         return verbosity;
     }
     
+    /**
+     * @see Options.CLI_WARNING_LEVEL
+     */
     public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
     }
 
+    /**
+     * @see Options.CLI_VERBOSE
+     */
     public boolean isVerbose() {
         return verbosity == Verbosity.TRUE;
     }
 
-    @Deprecated
-    public Boolean getVerbose() {
-        return isVerbose();
-    }
-
+    /**
+     * @see Options.CLI_DEBUG
+     */
     public boolean isDebug() {
         return debug;
     }
 
+    /**
+     * @see Options.CLI_DEBUG
+     */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-
+    
+    /**
+     * @see Options.CLI_PARSER_DEBUG
+     */
     public boolean isParserDebug() {
         return parserDebug;
     }
+    
+    /**
+     * @see Options.CLI_PARSER_DEBUG
+     */
+    public void setParserDebug(boolean parserDebug) {
+        this.parserDebug = parserDebug;
+    }
+    
+    /**
+     * @see Options.CLI_PARSER_DEBUG
+     */
+    public boolean getParserDebug() {
+        return parserDebug;
+    }
 
+    /**
+     * @see Options.CLI_VERSION
+     */
+    public void setShowVersion(boolean showVersion) {
+        this.showVersion = showVersion;
+    }
+
+    /**
+     * @see Options.CLI_VERSION
+     */
     public boolean isShowVersion() {
         return showVersion;
     }
     
+    /**
+     * @see Options.CLI_BYTECODE
+     */
+    public void setShowBytecode(boolean showBytecode) {
+        this.showBytecode = showBytecode;
+    }
+    
+    /**
+     * @see Options.CLI_BYTECODE
+     */
     public boolean isShowBytecode() {
         return showBytecode;
     }
 
-    public boolean isShowCopyright() {
-        return showCopyright;
-    }
-
-    public void setShowVersion(boolean showVersion) {
-        this.showVersion = showVersion;
-    }
-    
-    public void setShowBytecode(boolean showBytecode) {
-        this.showBytecode = showBytecode;
-    }
-
+    /**
+     * @see Options.CLI_COPYRIGHT
+     */
     public void setShowCopyright(boolean showCopyright) {
         this.showCopyright = showCopyright;
+    }
+
+    /**
+     * @see Options.CLI_COPYRIGHT
+     */
+    public boolean isShowCopyright() {
+        return showCopyright;
     }
     
     public void setShouldRunInterpreter(boolean shouldRunInterpreter) {
@@ -876,61 +955,87 @@ public class RubyInstanceConfig {
     public boolean getShouldRunInterpreter() {
         return shouldRunInterpreter && (hasScriptArgv || !showVersion);
     }
-
-    @Deprecated
-    public boolean shouldRunInterpreter() {
-        return isShouldRunInterpreter();
-    }
-
-    @Deprecated
-    public boolean isShouldRunInterpreter() {
-        return shouldRunInterpreter;
-    }
     
+    /**
+     * @see Options.CLI_CHECK_SYNTAX
+     */
     public void setShouldCheckSyntax(boolean shouldSetSyntax) {
         this.shouldCheckSyntax = shouldSetSyntax;
     }
 
+    /**
+     * @see Options.CLI_CHECK_SYNTAX
+     */
     public boolean getShouldCheckSyntax() {
         return shouldCheckSyntax;
     }
     
+    /**
+     * @see Options.CLI_AUTOSPLIT_SEPARATOR
+     */
     public void setInputFieldSeparator(String inputFieldSeparator) {
         this.inputFieldSeparator = inputFieldSeparator;
     }
 
+    /**
+     * @see Options.CLI_AUTOSPLIT_SEPARATOR
+     */
     public String getInputFieldSeparator() {
         return inputFieldSeparator;
     }
 
+    /**
+     * @see Options.CLI_KCODE
+     */
     public KCode getKCode() {
         return kcode;
     }
 
+    /**
+     * @see Options.CLI_KCODE
+     */
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
     }
     
+    /**
+     * @see Options.CLI_ENCODING_INTERNAL
+     */
     public void setInternalEncoding(String internalEncoding) {
         this.internalEncoding = internalEncoding;
     }
 
+    /**
+     * @see Options.CLI_ENCODING_INTERNAL
+     */
     public String getInternalEncoding() {
         return internalEncoding;
     }
     
+    /**
+     * @see Options.CLI_ENCODING_EXTERNAL
+     */
     public void setExternalEncoding(String externalEncoding) {
         this.externalEncoding = externalEncoding;
     }
 
+    /**
+     * @see Options.CLI_ENCODING_EXTERNAL
+     */
     public String getExternalEncoding() {
         return externalEncoding;
     }
     
+    /**
+     * @see Options.CLI_RECORD_SEPARATOR
+     */
     public void setRecordSeparator(String recordSeparator) {
         this.recordSeparator = recordSeparator;
     }
 
+    /**
+     * @see Options.CLI_RECORD_SEPARATOR
+     */
     public String getRecordSeparator() {
         return recordSeparator;
     }
@@ -943,10 +1048,16 @@ public class RubyInstanceConfig {
         return classCache;
     }
     
+    /**
+     * @see Options.CLI_BACKUP_EXTENSION
+     */
     public void setInPlaceBackupExtension(String inPlaceBackupExtension) {
         this.inPlaceBackupExtension = inPlaceBackupExtension;
     }
 
+    /**
+     * @see Options.CLI_BACKUP_EXTENSION
+     */
     public String getInPlaceBackupExtension() {
         return inPlaceBackupExtension;
     }
@@ -965,14 +1076,6 @@ public class RubyInstanceConfig {
     
     public Set getExcludedMethods() {
         return excludedMethods;
-    }
-    
-    public void setParserDebug(boolean parserDebug) {
-        this.parserDebug = parserDebug;
-    }
-    
-    public boolean getParserDebug() {
-        return parserDebug;
     }
 
     public boolean isArgvGlobalsOn() {
@@ -995,18 +1098,30 @@ public class RubyInstanceConfig {
         this.hardExit = hardExit;
     }
 
+    /**
+     * @see Options.CLI_PROFILING_MODE
+     */
     public boolean isProfiling() {
         return profilingMode != ProfilingMode.OFF;
     }
     
+    /**
+     * @see Options.CLI_PROFILING_MODE
+     */
     public boolean isProfilingEntireRun() {
         return profilingMode != ProfilingMode.OFF && profilingMode != ProfilingMode.API;
     }
     
+    /**
+     * @see Options.CLI_PROFILING_MODE
+     */
     public void setProfilingMode(ProfilingMode profilingMode) {
         this.profilingMode = profilingMode;
     }
 
+    /**
+     * @see Options.CLI_PROFILING_MODE
+     */
     public ProfilingMode getProfilingMode() {
         return profilingMode;
     }
@@ -1027,18 +1142,30 @@ public class RubyInstanceConfig {
         this.hasShebangLine = hasShebangLine;
     }
 
+    /**
+     * @see Options.CLI_RUBYGEMS_ENABLE
+     */
     public boolean isDisableGems() {
         return disableGems;
     }
 
+    /**
+     * @see Options.CLI_RUBYGEMS_ENABLE
+     */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
     }
 
+    /**
+     * @see Options.BACKTRACE_STYLE
+     */
     public TraceType getTraceType() {
         return traceType;
     }
 
+    /**
+     * @see Options.BACKTRACE_STYLE
+     */
     public void setTraceType(TraceType traceType) {
         this.traceType = traceType;
     }
@@ -1054,6 +1181,8 @@ public class RubyInstanceConfig {
     /**
      * Whether to mask .java lines in the Ruby backtrace, as MRI does for C calls.
      *
+     * @see Options.BACKTRACE_MASK
+     * 
      * @return true if masking; false otherwise
      */
     public boolean getBacktraceMask() {
@@ -1063,6 +1192,8 @@ public class RubyInstanceConfig {
     /**
      * Set whether to mask .java lines in the Ruby backtrace.
      *
+     * @see Options.BACKTRACE_MASK
+     * 
      * @param backtraceMask true to mask; false otherwise
      */
     public void setBacktraceMask(boolean backtraceMask) {
@@ -1073,6 +1204,8 @@ public class RubyInstanceConfig {
      * Set whether native code is enabled for this config. Disabling it also
      * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
      * 
+     * @see Options.NATIVE_ENABLED
+     * 
      * @param b new value indicating whether native code is enabled
      */
     public void setNativeEnabled(boolean b) {
@@ -1081,6 +1214,8 @@ public class RubyInstanceConfig {
     
     /**
      * Get whether native code is enabled for this config.
+     * 
+     * @see Options.NATIVE_ENABLED
      * 
      * @return true if native code is enabled; false otherwise.
      */
@@ -1091,6 +1226,8 @@ public class RubyInstanceConfig {
     /**
      * Set whether C extensions are enabled for this config.
      * 
+     * @see Options.CEXT_ENABLED
+     * 
      * @param b new value indicating whether native code is enabled
      */
     public void setCextEnabled(boolean b) {
@@ -1100,27 +1237,32 @@ public class RubyInstanceConfig {
     /**
      * Get whether C extensions are enabled for this config.
      * 
+     * @see Options.CEXT_ENABLED
+     * 
      * @return true if C extensions are enabled; false otherwise.
      */
     public boolean isCextEnabled() {
         return _cextEnabled;
     }
     
+    /**
+     * @see Options.CLI_STRIP_HEADER
+     */
     public void setXFlag(boolean xFlag) {
         this.xFlag = xFlag;
     }
 
+    /**
+     * @see Options.CLI_STRIP_HEADER
+     */
     public boolean isXFlag() {
-        return xFlag;
-    }
-    
-    @Deprecated
-    public boolean isxFlag() {
         return xFlag;
     }
     
     /**
      * True if colorized backtraces are enabled. False otherwise.
+     * 
+     * @see Options.BACKTRACE_COLOR
      */
     public boolean getBacktraceColor() {
         return backtraceColor;
@@ -1128,6 +1270,8 @@ public class RubyInstanceConfig {
     
     /**
      * Set to true to enable colorized backtraces.
+     * 
+     * @see Options.BACKTRACE_COLORR
      */
     public void setBacktraceColor(boolean backtraceColor) {
         this.backtraceColor = backtraceColor;
@@ -1135,6 +1279,7 @@ public class RubyInstanceConfig {
     
     /**
      * Whether to use a single global lock for requires.
+     * 
      * @see Options.GLOBAL_REQUIRE_LOCK
      */
     public boolean isGlobalRequireLock() {
@@ -1143,6 +1288,8 @@ public class RubyInstanceConfig {
     
     /**
      * Set whether to use a single global lock for requires.
+     * 
+     * @see Options.GLOBAL_REQUIRE_LOCK
      */
     public void setGlobalRequireLock(boolean globalRequireLock) {
         this.globalRequireLock = globalRequireLock;
@@ -1150,6 +1297,8 @@ public class RubyInstanceConfig {
 
     /**
      * Set whether the JIT compiler should run in a background thread (Executor-based).
+     * 
+     * @see Options.JIT_BACKGROUND
      *
      * @param jitBackground whether to run the JIT compiler in a background thread
      */
@@ -1159,6 +1308,8 @@ public class RubyInstanceConfig {
 
     /**
      * Get whether the JIT compiler will run in a background thread.
+     * 
+     * @see Options.JIT_BACKGROUND
      *
      * @return whether the JIT compiler will run in a background thread
      */
@@ -1168,6 +1319,8 @@ public class RubyInstanceConfig {
 
     /**
      * Set whether to load and setup bundler on startup.
+     * 
+     * @see Options.CLI_LOAD_GEMFILE
      */
     public void setLoadGemfile(boolean loadGemfile) {
         this.loadGemfile = loadGemfile;
@@ -1175,6 +1328,8 @@ public class RubyInstanceConfig {
 
     /**
      * Whether to load and setup bundler on startup.
+     * 
+     * @see Options.CLI_LOAD_GEMFILE
      */
     public boolean getLoadGemfile() {
         return loadGemfile;
@@ -1182,6 +1337,8 @@ public class RubyInstanceConfig {
 
     /**
      * Set the maximum number of methods to consider when profiling.
+     * 
+     * @see Options.PROFILE_MAX_METHODS
      */
     public void setProfileMaxMethods(int profileMaxMethods) {
         this.profileMaxMethods = profileMaxMethods;
@@ -1189,6 +1346,8 @@ public class RubyInstanceConfig {
 
     /**
      * Get the maximum number of methods to consider when profiling.
+     * 
+     * @see Options.PROFILE_MAX_METHODS
      */
     public int getProfileMaxMethods() {
         return profileMaxMethods;
@@ -1215,7 +1374,7 @@ public class RubyInstanceConfig {
     /**
      * Indicates whether the script must be extracted from script source
      */
-    private boolean xFlag;
+    private boolean xFlag = Options.CLI_STRIP_HEADER.load();
 
     /**
      * Indicates whether the script has a shebang line or not
@@ -1243,13 +1402,12 @@ public class RubyInstanceConfig {
     private int jitThreshold;
     private int jitMax;
     private int jitMaxSize;
-    private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
-    private String internalEncoding = null;
-    private String externalEncoding = null;
+    private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
+    private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
 		
-    private ProfilingMode profilingMode = ProfilingMode.OFF;
+    private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
@@ -1264,32 +1422,31 @@ public class RubyInstanceConfig {
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
     private Collection<String> requiredLibraries = new LinkedHashSet<String>();
-    private boolean benchmarking = false;
     private boolean argvGlobalsOn = false;
-    private boolean assumeLoop = false;
-    private boolean assumePrinting = false;
+    private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
+    private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
     private Map optionGlobals = new HashMap();
-    private boolean processLineEnds = false;
-    private boolean split = false;
-    private Verbosity verbosity = Verbosity.FALSE;
-    private boolean debug = false;
-    private boolean showVersion = false;
-    private boolean showBytecode = false;
-    private boolean showCopyright = false;
+    private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
+    private boolean split = Options.CLI_AUTOSPLIT.load();
+    private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
+    private boolean debug = Options.CLI_DEBUG.load();
+    private boolean showVersion = Options.CLI_VERSION.load();
+    private boolean showBytecode = Options.CLI_BYTECODE.load();
+    private boolean showCopyright = Options.CLI_COPYRIGHT.load();
     private boolean shouldRunInterpreter = true;
-    private boolean shouldPrintUsage = false;
-    private boolean shouldPrintProperties=false;
+    private boolean shouldPrintUsage = Options.CLI_HELP.load();
+    private boolean shouldPrintProperties=Options.CLI_PROPERTIES.load();
     private boolean dumpConfig=false;
-    private KCode kcode = KCode.NONE;
-    private String recordSeparator = "\n";
-    private boolean shouldCheckSyntax = false;
-    private String inputFieldSeparator = null;
+    private KCode kcode = Options.CLI_KCODE.load();
+    private String recordSeparator = Options.CLI_RECORD_SEPARATOR.load();
+    private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();
+    private String inputFieldSeparator = Options.CLI_AUTOSPLIT_SEPARATOR.load();
     private boolean managementEnabled = false;
-    private String inPlaceBackupExtension = null;
+    private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();
     private boolean parserDebug = false;
     private String threadDumpSignal = null;
     private boolean hardExit = false;
-    private boolean disableGems = false;
+    private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
@@ -1319,7 +1476,7 @@ public class RubyInstanceConfig {
 
     private boolean jitBackground = Options.JIT_BACKGROUND.load();
 
-    private boolean loadGemfile = false;
+    private boolean loadGemfile = Options.CLI_LOAD_GEMFILE.load();
 
     private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
     
@@ -1375,33 +1532,9 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     
     /**
-     * The max count of active methods eligible for JIT-compilation.
-     */
-    @Deprecated
-    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
-
-    /**
-     * The max size of JIT-compiled methods (full class size) allowed.
-     */
-    @Deprecated
-    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
-
-    /**
-     * The JIT threshold to the specified method invocation count.
-     */
-    @Deprecated
-    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-    
-    /**
      * The version to use for generated classes. Set to current JVM version by default
      */
     public static final int JAVA_VERSION = initGlobalJavaVersion();
-    
-    /**
-     * Default size for chained compilation.
-     */
-    @Deprecated
-    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
     
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1530,9 +1663,6 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
-
-    @Deprecated
-    public static final boolean nativeEnabled = NATIVE_ENABLED;
 
     /**
      * Indicates the global default for whether C extensions are enabled.
@@ -1709,5 +1839,111 @@ public class RubyInstanceConfig {
     @Deprecated
     public String getInPlaceBackupExtention() {
         return inPlaceBackupExtension;
+    }
+
+    @Deprecated
+    public String getBasicUsageHelp() {
+        return OutputStrings.getBasicUsageHelp();
+    }
+
+    @Deprecated
+    public String getExtendedHelp() {
+        return OutputStrings.getExtendedHelp();
+    }
+
+    @Deprecated
+    public String getPropertyHelp() {
+        return OutputStrings.getPropertyHelp();
+    }
+
+    @Deprecated
+    public String getVersionString() {
+        return OutputStrings.getVersionString(compatVersion);
+    }
+
+    @Deprecated
+    public String getCopyrightString() {
+        return OutputStrings.getCopyrightString();
+    }
+
+    @Deprecated
+    public Collection<String> requiredLibraries() {
+        return requiredLibraries;
+    }
+
+    @Deprecated
+    public List<String> loadPaths() {
+        return loadPaths;
+    }
+
+    @Deprecated
+    public boolean shouldPrintUsage() {
+        return shouldPrintUsage;
+    }
+
+    @Deprecated
+    public boolean shouldPrintProperties() {
+        return shouldPrintProperties;
+    }
+
+    @Deprecated
+    public Boolean getVerbose() {
+        return isVerbose();
+    }
+
+    @Deprecated
+    public boolean shouldRunInterpreter() {
+        return isShouldRunInterpreter();
+    }
+
+    @Deprecated
+    public boolean isShouldRunInterpreter() {
+        return shouldRunInterpreter;
+    }
+    
+    @Deprecated
+    public boolean isxFlag() {
+        return xFlag;
+    }
+    
+    /**
+     * The max count of active methods eligible for JIT-compilation.
+     */
+    @Deprecated
+    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
+
+    /**
+     * The max size of JIT-compiled methods (full class size) allowed.
+     */
+    @Deprecated
+    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
+
+    /**
+     * The JIT threshold to the specified method invocation count.
+     */
+    @Deprecated
+    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
+    
+    /**
+     * Default size for chained compilation.
+     */
+    @Deprecated
+    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
+
+    @Deprecated
+    public static final boolean nativeEnabled = NATIVE_ENABLED;
+
+    @Deprecated
+    public boolean isSamplingEnabled() {
+        return false;
+    }
+    
+    @Deprecated
+    public void setBenchmarking(boolean benchmarking) {
+    }
+
+    @Deprecated
+    public boolean isBenchmarking() {
+        return false;
     }
 }

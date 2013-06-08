@@ -28,6 +28,7 @@
 
 package org.jruby.internal.runtime.methods;
 
+import com.headius.invokebinder.transform.Varargs;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -36,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.visitor.InstanceVariableFinder;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -44,6 +46,7 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.MethodData;
 
 /**
  * This is the mixed-mode method type.  It will call out to JIT compiler to see if the compiler
@@ -66,6 +69,7 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
     private final ArgsNode argsNode;
     private final ISourcePosition position;
     private final InterpretedMethod interpretedMethod;
+    private MethodData methodData;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             String name, ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
@@ -105,6 +109,14 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
 
     public StaticScope getStaticScope() {
         return staticScope;
+    }
+    
+    @Override
+    public MethodData getMethodData() {
+        if (methodData == null){
+            methodData = new MethodData(name, getFile(), InstanceVariableFinder.findVariables(body));
+        }
+        return methodData;
     }
 
     public DynamicMethod getMethodForCaching() {

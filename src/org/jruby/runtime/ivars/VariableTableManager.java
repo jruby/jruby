@@ -68,6 +68,9 @@ public class VariableTableManager {
     /** whether a slot has been allocated to object_id */
     private volatile boolean hasObjectID = false;
     
+    /** whether objects associated with this table use fields */
+    private volatile int fieldVariables = 0;
+    
     /** a lazy accessor for object_id */
     private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
     /** a lazy accessor for C ext handle */
@@ -174,6 +177,29 @@ public class VariableTableManager {
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessor(name);
+                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+
+                    newVariableAccessors.putAll(myVariableAccessors);
+                    newVariableAccessors.put(name, ivarAccessor);
+
+                    variableAccessors = newVariableAccessors;
+                }
+            }
+        }
+        return ivarAccessor;
+    }
+    
+    public VariableAccessor getVariableAccessorForVar(String name, int index) {
+        VariableAccessor ivarAccessor = variableAccessors.get(name);
+        if (ivarAccessor == null) {
+
+            synchronized (realClass) {
+                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
+                ivarAccessor = myVariableAccessors.get(name);
+
+                if (ivarAccessor == null) {
+                    // allocate a new accessor and populate a new table
+                    ivarAccessor = allocateVariableAccessorForVar(name, index);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
 
                     newVariableAccessors.putAll(myVariableAccessors);
@@ -385,7 +411,7 @@ public class VariableTableManager {
         RubyClass otherRealClass = other.getMetaClass().getRealClass();
         boolean sameTable = otherRealClass == realClass;
 
-        if (sameTable) {
+        if (sameTable && fieldVariables == 0) {
             int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
             
             Object[] otherVars = ((RubyBasicObject) other).varTable;
@@ -447,7 +473,7 @@ public class VariableTableManager {
     public boolean hasVariables(RubyBasicObject object) {
         // we check both to exclude object_id
         Object[] myVarTable;
-        return getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
+        return fieldVariables > 0 || getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
     }
 
     public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
@@ -477,12 +503,6 @@ public class VariableTableManager {
             Object value = getVariableAccessorForRead(name).get(object);
             getVariableAccessorForWrite(name).set(object, null);
             
-            // if there's no values set anymore, null out the table
-            // FIXME: This should enlist in volatility logic or be removed
-            for (Object var : object.varTable) {
-                if (var != null) return value;
-            }
-            object.varTable = null;
             return value;
         }
     }
@@ -570,6 +590,59 @@ public class VariableTableManager {
             newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
         } else {
             newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+        }
+
+        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+
+        return newVariableAccessor;
+    }
+    
+    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
+        int id = realClass.id;
+        String[] myVariableNames = variableNames;
+
+        int newIndex = myVariableNames.length;
+        String[] newVariableNames = new String[newIndex + 1];
+        
+        fieldVariables += 1;
+
+        VariableAccessor newVariableAccessor;
+        switch (index) {
+            case 0:
+                newVariableAccessor = new VariableAccessorVar0(realClass, name, newIndex, id);
+                break;
+            case 1:
+                newVariableAccessor = new VariableAccessorVar1(realClass, name, newIndex, id);
+                break;
+            case 2:
+                newVariableAccessor = new VariableAccessorVar2(realClass, name, newIndex, id);
+                break;
+            case 3:
+                newVariableAccessor = new VariableAccessorVar3(realClass, name, newIndex, id);
+                break;
+            case 4:
+                newVariableAccessor = new VariableAccessorVar4(realClass, name, newIndex, id);
+                break;
+            case 5:
+                newVariableAccessor = new VariableAccessorVar5(realClass, name, newIndex, id);
+                break;
+            case 6:
+                newVariableAccessor = new VariableAccessorVar6(realClass, name, newIndex, id);
+                break;
+            case 7:
+                newVariableAccessor = new VariableAccessorVar7(realClass, name, newIndex, id);
+                break;
+            case 8:
+                newVariableAccessor = new VariableAccessorVar8(realClass, name, newIndex, id);
+                break;
+            case 9:
+                newVariableAccessor = new VariableAccessorVar9(realClass, name, newIndex, id);
+                break;
+            default:
+                throw new RuntimeException("unsupported var index in " + realClass + ": " + index);
         }
 
         System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);

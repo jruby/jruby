@@ -128,9 +128,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_18
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, $KCODE, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "--1.8 -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    args = "--1.8 -J-Dfoo=bar -v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
-    assert_equal 0, $?.exitstatus
+    assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
     assert_match /ruby \d+\.\d+\.\d+/, lines[0]
@@ -143,7 +143,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # The gsub is for windows
     assert_equal "#{parent_dir}", lines[7].gsub('\\', '/')
     assert_equal "bar", lines[8]
-    assert_match /Runtime: \d+ ms/, lines[9]
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
@@ -155,9 +154,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "--1.9 -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    args = "--1.9 -J-Dfoo=bar -v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
-    assert_equal 0, $?.exitstatus
+    assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
     assert_match /ruby \d+\.\d+\.\d+/, lines[0]
@@ -170,7 +169,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # The gsub is for windows
     assert_equal "#{parent_dir}", lines[7].gsub('\\', '/')
     assert_equal "bar", lines[8]
-    assert_match /Runtime: \d+ ms/, lines[9]
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"

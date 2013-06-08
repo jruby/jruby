@@ -1777,38 +1777,6 @@ public class ScriptingContainerTest {
         instance = null;
     }
 
-    private void testSetCompileModeBySystemProperty(CompileMode mode) {
-        String oldProperty = System.getProperty("jruby.compile.mode");
-        try {
-            System.setProperty("jruby.compile.mode", mode.toString());
-            ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-            instance.put("$MEANING", 42);
-            // instance.runScriptlet("puts MEANING");
-            assertEquals(mode, instance.getCompileMode());
-        } finally {
-            if (oldProperty != null) {
-                System.setProperty("jruby.compile.mode", oldProperty);
-            } else {
-                System.clearProperty("jruby.compile.mode");
-            }
-        }
-    }
-
-    @Test
-    public void testSetCompileModeBySystemPropertyFORCE() {
-        testSetCompileModeBySystemProperty(CompileMode.FORCE);
-    }
-
-    @Test
-    public void testSetCompileModeBySystemPropertyJIT() {
-        testSetCompileModeBySystemProperty(CompileMode.JIT);
-    }
-
-    @Test
-    public void testSetCompileModeBySystemPropertyOFFIR() {
-        testSetCompileModeBySystemProperty(CompileMode.OFFIR);
-    }
-
     /**
      * Test of isRunRubyInProcess method, of class ScriptingContainer.
      */

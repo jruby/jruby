@@ -1169,17 +1169,19 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_fetch
      *
      */
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, compat = RUBY1_8)
     public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
         if (args.length == 2 && block.isGiven()) {
-            getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
         }
 
-        IRubyObject value;
-        if ((value = internalGet(args[0])) == null) {
+        IRubyObject value = internalGet(args[0]);
+        
+        if (value == null) {
             if (block.isGiven()) return block.yield(context, args[0]);
+            
             if (args.length == 1) {
                 if (runtime.is1_9()) {
                     throw runtime.newKeyError("key not found: " + args[0]);
@@ -1189,6 +1191,42 @@ public class RubyHash extends RubyObject implements Map {
             }
             return args[1];
         }
+        
+        return value;
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject value = internalGet(key);
+        
+        if (value == null) {
+            if (block.isGiven()) return block.yield(context, key);
+            
+            throw runtime.newKeyError("key not found: " + key);
+        }
+        
+        return value;
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
+        Ruby runtime = context.runtime;
+        boolean blockGiven = block.isGiven();
+
+        if (blockGiven) {
+            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+        }
+
+        IRubyObject value = internalGet(key);
+        
+        if (value == null) {
+            if (blockGiven) return block.yield(context, key);
+            
+            return _default;
+        }
+        
         return value;
     }
 

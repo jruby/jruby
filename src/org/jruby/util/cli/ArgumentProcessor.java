@@ -172,9 +172,6 @@ public class ArgumentProcessor {
                 case 'a':
                     config.setSplit(true);
                     break;
-                case 'b':
-                    config.setBenchmarking(true);
-                    break;
                 case 'c':
                     config.setShouldCheckSyntax(true);
                     break;
@@ -280,30 +277,20 @@ public class ArgumentProcessor {
                 case 'W':
                     {
                         String temp = grabOptionalValue();
-                        int value = 2;
-                        if (null != temp) {
-                            if (temp.equals("2")) {
-                                value = 2;
+                        if (temp == null) {
+                            config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                        } else {
+                            if (temp.equals("0")) {
+                                config.setVerbosity(RubyInstanceConfig.Verbosity.NIL);
                             } else if (temp.equals("1")) {
-                                value = 1;
-                            } else if (temp.equals("0")) {
-                                value = 0;
+                                config.setVerbosity(RubyInstanceConfig.Verbosity.FALSE);
+                            } else if (temp.equals("2")) {
+                                config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                             } else {
                                 MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
                                 mee.setUsageError(true);
                                 throw mee;
                             }
-                        }
-                        switch (value) {
-                            case 0:
-                                config.setVerbosity(RubyInstanceConfig.Verbosity.NIL);
-                                break;
-                            case 1:
-                                config.setVerbosity(RubyInstanceConfig.Verbosity.FALSE);
-                                break;
-                            case 2:
-                                config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
-                                break;
                         }
                         break FOR;
                     }

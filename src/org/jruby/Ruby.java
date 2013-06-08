@@ -180,9 +180,6 @@ public final class Ruby {
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
         this.threadService      = new ThreadService(this);
-        if(config.isSamplingEnabled()) {
-            org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
-        }
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
         

@@ -1306,6 +1306,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
+        if (path instanceof RubyString) {
+            return (RubyString)path;
+        }
         if (context.runtime.is1_9()) {
             if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
             
@@ -1334,6 +1337,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         return path;
     }
+    
+    private static final ByteList FILE_URL_START = ByteList.create("file:");
 
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
@@ -1348,12 +1353,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
-            String path = pathStr.asJavaString();
-            String[] pathParts = splitURI(path);
-            if (pathParts != null && pathParts[0].equals("file:")) {
-                path = pathParts[1];
+            ByteList pathByteList = pathStr.getByteList();
+
+            if ((pathByteList.bytes().length > FILE_URL_START.bytes().length) && pathByteList.startsWith(FILE_URL_START)) {
+                String path = pathStr.asJavaString();
+                String[] pathParts = splitURI(path);
+                if (pathParts != null && pathParts[0].equals("file:")) {
+                    path = pathParts[1];
+                }
+
+                return JRubyFile.create(runtime.getCurrentDirectory(), path);
             }
-            return JRubyFile.create(runtime.getCurrentDirectory(), path);
+
+            return JRubyFile.create(runtime.getCurrentDirectory(), pathStr.toString());
         }
     }
 

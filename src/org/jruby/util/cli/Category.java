@@ -42,7 +42,8 @@ public enum Category {
     MISCELLANEOUS("miscellaneous"),
     DEBUG("debugging and logging"),
     JAVA_INTEGRATION("java integration"),
-    PROFILING("profiling");
+    PROFILING("profiling"),
+    CLI("command line options");
 
     Category(String desc) {
         this.desc = desc;

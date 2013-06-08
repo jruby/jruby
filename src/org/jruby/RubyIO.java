@@ -854,6 +854,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject options) {
         Ruby runtime = context.runtime;
 
+        if(options != null && !options.isNil() && !(options instanceof RubyHash) && !(options.respondsTo("to_hash"))) {
+            throw runtime.newArgumentError("last argument must be a hash!");
+        }
+
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
 
@@ -1180,13 +1184,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IOOptions modes;
         int perms = -1; // -1 == don't set permissions
 
-        if (args.length > 1) {
+        if (args.length > 1 && !args[1].isNil()) {
             IRubyObject modeString = args[1].convertToString();
             modes = newIOOptions(runtime, modeString.toString());
         } else {
             modes = newIOOptions(runtime, "r");
         }
-        if (args.length > 2) {
+
+        if (args.length > 2 && !args[2].isNil()) {
             RubyInteger permsInt =
                 args.length >= 3 ? args[2].convertToInteger() : null;
             perms = RubyNumeric.fix2int(permsInt);
@@ -3599,12 +3604,28 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *    open_args: array of string
      */
     private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
-        // FIXME: process options
-
         RubyString pathStr = RubyFile.get_path(context, path);
         Ruby runtime = context.runtime;
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
+
+        RubyIO file = null;
+
+        long mode = ModeFlags.CREAT;
+
+        if (options == null || (options != null && options.isEmpty())) {
+            if (offset.isNil()) {
+                mode |= ModeFlags.WRONLY;
+            } else {
+                mode |= ModeFlags.RDWR;
+            }
+
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
+        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
+            mode |= ModeFlags.WRONLY;
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options); 
+        } else {
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
+        }
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3704,8 +3725,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO file = null;
 
+        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
         if (options == null || (options != null && options.isEmpty())) {
-            long mode = ModeFlags.CREAT | ModeFlags.BINARY;
 
             if (offset == null) {
                 mode |= ModeFlags.WRONLY;
@@ -3714,6 +3735,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
+        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
+            mode |= ModeFlags.WRONLY;
+            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options);
         } else {
             file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
         }

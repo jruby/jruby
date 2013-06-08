@@ -18,7 +18,6 @@ public class OutputStrings {
                 .append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
                 .append("  -0[octal]       specify record separator (\\0, if no argument)\n")
                 .append("  -a              autosplit mode with -n or -p (splits $_ into $F)\n")
-                .append("  -b              benchmark mode, times the script execution\n")
                 .append("  -c              check syntax only\n")
                 .append("  -Cdirectory     cd to directory, before executing your script\n")
                 .append("  -d              set debugging flags (set $DEBUG to true)\n")
@@ -97,20 +96,11 @@ public class OutputStrings {
                 .append("# Specify them by passing -X<property>=<value>\n")
                 .append("#   or if passing directly to Java, -Djruby.<property>=<value>\n")
                 .append("#   or put <property>=<value> in .jrubyrc\n")
-                .append("#\n# This dump is a valid .jrubyrc file of current settings.\n");
+                .append("#\n")
+                .append("# This dump is a valid .jrubyrc file of current settings. Uncomment and modify\n")
+                .append("# settings to customize.\n");
         
-        Category category = null;
-        for (Option property : Options.PROPERTIES) {
-            if (category != property.category) {
-                category = property.category;
-                sb.append("\n################################################################################");
-                sb.append("\n# ").append(category).append(" settings");
-                sb.append("\n################################################################################\n\n");
-            }
-            sb.append("# ").append(property.description).append('\n');
-            sb.append("# Options: ").append(Arrays.toString(property.options)).append(", Default: ").append(property.defval).append(".\n");
-            sb.append(property.name).append('=').append(property.load()).append("\n\n");
-        }
+        sb.append(Option.formatOptions(Options.PROPERTIES));
 
         return sb.toString();
     }

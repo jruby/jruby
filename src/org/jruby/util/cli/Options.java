@@ -30,10 +30,15 @@ package org.jruby.util.cli;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.jruby.runtime.Constants;
+import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.cli.Category.*;
+import static org.jruby.RubyInstanceConfig.Verbosity;
+import static org.jruby.RubyInstanceConfig.ProfilingMode;
 
 /**
  * Options defines all configuration settings for JRuby in a consistent form.
@@ -42,92 +47,11 @@ import static org.jruby.util.cli.Category.*;
  * of the built-in structure.
  */
 public class Options {
-    public static String dump() {
-        StringBuilder sb = new StringBuilder("# JRuby configuration options with current values\n");
-        Category category = null;
-        for (Option option : _loadedOptions) {
-            if (category != option.category) {
-                category = option.category;
-                sb.append('\n').append(category.desc()).append('\n');
-            }
-            sb
-                    .append(option.name)
-                    .append('=')
-                    .append(option.load())
-                    .append('\n');
-        }
-        return sb.toString();
-    }
-
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
-
-    private static final boolean INVOKEDYNAMIC_DEFAULT;
-    static {
-        boolean hotspot24 = false;
-        
-        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotSpot = !vmName.equals("") && 
-                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
-        if (isHotSpot) {
-            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-            if (vmVersionString.equals("")) {
-                // can't get VM version for whatever reason, assume LCD.
-                hotspot24 = false;
-            } else {
-                int version;
-                try {
-                    version = Integer.parseInt(vmVersionString.substring(0, 2));
-                } catch (NumberFormatException nfe) {
-                    version = -1;
-                }
-
-                if (version < 24) {
-                    // if on HotSpot version prior to 24, off by default unless turned on
-                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                    hotspot24 = false;
-                } else {
-                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                    hotspot24 = true;
-                }
-            }
-        }
-
-        if (hotspot24) {
-            INVOKEDYNAMIC_DEFAULT = true;
-        } else if (isHotSpot) {
-            INVOKEDYNAMIC_DEFAULT = false;
-        } else {
-            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-                if (!vmName.contains("ibm j9 vm")) {
-                    // if not on HotSpot or J9, on if specification version supports indy
-                    INVOKEDYNAMIC_DEFAULT = true;
-                } else {        // IBM J9 VM
-                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
-                    int dash = runtimeVersion.indexOf('-');
-                    int dateStamp;
-                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
-                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
-                    } catch (Exception e) {
-                        dateStamp = -1;
-                    }
-                    // The initial release and first few service releases had a crash issue.
-                    // Narrow range so unexpected will tend to default to invokedynamic on.
-                    if (dateStamp > 20110731 && dateStamp < 20121101) {
-                        INVOKEDYNAMIC_DEFAULT = false;
-                    } else {        // SR4 and beyond include APAR IV34500: crash fix
-                        INVOKEDYNAMIC_DEFAULT = true;
-                    }
-                }
-            } else {
-                // on only if forced
-                INVOKEDYNAMIC_DEFAULT = false;
-            }
-        }
-    }
+    private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     
     // This section holds all Options for JRuby. They will be listed in the
-    // --properties output in the order they are constructed here.
+    // --properties output.
     public static final Option<String> COMPILE_MODE = string(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF", "OFFIR"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
@@ -171,15 +95,15 @@ public class Options {
     public static final Option<Integer> JIT_LOGEVERY = integer(JIT, "jit.logEvery", 0, "Log a message every n methods JIT compiled.");
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", new String[]{"ClsOrMod","ClsOrMod::method_name","-::method_name"}, "none", "Exclude methods from JIT. Comma delimited.");
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", true, "Cache jitted method in-memory bodies across runtimes and loads.");
-    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, null, "Save jitted methods to <dir> as they're compiled, for future runs.");
+    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
     
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
-    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", null, null, "Specify comma delimeted list of passes to run.");
-    public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", null, null, "Specify comma delimeted list of passes to run after inlining a method.");
+    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", "Specify comma delimeted list of passes to run.");
+    public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
     
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -217,6 +141,7 @@ public class Options {
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
     public static final Option<Boolean> ENUMERATOR_LIGHTWEIGHT = bool(MISCELLANEOUS, "enumerator.lightweight", true, "Use lightweight Enumerator#next logic when possible.");
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
+    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", false, "Attempt to expand instance vars into Java fields");
     
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -231,6 +156,7 @@ public class Options {
     public static final Option<Boolean> LOG_CALLERS = bool(DEBUG, "log.callers", false, "Log every time a Kernel#caller backtrace is generated.");
     public static final Option<Boolean> LOG_WARNINGS = bool(DEBUG, "log.warnings", false, "Log every time a built-in warning backtrace is generated.");
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[] {"class name"}, "org.jruby.util.log.JavaUtilLoggingLogger", "Use specified class for logging.");
+    public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
@@ -239,27 +165,144 @@ public class Options {
     public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
     public static final Option<Boolean> JI_NEWSTYLEEXTENSION = bool(JAVA_INTEGRATION, "ji.newStyleExtension", false, "Extend Java classes without using a proxy object.");
     public static final Option<Boolean> JI_OBJECTPROXYCACHE = bool(JAVA_INTEGRATION, "ji.objectProxyCache", true, "Cache Java object wrappers between calls.");
-    public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", null, null, "Allow external envs to replace JI proxy class factory");
+    public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", "Allow external envs to replace JI proxy class factory");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
+    
+    public static final Option<Boolean> CLI_AUTOSPLIT = bool(CLI, "cli.autosplit", false, "Split $_ into $F for -p or -n. Same as -a.");
+    public static final Option<Boolean> CLI_DEBUG = bool(CLI, "cli.debug", false, "Enable debug mode logging. Same as -d.");
+    public static final Option<Boolean> CLI_PROCESS_LINE_ENDS = bool(CLI, "cli.process.line.ends", false, "Enable line ending processing. Same as -l.");
+    public static final Option<Boolean> CLI_ASSUME_LOOP = bool(CLI, "cli.assume.loop", false, "Wrap execution with a gets() loop. Same as -n.");
+    public static final Option<Boolean> CLI_ASSUME_PRINT = bool(CLI, "cli.assume.print", false, "Print $_ after each execution of script. Same as -p.");
+    public static final Option<Boolean> CLI_VERBOSE = bool(CLI, "cli.verbose", false, "Verbose mode, as -w or -W2. Sets default for cli.warning.level.");
+    public static final Option<Verbosity> CLI_WARNING_LEVEL = enumeration(CLI, "cli.warning.level", Verbosity.class, CLI_VERBOSE.load() ? Verbosity.TRUE : Verbosity.FALSE, "Warning level (off=0,normal=1,on=2). Same as -W.");
+    public static final Option<Boolean> CLI_PARSER_DEBUG = bool(CLI, "cli.parser.debug", false, "Enable parser debug logging. Same as -y.");
+    public static final Option<Boolean> CLI_VERSION = bool(CLI, "cli.version", false, "Print version to stderr. Same as --version.");
+    public static final Option<Boolean> CLI_BYTECODE = bool(CLI, "cli.bytecode", false, "Print target script bytecode to stderr. Same as --bytecode.");
+    public static final Option<Boolean> CLI_COPYRIGHT = bool(CLI, "cli.copyright", false, "Print copyright to stderr. Same as --copyright but runs script.");
+    public static final Option<Boolean> CLI_CHECK_SYNTAX = bool(CLI, "cli.check.syntax", false, "Check syntax of target script. Same as -c but runs script.");
+    public static final Option<String> CLI_AUTOSPLIT_SEPARATOR = string(CLI, "cli.autosplit.separator", "Set autosplit separator. Same as -F.");
+    public static final Option<KCode> CLI_KCODE = enumeration(CLI, "cli.kcode", KCode.class, KCode.NONE, "Set kcode character set. Same as -K (1.8).");
+    public static final Option<Boolean> CLI_HELP = bool(CLI, "cli.help", false, "Print command-line usage. Same as --help but runs script.");
+    public static final Option<Boolean> CLI_PROPERTIES = bool(CLI, "cli.properties", false, "Print config properties. Same as --properties but runs script.");
+    public static final Option<String> CLI_ENCODING_INTERNAL = string(CLI, "cli.encoding.internal", "Encoding name to use internally.");
+    public static final Option<String> CLI_ENCODING_EXTERNAL = string(CLI, "cli.encoding.external", "Encoding name to treat external data.");
+    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", "\n", "Default record separator.");
+    public static final Option<String> CLI_BACKUP_EXTENSION = string(CLI, "cli.backup.extension", "Backup extension for in-place ARGV files. Same as -i.");
+    public static final Option<ProfilingMode> CLI_PROFILING_MODE = enumeration(CLI, "cli.profiling.mode", ProfilingMode.class, ProfilingMode.OFF, "Enable instrumented profiling modes.");
+    public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
+    public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
+    public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
+    
+    public static String dump() {
+        return "# JRuby configuration options with current values\n" +
+                Option.formatValues(_loadedOptions);
+    }
 
-    public static final Option[] PROPERTIES = _loadedOptions.toArray(new Option[0]);
+    public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
     
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
-        Option<String> option = new StringOption(category, name, options, defval, description);
+        Option<String> option = Option.string("jruby", name, category, options, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String defval, String description) {
+        Option<String> option = Option.string("jruby", name, category, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String[] options, String description) {
+        Option<String> option = Option.string("jruby", name, category, options, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    
+    private static Option<String> string(Category category, String name, String description) {
+        Option<String> option = Option.string("jruby", name, category, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Boolean> bool(Category category, String name, Boolean defval, String description) {
-        Option<Boolean> option = new BooleanOption(category, name, defval, description);
+        Option<Boolean> option = Option.bool("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
     
     private static Option<Integer> integer(Category category, String name, Integer defval, String description) {
-        Option<Integer> option = new IntegerOption(category, name, defval, description);
+        Option<Integer> option = Option.integer("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
+    }
+    
+    private static <T extends Enum<T>> Option<T> enumeration(Category category, String name, Class<T> enumClass, T defval, String description) {
+        Option<T> option = Option.enumeration("jruby", name, category, enumClass, defval, description);
+        _loadedOptions.add(option);
+        return option;
+    }
+    private static boolean calculateInvokedynamicDefault() {
+        boolean hotspot24 = false;
+        
+        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
+        boolean isHotSpot = !vmName.equals("") && 
+                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
+        if (isHotSpot) {
+            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+            if (vmVersionString.equals("")) {
+                // can't get VM version for whatever reason, assume LCD.
+                hotspot24 = false;
+            } else {
+                int version;
+                try {
+                    version = Integer.parseInt(vmVersionString.substring(0, 2));
+                } catch (NumberFormatException nfe) {
+                    version = -1;
+                }
+
+                if (version < 24) {
+                    // if on HotSpot version prior to 24, off by default unless turned on
+                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                    hotspot24 = false;
+                } else {
+                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                    hotspot24 = true;
+                }
+            }
+        }
+
+        if (hotspot24) {
+            return true;
+        } else if (isHotSpot) {
+            return false;
+        } else {
+            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+                if (!vmName.contains("ibm j9 vm")) {
+                    // if not on HotSpot or J9, on if specification version supports indy
+                    return true;
+                } else {        // IBM J9 VM
+                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+                    int dash = runtimeVersion.indexOf('-');
+                    int dateStamp;
+                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+                    } catch (Exception e) {
+                        dateStamp = -1;
+                    }
+                    // The initial release and first few service releases had a crash issue.
+                    // Narrow range so unexpected will tend to default to invokedynamic on.
+                    if (dateStamp > 20110731 && dateStamp < 20121101) {
+                        return false;
+                    } else {        // SR4 and beyond include APAR IV34500: crash fix
+                        return true;
+                    }
+                }
+            } else {
+                // on only if forced
+                return false;
+            }
+        }
     }
 }

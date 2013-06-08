@@ -1,3 +1,0 @@
-fails(gh-631):ARGF.seek sets the absolute position relative to beginning of file
-fails(gh-631):ARGF.seek sets the position relative to current position in file
-fails(gh-631):ARGF.seek sets the absolute position relative to end of file

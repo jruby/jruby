@@ -63,6 +63,7 @@ import org.jruby.util.log.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
@@ -480,9 +481,19 @@ public class InvokeDynamicSupport {
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
         
         // get variable value and filter with nullToNil
-        MethodHandle getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
-        getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
-        getValue = insertArguments(getValue, 1, accessor.getIndex());
+        MethodHandle getValue;
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            getValue = lookup().findGetter(cls, "var" + offset, Object.class);
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
+        } else {
+            getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
+            getValue = insertArguments(getValue, 1, accessor.getIndex());
+        }
+        
         getValue = filterReturnValue(getValue, nullToNil);
         
         // prepare fallback
@@ -515,6 +526,19 @@ public class InvokeDynamicSupport {
         return site.getVariable(self);
     }
     
+    public static final Class[] REIFIED_OBJECT_CLASSES = {
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
+    
     public static IRubyObject setVariableFallback(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
         VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
@@ -524,9 +548,19 @@ public class InvokeDynamicSupport {
         returnValue = dropArguments(returnValue, 0, IRubyObject.class);
 
         // set variable value and fold by returning value
-        MethodHandle setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
-        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
-        setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
+        MethodHandle setValue;
+        
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
+            setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
+        }
+        
         setValue = foldArguments(returnValue, setValue);
 
         // prepare fallback

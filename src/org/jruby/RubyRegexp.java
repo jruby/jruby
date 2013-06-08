@@ -246,17 +246,54 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         try {
-            return matcher.searchInterruptible(start, range, option);
+            RubyThread thread = runtime.getCurrentContext().getThread();
+            SearchMatchTask task = new SearchMatchTask(thread, matcher, start, range, option, false);
+            thread.executeBlockingTask(task);
+            return task.retval;
         } catch (InterruptedException e) {
             throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
         }
     }
     
-    public static int matcherMatch(Ruby runtime, Matcher matcher, int at, int range, int option) {
+    public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         try {
-            return matcher.matchInterruptible(at, range, option);
+            RubyThread thread = runtime.getCurrentContext().getThread();
+            SearchMatchTask task = new SearchMatchTask(thread, matcher, start, range, option, true);
+            thread.executeBlockingTask(task);
+            return task.retval;
         } catch (InterruptedException e) {
             throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
+        }
+    }
+    
+    private static class SearchMatchTask implements RubyThread.BlockingTask {
+        int retval;
+        final RubyThread thread;
+        final Matcher matcher;
+        final int start;
+        final int range;
+        final int option;
+        final boolean match;
+        
+        SearchMatchTask(RubyThread thread, Matcher matcher, int start, int range, int option, boolean match) {
+            this.thread = thread;
+            this.matcher = matcher;
+            this.start = start;
+            this.range = range;
+            this.option = option;
+            this.match = match;
+        }
+        
+        @Override
+        public void run() throws InterruptedException {
+            retval = match ?
+                    matcher.matchInterruptible(start, range, option) :
+                    matcher.searchInterruptible(start, range, option);
+        }
+
+        @Override
+        public void wakeup() {
+            thread.getNativeThread().interrupt();
         }
     }
 

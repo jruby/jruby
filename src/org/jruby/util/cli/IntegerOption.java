@@ -28,17 +28,27 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import org.jruby.util.SafePropertyAccessor;
-
 /**
  * An Integer-based Option.
  */
 public class IntegerOption extends Option<Integer> {
-    public IntegerOption(Category category, String name, Integer defval, String description) {
-        super(category, name, Integer.class, null, defval, description);
+    public IntegerOption(String prefix, String name, Enum category, Integer[] options, Integer defval, String description) {
+        super(prefix, name, Integer.class, category, options, defval, description);
+    }
+    
+    public IntegerOption(String longName, Enum category, Integer[] options, Integer defval, String description) {
+        super(longName, Integer.class, category, options, defval, description);
+    }
+    
+    public IntegerOption(String prefix, String name, Enum category, Integer defval, String description) {
+        super(prefix, name, Integer.class, category, null, defval, description);
+    }
+    
+    public IntegerOption(String longName, Enum category, Integer defval, String description) {
+        super(longName, Integer.class, category, null, defval, description);
     }
 
-    public Integer load() {
+    public Integer reload() {
         String value = super.loadProperty();
 
         if (value == null) {

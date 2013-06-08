@@ -29,6 +29,19 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
     private final Set<String> foundVariables = new HashSet<String>();
     
     /**
+     * Walk a node and its children looking for instance variables using a new
+     * InstanceVariableFinder. Return an array of the variable names found.
+     * 
+     * @param node the node to walk
+     * @return an array of instance variable names found
+     */
+    public static Set<String> findVariables(Node node) {
+        InstanceVariableFinder ivf = new InstanceVariableFinder();
+        node.accept(ivf);
+        return ivf.getFoundVariables();
+    }
+    
+    /**
      * Return the Set of all instance variables found during walking.
      * 
      * @return a Set of all instance variable names found

@@ -659,8 +659,6 @@ public class ChannelDescriptor {
         
         return internalWrite(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
     }
-    
-    private final ByteBuffer directBuffer = ByteBuffer.allocateDirect(8192);
 
     /**
      * Write the bytes in the specified byte list to the associated channel.

@@ -69,6 +69,8 @@ module Gem
     # and dependencies.
     #
     class APISpecification
+      attr_reader :set # :nodoc:
+
       def initialize(set, api_data)
         @set = set
         @name = api_data[:name]
@@ -79,6 +81,14 @@ module Gem
       end
 
       attr_reader :name, :version, :dependencies
+
+      def == other # :nodoc:
+        self.class === other and
+          @set          == other.set and
+          @name         == other.name and
+          @version      == other.version and
+          @dependencies == other.dependencies
+      end
 
       def full_name
         "#{@name}-#{@version}"
@@ -91,6 +101,7 @@ module Gem
     class APISet
       def initialize
         @data = Hash.new { |h,k| h[k] = [] }
+        @dep_uri = URI 'https://rubygems.org/api/v1/dependencies'
       end
 
       # Return data for all versions of the gem +name+.
@@ -100,8 +111,8 @@ module Gem
           return @data[name]
         end
 
-        u = URI.parse "http://rubygems.org/api/v1/dependencies?gems=#{name}"
-        str = Net::HTTP.get(u)
+        uri = @dep_uri + "?gems=#{name}"
+        str = Gem::RemoteFetcher.fetcher.fetch_path uri
 
         Marshal.load(str).each do |ver|
           @data[ver[:name]] << ver
@@ -134,8 +145,8 @@ module Gem
 
         return if needed.empty?
 
-        u = URI.parse "http://rubygems.org/api/v1/dependencies?gems=#{needed.join ','}"
-        str = Net::HTTP.get(u)
+        uri = @dep_uri + "?gems=#{needed.sort.join ','}"
+        str = Gem::RemoteFetcher.fetcher.fetch_path uri
 
         Marshal.load(str).each do |ver|
           @data[ver[:name]] << ver
@@ -159,7 +170,7 @@ module Gem
         @spec = nil
       end
 
-      attr_reader :name, :version
+      attr_reader :name, :version, :source
 
       def full_name
         "#{@name}-#{@version}"
@@ -183,9 +194,10 @@ module Gem
 
         @all = Hash.new { |h,k| h[k] = [] }
 
-        @f.list(true, true).each do |uri, specs|
-          specs.each do |name, ver, plat|
-            @all[name] << [uri, ver, plat]
+        list, _ = @f.available_specs(:released)
+        list.each do |uri, specs|
+          specs.each do |n|
+            @all[n.name] << [uri, n]
           end
         end
 
@@ -200,9 +212,10 @@ module Gem
 
         name = req.dependency.name
 
-        @all[name].each do |uri, ver, plat|
-          if req.dependency.match? name, ver
-            res << IndexSpecification.new(self, name, ver, uri, plat)
+        @all[name].each do |uri, n|
+          if req.dependency.match? n
+            res << IndexSpecification.new(self, n.name, n.version,
+                                          uri, n.platform)
           end
         end
 
@@ -218,9 +231,9 @@ module Gem
       # Called from IndexSpecification to get a true Specification
       # object.
       #
-      def load_spec(name, ver, uri)
+      def load_spec(name, ver, source)
         key = "#{name}-#{ver}"
-        @specs[key] ||= @f.fetch_spec([name, ver], uri)
+        @specs[key] ||= source.fetch_spec(Gem::NameTuple.new(name, ver))
       end
     end
 
@@ -245,7 +258,7 @@ module Gem
     # defaults to IndexSet, which will query rubygems.org.
     #
     def initialize(needed, set=IndexSet.new)
-      @set = set
+      @set = set || IndexSet.new # Allow nil to mean IndexSet
       @needed = needed
 
       @conflicts = nil
@@ -283,9 +296,10 @@ module Gem
     # with a spec that would be activated.
     #
     class DependencyConflict
-      def initialize(dependency, activated)
+      def initialize(dependency, activated, failed_dep=dependency)
         @dependency = dependency
         @activated = activated
+        @failed_dep = failed_dep
       end
 
       attr_reader :dependency, :activated
@@ -293,7 +307,7 @@ module Gem
       # Return the Specification that listed the dependency
       #
       def requester
-        @dependency.requester
+        @failed_dep.requester
       end
 
       def for_spec?(spec)
@@ -303,7 +317,7 @@ module Gem
       # Return the 2 dependency objects that conflicted
       #
       def conflicting_dependencies
-        [@dependency.dependency, @activated.request.dependency]
+        [@failed_dep.dependency, @activated.request.dependency]
       end
     end
 
@@ -347,12 +361,20 @@ module Gem
     # activation.
     #
     class ActivationRequest
-      def initialize(spec, req)
+      def initialize(spec, req, others_possible=true)
         @spec = spec
         @request = req
+        @others_possible = others_possible
       end
 
       attr_reader :spec, :request
+
+      # Indicate if this activation is one of a set of possible
+      # requests for the same Dependency request.
+      #
+      def others_possible?
+        @others_possible
+      end
 
       # Return the ActivationRequest that contained the dependency
       # that we were activated for.
@@ -373,6 +395,22 @@ module Gem
         @spec.version
       end
 
+      def full_spec
+        Gem::Specification === @spec ? @spec : @spec.spec
+      end
+
+      def download(path)
+        if @spec.respond_to? :source
+          source = @spec.source
+        else
+          source = Gem.sources.first
+        end
+
+        Gem.ensure_gem_subdirectories path
+
+        source.download full_spec, path
+      end
+
       def ==(other)
         case other
         when Gem::Specification
@@ -381,6 +419,17 @@ module Gem
           @spec == other.spec && @request == other.request
         else
           false
+        end
+      end
+
+      ##
+      # Indicates if the requested gem has already been installed.
+
+      def installed?
+        this_spec = full_spec
+
+        Gem::Specification.any? do |s|
+          s == this_spec
         end
       end
     end
@@ -416,7 +465,17 @@ module Gem
           # object which will be seen by the caller and be
           # handled at the right level.
 
-          conflict = DependencyConflict.new(dep, existing)
+          # If the existing activation indicates that there
+          # are other possibles for it, then issue the conflict
+          # on the dep for the activation itself. Otherwise, issue
+          # it on the requester's request itself.
+          #
+          if existing.others_possible?
+            conflict = DependencyConflict.new(dep, existing)
+          else
+            depreq = existing.request.requester.request
+            conflict = DependencyConflict.new(depreq, existing, dep)
+          end
           @conflicts << conflict
 
           return conflict
@@ -435,7 +494,7 @@ module Gem
           # them to needed.
 
           spec = possible.first
-          act =  ActivationRequest.new(spec, dep)
+          act =  ActivationRequest.new(spec, dep, false)
 
           specs << act
 

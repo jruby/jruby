@@ -30,8 +30,6 @@ package org.jruby.anno;
 
 import org.jruby.CompatVersion;
 import org.jruby.util.CodegenUtils;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -43,13 +41,14 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 @SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
-    private static final Logger LOG = LoggerFactory.getLogger("AnnotationBinder");
+    private static final Logger LOG = Logger.getLogger("AnnotationBinder");
     public static final String SRC_GEN_DIR = "build/src_gen/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<CharSequence>();
     private PrintStream out;
@@ -211,7 +210,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 boolean scope = false;
                 if (anno.frame()) {
                     if (DEBUG)
-                        LOG.debug("Method has frame = true: {}:{}", methodDescs.get(0).getEnclosingElement(), methodDescs);
+                        LOG.finest("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
                     frame = true;
                 }
                 if (anno.reads() != null) for (FrameField read : anno.reads()) {
@@ -219,12 +218,12 @@ public class AnnotationBinder extends AbstractProcessor {
                         case BACKREF:
                         case LASTLINE:
                             if (DEBUG)
-                                LOG.debug("Method reads scope field {}: {}: {}", read, methodDescs.get(0).getEnclosingElement(), methodDescs);
+                                LOG.finest("Method reads scope field " + read + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
                             scope = true;
                             break;
                         default:
                             if (DEBUG)
-                                LOG.debug("Method reads frame field {}: {}: {}", read, methodDescs.get(0).getEnclosingElement(), methodDescs);
+                                LOG.finest("Method reads frame field " + read + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
                             ;
                             frame = true;
                     }
@@ -234,12 +233,12 @@ public class AnnotationBinder extends AbstractProcessor {
                         case BACKREF:
                         case LASTLINE:
                             if (DEBUG)
-                                LOG.debug("Method writes scope field {}: {}: {}", write, methodDescs.get(0).getEnclosingElement(), methodDescs);
+                                LOG.finest("Method writes scope field " + write + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
                             scope = true;
                             break;
                         default:
                             if (DEBUG)
-                                LOG.debug("Method writes frame field {}: {}: {}", write, methodDescs.get(0).getEnclosingElement(), methodDescs);
+                                LOG.finest("Method writes frame field " + write + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
                             frame = true;
                     }
                 }
@@ -361,7 +360,7 @@ public class AnnotationBinder extends AbstractProcessor {
             fos.write(bytes.toByteArray());
             fos.close();
         } catch (IOException ioe) {
-            LOG.error("FAILED TO GENERATE:", ioe);
+            LOG.severe("FAILED TO GENERATE: " + ioe);
             System.exit(1);
         }
     }

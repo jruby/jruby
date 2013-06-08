@@ -97,6 +97,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -104,6 +105,7 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1232,11 +1234,21 @@ public class RubyModule extends RubyObject {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
-            if (superClazz == runtime.getObject() && RubyInstanceConfig.REIFY_RUBY_CLASSES) {
-                clazz = RubyClass.newClass(runtime, superClazz, name, REIFYING_OBJECT_ALLOCATOR, this, true);
+            
+            ObjectAllocator allocator;
+            if (superClazz == runtime.getObject()) {
+                if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                    allocator = REIFYING_OBJECT_ALLOCATOR;
+                } else if (Options.REIFY_VARIABLES.load()) {
+                    allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+                } else {
+                    allocator = OBJECT_ALLOCATOR;
+                }
             } else {
-                clazz = RubyClass.newClass(runtime, superClazz, name, superClazz.getAllocator(), this, true);
+                allocator = superClazz.getAllocator();
             }
+            
+            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true);
         }
 
         return clazz;
@@ -3795,6 +3807,24 @@ public class RubyModule extends RubyObject {
                 break;
             }
         }
+    }
+    
+    public Set<String> discoverInstanceVariables() {
+        HashSet<String> set = new HashSet();
+        RubyModule cls = this;
+        while (cls != null) {
+            for (DynamicMethod method : cls.getNonIncludedClass().getMethods().values()) {
+                MethodData methodData = method.getMethodData();
+                set.addAll(methodData.getIvarNames());
+            }
+            
+            if (cls instanceof RubyClass) {
+                cls = ((RubyClass)cls).getSuperClass();
+            } else {
+                break;
+            }
+        }
+        return set;
     }
 
     /**

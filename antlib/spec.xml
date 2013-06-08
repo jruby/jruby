@@ -73,6 +73,9 @@
     <target name="spec:ci_cext" depends="install-gems,build-jruby-cext-native">
         <rake task="spec:ci_cext"/>
     </target>
+    <target name="spec:ir" depends="install-gems">
+        <rake task="spec:ir"/>
+    </target>
 
     <!-- Old compatibility targets which call to newer Rake-based ones -->
     <target name="spec" depends="spec:ci_18"/>
@@ -96,6 +99,7 @@
     <target name="spec-latest-all" depends="spec:ci_all"/>
     <target name="spec-latest" depends="spec:ci_latest"/>
     <target name="spec-cext" depends="spec:ci_cext"/>
+    <target name="spec-ir" depends="spec:ir"/>
 
     <target name="update-excludes">
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false"

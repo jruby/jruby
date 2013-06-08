@@ -39,10 +39,6 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getJitLogEvery();
     }
 
-    public boolean isSamplingEnabled() {
-        return ruby.get().getInstanceConfig().isSamplingEnabled();
-    }
-
     public int getJitThreshold() {
         return ruby.get().getInstanceConfig().getJitThreshold();
     }
@@ -97,10 +93,6 @@ public class Config implements ConfigMBean {
 
     public String getScriptFileName() {
         return ruby.get().getInstanceConfig().getScriptFileName();
-    }
-
-    public boolean isBenchmarking() {
-        return ruby.get().getInstanceConfig().isBenchmarking();
     }
 
     public boolean isAssumeLoop() {

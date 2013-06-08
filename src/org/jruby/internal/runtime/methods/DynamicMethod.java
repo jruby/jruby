@@ -44,6 +44,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
 
 /**
@@ -560,6 +561,13 @@ public abstract class DynamicMethod {
      */
     public boolean isNotImplemented() {
         return notImplemented;
+    }
+    
+    /**
+     * Additional metadata about this method.
+     */
+    public MethodData getMethodData() {
+        return MethodData.NULL;
     }
     
     /**
