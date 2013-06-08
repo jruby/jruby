@@ -425,7 +425,7 @@ public class RubyHash extends RubyObject implements Map {
         return ((h & HASH_SIGN_BIT_MASK) % length);
     }
 
-    private final void resize(int newCapacity) {
+    private final synchronized void resize(int newCapacity) {
         final RubyHashEntry[] oldTable = table;
         final RubyHashEntry[] newTable = new RubyHashEntry[newCapacity];
         for (int j = 0; j < oldTable.length; j++) {
