@@ -213,11 +213,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             for (Map.Entry entry : entries) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
-                if (getRuntime().getInstanceConfig().getCompatVersion() == RUBY1_8) {
-                    hash.op_aset(getRuntime().getCurrentContext(), key, value);
-                } else {
-                    hash.op_aset19(getRuntime().getCurrentContext(), key, value);
-                }
+                hash.op_aset(getRuntime().getCurrentContext(), key, value);
             }
             return hash;
         }
@@ -329,11 +325,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset(context, key, value);
-    }
-
-    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = RUBY1_9)
-    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-        return getOrCreateRubyHashMap().op_aset19(context, key, value);
     }
 
     /** rb_hash_equal
@@ -699,5 +690,10 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         } catch (IllegalAccessException ex) {
             throw getRuntime().newNotImplementedError("can't clone Map of type " + getObject().getClass().getName());
         }
+    }
+
+    @Deprecated
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+        return getOrCreateRubyHashMap().op_aset19(context, key, value);
     }
 }

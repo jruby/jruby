@@ -966,31 +966,10 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-      if (key instanceof RubyString) {
-          op_asetForString(runtime, (RubyString) key, value);
-      } else {
-          internalPut(key, value);
-      }
-    }
-
-    public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-        if (key instanceof RubyString) {
-            op_asetSmallForString(runtime, (RubyString) key, value);
-        } else {
-            internalPutSmall(key, value);
-        }
-    }
-
-    @Deprecated
-    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
-        return op_aset(getRuntime().getCurrentContext(), key, value);
-    }
-
     /** rb_hash_aset
      *
      */
-    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = RUBY1_8)
+    @JRubyMethod(name = {"[]=", "store"})
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();
 
@@ -998,13 +977,6 @@ public class RubyHash extends RubyObject implements Map {
         return value;
     }
 
-    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = RUBY1_9)
-    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-        modify();
-
-        fastASetCheckString19(context.runtime, key, value);
-        return value;
-    }
 
     protected void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
         final RubyHashEntry entry = internalGetEntry(key);
@@ -1032,22 +1004,6 @@ public class RubyHash extends RubyObject implements Map {
             }
             internalPutSmall(key, value, false);
         }
-    }
-
-    /**
-     * Note: this is included as a compatibility measure for AR-JDBC
-     * @deprecated use RubyHash.op_aset instead
-     */
-    public IRubyObject aset(IRubyObject key, IRubyObject value) {
-        return op_aset(getRuntime().getCurrentContext(), key, value);
-    }
-
-    /**
-     * Note: this is included as a compatibility measure for Mongrel+JRuby
-     * @deprecated use RubyHash.op_aref instead
-     */
-    public IRubyObject aref(IRubyObject key) {
-        return op_aref(getRuntime().getCurrentContext(), key);
     }
 
     public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
@@ -1831,7 +1787,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash self = this;
         return replaceCommon19(context, other, new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                self.op_aset19(context, key, value);
+                self.op_aset(context, key, value);
             }
         });
     }
@@ -2371,5 +2327,44 @@ public class RubyHash extends RubyObject implements Map {
         public int hashCode() {
             return entry.hashCode();
         }
+    }
+    
+    @Deprecated
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+        modify();
+
+        fastASetCheckString19(context.runtime, key, value);
+        return value;
+    }
+
+    /**
+     * Note: this is included as a compatibility measure for AR-JDBC
+     * @deprecated use RubyHash.op_aset instead
+     */
+    public IRubyObject aset(IRubyObject key, IRubyObject value) {
+        return op_aset(getRuntime().getCurrentContext(), key, value);
+    }
+
+    /**
+     * Note: this is included as a compatibility measure for Mongrel+JRuby
+     * @deprecated use RubyHash.op_aref instead
+     */
+    public IRubyObject aref(IRubyObject key) {
+        return op_aref(getRuntime().getCurrentContext(), key);
+    }
+
+    @Deprecated
+    public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
+        fastASetCheckString(runtime, key, value);
+    }
+
+    @Deprecated
+    public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
+        fastASetSmallCheckString(runtime, key, value);
+    }
+
+    @Deprecated
+    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
+        return op_aset(getRuntime().getCurrentContext(), key, value);
     }
 }

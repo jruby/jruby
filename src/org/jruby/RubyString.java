@@ -390,8 +390,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @Override
     public final boolean eql(IRubyObject other) {
-        Ruby runtime = getRuntime();
-        if (getMetaClass() != runtime.getString() || getMetaClass() != other.getMetaClass()) return super.eql(other);
+        RubyClass metaclass = getMetaClass();
+        Ruby runtime = metaclass.getClassRuntime();
+        if (metaclass != runtime.getString() || metaclass != other.getMetaClass()) return super.eql(other);
         return runtime.is1_9() ? eql19(runtime, other) : eql18(runtime, other);
     }
 
