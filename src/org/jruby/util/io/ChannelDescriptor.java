@@ -39,6 +39,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -214,7 +216,7 @@ public class ChannelDescriptor {
      * @param originalModes The mode flags for the new descriptor
      */
     public ChannelDescriptor(Channel channel, ModeFlags originalModes) {
-        this(channel, getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true, false);
+        this(channel, getNewFileno(), originalModes, getDescriptorFromChannel(channel), new AtomicInteger(1), true, false);
     }
 
     /**
@@ -286,7 +288,7 @@ public class ChannelDescriptor {
      * @param channel The channel for the new descriptor
      */
     public ChannelDescriptor(Channel channel) throws InvalidValueException {
-        this(channel, getModesFromChannel(channel), new FileDescriptor());
+        this(channel, getModesFromChannel(channel), getDescriptorFromChannel(channel));
     }
 
     /**
@@ -1001,4 +1003,63 @@ public class ChannelDescriptor {
     }
     
     private static final Map<Integer, ChannelDescriptor> filenoDescriptorMap = new ConcurrentHashMap<Integer, ChannelDescriptor>();
+    
+    private static final Class SEL_CH_IMPL;
+    private static final Method SEL_CH_IMPL_GET_FD;
+    private static final Class FILE_CHANNEL_IMPL;
+    private static final Field FILE_CHANNEL_IMPL_FD;
+    static {
+        Method getFD;
+        Class selChImpl;
+        try {
+            selChImpl = Class.forName("sun.nio.ch.SelChImpl");
+            try {
+                getFD = selChImpl.getMethod("getFD");
+                getFD.setAccessible(true);
+            } catch (Exception e) {
+                getFD = null;
+            }
+        } catch (Exception e) {
+            selChImpl = null;
+            getFD = null;
+        }
+        SEL_CH_IMPL = selChImpl;
+        SEL_CH_IMPL_GET_FD = getFD;
+        
+        Field fd;
+        Class fileChannelImpl;
+        try {
+            fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
+            try {
+                fd = fileChannelImpl.getDeclaredField("fd");
+                fd.setAccessible(true);
+            } catch (Exception e) {
+                fd = null;
+            }
+        } catch (Exception e) {
+            fileChannelImpl = null;
+            fd = null;
+        }
+        FILE_CHANNEL_IMPL = fileChannelImpl;
+        FILE_CHANNEL_IMPL_FD = fd;
+    }
+    
+    public static FileDescriptor getDescriptorFromChannel(Channel channel) {
+        if (SEL_CH_IMPL_GET_FD != null && SEL_CH_IMPL.isInstance(channel)) {
+            // Pipe Source and Sink, Sockets, and other several other selectable channels
+            try {
+                return (FileDescriptor)SEL_CH_IMPL_GET_FD.invoke(channel);
+            } catch (Exception e) {
+                // return bogus below
+            }
+        } else if (FILE_CHANNEL_IMPL_FD != null && FILE_CHANNEL_IMPL.isInstance(channel)) {
+            // FileChannels
+            try {
+                return (FileDescriptor)FILE_CHANNEL_IMPL_FD.get(channel);
+            } catch (Exception e) {
+                // return bogus below
+            }
+        }
+        return new FileDescriptor();
+    }
 }

@@ -3872,11 +3872,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // chance by waiting for 10ms before we proceed. Only doing this on 1.5
             // since Hotspot 1.6+ does not seem to exhibit the problem.
             if (System.getProperty("java.specification.version", "").equals("1.5")) {
-                synchronized (process) {
-                    try {
-                        process.wait(100);
-                    } catch (InterruptedException ie) {}
-                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {}
             }
 
             RubyIO io = new RubyIO(runtime, process, ioOptions);
