@@ -56,6 +56,8 @@ import java.util.zip.ZipEntry;
 import org.jruby.RubyFile;
 
 import jnr.posix.POSIX;
+import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
@@ -1008,6 +1010,8 @@ public class ChannelDescriptor {
     private static final Method SEL_CH_IMPL_GET_FD;
     private static final Class FILE_CHANNEL_IMPL;
     private static final Field FILE_CHANNEL_IMPL_FD;
+    private static final Field FILE_DESCRIPTOR_FD;
+    
     static {
         Method getFD;
         Class selChImpl;
@@ -1042,6 +1046,15 @@ public class ChannelDescriptor {
         }
         FILE_CHANNEL_IMPL = fileChannelImpl;
         FILE_CHANNEL_IMPL_FD = fd;
+        
+        Field ffd;
+        try {
+            ffd = FileDescriptor.class.getDeclaredField("fd");
+            ffd.setAccessible(true);
+        } catch (Exception e) {
+            ffd = null;
+        }
+        FILE_DESCRIPTOR_FD = ffd;
     }
     
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
@@ -1059,6 +1072,21 @@ public class ChannelDescriptor {
             } catch (Exception e) {
                 // return bogus below
             }
+        } else if (FILE_DESCRIPTOR_FD != null) {
+            FileDescriptor unixFD = new FileDescriptor();
+            
+                // UNIX sockets, from jnr-unixsocket
+                try {
+                    if (channel instanceof UnixSocketChannel) {
+                        FILE_DESCRIPTOR_FD.set(unixFD, ((UnixSocketChannel)channel).getFD());
+                        return unixFD;
+                    } else if (channel instanceof UnixServerSocketChannel) {
+                        FILE_DESCRIPTOR_FD.set(unixFD, ((UnixServerSocketChannel)channel).getFD());
+                        return unixFD;
+                    }
+                } catch (Exception e) {
+                    // return bogus below
+                }
         }
         return new FileDescriptor();
     }
