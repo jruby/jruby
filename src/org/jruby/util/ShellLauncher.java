@@ -66,6 +66,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
 
@@ -1283,10 +1284,11 @@ public class ShellLauncher {
         }
         
         private void checkGlobChar(String word) {
-            if (word.contains("*")
+            if (Options.LAUNCH_INPROC.load() &&
+                    (word.contains("*")
                     || word.contains("?")
                     || word.contains("[")
-                    || word.contains("{")) {
+                    || word.contains("{"))) {
                 runtime.getErr().println("Warning: treating '" + word + "' literally."
                         + " Consider passing -J-Djruby.launch.inproc=false.");
             }
