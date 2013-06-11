@@ -13,6 +13,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
 
@@ -29,6 +30,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     // Constant caching 
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
+    private Invalidator invalidator;
 
     public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
         super(Operation.LEXICAL_SEARCH_CONST);
@@ -78,14 +80,14 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            generation = runtime.getConstantInvalidator().getData();
+            generation = invalidator(runtime).getData();
             cachedConstant = constant;
         }
         return constant;
     }
 
     private boolean isCached(Ruby runtime, Object value) {
-        return value != null && generation == runtime.getConstantInvalidator().getData();
+        return value != null && generation == invalidator(runtime).getData();
     }
     
     @Override
@@ -100,5 +102,12 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.LexicalSearchConstInstr(this);
+    }
+
+    private Invalidator invalidator(Ruby runtime) {
+        if (invalidator == null) {
+            invalidator = runtime.getConstantInvalidator(constName);
+        }
+        return invalidator;
     }
 }

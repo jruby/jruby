@@ -43,6 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
@@ -54,6 +55,7 @@ public class Colon3Node extends Node implements INameNode {
     protected String name;
     private volatile transient IRubyObject cachedValue;
     private volatile Object generation;
+    private Invalidator invalidator;
     
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
@@ -86,6 +88,7 @@ public class Colon3Node extends Node implements INameNode {
 
     public void setName(String name) {
         this.name = name;
+        this.invalidator = null;
     }
     
    /** Get parent module/class that this module represents */
@@ -132,12 +135,12 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.runtime.getConstantInvalidator().getData();
+        return value != null && generation == invalidator(context).getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name) {
         Ruby runtime = context.runtime;
-        Object newGeneration = runtime.getConstantInvalidator().getData();
+        Object newGeneration = invalidator(context).getData();
         IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
 
         cachedValue = value;
@@ -145,5 +148,12 @@ public class Colon3Node extends Node implements INameNode {
         if (value != null) generation = newGeneration;
 
         return value;
+    }
+
+    protected Invalidator invalidator(ThreadContext context) {
+        if (invalidator == null) {
+            invalidator = context.runtime.getConstantInvalidator(name);
+        }
+        return invalidator;
     }
 }

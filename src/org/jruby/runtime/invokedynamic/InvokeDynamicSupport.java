@@ -760,7 +760,7 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
             AbstractScript script, ThreadContext context, int scopeIndex) {
-        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator(site.name()).getData();
         StaticScope scope = script.getScope(scopeIndex);
         IRubyObject value = scope.getConstant(site.name());
         
@@ -789,7 +789,7 @@ public class InvokeDynamicSupport {
 
     public static boolean constantBooleanFallback(RubyConstantCallSite site, 
             AbstractScript script, ThreadContext context, int scopeIndex) {
-        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator(site.name()).getData();
         StaticScope scope = script.getScope(scopeIndex);
         IRubyObject value = scope.getConstant(site.name());
         

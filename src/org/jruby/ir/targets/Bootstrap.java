@@ -767,7 +767,7 @@ public class Bootstrap {
 
     public static IRubyObject searchConst(MutableCallSite site, String constName, ThreadContext context, StaticScope staticScope) throws Throwable {
         Ruby runtime = context.runtime;
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
         IRubyObject value = staticScope.getConstant(constName);
 
         if (value == null) {
@@ -797,7 +797,7 @@ public class Bootstrap {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
 
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
 
         IRubyObject value = module.getConstantFromNoConstMissing(constName, false);
         if (value == null) {

@@ -25,6 +25,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
@@ -375,6 +376,7 @@ public class RuntimeCache {
         constants = new IRubyObject[size];
         constantTargetHashes = new int[size];
         constantGenerations = new Object[size];
+        constantInvalidators = new Invalidator[size];
         Arrays.fill(constantGenerations, -1);
         Arrays.fill(constantTargetHashes, -1);
     }
@@ -411,13 +413,15 @@ public class RuntimeCache {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.runtime.getConstantInvalidator().getData();
+        return value != null && constantGenerations[index] == constantInvalidators[index].getData();
     }
 
     public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
-        Object newGeneration = context.runtime.getConstantInvalidator().getData();
+        Invalidator invalidator = context.runtime.getConstantInvalidator(name);
+        Object newGeneration = invalidator.getData();
         IRubyObject value = scope.getConstant(name);
         constants[index] = value;
+        constantInvalidators[index] = invalidator;
         if (value != null) {
             constantGenerations[index] = newGeneration;
         }
@@ -436,16 +440,17 @@ public class RuntimeCache {
     }
 
     private boolean isCachedFrom(RubyModule target, ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.runtime.getConstantInvalidator().getData() && constantTargetHashes[index] == target.hashCode();
+        return value != null && constantGenerations[index] == constantInvalidators[index].getData() && constantTargetHashes[index] == target.hashCode();
     }
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
-        Object newGeneration = context.runtime.getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator(name).getData();
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
         constants[index] = value;
         if (value != null) {
             constantGenerations[index] = newGeneration;
             constantTargetHashes[index] = target.hashCode();
+            constantInvalidators[index] = context.runtime.getConstantInvalidator(name);
         }
         return value;
     }
@@ -673,4 +678,5 @@ public class RuntimeCache {
     private static final Object[] EMPTY_OBJS = {};
     public Object[] constantGenerations = EMPTY_OBJS;
     public int[] constantTargetHashes = EMPTY_INTS;
+    public Invalidator[] constantInvalidators = {};
 }

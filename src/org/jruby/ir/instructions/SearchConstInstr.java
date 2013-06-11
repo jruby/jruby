@@ -12,6 +12,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
 
@@ -28,6 +29,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     // Constant caching 
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
+    private Invalidator invalidator;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST);
@@ -85,7 +87,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
             constant = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         } else {
             // recache
-            generation = runtime.getConstantInvalidator().getData();
+            generation = runtime.getConstantInvalidator(constName).getData();
             cachedConstant = constant;
         }
 
@@ -93,7 +95,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     private boolean isCached(Ruby runtime, Object value) {
-        return value != null && generation == runtime.getConstantInvalidator().getData();
+        return value != null && generation == invalidator(runtime).getData();
     }
     
     @Override
@@ -120,5 +122,12 @@ public class SearchConstInstr extends Instr implements ResultInstr {
 
     public boolean isNoPrivateConsts() {
         return noPrivateConsts;
+    }
+
+    private Invalidator invalidator(Ruby runtime) {
+        if (invalidator == null) {
+            invalidator = runtime.getConstantInvalidator(constName);
+        }
+        return invalidator;
     }
 }

@@ -225,7 +225,7 @@ public class Constant extends AbstractVariable {
         } else {
             receiver.getMetaClass().storeConstant(name, irubyObject);
         }
-        receiver.getRuntime().getConstantInvalidator().invalidate();
+        receiver.getRuntime().getConstantInvalidator(name).invalidate();
         initialized = true;
     }
 

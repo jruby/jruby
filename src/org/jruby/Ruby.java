@@ -135,6 +135,7 @@ import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -219,7 +220,6 @@ public final class Ruby {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodNames.values().length - 1);
         
-        constantInvalidator = OptoFactory.newConstantInvalidator();
         checkpointInvalidator = OptoFactory.newConstantInvalidator();
 
         if (config.isObjectSpaceEnabled()) {
@@ -4181,23 +4181,28 @@ public final class Ruby {
         return -1;
     }
 
-    @Deprecated
-    public synchronized void incrementConstantGeneration() {
-        constantInvalidator.invalidate();
+    public Invalidator getConstantInvalidator(String constantName) {
+        Invalidator invalidator = constantNameInvalidators.get(constantName);
+        if (invalidator != null) {
+            return invalidator;
+        } else {
+            return addConstantInvalidator(constantName);
+        }
     }
-    
-    public Invalidator getConstantInvalidator() {
-        return constantInvalidator;
+
+    private Invalidator addConstantInvalidator(String constantName) {
+        Invalidator invalidator = OptoFactory.newConstantInvalidator();
+        constantNameInvalidators.putIfAbsent(constantName, invalidator);
+
+        // fetch the invalidator back from the ConcurrentHashMap to ensure that
+        // only one invalidator for a given constant name is ever used:
+        return constantNameInvalidators.get(constantName);
     }
     
     public Invalidator getCheckpointInvalidator() {
         return checkpointInvalidator;
     }
     
-    public void invalidateConstants() {
-        
-    }
-
     public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
@@ -4467,7 +4472,12 @@ public final class Ruby {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
-    private final Invalidator constantInvalidator;
+    private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
+        new ConcurrentHashMap<String, Invalidator>(
+            16    /* default initial capacity */,
+            0.75f /* default load factory */,
+            1     /* concurrency level - mostly reads here so this can be 1 */);
+    
     private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
     
