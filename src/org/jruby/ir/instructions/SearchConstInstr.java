@@ -29,7 +29,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     // Constant caching 
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
-    private volatile Invalidator invalidator;
+    private Invalidator invalidator;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST);

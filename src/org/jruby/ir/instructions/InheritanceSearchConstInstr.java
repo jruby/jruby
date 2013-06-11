@@ -31,7 +31,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     private volatile transient Object cachedConstant = null;
     private volatile int hash = -1;
     private volatile Object generation = -1;
-    private volatile Invalidator invalidator;
+    private Invalidator invalidator;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST);

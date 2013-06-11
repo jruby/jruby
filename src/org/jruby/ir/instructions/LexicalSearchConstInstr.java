@@ -30,7 +30,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     // Constant caching 
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
-    private volatile Invalidator invalidator;
+    private Invalidator invalidator;
 
     public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
         super(Operation.LEXICAL_SEARCH_CONST);
