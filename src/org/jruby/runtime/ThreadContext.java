@@ -55,8 +55,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.Fiber;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.backtrace.BacktraceElement;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.backtrace.BacktraceElement;
