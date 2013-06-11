@@ -4181,13 +4181,22 @@ public final class Ruby {
         return -1;
     }
 
-    public synchronized Invalidator getConstantInvalidator(String constantName) {
+    public Invalidator getConstantInvalidator(String constantName) {
         Invalidator invalidator = constantNameInvalidators.get(constantName);
-        if (invalidator == null) {
-            invalidator = OptoFactory.newConstantInvalidator();
-            constantNameInvalidators.put(constantName, invalidator);
+        if (invalidator != null) {
+            return invalidator;
+        } else {
+            return addConstantInvalidator(constantName);
+        }
     }
-        return invalidator;
+
+    private Invalidator addConstantInvalidator(String constantName) {
+        Invalidator invalidator = OptoFactory.newConstantInvalidator();
+        constantNameInvalidators.putIfAbsent(constantName, invalidator);
+
+        // fetch the invalidator back from the ConcurrentHashMap to ensure that
+        // only one invalidator for a given constant name is ever used:
+        return constantNameInvalidators.get(constantName);
     }
     
     public Invalidator getCheckpointInvalidator() {
