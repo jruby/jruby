@@ -1,1 +1,2 @@
 windows(JRUBY-4317):Process.kill raises an ArgumentError for unknown signals
+fails(travis,intermittent):Process.kill accepts a signal name without the 'SIG' prefix
