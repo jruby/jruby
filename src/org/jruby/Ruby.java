@@ -219,7 +219,6 @@ public final class Ruby {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodNames.values().length - 1);
         
-        constantInvalidator = OptoFactory.newConstantInvalidator();
         checkpointInvalidator = OptoFactory.newConstantInvalidator();
 
         if (config.isObjectSpaceEnabled()) {
@@ -4181,23 +4180,19 @@ public final class Ruby {
         return -1;
     }
 
-    @Deprecated
-    public synchronized void incrementConstantGeneration() {
-        constantInvalidator.invalidate();
+    public synchronized Invalidator getConstantInvalidator(String constantName) {
+        Invalidator invalidator = constantNameInvalidators.get(constantName);
+        if (invalidator == null) {
+            invalidator = OptoFactory.newConstantInvalidator();
+            constantNameInvalidators.put(constantName, invalidator);
     }
-    
-    public Invalidator getConstantInvalidator() {
-        return constantInvalidator;
+        return invalidator;
     }
     
     public Invalidator getCheckpointInvalidator() {
         return checkpointInvalidator;
     }
     
-    public void invalidateConstants() {
-        
-    }
-
     public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
@@ -4467,7 +4462,8 @@ public final class Ruby {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
-    private final Invalidator constantInvalidator;
+    private final Hashtable<String, Invalidator> constantNameInvalidators = new Hashtable<String, Invalidator>();
+    
     private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
     
