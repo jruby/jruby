@@ -40,3 +40,23 @@ fails(only in rake run?):Kernel#spawn returns the process ID of the new process 
 fails:Process.spawn returns the process ID of the new process as a Fixnum
 fails(gh-631):Process.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
 fails(gh-631):Process.spawn with multiple arguments preserves whitespace in passed arguments
+fails(intermittent, gh-779):Process.spawn with a command array does not subject the arguments to shell expansion
+fails(intermittent, gh-779):Process.spawn with a single argument calls #to_str to convert the argument to a String
+fails(intermittent, gh-779):Process.spawn with a single argument subjects the specified command to shell expansion
+fails(intermittent, gh-779):Process.spawn with multiple arguments does not subject the arguments to shell expansion
+fails(intermittent, gh-779):Process.spawn with multiple arguments calls #to_str to convert the arguments to Strings
+fails(intermittent, gh-779):Process.spawn with a command array preserves whitespace in passed arguments
+fails(intermittent, gh-779):Process.spawn with a command array calls #to_str to convert the first element to a String
+fails(intermittent, gh-779):Process.spawn with a command array calls #to_str to convert the second element to a String
+fails(intermittent, gh-779):Process.spawn executes the given command
+fails(intermittent, gh-779):Process.spawn sets environment variables in the child environment
+fails(intermittent, gh-779):Process.spawn calls #to_hash to convert the environment
+fails(intermittent, gh-779):Process.spawn does not unset other environment variables when given a false :unsetenv_others option
+fails(intermittent, gh-779):Process.spawn does not unset other environment variables when given a nil :unsetenv_others option
+fails(intermittent, gh-779):Process.spawn does not unset environment variables included in the environment hash
+fails(intermittent, gh-779):Process.spawn joins the current process group by default
+fails(intermittent, gh-779):Process.spawn joins the current process if :pgroup => false
+fails(intermittent, gh-779):Process.spawn joins the current process if :pgroup => nil
+fails(intermittent, gh-779):Process.spawn joins the specified process group if :pgroup => pgid
+fails(intermittent, gh-779):Process.spawn uses the current working directory as its working directory
+fails(intermittent, gh-779):Process.spawn uses the current umask by default
