@@ -135,6 +135,7 @@ import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -4462,7 +4463,11 @@ public final class Ruby {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
-    private final Hashtable<String, Invalidator> constantNameInvalidators = new Hashtable<String, Invalidator>();
+    private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
+        new ConcurrentHashMap<String, Invalidator>(
+            16    /* default initial capacity */,
+            0.75f /* default load factory */,
+            1     /* concurrency level - mostly reads here so this can be 1 */);
     
     private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
