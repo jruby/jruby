@@ -7,4 +7,4 @@ critical(hangs):Fiber#transfer can be invoked from the same Fiber it transfers c
 critical(hangs):Fiber#transfer raises a FiberError when transferring to a Fiber which resumes itself
 fails:Fiber#transfer can transfer control to a Fiber that has transfered to another Fiber
 fails:Fiber#transfer accepts any number of arguments
-fails(intermittent):Fiber#transfer raises a LocalJumpError if the block includes a return statement
+unstable(intermittent):Fiber#transfer raises a LocalJumpError if the block includes a return statement
