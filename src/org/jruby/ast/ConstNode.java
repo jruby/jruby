@@ -124,15 +124,10 @@ public class ConstNode extends Node implements INameNode {
         return value;
     }
 
-    protected Invalidator invalidator(ThreadContext context) {
-        if (invalidator != null) {
-            return invalidator;
+    private Invalidator invalidator(ThreadContext context) {
+        if (invalidator == null) {
+            invalidator = context.runtime.getConstantInvalidator(name);
         }
-        synchronized (this) {
-            if (invalidator == null) {
-                invalidator = context.runtime.getConstantInvalidator(name);
-            }
-            return invalidator;
-        }
+        return invalidator;
     }
 }

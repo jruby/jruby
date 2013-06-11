@@ -151,14 +151,9 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     protected Invalidator invalidator(ThreadContext context) {
-        if (invalidator != null) {
-            return invalidator;
+        if (invalidator == null) {
+            invalidator = context.runtime.getConstantInvalidator(name);
         }
-        synchronized (this) {
-            if (invalidator == null) {
-                invalidator = context.runtime.getConstantInvalidator(name);
-            }
-            return invalidator;
-        }
+        return invalidator;
     }
 }

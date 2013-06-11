@@ -123,14 +123,9 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     private Invalidator invalidator(Ruby runtime) {
-        if (invalidator != null) {
-            return invalidator;
+        if (invalidator == null) {
+            invalidator = runtime.getConstantInvalidator(constName);
         }
-        synchronized (this) {
-            if (invalidator == null) {
-                invalidator = runtime.getConstantInvalidator(constName);
-            }
-            return invalidator;
-        }
+        return invalidator;
     }
 }
