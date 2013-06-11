@@ -12,6 +12,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     private volatile transient Object cachedConstant = null;
     private volatile int hash = -1;
     private volatile Object generation = -1;
+    private volatile Invalidator invalidator;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST);
@@ -76,7 +78,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            generation = runtime.getConstantInvalidator().getData();
+            generation = runtime.getConstantInvalidator(constName).getData();
             hash = module.hashCode();
             cachedConstant = constant;
         }
@@ -84,7 +86,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     private boolean isCached(Ruby runtime, RubyModule target, Object value) {
-        return value != null && generation == runtime.getConstantInvalidator().getData() && hash == target.hashCode();
+        return value != null && generation == invalidator(runtime).getData() && hash == target.hashCode();
     }
 
     @Override
@@ -118,5 +120,17 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     public boolean isNoPrivateConsts() {
         return noPrivateConsts;
+    }
+
+    private Invalidator invalidator(Ruby runtime) {
+        if (invalidator != null) {
+            return invalidator;
+        }
+        synchronized (this) {
+            if (invalidator == null) {
+                invalidator = runtime.getConstantInvalidator(constName);
+            }
+            return invalidator;
+        }
     }
 }

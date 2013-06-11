@@ -132,7 +132,7 @@ public class Argv extends AbstractVariable {
         if (rubyModule == null) return;
 
         rubyModule.storeConstant(name, irubyObject);
-        receiver.getRuntime().getConstantInvalidator().invalidate();
+        receiver.getRuntime().getConstantInvalidator(name).invalidate();
         fromRuby = true;
     }
 

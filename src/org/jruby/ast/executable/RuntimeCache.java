@@ -415,7 +415,7 @@ public class RuntimeCache {
     }
 
     public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
-        Object newGeneration = context.runtime.getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator(name).getData();
         IRubyObject value = scope.getConstant(name);
         constants[index] = value;
         if (value != null) {
@@ -440,7 +440,7 @@ public class RuntimeCache {
     }
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
-        Object newGeneration = context.runtime.getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator(name).getData();
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
         constants[index] = value;
         if (value != null) {

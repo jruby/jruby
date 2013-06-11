@@ -41,6 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
@@ -51,6 +52,7 @@ public class ConstNode extends Node implements INameNode {
     private String name;
     private volatile transient IRubyObject cachedValue = null;
     private Object generation = -1;
+    private Invalidator invalidator;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
@@ -83,6 +85,7 @@ public class ConstNode extends Node implements INameNode {
     
     public void setName(String name) {
         this.name = name;
+        this.invalidator = null;
     }
     
     @Override
@@ -106,17 +109,30 @@ public class ConstNode extends Node implements INameNode {
     }
     
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.runtime.getConstantInvalidator().getData();
+        return value != null && generation == invalidator(context).getData();
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
-        Object newGeneration = context.runtime.getConstantInvalidator().getData();
+        Object newGeneration = invalidator(context).getData();
         IRubyObject value = context.getCurrentStaticScope().getConstant(name);
+        this.name = name;
         
         cachedValue = value;
             
         if (value != null) generation = newGeneration;
         
         return value;
+    }
+
+    protected Invalidator invalidator(ThreadContext context) {
+        if (invalidator != null) {
+            return invalidator;
+        }
+        synchronized (this) {
+            if (invalidator == null) {
+                invalidator = context.runtime.getConstantInvalidator(name);
+            }
+            return invalidator;
+        }
     }
 }
