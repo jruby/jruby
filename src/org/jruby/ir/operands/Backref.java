@@ -19,7 +19,7 @@ public class Backref extends Reference {
     }
 
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject backref = currDynScope.getBackRef(context.runtime);
+        IRubyObject backref = context.getBackRef();
         
         switch (type) {
         case '&':

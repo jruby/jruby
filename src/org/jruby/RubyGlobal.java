@@ -518,7 +518,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject get() {
-            return RubyRegexp.last_match(runtime.getCurrentContext().getCurrentScope().getBackRef(runtime));
+            return RubyRegexp.last_match(runtime.getCurrentContext().getBackRef());
         }
     }
 
@@ -529,7 +529,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject get() {
-            return RubyRegexp.match_pre(runtime.getCurrentContext().getCurrentScope().getBackRef(runtime));
+            return RubyRegexp.match_pre(runtime.getCurrentContext().getBackRef());
         }
     }
 
@@ -540,7 +540,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject get() {
-            return RubyRegexp.match_post(runtime.getCurrentContext().getCurrentScope().getBackRef(runtime));
+            return RubyRegexp.match_post(runtime.getCurrentContext().getBackRef());
         }
     }
 
@@ -551,7 +551,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject get() {
-            return RubyRegexp.match_last(runtime.getCurrentContext().getCurrentScope().getBackRef(runtime));
+            return RubyRegexp.match_last(runtime.getCurrentContext().getBackRef());
         }
     }
 

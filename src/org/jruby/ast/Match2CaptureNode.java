@@ -26,9 +26,8 @@ public class Match2CaptureNode extends Match2Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = super.interpret(runtime, context, self, aBlock);
-        DynamicScope scope = context.getCurrentScope();
 
-        Helpers.updateScopeWithCaptures(context, scope, scopeOffsets, result);
+        Helpers.updateScopeWithCaptures(context, scopeOffsets, result);
 
         return result;
     }

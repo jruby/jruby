@@ -94,7 +94,7 @@ public class BackRefNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
+        IRubyObject backref = context.getBackRef();
         
         switch (type) {
         case '&':
@@ -113,7 +113,7 @@ public class BackRefNode extends Node {
     
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
+        IRubyObject backref = context.getBackRef();
 
         if (backref instanceof RubyMatchData) {
             return runtime.getDefinedMessage(runtime.is1_9() ? DefinedMessage.GLOBAL_VARIABLE : definedMessage);

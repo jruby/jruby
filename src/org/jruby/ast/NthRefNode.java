@@ -86,12 +86,12 @@ public class NthRefNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyRegexp.nth_match(matchNumber, context.getCurrentScope().getBackRef(runtime));
+        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
     
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
+        IRubyObject backref = context.getBackRef();
         if (backref instanceof RubyMatchData) {
             if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
                 if (!context.runtime.is1_9()) {

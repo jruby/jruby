@@ -1015,7 +1015,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
-        IRubyObject match = context.getCurrentScope().getBackRef(context.runtime);
+        IRubyObject match = context.getBackRef();
         if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
         return match;
     }
@@ -1025,7 +1025,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
-        IRubyObject match = context.getCurrentScope().getBackRef(context.runtime);
+        IRubyObject match = context.getBackRef();
         if (match.isNil()) return match;
         return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
     }
@@ -1474,7 +1474,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (start < 0) return runtime.getNil();
             return runtime.newFixnum(start);
         }
-        context.getCurrentScope().setBackRef(runtime.getNil());
+        context.setBackRef(runtime.getNil());
         return runtime.getNil();
     }
 
@@ -1487,7 +1487,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (start < 0) return runtime.getNil();
             return runtime.newFixnum(start);
         }
-        context.getCurrentScope().setBackRef(runtime.getNil());
+        context.setBackRef(runtime.getNil());
         return runtime.getNil();
     }
 
@@ -1503,7 +1503,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) {
-                context.getCurrentScope().setBackRef(tmp);
+                context.setBackRef(tmp);
                 return runtime.getFalse();
             }
             str = (RubyString)tmp;
@@ -1518,7 +1518,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Ruby runtime = context.runtime;
         arg = operandNoCheck(arg);
         if (arg.isNil()) {
-            context.getCurrentScope().setBackRef(arg);
+            context.setBackRef(arg);
             return runtime.getFalse();
         }
         int start = search19(context, (RubyString)arg, 0, false);
@@ -1533,7 +1533,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         Ruby runtime = context.runtime;
         if (str.isNil()) {
-            context.getCurrentScope().setBackRef(str);
+            context.setBackRef(context.nil);
             return str;
         }
         int start = search(context, str.convertToString(), 0, false);
@@ -1545,7 +1545,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg.isNil()) {
-            context.getCurrentScope().setBackRef(arg);
+            context.setBackRef(context.nil);
             return arg;
         }
         RubyString str = operandCheck(runtime, arg);
@@ -1561,7 +1561,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
         IRubyObject result = op_match(context, str);
         if (result.isNil()) return result;
-        result = context.getCurrentScope().getBackRef(context.runtime);
+        result = context.getBackRef();
         ((RubyMatchData)result).use();
         return result;
     }
@@ -1585,11 +1585,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject match19Common(ThreadContext context, IRubyObject arg, int pos, boolean useBackref, Block block) {
-        DynamicScope scope = null;
-        
-        if (useBackref) scope = context.getCurrentScope();
         if (arg.isNil()) {
-            if (useBackref) scope.setBackRef(arg);
+            if (useBackref) context.setBackRef(arg);
             return arg;
         }
         Ruby runtime = context.runtime;
@@ -1597,13 +1594,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         MatchDataHolder backrefHolder = useBackref ? null : new MatchDataHolder();
 
         if (matchPos(context, str, pos, backrefHolder) < 0) {
-            if (useBackref) scope.setBackRef(runtime.getNil());
+            if (useBackref) context.setBackRef(runtime.getNil());
             return runtime.getNil();
         }
 
         IRubyObject backref = null;
         if (useBackref) {
-            backref = scope.getBackRef(runtime);
+            backref = context.getBackRef();
             ((RubyMatchData)backref).use();
         } else {
             backref = backrefHolder.matchData;
@@ -1631,7 +1628,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         check();
-        DynamicScope scope = context.getCurrentScope();
         ByteList value = str.getByteList();
 
         if (pos <= value.getRealSize() && pos >= 0) {
@@ -1641,31 +1637,31 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             int result = matcherSearch(context.runtime, matcher, begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
-                updateBackRef(context, str, scope, matcher, true);
+                updateBackRef(context, str, matcher, true);
                 return result;
             }
         }
 
-        scope.setBackRef(context.runtime.getNil());
+        context.setBackRef(context.runtime.getNil());
         return -1;
     }
 
-    private RubyMatchData updateBackRef(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, boolean useBackref) {
-        RubyMatchData match = updateBackRef(context, str, scope, matcher, pattern, useBackref);
+    private RubyMatchData updateBackRef(ThreadContext context, RubyString str, Matcher matcher, boolean useBackref) {
+        RubyMatchData match = updateBackRef(context, str, matcher, pattern, useBackref);
         match.regexp = this;
         match.infectBy(this);
         return match;
     }
 
-    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern) {
-        return updateBackRef(context, str, scope, matcher, pattern, true);
+    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
+        return updateBackRef(context, str, matcher, pattern, true);
     }
 
-    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern, boolean useBackref) {
+    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Matcher matcher, Regex pattern, boolean useBackref) {
         Ruby runtime = context.runtime;
         IRubyObject backref;
         if (useBackref) {
-            backref = scope.getBackRef(runtime);
+            backref = context.getBackRef();
         } else {
             backref = context.nil;
         }
@@ -1696,7 +1692,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         match.infectBy(str);
 
         // JRUBY-3625: delay setting backref until the MatchData is completely initialized
-        if (setBackRef) scope.setBackRef(match);
+        if (setBackRef) context.setBackRef(match);
 
         return match;
     }
@@ -1708,7 +1704,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public final int search19(ThreadContext context, RubyString str, int pos, boolean reverse, MatchDataHolder backrefHolder) {
         check();
         DynamicScope scope = null;
-        if (backrefHolder == null) scope = context.getCurrentScope();
         ByteList value = str.getByteList();
 
         if (pos <= value.getRealSize() && pos >= 0) {
@@ -1718,25 +1713,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             int result = matcherSearch(context.runtime, matcher, begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
-                RubyMatchData matchData = updateBackRef(context, str, scope, matcher, backrefHolder == null);
+                RubyMatchData matchData = updateBackRef(context, str, matcher, backrefHolder == null);
                 matchData.charOffsetUpdated = false;
                 if (backrefHolder != null) backrefHolder.matchData = matchData;
                 return result;
             }
         }
 
-        if (backrefHolder == null) scope.setBackRef(context.runtime.getNil());
+        if (backrefHolder == null) context.setBackRef(context.runtime.getNil());
         return -1;
     }
 
-    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern) {
-        RubyMatchData match = updateBackRef(context, str, scope, matcher, pattern, true);
+    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
+        RubyMatchData match = updateBackRef(context, str, matcher, pattern, true);
         match.charOffsetUpdated = false;
         return match;
     }
 
-    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern, boolean useBackref) {
-        RubyMatchData match = updateBackRef(context, str, scope, matcher, pattern, useBackref);
+    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, Matcher matcher, Regex pattern, boolean useBackref) {
+        RubyMatchData match = updateBackRef(context, str, matcher, pattern, useBackref);
         match.charOffsetUpdated = false;
         return match;
     }

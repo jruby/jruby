@@ -473,6 +473,14 @@ public final class ThreadContext {
         }
         return frames;
     }
+    
+    public IRubyObject setBackRef(IRubyObject match) {
+        return getCurrentScope().setBackRef(match);
+    }
+    
+    public IRubyObject getBackRef() {
+        return getCurrentScope().getBackRef(runtime);
+    }
 
     /////////////////// BACKTRACE ////////////////////
 
