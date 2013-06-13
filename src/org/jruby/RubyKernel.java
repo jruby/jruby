@@ -632,7 +632,7 @@ public class RubyKernel {
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(ThreadContext context, Ruby runtime) {
-        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
+        IRubyObject line = context.getLastLine();
 
         if (line.isNil()) {
             throw runtime.newTypeError("$_ value need to be String (nil given).");
@@ -658,7 +658,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
 
         if (!str.sub_bang(context, arg0, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
+            context.setLastLine(str);
         }
 
         return str;
@@ -669,7 +669,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
 
         if (!str.sub_bang(context, arg0, arg1, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
+            context.setLastLine(str);
         }
 
         return str;
@@ -690,7 +690,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
 
         if (!str.gsub_bang(context, arg0, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
+            context.setLastLine(str);
         }
 
         return str;
@@ -701,7 +701,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
 
         if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
+            context.setLastLine(str);
         }
 
         return str;
@@ -719,7 +719,7 @@ public class RubyKernel {
         if (str.getByteList().getRealSize() > 0) {
             str = (RubyString) str.dup();
             str.chop_bang(context);
-            context.getCurrentScope().setLastLine(str);
+            context.setLastLine(str);
         }
 
         return str;
@@ -744,7 +744,7 @@ public class RubyKernel {
             return str;
         } 
 
-        context.getCurrentScope().setLastLine(dup);
+        context.setLastLine(dup);
         return dup;
     }
 
@@ -757,7 +757,7 @@ public class RubyKernel {
             return str;
         } 
 
-        context.getCurrentScope().setLastLine(dup);
+        context.setLastLine(dup);
         return dup;
     }
 

@@ -1653,11 +1653,11 @@ public class Helpers {
     }
 
     public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
-        return context.getCurrentScope().setLastLine(value);
+        return context.setLastLine(value);
     }
 
     public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
-        return context.getCurrentScope().getLastLine(runtime);
+        return context.getLastLine();
     }
 
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {

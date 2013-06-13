@@ -1468,7 +1468,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_match2(ThreadContext context) {
         Ruby runtime = context.runtime;
-        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
+        IRubyObject line = context.getLastLine();
         if (line instanceof RubyString) {
             int start = search(context, (RubyString)line, 0, false);
             if (start < 0) return runtime.getNil();
@@ -1481,7 +1481,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_match2_19(ThreadContext context) {
         Ruby runtime = context.runtime;
-        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
+        IRubyObject line = context.getLastLine();
         if (line instanceof RubyString) {
             int start = search19(context, (RubyString)line, 0, false);
             if (start < 0) return runtime.getNil();

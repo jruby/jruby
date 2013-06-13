@@ -474,12 +474,42 @@ public final class ThreadContext {
         return frames;
     }
     
+    /**
+     * Set the $~ (backref) "global" to the given value.
+     * 
+     * @param match the value to set
+     * @return the value passed in
+     */
     public IRubyObject setBackRef(IRubyObject match) {
         return getCurrentScope().setBackRef(match);
     }
     
+    /**
+     * Get the value of the $~ (backref) "global".
+     * 
+     * @return the value of $~
+     */
     public IRubyObject getBackRef() {
         return getCurrentScope().getBackRef(runtime);
+    }
+    
+    /**
+     * Set the $_ (lastlne) "global" to the given value.
+     * 
+     * @param last the value to set
+     * @return the value passed in
+     */
+    public IRubyObject setLastLine(IRubyObject last) {
+        return getCurrentScope().setLastLine(last);
+    }
+    
+    /**
+     * Get the value of the $_ (lastline) "global".
+     * 
+     * @return the value of $_
+     */
+    public IRubyObject getLastLine() {
+        return getCurrentScope().getLastLine(runtime);
     }
 
     /////////////////// BACKTRACE ////////////////////

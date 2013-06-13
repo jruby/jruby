@@ -502,7 +502,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @Override
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
-        context.getCurrentScope().setLastLine(result);
+        context.setLastLine(result);
 
         return result;
     }
@@ -511,7 +511,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @Override
     public IRubyObject gets19(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
-        context.getCurrentScope().setLastLine(result);
+        context.setLastLine(result);
 
         return result;
     }

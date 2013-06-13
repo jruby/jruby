@@ -262,7 +262,7 @@ public class RubyArgsFile {
             line = argf_getline(context, recv, args);
         }
 
-        context.getCurrentScope().setLastLine(line);
+        context.setLastLine(line);
         context.runtime.getGlobalVariables().set("$_", line);
         
         return line;

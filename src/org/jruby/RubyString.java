@@ -2729,7 +2729,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int range = value.getBegin() + value.getRealSize();
         Matcher matcher = pattern.matcher(value.getUnsafeBytes(), value.getBegin(), range);
 
-        DynamicScope scope = context.getCurrentScope();
         if (RubyRegexp.matcherSearch(context.runtime, matcher, value.getBegin(), range, Option.NONE) >= 0) {
             frozenCheck(true);
             byte[] bytes = value.getUnsafeBytes();
@@ -2742,7 +2741,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             context.setBackRef(match);
             return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {
-            return scope.setBackRef(context.runtime.getNil());
+            return context.setBackRef(context.runtime.getNil());
         }
     }
 

@@ -256,7 +256,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         try {
             IRubyObject result = internalGets(args);
 
-            if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+            if (!result.isNil()) context.setLastLine(result);
             
             return result;
         } catch (IOException ioe) {

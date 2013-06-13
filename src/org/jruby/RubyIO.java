@@ -1645,7 +1645,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     public static IRubyObject print(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
         if (args.length == 0) {
-            args = new IRubyObject[] { context.getCurrentScope().getLastLine(context.runtime) };
+            args = new IRubyObject[] { context.getLastLine() };
         }
 
         Ruby runtime = context.runtime;
@@ -2141,7 +2141,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject result = getline(runtime, separator(runtime, runtime.getRecordSeparatorVar().get()));
 
-        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+        if (!result.isNil()) context.setLastLine(result);
 
         return result;
     }
@@ -2151,7 +2151,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject result = getline(runtime, separator(runtime, separatorArg));
 
-        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+        if (!result.isNil()) context.setLastLine(result);
 
         return result;
     }
@@ -2161,7 +2161,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject result = getline(runtime, separator(runtime));
 
-        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+        if (!result.isNil()) context.setLastLine(result);
 
         return result;
     }
@@ -2181,7 +2181,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         IRubyObject result = getline(runtime, separator, limit);
 
-        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+        if (!result.isNil()) context.setLastLine(result);
 
         return result;
     }
@@ -2192,7 +2192,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(TypeConverter.checkIntegerType(runtime, limit_arg, "to_int"));
         IRubyObject result = getline(runtime, separator(runtime, separator), limit);
 
-        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+        if (!result.isNil()) context.setLastLine(result);
 
         return result;
     }
