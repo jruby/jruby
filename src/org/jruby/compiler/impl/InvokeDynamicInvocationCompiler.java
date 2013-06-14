@@ -303,9 +303,20 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
 
     @Override
-    public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
+    public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, final long fixnum) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
-            super.invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
+            ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
+                @Override
+                public int getArity() {
+                    return 1;
+                }
+
+                @Override
+                public void call(BodyCompiler context) {
+                    methodCompiler.getScriptCompiler().getCacheCompiler().cacheFixnum(methodCompiler, fixnum);
+                }
+            };
+            invokeDynamic(name, receiverCallback, argumentsCallback, CallType.NORMAL, null, false);
             return;
         }
         
@@ -333,9 +344,21 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
 
     @Override
-    public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
+    public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, final long fixnum) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
-            super.invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
+            ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
+                @Override
+                public int getArity() {
+                    return 1;
+                }
+
+                @Override
+                public void call(BodyCompiler context) {
+                    methodCompiler.getScriptCompiler().getCacheCompiler().cacheFixnum(methodCompiler, fixnum);
+                }
+            };
+            invokeDynamic(name, receiverCallback, argumentsCallback, CallType.NORMAL, null, false);
+            methodCompiler.isTrue();
             return;
         }
         
@@ -362,9 +385,20 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 methodCompiler.getLastLine() + 1);
     }
     
-    public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
+    public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, final double flote) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
-            super.invokeBinaryFloatRHS(name, receiverCallback, flote);
+            ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
+                @Override
+                public int getArity() {
+                    return 1;
+                }
+
+                @Override
+                public void call(BodyCompiler context) {
+                    methodCompiler.getScriptCompiler().getCacheCompiler().cacheFloat(methodCompiler, flote);
+                }
+            };
+            invokeDynamic(name, receiverCallback, argumentsCallback, CallType.NORMAL, null, false);
             return;
         }
         
