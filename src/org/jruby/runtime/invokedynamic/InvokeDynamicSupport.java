@@ -482,8 +482,10 @@ public class InvokeDynamicSupport {
         
         // get variable value and filter with nullToNil
         MethodHandle getValue;
+        boolean direct = false;
         
         if (accessor instanceof FieldVariableAccessor) {
+            direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
             Class cls = REIFIED_OBJECT_CLASSES[offset];
             getValue = lookup().findGetter(cls, "var" + offset, Object.class);
@@ -505,7 +507,13 @@ public class InvokeDynamicSupport {
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                if (direct) {
+                    LOG.info(site.name + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                } else {
+                    LOG.info(site.name + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                }
+            }
             fallback = site.getTarget();
             site.incrementChainCount();
         }
@@ -549,8 +557,10 @@ public class InvokeDynamicSupport {
 
         // set variable value and fold by returning value
         MethodHandle setValue;
+        boolean direct = false;
         
         if (accessor instanceof FieldVariableAccessor) {
+            direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
             Class cls = REIFIED_OBJECT_CLASSES[offset];
             setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
@@ -572,7 +582,13 @@ public class InvokeDynamicSupport {
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self, value);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                if (direct) {
+                    LOG.info(site.name + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                } else {
+                    LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                }
+            }
             fallback = site.getTarget();
             site.incrementChainCount();
         }

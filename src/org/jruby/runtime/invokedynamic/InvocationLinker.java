@@ -542,9 +542,22 @@ public class InvocationLinker {
 
         @Override
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            AttrReaderMethod attrReader = (AttrReaderMethod)method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
+            
             // Ruby to attr reader
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-            return createAttrReaderHandle(site, cls, method);
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                }
+            }
+            
+            return createAttrReaderHandle(site, cls, accessor);
         }
     }
 
@@ -569,11 +582,21 @@ public class InvocationLinker {
 
         @Override
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            AttrWriterMethod attrReader = (AttrWriterMethod)method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
+            
             // Ruby to attr reader
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
-                LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                }
             }
-            return createAttrWriterHandle(site, cls, method);
+            return createAttrWriterHandle(site, cls, accessor);
         }
     }
     
@@ -1542,16 +1565,9 @@ public class InvocationLinker {
     // Dispatch to attribute accessors
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createAttrReaderHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
-        if (nativeTarget != null) return nativeTarget;
-
-        AttrReaderMethod attrReader = (AttrReaderMethod)method;
-        String varName = attrReader.getVariableName();
-
-        // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
-        VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
-
+    private static MethodHandle createAttrReaderHandle(JRubyCallSite site, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+        
         MethodHandle filter = Binder
                 .from(IRubyObject.class, IRubyObject.class)
                 .insert(1, cls.getRuntime().getNil())
@@ -1588,15 +1604,9 @@ public class InvocationLinker {
         return value == null ? nil : value;
     }
 
-    private static MethodHandle createAttrWriterHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
-        if (nativeTarget != null) return nativeTarget;
-
-        AttrWriterMethod attrWriter = (AttrWriterMethod)method;
-        String varName = attrWriter.getVariableName();
+    private static MethodHandle createAttrWriterHandle(JRubyCallSite site, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
         
-        VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
-
         MethodHandle filter = Binder
                 .from(IRubyObject.class, Object.class)
                 .drop(0)
