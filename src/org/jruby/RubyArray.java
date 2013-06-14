@@ -1391,8 +1391,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (arg0 instanceof RubyFixnum) {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
-            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
-            splice(beglen[0], beglen[1], arg1, false);
+            RubyRange range = (RubyRange)arg0;
+            long beg = range.begLen0(realLength);
+            splice(beg, range.begLen1(realLength, beg), arg1, false);
         } else if(arg0 instanceof RubySymbol) {
             throw getRuntime().newTypeError("Symbol as array index");
         } else {
@@ -1407,8 +1408,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (arg0 instanceof RubyFixnum) {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
-            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
-            splice(beglen[0], beglen[1], arg1, true);
+            RubyRange range = (RubyRange)arg0;
+            long beg = range.begLen0(realLength);
+            splice(beg, range.begLen1(realLength, beg), arg1, true);
         } else {
             store(RubyNumeric.num2long(arg0), arg1);
         }
@@ -2839,9 +2841,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 return runtime.getNil();
             }
 
-            long[] beglen = range.begLen(realLength, 1);
-            long pos = beglen[0];
-            long len = beglen[1];
+            long pos = range.begLen0(realLength);
+            long len = range.begLen1(realLength, pos);
             return slice_internal(pos, len, arg0, null, runtime);
         }
         return delete_at((int) RubyNumeric.num2long(arg0));
