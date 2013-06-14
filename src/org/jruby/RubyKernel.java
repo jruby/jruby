@@ -570,6 +570,34 @@ public class RubyKernel {
         return RubyIO.putc(context, defout, ch);
     }
 
+    @JRubyMethod(name = "puts", module = true, visibility = PRIVATE)
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
+        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+
+        return RubyIO.puts0(context, defout);
+    }
+
+    @JRubyMethod(name = "puts", module = true, visibility = PRIVATE)
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+
+        return RubyIO.puts1(context, defout, arg0);
+    }
+
+    @JRubyMethod(name = "puts", module = true, visibility = PRIVATE)
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+
+        return RubyIO.puts2(context, defout, arg0, arg1);
+    }
+
+    @JRubyMethod(name = "puts", module = true, visibility = PRIVATE)
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+
+        return RubyIO.puts3(context, defout, arg0, arg1, arg2);
+    }
+
     @JRubyMethod(name = "puts", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");

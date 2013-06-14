@@ -2292,12 +2292,69 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static final ByteList NIL_BYTELIST = ByteList.create("nil");
     private static final ByteList RECURSIVE_BYTELIST = ByteList.create("[...]");
 
+    @JRubyMethod(name = "puts")
+    public IRubyObject puts(ThreadContext context) {
+        return puts(context, this);
+    }
+
+    @JRubyMethod(name = "puts")
+    public IRubyObject puts(ThreadContext context, IRubyObject arg0) {
+        return puts(context, this, arg0);
+    }
+
+    @JRubyMethod(name = "puts")
+    public IRubyObject puts(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return puts(context, this, arg0, arg1);
+    }
+
+    @JRubyMethod(name = "puts")
+    public IRubyObject puts(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return puts(context, this, arg0, arg1, arg2);
+    }
+
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
         return puts(context, this, args);
     }
 
-    public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
+    public static IRubyObject puts0(ThreadContext context, IRubyObject maybeIO) {
+        return writeSeparator(context, maybeIO);
+    }
+
+    public static IRubyObject puts1(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0) {
+        Ruby runtime = context.runtime;
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        
+        putsSingle(context, runtime, maybeIO, arg0, separator);
+        
+        return context.nil;
+    }
+
+    public static IRubyObject puts2(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        
+        putsSingle(context, runtime, maybeIO, arg0, separator);
+        putsSingle(context, runtime, maybeIO, arg1, separator);
+        
+        return context.nil;
+    }
+
+    public static IRubyObject puts3(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.runtime;
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        
+        putsSingle(context, runtime, maybeIO, arg0, separator);
+        putsSingle(context, runtime, maybeIO, arg1, separator);
+        putsSingle(context, runtime, maybeIO, arg2, separator);
+        
+        return context.nil;
+    }
+
+    public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject... args) {
         if (args.length == 0) {
             return writeSeparator(context, maybeIO);
         }
@@ -2320,26 +2377,31 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
 
         for (int i = 0; i < args.length; i++) {
-            ByteList line;
-
-            if (args[i].isNil()) {
-                line = getNilByteList(runtime);
-            } else if (runtime.isInspecting(args[i])) {
-                line = RECURSIVE_BYTELIST;
-            } else if (args[i] instanceof RubyArray) {
-                inspectPuts(context, maybeIO, (RubyArray) args[i]);
-                continue;
-            } else {
-                line = args[i].asString().getByteList();
-            }
-
-            write(context, maybeIO, line);
-
-            if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-                write(context, maybeIO, separator.getByteList());
-            }
+            putsSingle(context, runtime, maybeIO, args[i], separator);
         }
+        
         return runtime.getNil();
+    }
+    
+    private static void putsSingle(ThreadContext context, Ruby runtime, IRubyObject maybeIO, IRubyObject arg, RubyString separator) {
+        ByteList line;
+
+        if (arg.isNil()) {
+            line = getNilByteList(runtime);
+        } else if (runtime.isInspecting(arg)) {
+            line = RECURSIVE_BYTELIST;
+        } else if (arg instanceof RubyArray) {
+            inspectPuts(context, maybeIO, (RubyArray) arg);
+            return;
+        } else {
+            line = arg.asString().getByteList();
+        }
+
+        write(context, maybeIO, line);
+
+        if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
+            write(context, maybeIO, separator.getByteList());
+        }
     }
 
     protected void write(ThreadContext context, ByteList byteList) {
