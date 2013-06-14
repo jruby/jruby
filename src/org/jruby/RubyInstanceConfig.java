@@ -1763,27 +1763,25 @@ public class RubyInstanceConfig {
     public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
     public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
     
-    public static final boolean INVOKEDYNAMIC_INVOCATION = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_INVOCATION.load();
-    public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
-    public static final boolean INVOKEDYNAMIC_INDIRECT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
-    public static final boolean INVOKEDYNAMIC_JAVA = INVOKEDYNAMIC_ALL ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
-    public static final boolean INVOKEDYNAMIC_ATTR = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
-    public static final boolean INVOKEDYNAMIC_FASTOPS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
+    private static final boolean invokedynamicOn = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE || USE_INVOKEDYNAMIC;
     
-    public static final boolean INVOKEDYNAMIC_CACHE = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_CACHE.load();
-    public static final boolean INVOKEDYNAMIC_CONSTANTS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
-    public static final boolean INVOKEDYNAMIC_LITERALS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
-    public static final boolean INVOKEDYNAMIC_IVARS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_IVARS.load();
+    public static final boolean INVOKEDYNAMIC_INVOCATION = invokedynamicOn && Options.INVOKEDYNAMIC_INVOCATION.load();
+    
+    private static final boolean invokedynamicInvocation = invokedynamicOn && INVOKEDYNAMIC_INVOCATION;
+    
+    public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
+    public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
+    public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
+    public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
+    public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
+    
+    public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
+    
+    private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;
+    
+    public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
+    public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
+    public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
     
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
