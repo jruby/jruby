@@ -577,7 +577,7 @@ public class RubyKernel {
         return RubyIO.puts(context, defout, args);
     }
 
-    @JRubyMethod(name = "print", rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "print", rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
