@@ -44,6 +44,12 @@ describe "A Java package" do
   it "supports const_get" do
     java.util.const_get("Arrays").should respond_to "asList"
   end
+
+  if RUBY_VERSION =~ /1\.9/
+    it "supports const_get with inherit argument" do
+      java.util.const_get("Arrays", false).should respond_to "asList"
+    end
+  end
 end
 
 describe "A class in the default package" do

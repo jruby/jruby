@@ -5,7 +5,7 @@ module JavaPackageModuleTemplate
     end
     private :const_missing
 
-    def const_get(const)
+    def const_get(const, inherit=true)
       JavaUtilities.get_proxy_class(@package_name + const.to_s)
     end
 
