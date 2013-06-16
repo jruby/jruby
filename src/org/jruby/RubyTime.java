@@ -806,8 +806,10 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "zone")
-    public RubyString zone() {
+    public IRubyObject zone() {
         Ruby runtime = getRuntime();
+        if (isTzRelative) return runtime.getNil();
+        
         String envTZ = getEnvTimeZone(runtime).toString();
         // see declaration of SHORT_TZNAME
         if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
