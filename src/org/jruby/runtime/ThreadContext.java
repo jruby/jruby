@@ -422,9 +422,16 @@ public final class ThreadContext {
     }
     
     public void popFrame() {
-        Frame frame = frameStack[frameIndex--];
+        Frame[] stack = frameStack;
+        int index = frameIndex--;
+        Frame frame = stack[index];
         
-        frame.clear();
+        // if the frame was captured, we must replace it but not clear
+        if (frame.isCaptured()) {
+            stack[index] = new Frame();
+        } else {
+            frame.clear();
+        }
     }
         
     private void popFrameReal(Frame oldFrame) {
@@ -481,7 +488,7 @@ public final class ThreadContext {
      * @return the value passed in
      */
     public IRubyObject setBackRef(IRubyObject match) {
-        return getCurrentScope().setBackRef(match);
+        return getCurrentFrame().setBackRef(match);
     }
     
     /**
@@ -490,7 +497,7 @@ public final class ThreadContext {
      * @return the value of $~
      */
     public IRubyObject getBackRef() {
-        return getCurrentScope().getBackRef(runtime);
+        return getCurrentFrame().getBackRef(nil);
     }
     
     /**
@@ -500,7 +507,7 @@ public final class ThreadContext {
      * @return the value passed in
      */
     public IRubyObject setLastLine(IRubyObject last) {
-        return getCurrentScope().setLastLine(last);
+        return getCurrentFrame().setLastLine(last);
     }
     
     /**
@@ -509,7 +516,7 @@ public final class ThreadContext {
      * @return the value of $_
      */
     public IRubyObject getLastLine() {
-        return getCurrentScope().getLastLine(runtime);
+        return getCurrentFrame().getLastLine(nil);
     }
 
     /////////////////// BACKTRACE ////////////////////
@@ -1302,7 +1309,7 @@ public final class ThreadContext {
      * @return the current binding
      */
     public Binding currentBinding() {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1312,7 +1319,7 @@ public final class ThreadContext {
      * @return the current binding, using the specified self
      */
     public Binding currentBinding(IRubyObject self) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1324,7 +1331,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1336,7 +1343,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self and scope
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 
@@ -1351,7 +1358,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self, scope, and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, visibility, getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 

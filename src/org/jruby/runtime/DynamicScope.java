@@ -45,12 +45,6 @@ public abstract class DynamicScope {
     // Captured dynamic scopes
     protected final DynamicScope parent;
 
-    // Backref for $~, $1, etc
-    private IRubyObject backref;
-
-    // Lastline
-    private IRubyObject lastline;
-
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
     // hidden shared scope.  We store it here.  This will be null if no binding has yet
@@ -181,46 +175,6 @@ public abstract class DynamicScope {
      */
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
-    }
-
-    /**
-     * Get backref
-     */
-    public IRubyObject getBackRef(Ruby runtime) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.getBackRef(runtime);
-        }
-        return backref == null ? runtime.getNil() : backref;
-    }
-
-    /**
-     * Set backref
-     */
-    public IRubyObject setBackRef(IRubyObject backref) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.setBackRef(backref);
-        }
-        return this.backref = backref;
-    }
-
-    /**
-     * Get lastline
-     */
-    public IRubyObject getLastLine(Ruby runtime) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.getLastLine(runtime);
-        }
-        return lastline == null ? runtime.getNil() : lastline;
-    }
-
-    /**
-     * Set lastline
-     */
-    public IRubyObject setLastLine(IRubyObject lastline) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.setLastLine(lastline);
-        }
-        return this.lastline = lastline;
     }
 
     public abstract void growIfNeeded();

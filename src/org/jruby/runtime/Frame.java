@@ -87,6 +87,15 @@ public final class Frame {
     /** The target for non-local jumps, like return from a block */
     private int jumpTarget;
     
+    /** backref **/
+    private IRubyObject backRef;
+    
+    /** lastline **/
+    private IRubyObject lastLine;
+    
+    /** whether this frame has been captured into a binding **/
+    private boolean captured;
+    
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
      * when needed.
@@ -198,10 +207,14 @@ public final class Frame {
      * Clear the frame, as when the call completes. Clearing prevents cached
      * frames from holding references after the call is done.
      */
-    public void clear() {
+    public Frame clear() {
         this.self = null;
         this.klazz = null;
         this.block = Block.NULL_BLOCK;
+        this.backRef = null;
+        this.lastLine = null;
+        
+        return this;
     }
     
     /**
@@ -332,6 +345,37 @@ public final class Frame {
      */
     public Block getBlock() {
         return block;
+    }
+    
+    public IRubyObject getBackRef(IRubyObject nil) {
+        IRubyObject backRef = this.backRef;
+        return backRef == null ? nil : backRef;
+    }
+    
+    public IRubyObject setBackRef(IRubyObject backRef) {
+        return this.backRef = backRef;
+    }
+    
+    public IRubyObject getLastLine(IRubyObject nil) {
+        IRubyObject lastLine = this.lastLine;
+        return lastLine == null ? nil : lastLine;
+    }
+    
+    public IRubyObject setLastLine(IRubyObject lastLine) {
+        return this.lastLine = lastLine;
+    }
+    
+    public void setCaptured(boolean captured) {
+        this.captured = captured;
+    }
+    
+    public Frame capture() {
+        captured = true;
+        return this;
+    }
+    
+    public boolean isCaptured() {
+        return captured;
     }
 
     /* (non-Javadoc)

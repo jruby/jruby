@@ -1,9 +1,7 @@
 package org.jruby.runtime.scope;
 
-import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * This is a DynamicScope that does not support any variables. It differs from
@@ -38,57 +36,5 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
     public DynamicScope cloneScope() {
         // there should be no mutable state in this scope, so return same
         return this;
-    }
-
-    /**
-     * Get backref
-     */
-    public IRubyObject getBackRef(Ruby runtime) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.getBackRef(runtime);
-        }
-        if (runtime.getDebug().isTrue()) {
-            runtime.getWarnings().warn("DummyDynamicScope should never be used for backref storage");
-        }
-        return runtime.getNil();
-    }
-
-    /**
-     * Set backref
-     */
-    public IRubyObject setBackRef(IRubyObject backref) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.setBackRef(backref);
-        }
-        if (backref.getRuntime().getDebug().isTrue()) {
-            backref.getRuntime().getWarnings().warn("DummyDynamicScope should never be used for backref storage");
-        }
-        return backref;
-    }
-
-    /**
-     * Get lastline
-     */
-    public IRubyObject getLastLine(Ruby runtime) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.getLastLine(runtime);
-        }
-        if (runtime.getDebug().isTrue()) {
-            runtime.getWarnings().warn("DummyDynamicScope should never be used for lastline storage");
-        }
-        return runtime.getNil();
-    }
-
-    /**
-     * Set lastline
-     */
-    public IRubyObject setLastLine(IRubyObject lastline) {
-        if (!staticScope.isBackrefLastlineScope()) {
-            return parent.setLastLine(lastline);
-        }
-        if (lastline.getRuntime().getDebug().isTrue()) {
-            lastline.getRuntime().getWarnings().warn("DummyDynamicScope should never be used for backref storage");
-        }
-        return lastline;
     }
 }

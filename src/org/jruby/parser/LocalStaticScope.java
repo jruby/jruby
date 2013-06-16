@@ -45,8 +45,6 @@ public class LocalStaticScope extends StaticScope {
 
     protected LocalStaticScope(StaticScope enclosingScope, String[] names) {
         super(enclosingScope, names);
-
-        setBackrefLastlineScope(true);
     }
 
     public StaticScope getLocalScope() {

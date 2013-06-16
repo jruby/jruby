@@ -82,7 +82,7 @@ public class Binding {
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = self;
-        this.frame = frame.duplicate();
+        this.frame = frame;
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
@@ -102,7 +102,7 @@ public class Binding {
     
     public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = frame.getSelf();
-        this.frame = frame.duplicate();
+        this.frame = frame;
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
@@ -110,7 +110,7 @@ public class Binding {
     }
     
     private Binding(Binding other) {
-        this(other.self, other.frame.duplicate(), other.visibility, other.klass, other.dynamicScope, other.backtrace, other.dummyScope);
+        this(other.self, other.frame, other.visibility, other.klass, other.dynamicScope, other.backtrace, other.dummyScope);
     }
 
     /**
@@ -185,6 +185,10 @@ public class Binding {
      */
     public RubyModule getKlass() {
         return klass;
+    }
+    
+    public BacktraceElement getBacktrace() {
+        return backtrace;
     }
 
     public String getFile() {
