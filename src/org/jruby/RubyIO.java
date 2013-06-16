@@ -2294,22 +2294,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context) {
-        return puts(context, this);
+        return puts0(context, this);
     }
 
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context, IRubyObject arg0) {
-        return puts(context, this, arg0);
+        return puts1(context, this, arg0);
     }
 
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return puts(context, this, arg0, arg1);
+        return puts2(context, this, arg0, arg1);
     }
 
     @JRubyMethod(name = "puts")
     public IRubyObject puts(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return puts(context, this, arg0, arg1, arg2);
+        return puts3(context, this, arg0, arg1, arg2);
     }
 
     @JRubyMethod(name = "puts", rest = true)
