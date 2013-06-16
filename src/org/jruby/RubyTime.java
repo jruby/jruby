@@ -671,6 +671,16 @@ public class RubyTime extends RubyObject {
 
         String result = simpleDateFormat.print(dt);
 
+        if (isTzRelative) {
+            // display format needs to invert the UTC offset if this object was
+            // created with a specific offset in the 7-arg form of #new
+            DateTimeZone dtz = dt.getZone();
+            int offset = (-1) * dtz.toTimeZone().getOffset(dt.getMillis());
+            DateTimeZone invertedDTZ = DateTimeZone.forOffsetMillis(offset);
+            DateTime invertedDT = dt.withZone(invertedDTZ);
+            result = simpleDateFormat.print(invertedDT);
+        }
+
         return getRuntime().newString(result);
     }
 
