@@ -25,9 +25,6 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
 
     private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
 
-    private final static ProtectionDomain DEFAULT_DOMAIN
-            = JRubyClassLoader.class.getProtectionDomain();
-
     private final Map<URL,Set<String>> jarIndexes = new LinkedHashMap<URL,Set<String>>();
 
     private Runnable unloader;
@@ -79,7 +76,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
-        return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
+        return super.defineClass(name, bytes, 0, bytes.length, (ProtectionDomain) null);
      }
 
     public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
