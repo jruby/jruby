@@ -63,16 +63,16 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
-            int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
+            int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_8) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
-        
+
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = is1_9 ? new InterpretedIRBlockBody19(this, arity, argumentType)
-                              : new InterpretedIRBlockBody(this, arity, argumentType);
+            this.body = is1_8 ? new InterpretedIRBlockBody(this, arity, argumentType)
+                              : new InterpretedIRBlockBody19(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         }
 

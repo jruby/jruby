@@ -46,6 +46,8 @@ public enum Operation {
     RECV_SELF(0),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_POST_REQD_ARG(OpFlags.f_is_arg_receive),
+    RECV_KW_ARG(OpFlags.f_is_arg_receive),
+    RECV_KW_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
     RECV_CLOSURE(OpFlags.f_is_arg_receive),

@@ -31,6 +31,8 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveOptArgBase;
 import org.jruby.ir.instructions.ReceiveRestArgBase;
@@ -96,7 +98,7 @@ public class Interpreter {
 
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager(), is_1_9).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation(false);
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext();
@@ -128,7 +130,7 @@ public class Interpreter {
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
 
-        IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime.getIRManager(), runtime.is1_9()).buildRoot((RootNode) rootNode);
+        IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.
@@ -431,6 +433,18 @@ public class Interpreter {
                     ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
                     result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
                     resultVar = rei.getResult();
+                    break;
+                }
+                case RECV_KW_ARG: {
+                    ReceiveKeywordArgInstr ra = (ReceiveKeywordArgInstr)instr;
+                    result = ra.receiveKWArg(context, args);
+                    resultVar = ra.getResult();
+                    break;
+                }
+                case RECV_KW_REST_ARG: {
+                    ReceiveKeywordRestArgInstr ra = (ReceiveKeywordRestArgInstr)instr;
+                    result = ra.receiveKWArg(context, args);
+                    resultVar = ra.getResult();
                     break;
                 }
 

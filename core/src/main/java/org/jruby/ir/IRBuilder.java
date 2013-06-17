@@ -127,6 +127,10 @@ public class IRBuilder {
         return false;
     }
 
+    public boolean is2_0() {
+        return false;
+    }
+
     /* -----------------------------------------------------------------------------------
      * Every ensure block has a start label and end label, and at the end, it will jump
      * to an address stored in a return address variable.
@@ -281,8 +285,26 @@ public class IRBuilder {
         }
     }
 
-    public static IRBuilder createIRBuilder(IRManager manager, boolean is19) {
-        return is19 ? new IRBuilder19(manager) : new IRBuilder(manager);
+    public static IRBuilder createIRBuilder(Ruby runtime, IRManager manager) {
+        boolean is19 = runtime.is1_9();
+        boolean is20 = runtime.is2_0();
+        if (is20) {
+            return new IRBuilder20(manager);
+        } else if (is19) {
+            return new IRBuilder19(manager);
+        } else {
+            return new IRBuilder(manager);
+        }
+    }
+
+    public IRBuilder newIRBuilder(IRManager manager) {
+        if (is2_0()) {
+            return new IRBuilder20(manager);
+        } else if (is1_9()) {
+            return new IRBuilder19(manager);
+        } else {
+            return new IRBuilder(manager);
+        }
     }
 
     public Node skipOverNewlines(IRScope s, Node n) {
@@ -756,7 +778,7 @@ public class IRBuilder {
             retVal = build(child, s);
         }
 
-           // Value of the last expression in the block 
+        // Value of the last expression in the block
         return retVal;
     }
 
@@ -776,8 +798,8 @@ public class IRBuilder {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
                 IRScope returnScope = s.getLexicalParent();
-                if (is1_9()) {
-                    // In 1.9 mode, no breaks from evals
+                if (is1_9() || is2_0()) {
+                    // In 1.9 and later modes, no breaks from evals
                     if (s instanceof IREvalScript) s.addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
                     else s.addInstr(new BreakInstr(rv, returnScope));
                 } else {
@@ -997,7 +1019,7 @@ public class IRBuilder {
         c.addInstr(new CopyInstr(c.getCurrentScopeVariable(), new CurrentScope(c)));
         c.addInstr(new CopyInstr(c.getCurrentModuleVariable(), new ScopeModule(c)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager, is1_9()).build(classNode.getBodyNode(), c);
+        Operand rv = newIRBuilder(manager).build(classNode.getBodyNode(), c);
         if (rv != null) c.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1030,7 +1052,7 @@ public class IRBuilder {
         mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope(mc)));
         mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new ScopeModule(mc)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager, is1_9()).build(sclassNode.getBodyNode(), mc);
+        Operand rv = newIRBuilder(manager).build(sclassNode.getBodyNode(), mc);
         if (rv != null) mc.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1659,7 +1681,7 @@ public class IRBuilder {
         Node bodyNode = defNode.getBodyNode();
         if (bodyNode != null) {
             // Create a new nested builder to ensure this gets its own IR builder state 
-            Operand rv = createIRBuilder(manager, is1_9()).build(bodyNode, method);
+            Operand rv = newIRBuilder(manager).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(manager.getNil()));
@@ -2075,12 +2097,12 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), !is1_9() && !is2_0());
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder forBuilder = createIRBuilder(manager, is1_9());
+        IRBuilder forBuilder = newIRBuilder(manager);
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
@@ -2227,12 +2249,12 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), !is1_9() && !is2_0());
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder closureBuilder = createIRBuilder(manager, is1_9());
+        IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
@@ -2359,7 +2381,7 @@ public class IRBuilder {
         m.addInstr(new CopyInstr(m.getCurrentScopeVariable(), new CurrentScope(m)));
         m.addInstr(new CopyInstr(m.getCurrentModuleVariable(), new ScopeModule(m)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager, is1_9()).build(moduleNode.getBodyNode(), m);
+        Operand rv = newIRBuilder(manager).build(moduleNode.getBodyNode(), m);
         if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -2689,7 +2711,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
+        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), !is1_9() && !is2_0());
         // Set up %current_scope and %current_module
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
@@ -2701,7 +2723,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
+        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), !is1_9() && !is2_0());
         // Set up %current_scope and %current_module
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(beginClosure)));

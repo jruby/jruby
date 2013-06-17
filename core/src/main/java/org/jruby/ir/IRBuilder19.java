@@ -152,7 +152,7 @@ public class IRBuilder19 extends IRBuilder {
         else s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
     }
 
-    public void receiveArgs(final ArgsNode argsNode, IRScope s) {
+    protected void receiveNonBlockArgs(final ArgsNode argsNode, IRScope s) {
         final int numPreReqd = argsNode.getPreCount();
         final int numPostReqd = argsNode.getPostCount();
         final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
@@ -166,7 +166,7 @@ public class IRBuilder19 extends IRBuilder {
             // FIXME: Expensive to do this explicitly?  But, two advantages:
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
-            // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
+            // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?
             s.addInstr(new CheckArityInstr(required, opt, rest));
         }
 
@@ -222,12 +222,18 @@ public class IRBuilder19 extends IRBuilder {
         for (int i = 0; i < numPostReqd; i++) {
             receiveRequiredArg(postArgs.get(i), s, i, true, numPreReqd, numPostReqd);
         }
+    }
 
-        // Now, receive the block arg 
-        // -- for methods, we always receive it (implicitly, if the block arg is not explicit)
-        // -- for closures, only if it is explicitly present
+    protected void receiveBlockArg(final ArgsNode argsNode, IRScope s) {
+        // For methods, we always receive it (implicitly, if the block arg is not explicit)
+        // For closures, only if it is explicitly present
         BlockArgNode blockArg = argsNode.getBlock();
         if ((s instanceof IRMethod) || (blockArg != null)) receiveClosureArg(blockArg, s);
+    }
+
+    public void receiveArgs(final ArgsNode argsNode, IRScope s) {
+        receiveNonBlockArgs(argsNode, s);
+        receiveBlockArg(argsNode, s);
     }
 
     @Override
@@ -236,7 +242,7 @@ public class IRBuilder19 extends IRBuilder {
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure)s).setParameterList(Helpers.encodeParameterList((ArgsNode) args).split(";"));
             receiveArgs((ArgsNode)args, s);
-        } else  { 
+        } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
             buildBlockArgsAssignment(args, s, null, 0, false, false, false);
         }
@@ -408,9 +414,9 @@ public class IRBuilder19 extends IRBuilder {
         IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
         s.addClosure(closure);
 
-        // Create a new nested builder to ensure this gets its own IR builder state 
+        // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
-        IRBuilder closureBuilder = createIRBuilder(manager, is1_9());
+        IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
