@@ -31,7 +31,7 @@ public class TestSomething extends RubyObject  {
   private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
   private static final RubyClass __metaclass__;
   static {
-    __ruby__.getLoadService().lockAndRequire("myruby3.rb");
+    __ruby__.getLoadService().require("myruby3.rb");
     RubyClass metaclass = __ruby__.getClass("TestSomething");
     metaclass.setClassAllocator(TestSomething.class);
     if (metaclass == null) throw new NoClassDefFoundError("Could not load Ruby class: TestSomething");

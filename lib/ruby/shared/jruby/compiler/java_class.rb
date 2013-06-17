@@ -398,7 +398,7 @@ JAVA
         "        String source = new StringBuilder(\"#{source_line}\").toString();\n        __ruby__.executeScript(source, \"#{script_name}\");"
       else
         requires.map do |r|
-          "        __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+          "        __ruby__.getLoadService().require(\"#{r}\");"
         end.join("\n")
       end
     end
