@@ -27,25 +27,28 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.runtime.Helpers;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import static org.jruby.CompatVersion.*;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallBlock;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.util.cli.Options;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.CompatVersion.RUBY2_0;
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -390,22 +393,6 @@ public class RubyEnumerator extends RubyObject {
         
         return context.nil;
     }
-    
-    private static class EachWithIndex implements BlockCallback {
-        private int index = 0;
-        private final Block block;
-        private final Ruby runtime;
-
-        public EachWithIndex(ThreadContext ctx, Block block, int index) {
-            this.block = block;
-            this.runtime = ctx.runtime;
-            this.index = index;
-        }
-
-        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.call(context, new IRubyObject[] { runtime.newArray(RubyEnumerable.checkArgs(runtime, iargs), runtime.newFixnum(index++)) });
-        }
-    }
 
     private static IRubyObject with_index_common(ThreadContext context, IRubyObject self, 
             final Block block, final String rubyMethodName, IRubyObject arg) {
@@ -416,7 +403,7 @@ public class RubyEnumerator extends RubyObject {
                 enumeratorize(runtime, self.getType(), self , rubyMethodName, runtime.newFixnum(index));
         }
 
-        return RubyEnumerable.callEach(runtime, context, self, new EachWithIndex(context, block, index));
+        return RubyEnumerable.callEach(runtime, context, self, new RubyEnumerable.EachWithIndex(context, block, index));
     }
 
     @JRubyMethod

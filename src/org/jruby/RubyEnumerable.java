@@ -27,28 +27,33 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.*;
-
-import java.util.ArrayList;
-import static org.jruby.RubyEnumerator.enumeratorize;
-
-import java.util.Comparator;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import static org.jruby.CompatVersion.RUBY1_9;
-import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
-
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaInternalBlockBody;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
@@ -864,38 +869,41 @@ public class RubyEnumerable {
         return block.isGiven() ? partitionCommon(context, self, block) : enumeratorize(context.runtime, self, "partition");
     }
 
-    private static class EachWithIndex implements BlockCallback {
-        private int index = 0;
+    static class EachWithIndex implements BlockCallback {
+        private int index;
         private final Block block;
         private final Ruby runtime;
 
         public EachWithIndex(ThreadContext ctx, Block block) {
+            this(ctx, block, 0);
+        }
+
+        public EachWithIndex(ThreadContext ctx, Block block, int index) {
             this.block = block;
             this.runtime = ctx.runtime;
+            this.index = index;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            switch (iargs.length) {
-            case 0:
-                // FIXME: Does this ever happen?
-            case 1:
-                this.block.call(context, checkArgs(runtime, iargs), runtime.newFixnum(index++));
-                break;
-            case 2:
-                this.block.call(context, runtime.newArrayNoCopy(iargs), runtime.newFixnum(index++));
-                break;
+            // Package the arguments appropriately depending on how many there are
+            // Corresponds to rb_enum_values_pack in MRI
+            if (iargs.length < 2) {
+                // For 0 or 1 arguments, we want the checkArgs behavior
+                return this.block.call(context, checkArgs(runtime, iargs), runtime.newFixnum(index++));
+            } else {
+                // For more than 1 arg, we pass them to our block as an arrays
+                return this.block.call(context, runtime.newArrayNoCopy(iargs), runtime.newFixnum(index++));
             }
-            return runtime.getNil();            
         }
     }
 
     public static IRubyObject each_with_indexCommon(ThreadContext context, IRubyObject self, Block block) {
-        callEach(context.runtime, context, self, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block));
+        callEach(context.runtime, context, self, Arity.OPTIONAL, new EachWithIndex(context, block));
         return self;
     }
 
     public static IRubyObject each_with_indexCommon19(ThreadContext context, IRubyObject self, Block block, IRubyObject[] args) {
-        callEach(context.runtime, context, self, args, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block));
+        callEach(context.runtime, context, self, args, Arity.OPTIONAL, new EachWithIndex(context, block));
         return self;
     }
 
