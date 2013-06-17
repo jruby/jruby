@@ -77,9 +77,6 @@ public final class Frame {
      * previous frame to work.
      */ 
     private Block block = Block.NULL_BLOCK;
-    
-    /** Delimit a frame where an eval with binding occurred.  Used for stack traces. */
-    private boolean isBindingFrame = false;
 
     /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
@@ -115,7 +112,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
     }
 
@@ -156,7 +152,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
     }
 
@@ -180,7 +175,6 @@ public final class Frame {
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
-        this.isBindingFrame = false;
         this.jumpTarget = jumpTarget;
     }
 
@@ -199,7 +193,6 @@ public final class Frame {
         this.self = self;
         this.name = null;
         this.visibility = Visibility.PRIVATE;
-        this.isBindingFrame = false;
         this.jumpTarget = jumpTarget;
     }
 
@@ -235,7 +228,6 @@ public final class Frame {
     public Frame duplicateForBacktrace() {
         Frame backtraceFrame = new Frame();
         backtraceFrame.name = name;
-        backtraceFrame.isBindingFrame = isBindingFrame;
         return backtraceFrame;
     }
 
@@ -318,24 +310,6 @@ public final class Frame {
      */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
-    }
-    
-    /**
-     * Is this frame the frame which started a binding eval?
-     * 
-     * @return Whether this is a binding frame
-     */
-    public boolean isBindingFrame() {
-        return isBindingFrame;
-    }
-    
-    /**
-     * Set whether this is a binding frame or not
-     * 
-     * @param isBindingFrame Whether this is a binding frame
-     */
-    public void setIsBindingFrame(boolean isBindingFrame) {
-        this.isBindingFrame = isBindingFrame;
     }
     
     /**
