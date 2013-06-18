@@ -20,10 +20,13 @@ module JRuby
         ARGV.delete_if do |g|
           # skip options
           next false if g =~ /^-/
+          
+          f = Dir.glob("build_lib/#{g}*.gem").first
+          next false if f.nil?
 
-          if File.exist?(g) # local gem
+          if File.exist?(f) # local gem
             begin
-              gem = Gem::Package.new(g)
+              gem = Gem::Package.new(f)
               name = gem.spec.name
               ver = gem.spec.version
               dep = Gem::Dependency.new(name, ver)
