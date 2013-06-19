@@ -424,7 +424,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (threadImpl != null) throw runtime.newThreadError("already initialized thread");
 
         try {
-            RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
+            RubyRunnable runnable = new RubyRunnable(this, args, block);
             if (RubyInstanceConfig.POOLING_ENABLED) {
                 FutureThread futureThread = new FutureThread(this, runnable);
                 threadImpl = futureThread;

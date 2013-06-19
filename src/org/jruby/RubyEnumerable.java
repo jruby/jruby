@@ -474,14 +474,12 @@ public class RubyEnumerable {
             callEach(runtime, context, self, block.arity(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
-                    ctx.setRubyFrameDelta(ctx.getRubyFrameDelta()+2);
                     if (pattern.callMethod(ctx, "===", larg).isTrue()) {
                         IRubyObject value = block.yield(ctx, larg);
                         synchronized (result) {
                             result.append(value);
                         }
                     }
-                    ctx.setRubyFrameDelta(ctx.getRubyFrameDelta()-2);
                     return runtime.getNil();
                 }
             });

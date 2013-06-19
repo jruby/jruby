@@ -49,19 +49,15 @@ public class RubyRunnable implements Runnable {
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
-
-    /** Frames at thread construction time, to produce a good contextual backtrace **/
-    private Frame[] currentFrames;
     
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
     
-    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Frame[] frames, Block currentBlock) {
+    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
         
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
-        this.currentFrames = frames;
         this.arguments = args;
     }
     
@@ -89,7 +85,6 @@ public class RubyRunnable implements Runnable {
             }
         }
         
-        context.preRunThread(currentFrames);
         rubyThread.beforeStart();
 
         // uber-ThreadKill catcher, since it should always just mean "be dead"

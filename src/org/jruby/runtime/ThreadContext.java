@@ -118,12 +118,6 @@ public final class ThreadContext {
     // The flat profile data for this thread
 	private ProfileData profileData;
 	
-    // In certain places, like grep, we don't use real frames for the
-    // call blocks. This has the effect of not setting the backref in
-    // the correct frame - this delta is activated to the place where
-    // the grep is running in so that the backref will be set in an
-    // appropriate place.
-    private int rubyFrameDelta = 0;
     private boolean eventHooksEnabled = true;
 
     CallType lastCallType;
@@ -404,15 +398,6 @@ public final class ThreadContext {
         }
     }
     
-    private void pushFrame(String name) {
-        int index = ++this.frameIndex;
-        Frame[] stack = frameStack;
-        stack[index].updateFrame(name);
-        if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
-        }
-    }
-    
     public void pushFrame() {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
@@ -441,18 +426,6 @@ public final class ThreadContext {
     public Frame getCurrentFrame() {
         return frameStack[frameIndex];
     }
-
-    public int getRubyFrameDelta() {
-        return this.rubyFrameDelta;
-    }
-    
-    public void setRubyFrameDelta(int newDelta) {
-        this.rubyFrameDelta = newDelta;
-    }
-
-    public Frame getCurrentRubyFrame() {
-        return frameStack[frameIndex-rubyFrameDelta];
-    }
     
     public Frame getNextFrame() {
         int index = frameIndex;
@@ -466,19 +439,6 @@ public final class ThreadContext {
     public Frame getPreviousFrame() {
         int index = frameIndex;
         return index < 1 ? null : frameStack[index - 1];
-    }
-    
-    public int getFrameCount() {
-        return frameIndex + 1;
-    }
-
-    public Frame[] getFrames(int delta) {
-        int top = frameIndex + delta;
-        Frame[] frames = new Frame[top + 1];
-        for (int i = 0; i <= top; i++) {
-            frames[i] = frameStack[i].duplicateForBacktrace();
-        }
-        return frames;
     }
     
     /**
@@ -1195,12 +1155,6 @@ public final class ThreadContext {
     
     public void postMproc() {
         popFrame();
-    }
-    
-    public void preRunThread(Frame[] currentFrames) {
-        for (Frame frame : currentFrames) {
-            pushFrame(frame);
-        }
     }
     
     public void preTrace() {
