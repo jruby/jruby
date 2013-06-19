@@ -21,12 +21,9 @@ module JRuby
           # skip options
           next false if g =~ /^-/
           
-          f = Dir.glob("build_lib/#{g}*.gem").sort.last
-          next false if f.nil?
-
-          if File.exist?(f) # local gem
+          if File.exist?(g) # local gem
             begin
-              gem = Gem::Package.new(f)
+              gem = Gem::Package.new(g)
               name = gem.spec.name
               ver = gem.spec.version
               dep = Gem::Dependency.new(name, ver)
