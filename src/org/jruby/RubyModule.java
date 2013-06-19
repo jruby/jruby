@@ -1461,7 +1461,12 @@ public class RubyModule extends RubyObject {
         String name = arg0.asJavaString().intern();
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
+        
+        if (!block.isGiven()) {
+            throw getRuntime().newArgumentError("tried to create Proc object without a block");
+        }
 
+        block = block.cloneBlockAndFrame();
         RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda

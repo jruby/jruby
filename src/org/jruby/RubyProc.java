@@ -51,6 +51,8 @@ import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.CompatVersion.*;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
@@ -139,17 +141,28 @@ public class RubyProc extends RubyObject implements DataType {
         if (isLambda() && procBlock == null) {
             // TODO: warn "tried to create Proc object without a block"
         }
-        
-        block = procBlock.cloneBlock();
 
         if (isThread()) {
+            // binding for incoming proc must not share frame
+            Binding oldBinding = procBlock.getBinding();
+            Binding newBinding = new Binding(
+                    oldBinding.getSelf(),
+                    oldBinding.getFrame().duplicate(),
+                    oldBinding.getVisibility(),
+                    oldBinding.getKlass(), 
+                    oldBinding.getDynamicScope(),
+                    oldBinding.getBacktrace().clone());
+            block = new Block(procBlock.getBody(), newBinding);
+
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = getRuntime().getStaticScopeFactory().newBlockScope(oldScope.getEnclosingScope(), oldScope.getVariables());
-            newScope.setBackrefLastlineScope(true);
             newScope.setPreviousCRefScope(oldScope.getPreviousCRefScope());
             newScope.setModule(oldScope.getModule());
             block.getBody().setStaticScope(newScope);
+        } else {
+            // just use as is
+            block = procBlock;
         }
 
         // force file/line info into the new block's binding

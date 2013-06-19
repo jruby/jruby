@@ -213,34 +213,16 @@ public class AnnotationBinder extends AbstractProcessor {
                         LOG.finest("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
                     frame = true;
                 }
-                if (anno.reads() != null) for (FrameField read : anno.reads()) {
-                    switch (read) {
-                        case BACKREF:
-                        case LASTLINE:
-                            if (DEBUG)
-                                LOG.finest("Method reads scope field " + read + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                            scope = true;
-                            break;
-                        default:
-                            if (DEBUG)
-                                LOG.finest("Method reads frame field " + read + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                            ;
-                            frame = true;
-                    }
+                if (anno.reads() != null) {
+                        if (DEBUG)
+                            LOG.finest("Method reads frame fields " + anno.reads() + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
+                        ;
+                        frame = true;
                 }
-                if (anno.writes() != null) for (FrameField write : anno.writes()) {
-                    switch (write) {
-                        case BACKREF:
-                        case LASTLINE:
-                            if (DEBUG)
-                                LOG.finest("Method writes scope field " + write + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                            scope = true;
-                            break;
-                        default:
-                            if (DEBUG)
-                                LOG.finest("Method writes frame field " + write + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                            frame = true;
-                    }
+                if (anno.writes() != null) {
+                        if (DEBUG)
+                            LOG.finest("Method writes frame fields " + anno.writes() + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
+                        frame = true;
                 }
                 if (frame) frameAwareMethods.addAll(Arrays.asList(anno.name()));
                 if (scope) scopeAwareMethods.addAll(Arrays.asList(anno.name()));

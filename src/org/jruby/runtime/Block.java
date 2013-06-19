@@ -169,7 +169,20 @@ public final class Block {
     }
     
     public Block cloneBlock() {
-        Block newBlock = body.cloneBlock(binding);
+        Block newBlock = new Block(body, binding);
+        
+        newBlock.type = type;
+        newBlock.escapeBlock = this;
+
+        return newBlock;
+    }
+    
+    public Block cloneBlockAndFrame() {
+        Binding oldBinding = binding;
+        Binding binding = new Binding(
+                oldBinding.getSelf(), oldBinding.getFrame().duplicate(), oldBinding.getVisibility(), oldBinding.getKlass(), oldBinding.getDynamicScope(), oldBinding.getBacktrace());
+        
+        Block newBlock = new Block(body, binding);
         
         newBlock.type = type;
         newBlock.escapeBlock = this;

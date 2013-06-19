@@ -30,7 +30,6 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
@@ -76,8 +75,6 @@ public abstract class StaticScope implements Serializable {
     
     // index of variable that represents a "rest" arg
     private int restArg = -1;
-
-    private boolean isBackrefLastlineScope = false;
     
     private DynamicScope dummyScope;
 
@@ -380,14 +377,6 @@ public abstract class StaticScope implements Serializable {
 
     public boolean isBlockScope() {
         return false;
-    }
-
-    public boolean isBackrefLastlineScope() {
-        return isBackrefLastlineScope;
-    }
-
-    public void setBackrefLastlineScope(boolean isBackrefLastlineScope) {
-        this.isBackrefLastlineScope = isBackrefLastlineScope;
     }
     
     public Arity getArity() {
