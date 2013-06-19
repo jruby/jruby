@@ -680,7 +680,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public RubyFixnum hash() {
         check();
-        return getRuntime().newFixnum(regexp.hashCode() ^ str.hashCode());
+        return getRuntime().newFixnum(pattern.hashCode() ^ str.hashCode());
     }
 
 }
