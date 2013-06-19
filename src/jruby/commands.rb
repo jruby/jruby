@@ -21,7 +21,7 @@ module JRuby
           # skip options
           next false if g =~ /^-/
           
-          f = Dir.glob("build_lib/#{g}*.gem").first
+          f = Dir.glob("build_lib/#{g}*.gem").sort.last
           next false if f.nil?
 
           if File.exist?(f) # local gem
