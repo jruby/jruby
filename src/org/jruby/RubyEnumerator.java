@@ -675,7 +675,7 @@ public class RubyEnumerator extends RubyObject {
                             try {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
                                 if (die) throw new JumpException.BreakJump(-1, NEVER);
-                                out.put(args[0]);
+                                out.put(RubyEnumerable.packEnumValues(runtime, args));
                                 if (die) throw new JumpException.BreakJump(-1, NEVER);
                             } catch (InterruptedException ie) {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
