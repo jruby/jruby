@@ -1492,25 +1492,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
     }
 
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, block);
     }
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;

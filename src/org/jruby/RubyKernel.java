@@ -2232,19 +2232,19 @@ public class RubyKernel {
         return ((RubyBasicObject)self).send(context, args, block);
     }
 
-    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         return ((RubyBasicObject)self).send19(context, arg0, block);
     }
-    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         return ((RubyBasicObject)self).send19(context, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send19(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send"}, required = 1, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = {"send"}, required = 1, rest = true, compat = RUBY1_9, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return ((RubyBasicObject)self).send19(context, args, block);
     }
