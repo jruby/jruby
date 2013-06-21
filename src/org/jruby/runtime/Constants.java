@@ -48,7 +48,7 @@ public final class Constants {
     public static final String RUBY2_0_MAJOR_VERSION = "@version.ruby2_0.major@";
     public static final String RUBY2_0_VERSION = "@version.ruby2_0@";
     public static final int    RUBY2_0_PATCHLEVEL = Integer.parseInt("@version.ruby2_0.patchlevel@");
-//    public static final int    RUBY2_0_REVISION = Integer.parseInt("@version.ruby2_0.revision@");
+    public static final int    RUBY2_0_REVISION = Integer.parseInt("@version.ruby2_0.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
     public static final String VERSION = "@version.jruby@";
@@ -93,6 +93,8 @@ public final class Constants {
             DEFAULT_RUBY_VERSION = "1.8";
         } else if (defaultRubyVersion.equals("1.9")) {
             DEFAULT_RUBY_VERSION = "1.9";
+        } else if (defaultRubyVersion.equals("2.0")) {
+            DEFAULT_RUBY_VERSION = "2.0";
         } else {
             System.err.println("invalid version selected in build (\"" + defaultRubyVersion + "\"), using 1.8");
             DEFAULT_RUBY_VERSION = "1.8";
