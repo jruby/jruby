@@ -358,6 +358,8 @@ def DelegateClass(superclass)
   return klass
 end
 
+require 'native_delegate.jar'
+
 # :enddoc:
 
 if __FILE__ == $0
