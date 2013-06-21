@@ -6,7 +6,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.jcodings.Encoding;
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
 import org.jruby.Ruby;
@@ -29,6 +31,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Stream;
@@ -226,6 +229,9 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         // StringIO.new("あいう").gets(5) => "あい"
         // StringIO.new("あいう").gets(6) => "あい"
         // StringIO.new("あいう").gets(7) => "あいう"
+        
+        Encoding encoding = result.getEncoding();
+        
         while (limit <= 0 || result.length() < limit) {
             int sepOffset = result.length() - sep.getRealSize();
             if (sepOffset >= 0 && result.startsWith(sep, sepOffset)) break;
@@ -237,6 +243,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
+        fixBrokenTrailingCharacter(result);
+
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
         if (0 == result.length() && -1 == ce) return getRuntime().getNil();
@@ -350,6 +358,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             val.append(buffer, 0, read);
             if (limit != -1) rest -= read;
         }
+        
+        fixBrokenTrailingCharacter(val);
         
         this.position += val.length();
         return newStr(getRuntime(), val);
@@ -607,6 +617,42 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return getRuntime().getNil();
     }
     
+    private void fixBrokenTrailingCharacter(ByteList val) throws IOException {
+        // read additional bytes to fix broken char
+        if (val.length() > 0 && StringSupport.isIncompleteChar(val.get(val.length() - 1))) {
+            
+            Encoding encoding = val.getEncoding();
+            int begin = val.getBegin();
+            int size = val.getRealSize();
+            
+            // get head offset of broken character
+            int charHead = encoding.leftAdjustCharHead(
+                    val.getUnsafeBytes(), // string bytes
+                    begin, // start of string
+                    begin + size - 1, // last byte
+                    begin + size); // end of string
+            
+            // external offset
+            charHead -= begin;
+            
+            // byte at char head
+            byte byteHead = (byte)(val.get(charHead) & 0xFF);
+            
+            // total bytes we would need to complete character
+            int extra = val.getEncoding().length(byteHead);
+            
+            // what we already have
+            extra -= val.getRealSize() - charHead;
+            
+            for (int i = 0; i < extra; i++) {
+                int read = bufferedStream.read();
+                if (read == -1) break;
+                
+                val.append(read);
+            }
+        }
+    }
+
     private int line = 0;
     private long position = 0;
     private com.jcraft.jzlib.GZIPInputStream io;
