@@ -57,6 +57,8 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
       args.should == nil
       index.should == 0
     end
+
+    no_args_method.new.enum_for(:my_method).next.should == nil
   end
 
   it "passes the arg directly to the block if the method passes one arg" do
@@ -71,6 +73,8 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
       args.should == "one"
       index.should == 0
     end
+
+    one_arg_each.new.enum_for(:my_method).next.should == "one"
   end
 
   it "passes an array of arguments to the block if the method passes multiple values" do
@@ -85,5 +89,7 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
       args.should == [0, 1, 2, 3]
       index.should == 0
     end
+
+    many_args_method.new.enum_for(:my_method).next.should == [0, 1, 2, 3]
   end
 end

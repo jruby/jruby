@@ -883,15 +883,21 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            // Package the arguments appropriately depending on how many there are
-            // Corresponds to rb_enum_values_pack in MRI
-            if (iargs.length < 2) {
-                // For 0 or 1 arguments, we want the checkArgs behavior
-                return this.block.call(context, checkArgs(runtime, iargs), runtime.newFixnum(index++));
-            } else {
-                // For more than 1 arg, we pass them to our block as an arrays
-                return this.block.call(context, runtime.newArrayNoCopy(iargs), runtime.newFixnum(index++));
-            }
+            return this.block.call(context, packEnumValues(runtime, iargs), runtime.newFixnum(index++));
+        }
+    }
+
+    /**
+     * Package the arguments appropriately depending on how many there are
+     * Corresponds to rb_enum_values_pack in MRI
+     */
+    static IRubyObject packEnumValues(Ruby runtime, IRubyObject[] args) {
+        if (args.length < 2) {
+            // For 0 or 1 arguments, we want the checkArgs behavior
+            return checkArgs(runtime, args);
+        } else {
+            // For more than 1 arg, we pack them as an arrays
+            return runtime.newArrayNoCopy(args);
         }
     }
 
