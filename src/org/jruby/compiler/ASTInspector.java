@@ -39,9 +39,10 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static org.jruby.compiler.ASTInspector.Flag.*;
 
 /**
  *
@@ -65,27 +66,57 @@ public class ASTInspector {
 
     private static final boolean DEBUG = false;
 
-    public static final int BLOCK_ARG = 0x1; // block argument to the method
-    public static final int CLOSURE = 0x2; // closure present
-    public static final int CLASS = 0x4; // class present
-    public static final int METHOD = 0x8; // method table mutations, def, defs, undef, alias
-    public static final int EVAL = 0x10; // likely call to eval
-    public static final int FRAME_AWARE = 0x20; // makes calls that are aware of the frame
-    public static final int FRAME_SELF = 0x40; // makes calls that are aware of the frame's self
-    public static final int FRAME_VISIBILITY = 0x80; // makes calls that are aware of the frame's visibility
-    public static final int FRAME_BLOCK = 0x100; // makes calls that are aware of the frame's block
-    public static final int FRAME_NAME = 0x200; // makes calls that are aware of the frame's name
-    public static final int BACKREF = 0x400; // makes calls that set or get backref
-    public static final int LASTLINE = 0x800; // makes calls that set or get lastline
-    public static final int FRAME_CLASS = 0x1000; // makes calls that are aware of the frame's class
-    public static final int OPT_ARGS = 0x2000; // optional arguments to the method
-    public static final int REST_ARG = 0x4000; // rest arg to the method
-    public static final int SCOPE_AWARE = 0x8000; // makes calls that are aware of the scope
-    public static final int ZSUPER = 0x10000; // makes a zero-argument super call
-    public static final int CONSTANT = 0x20000; // accesses or sets constants
-    public static final int CLASS_VAR = 0x40000; // accesses or sets class variables
-    public static final int SUPER = 0x80000; // makes normal super call
-    public static final int RETRY = 0x100000; // contains a retry
+    enum Flag {
+        BLOCK_ARG(0x1), // block argument to the method
+        CLOSURE(0x2), // closure present
+        CLASS(0x4), // class present
+        METHOD(0x8), // method table mutations, def, defs, undef, alias
+        EVAL(0x10), // likely call to eval
+        FRAME_AWARE(0x20), // makes calls that are aware of the frame
+        FRAME_SELF(0x40), // makes calls that are aware of the frame's self
+        FRAME_VISIBILITY(0x80), // makes calls that are aware of the frame's visibility
+        FRAME_BLOCK(0x100), // makes calls that are aware of the frame's block
+        FRAME_NAME(0x200), // makes calls that are aware of the frame's name
+        BACKREF(0x400), // makes calls that set or get backref
+        LASTLINE(0x800), // makes calls that set or get lastline
+        FRAME_CLASS(0x1000), // makes calls that are aware of the frame's class
+        OPT_ARGS(0x2000), // optional arguments to the method
+        REST_ARG(0x4000), // rest arg to the method
+        SCOPE_AWARE(0x8000), // makes calls that are aware of the scope
+        ZSUPER(0x10000), // makes a zero-argument super call
+        CONSTANT(0x20000), // accesses or sets constants
+        CLASS_VAR(0x40000), // accesses or sets class variables
+        SUPER(0x80000), // makes normal super call
+        RETRY(0x100000); // contains a retry
+        
+        private Flag(int value) {
+            flag = value;
+        }
+        
+        public final int flag;
+    }
+
+    public static final Flag BLOCK_ARG = Flag.BLOCK_ARG;
+    public static final Flag CLOSURE = Flag.CLOSURE;
+    public static final Flag CLASS = Flag.CLASS;
+    public static final Flag METHOD = Flag.METHOD;
+    public static final Flag EVAL = Flag.EVAL;
+    public static final Flag FRAME_AWARE = Flag.FRAME_AWARE;
+    public static final Flag FRAME_SELF = Flag.FRAME_SELF;
+    public static final Flag FRAME_VISIBILITY = Flag.FRAME_VISIBILITY;
+    public static final Flag FRAME_BLOCK = Flag.FRAME_BLOCK;
+    public static final Flag FRAME_NAME = Flag.FRAME_NAME;
+    public static final Flag BACKREF = Flag.BACKREF;
+    public static final Flag LASTLINE = Flag.LASTLINE;
+    public static final Flag FRAME_CLASS = Flag.FRAME_CLASS;
+    public static final Flag OPT_ARGS = Flag.OPT_ARGS;
+    public static final Flag REST_ARG = Flag.REST_ARG;
+    public static final Flag SCOPE_AWARE = Flag.SCOPE_AWARE;
+    public static final Flag ZSUPER = Flag.ZSUPER;
+    public static final Flag CONSTANT = Flag.CONSTANT;
+    public static final Flag CLASS_VAR = Flag.CLASS_VAR;
+    public static final Flag SUPER = Flag.SUPER;
+    public static final Flag RETRY = Flag.RETRY;
 
     private static final String[] MODIFIER_NAMES = {
         "BLOCK", "CLOSURE", "CLASS", "METHOD", "EVAL", "FRAME_AWARE", "FRAME_SELF",
@@ -173,22 +204,30 @@ public class ASTInspector {
         return newInspector;
     }
     
-    public boolean getFlag(int modifier) {
-        return (flags & modifier) != 0;
-    }
-
-    public void setFlag(int modifier) {
-        if (dump) {
-            LOG.debug("[ASTInspector] {}\n\tset flag {}", name, Integer.toHexString(modifier));
-        }
-        flags |= modifier;
+    public boolean getFlag(Flag modifier) {
+        return (flags & modifier.flag) != 0;
     }
     
-    public void setFlag(Node node, int modifier) {
-        if (dump) {
-            LOG.debug("[ASTInspector] {}\n\tset flag {} because of {} at {}", name, Integer.toHexString(modifier), node.getNodeType(), node.getPosition());
+    public boolean getFlag(Flag... modifiers) {
+        int mask = 0;
+        for (Flag flag : modifiers) {
+            mask |= flag.flag;
         }
-        flags |= modifier;
+        return (flags & mask) != 0;
+    }
+
+    public void setFlag(Flag modifier) {
+        if (dump) {
+            LOG.info("[ASTInspector] " + name + "\n\tset flag " + modifier);
+        }
+        flags |= modifier.flag;
+    }
+    
+    public void setFlag(Node node, Flag modifier) {
+        if (dump) {
+            LOG.info("[ASTInspector] " + name + "\n\tset flag " + modifier + " because of " + node.getNodeType() + " at " + node.getPosition());
+        }
+        flags |= modifier.flag;
     }
     
     /**
@@ -769,8 +808,8 @@ public class ASTInspector {
 
     public boolean hasFrameAwareMethods() {
         return getFlag(
-                FRAME_AWARE | FRAME_BLOCK | FRAME_CLASS | FRAME_NAME | FRAME_SELF | FRAME_VISIBILITY |
-                CLOSURE | EVAL | ZSUPER | SUPER | BACKREF | LASTLINE);
+                FRAME_AWARE, FRAME_BLOCK, FRAME_CLASS, FRAME_NAME, FRAME_SELF, FRAME_VISIBILITY,
+                CLOSURE, EVAL, ZSUPER, SUPER, BACKREF, LASTLINE);
     }
 
     public boolean hasScopeAwareMethods() {
