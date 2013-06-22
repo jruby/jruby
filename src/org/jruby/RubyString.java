@@ -1393,7 +1393,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int cr2 = cr;
 
         if (toEnc == enc) {
-            if (toCr == CR_UNKNOWN || (toEnc == ASCIIEncoding.INSTANCE && toCr != CR_7BIT)) {
+            if (toCr == CR_UNKNOWN) {
                 cr = CR_UNKNOWN;
             } else if (cr == CR_UNKNOWN) {
                 cr = codeRangeScan(enc, bytes, p, len);
@@ -1427,7 +1427,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             resCr = CR_UNKNOWN;
         } else if (toCr == CR_7BIT) {
             if (cr == CR_7BIT) {
-                resEnc = toEnc != ASCIIEncoding.INSTANCE ? toEnc : enc;
+                resEnc = toEnc;
                 resCr = CR_7BIT;
             } else {
                 resEnc = enc;
