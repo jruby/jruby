@@ -42,6 +42,17 @@ import org.jruby.util.io.Stream;
  */
 @JRubyClass(name = "Zlib::GzipReader", parent = "Zlib::GzipFile", include = "Enumerable")
 public class JZlibRubyGzipReader extends RubyGzipFile {
+
+    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
+        // fix broken trailing character
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result, result.length());
+        for (int i = 0; i < extraBytes; i++) {
+            int read = bufferedStream.read();
+            if (read == -1) break;
+            
+            result.append(read);
+        }
+    }
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")
     public static class Error {}
     
@@ -243,7 +254,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
-        fixBrokenTrailingCharacter(result);
+        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(result);
 
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
@@ -359,7 +370,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (limit != -1) rest -= read;
         }
         
-        fixBrokenTrailingCharacter(val);
+        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(val);
         
         this.position += val.length();
         return newStr(getRuntime(), val);
@@ -615,42 +626,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             throw getRuntime().newIOErrorFromException(ioe);
         }
         return getRuntime().getNil();
-    }
-    
-    private void fixBrokenTrailingCharacter(ByteList val) throws IOException {
-        // read additional bytes to fix broken char
-        if (val.length() > 0 && StringSupport.isIncompleteChar(val.get(val.length() - 1))) {
-            
-            Encoding encoding = val.getEncoding();
-            int begin = val.getBegin();
-            int size = val.getRealSize();
-            
-            // get head offset of broken character
-            int charHead = encoding.leftAdjustCharHead(
-                    val.getUnsafeBytes(), // string bytes
-                    begin, // start of string
-                    begin + size - 1, // last byte
-                    begin + size); // end of string
-            
-            // external offset
-            charHead -= begin;
-            
-            // byte at char head
-            byte byteHead = (byte)(val.get(charHead) & 0xFF);
-            
-            // total bytes we would need to complete character
-            int extra = val.getEncoding().length(byteHead);
-            
-            // what we already have
-            extra -= val.getRealSize() - charHead;
-            
-            for (int i = 0; i < extra; i++) {
-                int read = bufferedStream.read();
-                if (read == -1) break;
-                
-                val.append(read);
-            }
-        }
     }
 
     private int line = 0;

@@ -432,6 +432,10 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                 if (sepArg.isNil()) {
                     int bytesAvailable = data.internal.getByteList().getRealSize() - (int)data.pos;
                     int bytesToUse = (limit < 0 || limit >= bytesAvailable ? bytesAvailable : limit);
+                    
+                    // add additional bytes to fix trailing broken character
+                    bytesToUse += StringSupport.bytesToFixBrokenTrailingCharacter(data.internal.getByteList(), bytesToUse);
+                    
                     ByteList buf = data.internal.getByteList().makeShared(
                         (int)data.pos, bytesToUse);
                     data.pos += buf.getRealSize();
@@ -454,26 +458,35 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                 }
             }
 
-            int ix = ss.indexOf(sep, (int)data.pos);
+            int sepIndex = ss.indexOf(sep, (int)data.pos);
 
             ByteList add;
-            if (-1 == ix) {
-                ix = data.internal.getByteList().getRealSize();
+            if (-1 == sepIndex) {
+                sepIndex = data.internal.getByteList().getRealSize();
                 add = ByteList.EMPTY_BYTELIST;
             } else {
                 add = sep;
             }
 
-            int bytes = ix - (int)data.pos;
+            int bytes = sepIndex - (int)data.pos;
             int bytesToUse = (limit < 0 || limit >= bytes ? bytes : limit);
 
-            int bytesWithSep = ix - (int)data.pos + add.getRealSize();
+            int bytesWithSep = sepIndex - (int)data.pos + add.getRealSize();
             int bytesToUseWithSep = (limit < 0 || limit >= bytesWithSep ? bytesWithSep : limit);
 
             ByteList line = new ByteList(bytesToUseWithSep);
             if (is19) line.setEncoding(data.internal.getByteList().getEncoding());
             line.append(data.internal.getByteList(), (int)data.pos, bytesToUse);
             data.pos += bytesToUse;
+            
+            if (is19) {
+                // add additional bytes to fix trailing broken character
+                int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(line, line.length());
+                if (extraBytes != 0) {
+                    line.append(data.internal.getByteList(), (int)data.pos, extraBytes);
+                    data.pos += extraBytes;
+                }
+            }
 
             int sepBytesToUse = bytesToUseWithSep - bytesToUse;
             line.append(add, 0, sepBytesToUse);
