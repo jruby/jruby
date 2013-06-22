@@ -65,10 +65,19 @@ public class LoggerFactory {
         try {
             Logger logger = (Logger) CTOR.newInstance(loggerName);
             return logger;
-        } catch (SecurityException e) {
-            return new StandardErrorLogger(loggerName);
         } catch (Exception e) {
-            throw new IllegalStateException("unable to instantiate logger", e);
+          Throwable rootCause = e;
+
+          // Unwrap reflection exception wrappers
+          while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+          }
+
+          if (rootCause instanceof SecurityException) {
+            return new StandardErrorLogger(loggerName);
+          }
+
+          throw new IllegalStateException("unable to instantiate logger", e);
         }
     }
 }
