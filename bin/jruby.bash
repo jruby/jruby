@@ -190,7 +190,7 @@ mode=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
-JAVA_CLASS_NGSERVER=com.martiansoftware.nailgun.NGServer
+JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
