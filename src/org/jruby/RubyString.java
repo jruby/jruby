@@ -2739,6 +2739,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     makeShared(context.runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
             frozenCheck(true);
+            context.setBackRef(match);
             return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {
             return context.setBackRef(context.runtime.getNil());
