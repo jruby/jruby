@@ -56,7 +56,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -76,8 +75,6 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.XMLConverter;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.string.JavaCrypt;
 
 import java.io.UnsupportedEncodingException;
@@ -116,8 +113,6 @@ import static org.jruby.util.StringSupport.unpackResult;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding {
-
-    private static final Logger LOG = LoggerFactory.getLogger("RubyString");
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
@@ -557,8 +552,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Charset rubyInt = null;
         if (internal != null && internal.getCharset() != null) rubyInt = internal.getCharset();
 
-        // Java external, used if no internal
-        Charset javaExt = Charset.defaultCharset();
         Encoding javaExtEncoding = runtime.getEncodingService().getJavaDefault();
 
         if (rubyInt == null) {
@@ -2852,7 +2845,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = value.getEncoding();
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
-        DynamicScope scope = context.getCurrentScope();
         if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
             RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
@@ -3147,8 +3139,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         byte[]bytes = value.getUnsafeBytes();
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
-        DynamicScope scope = null;
-        
         int beg = RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE);
         if (beg < 0) {
             if (useBackref) context.setBackRef(runtime.getNil());
