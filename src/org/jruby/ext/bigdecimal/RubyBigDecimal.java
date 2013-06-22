@@ -656,7 +656,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(value.hashCode());
+        return getRuntime().newFixnum(value.stripTrailingZeros().hashCode());
     }
 
     @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
