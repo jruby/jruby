@@ -1082,20 +1082,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         try {
             IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
                     this, OP_CMP, other);
+            
             // if RubyBasicObject#op_cmp is used, the result may be nil
-            if (cmp.isNil()) {
-                throw new IllegalArgumentException(
-                        "Incomparable objects: " + cmp.inspect() + " <=> " +
-                        other.inspect() + " returned nil");
+            if (!cmp.isNil()) {
             } else {
                 return (int) cmp.convertToInteger().getLongValue();
             }
         } catch (RaiseException ex) {
-            // NoMethodError was raised, but the call came from java. The
-            // correct java exception is IllegalArgumentException. Otherwise,
-            // the ruby stack trace makes no sense because ruby didn't call <=>
-            throw new IllegalArgumentException("Incomparable objects", ex);
         }
+        
+        /* We used to raise an error if two IRubyObject were not comparable, but
+         * in order to support the new ConcurrentHashMapV8 and other libraries
+         * and containers that arbitrarily call compareTo expecting it to always
+         * succeed, we have opted to return 0 here. This will allow all
+         * RubyBasicObject subclasses to be compared, but if the comparison is
+         * not valid we they will appear the same for sorting purposes.
+         * 
+         * See https://jira.codehaus.org/browse/JRUBY-7013
+         */
+        return 0;
     }
 
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
