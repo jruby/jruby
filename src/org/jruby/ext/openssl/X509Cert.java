@@ -301,7 +301,7 @@ public class X509Cert extends RubyObject {
         } else {
             bi = new BigInteger(s);
         }
-        generator.setSerialNumber(bi);
+	generator.setSerialNumber(new BigInteger(1, bi.toByteArray()));
         return num;
     }
 
