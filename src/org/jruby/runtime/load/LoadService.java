@@ -1092,7 +1092,8 @@ public class LoadService {
         if (resource == null) {
             return null;
         }
-        String file = state.loadName;
+        String file = resource.getName();
+        String location = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
             if (runtime.getInstanceConfig().isCextEnabled()) {
                 return new CExtension(resource);
@@ -1104,7 +1105,7 @@ public class LoadService {
         } else if (file.endsWith(".class")) {
             return new JavaCompiledScript(resource);
         } else {
-            return new ExternalScript(resource, file);
+            return new ExternalScript(resource, location);
         }
     }
 
