@@ -1024,6 +1024,11 @@ primary         : literal
                 | kBEGIN bodystmt kEND {
                     $$ = p.dispatch("on_begin", $2);
                 }
+                | tLPAREN_ARG {
+                    p.setState(LexState.EXPR_ENDARG);
+                } rparen {
+                    $$ = p.dispatch("on_paren", $2);
+                }
                 | tLPAREN_ARG expr {
                     p.setState(LexState.EXPR_ENDARG); 
                 } rparen {
@@ -1772,8 +1777,9 @@ superclass      : term {
 // [!null]
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
-                    $$ = $2;
+                    $$ = p.dispatch("on_paren", $2);
                     p.setState(LexState.EXPR_BEG);
+
                 }
                 | f_args term {
                     $$ = $1;
