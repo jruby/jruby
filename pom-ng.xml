@@ -281,6 +281,7 @@
           <verbose>true</verbose>
           <fork>true</fork>
           <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
           <source>${javac.version}</source>
           <target>${javac.version}</target>
         </configuration>
