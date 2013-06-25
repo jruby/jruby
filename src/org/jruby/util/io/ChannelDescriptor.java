@@ -837,11 +837,12 @@ public class ChannelDescriptor {
             }
 
             if (flags.isCreate()) {
-                if (theFile.exists() && flags.isExclusive()) {
-                    throw new FileExistsException(path);
-                }
                 try {
                     fileCreated = theFile.createNewFile();
+                    
+                    if (!fileCreated && flags.isExclusive()) {
+                        throw new FileExistsException(path);
+                    }
                 } catch (IOException ioe) {
                     // See JRUBY-4380.
                     // MRI behavior: raise Errno::ENOENT in case
