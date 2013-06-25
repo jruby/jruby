@@ -262,4 +262,21 @@ DEPS
       $hello
     })
   end
+
+  def test_symlinked_jar
+    Dir.chdir('test') do
+      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exists?('jarwithoutextension')
+      File.symlink 'jarwithoutextension', 'symlink.jar' unless File.symlink?('symlink.jar')
+    end
+
+    assert_in_sub_runtime %{
+      require 'test/symlink.jar'
+    }
+  ensure
+    Dir.chdir('test') do
+      [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
+        File.delete(file)
+      end
+    end
+  end
 end
