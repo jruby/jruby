@@ -76,6 +76,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
@@ -164,6 +165,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         finalResult = runtime.getNil();
         errorInfo = runtime.getNil();
+    }
+    
+    public RubyThread(Ruby runtime, RubyClass klass, ThreadedRunnable runnable) {
+        this(runtime, klass);
+        
+        startWith(runnable);
     }
 
     public void receiveMail(ThreadService.Event event) {
@@ -423,8 +430,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
         if (threadImpl != null) throw runtime.newThreadError("already initialized thread");
 
+        RubyRunnable runnable = new RubyRunnable(this, args, block);
+        
+        return startWith(runnable);
+    }
+
+    private IRubyObject startWith(ThreadedRunnable runnable) throws RaiseException, OutOfMemoryError {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        
         try {
-            RubyRunnable runnable = new RubyRunnable(this, args, block);
             if (RubyInstanceConfig.POOLING_ENABLED) {
                 FutureThread futureThread = new FutureThread(this, runnable);
                 threadImpl = futureThread;

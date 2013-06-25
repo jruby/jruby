@@ -41,10 +41,10 @@ import org.jruby.RubyThread;
 public class FutureThread implements ThreadLike {
     private volatile Future future;
     private volatile Thread nativeThread;
-    private RubyRunnable runnable;
+    private ThreadedRunnable runnable;
     public RubyThread rubyThread;
     
-    public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
+    public FutureThread(RubyThread rubyThread, ThreadedRunnable runnable) {
         this.rubyThread = rubyThread;
         this.runnable = runnable;
     }

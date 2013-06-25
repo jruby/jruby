@@ -102,6 +102,8 @@ import org.jruby.runtime.Arity;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import org.jruby.internal.runtime.ThreadedRunnable;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.ShellLauncher.POpenProcess;
@@ -4155,7 +4157,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
    
-    @JRubyMethod(rest = true, meta = true)
+    @JRubyMethod(rest = true, meta = true, compat = RUBY1_8)
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
@@ -4180,6 +4182,80 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } catch (InterruptedException e) {
             throw runtime.newThreadError("unexpected interrupt");
         }
+    }
+   
+    @JRubyMethod(name = "popen3", rest = true, meta = true, compat = RUBY1_9)
+    public static IRubyObject popen3_19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
+
+        final POpenTuple tuple = popenSpecial(context, args);
+        final long pid = ShellLauncher.getPidFromProcess(tuple.process);
+
+        // array trick to be able to reference enclosing RubyThread
+        final RubyThread[] waitThread = new RubyThread[1];
+        waitThread[0] = new RubyThread(
+                runtime,
+                (RubyClass) runtime.getClassFromPath("Process::WaitThread"),
+                new ThreadedRunnable() {
+
+            volatile Thread javaThread;
+
+            @Override
+            public Thread getJavaThread() {
+                return javaThread;
+            }
+
+            @Override
+            public void run() {
+                javaThread = Thread.currentThread();
+                RubyThread rubyThread;
+                // spin a bit until this happens; should almost never spin
+                while ((rubyThread = waitThread[0]) == null) {
+                    Thread.yield();
+                }
+                
+                ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+
+                rubyThread.op_aset(
+                        runtime.newSymbol("pid"),
+                        runtime.newFixnum(pid));
+
+                try {
+                    int exitValue = tuple.process.waitFor();
+                    
+                    RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
+                            runtime,
+                            exitValue,
+                            pid);
+                    
+                    rubyThread.cleanTerminate(status);
+                } catch (Throwable t) {
+                    rubyThread.exceptionRaised(t);
+                } finally {
+                    rubyThread.dispose();
+                }
+            }
+
+        });
+
+        RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
+                tuple.output,
+                tuple.input,
+                tuple.error,
+                waitThread[0]);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(context, yieldArgs);
+            } finally {
+                cleanupPOpen(tuple);
+                
+                IRubyObject status = waitThread[0].join(IRubyObject.NULL_ARRAY);
+                context.setLastExitStatus(status);
+            }
+        }
+        
+        return yieldArgs;
     }
 
     @JRubyMethod(rest = true, meta = true)

@@ -34,14 +34,13 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class RubyRunnable implements Runnable {
+public class RubyRunnable implements ThreadedRunnable {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyRunnable");
 
@@ -61,6 +60,7 @@ public class RubyRunnable implements Runnable {
         this.arguments = args;
     }
     
+    @Deprecated
     public RubyThread getRubyThread() {
         return rubyThread;
     }
@@ -69,6 +69,7 @@ public class RubyRunnable implements Runnable {
         return javaThread;
     }
     
+    @Override
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
