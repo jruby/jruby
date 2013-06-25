@@ -6,6 +6,9 @@ require "test/unit"
 require 'net/https'
 
 class TestIntegration < Test::Unit::TestCase
+  CACERT_FILE = File.join(File.dirname(__FILE__), "fixture", "cacert.pem");
+  NEGATIVE_SERIAL_CERT_FILE = File.join(File.dirname(__FILE__), "fixture", "negative_serial_cert.pem");
+  
   def path(file)
     File.expand_path(file, File.dirname(__FILE__))
   end
@@ -14,7 +17,7 @@ class TestIntegration < Test::Unit::TestCase
   def _test_drb
     config = {
       :SSLVerifyMode => OpenSSL::SSL::VERIFY_PEER,
-      :SSLCACertificateFile => File.join(File.dirname(__FILE__), "fixture", "cacert.pem"),
+      :SSLCACertificateFile => CACERT_FILE,
       :SSLPrivateKey => OpenSSL::PKey::RSA.new(File.read(File.join(File.dirname(__FILE__), "fixture", "localhost_keypair.pem"))),
       :SSLCertificate => OpenSSL::X509::Certificate.new(File.read(File.join(File.dirname(__FILE__), "fixture", "cert_localhost.pem"))),
     }
@@ -125,20 +128,15 @@ class TestIntegration < Test::Unit::TestCase
     assert_equal "\253\305\306\372;\374\235\302\357/\006\360\355XO\232\312S\356* #\227\217", encrypted
   end
   
-  def _test_perf_of_nil
-# require 'net/https'
-# require 'benchmark'
+  # jruby/jruby#823
+  def test_negative_serial_number
+    cert_armor_regex = 
+    /(-----BEGIN (X509 )?CERTIFICATE-----.+?-----END (X509 )?CERTIFICATE-----)/m
 
-# def request(data)
-#   connection = Net::HTTP.new("www.google.com", 443)
-#   connection.use_ssl = true
-#   connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
-#   connection.start do |connection|
-#     connection.request_post("/tbproxy/spell?lang=en", data, { 'User-Agent' => "Test", 'Accept' => 'text/xml' })
-#   end
-# end
-
-# puts "is not: #{Benchmark.measure { request("") }.to_s.chomp}"
-# puts "is nil: #{Benchmark.measure { request(nil) }.to_s.chomp}"
+    assert_nothing_raised do
+      File.read(NEGATIVE_SERIAL_CERT_FILE).scan(cert_armor_regex).map(&:first).map do |cert|
+        OpenSSL::X509::Certificate.new(cert)
+      end
+    end
   end
 end
