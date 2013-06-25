@@ -104,13 +104,11 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
       <version>1.47</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.47</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -232,6 +230,18 @@
               </sources>
             </configuration>
           </execution>
+          <execution>
+            <id>add-populators</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>build/src_gen</source>
+              </sources>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -254,6 +264,31 @@
           </execution>
         </executions>
       </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>invoker-generator</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+              <configuration>
+                <executable>java</executable>
+                <arguments>
+                  <argument>-Djruby.bytecode.version=${javac.version}</argument>
+                  <argument>-classpath</argument>
+                  <classpath/>
+                  <argument>org.jruby.anno.InvokerGenerator</argument>
+                  <argument>build/src_gen/annotated_classes.txt</argument>
+                  <argument>${project.build.outputDirectory}</argument>
+                </arguments>
+              </configuration>
+              </execution>
+            </executions>
+          </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>buildnumber-maven-plugin</artifactId>
@@ -300,6 +335,16 @@
                 <include>org/jruby/runtime/Visibility.java</include>
                 <include>org/jruby/util/CodegenUtils.java</include>
                 <include>org/jruby/util/SafePropertyAccessor.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>populators</id>
+            <phase>process-classes</phase>
+            <goals><goal>compile</goal></goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/gen/**/*java</include>
               </includes>
             </configuration>
           </execution>
@@ -436,28 +481,29 @@
             <version>1.2.1</version>
             <executions>
               <execution>
+                <id>tzdata</id>
                 <phase>process-resources</phase>
                 <goals>
                   <goal>java</goal>
                 </goals>
+              <configuration>
+                <mainClass>org.joda.time.tz.ZoneInfoCompiler</mainClass>
+                <arguments>
+                  <argument>-src</argument>
+                  <argument>${project.build.directory}/tzdata</argument>
+                  <argument>-dst</argument>
+                  <argument>${project.build.directory}/tzdata/build</argument>
+                  <argument>africa</argument>
+                </arguments>
+                <systemProperties>
+                  <systemProperty>
+                    <key>org.joda.time.DateTimeZone.Provider</key>
+                    <value>org.joda.time.tz.UTCProvider</value>
+                  </systemProperty>
+                </systemProperties>
+              </configuration>
               </execution>
             </executions>
-            <configuration>
-              <mainClass>org.joda.time.tz.ZoneInfoCompiler</mainClass>
-              <arguments>
-                <argument>-src</argument>
-                <argument>${project.build.directory}/tzdata</argument>
-                <argument>-dst</argument>
-                <argument>${project.build.directory}/tzdata/build</argument>
-                <argument>africa</argument>
-              </arguments>
-              <systemProperties>
-                <systemProperty>
-                  <key>org.joda.time.DateTimeZone.Provider</key>
-                  <value>org.joda.time.tz.UTCProvider</value>
-                </systemProperty>
-              </systemProperties>
-            </configuration>
           </plugin>
         </plugins>
       </build>
