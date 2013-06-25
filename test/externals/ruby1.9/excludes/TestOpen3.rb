@@ -1,6 +1,5 @@
 exclude :test_capture2, "hangs"
 exclude :test_capture2e, "error"
-exclude :test_capture3_flip, "error"
 exclude :test_pipeline, "error"
 exclude :test_pipeline_r, "hangs"
 exclude :test_pipeline_rw, "hangs"
