@@ -299,7 +299,7 @@
         </configuration>
         <executions>
           <execution>
-            <phase>validate</phase>
+            <phase>process-sources</phase>
             <goals>
               <goal>create</goal>
             </goals>
@@ -401,6 +401,31 @@
                   <destFileName>${unsafe.jar}</destFileName>
                 </artifactItem>
               </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>auto-clean</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <filesets>
+                <fileset>
+                  <directory>build/src_gen</directory>
+                  <includes>
+                    <include>annotated_classes.txt</include>
+                  </includes>
+                </fileset>
+              </filesets>
+              <failOnError>false</failOnError>
             </configuration>
           </execution>
         </executions>
