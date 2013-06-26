@@ -1,225 +1,224 @@
-<?xml version="1.0"?>
-<project
-    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>jruby-core</artifactId>
   <groupId>org.jruby</groupId>
+  <artifactId>jruby</artifactId>
   <version>1.7.5.dev</version>
+  <name><![CDATA[JRuby]]></name>
   <packaging>jar</packaging>
-  <name>JRuby Core</name>
-
   <repositories>
     <repository>
       <id>localrepo</id>
       <url>file:./localrepo</url>
     </repository>
+    <repository>
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </repository>
   </repositories>
-
   <scm>
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
-    <developerConnection>scm:git:git://github.com/jruby/jruby.git</developerConnection>
+    <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>http://github.com/jruby/jruby</url>
   </scm>
-
   <dependencies>
-    <!--dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${project.version}</version>
-    </dependency-->
-    <!-- JRuby dependencies included in the jar and *not* rewritten. -->
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
       <version>2.0.0</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
       <version>1.1.2</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
       <version>0.4</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
       <version>0.3</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
       <version>3.0.0</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
       <version>1.0.10</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
       <version>0.8.4</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
       <version>1.0.10</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
       <version>1.2.5</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-ffi</artifactId>
+      <version>1.0.4</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
       <version>1.11</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>2.7</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.1</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
       <version>1.1.2</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
       <version>1.2</version>
+      <type>jar</type>
     </dependency>
-
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
       <version>1.47</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.47</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
       <version>4.3.1</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.8.4</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
-
-    <!-- localrepo jars -->
     <dependency>
       <groupId>jay</groupId>
       <artifactId>yydebug</artifactId>
       <version>1.0</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>1.0</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>nailgun</groupId>
       <artifactId>nailgun</artifactId>
       <version>0.7.1</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>coro</groupId>
       <artifactId>coro-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>sun.misc</groupId>
       <artifactId>unsafe-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
+      <type>jar</type>
       <scope>provided</scope>
     </dependency>
-
-    <!-- to use this explicitly allows to exclude the asm deps
-    which are repacked inside jruby-core itself -->
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-ffi</artifactId>
-      <version>1.0.4</version>
-      <!--exclusions>
-	<exclusion>
-	  <groupId>org.ow2.asm</groupId>
-	  <artifactId>asm-util</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>org.ow2.asm</groupId>
-	  <artifactId>asm-analysis</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>org.ow2.asm</groupId>
-	  <artifactId>asm-commons</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>org.ow2.asm</groupId>
-	  <artifactId>asm-tree</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>org.ow2.asm</groupId>
-	  <artifactId>asm</artifactId>
-	</exclusion>
-      </exclusions-->
-    </dependency>
   </dependencies>
-
+  <properties>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <gem.home>${project.build.directory}/rubygems</gem.home>
+    <gem.path>${project.build.directory}/rubygems</gem.path>
+    <jruby.plugins.version>0.29.4</jruby.plugins.version>
+    <anno.sources>${project.basedir}/build/src_gen</anno.sources>
+    <unsafe.jar>${project.build.directory}/unsafe.jar</unsafe.jar>
+    <generated.sources>${project.build.directory}/generated-sources</generated.sources>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+    <build.date>${maven.build.timestamp}</build.date>
+    <tzdata.tar.gz>${project.build.directory}/tzdata.tar.gz</tzdata.tar.gz>
+    <tzdata.build.directory>${project.build.directory}/tzdata/build/org/joda/time/tz/data</tzdata.build.directory>
+    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+  </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <outputDirectory>build/classes/jruby</outputDirectory>
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <includes>
-          <include>**/*.rb</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${tzdata.build.directory}</targetPath>
-        <directory>${project.basedir}/resources</directory>
-        <includes>
-          <include>.empty</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${generated.sources}</targetPath>
-        <filtering>true</filtering>
-        <directory>${project.basedir}/resources</directory>
-        <includes>
-          <include>${Constants.java}</include>
-        </includes>
-      </resource>
-    </resources>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0-alpha-2</version>
+        <executions>
+          <execution>
+            <id>properties</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>read-project-properties</goal>
+            </goals>
+            <configuration>
+              <files>
+                <file>${basedir}/default.build.properties</file>
+                <file>${basedir}/build.properties</file>
+              </files>
+              <quiet>true</quiet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <version>1.8</version>
         <executions>
           <execution>
-            <id>add-source</id>
+            <id>add-generated-sources</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>add-source</goal>
@@ -238,7 +237,7 @@
             </goals>
             <configuration>
               <sources>
-                <source>build/src_gen</source>
+                <source>${anno.sources}</source>
               </sources>
             </configuration>
           </execution>
@@ -246,68 +245,65 @@
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
-        <artifactId>properties-maven-plugin</artifactId>
-        <version>1.0-alpha-2</version>
-        <executions>
-          <execution>
-            <phase>initialize</phase>
-            <goals>
-              <goal>read-project-properties</goal>
-            </goals>
-            <configuration>
-              <quiet>true</quiet>
-              <files>
-                <file>${basedir}/default.build.properties</file>
-                <file>${basedir}/build.properties</file>
-              </files>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
-            <executions>
-              <execution>
-                <id>invoker-generator</id>
-                <phase>process-classes</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-              <configuration>
-                <executable>java</executable>
-                <arguments>
-                  <argument>-Djruby.bytecode.version=${javac.version}</argument>
-                  <argument>-classpath</argument>
-                  <classpath/>
-                  <argument>org.jruby.anno.InvokerGenerator</argument>
-                  <argument>build/src_gen/annotated_classes.txt</argument>
-                  <argument>${project.build.outputDirectory}</argument>
-                </arguments>
-              </configuration>
-              </execution>
-            </executions>
-          </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
         <artifactId>buildnumber-maven-plugin</artifactId>
         <version>1.2</version>
-        <configuration>
-          <shortRevisionLength>7</shortRevisionLength>
-          <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
-        </configuration>
         <executions>
           <execution>
+            <id>jruby-revision</id>
             <phase>process-sources</phase>
             <goals>
               <goal>create</goal>
             </goals>
+            <configuration>
+              <shortRevisionLength>7</shortRevisionLength>
+              <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+            </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>invoker-generator</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.bytecode.version=${javac.version}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.anno.InvokerGenerator</argument>
+                <argument>${anno.sources}/annotated_classes.txt</argument>
+                <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+            </configuration>
+          </execution>
+          <execution>
+            <id>unsafe-generator</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.util.unsafe.UnsafeGenerator</argument>
+                <argument>org.jruby.util.unsafe</argument>
+                <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
         <configuration>
@@ -324,7 +320,9 @@
           <execution>
             <id>anno</id>
             <phase>process-resources</phase>
-            <goals><goal>compile</goal></goals>
+            <goals>
+              <goal>compile</goal>
+            </goals>
             <configuration>
               <includes>
                 <include>org/jruby/anno/FrameField.java</include>
@@ -339,19 +337,11 @@
             </configuration>
           </execution>
           <execution>
-            <id>populators</id>
-            <phase>process-classes</phase>
-            <goals><goal>compile</goal></goals>
-            <configuration>
-              <includes>
-                <include>org/jruby/gen/**/*java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
             <id>constants</id>
             <phase>process-resources</phase>
-            <goals><goal>compile</goal></goals>
+            <goals>
+              <goal>compile</goal>
+            </goals>
             <configuration>
               <includes>
                 <include>${Constants.java}</include>
@@ -361,30 +351,44 @@
           <execution>
             <id>default-compile</id>
             <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
             <configuration>
+              <excludes>
+                <exclude>${Constants.java}</exclude>
+              </excludes>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
               </annotationProcessors>
               <compilerArgs>
-                <arg>-XDignore.symbol.file=true</arg>
-                <arg>-J-Duser.language=en</arg>
-                <arg>-J-Dfile.encoding=UTF-8</arg>
-                <arg>-J-Xbootclasspath/p:${project.build.directory}/${unsafe.jar}</arg>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-Duser.language=en</compilerArg>
+                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
               </compilerArgs>
-              <excludes>
-                <exclude>${Constants.java}</exclude>
-              </excludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>populators</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/gen/**/*java</include>
+              </includes>
             </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <version>2.8</version>
         <executions>
           <execution>
-            <id>unsafe</id>
+            <id>copy-unsafe</id>
             <phase>process-resources</phase>
             <goals>
               <goal>copy</goal>
@@ -398,7 +402,7 @@
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>${unsafe.jar}</destFileName>
+                  <destFileName>unsafe.jar</destFileName>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -410,7 +414,7 @@
         <version>2.5</version>
         <executions>
           <execution>
-            <id>auto-clean</id>
+            <id>clean-anno-config</id>
             <phase>process-classes</phase>
             <goals>
               <goal>clean</goal>
@@ -419,7 +423,7 @@
               <excludeDefaultDirectories>true</excludeDefaultDirectories>
               <filesets>
                 <fileset>
-                  <directory>build/src_gen</directory>
+                  <directory>${anno.sources}</directory>
                   <includes>
                     <include>annotated_classes.txt</include>
                   </includes>
@@ -430,108 +434,79 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.3.2</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>**/*openssl*/**/*</exclude>
+                <exclude>org/jruby/gen/org$jruby$ext$openssl*</exclude>
+                <exclude>org/jruby/ext/readline/**/*</exclude>
+                <exclude>org/jruby/demo/readline/**/*</exclude>
+                <exclude>org/jruby/gen/org$jruby$ext$readline*</exclude>
+              </excludes>
+              <archive>
+                <manifest>
+                  <mainClass>org.jruby.Main</mainClass>
+                </manifest>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <id>in_phase_package</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <includes>
+          <include>**/*rb</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/resources</directory>
+        <includes>
+          <include>.empty</include>
+        </includes>
+        <targetPath>${tzdata.build.directory}</targetPath>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/resources</directory>
+        <includes>
+          <include>${Constants.java}</include>
+        </includes>
+        <targetPath>${generated.sources}</targetPath>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
   </build>
-
-  <properties>
-    <generated.sources>${project.build.directory}/generated-sources</generated.sources>
-    <unsafe.jar>unsafe.jar</unsafe.jar>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-    <build.date>${maven.build.timestamp}</build.date>
-    <tzdata.tar.gz>${project.build.directory}/tzdata.tar.gz</tzdata.tar.gz>
-    <tzdata.build.directory>${project.build.directory}/tzdata/build/org/joda/time/tz/data</tzdata.build.directory>
-    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-  </properties>
-
   <profiles>
     <profile>
       <id>tzdata</id>
-      <!--activation>
-        <file>
-          <missing>target/tzdata.tar.gz</missing>
-        </file>
-      </activation-->
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>wagon-maven-plugin</artifactId>
-            <version>1.0-beta-3</version>
-            <executions>
-              <execution>
-                <id>tzdata</id>
-                <phase>generate-sources</phase>
-                <goals>
-                  <goal>download-single</goal>
-                </goals>
-                <configuration>
-                  <url>ftp://anonymous:jruby%40jruby.org@${tzdata.ftpserver}</url>
-                  <fromFile>${tzdata.ftp.dir}/tzdata${tzdata.latest.version}.tar.gz</fromFile>
-                  <toFile>${tzdata.tar.gz}</toFile>
-                </configuration>
-              </execution>
-            </executions>
-            <dependencies>
-              <dependency>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ftp</artifactId>
-                <version>2.4</version>
-              </dependency>
-            </dependencies>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>truezip-maven-plugin</artifactId>
-            <version>1.1</version>
-            <executions>
-              <execution>
-                <id>copy-out-fileset</id>
-                <goals>
-                  <goal>copy</goal>
-                </goals>
-                <phase>generate-sources</phase>
-                <configuration>
-                  <fileset>
-                    <directory>${tzdata.tar.gz}</directory>
-                    <outputDirectory>${project.build.directory}/tzdata</outputDirectory>
-                  </fileset>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
-            <executions>
-              <execution>
-                <id>tzdata</id>
-                <phase>process-resources</phase>
-                <goals>
-                  <goal>java</goal>
-                </goals>
-              <configuration>
-                <mainClass>org.joda.time.tz.ZoneInfoCompiler</mainClass>
-                <arguments>
-                  <argument>-src</argument>
-                  <argument>${project.build.directory}/tzdata</argument>
-                  <argument>-dst</argument>
-                  <argument>${project.build.directory}/tzdata/build</argument>
-                  <argument>africa</argument>
-                </arguments>
-                <systemProperties>
-                  <systemProperty>
-                    <key>org.joda.time.DateTimeZone.Provider</key>
-                    <value>org.joda.time.tz.UTCProvider</value>
-                  </systemProperty>
-                </systemProperties>
-              </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 </project>
