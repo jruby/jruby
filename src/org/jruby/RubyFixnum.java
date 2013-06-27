@@ -489,14 +489,10 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return multiplyFixnum(context, other);
+            return op_mul(context, ((RubyFixnum)other).value);
         } else {
             return multiplyOther(context, other);
         }
-    }
-
-    private IRubyObject multiplyFixnum(ThreadContext context, IRubyObject other) {
-        return op_mul(context, ((RubyFixnum) other).value);
     }
 
     private IRubyObject multiplyOther(ThreadContext context, IRubyObject other) {
@@ -515,8 +511,17 @@ public class RubyFixnum extends RubyInteger {
         //   value == -1; otherValue == Long.MIN_VALUE;
         //   result = value * othervalue;  #=> Long.MIN_VALUE (overflow)
         //   result / value  #=>  Long.MIN_VALUE (overflow) == otherValue
+        
         Ruby runtime = context.runtime;
-        if (value == 0) {
+        long value = this.value;
+        
+        // fast check for known ranges that won't overflow
+        if (value <= 3037000499L && otherValue <= 3037000499L &&
+                value >= -3037000499L && otherValue >= -3037000499L) {
+            return newFixnum(runtime, value * otherValue);
+        }
+        
+        if (value == 0 || otherValue == 0) {
             return RubyFixnum.zero(runtime);
         }
         if (value == -1) {
