@@ -102,13 +102,13 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }
 
     public T getIncomingSourceData() {
-        Edge<T> edge = getSingleEdge(getIncomingEdges().iterator(), "");
+        Edge<T> edge = getFirstEdge(getIncomingEdges().iterator(), "");
         
         return edge == null ? null : edge.getSource().getData();  
     }    
     
     public T getIncomingSourceDataOfType(Object type) {
-        Edge<T> edge = getSingleEdge(getIncomingEdgesOfType(type).iterator(), type);
+        Edge<T> edge = getFirstEdge(getIncomingEdgesOfType(type).iterator(), type);
         
         return edge == null ? null : edge.getSource().getData();
     }    
@@ -142,18 +142,18 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }
 
     public T getOutgoingDestinationData() {
-        Edge<T> edge = getSingleEdge(getOutgoingEdges().iterator(), "");
+        Edge<T> edge = getFirstEdge(getOutgoingEdges().iterator(), "");
         
         return edge == null ? null : edge.getDestination().getData();  
     }    
     
     public T getOutgoingDestinationDataOfType(Object type) {
-        Edge<T> edge = getSingleEdge(getOutgoingEdgesOfType(type).iterator(), type);
+        Edge<T> edge = getFirstEdge(getOutgoingEdgesOfType(type).iterator(), type);
         
         return edge == null ? null : edge.getDestination().getData();
     }
     
-    private Edge<T> getSingleEdge(Iterator<Edge<T>> iterator, Object type) {
+    private Edge<T> getFirstEdge(Iterator<Edge<T>> iterator, Object type) {
         if (iterator.hasNext()) {
             Edge<T> edge = iterator.next();
             
@@ -166,27 +166,27 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }
     
     public Edge<T> getIncomingEdgeOfType(Object type) {
-        return getSingleEdge(getIncomingEdgesOfType(type).iterator(), type);
+        return getFirstEdge(getIncomingEdgesOfType(type).iterator(), type);
     }
 
     public Edge<T> getOutgoingEdgeOfType(Object type) {
-        return getSingleEdge(getOutgoingEdgesOfType(type).iterator(), type);
+        return getFirstEdge(getOutgoingEdgesOfType(type).iterator(), type);
     }
     
     /**
-     * Get single incoming edge of any type and assert if there is more than
+     * Get first incoming edge of any type and assert if there is more than
      * one.
      */
     public Edge<T> getIncomingEdge() {
-        return getSingleEdge(getIncomingEdgesNotOfType(null).iterator(), null);
+        return getFirstEdge(getIncomingEdgesNotOfType(null).iterator(), null);
     }
     
     /**
-     * Get single outgoing edge of any type and assert if there is more than
+     * Get first outgoing edge of any type and assert if there is more than
      * one.
      */
     public Edge<T> getOutgoingEdge() {
-        return getSingleEdge(getOutgoingEdgesNotOfType(null).iterator(), null);
+        return getFirstEdge(getOutgoingEdgesNotOfType(null).iterator(), null);
     }
 
     public Set<Edge<T>> getIncomingEdges() {
