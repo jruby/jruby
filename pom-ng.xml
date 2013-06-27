@@ -410,6 +410,27 @@
               </artifactItems>
             </configuration>
           </execution>
+          <execution>
+            <id>unzip native</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <excludes>META-INF,META-INF/*</excludes>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.github.jnr</groupId>
+                  <artifactId>jffi</artifactId>
+                  <version>1.2.5</version>
+                  <type>jar</type>
+                  <classifier>native</classifier>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${basedir}/lib</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>

@@ -186,6 +186,16 @@ plugin( :clean, '2.5' )
          :filesets => [ { :directory => '${anno.sources}',
                           :includes => [ 'annotated_classes.txt' ] } ],
          :failOnError => false )
+plugin( :dependency, '2.8' ).in_phase( 'process-classes', 'unzip native' )
+  .execute_goal( 'unpack' )
+  .with( :excludes => 'META-INF,META-INF/*',
+         :artifactItems => [ { :groupId => 'com.github.jnr',
+                               :artifactId => 'jffi',
+                               :version => '1.2.5',
+                               :type => :jar,
+                               :classifier => :native,
+                               :overWrite => false,
+                               :outputDirectory => '${basedir}/lib' } ] )
 
 # phase: package
 plugin( :jar, '2.3.2' )
