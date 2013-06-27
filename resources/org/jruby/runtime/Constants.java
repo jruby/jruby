@@ -81,14 +81,17 @@ public final class Constants {
      * The JIT threshold to the specified method invocation count.
      */
     public static final int JIT_THRESHOLD = 50;
+    
+    private static String jruby_revision = "@jruby.revision@";
+    private static String jruby_default_ruby_version = "@jruby.default.ruby.version@";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
 
     static {
         // This is populated here to avoid javac propagating the value to consumers
-        REVISION = "@jruby.revision@";
-        String defaultRubyVersion = "@jruby.default.ruby.version@";
+        REVISION = jruby_revision;
+        String defaultRubyVersion = jruby_default_ruby_version;
         if (defaultRubyVersion.equals("1.8")) {
             DEFAULT_RUBY_VERSION = "1.8";
         } else if (defaultRubyVersion.equals("1.9")) {
@@ -96,8 +99,8 @@ public final class Constants {
         } else if (defaultRubyVersion.equals("2.0")) {
             DEFAULT_RUBY_VERSION = "2.0";
         } else {
-            System.err.println("invalid version selected in build (\"" + defaultRubyVersion + "\"), using 1.8");
-            DEFAULT_RUBY_VERSION = "1.8";
+            System.err.println("invalid version selected in build (\"" + defaultRubyVersion + "\"), using 1.9");
+            DEFAULT_RUBY_VERSION = "1.9";
         }
     }
 
