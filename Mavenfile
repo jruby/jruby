@@ -31,8 +31,8 @@ jar 'jline:jline', '2.7'
 jar 'joda-time:joda-time', '2.1'
 jar 'com.jcraft:jzlib', '1.1.2'
 jar 'com.headius:invokebinder', '1.2'
-jar 'org.bouncycastle:bcpkix-jdk15on', '1.47'
-jar 'org.bouncycastle:bcprov-jdk15on', '1.47'
+jar( 'org.bouncycastle:bcpkix-jdk15on', '1.47' ).scope :provided
+jar( 'org.bouncycastle:bcprov-jdk15on', '1.47' ).scope :provided
 jar( 'org.osgi:org.osgi.core', '4.3.1' ).scope :provided
 jar( 'org.apache.ant:ant', '1.8.4' ).scope :provided
 jar( 'jay:yydebug', '1.0' ).scope :provided
@@ -113,7 +113,8 @@ plugin( 'org.codehaus.mojo:exec-maven-plugin', '1.2.1' ) do |pl|
                            'org.jruby.anno.InvokerGenerator',
                            '${anno.sources}/annotated_classes.txt',
                            '${project.build.outputDirectory}' ],
-           :executable => 'java' )
+           :executable => 'java',
+           :classpathScope => 'compile' )
   pl.in_phase( 'process-classes', 'unsafe-generator' )
     .execute_goal( 'exec' )
     .with( :arguments => [ '-classpath',
@@ -203,7 +204,9 @@ plugin( :jar, '2.3.2' )
 plugin( :assembly, '2.4' )
   .in_phase( :package )
   .execute_goal( :single )
-  .with( :descriptorRefs => [ 'jar-with-dependencies' ] )
+  .with( :descriptors => [ '${basedir}/resources/jar-with-dependencies.xml' ],
+         :finalName => 'jruby',
+         :outputDirectory => '${basedir}/lib' )
 #plugin( 'org.sonatype.plugins:jarjar-maven-plugin', '1.7' )
 #  .in_phase( :package, 'jarjar-native' )
 #  .execute_goal( :jarjar )

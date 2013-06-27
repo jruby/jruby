@@ -116,12 +116,14 @@
       <artifactId>bcpkix-jdk15on</artifactId>
       <version>1.47</version>
       <type>jar</type>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.47</version>
       <type>jar</type>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -282,6 +284,7 @@
                 <argument>${project.build.outputDirectory}</argument>
               </arguments>
               <executable>java</executable>
+              <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
           <execution>
@@ -472,9 +475,11 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+              <descriptors>
+                <descriptor>${basedir}/resources/jar-with-dependencies.xml</descriptor>
+              </descriptors>
+              <finalName>jruby</finalName>
+              <outputDirectory>${basedir}/lib</outputDirectory>
             </configuration>
           </execution>
         </executions>
