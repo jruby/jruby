@@ -27,7 +27,7 @@ jar 'org.jruby.jcodings:jcodings', '1.0.10'
 jar 'com.github.jnr:jffi', '1.2.5'
 jar 'com.github.jnr:jnr-ffi', '1.0.4'
 jar 'org.yaml:snakeyaml', '1.11'
-jar 'jline:jline', '2.7'
+jar( 'jline:jline', '2.7' ).scope :provided
 jar 'joda-time:joda-time', '2.1'
 jar 'com.jcraft:jzlib', '1.1.2'
 jar 'com.headius:invokebinder', '1.2'
@@ -35,9 +35,9 @@ jar( 'org.bouncycastle:bcpkix-jdk15on', '1.47' ).scope :provided
 jar( 'org.bouncycastle:bcprov-jdk15on', '1.47' ).scope :provided
 jar( 'org.osgi:org.osgi.core', '4.3.1' ).scope :provided
 jar( 'org.apache.ant:ant', '1.8.4' ).scope :provided
-jar( 'jay:yydebug', '1.0' ).scope :provided
+jar( 'jay:yydebug', '1.0' )
 jar( 'org.apache.bsf:bsf', '1.0' ).scope :provided
-jar( 'nailgun:nailgun', '0.7.1' ).scope :provided
+jar( 'nailgun:nailgun', '0.7.1' )
 jar( 'coro:coro-mock', '1.0-SNAPSHOT' ).scope :provided
 jar( 'sun.misc:unsafe-mock', '1.0-SNAPSHOT' ).scope :provided
 # jar 'com.github.jnr:jnr-ffi', '1.0.4'
