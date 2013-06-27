@@ -50,6 +50,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     public void testReadUntilShouldIncludeInputUpToChar() {
         final LexerSource src = newSource("abcd1234");
         assertActionShouldProduce("abcd", new Callable<byte[]>() {
+            @Override
             public byte[] call() throws Exception {
                 return src.readUntil('1').bytes();
             }
@@ -86,6 +87,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     public void testReadLineBytesShouldIncludeInputExcludingNewline() {
         final LexerSource src = newSource("abcd\n1234");
         assertActionShouldProduce("abcd", new Callable<byte[]>() {
+            @Override
             public byte[] call() throws Exception {
                 return src.readLineBytes().bytes();
             }
@@ -95,6 +97,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     public void testReadLineBytesShouldIncludeTheRestOfInputWhenNoMoreNewlines() {
         final LexerSource src = newSource("abcd");
         assertActionShouldProduce("abcd", new Callable<byte[]>() {
+            @Override
             public byte[] call() throws Exception {
                 return src.readLineBytes().bytes();
             }
@@ -224,6 +227,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
         assertEquals("333333", lines.get(2));
     }
 
+    @SuppressWarnings("empty-statement")
     public void testCaptureLinesWithCarriageReturn() throws IOException {
         List<String> lines = new ArrayList<String>();
         LexerSource src = newSource("1\r\n2\r\n3", lines);
@@ -241,6 +245,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
         }
         final InputStream in = src.getRemainingAsStream();
         assertActionShouldProduce("222\n333333\n", new Callable<byte[]>() {
+            @Override
             public byte[] call() throws Exception {
                 ByteList buf = new ByteList();
                 int c;
@@ -293,6 +298,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
             }
         }
         assertActionShouldProduce(expected, new Callable<byte[]>() {
+            @Override
             public byte[] call() throws Exception {
                 return actual.bytes();
             }

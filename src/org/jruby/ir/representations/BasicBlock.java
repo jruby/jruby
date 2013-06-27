@@ -29,6 +29,7 @@ public class BasicBlock implements ExplicitVertexID {
         isRescueEntry = false;
     }
 
+    @Override
     public int getID() {
         return id;
     }

@@ -66,10 +66,12 @@ public abstract class Node implements ISourcePositionHolder {
     /**
      * Location of this node within the source
      */
+    @Override
     public ISourcePosition getPosition() {
         return position;
     }
 
+    @Override
     public void setPosition(ISourcePosition position) {
         this.position = position;
     }

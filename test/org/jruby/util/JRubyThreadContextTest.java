@@ -110,6 +110,7 @@ public class JRubyThreadContextTest extends TestCase {
         public SimpleClassLoader() {
         }
 
+        @Override
         protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
             if (name.equals("org.jruby.GiveMeAString")) {
                 return String.class;

@@ -59,6 +59,7 @@ public class NativeException extends RubyException {
     }
     
     private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             NativeException instance = new NativeException(runtime, klazz);
             instance.setMetaClass(klazz);
@@ -79,6 +80,7 @@ public class NativeException extends RubyException {
         return Java.getInstance(getRuntime(), cause);
     }
 
+    @Override
     public IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
         if (rubyTrace.isNil()) {

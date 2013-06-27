@@ -332,42 +332,52 @@ public final class BasicObjectStub {
             this.nil = nil;
         }
 
+        @Override
         public boolean hasInstanceVariable(String name) {
             return false;
         }
 
+        @Override
         public boolean fastHasInstanceVariable(String internedName) {
             return false;
         }
 
+        @Override
         public IRubyObject getInstanceVariable(String name) {
             return nil;
         }
 
+        @Override
         public IRubyObject fastGetInstanceVariable(String internedName) {
             return nil;
         }
 
+        @Override
         public IRubyObject setInstanceVariable(String name, IRubyObject value) {
             return value;
         }
 
+        @Override
         public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
             return value;
         }
 
+        @Override
         public IRubyObject removeInstanceVariable(String name) {
             return nil;
         }
 
+        @Override
         public List<Variable<IRubyObject>> getInstanceVariableList() {
         return Collections.EMPTY_LIST;
         }
 
+        @Override
         public List<String> getInstanceVariableNameList() {
         return Collections.EMPTY_LIST;
         }
 
+        @Override
         public void copyInstanceVariablesInto(InstanceVariables other) {
         }
 
@@ -380,28 +390,35 @@ public final class BasicObjectStub {
 
     @SuppressWarnings("deprecation")
     public static class DummyInternalVariables implements InternalVariables {
+        @Override
         public boolean hasInternalVariable(String name) {
             return false;
         }
 
+        @Override
         public boolean fastHasInternalVariable(String internedName) {
             return false;
         }
 
+        @Override
         public Object getInternalVariable(String name) {
             return null;
         }
 
+        @Override
         public Object fastGetInternalVariable(String internedName) {
             return null;
         }
 
+        @Override
         public void setInternalVariable(String name, Object value) {
         }
 
+        @Override
         public void fastSetInternalVariable(String internedName, Object value) {
         }
 
+        @Override
         public Object removeInternalVariable(String name) {
             return null;
         }
