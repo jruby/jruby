@@ -264,7 +264,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (real_fd != -1) {
             // we have a real fd...try native flocking
             try {
-                return runtime.newFixnum(runtime.getPosix().flock(real_fd, lockMode));
+                int result = runtime.getPosix().flock(real_fd, lockMode);
+                if (result < 0) {
+                    return runtime.getFalse();
+                }
+                return RubyFixnum.zero(runtime);
             } catch (RaiseException re) {
                 if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
                     // not implemented, probably pure Java; fall through
