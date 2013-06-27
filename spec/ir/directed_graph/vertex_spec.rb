@@ -65,8 +65,8 @@ describe "Vertex" do
 
     context "Destination of all of the outgoing edges from the current vertex doesn't match with given destination" do
       it "returns false" do
-        fake   = Vertex.new(@graph, "baz", 3)
-        expect(@source.removeEdgeTo(fake)).to be false
+        non_existent_destination = Vertex.new(@graph, "baz", 3)
+        expect(@source.removeEdgeTo(non_existent_destination)).to be false
       end
     end
 
