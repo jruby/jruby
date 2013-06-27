@@ -46,6 +46,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * 
      * @return a Set of all instance variable names found
      */
+    @Override
     public Set<String> getFoundVariables() {
         return foundVariables;
     }

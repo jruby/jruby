@@ -73,7 +73,9 @@ class TestJrubyc < Test::Unit::TestCase
       "Compiling test_file1.rb\n",
       output)
 
-    assert_nothing_raised { require 'test_file1' }
+    assert_nothing_raised do
+      require 'test_file1'
+    end
     assert($compile_test)
   ensure
     File.delete("test_file1.rb") rescue nil
