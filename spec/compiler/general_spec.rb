@@ -92,7 +92,9 @@ describe "JRuby's compiler" do
     compile_and_run("nil && fail").should == nil
     compile_and_run("1 || 2").should == 1
     compile_and_run("nil || 2").should == 2
-    lambda {compile_and_run(nil || fail)}.should raise_error(RuntimeError)
+    lambda do 
+      compile_and_run(nil || fail)
+    end.should raise_error(RuntimeError)
     compile_and_run("1 and 2").should == 2
     compile_and_run("1 or 2").should == 1
   end
@@ -264,13 +266,19 @@ describe "JRuby's compiler" do
   it "compiles optional method arguments" do
     compile_and_run("def foo(a,b=1);[a,b];end;foo(1)").should == [1,1]
     compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2)").should == [1,2]
-    lambda{compile_and_run("def foo(a,b=1);[a,b];end;foo")}.should raise_error(ArgumentError)
-    lambda{compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2,3)")}.should raise_error(ArgumentError)
+    lambda do
+      compile_and_run("def foo(a,b=1);[a,b];end;foo")
+    end.should raise_error(ArgumentError)
+    lambda do 
+      compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2,3)")
+    end.should raise_error(ArgumentError)
     compile_and_run("def foo(a=(b=1));[a,b];end;foo").should == [1,1]
     compile_and_run("def foo(a=(b=1));[a,b];end;foo(2)").should == [2,nil]
     compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1)").should == [1,1,1]
     compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2)").should == [1,2,nil]
-    lambda{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.should raise_error(ArgumentError)
+    lambda do
+      compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")
+    end.should raise_error(ArgumentError)
   end
   
   if is19
@@ -305,6 +313,7 @@ describe "JRuby's compiler" do
   it "compiles implicit and explicit return" do
     compile_and_run("def foo; 1; end; foo").should == 1
     compile_and_run("def foo; return; end; foo").should == nil
+    compile_and_run("def foo; end; foo").should == nil
     compile_and_run("def foo; return 1; end; foo").should == 1
   end
   
@@ -721,9 +730,9 @@ ary
     end
     "
 
-    lambda {
+    lambda do
       JRuby5871A.new("foo", :each_byte)
-    }.should_not raise_error
+    end.should_not raise_error
     
     compile_and_run "
     class JRuby5871B < #{enumerable}
@@ -733,9 +742,9 @@ ary
     end
     "
 
-    lambda {
+    lambda do
       JRuby5871B.new("foo", :each_byte)
-    }.should_not raise_error
+    end.should_not raise_error
 
     class JRUBY4925
     end
