@@ -48,7 +48,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.0</version>
+      <version>3.0.1-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -169,6 +169,13 @@
     <dependency>
       <groupId>sun.misc</groupId>
       <artifactId>unsafe-mock</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <type>jar</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>jsr292</groupId>
+      <artifactId>jsr292-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
       <type>jar</type>
       <scope>provided</scope>
@@ -368,6 +375,7 @@
                 <compilerArg>-J-Duser.language=en</compilerArg>
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                 <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
+                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
             </configuration>
           </execution>
