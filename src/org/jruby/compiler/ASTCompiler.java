@@ -382,10 +382,12 @@ public class ASTCompiler {
             this.node = node;
         }
         
+        @Override
         public int getArity() {
             return -1;
         }
         
+        @Override
         public void call(BodyCompiler context) {
             compileArguments(node, context);
         }

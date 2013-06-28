@@ -99,7 +99,8 @@ import java.util.Stack;
 // copy propagation and dead-code elimination.
 //
 // Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
-// this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
+// this smart can be built in here.  Right now, the goal is to do something simple and straightforward 
+// that is going to be correct.
 //
 // 2. Returning null vs manager.getNil()
 // ----------------------------

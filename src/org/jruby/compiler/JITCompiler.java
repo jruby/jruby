@@ -132,38 +132,47 @@ public class JITCompiler implements JITCompilerMBean {
         runtime.getBeanManager().register(this);
     }
 
+    @Override
     public long getSuccessCount() {
         return counts.successCount.get();
     }
 
+    @Override
     public long getCompileCount() {
         return counts.compiledCount.get();
     }
 
+    @Override
     public long getFailCount() {
         return counts.failCount.get();
     }
 
+    @Override
     public long getCompileTime() {
         return counts.compileTime.get() / 1000;
     }
 
+    @Override
     public long getAbandonCount() {
         return counts.abandonCount.get();
     }
     
+    @Override
     public long getCodeSize() {
         return counts.codeSize.get();
     }
     
+    @Override
     public long getAverageCodeSize() {
         return counts.averageCodeSize.get();
     }
     
+    @Override
     public long getAverageCompileTime() {
         return counts.averageCompileTime.get() / 1000;
     }
     
+    @Override
     public long getLargestCodeSize() {
         return counts.largestCodeSize.get();
     }
@@ -406,14 +415,17 @@ public class JITCompiler implements JITCompilerMBean {
             final ASTCompiler compiler = ruby.getInstanceConfig().newCompiler();
 
             CompilerCallback args = new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compiler.compileArgs(argsNode, context, true);
                 }
             };
 
-            ASTInspector inspector = new ASTInspector();
+            ASTInspector inspector = null;
             if (ruby.getInstanceConfig().isJitDumping()) {
                 inspector = new ASTInspector(className, true);
+            } else {
+                inspector = new ASTInspector();
             }
             // check args first, since body inspection can depend on args
             inspector.inspect(argsNode);

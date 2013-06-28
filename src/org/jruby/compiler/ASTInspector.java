@@ -39,7 +39,6 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -283,9 +282,9 @@ public class ASTInspector {
             CallNode callNode = (CallNode)node;
             inspect(callNode.getReceiverNode());
             // check for Proc.new, an especially magic method
-            if (callNode.getName() == "new" &&
+            if ("new".equals(callNode.getName()) &&
                     callNode.getReceiverNode() instanceof ConstNode &&
-                    ((ConstNode)callNode.getReceiverNode()).getName() == "Proc") {
+                    "Proc".equals(((ConstNode)callNode.getReceiverNode()).getName())) {
                 // Proc.new needs the caller's block to instantiate a proc
                 setFlag(node, FRAME_BLOCK);
             }
