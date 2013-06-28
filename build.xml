@@ -213,7 +213,7 @@
             <copy file="build/src_gen/org/jruby/runtime/Constants.java"
                   tofile="build/src_gen/org/jruby/runtime/Constants.java.old"
                   preservelastmodified="true" failonerror="false"/>
-            <copy file="src/org/jruby/runtime/Constants.java"
+            <copy file="resources/org/jruby/runtime/Constants.java"
                   overwrite="true"
                   tofile="build/src_gen/org/jruby/runtime/Constants.java.gen">
                 <filterset>

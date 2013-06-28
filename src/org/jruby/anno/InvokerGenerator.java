@@ -30,6 +30,7 @@ package org.jruby.anno;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,13 @@ public class InvokerGenerator {
     public static final boolean DEBUG = false;
     
     public static void main(String[] args) throws Exception {
-        FileReader fr = new FileReader(args[0]);
+        FileReader fr = null;
+        try {
+            fr = new FileReader(args[0]);
+        } catch(FileNotFoundException e) {
+            System.err.println(args[0] + " - not found. skip generator." );
+            return;
+        }
         BufferedReader br = new BufferedReader(fr);
         
         List<String> classNames = new ArrayList<String>();
