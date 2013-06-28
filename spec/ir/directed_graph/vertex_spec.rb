@@ -71,4 +71,59 @@ describe "Vertex" do
     end
 
   end
+
+  describe "Remove all incoming edges" do
+
+    before do
+      @a = Vertex.new(@graph, "foo", 1)
+      @b = Vertex.new(@graph, "bar", 2)
+      @c = Vertex.new(@graph, "baz", 2)
+      @b.addEdgeTo(@a)
+      @c.addEdgeTo(@a)
+    end
+
+    it "removes all incoming edges to the vertex" do
+      @a.removeAllIncomingEdges()
+      expect(@a.inDegree).to eq 0
+    end
+
+  end
+
+  describe "Remove all outgoing edges" do
+
+    before do
+      @a = Vertex.new(@graph, "foo", 1)
+      @b = Vertex.new(@graph, "bar", 2)
+      @c = Vertex.new(@graph, "baz", 2)
+      @a.addEdgeTo(@b)
+      @a.addEdgeTo(@c)
+    end
+
+    it "removes all outgoing edges from the vertex" do
+      @a.removeAllOutgoingEdges()
+      expect(@a.outDegree).to eq 0
+    end
+
+  end
+
+  describe "Remove all edges" do
+
+    before do
+      @a = Vertex.new(@graph, "foo", 1)
+      @b = Vertex.new(@graph, "bar", 2)
+      @c = Vertex.new(@graph, "baz", 2)
+      @a.addEdgeTo(@b)
+      @a.addEdgeTo(@c)
+      @c.addEdgeTo(@a)
+      @b.addEdgeTo(@a)
+    end
+
+    it "removes all edges from the vertex" do
+      @a.removeAllEdges()
+      expect(@a.outDegree).to eq 0
+      expect(@a.inDegree).to eq 0
+    end
+
+  end
+
 end
