@@ -300,7 +300,7 @@ if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
 fi
 
 # prefer IPv4 to IPv6; see https://github.com/jruby/jruby/issues/775
-java_args=("${java_args[@]" "-Djava.net.preferIPv4Stack=true")
+java_args=("${java_args[@]}" "-Djava.net.preferIPv4Stack=true")
 
 # Append the rest of the arguments
 ruby_args=("${ruby_args[@]}" "$@")
