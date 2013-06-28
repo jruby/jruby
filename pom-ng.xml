@@ -485,22 +485,29 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.1</version>
+        <configuration>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <mainClass>org.jruby.Main</mainClass>
+            </transformer>
+          </transformers>
+          <outputFile>${basedir}/lib/jruby.jar</outputFile>
+          <relocations>
+            <relocation>
+              <pattern>org.objectweb</pattern>
+              <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
         <executions>
           <execution>
-            <id>in_phase_package</id>
             <phase>package</phase>
             <goals>
-              <goal>single</goal>
+              <goal>shade</goal>
             </goals>
-            <configuration>
-              <descriptors>
-                <descriptor>${basedir}/resources/jar-with-dependencies.xml</descriptor>
-              </descriptors>
-              <finalName>jruby</finalName>
-              <outputDirectory>${basedir}/lib</outputDirectory>
-            </configuration>
           </execution>
         </executions>
       </plugin>
