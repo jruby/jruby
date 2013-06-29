@@ -12,6 +12,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <bc.version>1.47</bc.version>
+    <openssl.dir>${project.basedir}/../../lib/ruby/shared</openssl.dir>
   </properties>
 
   <dependencies>
@@ -26,14 +28,14 @@
       <artifactId>bcpkix-jdk15on</artifactId>
       <version>1.47</version>
       <type>jar</type>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.47</version>
       <type>jar</type>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -46,28 +48,52 @@
   <build>
     <plugins>
       <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.8</version>
+        <executions>
+          <execution>
+            <id>copy bouncy-castle</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcpkix-jdk15on</artifactId>
+                  <version>${bc.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${openssl.dir}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcprov-jdk15on</artifactId>
+                  <version>${bc.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${openssl.dir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>2.1</version>
-        <configuration>
-          <outputFile>${basedir}/../../lib/ruby/shared/jopenssl.jar</outputFile>
-          <filters>
-            <filter>
-                <artifact>*:*</artifact>
-                <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                </excludes>
-            </filter>
-          </filters>
-        </configuration>
         <executions>
           <execution>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <finalName>jopenssl</finalName>
+              <outputDirectory>${openssl.dir}</outputDirectory>
+            </configuration>
           </execution>
         </executions>
       </plugin>
