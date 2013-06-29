@@ -18,11 +18,6 @@
         <pathelement path="${jruby.classes.dir}"/>
     </path>
 
-    <path id="emma.classpath">
-        <pathelement location="${build.lib.dir}/emma.jar"/>
-        <pathelement location="${build.lib.dir}/emma_ant.jar"/>
-    </path>
-
     <patternset id="java.src.pattern">
         <include name="**/*.java"/>
         <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
@@ -163,25 +158,7 @@
                 <include name="**/*.rb"/>
             </fileset>
         </copy>
-        <antcall target="copy-bc-resources"/>
-        <antcall target="copy-jline-resources"/>
         <property name="copy-resources.hasrun" value="true"/>
-    </target>
-
-    <target name="copy-bc-resources" unless="exclude_openssl">
-        <copy todir="${lib.dir}/ruby/shared" preservelastmodified="true">
-            <fileset dir="${build.lib.dir}">
-                <include name="bc*.jar"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="copy-jline-resources" unless="exclude_openssl">
-        <copy todir="${lib.dir}/ruby/shared/readline" preservelastmodified="true">
-            <fileset dir="${build.lib.dir}">
-                <include name="jline*.jar"/>
-            </fileset>
-        </copy>
     </target>
 
     <target name="compile" description="Compile the source files for the project.">
@@ -252,7 +229,6 @@
             </manifest>
         </jar>
 
-        <antcall target="add-emma-jars"/>
         <antcall target="jar-jopenssl"/>
         <antcall target="jar-readline"/>
 
@@ -269,12 +245,6 @@
         <exec executable="mvn" dir="ext/readline" failonerror="true">
             <arg line="package"/>
         </exec>
-    </target>
-
-    <target name="add-emma-jars" if="coverage.enabled">
-        <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
-            <zipfileset src="${build.lib.dir}/emma.jar"/>
-        </jar>
     </target>
 
     <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
@@ -532,50 +502,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <jvmarg line="-ea ${java.opts}"/>
             <arg line="--1.9 -I bin/ -S jrubyc --target ${build.dir}/stdlib lib/ruby/1.9"/>
         </java>
-    </target>
-
-    <target name="coverage" description="Enable code coverage reporting for built artifacts.">
-        <property name="coverage.enabled" value="true"/>
-    </target>
-
-    <target name="emma"
-            description="Turns on EMMA instrumentation/reporting; use with 'jar' to create an instrumented jar.">
-        <available property="emma.present"
-                   classname="com.vladium.app.IAppVersion"
-                   classpathref="emma.classpath"/>
-        <taskdef resource="emma_ant.properties" classpathref="emma.classpath"/>
-
-        <property name="emma.enabled" value="true"/>
-
-        <path id="classes_to_instrument">
-            <pathelement location="${jruby.classes.dir}"/>
-        </path>
-    </target>
-
-    <target name="instrument" depends="emma" if="coverage.enabled">
-        <emma enabled="${emma.enabled}">
-            <instr instrpathref="classes_to_instrument"
-                   mode="overwrite"
-                   metadatafile="${test.results.dir}/coverage.emma"
-                   merge="true">
-                <filter excludes="*INVOKER*"/>
-            </instr>
-        </emma>
-    </target>
-
-    <target name="coverage-report" description="Generate a coverage report based on aggregated runs." depends="emma">
-        <emma enabled="${emma.enabled}">
-            <report sourcepath="${src.dir}">
-                <fileset dir="${test.results.dir}">
-                    <include name="*.emma"/>
-                </fileset>
-                <fileset dir="${basedir}">
-                    <include name="*.ec"/>
-                </fileset>
-                <html outfile="${test.coverage.results.dir}/coverage.html"/>
-                <xml outfile="${test.coverage.results.dir}/coverage.xml"/>
-            </report>
-        </emma>
     </target>
 
     <target name="install-gems" depends="install-dev-gems,install-jruby-launcher-gem"/>
