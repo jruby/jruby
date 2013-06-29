@@ -1,5 +1,6 @@
 #-*- mode: ruby -*-
 # vim: syntax=Ruby
+dump_pom 'pom.xml'
 
 group_id 'org.jruby'
 artifact_id 'jruby'
@@ -8,6 +9,11 @@ packaging 'jar'
 name 'JRuby'
 
 repository( 'localrepo' ).url 'file:./localrepo'
+repository( 'sonatype' )do |s|
+  s.url 'https://oss.sonatype.org/content/repositories/snapshots/'
+  s.snapshots( :enabled => true )
+  s.releases( :enabled => false )
+end
 
 source_control do |sc|
   u = 'github.com/jruby/jruby'
