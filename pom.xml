@@ -189,6 +189,7 @@
     <tzdata.tar.gz>${project.build.directory}/tzdata.tar.gz</tzdata.tar.gz>
     <tzdata.build.directory>${project.build.directory}/tzdata/build/org/joda/time/tz/data</tzdata.build.directory>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+    <base.java.version>1.6</base.java.version>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -278,7 +279,7 @@
             </goals>
             <configuration>
               <arguments>
-                <argument>-Djruby.bytecode.version=${javac.version}</argument>
+                <argument>-Djruby.bytecode.version=${base.java.version}</argument>
                 <argument>-classpath</argument>
                 <classpath />
                 <argument>org.jruby.anno.InvokerGenerator</argument>
@@ -318,8 +319,8 @@
           <fork>true</fork>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${javac.version}</source>
-          <target>${javac.version}</target>
+          <source>${base.java.version}</source>
+          <target>${base.java.version}</target>
         </configuration>
         <executions>
           <execution>
