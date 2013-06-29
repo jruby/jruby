@@ -11,6 +11,16 @@
       <url>file:./localrepo</url>
     </repository>
     <repository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
@@ -90,7 +100,7 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>2.7</version>
+      <version>2.11</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -115,14 +125,14 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.47</version>
+      <version>${bc.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.47</version>
+      <version>${bc.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -180,12 +190,21 @@
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>yecht</groupId>
+      <artifactId>yecht</artifactId>
+      <version>1.0</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <gem.home>${project.build.directory}/rubygems</gem.home>
     <gem.path>${project.build.directory}/rubygems</gem.path>
-    <jruby.plugins.version>0.29.4</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-beta</jruby.plugins.version>
+    <bc.version>1.47</bc.version>
+    <openssl.dir>${project.basedir}/lib/ruby/shared</openssl.dir>
+    <readline.dir>${project.basedir}/lib/ruby/shared/readline</readline.dir>
     <anno.sources>${project.basedir}/build/src_gen</anno.sources>
     <unsafe.jar>${project.build.directory}/unsafe.jar</unsafe.jar>
     <generated.sources>${project.build.directory}/generated-sources</generated.sources>
@@ -198,6 +217,7 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <outputDirectory>build/classes/jruby</outputDirectory>
+    <defaultGoal>package</defaultGoal>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -438,6 +458,52 @@
               </artifactItems>
             </configuration>
           </execution>
+          <execution>
+            <id>copy jline</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>jline</groupId>
+                  <artifactId>jline</artifactId>
+                  <version>2.11</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${readline.dir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy bouncy-castle</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcpkix-jdk15on</artifactId>
+                  <version>${bc.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${openssl.dir}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcprov-jdk15on</artifactId>
+                  <version>${bc.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${openssl.dir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -490,32 +556,63 @@
               </archive>
             </configuration>
           </execution>
+          <execution>
+            <id>readline</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/ext/readline/**/*</include>
+                <include>org/jruby/demo/readline/**/*</include>
+              </includes>
+              <finalName>readline</finalName>
+              <outputDirectory>${readline.dir}</outputDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>openssl</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/*openssl*/**/*</include>
+                <include>org/jruby/gen/org$jruby$ext$openssl*</include>
+              </includes>
+              <finalName>jopenssl</finalName>
+              <outputDirectory>${openssl.dir}</outputDirectory>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>2.1</version>
-        <configuration>
-          <transformers>
-            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-              <mainClass>org.jruby.Main</mainClass>
-            </transformer>
-          </transformers>
-          <outputFile>${basedir}/lib/jruby.jar</outputFile>
-          <relocations>
-            <relocation>
-              <pattern>org.objectweb</pattern>
-              <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
         <executions>
           <execution>
+            <id>in_phase_package</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+              </relocations>
+              <finalName>jruby</finalName>
+              <outputDirectory>${basedir}/lib</outputDirectory>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.jruby.Main</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
           </execution>
         </executions>
       </plugin>

@@ -1,5 +1,6 @@
 #-*- mode: ruby -*-
 # vim: syntax=Ruby
+dump_pom 'pom.xml'
 
 group_id 'org.jruby'
 artifact_id 'jruby'
@@ -8,6 +9,11 @@ packaging 'jar'
 name 'JRuby'
 
 repository( 'localrepo' ).url 'file:./localrepo'
+repository( 'sonatype' )do |s|
+  s.url 'https://oss.sonatype.org/content/repositories/snapshots/'
+  s.snapshots( :enabled => true )
+  s.releases( :enabled => false )
+end
 
 source_control do |sc|
   u = 'github.com/jruby/jruby'
@@ -20,19 +26,19 @@ jar 'org.jruby.joni:joni', '2.0.0'
 jar 'com.github.jnr:jnr-netdb', '1.1.2'
 jar 'com.github.jnr:jnr-enxio', '0.4'
 jar 'com.github.jnr:jnr-unixsocket', '0.3'
-jar 'com.github.jnr:jnr-posix', '3.0.0'
+jar 'com.github.jnr:jnr-posix', '3.0.1-SNAPSHOT'
 jar 'org.jruby.extras:bytelist', '1.0.10'
 jar 'com.github.jnr:jnr-constants', '0.8.4'
 jar 'org.jruby.jcodings:jcodings', '1.0.10'
 jar 'com.github.jnr:jffi', '1.2.5'
 jar 'com.github.jnr:jnr-ffi', '1.0.4'
 jar 'org.yaml:snakeyaml', '1.11'
-jar( 'jline:jline', '2.7' ).scope :provided
+jar( 'jline:jline', '2.11' ).scope :provided
 jar 'joda-time:joda-time', '2.1'
 jar 'com.jcraft:jzlib', '1.1.2'
 jar 'com.headius:invokebinder', '1.2'
-jar( 'org.bouncycastle:bcpkix-jdk15on', '1.47' ).scope :provided
-jar( 'org.bouncycastle:bcprov-jdk15on', '1.47' ).scope :provided
+jar( 'org.bouncycastle:bcpkix-jdk15on', '${bc.version}' ).scope :provided
+jar( 'org.bouncycastle:bcprov-jdk15on', '${bc.version}' ).scope :provided
 jar( 'org.osgi:org.osgi.core', '4.3.1' ).scope :provided
 jar( 'org.apache.ant:ant', '1.8.4' ).scope :provided
 jar( 'jay:yydebug', '1.0' )
@@ -40,10 +46,13 @@ jar( 'org.apache.bsf:bsf', '1.0' ).scope :provided
 jar( 'nailgun:nailgun', '0.7.1' )
 jar( 'coro:coro-mock', '1.0-SNAPSHOT' ).scope :provided
 jar( 'sun.misc:unsafe-mock', '1.0-SNAPSHOT' ).scope :provided
+jar( 'jsr292:jsr292-mock', '1.0-SNAPSHOT' ).scope :provided
+jar( 'yecht:yecht', '1.0' )
 # jar 'com.github.jnr:jnr-ffi', '1.0.4'
 
-build.source_directory = 'src'
-build.output_directory = 'build/classes/jruby'
+build.source_directory 'src'
+build.output_directory 'build/classes/jruby'
+build.default_goal :package
 
 res = build.resources
 res.add do |r|
@@ -168,7 +177,8 @@ plugin( :compiler ).in_phase( 'compile', 'default-compile' )
          :compilerArgs => [ '-XDignore.symbol.file=true',
                             '-J-Duser.language=en',
                             '-J-Dfile.encoding=UTF-8',
-                            '-J-Xbootclasspath/p:${unsafe.jar}' ] )
+                            '-J-Xbootclasspath/p:${unsafe.jar}',
+                            '-J-Xmx${jruby.compile.memory}' ] )
 
 # phase: process-classes
 plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
@@ -186,44 +196,86 @@ plugin( :clean, '2.5' )
          :filesets => [ { :directory => '${anno.sources}',
                           :includes => [ 'annotated_classes.txt' ] } ],
          :failOnError => false )
-plugin( :dependency, '2.8' ).in_phase( 'process-classes', 'unzip native' )
-  .execute_goal( 'unpack' )
-  .with( :excludes => 'META-INF,META-INF/*',
-         :artifactItems => [ { :groupId => 'com.github.jnr',
-                               :artifactId => 'jffi',
-                               :version => '1.2.5',
-                               :type => :jar,
-                               :classifier => :native,
-                               :overWrite => false,
-                               :outputDirectory => '${basedir}/lib' } ] )
+plugin( :dependency, '2.8' ) do |pl|
+  pl.in_phase( 'process-classes', 'unzip native' )
+    .execute_goal( :unpack )
+    .with( :excludes => 'META-INF,META-INF/*',
+           :artifactItems => [ { :groupId => 'com.github.jnr',
+                                 :artifactId => 'jffi',
+                                 :version => '1.2.5',
+                                 :type => :jar,
+                                 :classifier => :native,
+                                 :overWrite => false,
+                                 :outputDirectory => '${basedir}/lib' } ] )
+  pl.in_phase( 'process-classes', 'copy jline' )
+    .execute_goal( :copy )
+    .with( :artifactItems => [ { :groupId => 'jline',
+                                 :artifactId => 'jline',
+                                 :version => '2.11',
+                                 :type => :jar,
+                                 :overWrite => false,
+                                 :outputDirectory => '${readline.dir}' } ] )
+  pl.in_phase( 'process-classes', 'copy bouncy-castle' )
+    .execute_goal( :copy )
+    .with( :artifactItems => [ { :groupId => 'org.bouncycastle',
+                                 :artifactId => 'bcpkix-jdk15on',
+                                 :version => '${bc.version}',
+                                 :type => :jar,
+                                 :overWrite => false,
+                                 :outputDirectory => '${openssl.dir}' },
+                               { :groupId => 'org.bouncycastle',
+                                 :artifactId => 'bcprov-jdk15on',
+                                 :version => '${bc.version}',
+                                 :type => :jar,
+                                 :overWrite => false,
+                                 :outputDirectory => '${openssl.dir}' } ] )
+end
 
 # phase: package
-plugin( :jar, '2.3.2' )
-  .in_phase( :package, 'default-jar' )
-  .execute_goal( :jar )
-  .with( :excludes => [ '**/*openssl*/**/*',
-                        'org/jruby/gen/org$jruby$ext$openssl*',
-                        'org/jruby/ext/readline/**/*',
-                        'org/jruby/demo/readline/**/*',
-                        'org/jruby/gen/org$jruby$ext$readline*' ],
-         :archive => {
-           :manifest => {
-             :mainClass => 'org.jruby.Main'
-           }
-         } )
-plugin( :assembly, '2.4' )
+plugin( :jar, '2.3.2' ) do |pl|
+  pl.in_phase( :package, 'default-jar' )
+    .execute_goal( :jar )
+    .with( :excludes => [ '**/*openssl*/**/*',
+                          'org/jruby/gen/org$jruby$ext$openssl*',
+                          'org/jruby/ext/readline/**/*',
+                          'org/jruby/demo/readline/**/*',
+                          'org/jruby/gen/org$jruby$ext$readline*' ],
+           :archive => {
+             :manifest => {
+               :mainClass => 'org.jruby.Main'
+             }
+           } )
+  pl.in_phase( :package, 'readline' )
+    .execute_goal( :jar )
+    .with( :includes => [ 'org/jruby/ext/readline/**/*',
+                          'org/jruby/demo/readline/**/*' ],
+           :finalName => 'readline',
+           :outputDirectory => '${readline.dir}' )
+  pl.in_phase( :package, 'openssl' )
+    .execute_goal( :jar )
+    .with( :includes => [ '**/*openssl*/**/*',
+                          'org/jruby/gen/org$jruby$ext$openssl*' ],
+           :finalName => 'jopenssl',
+           :outputDirectory => '${openssl.dir}' )
+end
+plugin( :shade, '2.1' )
   .in_phase( :package )
-  .execute_goal( :single )
-  .with( :descriptors => [ '${basedir}/resources/jar-with-dependencies.xml' ],
+  .execute_goal( :shade )
+  .with( :relocations => [ { :pattern => 'org.objectweb',
+                             :shadedPattern =>  'org.jruby.org.objectweb' } ],
          :finalName => 'jruby',
-         :outputDirectory => '${basedir}/lib' )
-#plugin( 'org.sonatype.plugins:jarjar-maven-plugin', '1.7' )
-#  .in_phase( :package, 'jarjar-native' )
-#  .execute_goal( :jarjar )
-#  .with( :includes =>  ['com.github.jnr:jffi' ], 
-#         :rules => [] )
+         :outputDirectory => '${basedir}/lib',
+         :transformers => <<-XML
 
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.jruby.Main</mainClass>
+                </transformer>
+XML
+         )
 
+properties[ 'bc.version' ] = '1.47'
+properties[ 'openssl.dir' ] = '${project.basedir}/lib/ruby/shared'
+properties[ 'readline.dir' ] = '${project.basedir}/lib/ruby/shared/readline'
 properties[ 'anno.sources' ] = '${project.basedir}/build/src_gen'
 properties[ 'unsafe.jar' ] = '${project.build.directory}/unsafe.jar'
 properties[ 'generated.sources' ] =
