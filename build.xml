@@ -205,37 +205,12 @@
           jzlib-1.1.2.jar
           invokebinder.jar"/>
 
-    <target name="jar-jruby" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
-        <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
-            <fileset dir="${jruby.classes.dir}"/>
-            
-            <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
-
-            <metainf dir="spi">
-                <include name="services/**"/>
-            </metainf>
-            <manifest>
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Main-Class" value="org.jruby.Main"/>
-            </manifest>
-        </jar>
-
-        <antcall target="jar-jopenssl"/>
-        <antcall target="jar-readline"/>
+    <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
+        <exec executable="mvn" failonerror="true">
+            <arg line="package"/>
+        </exec>
 
         <property name="jar-jruby.hasrun" value="true"/>
-    </target>
-    
-    <target name="jar-jopenssl" unless="exclude_openssl">
-        <exec executable="mvn" dir="ext/openssl" failonerror="true">
-            <arg line="package"/>
-        </exec>
-    </target>
-    
-    <target name="jar-readline">
-        <exec executable="mvn" dir="ext/readline" failonerror="true">
-            <arg line="package"/>
-        </exec>
     </target>
 
     <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
@@ -278,36 +253,15 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <property name="jar-jruby-core.hasrun" value="true"/>
     </target>
 
-    <target name="jar-jruby-dist" depends="compile">
+    <target name="jar-jruby-dist" depends="jar-jruby">
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
                  classpath="${build.lib.dir}/jarjar-1.0.jar"/>
         <echo message="jarjaring for dist"/>
-        <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
-            <fileset dir="${jruby.classes.dir}">
-                <exclude name="**/*openssl*/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**/*"/>
-                <exclude name="org/jruby/demo/readline/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
-            </fileset>
-            <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
-
-            <metainf dir="spi">
-                <include name="services/**"/>
-            </metainf>
-            <manifest>
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Main-Class" value="org.jruby.Main"/>
-            </manifest>
-            <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-        </jarjar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby.bnd"/>
             <param name="jar.wrap" value="${lib.dir}/jruby.jar"/>
             <param name="bar.wrap" value="${lib.dir}/jruby.bar"/>
         </antcall>
-        <antcall target="jar-jopenssl"/>
-        <antcall target="jar-readline"/>
     </target>
     <target name="jarjar" depends="jar-jruby-dist"/>
 
@@ -324,7 +278,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
               overwrite="true"/>
     </target>
 
-    <target name="jar-jruby-stdlib" depends="copy-resources, compile, jar-jopenssl, jar-readline" unless="jar-jruby-stdlib.hasrun"
+    <target name="jar-jruby-stdlib" depends="copy-resources, compile" unless="jar-jruby-stdlib.hasrun"
             description="Create the 'sdtlib' JRuby jar. Pass 'filename' to adjust.">
         <property name="mainclass" value="org.jruby.Main"/>
         <property name="filename" value="jruby-stdlib.jar"/>
