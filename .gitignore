@@ -14,6 +14,7 @@ target
 dist
 lib/jruby*.jar
 lib/native
+lib/jni
 lib/ruby/gems
 lib/ruby/shared/rubygems/defaults/jruby_native.rb
 nbproject/private
