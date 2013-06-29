@@ -185,7 +185,7 @@
     </target>
 
     <target name="compile" description="Compile the source files for the project.">
-        <exec executable="mvn">
+        <exec executable="mvn" failonerror="true">
           <arg line="compile"/>
         </exec>
     </target>
@@ -239,13 +239,7 @@
 
     <target name="jar-jruby" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
         <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
-            <fileset dir="${jruby.classes.dir}">
-                <exclude name="**/*openssl*/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**/*"/>
-                <exclude name="org/jruby/demo/readline/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
-            </fileset>
+            <fileset dir="${jruby.classes.dir}"/>
             
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
 
@@ -266,22 +260,15 @@
     </target>
     
     <target name="jar-jopenssl" unless="exclude_openssl">
-        <jar destfile="${lib.dir}/ruby/shared/jopenssl.jar" compress="true" index="true" update="true">
-            <fileset dir="${jruby.classes.dir}">
-                <include name="**/*openssl*/**/*"/>
-                <include name="org/jruby/gen/org$jruby$ext$openssl*"/>
-            </fileset>
-        </jar>
+        <exec executable="mvn" dir="ext/openssl" failonerror="true">
+            <arg line="package"/>
+        </exec>
     </target>
     
     <target name="jar-readline">
-        <jar destfile="${lib.dir}/ruby/shared/readline/readline.jar" compress="true" index="true" update="true">
-            <fileset dir="${jruby.classes.dir}">
-                <include name="org/jruby/ext/readline/**"/>
-                <include name="org/jruby/demo/readline/**/*"/>
-                <include name="**/*readline*/**/*"/>
-            </fileset>
-        </jar>
+        <exec executable="mvn" dir="ext/readline" failonerror="true">
+            <arg line="package"/>
+        </exec>
     </target>
 
     <target name="add-emma-jars" if="coverage.enabled">
