@@ -9,15 +9,6 @@
     <!-- Then set defaults for any values not set by build.properties -->
     <property file="default.build.properties"/>
 
-    <path id="build.classpath">
-        <fileset dir="${build.lib.dir}" includes="*.jar"/>
-    </path>
-
-    <path id="jruby.execute.classpath">
-        <path refid="build.classpath"/>
-        <pathelement path="${jruby.classes.dir}"/>
-    </path>
-
     <patternset id="java.src.pattern">
         <include name="**/*.java"/>
         <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
@@ -349,7 +340,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
         <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
             <classpath>
-                <path refid="jruby.execute.classpath"/>
+                <pathelement location="lib/jruby.jar"/>
                 <pathelement location="${build.dir}/jar-stdlib"/>
             </classpath>
             <sysproperty key="jruby.home" value="${jar-stdlib-home}"/>
@@ -404,7 +395,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
         <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
             <classpath>
-                <path refid="jruby.execute.classpath"/>
+                <pathelement location="lib/jruby.jar"/>
                 <pathelement location="${build.dir}/jar-complete"/>
             </classpath>
             <sysproperty key="jruby.home" value="${jar-complete-home}"/>
@@ -490,14 +481,14 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <mkdir dir="${build.dir}/stdlib"/>
         <echo message="Compiling 1.8 stdlib..."/>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath refid="jruby.execute.classpath"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <jvmarg line="-ea ${java.opts}"/>
             <arg line="--1.8 -I bin/ -S jrubyc --target ${build.dir}/stdlib lib/ruby/1.8"/>
         </java>
         <echo message="Compiling 1.9 stdlib..."/>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath refid="jruby.execute.classpath"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <jvmarg line="-ea ${java.opts}"/>
             <arg line="--1.9 -I bin/ -S jrubyc --target ${build.dir}/stdlib lib/ruby/1.9"/>
@@ -518,14 +509,12 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
     <target name="install-dev-gems" depends="jar" unless="dev.gems.installed">
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
-            <classpath refid="build.classpath"/>
-            <classpath path="${jruby.classes.dir}"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <arg line="-S gem uninstall --all --force ${dev.gem.names}"/>
         </java>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath refid="build.classpath"/>
-            <classpath path="${jruby.classes.dir}"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <arg line="-S gem install --local --ignore-dependencies ${dev.gems}"/>
         </java>
@@ -547,14 +536,12 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
     <target name="install-jruby-launcher-gem" depends="install-dev-gems" unless="jruby-launcher.gem.installed">
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
-            <classpath refid="build.classpath"/>
-            <classpath path="${jruby.classes.dir}"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <arg line="-S gem uninstall --all --force jruby-launcher"/>
         </java>
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath refid="build.classpath"/>
-            <classpath path="${jruby.classes.dir}"/>
+            <classpath path="lib/jruby.jar"/>
             <sysproperty key="jruby.home" value="${basedir}"/>
             <env key="PATH" value="${basedir}/lib/ruby/gems/shared/bin:${env.PATH}"/>
             <arg line="-S gem install --local --ignore-dependencies ${jruby.launcher.gem}"/>
@@ -566,7 +553,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <!-- Run the package_docs.rb script to generate package.html files -->
         <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true"
               dir="${basedir}">
-            <classpath refid="jruby.execute.classpath"/>
+            <classpath path="lib/jruby.jar"/>
 
             <sysproperty key="jruby.home" value="${basedir}"/>
 
@@ -580,7 +567,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
                 <include name="**/*.java"/>
             </fileset>
             <arg value="-J-Dfile.encoding=UTF-8"/>
-            <classpath refid="build.classpath"/>
+            <classpath path="lib/jruby.jar"/>
             <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
             <bottom><![CDATA[<i>Copyright &#169; 2002-2009 JRuby Team. All Rights Reserved.</i>]]></bottom>
         </javadoc>
