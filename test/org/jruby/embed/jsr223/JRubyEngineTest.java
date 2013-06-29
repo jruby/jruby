@@ -96,7 +96,7 @@ public class JRubyEngineTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/target/surefire-reports/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -105,7 +105,7 @@ public class JRubyEngineTest {
         logger1.addHandler(new ConsoleHandler());
         logger1.setLevel(Level.WARNING);
 
-        writer = new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true);
+        writer = new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true);
     }
 
     @After

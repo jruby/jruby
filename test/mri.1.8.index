@@ -1,10 +1,7 @@
 # MRI's tests
 externals/ruby1.8/csv/test_csv
 
-# TODO: test_digest can't be executed by
-# TestUnitTestSuite during the build since the
-# test uses some dynamically created test cases.
-# externals/ruby1.8/digest/test_digest
+externals/ruby1.8/digest/test_digest
 
 externals/ruby1.8/logger/test_logger
 # JRUBY-3711

@@ -97,7 +97,7 @@ public class MultipleScriptsRunner {
             basedir
         };
         ruby19loadPaths = Arrays.asList(paths);
-        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/target/surefire-reports/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -127,7 +127,7 @@ public class MultipleScriptsRunner {
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));
-                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+                instance.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
                 // test_backquote.rb fails when the current directory is set.
                 //instance.getProvider().getRubyInstanceConfig().setCurrentDirectory(basedir + "/test");
                 instance.runScriptlet(PathType.CLASSPATH, testname);
@@ -266,7 +266,7 @@ public class MultipleScriptsRunner {
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));
-                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+                instance.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
                 instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
                 t.printStackTrace(new PrintStream(outStream));
@@ -304,7 +304,7 @@ public class MultipleScriptsRunner {
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));
-                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+                instance.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
                 instance.runScriptlet(PathType.ABSOLUTE, testname);
                 instance.getVarMap().clear();
             } catch (Throwable t) {
@@ -333,7 +333,7 @@ public class MultipleScriptsRunner {
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));
-                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+                instance.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
                 instance.runScriptlet(PathType.ABSOLUTE, testname);
             } catch (Throwable t) {
                 t.printStackTrace(new PrintStream(outStream));
@@ -363,7 +363,7 @@ public class MultipleScriptsRunner {
             instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
             instance.setError(new PrintStream(outStream, true));
             instance.setOutput(new PrintStream(outStream, true));
-            instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+            instance.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
             instance.runScriptlet("require 'java'");
             instance.runScriptlet(PathType.CLASSPATH, testname);
 

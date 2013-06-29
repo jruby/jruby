@@ -81,7 +81,7 @@ public class JRubyEngineTest {
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
         System.setProperty("org.jruby.embed.class.path", basedir + "/test");
 
-        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/target/surefire-reports/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);

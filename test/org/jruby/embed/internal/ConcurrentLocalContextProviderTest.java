@@ -72,7 +72,7 @@ public class ConcurrentLocalContextProviderTest {
 
     @Before
     public void setUp() throws FileNotFoundException {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/build/test-results/run-junit-embed.log", true);
+        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/surefire-reports/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
