@@ -46,10 +46,12 @@ jar( 'org.apache.bsf:bsf', '1.0' ).scope :provided
 jar( 'nailgun:nailgun', '0.7.1' )
 jar( 'coro:coro-mock', '1.0-SNAPSHOT' ).scope :provided
 jar( 'sun.misc:unsafe-mock', '1.0-SNAPSHOT' ).scope :provided
+jar( 'yecht:yecht', '1.0' )
 # jar 'com.github.jnr:jnr-ffi', '1.0.4'
 
-build.source_directory = 'src'
-build.output_directory = 'build/classes/jruby'
+build.source_directory 'src'
+build.output_directory 'build/classes/jruby'
+build.default_goal :package
 
 res = build.resources
 res.add do |r|
