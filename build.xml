@@ -154,6 +154,7 @@
 
     <target name="compile" description="Compile the source files for the project.">
         <exec executable="mvn" failonerror="true">
+          <arg line="--batch-mode"/>
           <arg line="compile"/>
         </exec>
     </target>
