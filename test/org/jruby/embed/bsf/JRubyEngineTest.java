@@ -81,7 +81,7 @@ public class JRubyEngineTest {
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
         System.setProperty("org.jruby.embed.class.path", basedir + "/test");
 
-        outStream = new FileOutputStream(basedir + "/target/surefire-reports/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -181,7 +181,7 @@ public class JRubyEngineTest {
         String partone =
                 "def partone\n" +
                   "impression = \"Sooooo Gooood!\"\n" +
-                  "f = File.new(\"" + basedir + "/build/test-results/bsfeval.txt\", \"w\")\n" +
+                  "f = File.new(\"" + basedir + "/target/bsfeval.txt\", \"w\")\n" +
                   "begin\n" +
                     "f.puts impression\n" +
                   "ensure\n" +
@@ -191,7 +191,7 @@ public class JRubyEngineTest {
                 "partone";
         String parttwo =
                 "def parttwo\n" +
-                  "f = File.open \"" + basedir + "/build/test-results/bsfeval.txt\"\n" +
+                  "f = File.open \"" + basedir + "/target/bsfeval.txt\"\n" +
                   "begin\n" +
                     "comment = f.gets\n" +
                     "return comment\n" +

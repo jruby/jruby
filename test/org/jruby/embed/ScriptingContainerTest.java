@@ -103,7 +103,7 @@ public class ScriptingContainerTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/surefire-reports/run-junit-embed.log", true);
+        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -113,7 +113,7 @@ public class ScriptingContainerTest {
         logger1.setLevel(Level.WARNING);
 
         pstream = new PrintStream(outStream, true);
-        writer = new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true);
+        writer = new FileWriter(basedir + "/target/run-junit-embed.txt", true);
     }
 
     @After

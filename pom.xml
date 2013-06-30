@@ -528,17 +528,16 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.15</version>
         <configuration>
-          <forkCount>1.5C</forkCount>
-          <reuseForks>true</reuseForks>
+          <systemProperties>
+            <jruby.compat.version>1.9</jruby.compat.version>
+            <jruby.home>${basedir}</jruby.home>
+            <file.encoding>UTF-8</file.encoding>
+          </systemProperties>
           <testFailureIgnore>true</testFailureIgnore>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
-          <excludes>
-            <exclude>org/jruby/javasupport/test/RubyTestCase.java</exclude>
-            <exclude>org/jruby/test/TestRubyBase.java</exclude>
-          </excludes>
-          <properties>
-            <jruby.compat.version>1.8</jruby.compat.version>
-          </properties>
+          <includes>
+            <include>org/jruby/test/MainTestSuite.java</include>
+          </includes>
         </configuration>
       </plugin>
     </plugins>

@@ -77,7 +77,7 @@ public class ReaderInputStreamTest {
 
     @Before
     public void setUp() throws FileNotFoundException {
-        outStream = new FileOutputStream(basedir + "/target/surefire-reports/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -213,7 +213,7 @@ public class ReaderInputStreamTest {
         container.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
         container.setError(new PrintStream(outStream, true));
         container.setOutput(new PrintStream(outStream, true));
-        container.setWriter(new FileWriter(basedir + "/target/surefire-reports/run-junit-embed.txt", true));
+        container.setWriter(new FileWriter(basedir + "/target/run-junit-embed.txt", true));
         container.runScriptlet(new String(sb));
         container.terminate();
     }

@@ -36,7 +36,7 @@ public class ThreadSafeLocalContextProviderTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/surefire-reports/run-junit-embed.log", true);
+        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
