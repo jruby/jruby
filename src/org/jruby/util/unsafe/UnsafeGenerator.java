@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.unsafe;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.objectweb.asm.ClassWriter;
@@ -41,8 +42,9 @@ public class UnsafeGenerator {
         
         String pkg = args[0].replace('.', '/');
         String dir = args[1];
+        String target = dir + "/" + pkg;
         String classname = pkg + "/GeneratedUnsafe";
-        String classpath = dir + "/GeneratedUnsafe.class";
+        String classpath = target + "/GeneratedUnsafe.class";
         
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, classname, null, p(Object.class), new String[] {p(Unsafe.class)});
@@ -68,6 +70,8 @@ public class UnsafeGenerator {
         byte[] bytecode = cw.toByteArray();
         
         try {
+            File targetFile = new File(target);
+            targetFile.mkdirs();
             FileOutputStream fos = new FileOutputStream(classpath);
             fos.write(bytecode);
         } catch (Exception e) {
