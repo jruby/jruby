@@ -194,6 +194,13 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>requireTest</groupId>
+      <artifactId>requireTest</artifactId>
+      <version>1.0</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -531,12 +538,13 @@
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}</jruby.home>
-            <file.encoding>UTF-8</file.encoding>
           </systemProperties>
           <testFailureIgnore>true</testFailureIgnore>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
+          <argLine>-Dfile.encoding=UTF-8</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
+            <include>org/jruby/embed/**/*Test*.java</include>
           </includes>
         </configuration>
       </plugin>
