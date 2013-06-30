@@ -621,6 +621,80 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <rake task="bench:language"/>
     </target>
 
+    <target name="fetch-tzdata" description="Fetch tzdata into build/tzdata">
+        <available property="tzdata.present" filepath="${tzdata.builddir}/src"
+                   file="tzdata${tzdata.latest.version}.tar.gz"/>
+        <mkdir dir="${tzdata.builddir}/src"/>
+        <ftp server="${tzdata.ftpserver}"
+             action="get"
+             verbose="yes"
+             passive="yes"
+             userid="anonymous"
+             password="${tzdata.ftp.anonymous.userid}"
+             remotedir="${tzdata.ftp.dir}"
+             newer="yes">
+            <fileset dir="${tzdata.builddir}/src">
+                <include name="tzdata${tzdata.latest.version}.tar.gz"/>
+            </fileset>
+        </ftp>
+    </target>
+
+    <target name="expand-tzdata" depends="fetch-tzdata" description="Expand tzdata into build/tzdata">
+        <untar src="${tzdata.builddir}/src/tzdata${tzdata.latest.version}.tar.gz"
+               compression="gzip"
+               dest="${tzdata.builddir}/src"
+                />
+    </target>
+
+    <!-- basically a copy of joda-time's compile.zoneinfo task -->
+    <target name="compile-tzdata" depends="prepare, expand-tzdata" description="Compile tzdata in build/tzdata">
+        <mkdir dir="${tzdata.builddir}/build"/>
+        <mkdir dir="${tzdata.builddir}/build/org/joda/time/tz/data"/>
+        <echo message="Compiling tzdata version ${tzdata.latest.version}"/>
+        <java classname="org.joda.time.tz.ZoneInfoCompiler"
+              fork="true"
+              output="${dev.null}"
+              failonerror="false">
+            <classpath path="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+            <!-- Override default provider since data directory doesn't exist yet -->
+            <sysproperty key="org.joda.time.DateTimeZone.Provider"
+                         value="org.joda.time.tz.UTCProvider"/>
+            <!-- Specify source and destination directories -->
+            <arg line="-src ${tzdata.builddir}/src -dst ${tzdata.builddir}/build/org/joda/time/tz/data"/>
+            <!-- Specify all the data files to compile -->
+            <arg value="africa"/>
+            <arg value="antarctica"/>
+            <arg value="asia"/>
+            <arg value="australasia"/>
+            <arg value="europe"/>
+            <arg value="northamerica"/>
+            <arg value="southamerica"/>
+            <arg value="pacificnew"/>
+            <arg value="etcetera"/>
+            <arg value="backward"/>
+            <arg value="systemv"/>
+        </java>
+        <update-constants tzdata-version="${tzdata.latest.version}"/>
+        <property name="constants.java.is.same" value="true"/>
+    </target>
+
+    <target name="update-tzdata" depends="compile-tzdata"
+            description="Update joda-time's zone info with one we compiled">
+        <jar update="yes" destfile="${build.lib.dir}/joda-time-${joda.time.version}.jar"
+             basedir="${tzdata.builddir}/build"/>
+    </target>
+
+    <target name="clean-tzdata" description="Remove files used for updating time zone information">
+        <delete dir="${tzdata.builddir}" failonerror="no"/>
+        <echo message="Reset joda-time jar"/>
+        <exec osfamily="unix" executable="/bin/sh" failonerror="false" failifexecutionfails="false">
+            <arg line="-c 'git checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar'"/>
+        </exec>
+        <exec osfamily="windows" executable="cmd" failonerror="false" failifexecutionfails="false">
+            <arg line="/c git checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        </exec>
+    </target>
+
     <target name="ci-matrix" depends="clean,jar" description="Run a matrix configuration job from Hudson.">
         <property name="testtype" value="test"/>
         <echo>Running ${testtype} build with JDK ${jdk}</echo>
