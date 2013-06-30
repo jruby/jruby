@@ -49,7 +49,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 /**
  * Represents a rescue statement
@@ -132,7 +131,7 @@ public class RescueNode extends Node {
                 throw flow;
             } catch (Throwable t) {
                 if (t instanceof Unrescuable) {
-                    UnsafeFactory.getUnsafe().throwException(t);
+                    Helpers.throwException(t);
                 }
                 try {
                     result = handleJavaException(runtime, context, self, aBlock, t);
@@ -209,7 +208,7 @@ public class RescueNode extends Node {
         }
 
         // no takers; bubble up
-        UnsafeFactory.getUnsafe().throwException(throwable);
+        Helpers.throwException(throwable);
         throw new RuntimeException("Unsafe.throwException failed");
     }
 

@@ -36,7 +36,6 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1000,7 +999,7 @@ public class Helpers {
     
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject[] throwables, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
-            UnsafeFactory.getUnsafe().throwException(currentThrowable);
+            throwException(currentThrowable);
         }
 
         if (currentThrowable instanceof RaiseException) {
@@ -1023,7 +1022,7 @@ public class Helpers {
 
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
-            UnsafeFactory.getUnsafe().throwException(currentThrowable);
+            throwException(currentThrowable);
         }
 
         if (currentThrowable instanceof RaiseException) {
@@ -1039,7 +1038,7 @@ public class Helpers {
 
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
-            UnsafeFactory.getUnsafe().throwException(currentThrowable);
+            throwException(currentThrowable);
         }
 
         if (currentThrowable instanceof RaiseException) {
@@ -1058,7 +1057,7 @@ public class Helpers {
 
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, IRubyObject throwable2, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
-            UnsafeFactory.getUnsafe().throwException(currentThrowable);
+            throwException(currentThrowable);
         }
         
         if (currentThrowable instanceof RaiseException) {
@@ -2887,5 +2886,13 @@ public class Helpers {
     @Deprecated
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
+    }
+    
+    public static void throwException(final Throwable e) {
+        Helpers.<RuntimeException>throwsUnchecked(e);
+    }
+    
+    private static <T extends Throwable> void throwsUnchecked(Throwable t) throws T {
+        throw (T)t;
     }
 }

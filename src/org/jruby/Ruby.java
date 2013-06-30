@@ -120,7 +120,6 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -4077,7 +4076,7 @@ public final class Ruby {
             inRecursiveListOperation.set(true);
             return body.call();
         } catch (Exception e) {
-            UnsafeFactory.getUnsafe().throwException(e);
+            Helpers.throwException(e);
             return null; // not reached
         } finally {
             recursiveListClear();

@@ -312,23 +312,6 @@
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
-          <execution>
-            <id>unsafe-generator</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <arguments>
-                <argument>-classpath</argument>
-                <classpath />
-                <argument>org.jruby.util.unsafe.UnsafeGenerator</argument>
-                <argument>org.jruby.util.unsafe</argument>
-                <argument>${project.build.outputDirectory}</argument>
-              </arguments>
-              <executable>java</executable>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>

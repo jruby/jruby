@@ -73,13 +73,11 @@ import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import static org.jruby.CompatVersion.*;
 import org.jruby.internal.runtime.ThreadedRunnable;
-import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.util.ByteList;
 
 /**
@@ -1148,7 +1146,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             runtime.getThreadService().getMainThread().getNativeThread().stop(exception);
         } else {
             // just rethrow on this thread, let system handlers report it
-            UnsafeFactory.getUnsafe().throwException(exception);
+            Helpers.throwException(exception);
         }
     }
 

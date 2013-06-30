@@ -47,7 +47,6 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.runtime.IRBreakJump;
-import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
@@ -64,7 +63,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.util.unsafe.UnsafeFactory;
+import org.jruby.runtime.Helpers;
 
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
@@ -543,7 +542,7 @@ public class Interpreter {
                 if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
 
                 if (ipc == -1) {
-                    UnsafeFactory.getUnsafe().throwException((Throwable)t);
+                    Helpers.throwException((Throwable)t);
                 } else {
                     exception = t;
                 }

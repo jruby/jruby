@@ -11,9 +11,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.lang.invoke.MethodHandle;
+import org.jruby.runtime.Helpers;
 
 public class CompiledIRMethod extends DynamicMethod implements PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("CompiledIRMethod");
@@ -65,7 +65,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             // not reached
             return null;
         } finally {
@@ -90,7 +90,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             // not reached
             return null;
         } finally {
@@ -115,7 +115,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             // not reached
             return null;
         } finally {
@@ -140,7 +140,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             // not reached
             return null;
         } finally {
@@ -165,7 +165,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1, arg2, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             // not reached
             return null;
         } finally {
