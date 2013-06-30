@@ -90,6 +90,16 @@
             <argument>-dst</argument>
             <argument>${project.build.outputDirectory}/org/joda/time/tz/data</argument>
             <argument>africa</argument>
+            <argument>antarctica</argument>
+            <argument>asia</argument>
+            <argument>australasia</argument>
+            <argument>europe</argument>
+            <argument>northamerica</argument>
+            <argument>southamerica</argument>
+            <argument>pacificnew</argument>
+            <argument>etcetera</argument>
+            <argument>backward</argument>
+            <argument>systemv</argument>
           </arguments>
           <systemProperties>
             <systemProperty>
