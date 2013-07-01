@@ -104,15 +104,16 @@
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.2</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>joda-timezones</artifactId>
       <version>${tzdata.version}</version>
+      <type>jar</type>
+      <scope>${tzdata.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.2</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -217,6 +218,7 @@
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <tzdata.version>2013c</tzdata.version>
     <maven.test.skip>true</maven.test.skip>
+    <tzdata.scope>provided</tzdata.scope>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -505,14 +507,6 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <filters>
-                <filter>
-                  <artifact>joda-time:joda-time</artifact>
-                  <excludes>
-                    <exclude>org/joda/time/tz/data/**</exclude>
-                  </excludes>
-                </filter>
-              </filters>
               <relocations>
                 <relocation>
                   <pattern>org.objectweb</pattern>
@@ -584,6 +578,12 @@
       <id>test</id>
       <properties>
       	<maven.test.skip>false</maven.test.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>tzdata</id>
+      <properties>
+        <tzdata.scope>runtime</tzdata.scope>
       </properties>
     </profile>
   </profiles>
