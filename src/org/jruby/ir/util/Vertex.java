@@ -156,10 +156,9 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     private Edge<T> getFirstEdge(Iterator<Edge<T>> iterator, Object type) {
         if (iterator.hasNext()) {
             Edge<T> edge = iterator.next();
+            Object edgeType = edge.getType();
             
-            assert !iterator.hasNext() : "Should only be one edge of type " + type;
-            
-            return edge;
+            if (edgeType == type || (edgeType != null && edgeType.equals(type))) return edge;
         }
         
         return null;
