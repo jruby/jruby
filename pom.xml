@@ -329,6 +329,38 @@
             </configuration>
           </execution>
           <execution>
+            <id>build jopenssl</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-f</argument>
+                <argument>ext/openssl/pom.xml</argument>
+                <argument>package</argument>
+              </arguments>
+              <executable>mvn</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build readline</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-f</argument>
+                <argument>ext/readline/pom.xml</argument>
+                <argument>package</argument>
+              </arguments>
+              <executable>mvn</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
             <id>install rake</id>
             <phase>package</phase>
             <goals>
