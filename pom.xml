@@ -216,6 +216,7 @@
     <base.java.version>1.6</base.java.version>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <tzdata.version>2013c</tzdata.version>
+    <maven.test.skip>true</maven.test.skip>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -580,7 +581,10 @@
   </build>
   <profiles>
     <profile>
-      <id>tzdata</id>
+      <id>test</id>
+      <properties>
+      	<maven.test.skip>false</maven.test.skip>
+      </properties>
     </profile>
   </profiles>
 </project>
