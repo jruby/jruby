@@ -152,13 +152,6 @@
         <property name="copy-resources.hasrun" value="true"/>
     </target>
 
-    <target name="compile" description="Compile the source files for the project.">
-        <exec executable="mvn" failonerror="true">
-          <arg line="--batch-mode"/>
-          <arg line="compile"/>
-        </exec>
-    </target>
-
     <target name="unzip-native-libs" unless="native-libs-uptodate">
         <unzip-native-libs destination.dir="${lib.dir}/native"/>
         <echo file="${lib.dir}/native/libs.OK"/>
@@ -205,16 +198,6 @@
           nailgun-0.7.1.jar
           jzlib-1.1.2.jar
           invokebinder.jar"/>
-
-    <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
-        <exec executable="mvn" failonerror="true">
-            <arg line="--batch-mode"/>
-            <arg line="-DskipTests"/>
-            <arg line="package"/>
-        </exec>
-
-        <property name="jar-jruby.hasrun" value="true"/>
-    </target>
 
     <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
 other than ASM, which is rewritten to avoid conflicts. -->
@@ -631,5 +614,28 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <property name="testtype" value="test"/>
         <echo>Running ${testtype} build with JDK ${jdk}</echo>
         <antcall target="${testtype}"/>
+    </target>
+    
+    <!--
+    ***************************************************************************
+    Targets below this line are now handled by maven, and should not be edited.
+    ***************************************************************************
+    -->
+
+    <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
+        <exec executable="mvn" failonerror="true">
+            <arg line="--batch-mode"/>
+            <arg line="-DskipTests"/>
+            <arg line="package"/>
+        </exec>
+
+        <property name="jar-jruby.hasrun" value="true"/>
+    </target>
+
+    <target name="compile" description="Compile the source files for the project.">
+        <exec executable="mvn" failonerror="true">
+          <arg line="--batch-mode"/>
+          <arg line="compile"/>
+        </exec>
     </target>
 </project>
