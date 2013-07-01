@@ -15,6 +15,7 @@
     <bc.version>1.47</bc.version>
     <openssl.dir>${project.basedir}/../../lib/ruby/shared</openssl.dir>
     <base.java.version>1.6</base.java.version>
+    <skipTests>true</skipTests>
   </properties>
 
   <dependencies>
