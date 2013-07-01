@@ -38,7 +38,7 @@
 
     <target name="test" depends="test-extended"/>
 
-    <target name="test-extended">
+    <target name="test-extended" depends="jar">
         <java classname="org.jruby.Main" fork="true" failonerror="true">
             <classpath refid="test.class.path"/>
             <jvmarg line="${java.opts}"/>
