@@ -504,6 +504,14 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <filters>
+                <filter>
+                  <artifact>joda-time:joda-time</artifact>
+                  <excludes>
+                    <exclude>org/joda/time/tz/data/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <relocations>
                 <relocation>
                   <pattern>org.objectweb</pattern>
