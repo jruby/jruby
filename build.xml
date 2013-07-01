@@ -209,6 +209,7 @@
     <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
         <exec executable="mvn" failonerror="true">
             <arg line="--batch-mode"/>
+            <arg line="-DskipTests"/>
             <arg line="package"/>
         </exec>
 
