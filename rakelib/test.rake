@@ -71,7 +71,7 @@ namespace :test do
   task :rake_targets => long_tests
   
   task :extended do
-    sh 'mvn --batch-mode -Ptest test' # also compiles files needed for some ruby tests
+    sh 'mvn -q -Ptest test' # also compiles files needed for some ruby tests
     Rake::Task["test:rake_targets"].invoke
   end
 

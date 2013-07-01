@@ -530,6 +530,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <delete dir="build/src_gen"/>
         <antcall target="clean-ng"/>
         <exec executable="mvn">
+          <arg line="-q"/>
           <arg line="clean"/>
         </exec>
     </target>
@@ -624,7 +625,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
     <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
         <exec executable="mvn" failonerror="true">
-            <arg line="--batch-mode"/>
+            <arg line="-q"/>
             <arg line="-DskipTests"/>
             <arg line="package"/>
         </exec>
@@ -634,7 +635,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
 
     <target name="compile" description="Compile the source files for the project.">
         <exec executable="mvn" failonerror="true">
-          <arg line="--batch-mode"/>
+          <arg line="-q"/>
           <arg line="compile"/>
         </exec>
     </target>
