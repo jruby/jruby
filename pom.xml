@@ -209,6 +209,13 @@
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rspec</artifactId>
+      <version>${rspec.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -227,6 +234,7 @@
     <maven.test.skip>true</maven.test.skip>
     <tzdata.scope>provided</tzdata.scope>
     <rake.version>10.1.0</rake.version>
+    <rspec.version>2.12.0</rspec.version>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -376,6 +384,27 @@
                 <argument>gem</argument>
                 <argument>install</argument>
                 <argument>target/rake-${rake.version}.gem</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install rspec</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.home=${basedir}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.Main</argument>
+                <argument>-S</argument>
+                <argument>gem</argument>
+                <argument>install</argument>
+                <argument>target/rspec-${rspec.version}.gem</argument>
               </arguments>
               <executable>java</executable>
               <classpathScope>compile</classpathScope>
