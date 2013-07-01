@@ -413,10 +413,12 @@ public class ASTCompiler {
             this.node = node;
         }
         
+        @Override
         public int getArity() {
             return arity;
         }
         
+        @Override
         public void call(BodyCompiler context) {
             if (node.getNodeType() == NodeType.ARRAYNODE) {
                 ArrayNode arrayNode = (ArrayNode)node;
@@ -543,6 +545,7 @@ public class ASTCompiler {
         
         if (expr) {
             ArrayCallback callback = new ArrayCallback() {
+                @Override
                 public void nextValue(BodyCompiler context, Object sourceArray, int index) {
                     Node node = (Node) ((Object[]) sourceArray)[index];
                     compile(node, context, true);
@@ -728,7 +731,8 @@ public class ASTCompiler {
                 }
             } else if (argument instanceof FloatNode) {
                 if (MethodIndex.hasFastFloatOps(name)) {
-                    context.getInvocationCompiler().invokeBinaryFloatRHS(name, receiverCallback, ((FloatNode)argument).getValue());
+                    context.getInvocationCompiler().invokeBinaryFloatRHS(name,
+                            receiverCallback, ((FloatNode)argument).getValue());
                     discardTopValue(expr, context);
                     return;
                 }
@@ -883,6 +887,7 @@ public class ASTCompiler {
     public void compileWhen(final Node value, List<Node> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
         CompilerCallback caseValue = null;
         if (value != null) caseValue = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(value, context, true);
                 context.pollThreadEvents();
@@ -1147,12 +1152,14 @@ public class ASTCompiler {
 
         if (constNode == null) {
             context.assignConstantInCurrent(constDeclNode.getName(), new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compile(constDeclNode.getValueNode(), context, true);
                 }
             });
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             context.assignConstantInModule(constDeclNode.getName(), new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compile(constDeclNode.getValueNode(), context, true);
                     compile(((Colon2Node) constNode).getLeftNode(), context, true);
@@ -1160,6 +1167,7 @@ public class ASTCompiler {
             });
         } else {// colon3, assign in Object
             context.assignConstantInObject(constDeclNode.getName(), new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compile(constDeclNode.getValueNode(), context, true);
                 }
@@ -1206,6 +1214,7 @@ public class ASTCompiler {
                 context.retrieveConstantFromModule(name);
             } else if (node instanceof Colon2MethodNode) {
                 final CompilerCallback receiverCallback = new CompilerCallback() {
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(iVisited.getLeftNode(), context,true);
                     }
@@ -1229,6 +1238,9 @@ public class ASTCompiler {
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
         switch (node.getNodeType()) {
+        case NEWLINENODE:
+            compileGetDefinitionBase(((NewlineNode)node).getNextNode(), context);
+            break;
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
         case CONSTDECLNODE:
@@ -1255,13 +1267,9 @@ public class ASTCompiler {
         case COLON3NODE:
         case CALLNODE:
             // these are all simple cases that don't require the heavier defined logic
-            compileGetDefinition(node, context);
-            break;
-        case NEWLINENODE:
-            compileGetDefinitionBase(((NewlineNode)node).getNextNode(), context);
-            break;
         default:
             compileGetDefinition(node, context);
+            break;
         }
     }
 
@@ -1327,14 +1335,14 @@ public class ASTCompiler {
             case NOTNODE: // evaluates, and under 1.9 flips to "method" if result is nonnull
                 {
                     context.rescue(new BranchCallback() {
-
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     compile(node, context, false);
                                     context.pushDefinedMessage(DefinedMessage.EXPRESSION);
                                 }
                             }, JumpException.class,
                             new BranchCallback() {
-
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     context.pushNull();
                                 }
@@ -1374,13 +1382,13 @@ public class ASTCompiler {
                 context.loadSelf();
                 context.isMethodBound(((VCallNode) node).getName(),
                         new BranchCallback() {
-
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushDefinedMessage(DefinedMessage.METHOD);
                             }
                         },
                         new BranchCallback() {
-
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
@@ -1388,13 +1396,14 @@ public class ASTCompiler {
                 break;
             case YIELDNODE:
                 context.hasBlock(new BranchCallback() {
-
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushDefinedMessage(DefinedMessage.YIELD);
                             }
                         },
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
@@ -1404,12 +1413,14 @@ public class ASTCompiler {
                 context.isGlobalDefined(((GlobalVarNode) node).getName(),
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                             }
                         },
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
@@ -1426,12 +1437,14 @@ public class ASTCompiler {
                 context.isMethodBound(((FCallNode) node).getName(),
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 compileGetArgumentDefinition(((FCallNode) node).getArgsNode(), context, "method");
                             }
                         },
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
@@ -1446,6 +1459,7 @@ public class ASTCompiler {
 
                     BranchCallback setup = new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     if (iVisited instanceof Colon2Node) {
                                         final Node leftNode = ((Colon2Node) iVisited).getLeftNode();
@@ -1480,6 +1494,7 @@ public class ASTCompiler {
                     context.isClassVarDefined(iVisited.getName(),
                             new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     context.consumeCurrentValue();
                                     context.pushDefinedMessage(DefinedMessage.CLASS_VARIABLE);
@@ -1488,6 +1503,7 @@ public class ASTCompiler {
                             },
                             new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                 }
                             });
@@ -1496,6 +1512,7 @@ public class ASTCompiler {
                     context.isClassVarDefined(iVisited.getName(),
                             new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     context.consumeCurrentValue();
                                     context.pushDefinedMessage(DefinedMessage.CLASS_VARIABLE);
@@ -1504,6 +1521,7 @@ public class ASTCompiler {
                             },
                             new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                 }
                             });
@@ -1520,8 +1538,8 @@ public class ASTCompiler {
                     context.setEnding(failure);
                     context.pushNull();
                     context.setEnding(ending);
+                    break;
                 }
-                break;
             case ZSUPERNODE:
                 {
                     Object fail = context.getNewEnding();
@@ -1588,6 +1606,7 @@ public class ASTCompiler {
 
                     context.rescue(new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     compile(iVisited.getReceiverNode(), context,true); //[IRubyObject]
                                     context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
@@ -1605,14 +1624,16 @@ public class ASTCompiler {
                                     context.go(isfalse);
                                     context.setEnding(isreal); //[]
 
-                                    context.isMethodBound(iVisited.getName(), new BranchCallback() {
-
+                                    context.isMethodBound(iVisited.getName(), 
+                                            new BranchCallback() {
+                                                @Override
                                                 public void branch(BodyCompiler context) {
                                                     compileGetArgumentDefinition(iVisited.getArgsNode(), context, "assignment");
                                                 }
                                             },
                                             new BranchCallback() {
 
+                                                @Override
                                                 public void branch(BodyCompiler context) {
                                                     context.go(isfalse);
                                                 }
@@ -1625,6 +1646,7 @@ public class ASTCompiler {
                             }, JumpException.class,
                             new BranchCallback() {
 
+                                @Override
                                 public void branch(BodyCompiler context) {
                                     context.pushNull();
                                 }
@@ -1639,14 +1661,16 @@ public class ASTCompiler {
             default:
                 context.rescue(new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
-                                compile(node, context,true);
+                                compile(node, context, true);
                                 context.consumeCurrentValue();
                                 context.pushNull();
                             }
                         }, JumpException.class,
                         new BranchCallback() {
 
+                            @Override
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
@@ -1659,6 +1683,7 @@ public class ASTCompiler {
     protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
         context.rescue(new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         compile(node, context, false);
                         context.pushDefinedMessage(DefinedMessage.EXPRESSION);
@@ -1666,6 +1691,7 @@ public class ASTCompiler {
                 }, JumpException.class,
                 new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.pushNull();
                     }
@@ -1681,6 +1707,7 @@ public class ASTCompiler {
 
             context.rescue(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(iVisited.getReceiverNode(), context, true); //[IRubyObject]
                             context.definedCall(iVisited.getName());
@@ -1688,13 +1715,14 @@ public class ASTCompiler {
                     }, JumpException.class,
                     new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             context.pushNull();
                         }
                     }, RubyString.class);
 
-            //          context.swapValues();
-    //context.consumeCurrentValue();
+//            context.swapValues();
+//            context.consumeCurrentValue();
             context.go(ending);
             context.setEnding(isnull);
             context.pushNull();
@@ -1710,12 +1738,14 @@ public class ASTCompiler {
         context.isInstanceOf(RubyMatchData.class,
                 new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.pushDefinedMessage(DefinedMessage.byText("$" + ((BackRefNode) node).getType()));
                     }
                 },
                 new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.pushNull();
                     }
@@ -1726,12 +1756,14 @@ public class ASTCompiler {
         context.isCaptured(((NthRefNode) node).getMatchNumber(),
                 new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.pushDefinedMessage(DefinedMessage.byText("$" + ((NthRefNode) node).getMatchNumber()));
                     }
                 },
                 new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.pushNull();
                     }
@@ -1742,6 +1774,7 @@ public class ASTCompiler {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(dasgnNode.getValueNode(), context, true);
             }
@@ -1764,6 +1797,7 @@ public class ASTCompiler {
 
         CompilerCallback body = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (defnNode.getBodyNode() != null) {
                             Node oldBodyNode = currentBodyNode;
@@ -1783,6 +1817,7 @@ public class ASTCompiler {
 
         CompilerCallback args = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compileArgs(argsNode, context, true);
                     }
@@ -1818,6 +1853,7 @@ public class ASTCompiler {
 
         CompilerCallback receiver = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(defsNode.getReceiverNode(), context, true);
                     }
@@ -1825,6 +1861,7 @@ public class ASTCompiler {
 
         CompilerCallback body = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (defsNode.getBodyNode() != null) {
                             if (defsNode.getBodyNode() instanceof RescueNode) {
@@ -1841,6 +1878,7 @@ public class ASTCompiler {
 
         CompilerCallback args = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compileArgs(argsNode, context, true);
                     }
@@ -1885,6 +1923,7 @@ public class ASTCompiler {
         if (required > 0) {
             requiredAssignment = new ArrayCallback() {
 
+                        @Override
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
                             context.getVariableCompiler().assignLocalVariable(index, false);
@@ -1895,6 +1934,7 @@ public class ASTCompiler {
         if (opt > 0) {
             optionalGiven = new ArrayCallback() {
 
+                        @Override
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
@@ -1903,6 +1943,7 @@ public class ASTCompiler {
                     };
             optionalNotGiven = new ArrayCallback() {
 
+                        @Override
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
@@ -1914,6 +1955,7 @@ public class ASTCompiler {
         if (rest > -1) {
             restAssignment = new CompilerCallback() {
 
+                        @Override
                         public void call(BodyCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
                         }
@@ -1923,6 +1965,7 @@ public class ASTCompiler {
         if (argsNode.getBlock() != null) {
             blockAssignment = new CompilerCallback() {
 
+                        @Override
                         public void call(BodyCompiler context) {
                             context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
                         }
@@ -1947,6 +1990,7 @@ public class ASTCompiler {
 
         if (expr) {
             CompilerCallback beginEndCallback = new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compile(dotNode.getBeginNode(), context, true);
                     compile(dotNode.getEndNode(), context, true);
@@ -1962,9 +2006,11 @@ public class ASTCompiler {
 
         CompilerCallback createStringCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         ArrayCallback dstrCallback = new ArrayCallback() {
 
+                                    @Override
                                     public void nextValue(BodyCompiler context, Object sourceArray,
                                             int index) {
                                         compile(dregexpNode.get(index), context, true);
@@ -1993,6 +2039,7 @@ public class ASTCompiler {
         final DNode dNode = (DNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
+            @Override
             public void nextValue(BodyCompiler context, Object sourceArray,
                                   int index) {
                 Node nextNode = dNode.get(index);
@@ -2051,10 +2098,12 @@ public class ASTCompiler {
         final DXStrNode dxstrNode = (DXStrNode) node;
 
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
+                    @Override
                     public int getArity() {
                         return 1;
                     }
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compileDNode(dxstrNode, context, true);
                     }
@@ -2070,6 +2119,7 @@ public class ASTCompiler {
         if (ensureNode.getEnsureNode() != null) {
             context.performEnsure(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             if (ensureNode.getBodyNode() != null) {
                                 compile(ensureNode.getBodyNode(), context, true);
@@ -2080,6 +2130,7 @@ public class ASTCompiler {
                     },
                     new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(ensureNode.getEnsureNode(), context, false);
                         }
@@ -2117,9 +2168,13 @@ public class ASTCompiler {
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
         if (fcallNode instanceof SpecialArgs) {
-            context.getInvocationCompiler().invokeDynamicVarargs(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+            context.getInvocationCompiler().invokeDynamicVarargs(fcallNode.getName(), 
+                    null, argsCallback, CallType.FUNCTIONAL,
+                    closureArg, fcallNode.getIterNode() instanceof IterNode);
         } else {
-            context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+            context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), 
+                    null, argsCallback, CallType.FUNCTIONAL,
+                    closureArg, fcallNode.getIterNode() instanceof IterNode);
         }
         discardTopValue(expr, context);
     }
@@ -2135,6 +2190,7 @@ public class ASTCompiler {
 
                 return new CompilerCallback() {
 
+                            @Override
                             public void call(BodyCompiler context) {
                                 compile(iterNode, context,true);
                             }
@@ -2144,13 +2200,15 @@ public class ASTCompiler {
 
                 return new CompilerCallback() {
 
+                            @Override
                             public void call(BodyCompiler context) {
                                 compile(blockPassNode.getBodyNode(), context,true);
                                 context.unwrapPassedBlock();
                             }
                         };
             default:
-                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
+                throw new NotCompilableException(
+                        "ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
     }
 
@@ -2168,16 +2226,19 @@ public class ASTCompiler {
         if (flipNode.isExclusive()) {
             context.performBooleanBranch(new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getEndNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
                             context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                         }
                     });
@@ -2185,6 +2246,7 @@ public class ASTCompiler {
                 }
             }, new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getBeginNode(), context,true);
                     becomeTrueOrFalse(context);
@@ -2194,16 +2256,19 @@ public class ASTCompiler {
         } else {
             context.performBooleanBranch(new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getEndNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
                             context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                         }
                     });
@@ -2211,10 +2276,12 @@ public class ASTCompiler {
                 }
             }, new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getBeginNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(flipNode.getEndNode(), context,true);
                             flipTrueOrFalse(context);
@@ -2223,6 +2290,7 @@ public class ASTCompiler {
                         }
                     }, new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
                         }
@@ -2236,11 +2304,13 @@ public class ASTCompiler {
     private void becomeTrueOrFalse(BodyCompiler context) {
         context.performBooleanBranch(new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.loadTrue();
                     }
                 }, new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.loadFalse();
                     }
@@ -2250,11 +2320,13 @@ public class ASTCompiler {
     private void flipTrueOrFalse(BodyCompiler context) {
         context.performBooleanBranch(new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.loadFalse();
                     }
                 }, new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         context.loadTrue();
                     }
@@ -2264,7 +2336,9 @@ public class ASTCompiler {
     public void compileFloat(Node node, BodyCompiler context, boolean expr) {
         FloatNode floatNode = (FloatNode) node;
 
-        if (expr) context.createNewFloat(floatNode.getValue());
+        if (expr) {
+            context.createNewFloat(floatNode.getValue());
+        }
     }
 
     public void compileFor(Node node, BodyCompiler context, boolean expr) {
@@ -2272,6 +2346,7 @@ public class ASTCompiler {
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(forNode.getIterNode(), context, true);
                     }
@@ -2279,12 +2354,14 @@ public class ASTCompiler {
 
         final CompilerCallback closureArg = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compileForIter(forNode, context);
                     }
                 };
 
-        context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, true);
+        context.getInvocationCompiler().invokeDynamic("each",
+                receiverCallback, null, CallType.NORMAL, closureArg, true);
         discardTopValue(expr, context);
     }
 
@@ -2294,6 +2371,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (forNode.getBodyNode() != null) {
                             compile(forNode.getBodyNode(), context,true);
@@ -2306,6 +2384,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (forNode.getVarNode() != null) {
                             compileAssignment(forNode.getVarNode(), context);
@@ -2341,6 +2420,7 @@ public class ASTCompiler {
         final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(globalAsgnNode.getValueNode(), context, true);
             }
@@ -2418,6 +2498,7 @@ public class ASTCompiler {
             }
 
             ArrayCallback hashCallback = new ArrayCallback() {
+                @Override
                 public void nextValue(BodyCompiler context, Object sourceArray,
                         int index) {
                     ListNode listNode = (ListNode) sourceArray;
@@ -2461,6 +2542,7 @@ public class ASTCompiler {
             compile(ifNode.getElseBody(), context, expr);
         } else {
             BranchCallback trueCallback = new BranchCallback() {
+                @Override
                 public void branch(BodyCompiler context) {
                     if (ifNode.getThenBody() != null) {
                         compile(ifNode.getThenBody(), context, expr);
@@ -2471,6 +2553,7 @@ public class ASTCompiler {
             };
 
             BranchCallback falseCallback = new BranchCallback() {
+                @Override
                 public void branch(BodyCompiler context) {
                     if (ifNode.getElseBody() != null) {
                         compile(ifNode.getElseBody(), context, expr);
@@ -2512,6 +2595,7 @@ public class ASTCompiler {
                             context.getInvocationCompiler().invokeBinaryBooleanFixnumRHS(
                                     callNode.getName(),
                                     new CompilerCallback() {
+                                        @Override
                                         public void call(BodyCompiler context) {
                                             compile(callNode.getReceiverNode(), context, true);
                                         }
@@ -2533,6 +2617,7 @@ public class ASTCompiler {
         final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(instAsgnNode.getValueNode(), context, true);
             }
@@ -2552,7 +2637,9 @@ public class ASTCompiler {
     public void compileInstVar(Node node, BodyCompiler context, boolean expr) {
         InstVarNode instVarNode = (InstVarNode) node;
 
-        if (expr) context.retrieveInstanceVariable(instVarNode.getName());
+        if (expr) {
+            context.retrieveInstanceVariable(instVarNode.getName());
+        }
     }
 
     public void compileIter(Node node, BodyCompiler context) {
@@ -2561,6 +2648,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (iterNode.getBodyNode() != null) {
                             compile(iterNode.getBodyNode(), context, true);
@@ -2572,6 +2660,7 @@ public class ASTCompiler {
 
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 if (iterNode.getVarNode() != null) {
                     compileAssignment(iterNode.getVarNode(), context);
@@ -2614,6 +2703,7 @@ public class ASTCompiler {
             if (expr) context.loadNil();
         } else {
             CompilerCallback value = new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compile(localAsgnNode.getValueNode(), context,true);
                 }
@@ -2633,7 +2723,9 @@ public class ASTCompiler {
     public void compileLocalVar(Node node, BodyCompiler context, boolean expr) {
         LocalVarNode localVarNode = (LocalVarNode) node;
 
-        if (expr) context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+        if (expr) {
+            context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+        }
     }
 
     public void compileMatch(Node node, BodyCompiler context, boolean expr) {
@@ -2650,6 +2742,7 @@ public class ASTCompiler {
 
         compile(matchNode.getReceiverNode(), context,true);
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(matchNode.getValueNode(), context,true);
             }
@@ -2676,6 +2769,7 @@ public class ASTCompiler {
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (moduleNode.getBodyNode() != null) {
                             compile(moduleNode.getBodyNode(), context,true);
@@ -2686,6 +2780,7 @@ public class ASTCompiler {
 
         CompilerCallback pathCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
@@ -2800,6 +2895,7 @@ public class ASTCompiler {
         // normal items at the "head" of the masgn
         ArrayCallback headAssignCallback = new ArrayCallback() {
 
+                    @Override
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
                         ListNode headNode = (ListNode) sourceArray;
@@ -2812,6 +2908,7 @@ public class ASTCompiler {
 
         CompilerCallback argsCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         Node argsNode = multipleAsgnNode.getArgsNode();
                         if (argsNode instanceof StarNode) {
@@ -2826,7 +2923,9 @@ public class ASTCompiler {
 
         if (multipleAsgnNode.getHeadNode() == null) {
             if (multipleAsgnNode.getArgsNode() == null) {
-                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
+                throw new NotCompilableException(
+                        "Something's wrong, multiple assignment with no head or args at: " +
+                        multipleAsgnNode.getPosition());
             } else {
                 if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
                     // do nothing
@@ -2840,9 +2939,11 @@ public class ASTCompiler {
             context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
             
             if (multipleAsgnNode.getArgsNode() == null) {
-                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, null);
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(),
+                        multipleAsgnNode.getHeadNode(), headAssignCallback, null);
             } else {
-                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(),
+                        multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
             }
         }
         discardTopValue(expr, context);
@@ -2853,7 +2954,9 @@ public class ASTCompiler {
 
         context.setLinePosition(node.getPosition());
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            context.traceLine();
+        }
 
         NewlineNode newlineNode = (NewlineNode) node;
 
@@ -2865,6 +2968,7 @@ public class ASTCompiler {
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (nextNode.getValueNode() != null) {
                             compile(nextNode.getValueNode(), context,true);
@@ -2882,7 +2986,9 @@ public class ASTCompiler {
     public void compileNthRef(Node node, BodyCompiler context, boolean expr) {
         NthRefNode nthRefNode = (NthRefNode) node;
 
-        if (expr) context.nthRef(nthRefNode.getMatchNumber());
+        if (expr) {
+            context.nthRef(nthRefNode.getMatchNumber());
+        }
     }
 
     public void compileNil(Node node, BodyCompiler context, boolean expr) {
@@ -2907,6 +3013,7 @@ public class ASTCompiler {
 
         BranchCallback longCallback = new BranchCallback() {
 
+                    @Override
                     public void branch(BodyCompiler context) {
                         compile(andNode.getSecondNode(), context,true);
                     }
@@ -2925,22 +3032,26 @@ public class ASTCompiler {
 
             context.isNull(new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(orNode.getSecondNode(), context,true);
                         }
                     }, new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(orNode.getFirstNode(), context,true);
                             context.duplicateCurrentValue();
                             context.performBooleanBranch(new BranchCallback() {
 
+                                        @Override
                                         public void branch(BodyCompiler context) {
                                         //Do nothing
                                         }
                                     },
                                     new BranchCallback() {
 
+                                        @Override
                                         public void branch(BodyCompiler context) {
                                             context.consumeCurrentValue();
                                             compile(orNode.getSecondNode(), context,true);
@@ -2952,11 +3063,13 @@ public class ASTCompiler {
             compile(orNode.getFirstNode(), context,true);
             context.duplicateCurrentValue();
             context.performBooleanBranch(new BranchCallback() {
+                @Override
                 public void branch(BodyCompiler context) {
                 //Do nothing
                 }
             },
             new BranchCallback() {
+                @Override
                 public void branch(BodyCompiler context) {
                     context.consumeCurrentValue();
                     compile(orNode.getSecondNode(), context,true);
@@ -3022,6 +3135,7 @@ public class ASTCompiler {
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
+            @Override
             public void call(BodyCompiler context) {
                 compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
             }
@@ -3029,7 +3143,8 @@ public class ASTCompiler {
         
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
-        context.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
+        context.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(),
+                opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
         discardTopValue(expr, context);
     }
 
@@ -3038,6 +3153,7 @@ public class ASTCompiler {
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
+            @Override
             public void call(BodyCompiler context) {
                 compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
             }
@@ -3045,7 +3161,8 @@ public class ASTCompiler {
         
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
-        context.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
+        context.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(),
+                opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
         discardTopValue(expr, context);
     }
 
@@ -3053,6 +3170,7 @@ public class ASTCompiler {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
                     }
@@ -3060,10 +3178,12 @@ public class ASTCompiler {
 
         // eval new value, call operator on old value, and assign
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            @Override
             public int getArity() {
                 return 1;
             }
 
+            @Override
             public void call(BodyCompiler context) {
                 compile(opAsgnNode.getValueNode(), context, true);
             }
@@ -3076,9 +3196,9 @@ public class ASTCompiler {
     public void compileOpElementAsgn(Node node, BodyCompiler context, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
-        if (opElementAsgnNode.getOperatorName() == "||") {
+        if ("||".equals(opElementAsgnNode.getOperatorName())) {
             compileOpElementAsgnWithOr(node, context, expr);
-        } else if (opElementAsgnNode.getOperatorName() == "&&") {
+        } else if ("&&".equals(opElementAsgnNode.getOperatorName())) {
             compileOpElementAsgnWithAnd(node, context, expr);
         } else {
             compileOpElementAsgnWithMethod(node, context, expr);
@@ -3092,6 +3212,7 @@ public class ASTCompiler {
             this.node = node;
         }
         
+        @Override
         public int getArity() {
             switch (node.getNodeType()) {
             case ARGSCATNODE:
@@ -3112,6 +3233,7 @@ public class ASTCompiler {
             }
         }
 
+        @Override
         public void call(BodyCompiler context) {
             if (getArity() == 1) {
                 // if arity 1, just compile the one element to save us the array cost
@@ -3127,6 +3249,7 @@ public class ASTCompiler {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getReceiverNode(), context, true);
             }
@@ -3135,6 +3258,7 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getValueNode(), context, true);
             }
@@ -3148,6 +3272,7 @@ public class ASTCompiler {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getReceiverNode(), context, true);
             }
@@ -3156,6 +3281,7 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode()); 
 
         CompilerCallback valueCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getValueNode(), context, true);
             }
@@ -3169,6 +3295,7 @@ public class ASTCompiler {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getReceiverNode(), context,true);
             }
@@ -3177,12 +3304,14 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(opElementAsgnNode.getValueNode(), context,true);
             }
         };
 
-        context.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
+        context.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback,
+                argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
         discardTopValue(expr, context);
     }
 
@@ -3201,6 +3330,7 @@ public class ASTCompiler {
 
             BranchCallback longCallback = new BranchCallback() {
 
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(orNode.getSecondNode(), context, true);
                         }
@@ -3217,6 +3347,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (postExeNode.getBodyNode() != null) {
                             compile(postExeNode.getBodyNode(), context, true);
@@ -3235,6 +3366,7 @@ public class ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (preExeNode.getBodyNode() != null) {
                             compile(preExeNode.getBodyNode(), context,true);
@@ -3257,7 +3389,9 @@ public class ASTCompiler {
     public void compileRegexp(Node node, BodyCompiler context, boolean expr) {
         RegexpNode reNode = (RegexpNode) node;
 
-        if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions().toEmbeddedOptions());
+        if (expr) {
+            context.createNewRegexp(reNode.getValue(), reNode.getOptions().toEmbeddedOptions());
+        }
     }
 
     public void compileRescue(Node node, BodyCompiler context, boolean expr) {
@@ -3269,6 +3403,7 @@ public class ASTCompiler {
         final RescueNode rescueNode = (RescueNode) node;
 
         BranchCallback body = new BranchCallback() {
+            @Override
             public void branch(BodyCompiler context) {
                 if (rescueNode.getBodyNode() != null) {
                     compile(rescueNode.getBodyNode(), context, true);
@@ -3281,6 +3416,7 @@ public class ASTCompiler {
         BranchCallback elseBody = null;
         if (rescueNode.getElseNode() != null) {
             elseBody = new BranchCallback() {
+                @Override
                 public void branch(BodyCompiler context) {
                     context.consumeCurrentValue();
                     compile(rescueNode.getElseNode(), context, true);
@@ -3289,6 +3425,7 @@ public class ASTCompiler {
         }
 
         BranchCallback rubyHandler = new BranchCallback() {
+            @Override
             public void branch(BodyCompiler context) {
                 compileRescueBodyInternal(rescueNode.getRescueNode(), context, light);
             }
@@ -3311,10 +3448,12 @@ public class ASTCompiler {
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
         ArgumentsCallback rescueArgs = getArgsCallback(exceptionList);
         if (rescueArgs == null) rescueArgs = new ArgumentsCallback() {
+            @Override
             public int getArity() {
                 return 1;
             }
 
+            @Override
             public void call(BodyCompiler context) {
                 context.loadStandardError();
             }
@@ -3323,6 +3462,7 @@ public class ASTCompiler {
         context.checkIsExceptionHandled(rescueArgs);
 
         BranchCallback trueBranch = new BranchCallback() {
+            @Override
             public void branch(BodyCompiler context) {
                 // check if it's an immediate, and don't outline
                 Node realBody = rescueBodyNode.getBodyNode();
@@ -3372,6 +3512,7 @@ public class ASTCompiler {
         };
 
         BranchCallback falseBranch = new BranchCallback() {
+            @Override
             public void branch(BodyCompiler context) {
                 if (rescueBodyNode.getOptRescueNode() != null) {
                     compileRescueBodyInternal(rescueBodyNode.getOptRescueNode(), context, light);
@@ -3480,12 +3621,15 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(superNode.getArgsNode());
 
         CompilerCallback closureArg = getBlock(superNode.getIterNode());
+        final boolean superNodeHasIterNode = superNode.getIterNode() instanceof IterNode;
 
         // this is a hacky check; would prefer arity-split Super nodes like Call and FCall
         if (superNode.getArgsNode() instanceof ArgsCatNode) {
-            context.getInvocationCompiler().invokeDynamicVarargs(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+            context.getInvocationCompiler().invokeDynamicVarargs(null, null, 
+                    argsCallback, CallType.SUPER, closureArg, superNodeHasIterNode);
         } else {
-            context.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+            context.getInvocationCompiler().invokeDynamic(null, null,
+                    argsCallback, CallType.SUPER, closureArg, superNodeHasIterNode);
         }
         discardTopValue(expr, context);
     }
@@ -3522,6 +3666,7 @@ public class ASTCompiler {
 
     public void compileUndef(final UndefNode undef, BodyCompiler context, boolean expr) {
         CompilerCallback nameArg = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(undef.getName(), context, true);
             }
@@ -3541,6 +3686,7 @@ public class ASTCompiler {
         } else {
             BranchCallback condition = new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(untilNode.getConditionNode(), context, true);
                     context.negateCurrentValue();
@@ -3549,6 +3695,7 @@ public class ASTCompiler {
 
             BranchCallback body = new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     if (untilNode.getBodyNode() != null) {
                         compile(untilNode.getBodyNode(), context, true);
@@ -3577,7 +3724,8 @@ public class ASTCompiler {
     public void compileVCall(Node node, BodyCompiler context, boolean expr) {
         VCallNode vcallNode = (VCallNode) node;
 
-        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
+        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null,
+                CallType.VARIABLE, null, false);
         discardTopValue(expr, context);
     }
 
@@ -3587,10 +3735,13 @@ public class ASTCompiler {
         if (whileNode.getConditionNode().getNodeType().alwaysFalse() &&
                 whileNode.evaluateAtStart()) {
             // do nothing
-            if (expr) context.loadNil();
+            if (expr) {
+                context.loadNil();
+            }
         } else {
             BranchCallback condition = new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     compile(whileNode.getConditionNode(), context, true);
                 }
@@ -3598,6 +3749,7 @@ public class ASTCompiler {
 
             BranchCallback body = new BranchCallback() {
 
+                @Override
                 public void branch(BodyCompiler context) {
                     if (whileNode.getBodyNode() != null) {
                         compile(whileNode.getBodyNode(), context, true);
@@ -3620,10 +3772,12 @@ public class ASTCompiler {
         final XStrNode xstrNode = (XStrNode) node;
 
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            @Override
             public int getArity() {
                 return 1;
             }
 
+            @Override
             public void call(BodyCompiler context) {
                 // FIXME: shouldn't this have codeRange like StrNode?
                 context.createNewString(xstrNode.getValue(), StringSupport.CR_UNKNOWN);
@@ -3637,17 +3791,19 @@ public class ASTCompiler {
         final YieldNode yieldNode = (YieldNode) node;
 
         ArgumentsCallback argsCallback = getArgsCallback(yieldNode.getArgsNode());
+        final boolean argsCallbackArity1To3 = argsCallback.getArity() == 1 || argsCallback.getArity() == 2 || argsCallback.getArity() == 3;
 
         // TODO: This filtering is kind of gross...it would be nice to get some parser help here
         if (argsCallback == null || argsCallback.getArity() == 0) {
             context.getInvocationCompiler().yieldSpecific(argsCallback);
-        } else if ((argsCallback.getArity() == 1 || argsCallback.getArity() == 2 || argsCallback.getArity() == 3) && yieldNode.getExpandArguments()) {
+        } else if (argsCallbackArity1To3 && yieldNode.getExpandArguments()) {
             // send it along as arity-specific, we don't need the array
             context.getInvocationCompiler().yieldSpecific(argsCallback);
         } else {
             CompilerCallback argsCallback2 = null;
             if (yieldNode.getArgsNode() != null) {
                 argsCallback2 = new CompilerCallback() {
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(yieldNode.getArgsNode(), context,true);
                     }
@@ -3702,6 +3858,7 @@ public class ASTCompiler {
 
         ArrayCallback callback = new ArrayCallback() {
 
+                    @Override
                     public void nextValue(BodyCompiler context, Object sourceArray, int index) {
                         Node node = (Node) ((Object[]) sourceArray)[index];
                         compile(node, context,true);
