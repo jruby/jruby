@@ -374,6 +374,11 @@ public class ASTCompiler {
                 context.convertToJavaArray();
         }
     }
+
+    private void discardTopValue(boolean expr, BodyCompiler context) {
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
     
     public class VariableArityArguments implements ArgumentsCallback {
         private Node node;
@@ -498,6 +503,7 @@ public class ASTCompiler {
 
     public void compileAlias(final AliasNode alias, BodyCompiler context, boolean expr) {
         CompilerCallback args = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(alias.getNewName(), context, true);
                 compile(alias.getOldName(), context, true);
@@ -505,9 +511,7 @@ public class ASTCompiler {
         };
 
         context.defineAlias(args);
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileAnd(Node node, BodyCompiler context, final boolean expr) {
@@ -523,13 +527,14 @@ public class ASTCompiler {
         } else {
             compile(andNode.getFirstNode(), context, true);
             BranchCallback longCallback = new BranchCallback() {
+                        @Override
                         public void branch(BodyCompiler context) {
                             compile(andNode.getSecondNode(), context, true);
                         }
                     };
 
             context.performLogicalAnd(longCallback);
-            if (!expr) context.consumeCurrentValue();
+            discardTopValue(expr, context);
         }
     }
 
@@ -605,9 +610,7 @@ public class ASTCompiler {
         compile(argsCatNode.getFirstNode(), context,true);
         compile(argsCatNode.getSecondNode(), context,true);
         context.argsCat();
-
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileArgsPush(Node node, BodyCompiler context, boolean expr) {
@@ -618,6 +621,7 @@ public class ASTCompiler {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(attrAssignNode.getReceiverNode(), context,true);
             }
@@ -635,6 +639,7 @@ public class ASTCompiler {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(attrAssignNode.getReceiverNode(), context,true);
             }
@@ -653,8 +658,7 @@ public class ASTCompiler {
         BackRefNode iVisited = (BackRefNode) node;
 
         context.performBackref(iVisited.getType());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileBegin(Node node, BodyCompiler context, boolean expr) {
@@ -664,7 +668,9 @@ public class ASTCompiler {
     }
 
     public void compileBignum(Node node, BodyCompiler context, boolean expr) {
-        if (expr) context.createNewBignum(((BignumNode) node).getValue());
+        if (expr) {
+            context.createNewBignum(((BignumNode) node).getValue());
+        }
     }
 
     public void compileBlock(Node node, BodyCompiler context, boolean expr) {
@@ -682,6 +688,7 @@ public class ASTCompiler {
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (breakNode.getValueNode() != null) {
                             compile(breakNode.getValueNode(), context, true);
@@ -692,14 +699,14 @@ public class ASTCompiler {
                 };
 
         context.issueBreakEvent(valueCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileCall(Node node, BodyCompiler context, boolean expr) {
         final CallNode callNode = (CallNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(callNode.getReceiverNode(), context, true);
             }
@@ -716,13 +723,13 @@ public class ASTCompiler {
             if (argument instanceof FixnumNode) {
                 if (MethodIndex.hasFastFixnumOps(name)) {
                     context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
-                    if (!expr) context.consumeCurrentValue();
+                    discardTopValue(expr, context);
                     return;
                 }
             } else if (argument instanceof FloatNode) {
                 if (MethodIndex.hasFastFloatOps(name)) {
                     context.getInvocationCompiler().invokeBinaryFloatRHS(name, receiverCallback, ((FloatNode)argument).getValue());
-                    if (!expr) context.consumeCurrentValue();
+                    discardTopValue(expr, context);
                     return;
                 }
             }
@@ -746,9 +753,7 @@ public class ASTCompiler {
                     name, receiverCallback, argsCallback,
                     callType, closureArg, callNode.getIterNode() instanceof IterNode);
         }
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     private static final Map<Class, Map<Class, Map<String, String>>> Intrinsics;
@@ -900,6 +905,7 @@ public class ASTCompiler {
         for (Node node : whenNodes) {
             final WhenNode whenNode = (WhenNode)node;
             CompilerCallback body = new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
                     compile(whenNode.getBodyNode(), context, expr);
@@ -910,6 +916,7 @@ public class ASTCompiler {
         }
         
         CompilerCallback fallback = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(elseNode, context, expr);
             }
@@ -968,10 +975,12 @@ public class ASTCompiler {
             if (whenNode instanceof WhenOneArgNode) {
                 // one arg but it's an array, treat it as a proper array
                 conditionals.add(new ArgumentsCallback() {
+                    @Override
                     public int getArity() {
                         return 1;
                     }
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(whenNode.getExpressionNodes(), context, true);
                     }
@@ -992,6 +1001,7 @@ public class ASTCompiler {
 
         CompilerCallback superCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(superNode, context, true);
                     }
@@ -1002,6 +1012,7 @@ public class ASTCompiler {
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         boolean oldIsAtRoot = isAtRoot;
                         isAtRoot = false;
@@ -1016,6 +1027,7 @@ public class ASTCompiler {
 
         CompilerCallback pathCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
@@ -1039,9 +1051,9 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(classNode.getBodyNode());
 
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null, inspector);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(),
+                superCallback, pathCallback, bodyCallback, null, inspector);
+        discardTopValue(expr, context);
     }
 
     public void compileSClass(Node node, BodyCompiler context, boolean expr) {
@@ -1049,6 +1061,7 @@ public class ASTCompiler {
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         compile(sclassNode.getReceiverNode(), context, true);
                     }
@@ -1056,6 +1069,7 @@ public class ASTCompiler {
 
         CompilerCallback bodyCallback = new CompilerCallback() {
 
+                    @Override
                     public void call(BodyCompiler context) {
                         boolean oldIsAtRoot = isAtRoot;
                         isAtRoot = false;
@@ -1072,29 +1086,28 @@ public class ASTCompiler {
         inspector.inspect(sclassNode.getBodyNode());
 
         context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileClassVar(Node node, BodyCompiler context, boolean expr) {
         ClassVarNode classVarNode = (ClassVarNode) node;
 
         context.retrieveClassVariable(classVarNode.getName());
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileClassVarAsgn(Node node, BodyCompiler context, boolean expr) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(classVarAsgnNode.getValueNode(), context, true);
             }
         };
 
         context.assignClassVariable(classVarAsgnNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileClassVarAsgnAssignment(Node node, BodyCompiler context) {
@@ -1109,14 +1122,14 @@ public class ASTCompiler {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         CompilerCallback value = new CompilerCallback() {
+            @Override
             public void call(BodyCompiler context) {
                 compile(classVarDeclNode.getValueNode(), context, true);
             }
         };
         
         context.declareClassVariable(classVarDeclNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileClassVarDeclAssignment(Node node, BodyCompiler context) {
@@ -1152,8 +1165,7 @@ public class ASTCompiler {
                 }
             });
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileConstDeclAssignment(Node node, BodyCompiler context) {
@@ -1177,9 +1189,7 @@ public class ASTCompiler {
         ConstNode constNode = (ConstNode) node;
 
         context.retrieveConstant(constNode.getName());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
-        // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
+        discardTopValue(expr, context);
     }
 
     public void compileColon2(Node node, BodyCompiler context, boolean expr) {
@@ -1206,8 +1216,7 @@ public class ASTCompiler {
                 compile(iVisited.getLeftNode(), context, true);
             }
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileColon3(Node node, BodyCompiler context, boolean expr) {
@@ -1215,8 +1224,7 @@ public class ASTCompiler {
         String name = iVisited.getName();
 
         context.retrieveConstantFromObject(name);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
@@ -1801,8 +1809,7 @@ public class ASTCompiler {
                 defnNode.getScope(), body, args, null, inspector, isAtRoot,
                 defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine(),
                 Helpers.encodeParameterList(argsNode));
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileDefs(Node node, BodyCompiler context, boolean expr) {
@@ -1859,8 +1866,7 @@ public class ASTCompiler {
                 defsNode.getScope(), body, args, receiver, inspector, false,
                 defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine(),
                 Helpers.encodeParameterList(argsNode));
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileArgs(Node node, BodyCompiler context, boolean expr) {
@@ -1933,8 +1939,7 @@ public class ASTCompiler {
                 optionalNotGiven,
                 restAssignment,
                 blockAssignment);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileDot(Node node, BodyCompiler context, boolean expr) {
@@ -2056,8 +2061,7 @@ public class ASTCompiler {
                 };
 
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileEnsureNode(Node node, BodyCompiler context, boolean expr) {
@@ -2087,8 +2091,7 @@ public class ASTCompiler {
                 context.loadNil();
             }
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileEvStr(Node node, BodyCompiler context, boolean expr) {
@@ -2096,8 +2099,7 @@ public class ASTCompiler {
 
         compile(evStrNode.getBody(), context,true);
         context.asString();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileFalse(Node node, BodyCompiler context, boolean expr) {
@@ -2119,9 +2121,7 @@ public class ASTCompiler {
         } else {
             context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
         }
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     private CompilerCallback getBlock(Node node) {
@@ -2230,8 +2230,7 @@ public class ASTCompiler {
                 }
             });
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     private void becomeTrueOrFalse(BodyCompiler context) {
@@ -2286,8 +2285,7 @@ public class ASTCompiler {
                 };
 
         context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, true);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileForIter(Node node, BodyCompiler context) {
@@ -2362,9 +2360,7 @@ public class ASTCompiler {
         } else {
             context.assignGlobalVariable(globalAsgnNode.getName(), value);
         }
-
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileGlobalAsgnAssignment(Node node, BodyCompiler context) {
@@ -2543,8 +2539,7 @@ public class ASTCompiler {
         };
 
         context.assignInstanceVariable(instAsgnNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileInstAsgnAssignment(Node node, BodyCompiler context) {
@@ -2647,8 +2642,7 @@ public class ASTCompiler {
         compile(matchNode.getRegexpNode(), context,true);
 
         context.match(is1_9());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
@@ -2662,8 +2656,7 @@ public class ASTCompiler {
         };
 
         context.match2(value, is1_9());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileMatch3(Node node, BodyCompiler context, boolean expr) {
@@ -2673,8 +2666,7 @@ public class ASTCompiler {
         compile(matchNode.getValueNode(), context,true);
 
         context.match3(is1_9());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileModule(Node node, BodyCompiler context, boolean expr) {
@@ -2714,8 +2706,7 @@ public class ASTCompiler {
         inspector.inspect(moduleNode.getBodyNode());
 
         context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileMultipleAsgn(Node node, BodyCompiler context, boolean expr) {
@@ -2854,8 +2845,7 @@ public class ASTCompiler {
                 context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
             }
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileNewline(Node node, BodyCompiler context, boolean expr) {
@@ -2886,8 +2876,7 @@ public class ASTCompiler {
 
         context.pollThreadEvents();
         context.issueNextEvent(valueCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileNthRef(Node node, BodyCompiler context, boolean expr) {
@@ -2908,8 +2897,7 @@ public class ASTCompiler {
         compile(notNode.getConditionNode(), context, true);
 
         context.negateCurrentValue();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpAsgnAnd(Node node, BodyCompiler context, boolean expr) {
@@ -2926,8 +2914,7 @@ public class ASTCompiler {
 
         context.performLogicalAnd(longCallback);
         context.pollThreadEvents();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpAsgnOr(Node node, BodyCompiler context, boolean expr) {
@@ -2979,8 +2966,7 @@ public class ASTCompiler {
         }
 
         context.pollThreadEvents();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     /**
@@ -3028,8 +3014,7 @@ public class ASTCompiler {
         }
 
         context.pollThreadEvents();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpAsgnWithOr(Node node, BodyCompiler context, boolean expr) {
@@ -3045,8 +3030,7 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
         context.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpAsgnWithAnd(Node node, BodyCompiler context, boolean expr) {
@@ -3062,8 +3046,7 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
         context.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpAsgnWithMethod(Node node, BodyCompiler context, boolean expr) {
@@ -3087,8 +3070,7 @@ public class ASTCompiler {
         };
         
         context.getInvocationCompiler().invokeOpAsgnWithMethod(opAsgnNode.getOperatorName(), opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpElementAsgn(Node node, BodyCompiler context, boolean expr) {
@@ -3159,8 +3141,7 @@ public class ASTCompiler {
         };
 
         context.getInvocationCompiler().opElementAsgnWithOr(receiverCallback, argsCallback, valueCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpElementAsgnWithAnd(Node node, BodyCompiler context, boolean expr) {
@@ -3181,8 +3162,7 @@ public class ASTCompiler {
         };
 
         context.getInvocationCompiler().opElementAsgnWithAnd(receiverCallback, argsCallback, valueCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOpElementAsgnWithMethod(Node node, BodyCompiler context, boolean expr) {
@@ -3203,8 +3183,7 @@ public class ASTCompiler {
         };
 
         context.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileOr(Node node, BodyCompiler context, boolean expr) {
@@ -3228,8 +3207,7 @@ public class ASTCompiler {
                     };
 
             context.performLogicalOr(longCallback);
-            // TODO: don't require pop
-            if (!expr) context.consumeCurrentValue();
+            discardTopValue(expr, context);
         }
     }
 
@@ -3248,8 +3226,7 @@ public class ASTCompiler {
                     }
                 };
         context.createNewEndBlock(closureBody);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compilePreExe(Node node, BodyCompiler context, boolean expr) {
@@ -3267,16 +3244,14 @@ public class ASTCompiler {
                     }
                 };
         context.runBeginBlock(preExeNode.getScope(), closureBody);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileRedo(Node node, BodyCompiler context, boolean expr) {
         //RedoNode redoNode = (RedoNode)node;
 
         context.issueRedoEvent();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileRegexp(Node node, BodyCompiler context, boolean expr) {
@@ -3287,9 +3262,7 @@ public class ASTCompiler {
 
     public void compileRescue(Node node, BodyCompiler context, boolean expr) {
         compileRescueInternal(node, context, false);
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     private void compileRescueInternal(Node node, BodyCompiler context, final boolean light) {
@@ -3415,8 +3388,7 @@ public class ASTCompiler {
         context.pollThreadEvents();
 
         context.issueRetryEvent();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileReturn(Node node, BodyCompiler context, boolean expr) {
@@ -3429,8 +3401,7 @@ public class ASTCompiler {
         }
 
         context.performReturn();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
@@ -3484,8 +3455,7 @@ public class ASTCompiler {
         compile(splatNode.getValue(), context, true);
 
         splatCurrentValue(context);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     protected void splatCurrentValue(BodyCompiler context) {
@@ -3517,9 +3487,7 @@ public class ASTCompiler {
         } else {
             context.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
         }
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileSValue(Node node, BodyCompiler context, boolean expr) {
@@ -3528,14 +3496,12 @@ public class ASTCompiler {
         compile(svalueNode.getValue(), context,true);
 
         context.singlifySplattedValue();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileSymbol(Node node, BodyCompiler context, boolean expr) {
         context.createNewSymbol(((SymbolNode) node).getName());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }    
     
     public void compileToAry(Node node, BodyCompiler context, boolean expr) {
@@ -3544,8 +3510,7 @@ public class ASTCompiler {
         compile(toAryNode.getValue(), context,true);
 
         context.aryToAry();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileTrue(Node node, BodyCompiler context, boolean expr) {
@@ -3562,8 +3527,7 @@ public class ASTCompiler {
             }
         };
         context.undefMethod(nameArg);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileUntil(Node node, BodyCompiler context, boolean expr) {
@@ -3599,8 +3563,7 @@ public class ASTCompiler {
             }
 
             context.pollThreadEvents();
-            // TODO: don't require pop
-            if (!expr) context.consumeCurrentValue();
+            discardTopValue(expr, context);
         }
     }
 
@@ -3608,16 +3571,14 @@ public class ASTCompiler {
         VAliasNode valiasNode = (VAliasNode) node;
 
         context.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileVCall(Node node, BodyCompiler context, boolean expr) {
         VCallNode vcallNode = (VCallNode) node;
 
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileWhile(Node node, BodyCompiler context, boolean expr) {
@@ -3651,8 +3612,7 @@ public class ASTCompiler {
             }
 
             context.pollThreadEvents();
-            // TODO: don't require pop
-            if (!expr) context.consumeCurrentValue();
+            discardTopValue(expr, context);
         }
     }
 
@@ -3670,8 +3630,7 @@ public class ASTCompiler {
             }
         };
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileYield(Node node, BodyCompiler context, boolean expr) {
@@ -3697,8 +3656,7 @@ public class ASTCompiler {
 
             context.getInvocationCompiler().yield(argsCallback2, yieldNode.getExpandArguments());
         }
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileZArray(Node node, BodyCompiler context, boolean expr) {
@@ -3713,8 +3671,7 @@ public class ASTCompiler {
         CompilerCallback closure = getBlock(zsuperNode.getIterNode());
 
         context.callZSuper(closure);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileArgsCatArguments(Node node, BodyCompiler context, boolean expr) {
@@ -3726,9 +3683,7 @@ public class ASTCompiler {
         compileArguments(argsCatNode.getFirstNode(), context);
         compile(argsCatNode.getSecondNode(), context,true);
         context.argsCatToArguments();
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileArgsPushArguments(Node node, BodyCompiler context, boolean expr) {
@@ -3739,9 +3694,7 @@ public class ASTCompiler {
         compileArguments(argsPushNode.getFirstNode(), context);
         compile(argsPushNode.getSecondNode(), context,true);
         context.appendToObjectArray();
-        
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 
     public void compileArrayArguments(Node node, BodyCompiler context, boolean expr) {
@@ -3757,9 +3710,7 @@ public class ASTCompiler {
 
         context.setLinePosition(arrayNode.getPosition());
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
-    // leave as a normal array
+        discardTopValue(expr, context);
     }
 
     public void compileSplatArguments(Node node, BodyCompiler context, boolean expr) {
@@ -3767,7 +3718,6 @@ public class ASTCompiler {
 
         compile(splatNode.getValue(), context,true);
         context.splatToArguments();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        discardTopValue(expr, context);
     }
 }
