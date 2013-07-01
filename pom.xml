@@ -539,7 +539,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>copy rake gem</id>
+            <id>copy bootstrap gems</id>
             <phase>process-classes</phase>
             <goals>
               <goal>copy</goal>
@@ -550,6 +550,14 @@
                   <groupId>rubygems</groupId>
                   <artifactId>rake</artifactId>
                   <version>${rake.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>target</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>rspec</artifactId>
+                  <version>${rspec.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>target</outputDirectory>
