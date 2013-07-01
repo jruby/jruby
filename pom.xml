@@ -483,13 +483,6 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <excludes>
-                <exclude>**/*openssl*/**/*</exclude>
-                <exclude>org/jruby/gen/org$jruby$ext$openssl*</exclude>
-                <exclude>org/jruby/ext/readline/**/*</exclude>
-                <exclude>org/jruby/demo/readline/**/*</exclude>
-                <exclude>org/jruby/gen/org$jruby$ext$readline*</exclude>
-              </excludes>
               <archive>
                 <manifest>
                   <mainClass>org.jruby.Main</mainClass>
