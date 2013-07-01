@@ -344,6 +344,7 @@
             </goals>
             <configuration>
               <arguments>
+                <argument>--batch-mode</argument>
                 <argument>-f</argument>
                 <argument>ext/openssl/pom.xml</argument>
                 <argument>package</argument>
@@ -360,6 +361,7 @@
             </goals>
             <configuration>
               <arguments>
+                <argument>--batch-mode</argument>
                 <argument>-f</argument>
                 <argument>ext/readline/pom.xml</argument>
                 <argument>package</argument>
