@@ -212,7 +212,6 @@
     <generated.sources>${project.build.directory}/generated-sources</generated.sources>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
-    <tzdata.version>2013c</tzdata.version>
     <tzdata.tar.gz>${project.build.directory}/tzdata.tar.gz</tzdata.tar.gz>
     <tzdata.build.directory>${project.build.directory}/tzdata/build/org/joda/time/tz/data</tzdata.build.directory>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>

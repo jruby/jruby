@@ -13,4 +13,4 @@ or for deployment
 
      mvn deploy
 
-now you need to change the version for jruby artifacts by changing the tzdata.version in the ./default.properties file
+now you need to change the version for jruby artifacts by changing the tzdata.version in the ./default.build.properties file
