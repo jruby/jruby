@@ -546,6 +546,9 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <delete dir="${api.docs.dir}"/>
         <delete dir="build/src_gen"/>
         <antcall target="clean-ng"/>
+        <exec executable="mvn">
+          <arg line="clean"/>
+        </exec>
     </target>
 
     <target name="clean-all" depends="clean, dist-clean, clear-specs"
