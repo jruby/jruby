@@ -86,7 +86,7 @@ public class TestLoadService extends TestRubyBase {
     public void testRequireJavaClassFile() {
         try {
             // Test that requiring a normal Java class raises an error (JRUBY-3214
-            loadService.load("build/classes/test/org/jruby/test/NormalJavaClass.class", false);
+            loadService.load("target/test-classes/org/jruby/test/NormalJavaClass.class", false);
             fail("Exception should have been raised requiring a non-script .class file");
         } catch (Exception e) {
             // ok

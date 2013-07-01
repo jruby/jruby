@@ -1,5 +1,5 @@
 require 'java'
-$CLASSPATH << File.expand_path('../../../build/classes/test', __FILE__)
+$CLASSPATH << File.expand_path('../../../target/test-classes', __FILE__)
 require 'rspec'
 
 unless $is_rspec_reconfigured

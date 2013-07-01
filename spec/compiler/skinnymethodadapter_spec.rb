@@ -6,8 +6,8 @@ begin
   import org.objectweb.asm.MethodVisitor
   import org.objectweb.asm.Opcodes
 rescue # jarjar renames things, so we try the renamed version
-  import "jruby.objectweb.asm.MethodVisitor"
-  import "jruby.objectweb.asm.Opcodes"
+  import "org.jruby.org.objectweb.asm.MethodVisitor"
+  import "org.jruby.org.objectweb.asm.Opcodes"
 end
 
 class MockMethodVisitor

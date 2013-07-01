@@ -85,7 +85,7 @@ public class MultipleScriptsRunner {
             basedir + "/lib/ruby/1.8/rdoc",
             basedir + "/lib/ruby/shared",
             basedir + "/test",
-            basedir + "/build/classes/test",
+            basedir + "/target/test-classes",
             basedir
         };
         loadPaths = Arrays.asList(paths);

@@ -120,7 +120,7 @@ class TestDir < Test::Unit::TestCase
 
   # http://jira.codehaus.org/browse/JRUBY-300
   def test_chdir_and_pwd
-    java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../build/classes/test')
+    java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../target/test-classes')
     java_test_classes = File.expand_path(File.dirname(__FILE__) + '/..') unless File.exist?(java_test_classes)
     Dir.mkdir("testDir_4")
     Dir.chdir("testDir_4") do

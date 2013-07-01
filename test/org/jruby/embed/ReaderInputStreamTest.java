@@ -204,7 +204,7 @@ public class ReaderInputStreamTest {
             basedir + "/lib/ruby/1.9/rdoc",
             basedir + "/lib/ruby/shared",
             basedir + "/test",
-            basedir + "/build/classes/test",
+            basedir + "/target/test-classes",
             basedir
         };
         ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);

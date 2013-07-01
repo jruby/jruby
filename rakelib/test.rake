@@ -15,7 +15,7 @@ task :test18 => "test:short18"
 namespace :test do
   desc "Compile test code"
   task :compile do
-    ant "compile-test"
+    sh "javac -cp lib/jruby.jar:build_lib/junit.jar -d target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
   short_tests_18 = ['jruby', 'mri', 'rubicon']
@@ -69,6 +69,11 @@ namespace :test do
   task :all18 => [:compile, *all_tests_18]
 
   task :rake_targets => long_tests
+  
+  task :extended do
+    sh 'mvn -Ptest test' # also compiles files needed for some ruby tests
+    Rake::Task["test:rake_targets"].invoke
+  end
 
   desc "Run tracing tests"
   task :tracing do
@@ -157,7 +162,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.9'
   end
 
@@ -173,7 +178,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--2.0'
   end
 
@@ -189,7 +194,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.8'
   end
 
@@ -205,7 +210,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-X+O'
   end
@@ -222,7 +227,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--2.0'
     t.ruby_opts << '-X+O'
   end
@@ -239,7 +244,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
   end
@@ -256,7 +261,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.8'
   end
 
@@ -272,7 +277,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp build/classes/test'
+    t.ruby_opts << '-J-cp target/test-classes'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
   end
@@ -294,7 +299,7 @@ namespace :test do
       "build_lib/bsf.jar",
       "build_lib/commons-logging-1.1.1.jar",
       "lib/jruby.jar",
-      "build/classes/test",
+      "target/test-classes",
       "test/requireTest.jar",
       "test"
     ]
