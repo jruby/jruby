@@ -202,6 +202,13 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rake</artifactId>
+      <version>${rake.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -219,6 +226,7 @@
     <tzdata.version>2013c</tzdata.version>
     <maven.test.skip>true</maven.test.skip>
     <tzdata.scope>provided</tzdata.scope>
+    <rake.version>10.1.0</rake.version>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -315,6 +323,27 @@
                 <argument>org.jruby.anno.InvokerGenerator</argument>
                 <argument>${anno.sources}/annotated_classes.txt</argument>
                 <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install rake</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.home=${basedir}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.Main</argument>
+                <argument>-S</argument>
+                <argument>gem</argument>
+                <argument>install</argument>
+                <argument>target/rake-${rake.version}.gem</argument>
               </arguments>
               <executable>java</executable>
               <classpathScope>compile</classpathScope>
@@ -444,6 +473,25 @@
                   <classifier>native</classifier>
                   <overWrite>false</overWrite>
                   <outputDirectory>${basedir}/lib</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy rake gem</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>rake</artifactId>
+                  <version>${rake.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>target</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
