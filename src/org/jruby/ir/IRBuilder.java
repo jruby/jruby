@@ -229,8 +229,10 @@ public class IRBuilder {
             innermostLoop = loop;
         }
 
-        public void restoreException(IRScope s, IRLoop currLoop) {
-            if (currLoop == innermostLoop) s.addInstr(new PutGlobalVarInstr("$!", savedExceptionVariable));
+        public void restoreException(IRScope scope, IRLoop currLoop) {
+            if (currLoop == innermostLoop) {
+                scope.addInstr(new PutGlobalVarInstr("$!", savedExceptionVariable));
+            }
         }
     }
 
@@ -272,13 +274,22 @@ public class IRBuilder {
             fis = new FileInputStream(file);
             long size = file.length();
             byte[] bytes = new byte[(int)size];
-            fis.read(bytes);
+            int readBytes = fis.read(bytes);
+            if (readBytes != size) {
+                throw new IOException("Omitted reading data");
+            }
             System.out.println("-- processing " + arg + " --");
             return ruby.parse(new ByteList(bytes), arg, null, 0, false);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
-            try { if (fis != null) fis.close(); } catch(Exception e) { }
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
         }
     }
 
@@ -296,14 +307,17 @@ public class IRBuilder {
             }
         }
 
-        while (n.getNodeType() == NodeType.NEWLINENODE)
+        while (n.getNodeType() == NodeType.NEWLINENODE) {
             n = ((NewlineNode)n).getNextNode();
+        }
 
         return n;
     }
 
     public Operand build(Node node, IRScope s) {
-        if (node == null) return null;
+        if (node == null) {
+            return null;
+        }
 
         if (s == null) {
             System.out.println("Got a null scope!");
@@ -568,12 +582,23 @@ public class IRBuilder {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
-            if (isSplat) s.addInstr(new RestArgMultipleAsgnInstr(v, argsArray, argIndex));
-            else s.addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, argIndex));
+            if (isSplat) {
+                s.addInstr(new RestArgMultipleAsgnInstr(v, argsArray, argIndex));
+            } else {
+                s.addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, argIndex));
+            }
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
-            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr18(v, argIndex) : new ReceivePreReqdArgInstr(v, argIndex)));
+            Instr instr = null;
+            if (isClosureArg) {
+                instr = new ReceiveClosureInstr(v);
+            } else if (isSplat) {
+                instr = new ReceiveRestArgInstr18(v, argIndex);
+            } else {
+                instr = new ReceivePreReqdArgInstr(v, argIndex);
+            }
+            s.addInstr(instr);
         }
     }
 
@@ -1442,6 +1467,7 @@ public class IRBuilder {
                 s.addInstr(new GetErrorInfoInstr(errInfo));
 
                 CodeBlock protectedCode = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) {
                         IRScope s    = (IRScope)args[0];
                         Node    n    = (Node)args[1];
@@ -1456,6 +1482,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
                         IRScope  m  = (IRScope)args[0];
@@ -1496,6 +1523,7 @@ public class IRBuilder {
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) {
                         IRScope  s          = (IRScope)args[0];
                         CallNode iVisited   = (CallNode)args[1];
@@ -1509,6 +1537,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
@@ -1537,6 +1566,7 @@ public class IRBuilder {
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) {
                         /* --------------------------------------------------------------------------
                          * This basically combines checks from CALLNODE and FCALLNODE
@@ -1569,6 +1599,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
@@ -1588,6 +1619,7 @@ public class IRBuilder {
             default: {
                 // protected code
                 CodeBlock protectedCode = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) { 
                         build((Node)args[0], (IRScope)args[1]);
                         // always an expression as long as we get through here without an exception!
@@ -1596,6 +1628,7 @@ public class IRBuilder {
                 };
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
+                    @Override
                     public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
@@ -1769,7 +1802,9 @@ public class IRBuilder {
     }
 
     public void receiveBlockClosureArg(final Node node, IRScope s) {
-        if (node != null) buildBlockArgsAssignment(node, s, null, 0, true, true, false);
+        if (node != null) {
+            buildBlockArgsAssignment(node, s, null, 0, true, true, false);
+        }
     }
 
     public String buildType(Node typeNode) {
@@ -3033,7 +3068,9 @@ public class IRBuilder {
         
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
-        if (block == null) block = s.getImplicitBlockArg();
+        if (block == null) {
+            block = s.getImplicitBlockArg();
+        }
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
     
