@@ -2841,8 +2841,12 @@ public final class Ruby {
         
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
-                if (file == null) file = "(ruby)";
-                if (type == null) type = getFalse();
+                if (file == null) {
+                    file = "(ruby)";
+                }
+                if (type == null) {
+                    type = getFalse();
+                }
                 
                 RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
 
@@ -4497,7 +4501,7 @@ public final class Ruby {
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private final List<EventHook> eventHooks = new Vector<EventHook>();
+    private final List<EventHook> eventHooks = new ArrayList<EventHook>();
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
