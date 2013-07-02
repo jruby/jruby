@@ -46,13 +46,13 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import static org.jruby.ext.psych.PsychLibrary.YAMLEncoding.*;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -216,7 +216,7 @@ public class PsychParser extends RubyObject {
             raiseParserException(context, yaml, re, path);
 
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return this;
         }
 

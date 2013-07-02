@@ -30,10 +30,10 @@ package org.jruby.internal.runtime.methods;
 import java.lang.invoke.MethodHandle;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 /**
  * A DynamicMethod backed by one or more java.lang.invoke.MethodHandle objects.
@@ -72,7 +72,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         try {
             return (IRubyObject) target4.invokeWithArguments(context, self, args, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return null;
         }
     }
@@ -85,7 +85,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         try {
             return (IRubyObject) target0.invokeWithArguments(context, self, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return null;
         }
     }
@@ -98,7 +98,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         try {
             return (IRubyObject) target1.invokeWithArguments(context, self, arg0, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return null;
         }
     }
@@ -111,7 +111,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         try {
             return (IRubyObject) target2.invokeWithArguments(context, self, arg0, arg1, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return null;
         }
     }
@@ -124,7 +124,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         try {
             return (IRubyObject) target3.invokeWithArguments(context, self, arg0, arg1, arg2, block);
         } catch (Throwable t) {
-            UnsafeFactory.getUnsafe().throwException(t);
+            Helpers.throwException(t);
             return null;
         }
     }

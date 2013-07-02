@@ -31,8 +31,6 @@ public class IRStaticScope extends StaticScope {
         this.isBlockOrEval = isBlock || isEval;
         this.isArgumentScope = !isBlockOrEval;
         this.irScope = null;
-
-        if (!isBlockOrEval) setBackrefLastlineScope(true);
     }
 
     public StaticScope getLocalScope() {

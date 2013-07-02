@@ -231,11 +231,14 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public String[] getParameterList() {
-        if (parameterList == null && parameterDesc != null && parameterDesc.length() > 0) {
-            parameterList = parameterDesc.split(";");
-        } else {
-            return parameterList = new String[0];
+        if (parameterList == null) {
+            if (parameterDesc != null && parameterDesc.length() > 0) {
+                parameterList = parameterDesc.split(";");
+            } else {
+                parameterList = new String[0];
+            }
         }
+        
         return parameterList;
     }
 

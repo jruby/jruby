@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 # for DefaultPackageClass
-$CLASSPATH << File.dirname(__FILE__) + "/../../../build/classes/test"
+$CLASSPATH << File.dirname(__FILE__) + "/../../../target/test-classes"
 
 describe "A Java package" do
   it 'is accessible directly when starting with java, javax, com, or org' do

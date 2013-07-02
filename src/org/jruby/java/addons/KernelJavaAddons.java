@@ -15,7 +15,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 public class KernelJavaAddons {
     @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE, omit = true)
@@ -36,7 +35,7 @@ public class KernelJavaAddons {
             
             if (maybeThrowable instanceof Throwable) {
                 // yes, we're cheating here.
-                UnsafeFactory.getUnsafe().throwException((Throwable)maybeThrowable);
+                Helpers.throwException((Throwable)maybeThrowable);
                 return recv; // not reached
             } else {
                 throw runtime.newTypeError("can't raise a non-Throwable Java object");

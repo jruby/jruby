@@ -41,15 +41,18 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,6 +63,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
+import jnr.posix.JavaLibCHelper;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -81,6 +85,7 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.io.EncodingUtils;
@@ -248,10 +253,33 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // null channel always succeeds for all locking operations
         if (descriptor.isNull()) return RubyFixnum.zero(runtime);
+        
+        int lockMode = RubyNumeric.num2int(lockingConstant);
+        
+        Channel channel = descriptor.getChannel();
+        
+        FileDescriptor fd = ChannelDescriptor.getDescriptorFromChannel(channel);
+        int real_fd = JavaLibCHelper.getfdFromDescriptor(fd);
+        
+        if (real_fd != -1) {
+            // we have a real fd...try native flocking
+            try {
+                int result = runtime.getPosix().flock(real_fd, lockMode);
+                if (result < 0) {
+                    return runtime.getFalse();
+                }
+                return RubyFixnum.zero(runtime);
+            } catch (RaiseException re) {
+                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
+                    // not implemented, probably pure Java; fall through
+                } else {
+                    throw re;
+                }
+            }
+        }
 
         if (descriptor.getChannel() instanceof FileChannel) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-            int lockMode = RubyNumeric.num2int(lockingConstant);
 
             checkSharedExclusive(runtime, openFile, lockMode);
     
@@ -280,7 +308,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (runtime.getDebug().isTrue()) {
                     ioe.printStackTrace(System.err);
                 }
-            } catch (java.nio.channels.OverlappingFileLockException ioe) {
+            } catch (OverlappingFileLockException ioe) {
                 if (runtime.getDebug().isTrue()) {
                     ioe.printStackTrace(System.err);
                 }

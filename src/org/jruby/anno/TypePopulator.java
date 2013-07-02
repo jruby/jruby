@@ -88,8 +88,6 @@ public abstract class TypePopulator {
                     if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
                         // add all names for this annotation
                         ASTInspector.addFrameAwareMethods(anno.name());
-                        // TODO: separate scope-aware and frame-aware
-                        ASTInspector.addScopeAwareMethods(anno.name());
                     }
                 }
             }

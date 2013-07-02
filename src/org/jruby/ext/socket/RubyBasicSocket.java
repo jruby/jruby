@@ -37,6 +37,7 @@ import static jnr.constants.platform.TCP.TCP_NODELAY;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -691,7 +692,11 @@ public class RubyBasicSocket extends RubyIO {
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         Ruby r = context.runtime;
         IRubyObject[] ret = new IRubyObject[4];
-        ret[0] = r.newString("AF_INET");
+        if (addr.getAddress() instanceof Inet6Address) {
+            ret[0] = r.newString("AF_INET6");
+        } else {
+            ret[0] = r.newString("AF_INET");
+        }
         ret[1] = r.newFixnum(addr.getPort());
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {

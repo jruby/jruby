@@ -10,9 +10,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import java.util.Map;
+import org.jruby.runtime.Helpers;
 
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
@@ -55,7 +55,7 @@ public class ThrowExceptionInstr extends Instr {
             RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
             // SSS FIXME: Can avoid this workaround by adding a case for this instruction in the interpreter loop
-            UnsafeFactory.getUnsafe().throwException((Throwable)excObj);
+            Helpers.throwException((Throwable)excObj);
         }
 
         // should never get here

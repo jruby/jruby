@@ -72,6 +72,18 @@
                     <location>cext/src</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
+                <source-folder>
+                    <label>ext/openssl/src/main/java</label>
+                    <type>java</type>
+                    <location>ext/openssl/src/main/java</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>ext/readline/src/main/java</label>
+                    <type>java</type>
+                    <location>ext/readline/src/main/java</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
             </folders>
             <ide-actions>
                 <action name="build">
@@ -225,6 +237,14 @@
                         <label>cext/src</label>
                         <location>cext/src</location>
                     </source-folder>
+                    <source-folder style="packages">
+                        <label>ext/openssl/src/main/java</label>
+                        <location>ext/openssl/src/main/java</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>ext/readline/src/main/java</label>
+                        <location>ext/readline/src/main/java</location>
+                    </source-folder>
                     <source-file>
                         <location>build.xml</location>
                     </source-file>
@@ -291,6 +311,14 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>cext/src</package-root>
+                <source-level>1.6</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>ext/openssl/src/main/java</package-root>
+                <source-level>1.6</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>ext/readline/src/main/java</package-root>
                 <source-level>1.6</source-level>
             </compilation-unit>
         </java-data>

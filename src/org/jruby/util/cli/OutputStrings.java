@@ -122,7 +122,9 @@ public class OutputStrings {
             versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
             break;
         case RUBY2_0:
-            versionString = String.format("%s", Constants.RUBY2_0_VERSION);
+            ver = Constants.RUBY2_0_VERSION;
+            patchlevel = Constants.RUBY2_0_PATCHLEVEL;
+            versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
             break;
         }
 

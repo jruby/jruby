@@ -29,7 +29,7 @@ public class OverloadedClass extends RubyObject  {
   private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
   private static final RubyClass __metaclass__;
   static {
-    __ruby__.getLoadService().lockAndRequire("overloads.rb");
+    __ruby__.getLoadService().require("overloads.rb");
     RubyClass metaclass = __ruby__.getClass("OverloadedClass");
     metaclass.setClassAllocator(OverloadedClass.class);
     if (metaclass == null) throw new NoClassDefFoundError("Could not load Ruby class: OverloadedClass");

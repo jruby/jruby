@@ -1,18 +1,17 @@
 package org.jruby.ir.runtime;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.IRException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -77,7 +76,7 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject handleNonlocalReturn(IRScope scope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
-            UnsafeFactory.getUnsafe().throwException((Throwable)rjExc);
+            Helpers.throwException((Throwable)rjExc);
             return null;
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
@@ -119,7 +118,7 @@ public class IRRuntimeHelpers {
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else {
             // Propagate
-            UnsafeFactory.getUnsafe().throwException((Throwable)exc);
+            Helpers.throwException((Throwable)exc);
         }
     }
 

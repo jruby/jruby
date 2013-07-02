@@ -73,12 +73,11 @@ import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 import static org.jruby.CompatVersion.*;
-import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.internal.runtime.ThreadedRunnable;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.util.ByteList;
 
 /**
@@ -164,6 +163,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         finalResult = runtime.getNil();
         errorInfo = runtime.getNil();
+    }
+    
+    public RubyThread(Ruby runtime, RubyClass klass, ThreadedRunnable runnable) {
+        this(runtime, klass);
+        
+        startWith(runnable);
     }
 
     public void receiveMail(ThreadService.Event event) {
@@ -423,8 +428,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
         if (threadImpl != null) throw runtime.newThreadError("already initialized thread");
 
+        RubyRunnable runnable = new RubyRunnable(this, args, block);
+        
+        return startWith(runnable);
+    }
+
+    private IRubyObject startWith(ThreadedRunnable runnable) throws RaiseException, OutOfMemoryError {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        
         try {
-            RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
             if (RubyInstanceConfig.POOLING_ENABLED) {
                 FutureThread futureThread = new FutureThread(this, runnable);
                 threadImpl = futureThread;
@@ -1133,7 +1146,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             runtime.getThreadService().getMainThread().getNativeThread().stop(exception);
         } else {
             // just rethrow on this thread, let system handlers report it
-            UnsafeFactory.getUnsafe().throwException(exception);
+            Helpers.throwException(exception);
         }
     }
 

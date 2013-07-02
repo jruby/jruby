@@ -1082,20 +1082,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         try {
             IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
                     this, OP_CMP, other);
+            
             // if RubyBasicObject#op_cmp is used, the result may be nil
-            if (cmp.isNil()) {
-                throw new IllegalArgumentException(
-                        "Incomparable objects: " + cmp.inspect() + " <=> " +
-                        other.inspect() + " returned nil");
+            if (!cmp.isNil()) {
             } else {
                 return (int) cmp.convertToInteger().getLongValue();
             }
         } catch (RaiseException ex) {
-            // NoMethodError was raised, but the call came from java. The
-            // correct java exception is IllegalArgumentException. Otherwise,
-            // the ruby stack trace makes no sense because ruby didn't call <=>
-            throw new IllegalArgumentException("Incomparable objects", ex);
         }
+        
+        /* We used to raise an error if two IRubyObject were not comparable, but
+         * in order to support the new ConcurrentHashMapV8 and other libraries
+         * and containers that arbitrarily call compareTo expecting it to always
+         * succeed, we have opted to return 0 here. This will allow all
+         * RubyBasicObject subclasses to be compared, but if the comparison is
+         * not valid we they will appear the same for sorting purposes.
+         * 
+         * See https://jira.codehaus.org/browse/JRUBY-7013
+         */
+        return 0;
     }
 
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
@@ -1492,25 +1497,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
     }
 
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, block);
     }
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;

@@ -41,6 +41,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
@@ -109,11 +110,7 @@ public class Colon3Node extends Node implements INameNode {
         try {
             RubyModule left = runtime.getObject();
 
-            if (hasConstant(left)) {
-                return runtime.getDefinedMessage(DefinedMessage.CONSTANT);
-            } else if (hasMethod(left)) {
-                return runtime.getDefinedMessage(DefinedMessage.METHOD);
-            }
+            return Helpers.getDefinedConstantOrBoundMethod(left, name);
         } catch (JumpException excptn) {
         }
             

@@ -43,8 +43,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.unsafe.UnsafeFactory;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
     protected final Class<?>[] parameterTypes;
@@ -162,13 +162,13 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     protected IRubyObject handleThrowable(Throwable t, Member target) {
-        UnsafeFactory.getUnsafe().throwException(t);
+        Helpers.throwException(t);
         // not reached
         return getRuntime().getNil();
     }
 
     protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite, Member target) {
-        UnsafeFactory.getUnsafe().throwException(ite.getTargetException());
+        Helpers.throwException(ite.getTargetException());
         // not reached
         return getRuntime().getNil();
     }

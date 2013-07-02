@@ -161,7 +161,7 @@ public class JRubyLibrary implements Library {
             Ruby runtime = recv.getRuntime();
             RubyMethod rubyMethod = (RubyMethod)recv;
             RubyArray argsArray = RubyArray.newArray(runtime);
-            DynamicMethod method = rubyMethod.getMethod();
+            DynamicMethod method = rubyMethod.getMethod().getRealMethod();
             RubySymbol req = runtime.newSymbol("req");
             RubySymbol opt = runtime.newSymbol("opt");
             RubySymbol rest = runtime.newSymbol("rest");

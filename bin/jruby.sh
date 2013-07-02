@@ -250,6 +250,9 @@ if [[ -z "$JAVA_ENCODING" ]]; then
   java_args="${java_args} -Dfile.encoding=UTF-8"
 fi
 
+# prefer IPv4 to IPv6; see https://github.com/jruby/jruby/issues/775
+java_args=("${java_args[@]}" "-Djava.net.preferIPv4Stack=true")
+
 # Append the rest of the arguments
 ruby_args="${ruby_args} $@"
 
@@ -258,7 +261,7 @@ set -- "${ruby_args}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_VM $JAVA_MEM $JAVA_STACK"
 
-JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/native"
+JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 
 if [ "$nailgun_client" != "" ]; then

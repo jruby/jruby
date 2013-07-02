@@ -39,7 +39,7 @@ module Enumerable
           ary = [elt]
         end
       end
-      yielder.yield ary
+      yielder.yield ary unless ary.nil?
     end
   end
 end

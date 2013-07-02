@@ -190,20 +190,4 @@ public class TestRubyHash extends TestRubyBase {
         RubyHash rubyHash = new RubyHash(Ruby.getGlobalRuntime());
         assertEquals(null, rubyHash.get("Non matching key"));
     }
-    
-    public void testJavaComparison() {
-        RubyHash rubyHash1 = new RubyHash(runtime);
-        RubyHash rubyHash2 = new RubyHash(runtime);
-        rubyHash1.put(
-                RubySymbol.newSymbol(runtime, "one"),
-                RubyFixnum.newFixnum(runtime, 1));
-        try {
-            int result = rubyHash1.compareTo(rubyHash2);
-            fail("compareTo did not throw IllegalArgumentException");
-        } catch (IllegalArgumentException ex) {
-            // this is correct
-        } catch (RaiseException ex) {
-            fail("Java call to compareTo raised a ruby exception");
-        }
-    }
 }

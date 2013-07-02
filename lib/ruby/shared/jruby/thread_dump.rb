@@ -31,7 +31,7 @@ begin
       gather = trace_type::Gather::NORMAL
       format = trace_type::Format::JRUBY
 
-      ex_r.backtrace_data = gather.get_backtrace_data(thread_context, thread_r.native_thread, true)
+      ex_r.backtrace_data = gather.get_backtrace_data(thread_context, thread_r.native_thread.stack_trace, true)
       $stderr.puts format.print_backtrace(ex, false)
 
       $stderr.puts

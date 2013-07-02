@@ -34,14 +34,13 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class RubyRunnable implements Runnable {
+public class RubyRunnable implements ThreadedRunnable {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyRunnable");
 
@@ -49,22 +48,19 @@ public class RubyRunnable implements Runnable {
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
-
-    /** Frames at thread construction time, to produce a good contextual backtrace **/
-    private Frame[] currentFrames;
     
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
     
-    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Frame[] frames, Block currentBlock) {
+    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
         
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
-        this.currentFrames = frames;
         this.arguments = args;
     }
     
+    @Deprecated
     public RubyThread getRubyThread() {
         return rubyThread;
     }
@@ -73,6 +69,7 @@ public class RubyRunnable implements Runnable {
         return javaThread;
     }
     
+    @Override
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
@@ -89,7 +86,6 @@ public class RubyRunnable implements Runnable {
             }
         }
         
-        context.preRunThread(currentFrames);
         rubyThread.beforeStart();
 
         // uber-ThreadKill catcher, since it should always just mean "be dead"

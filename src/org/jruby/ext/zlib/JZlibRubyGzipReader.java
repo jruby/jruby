@@ -6,7 +6,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.jcodings.Encoding;
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
 import org.jruby.Ruby;
@@ -29,6 +31,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Stream;
@@ -39,6 +42,17 @@ import org.jruby.util.io.Stream;
  */
 @JRubyClass(name = "Zlib::GzipReader", parent = "Zlib::GzipFile", include = "Enumerable")
 public class JZlibRubyGzipReader extends RubyGzipFile {
+
+    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
+        // fix broken trailing character
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result, result.length());
+        for (int i = 0; i < extraBytes; i++) {
+            int read = bufferedStream.read();
+            if (read == -1) break;
+            
+            result.append(read);
+        }
+    }
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")
     public static class Error {}
     
@@ -226,6 +240,9 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         // StringIO.new("あいう").gets(5) => "あい"
         // StringIO.new("あいう").gets(6) => "あい"
         // StringIO.new("あいう").gets(7) => "あいう"
+        
+        Encoding encoding = result.getEncoding();
+        
         while (limit <= 0 || result.length() < limit) {
             int sepOffset = result.length() - sep.getRealSize();
             if (sepOffset >= 0 && result.startsWith(sep, sepOffset)) break;
@@ -237,6 +254,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
+        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(result);
+
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
         if (0 == result.length() && -1 == ce) return getRuntime().getNil();
@@ -350,6 +369,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             val.append(buffer, 0, read);
             if (limit != -1) rest -= read;
         }
+        
+        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(val);
         
         this.position += val.length();
         return newStr(getRuntime(), val);
@@ -606,7 +627,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
         return getRuntime().getNil();
     }
-    
+
     private int line = 0;
     private long position = 0;
     private com.jcraft.jzlib.GZIPInputStream io;

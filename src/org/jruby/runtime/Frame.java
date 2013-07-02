@@ -77,15 +77,21 @@ public final class Frame {
      * previous frame to work.
      */ 
     private Block block = Block.NULL_BLOCK;
-    
-    /** Delimit a frame where an eval with binding occurred.  Used for stack traces. */
-    private boolean isBindingFrame = false;
 
     /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
     
     /** The target for non-local jumps, like return from a block */
     private int jumpTarget;
+    
+    /** backref **/
+    private IRubyObject backRef;
+    
+    /** lastline **/
+    private IRubyObject lastLine;
+    
+    /** whether this frame has been captured into a binding **/
+    private boolean captured;
     
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
@@ -106,7 +112,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
     }
 
@@ -147,7 +152,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
     }
 
@@ -171,7 +175,6 @@ public final class Frame {
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
-        this.isBindingFrame = false;
         this.jumpTarget = jumpTarget;
     }
 
@@ -190,7 +193,6 @@ public final class Frame {
         this.self = self;
         this.name = null;
         this.visibility = Visibility.PRIVATE;
-        this.isBindingFrame = false;
         this.jumpTarget = jumpTarget;
     }
 
@@ -198,10 +200,14 @@ public final class Frame {
      * Clear the frame, as when the call completes. Clearing prevents cached
      * frames from holding references after the call is done.
      */
-    public void clear() {
+    public Frame clear() {
         this.self = null;
         this.klazz = null;
         this.block = Block.NULL_BLOCK;
+        this.backRef = null;
+        this.lastLine = null;
+        
+        return this;
     }
     
     /**
@@ -222,7 +228,6 @@ public final class Frame {
     public Frame duplicateForBacktrace() {
         Frame backtraceFrame = new Frame();
         backtraceFrame.name = name;
-        backtraceFrame.isBindingFrame = isBindingFrame;
         return backtraceFrame;
     }
 
@@ -308,30 +313,43 @@ public final class Frame {
     }
     
     /**
-     * Is this frame the frame which started a binding eval?
-     * 
-     * @return Whether this is a binding frame
-     */
-    public boolean isBindingFrame() {
-        return isBindingFrame;
-    }
-    
-    /**
-     * Set whether this is a binding frame or not
-     * 
-     * @param isBindingFrame Whether this is a binding frame
-     */
-    public void setIsBindingFrame(boolean isBindingFrame) {
-        this.isBindingFrame = isBindingFrame;
-    }
-    
-    /**
      * Retrieve the block associated with this frame.
      * 
      * @return The block of this frame or NULL_BLOCK if no block given
      */
     public Block getBlock() {
         return block;
+    }
+    
+    public IRubyObject getBackRef(IRubyObject nil) {
+        IRubyObject backRef = this.backRef;
+        return backRef == null ? nil : backRef;
+    }
+    
+    public IRubyObject setBackRef(IRubyObject backRef) {
+        return this.backRef = backRef;
+    }
+    
+    public IRubyObject getLastLine(IRubyObject nil) {
+        IRubyObject lastLine = this.lastLine;
+        return lastLine == null ? nil : lastLine;
+    }
+    
+    public IRubyObject setLastLine(IRubyObject lastLine) {
+        return this.lastLine = lastLine;
+    }
+    
+    public void setCaptured(boolean captured) {
+        this.captured = captured;
+    }
+    
+    public Frame capture() {
+        captured = true;
+        return this;
+    }
+    
+    public boolean isCaptured() {
+        return captured;
     }
 
     /* (non-Javadoc)

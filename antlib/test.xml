@@ -36,30 +36,15 @@
         </copy>
     </target>
 
-    <target name="test" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted-short,
-    test-rake-targets"
-            description="Runs unit tests.">
-    </target>
+    <target name="test" depends="test-extended"/>
 
-    <target name="test-debug" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted-short-debug,
-    test-rake-targets"
-            description="Runs unit tests, connecting to port 5001 via dt_socket">
-    </target>
-
-    <target name="test-extended" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted,
-    run-junit-compiled,
-    run-junit-embed,
-    test-rake-targets"
-            description="Runs unit tests.">
+    <target name="test-extended" depends="jar">
+        <java classname="org.jruby.Main" fork="true" failonerror="true">
+            <classpath refid="test.class.path"/>
+            <jvmarg line="${java.opts}"/>
+            <jvmarg line="-Djruby.home=${basedir}"/>
+            <arg line="-S rake test:extended"/>
+        </java>
     </target>
 
     <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
@@ -298,15 +283,6 @@
 
     <target name="-test-security-19">
         <test-security-manager-in compat.mode="--1.9"/>
-    </target>
-
-    <target name="test-rake-targets" depends="init">
-        <java classname="org.jruby.Main" fork="true" failonerror="true">
-            <classpath refid="test.class.path"/>
-            <jvmarg line="${java.opts}"/>
-            <jvmarg line="-Djruby.home=${basedir}"/>
-            <arg line="-S rake test:rake_targets"/>
-        </java>
     </target>
 
     <target name="spec-ci-interpreted" depends="init">

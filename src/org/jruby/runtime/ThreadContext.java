@@ -118,12 +118,6 @@ public final class ThreadContext {
     // The flat profile data for this thread
 	private ProfileData profileData;
 	
-    // In certain places, like grep, we don't use real frames for the
-    // call blocks. This has the effect of not setting the backref in
-    // the correct frame - this delta is activated to the place where
-    // the grep is running in so that the backref will be set in an
-    // appropriate place.
-    private int rubyFrameDelta = 0;
     private boolean eventHooksEnabled = true;
 
     CallType lastCallType;
@@ -404,15 +398,6 @@ public final class ThreadContext {
         }
     }
     
-    private void pushFrame(String name) {
-        int index = ++this.frameIndex;
-        Frame[] stack = frameStack;
-        stack[index].updateFrame(name);
-        if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
-        }
-    }
-    
     public void pushFrame() {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
@@ -422,9 +407,16 @@ public final class ThreadContext {
     }
     
     public void popFrame() {
-        Frame frame = frameStack[frameIndex--];
+        Frame[] stack = frameStack;
+        int index = frameIndex--;
+        Frame frame = stack[index];
         
-        frame.clear();
+        // if the frame was captured, we must replace it but not clear
+        if (frame.isCaptured()) {
+            stack[index] = new Frame();
+        } else {
+            frame.clear();
+        }
     }
         
     private void popFrameReal(Frame oldFrame) {
@@ -433,18 +425,6 @@ public final class ThreadContext {
     
     public Frame getCurrentFrame() {
         return frameStack[frameIndex];
-    }
-
-    public int getRubyFrameDelta() {
-        return this.rubyFrameDelta;
-    }
-    
-    public void setRubyFrameDelta(int newDelta) {
-        this.rubyFrameDelta = newDelta;
-    }
-
-    public Frame getCurrentRubyFrame() {
-        return frameStack[frameIndex-rubyFrameDelta];
     }
     
     public Frame getNextFrame() {
@@ -461,19 +441,6 @@ public final class ThreadContext {
         return index < 1 ? null : frameStack[index - 1];
     }
     
-    public int getFrameCount() {
-        return frameIndex + 1;
-    }
-
-    public Frame[] getFrames(int delta) {
-        int top = frameIndex + delta;
-        Frame[] frames = new Frame[top + 1];
-        for (int i = 0; i <= top; i++) {
-            frames[i] = frameStack[i].duplicateForBacktrace();
-        }
-        return frames;
-    }
-    
     /**
      * Set the $~ (backref) "global" to the given value.
      * 
@@ -481,7 +448,7 @@ public final class ThreadContext {
      * @return the value passed in
      */
     public IRubyObject setBackRef(IRubyObject match) {
-        return getCurrentScope().setBackRef(match);
+        return getCurrentFrame().setBackRef(match);
     }
     
     /**
@@ -490,7 +457,7 @@ public final class ThreadContext {
      * @return the value of $~
      */
     public IRubyObject getBackRef() {
-        return getCurrentScope().getBackRef(runtime);
+        return getCurrentFrame().getBackRef(nil);
     }
     
     /**
@@ -500,7 +467,7 @@ public final class ThreadContext {
      * @return the value passed in
      */
     public IRubyObject setLastLine(IRubyObject last) {
-        return getCurrentScope().setLastLine(last);
+        return getCurrentFrame().setLastLine(last);
     }
     
     /**
@@ -509,7 +476,7 @@ public final class ThreadContext {
      * @return the value of $_
      */
     public IRubyObject getLastLine() {
-        return getCurrentScope().getLastLine(runtime);
+        return getCurrentFrame().getLastLine(nil);
     }
 
     /////////////////// BACKTRACE ////////////////////
@@ -1190,12 +1157,6 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preRunThread(Frame[] currentFrames) {
-        for (Frame frame : currentFrames) {
-            pushFrame(frame);
-        }
-    }
-    
     public void preTrace() {
         setWithinTrace(true);
         pushFrame();
@@ -1240,14 +1201,12 @@ public final class ThreadContext {
     }
     
     public Frame preEvalWithBinding(Binding binding) {
-        binding.getFrame().setIsBindingFrame(true);
         Frame lastFrame = pushFrameForEval(binding);
         pushRubyClass(binding.getKlass());
         return lastFrame;
     }
     
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {
-        binding.getFrame().setIsBindingFrame(false);
         popFrameReal(lastFrame);
         popRubyClass();
     }
@@ -1302,7 +1261,7 @@ public final class ThreadContext {
      * @return the current binding
      */
     public Binding currentBinding() {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1312,7 +1271,7 @@ public final class ThreadContext {
      * @return the current binding, using the specified self
      */
     public Binding currentBinding(IRubyObject self) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1324,7 +1283,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
@@ -1336,7 +1295,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self and scope
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 
@@ -1351,7 +1310,7 @@ public final class ThreadContext {
      * @return the current binding using the specified self, scope, and visibility
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
-        Frame frame = getCurrentFrame();
+        Frame frame = getCurrentFrame().capture();
         return new Binding(self, frame, visibility, getRubyClass(), scope, backtrace[backtraceIndex].clone());
     }
 

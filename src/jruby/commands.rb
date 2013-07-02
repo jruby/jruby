@@ -20,7 +20,7 @@ module JRuby
         ARGV.delete_if do |g|
           # skip options
           next false if g =~ /^-/
-
+          
           if File.exist?(g) # local gem
             begin
               gem = Gem::Package.new(g)
