@@ -719,7 +719,8 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            final IRScope scope = IRBuilder.createIRBuilder(getIRManager(), is1_9()).buildRoot((RootNode) node);
+            final IRBuilder irBuilder = IRBuilder.createIRBuilder(getIRManager(), is1_9());
+            final IRScope scope = irBuilder.buildRoot((RootNode) node);
             final Class compiled = JVMVisitor.compile(this, scope, classLoader);
             final StaticScope staticScope = scope.getStaticScope();
             staticScope.setModule(getTopSelf().getMetaClass());
