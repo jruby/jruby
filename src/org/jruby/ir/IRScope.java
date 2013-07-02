@@ -687,7 +687,9 @@ public abstract class IRScope {
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
+        if (getCFG() == null) {
+            runCompilerPasses();
+        }
 
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
@@ -758,7 +760,9 @@ public abstract class IRScope {
     }
     
     private static Label[] catLabels(Label[] labels, Label cat) {
-        if (labels == null) return new Label[] {cat};
+        if (labels == null) {
+            return new Label[] {cat};
+        }
         Label[] newLabels = new Label[labels.length + 1];
         System.arraycopy(labels, 0, newLabels, 0, labels.length);
         newLabels[labels.length] = cat;
@@ -776,7 +780,9 @@ public abstract class IRScope {
             } else if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
-                if (call.targetRequiresCallersBinding()) this.bindingHasEscaped = true;
+                if (call.targetRequiresCallersBinding()) {
+                    this.bindingHasEscaped = true;
+                }
 
                 if (call.canBeEval()) {
                     this.usesEval = true;
@@ -1311,9 +1317,11 @@ public abstract class IRScope {
     protected int getPrefixCountSize(String prefix) {
         Integer index = nextVarIndex.get(prefix);
 
-        if (index == null) return 0;
-
-        return index.intValue();
+        if (index == null) {
+            return 0;
+        } else {
+            return index.intValue();
+        }
     }
     
     public RubyModule getContainerModule() {

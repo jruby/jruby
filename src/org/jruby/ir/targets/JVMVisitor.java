@@ -152,7 +152,9 @@ public class JVMVisitor extends IRVisitor {
             Instr instr = instrs[i];
 
             if (jumpTable.get(i) != null) {
-                for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
+                for (Label label : jumpTable.get(i)) {
+                    m.mark(jvm.methodData().getLabel(label));
+                }
             }
             visit(instr);
         }

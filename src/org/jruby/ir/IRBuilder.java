@@ -265,7 +265,9 @@ public class IRBuilder {
         ruby.getInstanceConfig().setCompileMode(CompileMode.OFFIR);
         
         // inline script
-        if (isCommandLineScript) return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
+        if (isCommandLineScript) {
+            return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
+        }
 
         // from file
         FileInputStream fis = null;
@@ -293,6 +295,14 @@ public class IRBuilder {
         }
     }
 
+    /**
+     * factory method creates IR Builder based on specified Ruby version and the
+     * IRManager.
+     * Default is Ruby 1.8.X
+     * @param manager
+     * @param is19 -- is Ruby 1.9.x ?
+     * @return -- Builder object for IR
+     */
     public static IRBuilder createIRBuilder(IRManager manager, boolean is19) {
         return is19 ? new IRBuilder19(manager) : new IRBuilder(manager);
     }
