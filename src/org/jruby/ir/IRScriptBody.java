@@ -34,6 +34,7 @@ public class IRScriptBody extends IRScope {
         return null;
     }
     
+    @Override
     public String getScopeName() {
         return "ScriptBody";
     }

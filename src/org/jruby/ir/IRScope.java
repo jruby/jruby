@@ -23,16 +23,13 @@ import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -335,7 +332,7 @@ public abstract class IRScope {
         setupLexicalContainment();
     }
     
-    private final void setupLexicalContainment() {
+    private void setupLexicalContainment() {
         if (manager.isDryRun()) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
@@ -345,6 +342,18 @@ public abstract class IRScope {
     @Override
     public int hashCode() {
         return scopeId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final IRScope other = (IRScope) obj;
+        return this.scopeId == other.scopeId;
     }
     
     protected void addChildScope(IRScope scope) {
@@ -371,10 +380,15 @@ public abstract class IRScope {
         // SSS FIXME: If more instructions set these flags, there may be
         // a better way to do this by encoding flags in its own object
         // and letting every instruction update it.
-        if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
-        else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
-        else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
-        else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
+        if (i instanceof ThreadPollInstr) {
+            threadPollInstrsCount++;
+        } else if (i instanceof BreakInstr) {
+            this.hasBreakInstrs = true;
+        } else if (i instanceof NonlocalReturnInstr) {
+            this.hasNonlocalReturns = true;
+        } else if (i instanceof DefineMetaClassInstr) {
+            this.canReceiveNonlocalReturns = true;
+        }
         instrList.add(i);
     }
 
@@ -587,7 +601,10 @@ public abstract class IRScope {
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
-        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
+        if (linearizedInstrArray != null) {
+            // Already prepared
+            return linearizedInstrArray;
+        } 
 
         try {
             buildLinearization(); // FIXME: compiler passes should have done this
@@ -675,7 +692,9 @@ public abstract class IRScope {
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
+        if (getCFG() == null) {
+            runCompilerPasses();
+        }
 
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
@@ -746,7 +765,9 @@ public abstract class IRScope {
     }
     
     private static Label[] catLabels(Label[] labels, Label cat) {
-        if (labels == null) return new Label[] {cat};
+        if (labels == null) {
+            return new Label[] {cat};
+        }
         Label[] newLabels = new Label[labels.length + 1];
         System.arraycopy(labels, 0, newLabels, 0, labels.length);
         newLabels[labels.length] = cat;
@@ -764,7 +785,9 @@ public abstract class IRScope {
             } else if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
-                if (call.targetRequiresCallersBinding()) this.bindingHasEscaped = true;
+                if (call.targetRequiresCallersBinding()) {
+                    this.bindingHasEscaped = true;
+                }
 
                 if (call.canBeEval()) {
                     this.usesEval = true;
@@ -875,39 +898,41 @@ public abstract class IRScope {
     }    
 
     public String toStringInstrs() {
-        StringBuilder b = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
         int i = 0;
         for (Instr instr : instrList) {
-            if (i > 0) b.append("\n");
+            if (i > 0) {
+                stringBuilder.append("\n");
+            }
             
-            b.append("  ").append(i).append('\t').append(instr);
+            stringBuilder.append("  ").append(i).append('\t').append(instr);
             
             i++;
         }
 
         if (!nestedClosures.isEmpty()) {
-            b.append("\n\n------ Closures encountered in this scope ------\n");
+            stringBuilder.append("\n\n------ Closures encountered in this scope ------\n");
             for (IRClosure c: nestedClosures)
-                b.append(c.toStringBody());
-            b.append("------------------------------------------------\n");
+                stringBuilder.append(c.toStringBody());
+            stringBuilder.append("------------------------------------------------\n");
         }
 
-        return b.toString();
+        return stringBuilder.toString();
     }
     
     public String toPersistableString() {
-        StringBuilder b = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
-        b.append("Scope:<");
-        b.append(name);
-        b.append(">");
+        stringBuilder.append("Scope:<");
+        stringBuilder.append(name);
+        stringBuilder.append(">");
         for (Instr instr : instrList) {
-            b.append("\n");
-            b.append(instr);
+            stringBuilder.append("\n");
+            stringBuilder.append(instr);
         }
         
-        return b.toString();
+        return stringBuilder.toString();
     }
 
     public String toStringVariables() {
@@ -1006,7 +1031,9 @@ public abstract class IRScope {
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
-        if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
+        if (reset || evalScopeVars == null) {
+            evalScopeVars = new LocalVariableAllocator();
+        }
     }
     
     public TemporaryVariable getNewTemporaryVariable() {
@@ -1299,9 +1326,11 @@ public abstract class IRScope {
     protected int getPrefixCountSize(String prefix) {
         Integer index = nextVarIndex.get(prefix);
 
-        if (index == null) return 0;
-
-        return index.intValue();
+        if (index == null) {
+            return 0;
+        } else {
+            return index.intValue();
+        }
     }
     
     public RubyModule getContainerModule() {

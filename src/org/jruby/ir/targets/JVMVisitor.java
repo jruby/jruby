@@ -152,7 +152,9 @@ public class JVMVisitor extends IRVisitor {
             Instr instr = instrs[i];
 
             if (jumpTable.get(i) != null) {
-                for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
+                for (Label label : jumpTable.get(i)) {
+                    m.mark(jvm.methodData().getLabel(label));
+                }
             }
             visit(instr);
         }
@@ -191,10 +193,12 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().pushHandle(jvm.clsData().clsName, name, method.getStaticScope().getRequiredArgs());
     }
 
+    @Override
     public void visit(Instr instr) {
         instr.visit(this);
     }
 
+    @Override
     public void visit(Operand operand) {
         if (operand.hasKnownValue()) {
             operand.visit(this);
@@ -353,8 +357,7 @@ public class JVMVisitor extends IRVisitor {
         if (   (name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/"))
             && numArgs == 1
             && args[0] instanceof Fixnum
-            && callInstr.getCallType() == CallType.NORMAL)
-        {
+            && callInstr.getCallType() == CallType.NORMAL) {
             m.loadLocal(0);
             m.loadLocal(2); // dummy to satisfy signature of existing target linker (MathLinker)
             visit(callInstr.getReceiver());
@@ -409,7 +412,8 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().loadContext();
         jvm.method().adapter.ldc("const_missing");
         jvm.method().pushSymbol(constmissinginstr.getMissingConst());
-        jvm.method().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
+        final Method invokeVirtualMethod = Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)");
+        jvm.method().invokeVirtual(Type.getType(RubyModule.class), invokeVirtualMethod);
     }
 
     @Override
@@ -464,13 +468,15 @@ public class JVMVisitor extends IRVisitor {
         // is meta?
         a.ldc(newIRClassBody instanceof IRMetaClassBody);
 
-        m.invokeHelper("newClassForIR", RubyClass.class, ThreadContext.class, String.class, IRubyObject.class, RubyModule.class, Object.class, boolean.class);
+        m.invokeHelper("newClassForIR", RubyClass.class, ThreadContext.class,
+                String.class, IRubyObject.class, RubyModule.class, Object.class, boolean.class);
 
         //// static scope
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(Helpers.class), "decodeScope",
+                "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
         a.swap();
 
         // set into StaticScope

@@ -13,7 +13,6 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
 import javax.lang.model.element.Name;
-import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

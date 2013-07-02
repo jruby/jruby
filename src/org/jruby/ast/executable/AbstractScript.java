@@ -8,7 +8,6 @@ package org.jruby.ast.executable;
 import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
@@ -34,31 +33,38 @@ public abstract class AbstractScript implements Script {
     public AbstractScript() {
     }
 
+    @Override
     public IRubyObject __file__(ThreadContext context, IRubyObject self, Block block) {
         return __file__(context, self, IRubyObject.NULL_ARRAY, block);
     }
     
+    @Override
     public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         return __file__(context, self, new IRubyObject[] {arg}, block);
     }
     
+    @Override
     public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         return __file__(context, self, new IRubyObject[] {arg1, arg2}, block);
     }
     
+    @Override
     public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         return __file__(context, self, new IRubyObject[] {arg1, arg2, arg3}, block);
     }
     
     @Deprecated
+    @Override
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return load(context, self, false);
     }
     
+    @Override
     public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
         return null;
     }
     
+    @Override
     public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return __file__(context, self, args, block);
     }
@@ -407,6 +413,7 @@ public abstract class AbstractScript implements Script {
         return callSites;
     }
 
+    @Override
     public final void setFilename(String filename) {
         this.filename = filename;
     }
@@ -415,6 +422,7 @@ public abstract class AbstractScript implements Script {
         runtimeCache.initFromDescriptor(descriptor);
     }
 
+    @Override
     public void setRootScope(StaticScope scope) {
         runtimeCache.scopes[0] = scope;
     }

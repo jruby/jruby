@@ -72,7 +72,7 @@ public abstract class ImmutableLiteral extends Operand {
     /**
      * retrieve the live value represented by this immutable literal.  An
      * interesting property of knowing something cannot change at compile
-     * time is that all information neccesary to construct it is also known
+     * time is that all information necessary to construct it is also known
      * at compile time.  We don't pre-create these since we don't want to 
      * assume the cost of constructing literals which may never be used.
      */
