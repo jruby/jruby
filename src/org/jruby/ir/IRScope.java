@@ -332,7 +332,7 @@ public abstract class IRScope {
         setupLexicalContainment();
     }
     
-    private final void setupLexicalContainment() {
+    private void setupLexicalContainment() {
         if (manager.isDryRun()) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
@@ -353,10 +353,7 @@ public abstract class IRScope {
             return false;
         }
         final IRScope other = (IRScope) obj;
-        if (this.scopeId != other.scopeId) {
-            return false;
-        }
-        return true;
+        return this.scopeId == other.scopeId;
     }
     
     protected void addChildScope(IRScope scope) {
@@ -383,10 +380,15 @@ public abstract class IRScope {
         // SSS FIXME: If more instructions set these flags, there may be
         // a better way to do this by encoding flags in its own object
         // and letting every instruction update it.
-        if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
-        else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
-        else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
-        else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
+        if (i instanceof ThreadPollInstr) {
+            threadPollInstrsCount++;
+        } else if (i instanceof BreakInstr) {
+            this.hasBreakInstrs = true;
+        } else if (i instanceof NonlocalReturnInstr) {
+            this.hasNonlocalReturns = true;
+        } else if (i instanceof DefineMetaClassInstr) {
+            this.canReceiveNonlocalReturns = true;
+        }
         instrList.add(i);
     }
 
@@ -599,7 +601,10 @@ public abstract class IRScope {
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
-        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
+        if (linearizedInstrArray != null) {
+            // Already prepared
+            return linearizedInstrArray;
+        } 
 
         try {
             buildLinearization(); // FIXME: compiler passes should have done this
@@ -893,39 +898,41 @@ public abstract class IRScope {
     }    
 
     public String toStringInstrs() {
-        StringBuilder b = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
         int i = 0;
         for (Instr instr : instrList) {
-            if (i > 0) b.append("\n");
+            if (i > 0) {
+                stringBuilder.append("\n");
+            }
             
-            b.append("  ").append(i).append('\t').append(instr);
+            stringBuilder.append("  ").append(i).append('\t').append(instr);
             
             i++;
         }
 
         if (!nestedClosures.isEmpty()) {
-            b.append("\n\n------ Closures encountered in this scope ------\n");
+            stringBuilder.append("\n\n------ Closures encountered in this scope ------\n");
             for (IRClosure c: nestedClosures)
-                b.append(c.toStringBody());
-            b.append("------------------------------------------------\n");
+                stringBuilder.append(c.toStringBody());
+            stringBuilder.append("------------------------------------------------\n");
         }
 
-        return b.toString();
+        return stringBuilder.toString();
     }
     
     public String toPersistableString() {
-        StringBuilder b = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
-        b.append("Scope:<");
-        b.append(name);
-        b.append(">");
+        stringBuilder.append("Scope:<");
+        stringBuilder.append(name);
+        stringBuilder.append(">");
         for (Instr instr : instrList) {
-            b.append("\n");
-            b.append(instr);
+            stringBuilder.append("\n");
+            stringBuilder.append(instr);
         }
         
-        return b.toString();
+        return stringBuilder.toString();
     }
 
     public String toStringVariables() {
@@ -1024,7 +1031,9 @@ public abstract class IRScope {
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
-        if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
+        if (reset || evalScopeVars == null) {
+            evalScopeVars = new LocalVariableAllocator();
+        }
     }
     
     public TemporaryVariable getNewTemporaryVariable() {
