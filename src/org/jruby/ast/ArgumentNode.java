@@ -55,10 +55,12 @@ public class ArgumentNode extends Node implements INameNode {
         this.location = location; // All variables should be depth 0 in this case
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.ARGUMENTNODE;
     }
     
+    @Override
     public Object accept(NodeVisitor visitor) {
         return null;
     }
@@ -82,6 +84,7 @@ public class ArgumentNode extends Node implements INameNode {
         return location & 0xffff;
     }
     
+    @Override
     public String getName() {
         return identifier;
     }

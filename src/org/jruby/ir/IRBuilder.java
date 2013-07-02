@@ -99,7 +99,8 @@ import java.util.Stack;
 // copy propagation and dead-code elimination.
 //
 // Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
-// this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
+// this smart can be built in here.  Right now, the goal is to do something simple and straightforward 
+// that is going to be correct.
 //
 // 2. Returning null vs manager.getNil()
 // ----------------------------
@@ -262,7 +263,9 @@ public class IRBuilder {
         ruby.getInstanceConfig().setCompileMode(CompileMode.OFFIR);
         
         // inline script
-        if (isCommandLineScript) return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
+        if (isCommandLineScript) {
+            return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
+        }
 
         // from file
         FileInputStream fis = null;
@@ -281,6 +284,14 @@ public class IRBuilder {
         }
     }
 
+    /**
+     * factory method creates IR Builder based on specified Ruby version and the
+     * IRManager.
+     * Default is Ruby 1.8.X
+     * @param manager
+     * @param is19 -- is Ruby 1.9.x ?
+     * @return -- Builder object for IR
+     */
     public static IRBuilder createIRBuilder(IRManager manager, boolean is19) {
         return is19 ? new IRBuilder19(manager) : new IRBuilder(manager);
     }

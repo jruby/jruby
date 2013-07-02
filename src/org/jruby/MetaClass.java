@@ -46,6 +46,7 @@ public final class MetaClass extends RubyClass {
         return true;
     }
 
+    @Override
     public final IRubyObject allocate(){
         throw runtime.newTypeError("can't create instance of virtual class");
     }

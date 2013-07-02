@@ -237,6 +237,7 @@ public class JRubyApplet extends Applet {
         try {
             final JRubyApplet applet = this;
             safeInvokeAndWait(new Runnable() {
+                @Override
                 public void run() {
                     applet.setLayout(new BorderLayout());
                     applet.facade.attach(applet.runtime, applet);
@@ -261,6 +262,7 @@ public class JRubyApplet extends Applet {
         final Ruby ruby = this.runtime;
         try {
             safeInvokeAndWait(new Runnable() {
+                @Override
                 public void run() {
                     proc.call(ruby.getCurrentContext(), args);
                 }
@@ -374,14 +376,19 @@ public class JRubyApplet extends Applet {
 
     private static class TrivialFacade implements Facade {
         public TrivialFacade() {}
+        @Override
         public InputStream getInputStream() { return System.in; }
+        @Override
         public PrintStream getOutputStream() { return System.out; }
+        @Override
         public PrintStream getErrorStream() { return System.err; }
+        @Override
         public void attach(Ruby runtime, Applet applet) {
             final IRubyObject wrappedApplet = JavaEmbedUtils.javaToRuby(runtime, applet);
             runtime.defineGlobalConstant("JRUBY_APPLET", wrappedApplet);
             wrappedApplet.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
         }
+        @Override
         public void destroy() {}
     }
 
@@ -416,16 +423,21 @@ public class JRubyApplet extends Applet {
             errorStream = new PrintStream(adaptor.getOutputStream());
         }
 
+        @Override
         public InputStream getInputStream() { return inputStream; }
+        @Override
         public PrintStream getOutputStream() { return outputStream; }
+        @Override
         public PrintStream getErrorStream() { return errorStream; }
 
+        @Override
         public void attach(Ruby runtime, Applet applet) {
             adaptor.hookIntoRuntime(runtime);
             applet.add(scrollPane);
             applet.validate();
         }
 
+        @Override
         public void destroy() {
             Container parent = scrollPane.getParent();
             adaptor.shutdown();

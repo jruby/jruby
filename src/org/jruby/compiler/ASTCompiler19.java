@@ -327,6 +327,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
         if (expr) {
             context.createNewLambda(new CompilerCallback() {
+                @Override
                 public void call(BodyCompiler context) {
                     compileIter(lambdaNode, context);
                 }
