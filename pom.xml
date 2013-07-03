@@ -264,6 +264,7 @@
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
     <base.java.version>1.6</base.java.version>
+    <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <tzdata.version>2013c</tzdata.version>
     <maven.test.skip>true</maven.test.skip>
@@ -741,6 +742,7 @@
             <jruby.home>${basedir}</jruby.home>
           </systemProperties>
           <testFailureIgnore>true</testFailureIgnore>
+          <argLine>-Xmx${jruby.test.memory}</argLine>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
           <argLine>-Dfile.encoding=UTF-8</argLine>
           <includes>
