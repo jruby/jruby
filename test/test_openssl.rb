@@ -1,7 +1,38 @@
 require 'test/unit'
-require 'openssl'
+require 'test/security_helper'
+
+SecurityManager.strict!.with_permissions({
+  "SecurityPermission" => [
+    "getProperty.keystore.type",
+    "putProviderProperty.SunJGSS",
+    "putProviderProperty.SunEC-Internal",
+    "putProviderProperty.BC",
+    "insertProvider.BC" 
+  ],
+
+  # OpenSSL uses java.text.SimpleDateFormat that needs to load this
+  "RuntimePermission" => "accessClassInPackage.sun.util.resources",
+  "PropertyPermission" => {
+    "com.sun.security.preserveOldDCEncoding" => "read",
+    "sun.security.key.serial.interop" => "read",
+
+    # Maybe this should be global?
+    "java.nio.file.spi.DefaultFileSystemProvider" => "read",
+
+    # SimpleDateFormat again
+    "sun.timezone.ids.oldmapping" => "read",
+    "sun.nio.fs.chdirAllowed" => "read",
+
+    # java.util.TimeZone.getDefault memoizes the default in property
+    "user.timezone" => "write"
+  }
+
+  }) do
+  require 'openssl'
+end
 
 class TestOpenssl < Test::Unit::TestCase
+
   def test_csr_request_extensions
     key = OpenSSL::PKey::RSA.new(512)
     csr = OpenSSL::X509::Request.new
@@ -26,3 +57,5 @@ class TestOpenssl < Test::Unit::TestCase
     assert_equal '/CN=example.com', csr.subject.to_s
   end
 end
+
+SecurityManager.permissive!
