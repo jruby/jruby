@@ -164,58 +164,50 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     public Edge<T> getOutgoingEdgeOfType(Object type) {
         return getFirstEdge(getOutgoingEdgesOfType(type).iterator());
     }
-    
-    /**
-     * Get first incoming edge of any type and assert if there is more than
-     * one.
-     */
+
     public Edge<T> getIncomingEdge() {
         return getFirstEdge(getIncomingEdgesNotOfType(null).iterator());
     }
-    
-    /**
-     * Get first outgoing edge of any type and assert if there is more than
-     * one.
-     */
+
     public Edge<T> getOutgoingEdge() {
         return getFirstEdge(getOutgoingEdgesNotOfType(null).iterator());
     }
 
     public Set<Edge<T>> getIncomingEdges() {
         if (incoming == null) incoming = new HashSet<Edge<T>>();
-        
+
         return incoming;
     }
-    
+
     public Set<Edge<T>> getOutgoingEdges() {
         if (outgoing == null) outgoing = new HashSet<Edge<T>>();
-        
+
         return outgoing;
-    }    
-    
+    }
+
     public T getData() {
         return data;
     }
-    
+
     public int getID() {
         return data instanceof ExplicitVertexID ? ((ExplicitVertexID) data).getID() : id;
     }
-    
+
     @Override
     public String toString() {
         boolean found = false;
         StringBuilder buf = new StringBuilder(data.toString());
 
         buf.append(":");
-        
+
         Set<Edge<T>> edges = getOutgoingEdges();
         int size = edges.size();
-        
+
         if (size > 0) {
             found = true;
             buf.append(">[");
             Iterator<Edge<T>> iterator = edges.iterator();
-            
+
             for (int i = 0; i < size - 1; i++) {
                 buf.append(iterator.next().getDestination().getID()).append(",");
             }
