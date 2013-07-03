@@ -227,8 +227,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     descriptor.getCallConfig(),
                     descriptor.getFile(),
                     descriptor.getLine());
-
-            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(invokerBytes), false, new PrintWriter(System.err));
+            verifyByteCode(invokerBytes);
 
             writeClassFile(destination, invokerBytes, descriptor.getInvokerName());
         }
@@ -239,8 +238,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     descriptor.getMethod(),
                     descriptor.getFile(),
                     descriptor.getLine());
-
-            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
+            verifyByteCode(callbackBytes);
 
             writeClassFile(destination, callbackBytes, descriptor.getCallbackName());
         }
@@ -251,8 +249,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     descriptor.getMethod(),
                     descriptor.getFile(),
                     descriptor.getLine());
-
-            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
+            verifyByteCode(callbackBytes);
 
             writeClassFile(destination, callbackBytes, descriptor.getCallbackName());
         }
@@ -261,7 +258,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void writeClass(String classname, File destination, ClassWriter writer) throws IOException {
         // verify the class
         byte[] bytecode = writer.toByteArray();
-        if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
+        verifyByteCode(bytecode);
 
         writeClassFile(destination, bytecode, classname);
     }
@@ -288,6 +285,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             out.write(bytecode);
         } finally {
             out.close();
+        }
+    }
+
+    private void verifyByteCode(byte[] bytecode) {
+        if (VERIFY_CLASSFILES) {
+            CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
         }
     }
 
@@ -414,6 +417,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return classWriter;
     }
     
+    @Override
     public void startScript(StaticScope scope) {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -459,6 +463,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classWriter.visitSource(sourcename, sourceFile.getAbsolutePath());
     }
 
+    @Override
     public void endScript(boolean generateLoad, boolean generateMain) {
         // add Script#run impl, used for running this script with a specified threadcontext and self
         // root method of a script is always in __file__ method
@@ -625,6 +630,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return cacheCompiler;
     }
     
+    @Override
     public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback args, StaticScope scope, ASTInspector inspector, int scopeIndex) {
         RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope, scopeIndex);
         
@@ -633,6 +639,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return methodCompiler;
     }
 
+    @Override
     public BodyCompiler startFileMethod(CompilerCallback args, StaticScope scope, ASTInspector inspector) {
         MethodBodyCompiler methodCompiler = new MethodBodyCompiler(this, "__file__", "__file__", inspector, scope, 0);
 

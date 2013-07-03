@@ -504,7 +504,11 @@ public final class Ruby {
         Node scriptNode = parseFromMain(inputStream, filename);
 
         // done with the stream, shut it down
-        try {inputStream.close();} catch (IOException ioe) {}
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        } catch (IOException ioe) {}
 
         ThreadContext context = getCurrentContext();
 
@@ -718,7 +722,8 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            final IRScope scope = IRBuilder.createIRBuilder(getIRManager(), is1_9()).buildRoot((RootNode) node);
+            final IRBuilder irBuilder = IRBuilder.createIRBuilder(getIRManager(), is1_9());
+            final IRScope scope = irBuilder.buildRoot((RootNode) node);
             final Class compiled = JVMVisitor.compile(this, scope, classLoader);
             final StaticScope staticScope = scope.getStaticScope();
             staticScope.setModule(getTopSelf().getMetaClass());
@@ -1242,7 +1247,9 @@ public final class Ruby {
         classClass.setMetaClass(classClass);
 
         RubyClass metaClass;
-        if (oneNine) metaClass = basicObjectClass.makeMetaClass(classClass);
+        if (oneNine) {
+            metaClass = basicObjectClass.makeMetaClass(classClass);
+        }
         metaClass = objectClass.makeMetaClass(classClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
@@ -1372,7 +1379,10 @@ public final class Ruby {
             RubyStruct.createStructClass(this);
         }
         if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(structClass, new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
+            tmsStruct = RubyStruct.newInstance(structClass,
+                    new IRubyObject[]{ newString("Tms"),
+                        newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"),
+                        newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
         if (profile.allowClass("Binding")) {
