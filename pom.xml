@@ -244,13 +244,13 @@
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
-    <!--<dependency>
+    <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-launcher</artifactId>
       <version>${jruby-launcher.version}</version>
       <type>gem</type>
       <scope>provided</scope>
-    </dependency>-->
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -274,7 +274,7 @@
     <rspec-expectations.version>2.12.1</rspec-expectations.version>
     <rspec-mocks.version>2.12.2</rspec-mocks.version>
     <diff-lcs.version>1.1.3</diff-lcs.version>
-    <jruby-launcher.version>1.0.18.dev</jruby-launcher.version>
+    <jruby-launcher.version>1.0.18.pre1</jruby-launcher.version>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -412,7 +412,7 @@
           </execution>
           <execution>
             <id>install bootstrap gems</id>
-            <phase>package</phase>
+            <phase>integration-test</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -432,7 +432,7 @@
                 <argument>target/rspec-expectations-${rspec-expectations.version}.gem</argument>
                 <argument>target/rspec-mocks-${rspec-mocks.version}.gem</argument>
                 <argument>target/rspec-${rspec.version}.gem</argument>
-                <!--<argument>build_lib/jruby-launcher-${jruby-launcher.version}-java.gem</argument>-->
+                <argument>target/jruby-launcher-${jruby-launcher.version}.gem</argument>
               </arguments>
               <executable>java</executable>
               <classpathScope>compile</classpathScope>
@@ -568,7 +568,7 @@
           </execution>
           <execution>
             <id>copy bootstrap gems</id>
-            <phase>process-classes</phase>
+            <phase>pre-integration-test</phase>
             <goals>
               <goal>copy</goal>
             </goals>
@@ -622,14 +622,14 @@
                   <overWrite>false</overWrite>
                   <outputDirectory>target</outputDirectory>
                 </artifactItem>
-                <!--<artifactItem>
+                <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>jruby-launcher</artifactId>
                   <version>${jruby-launcher.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>target</outputDirectory>
-                </artifactItem>-->
+                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
@@ -707,6 +707,28 @@
               </transformers>
             </configuration>
           </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <exec executable="/bin/sh" osfamily="unix">
+                  <arg line="-c 'test -f &quot;${basedir}/bin/jruby&quot; || cp &quot;${basedir}/bin/jruby.bash&quot; &quot;${basedir}/bin/jruby&quot;'"/>
+                </exec>
+                <chmod perm="755" file="bin/jruby"/>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution> 
         </executions>
       </plugin>
       <plugin>
