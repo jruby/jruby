@@ -826,8 +826,7 @@
                   <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                 </relocation>
               </relocations>
-              <finalName>jruby</finalName>
-              <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
+              <outputFile>${project.parent.basedir}/lib/jruby.jar</outputFile>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.jruby.Main</mainClass>
