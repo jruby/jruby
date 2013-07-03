@@ -4,14 +4,16 @@
     <option name="DEFAULT_COMPILER" value="Javac" />
     <resourceExtensions />
     <wildcardResourcePatterns>
-      <entry name="!?*.java" />
-      <entry name="!?*.form" />
-      <entry name="!?*.class" />
-      <entry name="!?*.groovy" />
-      <entry name="!?*.scala" />
-      <entry name="!?*.flex" />
-      <entry name="!?*.kt" />
-      <entry name="!?*.clj" />
+      <entry name="?*.properties" />
+      <entry name="?*.xml" />
+      <entry name="?*.gif" />
+      <entry name="?*.png" />
+      <entry name="?*.jpeg" />
+      <entry name="?*.jpg" />
+      <entry name="?*.html" />
+      <entry name="?*.dtd" />
+      <entry name="?*.tld" />
+      <entry name="?*.ftl" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
@@ -22,12 +24,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="jruby" />
+        <module name="jruby-core" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="jruby" target="1.6" />
-    </bytecodeTargetLevel>
   </component>
 </project>
 

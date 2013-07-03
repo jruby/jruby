@@ -1,7 +1,7 @@
 desc "Build the jruby-jars gem"
 namespace :gem do
   task 'jruby-jars' do
-    rdoc_gem = Dir.glob("build_lib/rdoc-*.gem").sort.last
+    rdoc_gem = Dir.glob("target/rdoc-*.gem").sort.last
     ruby "-S", "maybe_install_gems", rdoc_gem
     Dir.chdir("gems/jruby-jars") do
       ruby "-S", "rake", "package"
@@ -13,7 +13,7 @@ namespace :gem do
     end
   end
   task 'jruby-openssl' do
-    rdoc_gem = Dir.glob("build_lib/rdoc-*.gem").sort.last
+    rdoc_gem = Dir.glob("target/rdoc-*.gem").sort.last
     ruby "-S", "maybe_install_gems", rdoc_gem
     Dir.chdir("gems/jruby-openssl") do
       ruby "-S", "rake", "package"

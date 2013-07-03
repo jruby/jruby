@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/jruby.iml" filepath="$PROJECT_DIR$/jruby.iml" />
+      <module fileurl="file://$PROJECT_DIR$/core/jruby-core.iml" filepath="$PROJECT_DIR$/core/jruby-core.iml" />
     </modules>
   </component>
 </project>
