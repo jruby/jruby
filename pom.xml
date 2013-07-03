@@ -737,6 +737,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.15</version>
         <configuration>
+          <forkCount>1C</forkCount>
+          <reuseForks>false</reuseForks>
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}</jruby.home>
