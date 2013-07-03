@@ -1,51 +1,29 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
+    <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
-  <name>JRuby Distribution</name>
+  <name>JRuby Dist</name>
 
-  <properties>
-    <ant.target>dist</ant.target>
-    <dist.dir>${basedir}/../../dist</dist.dir>
-  </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <id>attach-artifacts</id>
-            <phase>package</phase>
-            <goals>
-              <goal>attach-artifact</goal>
-            </goals>
-            <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${dist.dir}/jruby-bin-${project.version}.zip</file>
-                  <type>zip</type>
-                  <classifier>bin</classifier>
-                </artifact>
-              </artifacts>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>

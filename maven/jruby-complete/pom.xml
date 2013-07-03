@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
+    <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
@@ -12,20 +12,18 @@
   <packaging>jar</packaging>
   <name>JRuby Complete</name>
 
-  <properties>
-    <ant.target>jar-complete</ant.target>
-  </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>

@@ -3,22 +3,51 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
+    <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>jruby-common</artifactId>
+  <artifactId>jruby-artifacts</artifactId>
   <packaging>pom</packaging>
-  <name>JRuby Common</name>
+  <name>JRuby Artifacts</name>
 
-  <modules>  
-    <module>jruby</module>
-    <module>jruby-core</module>
-    <module>jruby-complete</module>
-    <module>jruby-stdlib</module>
-    <module>jruby-dist</module>
-    <module>jruby-rake-plugin</module>
-  </modules>
-
+  <profiles>
+    <profile>
+      <id>all</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>main</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-stdlib</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>complete</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>rake-plugin</id>
+      <modules>
+        <module>jruby-rake-plugin</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>dist</id>
+      <modules>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

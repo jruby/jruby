@@ -337,11 +337,11 @@
     <base.java.version>1.6</base.java.version>
     <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
-    <tzdata.version>2013c</tzdata.version>
     <maven.test.skip>true</maven.test.skip>
     <tzdata.scope>provided</tzdata.scope>
     
     <!-- These are duplicated in default.build.properties -->
+    <tzdata.version>2013c</tzdata.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.12.0</rspec.version>
     <rspec-core.version>2.12.2</rspec-core.version>
@@ -375,6 +375,24 @@
                 <file>${basedir}/../build.properties</file>
               </files>
               <quiet>true</quiet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.2</version>
+        <executions>
+          <execution>
+            <id>jruby-revision</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <shortRevisionLength>7</shortRevisionLength>
+              <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
             </configuration>
           </execution>
         </executions>
@@ -486,6 +504,23 @@
             </configuration>
           </execution>
           <execution>
+            <id>compile-constants</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-Duser.language=en</compilerArg>
+                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+              </compilerArgs>
+              <includes>
+                <include>${Constants.java}</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
@@ -502,6 +537,9 @@
                 <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
+              <excludes>
+                <exclude>${Constants.java}</exclude>
+              </excludes>
             </configuration>
           </execution>
           <execution>
@@ -857,11 +895,11 @@
         </includes>
       </resource>
       <resource>
-        <directory>${project.basedir}/resources</directory>
+        <directory>${project.basedir}/src/main/resources</directory>
         <includes>
           <include>${Constants.java}</include>
         </includes>
-        <targetPath>${generated.sources}</targetPath>
+        <targetPath>${project.build.sourceDirectory}</targetPath>
         <filtering>true</filtering>
       </resource>
     </resources>
@@ -968,46 +1006,6 @@
     </pluginManagement>
   </build>
   <profiles>
-    <profile>
-      <id>constants</id>
-      <activation>
-        <file>
-          <missing>src/main/java/org/jruby/runtime/Constants.java</missing>
-        </file>
-      </activation>
-      <build>
-        <resources>
-          <resource>
-            <directory>${project.basedir}/src/main/resources</directory>
-            <includes>
-              <include>${Constants.java}</include>
-            </includes>
-            <targetPath>${project.build.sourceDirectory}</targetPath>
-            <filtering>true</filtering>
-          </resource>
-        </resources>
-        <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>1.2</version>
-        <executions>
-          <execution>
-            <id>jruby-revision</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>create</goal>
-            </goals>
-            <configuration>
-              <shortRevisionLength>7</shortRevisionLength>
-              <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>native</id>
       <activation>
