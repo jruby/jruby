@@ -301,7 +301,7 @@
         </java>
     </target>
 
-    <target name="test-jar-complete" depends="init,unzip-native-libs,jar-jruby-complete"
+    <target name="test-jar-complete" depends="init,jar-jruby-complete"
             description="Do some sanity checks on the complete jar.">
         <java jar="lib/jruby-complete.jar" fork="true" failonerror="true">
             <arg line="-v test/test_jar_complete.rb"/>
