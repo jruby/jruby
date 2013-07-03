@@ -37,17 +37,7 @@ see the next section to build JRuby first.
 
 ## Compiling from source
 
-You will need:
-
-* JDK 1.6 or greater
-* Apache Ant (http://jakarta.apache.org/ant/) 1.7.0 or later.
-
-To compile, just type:
-
-    ant
-
-This will create a `jruby.jar` file in the project `lib` directory.
-Add `bin` to your `$PATH`, and invoke `jruby`.
+See [BUILDING](BUILDING.md) for more information.
 
 ## Testing
 
