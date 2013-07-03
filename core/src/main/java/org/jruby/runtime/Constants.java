@@ -82,7 +82,7 @@ public final class Constants {
      */
     public static final int JIT_THRESHOLD = 50;
     
-    private static String jruby_revision = "7aba1c2";
+    private static String jruby_revision = "28c6fbc";
     private static String jruby_default_ruby_version = "1.9";
 
     @Deprecated
