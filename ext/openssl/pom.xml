@@ -110,8 +110,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <finalName>jopenssl</finalName>
-              <outputDirectory>${openssl.dir}</outputDirectory>
+              <outputFile>${openssl.dir}/jopenssl.jar</outputFile>
             </configuration>
           </execution>
         </executions>

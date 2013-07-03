@@ -108,8 +108,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <finalName>readline</finalName>
-              <outputDirectory>${readline.dir}</outputDirectory>
+              <outputFile>${readline.dir}/readline.jar</outputFile>
             </configuration>
           </execution>
         </executions>
