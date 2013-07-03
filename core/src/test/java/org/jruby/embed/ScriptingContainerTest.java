@@ -536,7 +536,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(reader, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/test/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 2);
         result = instance.parse(reader, filename);
@@ -546,7 +546,7 @@ public class ScriptingContainerTest {
         assertEquals(expStringResult, ret.toJava(String.class));
 
         // line number test
-        filename = basedir + "/test/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         reader = new FileReader(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
@@ -587,7 +587,7 @@ public class ScriptingContainerTest {
             t.printStackTrace(new PrintStream(outStream));
         }
 
-        filename = basedir + "/test/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
         IRubyObject ret = result.run();
         assertEquals(getNextYear(), ret.toJava(Integer.class));
@@ -596,7 +596,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         String[] planets = {"Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"};
         instance.put("@list", Arrays.asList(planets));
-        filename = "/test/org/jruby/embed/ruby/list_printer.rb";
+        filename = "/src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
         result = instance.parse(PathType.RELATIVE, filename);
         ret = result.run();
         String expResult = "Mercury >> Venus >> Earth >> Mars >> Jupiter >> Saturn >> Uranus >> Neptune: 8 in total";
@@ -651,7 +651,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(istream, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/test/org/jruby/embed/ruby/law_of_cosines.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         istream = new FileInputStream(filename);
         result = instance.parse(istream, filename);
         instance.put("@a", 1);
@@ -665,7 +665,7 @@ public class ScriptingContainerTest {
             assertEquals(60.0, angle, 0.00001);
         }
 
-        filename = basedir + "/test/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         istream = new FileInputStream(filename);
@@ -740,7 +740,7 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(reader, filename);
         assertEquals(expResult, result);
 
-        filename = basedir + "/test/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 3);
         result = instance.runScriptlet(reader, filename);
@@ -812,14 +812,14 @@ public class ScriptingContainerTest {
         }
 
         // absolute path
-        filename = basedir + "/test/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.ABSOLUTE, filename);
         // perhaps, a return type should be in a method argument
         // since implicit cast results in a Long type
         expResult = new Long(getNextYear());
         assertEquals(expResult, result);
 
-        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/test/org/jruby/embed");
+        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/src/test/ruby/org/jruby/embed");
         filename = "/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         assertEquals(expResult, result);
@@ -829,7 +829,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         String[] radioactive_isotopes = {"Uranium", "Plutonium", "Carbon", "Radium", "Einstenium", "Nobelium"};
         instance.put("@list", Arrays.asList(radioactive_isotopes));
-        filename = "/test/org/jruby/embed/ruby/list_printer.rb";
+        filename = "/src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         expResult = "Uranium >> Plutonium >> Carbon >> Radium >> Einstenium >> Nobelium: 6 in total";
         assertEquals(expResult, sw.toString().trim());

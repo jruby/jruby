@@ -57,8 +57,8 @@ import static org.junit.Assert.*;
  */
 public class ReaderInputStreamTest {
     private String basedir = System.getProperty("user.dir");
-    private String filename = basedir + "/test/org/jruby/embed/ruby/readertest.rb";
-    private String filename2 = basedir + "/test/test_yaml.rb";
+    private String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/readertest.rb";
+    private String filename2 = basedir + "/src/test/ruby/test_yaml.rb";
 
     static Logger logger0 = Logger.getLogger(MultipleScriptsRunner.class.getName());
     static Logger logger1 = Logger.getLogger(MultipleScriptsRunner.class.getName());

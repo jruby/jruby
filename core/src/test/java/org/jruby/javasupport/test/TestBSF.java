@@ -355,7 +355,7 @@ public class TestBSF extends RubyTestCase {
             // If we're running from within an IDE we may not have
             // the .rb files in our classpath. Try to find them
             // in the filesystem instead.
-            stream = new FileInputStream("test/org/jruby/javasupport/test/" + fileName);
+            stream = new FileInputStream("src/test/ruby/org/jruby/javasupport/test/" + fileName);
         }
         Reader in = new InputStreamReader(stream);
         StringBuffer result = new StringBuffer();

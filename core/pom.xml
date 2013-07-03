@@ -355,7 +355,6 @@
     <json.version>1.7.3</json.version>
   </properties>
   <build>
-    <testSourceDirectory>test</testSourceDirectory>
     <defaultGoal>package</defaultGoal>
     <plugins>
       <plugin>

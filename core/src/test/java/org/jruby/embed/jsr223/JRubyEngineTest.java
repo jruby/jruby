@@ -159,7 +159,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/proverbs_of_the_day.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/proverbs_of_the_day.rb";
         Reader reader = new FileReader(filename);
         
         instance.put("$day", -1);
@@ -269,7 +269,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/list_printer.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
         Reader reader = new FileReader(filename);
         ScriptContext context = new SimpleScriptContext();
 
@@ -324,7 +324,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/next_year.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         Reader reader = new FileReader(filename);
         
         long expResult = getNextYear();
@@ -383,7 +383,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/count_down.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/count_down.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = new SimpleBindings();
         bindings.put("@month", 6);
@@ -606,7 +606,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/tree.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/tree.rb";
         Reader reader = new FileReader(filename);
         Object receiver = instance.eval(reader);
         String method = "to_s";
@@ -622,7 +622,7 @@ public class JRubyEngineTest {
         bindings.put("color", "nondescript");
         bindings.put("bloomtime", "April - May");
         instance.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        filename = basedir + "/test/org/jruby/embed/ruby/tree_given_localvars.rb";
+        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/tree_given_localvars.rb";
         reader = new FileReader(filename);
         receiver = instance.eval(reader);
         expResult = "Cedar is a pyramidal shaped,";
@@ -646,7 +646,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/count_down.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/count_down.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = new SimpleBindings();
         bindings.put("@month", 6);
@@ -680,7 +680,7 @@ public class JRubyEngineTest {
             instance = (JRubyEngine) manager.getEngineByName("jruby");
         }
         Class returnType = RadioActiveDecay.class;
-        String filename = basedir + "/test/org/jruby/embed/ruby/radioactive_decay.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("$h", 5715); // half-life of Carbon
@@ -708,7 +708,7 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        String filename = basedir + "/test/org/jruby/embed/ruby/position_function.rb";
+        String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/position_function.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("initial_velocity", 30.0);
