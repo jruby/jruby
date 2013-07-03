@@ -448,7 +448,7 @@
             </goals>
             <configuration>
               <arguments>
-                <argument>-Djruby.home=${basedir}</argument>
+                <argument>-Djruby.home=${project.parent.basedir}</argument>
                 <argument>-classpath</argument>
                 <classpath />
                 <argument>org.jruby.Main</argument>
@@ -868,7 +868,7 @@
           <reuseForks>false</reuseForks>
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
-            <jruby.home>${basedir}/..</jruby.home>
+            <jruby.home>${project.parent.basedir}</jruby.home>
           </systemProperties>
           <testFailureIgnore>true</testFailureIgnore>
           <argLine>-Xmx${jruby.test.memory}</argLine>
@@ -883,7 +883,7 @@
     </plugins>
     <resources>
       <resource>
-        <directory>src/main/resources</directory>
+        <directory>src/main/ruby</directory>
         <includes>
           <include>**/*rb</include>
         </includes>
