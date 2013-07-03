@@ -15,7 +15,7 @@ task :test18 => "test:short18"
 namespace :test do
   desc "Compile test code"
   task :compile do
-    sh "javac -cp lib/jruby.jar:build_lib/junit.jar -d target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    sh "javac -cp lib/jruby.jar:target/junit.jar -d target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
   short_tests_18 = ['jruby', 'mri', 'rubicon']
@@ -297,10 +297,10 @@ namespace :test do
   
   namespace :junit do
     test_class_path = [
-      "build_lib/junit.jar",
-      "build_lib/livetribe-jsr223-2.0.6.jar",
-      "build_lib/bsf.jar",
-      "build_lib/commons-logging-1.1.1.jar",
+      "target/junit.jar",
+      "target/livetribe-jsr223.jar",
+      "target/bsf.jar",
+      "target/commons-logging.jar",
       "lib/jruby.jar",
       "target/test-classes",
       "test/requireTest.jar",
