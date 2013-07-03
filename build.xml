@@ -152,96 +152,7 @@
         <property name="copy-resources.hasrun" value="true"/>
     </target>
 
-    <target name="unzip-native-libs" unless="native-libs-uptodate">
-        <unzip-native-libs destination.dir="${lib.dir}/native"/>
-        <echo file="${lib.dir}/native/libs.OK"/>
-    </target>
-
-    <property name="jruby.jar.zip.includes" value="
-          ${asm.jar}
-          ${asm.commons.jar}
-          ${asm.util.jar}
-          ${asm.analysis.jar}
-          ${asm.tree.jar}
-          bytelist.jar
-          jnr-constants.jar
-          jcodings.jar
-          joni.jar
-          jnr-netdb.jar
-          jnr-posix.jar
-          jnr-x86asm.jar
-          jnr-ffi.jar
-          jnr-enxio.jar
-          jnr-unixsocket.jar
-          jffi.jar
-          jffi-i386-Linux.jar
-          jffi-x86_64-Linux.jar
-          jffi-Darwin.jar
-          jffi-i386-SunOS.jar
-          jffi-x86_64-SunOS.jar
-          jffi-ppc-AIX.jar
-          jffi-ppc-Linux.jar
-          jffi-ppc64-Linux.jar
-          jffi-sparc-SunOS.jar
-          jffi-sparcv9-SunOS.jar
-          jffi-i386-FreeBSD.jar
-          jffi-x86_64-FreeBSD.jar
-          jffi-i386-OpenBSD.jar
-          jffi-x86_64-OpenBSD.jar
-          jffi-i386-Windows.jar
-          jffi-x86_64-Windows.jar
-          jffi-s390x-Linux.jar
-          joda-time-${joda.time.version}.jar
-          snakeyaml-1.11.jar
-          yecht.jar
-          yydebug.jar
-          nailgun-0.7.1.jar
-          jzlib-1.1.2.jar
-          invokebinder.jar"/>
-
-    <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
-other than ASM, which is rewritten to avoid conflicts. -->
-    <target name="jar-jruby-core" depends="compile" unless="jar-jruby-core.hasrun">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                 classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-        <jarjar destfile="${lib.dir}/jruby-core.jar" compress="true" index="true">
-            <fileset dir="${jruby.classes.dir}">
-                <exclude name="**/*openssl*/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**/*"/>
-                <exclude name="org/jruby/demo/readline/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
-            </fileset>
-            <zipfileset src="${build.lib.dir}/${asm.jar}"/>
-            <zipfileset src="${build.lib.dir}/${asm.util.jar}"/>
-            <zipfileset src="${build.lib.dir}/${asm.tree.jar}"/>
-            <zipfileset src="${build.lib.dir}/${asm.commons.jar}"/>
-            <zipfileset src="${build.lib.dir}/${asm.analysis.jar}"/>
-            <zipfileset src="${build.lib.dir}/yecht.jar"/>
-            <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-            <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
-            <zipfileset src="${build.lib.dir}/yydebug.jar"/>
-            <metainf dir="spi">
-                <include name="services/**"/>
-            </metainf>
-            <manifest>
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Main-Class" value="org.jruby.Main"/>
-            </manifest>
-            <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-        </jarjar>
-        <antcall target="_osgify-jar_">
-            <param name="bndfile" value="jruby.bnd"/>
-            <param name="jar.wrap" value="${lib.dir}/jruby.jar"/>
-            <param name="bar.wrap" value="${lib.dir}/jruby.bar"/>
-        </antcall>
-
-        <property name="jar-jruby-core.hasrun" value="true"/>
-    </target>
-
     <target name="jar-jruby-dist" depends="jar-jruby">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                 classpath="${build.lib.dir}/jarjar-1.0.jar"/>
         <echo message="jarjaring for dist"/>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby.bnd"/>
@@ -311,7 +222,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <property name="jar-jruby-stdlib.hasrun" value="true"/>
     </target>
 
-    <target name="jar-jruby-complete" depends="compile" unless="jar-jruby-complete.hasrun"
+    <target name="jar-jruby-complete" depends="jar-jruby" unless="jar-jruby-complete.hasrun"
             description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
         <property name="mainclass" value="org.jruby.Main"/>
         <property name="filename" value="jruby-complete.jar"/>
@@ -346,28 +257,15 @@ other than ASM, which is rewritten to avoid conflicts. -->
         </java>
         <delete dir="${jar-complete-home}/lib/ruby/gems/shared/cache"/>
 
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                 classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-        <jarjar destfile="${dest.lib.dir}/${filename}">
-            <fileset dir="${jruby.classes.dir}">
-                <exclude name="**/*openssl*/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$openssl*"/>
-                <exclude name="org/jruby/ext/readline/**/*"/>
-                <exclude name="org/jruby/demo/readline/**/*"/>
-                <exclude name="org/jruby/gen/org$jruby$ext$readline*"/>
-            </fileset>
+        <jar destfile="${dest.lib.dir}/${filename}">
+            <zipfileset src="lib/jruby.jar"/>
             <fileset dir="${build.dir}/jar-complete"/>
-            <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
-
-            <metainf dir="spi">
-                <include name="services/**"/>
-            </metainf>
+            
             <manifest>
                 <attribute name="Built-By" value="${user.name}"/>
                 <attribute name="Main-Class" value="${mainclass}"/>
             </manifest>
-            <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-        </jarjar>
+        </jar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby-complete.bnd"/>
             <param name="jar.wrap" value="${dest.lib.dir}/${filename}"/>
@@ -377,13 +275,10 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <property name="jar-jruby-complete.hasrun" value="true"/>
     </target>
 
-    <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
-        <antcall target="jar-jruby-complete"/>
+    <target name="jar-console" depends="jar-jruby-complete" description="Create the jruby graphical console jar">
         
         <!-- roll the readline and jline jars into jruby-console.jar -->
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                 classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-        <jarjar destfile="lib/jruby-console.jar" update="true" compress="true">
+        <jar destfile="lib/jruby-console.jar" update="true" compress="true">
             <manifest>
                 <attribute name="Main-Class" value="org.jruby.demo.readline.IRBConsole"/>
             </manifest>
@@ -397,10 +292,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <antcall target="jar-jruby" inheritall="true"/>
     </target>
 
-    <target name="jar-core" depends="init"
-            description="Create the jruby-core.jar file for distribution. This version uses JarJar to rewrite some packages.">
-        <antcall target="jar-jruby-core" inheritall="true"/>
-    </target>
     <target name="jar-dist" depends="init"
             description="Create the jruby.jar file for distribution. This version uses JarJar to rewrite some packages.">
         <antcall target="jar-jruby-dist" inheritall="true"/>
@@ -623,7 +514,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
     ***************************************************************************
     -->
 
-    <target name="jar-jruby" depends="init, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
+    <target name="jar-jruby" depends="init" unless="jar-up-to-date, jar-jruby.hasrun">
         <exec executable="mvn" failonerror="true">
             <arg line="-q"/>
             <arg line="-DskipTests"/>
