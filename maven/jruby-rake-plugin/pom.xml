@@ -29,8 +29,8 @@
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-complete</artifactId>
-      <version>1.7.5.dev</version>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
