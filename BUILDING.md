@@ -77,7 +77,7 @@ mvn -Ptest test
 
 ### Just Like CI
 
-Our CI runs the following three commands (in essence):
+Our [CI](https://travis-ci.org/jruby/jruby) runs the following three commands (in essence):
 
 ```
 rake test:extended
