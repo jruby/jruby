@@ -12,6 +12,7 @@
   <modules>
     <module>ext</module>
     <module>core</module>
+    <module>test</module>
   </modules>
 
   <build>

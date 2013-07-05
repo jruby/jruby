@@ -42,7 +42,7 @@
         <!-- First, run up through integration phases -->
         <exec executable="mvn">
             <arg line="-q"/>
-            <arg line="verify"/>
+            <arg line="package"/>
         </exec>
         
         <!-- Then run Ruby tests from Rake -->

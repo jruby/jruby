@@ -14,7 +14,7 @@
   <repositories>
     <repository>
       <id>localrepo</id>
-      <url>file:../localrepo</url>
+      <url>file:${basedir}/../localrepo</url>
     </repository>
     <repository>
       <id>rubygems-releases</id>
@@ -32,6 +32,16 @@
     </repository>
   </repositories>
   <pluginRepositories>
+    <pluginRepository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
     <pluginRepository>
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
@@ -246,6 +256,30 @@
       <version>${jruby-launcher.version}</version>
       <type>gem</type>
     </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest</artifactId>
+      <version>${minitest.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest-excludes</artifactId>
+      <version>${minitest-excludes.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>${rdoc.version}</version>
+      <type>gem</type>
+    </dependency>
   </dependencies>
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -257,7 +291,11 @@
     <rspec-mocks.version>2.12.2</rspec-mocks.version>
     <diff-lcs.version>1.1.3</diff-lcs.version>
     <jruby-launcher.version>1.0.18.pre1</jruby-launcher.version>
-    <gem.home>../lib/ruby/gems</gem.home>
+    <minitest.version>4.7.5</minitest.version>
+    <minitest-excludes.version>1.0.2</minitest-excludes.version>
+    <rdoc.version>3.12</rdoc.version>
+    <json.version>1.7.3</json.version>
+    <gem.home>../lib/ruby/gems/shared</gem.home>
   </properties>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
