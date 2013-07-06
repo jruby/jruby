@@ -1338,7 +1338,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setWriter(writer);
 
-        String filename = System.getProperty("user.dir") + "/test/quiet.rb";
+        String filename = System.getProperty("user.dir") + "/src/test/ruby/quiet.rb";
         sw = new StringWriter();
         Writer esw = new StringWriter();
         instance.setWriter(sw);

@@ -49,7 +49,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
     private static final Logger LOG = Logger.getLogger("AnnotationBinder");
-    public static final String SRC_GEN_DIR = "build/src_gen/org/jruby/gen/";
+    public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<CharSequence>();
     private PrintStream out;
     private static final boolean DEBUG = false;
@@ -61,7 +61,7 @@ public class AnnotationBinder extends AbstractProcessor {
         }
 
         try {
-            FileWriter fw = new FileWriter("build/src_gen/annotated_classes.txt");
+            FileWriter fw = new FileWriter("target/generated-sources/annotated_classes.txt");
             for (CharSequence name : classNames) {
                 fw.write(name.toString());
                 fw.write('\n');

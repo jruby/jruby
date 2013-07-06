@@ -149,7 +149,6 @@
       <artifactId>yydebug</artifactId>
       <version>1.0</version>
       <type>jar</type>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bsf</groupId>
@@ -216,7 +215,7 @@
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.plugins.version>1.0.0-beta</jruby.plugins.version>
-    <anno.sources>${project.basedir}/build/src_gen</anno.sources>
+    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
     <unsafe.jar>${project.build.directory}/unsafe.jar</unsafe.jar>
     <generated.sources>${project.build.directory}/generated-sources</generated.sources>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
@@ -445,15 +444,6 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>sun.misc</groupId>
-                  <artifactId>unsafe-mock</artifactId>
-                  <version>1.0-SNAPSHOT</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>unsafe.jar</destFileName>
-                </artifactItem>
-                <artifactItem>
                   <groupId>biz.aQute</groupId>
                   <artifactId>bnd</artifactId>
                   <version>0.0.384</version>
@@ -463,31 +453,13 @@
                   <destFileName>bnd.jar</destFileName>
                 </artifactItem>
                 <artifactItem>
-                  <groupId>junit</groupId>
-                  <artifactId>junit</artifactId>
-                  <version>4.11</version>
+                  <groupId>sun.misc</groupId>
+                  <artifactId>unsafe-mock</artifactId>
+                  <version>1.0-SNAPSHOT</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>junit.jar</destFileName>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.livetribe</groupId>
-                  <artifactId>livetribe-jsr223</artifactId>
-                  <version>2.0.7</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>livetribe-jsr223.jar</destFileName>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.apache.bsf</groupId>
-                  <artifactId>bsf</artifactId>
-                  <version>1.0</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>bsf.jar</destFileName>
+                  <destFileName>unsafe.jar</destFileName>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -575,7 +547,7 @@
                   <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                 </relocation>
               </relocations>
-              <outputFile>${project.parent.basedir}/lib/jruby.jar</outputFile>
+              <outputFile>${basedir}/../lib/jruby.jar</outputFile>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.jruby.Main</mainClass>
@@ -616,12 +588,13 @@
           <reuseForks>false</reuseForks>
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
-            <jruby.home>${project.parent.basedir}</jruby.home>
+            <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
           <testFailureIgnore>true</testFailureIgnore>
           <argLine>-Xmx${jruby.test.memory}</argLine>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
           <argLine>-Dfile.encoding=UTF-8</argLine>
+          <argLine>-Djruby.compile.mode=OFF</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
