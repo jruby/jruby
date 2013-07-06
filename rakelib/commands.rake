@@ -26,9 +26,9 @@ def initialize_paths
 
   ant.path(:id => "test.class.path") do
     pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223-2.0.6.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging-1.1.1.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging.jar')
     #  pathelement :path => "${java.class.path}"/>
     pathelement :path => File.join(LIB_DIR, 'jruby.jar')
     pathelement :location => TEST_CLASSES_DIR
