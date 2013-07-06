@@ -915,8 +915,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject rename(ThreadContext context, IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         Ruby runtime = context.runtime;
-        RubyString oldNameString = RubyString.stringValue(oldName);
-        RubyString newNameString = RubyString.stringValue(newName);
+        RubyString oldNameString = get_path(context, oldName);
+        RubyString newNameString = get_path(context, newName);
 
         String newNameJavaString = newNameString.getUnicodeValue();
         String oldNameJavaString = oldNameString.getUnicodeValue();

@@ -1174,9 +1174,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        StringSupport.checkStringSafety(context.runtime, args[0]);
+        RubyString path = RubyFile.get_path(context, args[0]);
+        StringSupport.checkStringSafety(context.runtime, path);
 
-        return sysopenCommon(recv, args, block, RubyFile.get_path(context, args[0]));
+        return sysopenCommon(recv, args, block, path);
     }
 
     private static IRubyObject sysopenCommon(IRubyObject recv, IRubyObject[] args, Block block, IRubyObject pathString) {
