@@ -213,15 +213,11 @@
     </dependency>
   </dependencies>
   <properties>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-beta</jruby.plugins.version>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
     <unsafe.jar>${project.build.directory}/unsafe.jar</unsafe.jar>
-    <generated.sources>${project.build.directory}/generated-sources</generated.sources>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <base.java.version>1.6</base.java.version>
     <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>

@@ -282,21 +282,7 @@
     </dependency>
   </dependencies>
   <properties>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-beta-1-SNAPSHOT</jruby.plugins.version>
-    <rake.version>10.1.0</rake.version>
-    <rspec.version>2.12.0</rspec.version>
-    <rspec-core.version>2.12.2</rspec-core.version>
-    <rspec-expectations.version>2.12.1</rspec-expectations.version>
-    <rspec-mocks.version>2.12.2</rspec-mocks.version>
-    <diff-lcs.version>1.1.3</diff-lcs.version>
-    <jruby-launcher.version>1.0.18.pre1</jruby-launcher.version>
-    <minitest.version>4.7.5</minitest.version>
-    <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <rdoc.version>3.12</rdoc.version>
-    <json.version>1.7.3</json.version>
-    <gem.home>../lib/ruby/gems/shared</gem.home>
-    <base.java.version>1.6</base.java.version>
+    <gem.home>${basedir}/../lib/ruby/gems/shared</gem.home>
   </properties>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
