@@ -158,9 +158,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>nailgun</groupId>
-      <artifactId>nailgun</artifactId>
-      <version>0.7.1</version>
+      <groupId>com.martiansoftware</groupId>
+      <artifactId>nailgun-server</artifactId>
+      <version>0.9.1</version>
       <type>jar</type>
     </dependency>
     <dependency>
