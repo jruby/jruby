@@ -145,9 +145,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jay</groupId>
-      <artifactId>yydebug</artifactId>
-      <version>1.0</version>
+      <groupId>org.jruby</groupId>
+      <artifactId>jay-yydebug</artifactId>
+      <version>1.0-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
