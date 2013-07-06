@@ -225,10 +225,8 @@
     <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
+    <tzdata.version>2013d</tzdata.version>
     <tzdata.scope>provided</tzdata.scope>
-    
-    <!-- These are duplicated in default.build.properties -->
-    <tzdata.version>2013c</tzdata.version>
   </properties>
   <build>
     <defaultGoal>package</defaultGoal>
