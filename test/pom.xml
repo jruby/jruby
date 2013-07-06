@@ -296,6 +296,7 @@
     <rdoc.version>3.12</rdoc.version>
     <json.version>1.7.3</json.version>
     <gem.home>../lib/ruby/gems/shared</gem.home>
+    <base.java.version>1.6</base.java.version>
   </properties>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
@@ -337,6 +338,20 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+        <configuration>
+          <encoding>utf-8</encoding>
+          <debug>true</debug>
+          <verbose>true</verbose>
+          <fork>true</fork>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+          <source>${base.java.version}</source>
+          <target>${base.java.version}</target>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
