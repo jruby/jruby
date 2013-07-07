@@ -14,7 +14,7 @@
   <repositories>
     <repository>
       <id>localrepo</id>
-      <url>file:${basedir}/../localrepo</url>
+      <url>file:${jruby.basedir}/localrepo</url>
     </repository>
     <repository>
       <id>rubygems-releases</id>
@@ -140,7 +140,8 @@
     </dependency>
   </dependencies>
   <properties>
-    <gem.home>${basedir}/../lib/ruby/gems/shared</gem.home>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
+    <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
   </properties>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
@@ -157,8 +158,8 @@
             <configuration>
               <gemPath>${gem.home}</gemPath>
               <gemHome>${gem.home}</gemHome>
-              <libDirectory>../lib</libDirectory>
-              <jrubyJvmArgs>-Djruby.home=${basedir}/..</jrubyJvmArgs>
+              <libDirectory>${jruby.basedir}/lib</libDirectory>
+              <jrubyJvmArgs>-Djruby.home=${jruby.basedir}</jrubyJvmArgs>
             </configuration>
           </execution>
         </executions>
@@ -222,41 +223,6 @@
         </executions>
       </plugin>
 <!--
-      <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>rake-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-        <executions>
-          <execution>
-            <phase>test</phase>
-            <goals><goal>rake</goal></goals>
-            <configuration>
-              <args>-T</args>
-              <jrubyJvmArgs>-Djruby.home=${basedir}../</jrubyJvmArgs>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>rubygems</groupId>
-            <artifactId>rake</artifactId>
-            <version>${rake.version}</version>
-            <type>gem</type>
-          </dependency>
-          <dependency>
-            <groupId>rubygems</groupId>
-            <artifactId>rspec</artifactId>
-            <version>${rspec.version}</version>
-            <type>gem</type>
-          </dependency>
-          <dependency>
-            <groupId>rubygems</groupId>
-            <artifactId>jruby-launcher</artifactId>
-            <version>${jruby-launcher.version}</version>
-            <type>gem</type>
-          </dependency>
-        </dependencies>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

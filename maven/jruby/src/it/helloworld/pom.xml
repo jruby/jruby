@@ -7,9 +7,10 @@
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>1.7.5.dev</version>
-    </dependency>       
+      <artifactId>jruby</artifactId>
+      <version>@project.version@</version>
+      <type>pom</type>
+    </dependency>
   </dependencies>
 
   <build>

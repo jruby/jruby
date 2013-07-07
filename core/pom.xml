@@ -14,7 +14,7 @@
   <repositories>
     <repository>
       <id>localrepo</id>
-      <url>file:${basedir}/../localrepo</url>
+      <url>file:${jruby.basedir}/localrepo</url>
     </repository>
     <repository>
       <id>sonatype</id>
@@ -215,6 +215,7 @@
     <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
     <tzdata.version>2012j</tzdata.version>
     <joda-time.version>2.2</joda-time.version>
@@ -235,8 +236,8 @@
             </goals>
             <configuration>
               <files>
-                <file>${basedir}/../default.build.properties</file>
-                <file>${basedir}/../build.properties</file>
+                <file>${jruby.basedir}/default.build.properties</file>
+                <file>${jruby.basedir}/build.properties</file>
               </files>
               <quiet>true</quiet>
             </configuration>
@@ -508,13 +509,6 @@
             <goals>
               <goal>jar</goal>
             </goals>
-            <configuration>
-              <archive>
-                <manifest>
-                  <mainClass>org.jruby.Main</mainClass>
-                </manifest>
-              </archive>
-            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -524,7 +518,7 @@
         <version>2.1</version>
         <executions>
           <execution>
-            <id>in_phase_package</id>
+            <id>pack jruby.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
@@ -536,12 +530,35 @@
                   <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                 </relocation>
               </relocations>
-              <outputFile>${basedir}/../lib/jruby.jar</outputFile>
+              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.jruby.Main</mainClass>
                 </transformer>
               </transformers>
+            </configuration>
+          </execution>
+          <execution>
+            <id>pack jruby.artifact</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <relocations>
+<!--
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+-->
+              </relocations>
+              <artifactSet>
+                <includes>
+                  <include>org.ow2.asm:*</include>
+                  <include>yecht:yecht</include>
+                </includes>
+              </artifactSet>
             </configuration>
           </execution>
         </executions>
@@ -557,9 +574,9 @@
             <configuration>
               <tasks>
                 <exec executable="/bin/sh" osfamily="unix">
-                  <arg line="-c 'test -f &quot;${basedir}/../bin/jruby&quot; || cp &quot;${basedir}/../bin/jruby.bash&quot; &quot;${basedir}/../bin/jruby&quot;'"/>
+                  <arg line="-c 'test -f &quot;${jruby.basedir}/bin/jruby&quot; || cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'"/>
                 </exec>
-                <chmod perm="755" file="${basedir}/../bin/jruby"/>
+                <chmod perm="755" file="${jruby.basedir}/bin/jruby"/>
               </tasks>
             </configuration>
             <goals>
@@ -866,6 +883,7 @@
       <id>native</id>
       <activation>
         <file>
+          <!-- can not use properties here -->
           <missing>../lib/jni</missing>
         </file>
       </activation>
@@ -890,7 +908,7 @@
                   <type>jar</type>
                   <classifier>native</classifier>
                   <overWrite>false</overWrite>
-                  <outputDirectory>${basedir}/../lib</outputDirectory>
+                  <outputDirectory>${jruby.basedir}/lib</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>

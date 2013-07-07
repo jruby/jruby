@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>JRuby Main Maven Artifact</name>
 
   <dependencies>
@@ -18,30 +18,40 @@
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
     </dependency>
--->
   </dependencies>
-<!--
   <properties>
-    <ant.target>jar-dist</ant.target>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
   </properties>
-
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>1.5</version>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <preBuildHookScript>setup.bsh</preBuildHookScript>
+          <postBuildHookScript>verify.bsh</postBuildHookScript>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
--->
 </project>
