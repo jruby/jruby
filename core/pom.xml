@@ -106,19 +106,6 @@
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>joda-timezones</artifactId>
-      <version>${tzdata.version}</version>
-      <type>jar</type>
-      <scope>${tzdata.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.2</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
       <version>1.1.2</version>
@@ -223,7 +210,7 @@
     <maven.test.skip>true</maven.test.skip>
     <!-- this one needs to match the version packed with joda-time -->
     <tzdata.version>2012j</tzdata.version>
-    <tzdata.scope>provided</tzdata.scope>
+    <joda-time.version>2.2</joda-time.version>
   </properties>
   <build>
     <defaultGoal>package</defaultGoal>
@@ -911,6 +898,27 @@
       <properties>
         <maven.test.skip>false</maven.test.skip>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+          <version>${joda-time.version}</version>
+          <type>jar</type>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+          <version>${joda-time.version}</version>
+          <type>jar</type>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>tzdata</id>
@@ -920,9 +928,25 @@
         </property>
       </activation>
       <properties>
-        <tzdata.scope>runtime</tzdata.scope>
         <tzdata.version>2013d</tzdata.version>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.jruby</groupId>
+          <artifactId>joda-timezones</artifactId>
+          <version>${tzdata.version}</version>
+          <type>jar</type>
+          <scope>runtime</scope>
+        </dependency>
+        <!-- this MUST come after the joda-timezone for the shade plugin
+             to pack it correctly -->
+        <dependency>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+          <version>${joda-time.version}</version>
+          <type>jar</type>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>
