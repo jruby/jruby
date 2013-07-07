@@ -61,13 +61,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.googlecode.jarjar</groupId>
-      <artifactId>jarjar</artifactId>
-      <version>1.1</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.8.4</version>
@@ -75,37 +68,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jay</groupId>
-      <artifactId>yydebug</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>1.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>coro</groupId>
-      <artifactId>coro-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>unsafe-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>jsr292</groupId>
-      <artifactId>jsr292-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -130,114 +95,7 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
-<!--
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>${rake.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec</artifactId>
-      <version>${rspec.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec-core</artifactId>
-      <version>${rspec-core.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec-expectations</artifactId>
-      <version>${rspec-expectations.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec-mocks</artifactId>
-      <version>${rspec-mocks.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>diff-lcs</artifactId>
-      <version>${diff-lcs.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jruby-launcher</artifactId>
-      <version>${jruby-launcher.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest</artifactId>
-      <version>${minitest.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest-excludes</artifactId>
-      <version>${minitest-excludes.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>json</artifactId>
-      <version>${json.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
--->
-    <!--
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>tzinfo</artifactId>
-      <version>${tzinfo.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jruby-memcache-client</artifactId>
-      <version>${jruby-memcache-client.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>i18n</artifactId>
-      <version>${i18n.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>mocha</artifactId>
-      <version>${mocha.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>-->
+
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rake</artifactId>
