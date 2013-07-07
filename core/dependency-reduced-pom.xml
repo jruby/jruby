@@ -332,7 +332,7 @@
                 <artifactItem>
                   <groupId>com.headius</groupId>
                   <artifactId>unsafe-mock</artifactId>
-                  <version>1.0-SNAPSHOT</version>
+                  <version>8.0</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
@@ -714,13 +714,13 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>coro-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>unsafe-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>8.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
