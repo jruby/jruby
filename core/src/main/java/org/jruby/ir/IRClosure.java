@@ -17,7 +17,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
-import org.jruby.ir.instructions.ReceiveRestArgBase;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -164,13 +164,13 @@ public class IRClosure extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate block arguments
-        if (i instanceof ReceiveRestArgBase) blockArgs.add(new Splat(((ReceiveRestArgBase)i).getResult()));
+        if (i instanceof ReceiveRestArgInstr) blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
         else if (i instanceof ReceiveArgBase) blockArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
     }
 
-    public Operand[] getBlockArgs() { 
+    public Operand[] getBlockArgs() {
         return blockArgs.toArray(new Operand[blockArgs.size()]);
     }
 

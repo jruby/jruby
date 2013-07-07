@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveRestArgBase;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
@@ -42,7 +42,7 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveRestArgBase) callArgs.add(new Splat(((ReceiveRestArgBase)i).getResult()));
+        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
         else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);

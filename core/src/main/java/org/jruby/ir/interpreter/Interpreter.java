@@ -31,11 +31,11 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveOptArgBase;
-import org.jruby.ir.instructions.ReceiveRestArgBase;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
@@ -413,14 +413,14 @@ public class Interpreter {
                     break;
                 }
                 case RECV_OPT_ARG: {
-                    ReceiveOptArgBase ra = (ReceiveOptArgBase)instr;
-                    result = ra.receiveOptArg(args);
+                    ReceiveOptArgInstr ra = (ReceiveOptArgInstr)instr;
+                    result = ra.receiveOptArg(args, 0);
                     resultVar = ra.getResult();
                     break;
                 }
                 case RECV_REST_ARG: {
-                    ReceiveRestArgBase ra = (ReceiveRestArgBase)instr;
-                    result = ra.receiveRestArg(runtime, args);
+                    ReceiveRestArgInstr ra = (ReceiveRestArgInstr)instr;
+                    result = ra.receiveRestArg(runtime, args, 0);
                     resultVar = ra.getResult();
                     break;
                 }

@@ -16,8 +16,7 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
-import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -594,7 +593,7 @@ public class IRBuilder {
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
-            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr18(v, argIndex) : new ReceivePreReqdArgInstr(v, argIndex)));
+            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, argIndex)));
         }
     }
 
@@ -1718,7 +1717,7 @@ public class IRBuilder {
             String argName = n.getName();
             Variable av = s.getLocalVariable(argName, 0);
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
-            s.addInstr(new ReceiveOptArgInstr18(av, argIndex));
+            s.addInstr(new ReceiveOptArgInstr(av, argIndex-j, argIndex-j, j));
             s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
             build(n, s);
             s.addInstr(new LabelInstr(l));
@@ -1762,7 +1761,7 @@ public class IRBuilder {
             String argName = argsNode.getRestArgNode().getName();
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName);
             argName = (argName.equals("")) ? "%_arg_array" : argName;
-            s.addInstr(new ReceiveRestArgInstr18(s.getLocalVariable(argName, 0), argIndex));
+            s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex, argIndex));
         }
 
         // Receive block

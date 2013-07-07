@@ -26,7 +26,9 @@ import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
+import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
@@ -36,9 +38,7 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveOptArgInstr19;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveRestArgInstr19;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -55,11 +55,11 @@ public class IRBuilder19 extends IRBuilder {
     public IRBuilder19(IRManager manager) {
         super(manager);
     }
-    
+
     @Override
     public boolean is1_9() {
         return true;
-    }    
+    }
 
     @Override
     protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
@@ -194,7 +194,7 @@ public class IRBuilder19 extends IRBuilder {
                 Variable av = s.getNewLocalVariable(argName, 0);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                s.addInstr(new ReceiveOptArgInstr19(av, argIndex, required+j+1));
+                s.addInstr(new ReceiveOptArgInstr(av, required, numPreReqd, j));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                 build(n.getValue(), s);
                 s.addInstr(new LabelInstr(l));
@@ -213,7 +213,7 @@ public class IRBuilder19 extends IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            s.addInstr(new ReceiveRestArgInstr19(s.getNewLocalVariable(argName, 0), argIndex, required, opt));
+            s.addInstr(new ReceiveRestArgInstr(s.getNewLocalVariable(argName, 0), required + opt, argIndex));
             argIndex++;
         }
 

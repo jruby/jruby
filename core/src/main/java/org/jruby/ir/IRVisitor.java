@@ -13,13 +13,9 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
-import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
 import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveOptArgInstr19;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveRestArgInstr19;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -136,7 +132,9 @@ public abstract class IRVisitor {
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) { error(receiveclosureinstr); }
     public void ReceiveExceptionInstr(ReceiveExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }
+    public void ReceiveOptArgInstr(ReceiveOptArgInstr receiveoptarginstr) { error(receiveoptarginstr); }
     public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr receiveprereqdarginstr) { error(receiveprereqdarginstr); }
+    public void ReceiveRestArgInstr(ReceiveRestArgInstr receiverestarginstr) { error(receiverestarginstr); }
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) { error(receiveselfinstr); }
     public void RecordEndBlockInstr(RecordEndBlockInstr recordendblockinstr) { error(recordendblockinstr); }
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) { error(reqdargmultipleasgninstr); }
@@ -169,16 +167,10 @@ public abstract class IRVisitor {
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) { error(restoreerrorinfoinstr); }
     public void SuperMethodBoundInstr(SuperMethodBoundInstr supermethodboundinstr) { error(supermethodboundinstr); }
 
-    // ruby 1.8 specific
-    public void ReceiveOptArgInstr18(ReceiveOptArgInstr18 receiveoptarginstr) { error(receiveoptarginstr); }
-    public void ReceiveRestArgInstr18(ReceiveRestArgInstr18 receiverestarginstr) { error(receiverestarginstr); }
-
     // ruby 1.9 specific
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) { error(buildlambdainstr); }
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) { error(getencodinginstr); }
-    public void ReceiveOptArgInstr19(ReceiveOptArgInstr19 receiveoptarginstr) { error(receiveoptarginstr); }
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivepostreqdarginstr) { error(receivepostreqdarginstr); }
-    public void ReceiveRestArgInstr19(ReceiveRestArgInstr19 receiverestarginstr) { error(receiverestarginstr); }
 
     // operands
     public void Array(Array array) { error(array); }

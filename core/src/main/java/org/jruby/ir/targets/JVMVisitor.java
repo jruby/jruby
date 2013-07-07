@@ -29,13 +29,9 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
-import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
 import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveOptArgInstr19;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ruby19.ReceiveRestArgInstr19;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -921,6 +917,16 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ReceiveOptArgInstr(ReceiveOptArgInstr receiveoptarginstr) {
+        super.ReceiveOptArgInstr(receiveoptarginstr);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void ReceiveRestArgInstr(ReceiveRestArgInstr receiverestarginstr) {
+        super.ReceiveRestArgInstr(receiverestarginstr);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {
         throw new RuntimeException("Self instr should have been stripped: " + receiveselfinstr);
     }
@@ -1164,19 +1170,6 @@ public class JVMVisitor extends IRVisitor {
         super.SuperMethodBoundInstr(supermethodboundinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
-    // ruby 1.8 specific
-    @Override
-    public void ReceiveOptArgInstr18(ReceiveOptArgInstr18 receiveoptarginstr) {
-        // SSS FIXME: No support for 1.8 mode in the compiler at this time
-        throw new RuntimeException("1.8 mode not supported by the IR JIT at this time: " + receiveoptarginstr);
-    }
-
-    @Override
-    public void ReceiveRestArgInstr18(ReceiveRestArgInstr18 receiverestarginstr) {
-        // SSS FIXME: No support for 1.8 mode in the compiler at this time
-        throw new RuntimeException("1.8 mode not supported by the IR JIT at this time: " + receiverestarginstr);
-    }
-
     // ruby 1.9 specific
     @Override
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) {
@@ -1189,18 +1182,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ReceiveOptArgInstr19(ReceiveOptArgInstr19 receiveoptarginstr) {
-        super.ReceiveOptArgInstr19(receiveoptarginstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivepostreqdarginstr) {
         super.ReceivePostReqdArgInstr(receivepostreqdarginstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void ReceiveRestArgInstr19(ReceiveRestArgInstr19 receiverestarginstr) {
-        super.ReceiveRestArgInstr19(receiverestarginstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     // operands
