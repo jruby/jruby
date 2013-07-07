@@ -164,7 +164,7 @@
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>coro</groupId>
+      <groupId>com.headius</groupId>
       <artifactId>coro-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
       <type>jar</type>
