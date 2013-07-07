@@ -159,6 +159,7 @@
               <gemPath>${gem.home}</gemPath>
               <gemHome>${gem.home}</gemHome>
               <binDirectory>${jruby.basedir}/bin</binDirectory>
+              <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
               <libDirectory>${jruby.basedir}/lib</libDirectory>
               <jrubyJvmArgs>-Djruby.home=${jruby.basedir}</jrubyJvmArgs>
             </configuration>
