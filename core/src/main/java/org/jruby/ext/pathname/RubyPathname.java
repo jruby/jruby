@@ -34,6 +34,7 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -286,6 +287,11 @@ public class RubyPathname extends RubyObject {
         } else {
             return context.nil;
         }
+    }
+
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash(ThreadContext context) {
+        return path.hash();
     }
 
     @Override
