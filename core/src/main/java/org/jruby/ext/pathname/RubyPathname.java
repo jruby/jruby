@@ -424,12 +424,8 @@ public class RubyPathname extends RubyObject {
     private static RubyArray mapToPathnames(ThreadContext context, IRubyObject ary) {
         RubyArray paths = ary.convertToArray();
         for (int i = 0; i < paths.size(); i++) {
-            RubyString path;
-            if (paths.get(i) instanceof String) // TODO
-                path = context.runtime.newString((String) paths.get(i));
-            else
-                path = (RubyString) paths.get(i);
-            paths.set(i, newInstance(context, path));
+            RubyString path = paths.eltOk(i).convertToString();
+            paths.store(i, newInstance(context, path));
         }
         return paths;
     }
