@@ -221,7 +221,8 @@
     <jruby.test.memory>1024M</jruby.test.memory>
     <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
-    <tzdata.version>2013d</tzdata.version>
+    <!-- this one needs to match the version packed with joda-time -->
+    <tzdata.version>2012j</tzdata.version>
     <tzdata.scope>provided</tzdata.scope>
   </properties>
   <build>
@@ -913,8 +914,14 @@
     </profile>
     <profile>
       <id>tzdata</id>
+      <activation>
+        <property>
+          <name>tzdata.version</name>
+        </property>
+      </activation>
       <properties>
         <tzdata.scope>runtime</tzdata.scope>
+        <tzdata.version>2013d</tzdata.version>
       </properties>
     </profile>
   </profiles>
