@@ -96,7 +96,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>sun.misc</groupId>
+      <groupId>com.headius</groupId>
       <artifactId>unsafe-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
       <type>jar</type>
