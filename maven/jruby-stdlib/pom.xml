@@ -26,4 +26,55 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
+    <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
+  </properties>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>${gem.home}</directory>
+        <targetPath>${jruby.complete.gems}</targetPath>
+        <includes>
+          <include>gems/rake-${rake.version}/**/*</include>
+          <include>specifications/rake-${rake.version}.gemspec</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${jruby.basedir}</directory>
+        <targetPath>${jruby.complete.home}</targetPath>
+        <includes>
+          <include>bin/jruby</include>
+          <include>bin/*jruby*</include>
+          <include>bin/*gem*</include>
+          <include>bin/*ri*</include>
+          <include>bin/*rdoc*</include>
+          <include>bin/*irb*</include>
+          <include>bin/generate_yaml_index.rb</include>
+          <include>bin/testrb</include>
+          <include>bin/ast*</include>
+          <include>bin/spec.bat</include>
+          <include>bin/rake</include>
+          <include>bin/rake.bat</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${jruby.basedir}</directory>
+        <targetPath>${jruby.complete.home}</targetPath>
+        <includes>
+          <include>lib/ruby/1.8/**</include>
+          <include>lib/ruby/1.9/**</include>
+          <include>lib/ruby/2.0/**</include>
+          <include>lib/ruby/shared/**</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+    </plugins>
+  </build>
 </project>
