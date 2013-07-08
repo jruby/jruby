@@ -204,7 +204,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>2.5.1</version>
         <executions>
           <execution>
             <id>anno</id>
@@ -232,11 +232,7 @@
               <goal>compile</goal>
             </goals>
             <configuration>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-Duser.language=en</compilerArg>
-                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-              </compilerArgs>
+              <compilerArgument>-XDignore.symbol.file=true -J-Duser.language=en -J-Dfile.encoding=UTF-8</compilerArgument>
               <includes>
                 <include>${Constants.java}</include>
               </includes>
@@ -252,13 +248,7 @@
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
               </annotationProcessors>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-Duser.language=en</compilerArg>
-                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
-                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
-              </compilerArgs>
+              <compilerArgument>-XDignore.symbol.file=true -J-Duser.language=en -J-Dfile.encoding=UTF-8 -J-Xbootclasspath/p:${unsafe.jar} -J-Xmx${jruby.compile.memory}</compilerArgument>
               <excludes>
                 <exclude>${Constants.java}</exclude>
               </excludes>
@@ -271,13 +261,7 @@
               <goal>compile</goal>
             </goals>
             <configuration>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-Duser.language=en</compilerArg>
-                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
-                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
-              </compilerArgs>
+              <compilerArgument>-XDignore.symbol.file=true -J-Duser.language=en -J-Dfile.encoding=UTF-8 -J-Xbootclasspath/p:${unsafe.jar} -J-Xmx${jruby.compile.memory}</compilerArgument>
               <includes>
                 <include>org/jruby/gen/**/*.java</include>
               </includes>
@@ -441,7 +425,6 @@
               <relocations />
               <artifactSet>
                 <includes>
-                  <include>org.ow2.asm:*</include>
                   <include>yecht:yecht</include>
                 </includes>
               </artifactSet>
