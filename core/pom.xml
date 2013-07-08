@@ -554,7 +554,7 @@
               </relocations>
               <artifactSet>
                 <includes>
-                  <include>org.ow2.asm:*</include>
+                  <!--include>org.ow2.asm:*</include-->
                   <include>yecht:yecht</include>
                 </includes>
               </artifactSet>
