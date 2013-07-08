@@ -1567,6 +1567,9 @@ public final class Ruby {
                         createSysErr(c.intValue(), c.name());
                     }
                 }
+
+                // map ENOSYS to NotImplementedError
+                errnos.put(Errno.ENOSYS.intValue(), notImplementedError);
             } catch (Exception e) {
                 // dump the trace and continue
                 // this is currently only here for Android, which seems to have
