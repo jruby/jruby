@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Arrays;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -38,12 +39,17 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.CompiledBlock19;
+import org.jruby.runtime.CompiledBlockCallback19;
+import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
@@ -175,61 +181,26 @@ public class RubyMethod extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         Ruby runtime = context.runtime;
-        DynamicScope currentScope = context.getCurrentScope();
-        MethodBlock mb = new MethodBlock(this, currentScope.getStaticScope()) {
+        CompiledBlockCallback19 callback = new CompiledBlockCallback19() {
             @Override
-            public IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block block) {
-                return bmcall(value, method, self, block);
+            public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+                return method.call(context, receiver, originModule, originName, args, block);
+            }
+
+            @Override
+            public String getFile() {
+                return getFilename();
+            }
+
+            @Override
+            public int getLine() {
+                return RubyMethod.this.getLine();
             }
         };
-        Block block = MethodBlock.createMethodBlock(context, runtime.getTopSelf(), context.getCurrentScope(), mb);
+        BlockBody body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(), runtime.getStaticScopeFactory().getDummyScope(), callback, false, 0, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+        Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
         
-        while (true) {
-            try {
-                // FIXME: We should not be regenerating this over and over
-                return mproc(context, block);
-            } catch (JumpException.BreakJump bj) {
-                return (IRubyObject) bj.getValue();
-            } catch (JumpException.ReturnJump rj) {
-                return (IRubyObject) rj.getValue();
-            } catch (JumpException.RetryJump rj) {
-                // Execute iterateMethod again.
-            }
-        }
-    }
-
-    /** Create a Proc object which is called like a ruby method.
-     *
-     * Used by the RubyMethod#to_proc method.
-     *
-     */
-    private IRubyObject mproc(ThreadContext context, Block block) {
-        try {
-            context.preMproc();
-
-            return RubyKernel.proc(context, context.runtime.getNil(), block);
-        } finally {
-            context.postMproc();
-        }
-    }
-
-    /** Delegate a block call to a bound method call.
-     *
-     * Used by the RubyMethod#to_proc method.
-     *
-     */
-    public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1,
-            IRubyObject self, Block block) {
-        ThreadContext context = arg1.getRuntime().getCurrentContext();
-
-        if (blockArg == null) {
-            return ((RubyMethod) arg1).call(context, IRubyObject.NULL_ARRAY, block);
-        } else if (blockArg instanceof RubyArray) {
-            // ENEBO: Very wrong
-            return ((RubyMethod) arg1).call(context, ((RubyArray) blockArg).toJavaArray(), block);
-        }
-        // ENEBO: Very wrong
-        return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, block);
+        return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
     }
 
     @JRubyMethod

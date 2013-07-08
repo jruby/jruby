@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.jruby;
 
+import java.util.ArrayList;
 import org.jruby.CompatVersion;
 import org.jruby.ast.RestArgNode;
 import org.jruby.anno.JRubyMethod;
@@ -226,6 +227,71 @@ public class JRubyLibrary implements Library {
             }
 
             return argsArray;
+        }
+        
+        public static String[] methodParameters(Ruby runtime, DynamicMethod method) {
+            ArrayList<String> argsArray = new ArrayList<String>();
+            method = method.getRealMethod();
+
+            if (method instanceof MethodArgs2) {
+                return ((MethodArgs2) method).getParameterList();
+            } else if (method instanceof MethodArgs) {
+                MethodArgs interpMethod = (MethodArgs)method;
+                ArgsNode args = interpMethod.getArgsNode();
+                
+                ListNode requiredArgs = args.getPre();
+                for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
+                    Node argNode = requiredArgs.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.add("q");
+                    } else {
+                        argsArray.add("q" + getNameFrom(runtime, (INameNode)argNode));
+                    }
+                }
+                
+                ListNode optArgs = args.getOptArgs();
+                for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
+                    argsArray.add("o" + getNameFrom(runtime, (INameNode) optArgs.get(i)));
+                }
+
+                if (args.getRestArg() >= 0) {
+                    RestArgNode restArg = (RestArgNode) args.getRestArgNode();
+
+                    if (restArg instanceof UnnamedRestArgNode) {
+                        if (((UnnamedRestArgNode) restArg).isStar()) {
+                            argsArray.add("r");
+                        }
+                    } else {
+                        argsArray.add("r" + getNameFrom(runtime, args.getRestArgNode()));
+                    }
+                }
+                
+                ListNode requiredArgsPost = args.getPost();
+                for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
+                    Node argNode = requiredArgsPost.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.add("q");
+                    } else {
+                        argsArray.add("q" + getNameFrom(runtime, (INameNode) requiredArgsPost.get(i)));
+                    }
+                }
+
+                if (args.getBlock() != null) {
+                    argsArray.add("b" + getNameFrom(runtime, args.getBlock()));
+                }
+            } else if (method instanceof IRMethodArgs) {
+                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
+                    RubySymbol argType = runtime.newSymbol(argParam[0]);
+                    if (argParam[1] == "") argsArray.add(argParam[0]);
+                    else argsArray.add(argParam[0] + argParam[1]);
+                }
+            } else {
+                if (method.getArity() == Arity.OPTIONAL) {
+                    argsArray.add("r");
+                }
+            }
+
+            return argsArray.toArray(new String[argsArray.size()]);
         }
     }
 
