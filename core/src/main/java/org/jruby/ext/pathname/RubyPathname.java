@@ -59,12 +59,6 @@ public class RubyPathname extends RubyObject {
 
         cPathname.defineAnnotatedMethods(RubyPathname.class);
 
-        /*cPathname
-                .getVariableTableManager()
-                .getVariableAccessorsForRead()
-                .put("@path",
-                        cPathname.getVariableTableManager().getVariableAccessorForWrite("path"));*/
-
         runtime.getKernel().defineAnnotatedMethods(PathnameKernelMethods.class);
 
         defineDelegateMethods(cPathname, runtime.getFile(), "realpath", "realdirpath", "atime",
