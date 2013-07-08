@@ -58,13 +58,13 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
         return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
-    public IRubyObject receivePostReqdArg(IRubyObject[] args) {
+    public IRubyObject receivePostReqdArg(IRubyObject[] args, int kwArgHashCount) {
         int n = args.length;
-        int remaining = n - preReqdArgsCount;
+        int remaining = n - preReqdArgsCount - kwArgHashCount;
         if (remaining <= argIndex) {
             return null;  // For blocks!
         } else {
-            return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+            return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount - kwArgHashCount + argIndex] : args[preReqdArgsCount + argIndex];
         }
     }
 

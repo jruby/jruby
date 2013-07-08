@@ -16,35 +16,28 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyHash;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase {
-    /** This instruction gets to pick an argument only if
-     *  there are at least this many incoming arguments */
-    public final int minArgsLength;
+    public final int numUsedArgs;
 
-    public ReceiveKeywordRestArgInstr(Variable result, int minArgsLength) {
+    public ReceiveKeywordRestArgInstr(Variable result, int numUsedArgs) {
         super(Operation.RECV_KW_REST_ARG, result, -1);
-        this.minArgsLength = minArgsLength;
+        this.numUsedArgs = numUsedArgs;
     }
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + minArgsLength + ")";
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
     }
 
-    public Object receiveKWArg(ThreadContext context, IRubyObject[] args) {
-        IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash) {
-            if (minArgsLength == args.length) {
-                // SSS FIXME: Ruby 2 seems to suck the last ruby hash arg
-                // for keyword args always and hence finds one less arg
-                // available for required args.  Not sure if that makes sense.
-
+    public Object receiveKWArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
+        if (kwArgHashCount == 0) {
+            return RubyHash.newSmallHash(context.getRuntime());
+        } else {
+            if (numUsedArgs == args.length) {
                 /* throw ArgumentError */
-                Arity.raiseArgumentError(context.getRuntime(), args.length-1, minArgsLength, -1);
+                Arity.raiseArgumentError(context.getRuntime(), args.length-1, numUsedArgs, -1);
             }
 
-            return lastArg;
-        } else {
-            return RubyHash.newSmallHash(context.getRuntime());
+            return args[args.length - 1];
         }
     }
 }

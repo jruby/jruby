@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
@@ -338,6 +339,7 @@ public class Interpreter {
         boolean debug = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Instr[] instrs = scope.getInstrsForInterpretation();
+        int     kwArgHashCount = (scope.receivesKeywordArgs() && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
 
         // The base IR may not have been processed yet
         if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
@@ -401,26 +403,26 @@ public class Interpreter {
                 case RECV_PRE_REQD_ARG: {
                     ReceivePreReqdArgInstr ra = (ReceivePreReqdArgInstr)instr;
                     int argIndex = ra.getArgIndex();
-                    result = (argIndex < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+                    result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
                     resultVar = ra.getResult();
                     break;
                 }
                 case RECV_POST_REQD_ARG: {
                     ReceivePostReqdArgInstr ra = (ReceivePostReqdArgInstr)instr;
-                    result = ra.receivePostReqdArg(args);
+                    result = ra.receivePostReqdArg(args, kwArgHashCount);
                     if (result == null) result = context.nil; // For blocks
                     resultVar = ra.getResult();
                     break;
                 }
                 case RECV_OPT_ARG: {
                     ReceiveOptArgInstr ra = (ReceiveOptArgInstr)instr;
-                    result = ra.receiveOptArg(args, 0);
+                    result = ra.receiveOptArg(args, kwArgHashCount);
                     resultVar = ra.getResult();
                     break;
                 }
                 case RECV_REST_ARG: {
                     ReceiveRestArgInstr ra = (ReceiveRestArgInstr)instr;
-                    result = ra.receiveRestArg(runtime, args, 0);
+                    result = ra.receiveRestArg(runtime, args, kwArgHashCount);
                     resultVar = ra.getResult();
                     break;
                 }
@@ -437,13 +439,13 @@ public class Interpreter {
                 }
                 case RECV_KW_ARG: {
                     ReceiveKeywordArgInstr ra = (ReceiveKeywordArgInstr)instr;
-                    result = ra.receiveKWArg(context, args);
+                    result = ra.receiveKWArg(context, kwArgHashCount, args);
                     resultVar = ra.getResult();
                     break;
                 }
                 case RECV_KW_REST_ARG: {
                     ReceiveKeywordRestArgInstr ra = (ReceiveKeywordRestArgInstr)instr;
-                    result = ra.receiveKWArg(context, args);
+                    result = ra.receiveKWArg(context, kwArgHashCount, args);
                     resultVar = ra.getResult();
                     break;
                 }

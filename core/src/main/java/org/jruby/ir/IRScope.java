@@ -23,6 +23,8 @@ import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -214,6 +216,9 @@ public abstract class IRScope {
     /** Does this scope call any eval */
     private boolean usesEval;
 
+    /** Does this scope receive keyword args? */
+    private boolean receivesKeywordArgs;
+
     /** Does this scope have a break instr? */
     protected boolean hasBreakInstrs;
 
@@ -274,6 +279,7 @@ public abstract class IRScope {
         this.flagsComputed = s.flagsComputed;
         this.canModifyCode = s.canModifyCode;
         this.canCaptureCallersBinding = s.canCaptureCallersBinding;
+        this.receivesKeywordArgs = s.receivesKeywordArgs;
         this.hasBreakInstrs = s.hasBreakInstrs;
         this.hasNonlocalReturns = s.hasNonlocalReturns;
         this.canReceiveBreaks = s.canReceiveBreaks;
@@ -313,6 +319,7 @@ public abstract class IRScope {
         this.hasUnusedImplicitBlockArg = false;
 
         this.flagsComputed = false;
+        this.receivesKeywordArgs = false;
         this.hasBreakInstrs = false;
         this.hasNonlocalReturns = false;
         this.canReceiveBreaks = false;
@@ -375,6 +382,7 @@ public abstract class IRScope {
         else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
         else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
         else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
+        else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
         instrList.add(i);
     }
 
@@ -521,6 +529,10 @@ public abstract class IRScope {
 
     public void setCodeModificationFlag(boolean f) { 
         canModifyCode = f;
+    }
+
+    public boolean receivesKeywordArgs() {
+        return this.receivesKeywordArgs;
     }
 
     public boolean modifiesCode() { 

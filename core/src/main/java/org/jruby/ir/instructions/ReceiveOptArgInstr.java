@@ -50,11 +50,11 @@ public class ReceiveOptArgInstr extends ReceiveArgBase {
         return new ReceiveOptArgInstr(ii.getRenamedVariable(result), numUsedArgs, argOffset, optArgIndex);
     }
 
-    public Object receiveOptArg(IRubyObject[] args, int kwArgLoss) {
+    public Object receiveOptArg(IRubyObject[] args, int kwArgHashCount) {
         // Added this copy for code clarity
         // argIndex is relative to start of opt args and not the start of arg array
         int optArgIndex = this.argIndex;
-        return (optArgIndex + numUsedArgs + kwArgLoss < args.length ? args[argOffset + optArgIndex] : UndefinedValue.UNDEFINED);
+        return (optArgIndex + numUsedArgs + kwArgHashCount < args.length ? args[argOffset + optArgIndex] : UndefinedValue.UNDEFINED);
     }
 
     @Override

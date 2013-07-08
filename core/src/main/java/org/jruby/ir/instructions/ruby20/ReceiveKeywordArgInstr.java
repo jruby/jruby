@@ -14,39 +14,39 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyHash;
+import org.jruby.RubySymbol;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase {
-    /** This instruction gets to pick an argument only if
-     *  there are at least this many incoming arguments */
-    public final int minArgsLength;
+    public final int numUsedArgs;
 
-    public ReceiveKeywordArgInstr(Variable result, int minArgsLength) {
+    public ReceiveKeywordArgInstr(Variable result, int numUsedArgs) {
         super(Operation.RECV_KW_ARG, result, -1);
-        this.minArgsLength = minArgsLength;
+        this.numUsedArgs = numUsedArgs;
     }
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + minArgsLength + ")";
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
     }
 
-    public Object receiveKWArg(ThreadContext context, IRubyObject[] args) {
-        IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash) {
-            if (minArgsLength == args.length) {
-                // SSS FIXME: Ruby 2 seems to suck the last ruby hash arg
-                // for keyword args always and hence finds one less arg
-                // available for required args.  Not sure if that makes sense.
-
+    public Object receiveKWArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
+        if (kwArgHashCount == 0) {
+            return UndefinedValue.UNDEFINED;
+        } else {
+            RubyHash lastArg = (RubyHash)args[args.length - 1];
+            if (numUsedArgs == args.length) {
                 /* throw ArgumentError */
-                Arity.raiseArgumentError(context.getRuntime(), args.length-1, minArgsLength, -1);
+                Arity.raiseArgumentError(context.getRuntime(), args.length-1, numUsedArgs, -1);
             }
 
-            // All good.  Lookup result.name in lastArg
-            String argName = getResult().getName();
-            return ((RubyHash)lastArg).delete(context, context.getRuntime().newSymbol(argName), Block.NULL_BLOCK);
-        } else {
-            return UndefinedValue.UNDEFINED;
+            // If the key exists in the hash, delete and return it.
+            RubySymbol argName = context.getRuntime().newSymbol(getResult().getName());
+            if (lastArg.fastARef(argName) != null) {
+                // SSS FIXME: Can we use an internal delete here?
+                return lastArg.delete(context, argName, Block.NULL_BLOCK);
+            } else {
+                return UndefinedValue.UNDEFINED;
+            }
         }
     }
 }
