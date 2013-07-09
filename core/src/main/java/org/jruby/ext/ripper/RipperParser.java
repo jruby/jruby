@@ -121,9 +121,30 @@ public class RipperParser {
     }
     
     public IRubyObject assignable(IRubyObject name) {
-        // FIXME: Some grammar-level arg checking is here to prevent __ENCODING__ = 1 + other checks.
-        // We lose the plot here since we are not passing tokens around anymore.  We might be able to
-        // store arg type or in cases of __ENCODING__ just see if it is called __ENCODING__.
+        String javaName = name.asJavaString();
+        
+        if (javaName.equals("self")) {
+            yyerror("Can't change the value of self");
+        } else if (javaName.equals("nil")) {
+            yyerror("Can't assign to nil");
+        } else if (javaName.equals("true")) {
+            yyerror("Can't assign to true");
+        } else if (javaName.equals("false")) {
+            yyerror("Can't assign to false");
+        } else if (javaName.equals("__FILE__")) {
+            yyerror("Can't assign to __FILE__");
+        } else if (javaName.equals("__LINE__")) {
+            yyerror("Can't assign to __LINE__");
+        } else if (Character.isUpperCase(javaName.charAt(0))) {
+            if (isInDef() || isInSingle()) dispatch("on_assign_error", name);
+        } else if (javaName.charAt(0) == '@') {
+            if (javaName.charAt(1) == '@') {
+            } else {
+            }
+        } else if (javaName.charAt(0) == '$') {
+        } else {
+        }
+        
         return name;
     }
     
