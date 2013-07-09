@@ -168,7 +168,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
         <configuration>
           <encoding>utf-8</encoding>
           <debug>true</debug>
@@ -182,7 +181,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.8</version>
         <executions>
           <execution>
             <id>copy jars for testing</id>
@@ -375,9 +373,7 @@
       </plugin>
 -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.15</version>
         <configuration>
           <forkCount>1C</forkCount>
           <reuseForks>false</reuseForks>
@@ -397,7 +393,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
           <skip>true</skip>
