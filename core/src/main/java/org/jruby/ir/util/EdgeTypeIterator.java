@@ -28,11 +28,13 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
             Object edgeType = edge.getType();
 
             if (negate) {
-                if (edgeType != null && !edgeType.equals(type) || edgeType == null && edgeType != type) {
+                // When edgeType or type is null compare them directly. Otherwise compare them using equals
+                if ((edgeType != null && !edgeType.equals(type)) || (edgeType == null && edgeType != type)) {
                     nextEdge = edge;
                     return true;
                 }
-            } else if (edgeType != null && edgeType.equals(type) || edgeType == null && edgeType == type) {
+                // When edgeType or type is null compare them directly. Otherwise compare them using equals
+            } else if ((edgeType != null && edgeType.equals(type)) || (edgeType == null && edgeType == type)) {
                 nextEdge = edge;
                 return true;
             }
