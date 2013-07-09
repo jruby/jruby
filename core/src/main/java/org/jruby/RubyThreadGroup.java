@@ -127,7 +127,13 @@ public class RubyThreadGroup extends RubyObject {
 
     @JRubyMethod
     public IRubyObject list(Block block) {
-        return RubyArray.newArray(getRuntime(), rubyThreadList);
+        RubyArray ary = RubyArray.newArray(getRuntime());
+        for (RubyThread thread : rubyThreadList) {
+            if (thread != null) {
+                ary.append(thread);
+            }
+        }
+        return ary;
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
