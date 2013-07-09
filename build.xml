@@ -95,10 +95,6 @@
 
     <!-- Initializes the build -->
     <target name="init" unless="init.hasrun">
-        <!-- do not unpack native libs if they're already there -->
-        <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
-            <srcfiles dir="build_lib" includes="jffi-*.jar"/>
-        </uptodate>
 
         <!-- set appropriate spec tag filter if on windows -->
         <condition property="spec.windows.flag" value="-g windows">
