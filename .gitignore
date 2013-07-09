@@ -60,5 +60,6 @@ lib/ruby/shared/bcprov-jdk15on-*.jar
 lib/ruby/shared/*jopenssl*.jar
 lib/ruby/shared/readline/*readline*.jar
 lib/ruby/shared/readline/jline*.jar
+lib/ruby/shared/ripper.jar
 core/src/main/java/org/jruby/runtime/Constants.java
 maven/jruby-complete/dependency-reduced-pom.xml

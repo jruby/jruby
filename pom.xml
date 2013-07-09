@@ -13,6 +13,7 @@
     <module>ext</module>
     <module>core</module>
     <module>test</module>
+    <module>ext/ripper</module>
   </modules>
 
   <properties>
