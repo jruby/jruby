@@ -765,14 +765,6 @@
       <properties>
         <maven.test.skip>false</maven.test.skip>
       </properties>
-      <dependencies>
-        <dependency>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-          <version>${joda-time.version}</version>
-          <type>jar</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>default</id>
