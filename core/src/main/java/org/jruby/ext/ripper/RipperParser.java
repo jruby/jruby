@@ -302,7 +302,7 @@ public class RipperParser {
         String text = message + ", unexpected " + found + "\n";
         
         dispatch("on_parse_error", getRuntime().newString(text));
-        throw new SyntaxException(SyntaxException.PID.CHARACTER_BAD, lexer.getPosition(), found, message, expected);
+        throw new SyntaxException(SyntaxException.PID.CHARACTER_BAD, lexer.getPosition(), found, message, (Object)expected);
     }
 
     public Integer getLeftParenBegin() {

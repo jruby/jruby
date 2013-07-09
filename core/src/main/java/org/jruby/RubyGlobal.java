@@ -388,6 +388,7 @@ public class RubyGlobal {
         }
 
         @Override
+        @Deprecated
         public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
             return op_aset(context, key, value);
         }

@@ -167,31 +167,37 @@ public class RipperLexer implements Warnings {
     }
 
     @Override
+    @Deprecated
     public void warn(ID id, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
+    @Deprecated
     public void warning(ID id, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
+    @Deprecated
     public void warn(ID id, Position position, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
+    @Deprecated
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
+    @Deprecated
     public void warning(ID id, Position position, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
+    @Deprecated
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
