@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.ir.util;
 
 import java.util.Iterator;
@@ -16,7 +12,7 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
     private Object type;
     private Edge nextEdge = null;
     private boolean negate;
-    
+
     public EdgeTypeIterator(Set<Edge<T>> edges, Object type, boolean negate) {
         this.internalIterator = edges.iterator();
         this.type = type;
@@ -26,21 +22,36 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
     public boolean hasNext() {
         // Multiple hasNext calls with no next...hasNext still true
         if (nextEdge != null) return true;
-        
+
         while (internalIterator.hasNext()) {
             Edge edge = internalIterator.next();
+            Object edgeType = edge.getType();
 
             if (negate) {
-                if (edge.getType() != type) {
+                if (type != null && edgeType != null && edgeType.equals(type) == false) {
                     nextEdge = edge;
                     return true;
                 }
-            } else  if (edge.getType() == type) {
-                nextEdge = edge;
-                return true;
+                else if (type == null || edgeType == null) {
+                    if (edgeType != type) {
+                        nextEdge = edge;
+                        return true;
+                    }
+                }
+            }
+            else  {
+                if (type != null && edgeType != null && edgeType.equals(type)) {
+                    nextEdge = edge;
+                    return true;
+                }
+                else if (type == null || edgeType == null) {
+                    if (edgeType == type) {
+                        nextEdge = edge;
+                        return true;
+                    }
+                }
             }
         }
-
         return false;
     }
 
