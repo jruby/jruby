@@ -1,42 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="org/jruby/runtime/Constants.java" kind="src" path="src"/>
-	<classpathentry excluding="org/jruby/gen/*.java" kind="src" path="build/src_gen"/>
-	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="lib" path="build_lib/junit.jar"/>
-	<classpathentry kind="lib" path="build_lib/bsf.jar"/>
-	<classpathentry kind="lib" path="build_lib/joni.jar"/>
-	<classpathentry kind="lib" path="build_lib/bytelist.jar"/>
-	<classpathentry kind="lib" path="build_lib/jcodings.jar"/>
-	<classpathentry kind="lib" path="build_lib/jffi.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-constants.jar"/>
-	<classpathentry kind="lib" path="build_lib/apt-mirror-api.jar"/>
-	<classpathentry kind="lib" path="build_lib/dynalang-0.3.jar"/>
-	<classpathentry kind="lib" path="build_lib/yydebug.jar"/>
-	<classpathentry kind="lib" path="build_lib/jsr292-mock.jar"/>
-	<classpathentry kind="lib" path="build_lib/nailgun-0.7.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-posix.jar"/>
-	<classpathentry kind="lib" path="build_lib/livetribe-jsr223-2.0.6.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-netdb.jar"/>
-	<classpathentry kind="lib" path="build_lib/org.osgi.core-4.3.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-4.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-analysis-4.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-commons-4.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-tree-4.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-util-4.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/snakeyaml-1.11.jar"/>
-	<classpathentry kind="lib" path="build_lib/jzlib-1.1.2.jar"/>
-	<classpathentry kind="lib" path="build_lib/coro-mock-1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-ffi.jar"/>
-	<classpathentry kind="lib" path="build_lib/invokebinder.jar"/>
-	<classpathentry kind="lib" path="build_lib/joda-time-2.2.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-unixsocket.jar"/>
-	<classpathentry kind="lib" path="build_lib/jnr-enxio.jar"/>
-	<classpathentry kind="lib" path="build_lib/jline-2.11.jar"/>
-	<classpathentry kind="lib" path="build_lib/ant.jar"/>
-	<classpathentry kind="lib" path="build_lib/unsafe-mock-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="build_lib/bcprov-jdk15on-147.jar"/>
-	<classpathentry kind="lib" path="build_lib/bcpkix-jdk15on-147.jar"/>
 	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>
