@@ -318,6 +318,7 @@
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
           <target>${base.java.version}</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
         <executions>
           <execution>
