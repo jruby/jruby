@@ -1168,7 +1168,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *         no mapping for this key.
      */
     public Object remove(Object receiver, String key) {
-        return provider.getVarMap().remove(receiver, key);
+        return provider.getVarMap().removeFrom(receiver, key);
     }
 
     /**

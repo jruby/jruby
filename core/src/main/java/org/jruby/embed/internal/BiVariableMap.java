@@ -394,7 +394,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V remove(Object key) {
-        return remove(provider.getRuntime().getTopSelf(), key);
+        return removeFrom(provider.getRuntime().getTopSelf(), key);
     }
 
     /**
@@ -408,7 +408,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    public V remove(Object receiver, Object key) {
+    public V removeFrom(Object receiver, Object key) {
         if (varNames == null) return null;
         checkKey(key);
         RubyObject robj = getReceiverObject(receiver);
