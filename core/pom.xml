@@ -199,9 +199,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>joda-timezones</artifactId>
+      <version>${tzdata.jar.version}</version>
+      <type>jar</type>
+      <scope>${tzdata.scope}</scope>
+    </dependency>
+    <!-- joda-time MUST come after the joda-timezone for the shade plugin
+         to pack it correctly -->
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>${joda-time.version}</version>
+      <version>2.2</version>
       <type>jar</type>
     </dependency>
   </dependencies>
@@ -217,7 +226,9 @@
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
     <tzdata.version>2012j</tzdata.version>
-    <joda-time.version>2.2</joda-time.version>
+    <!-- any version which is on maven repo will do -->
+    <tzdata.jar.version>2013c</tzdata.jar.version>
+    <tzdata.scope>provided</tzdata.scope>
   </properties>
   <build>
     <defaultGoal>package</defaultGoal>
@@ -538,29 +549,6 @@
               </transformers>
             </configuration>
           </execution>
-          <execution>
-            <id>pack jruby.artifact</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <relocations>
-<!--
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
--->
-              </relocations>
-              <artifactSet>
-                <includes>
-                  <!--include>org.ow2.asm:*</include-->
-                  <include>yecht:yecht</include>
-                </includes>
-              </artifactSet>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -788,17 +776,7 @@
     </profile>
     <profile>
       <id>default</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-          <version>${joda-time.version}</version>
-          <type>jar</type>
-        </dependency>
-      </dependencies>
+      <!-- just leave it since travis might need it -->
     </profile>
     <profile>
       <id>tzdata</id>
@@ -808,25 +786,9 @@
         </property>
       </activation>
       <properties>
-        <tzdata.version>2013d</tzdata.version>
+        <tzdata.jar.version>${tzdata.version}</tzdata.jar.version>
+        <tzdata.scope>runtime</tzdata.scope>
       </properties>
-      <dependencies>
-        <dependency>
-          <groupId>org.jruby</groupId>
-          <artifactId>joda-timezones</artifactId>
-          <version>${tzdata.version}</version>
-          <type>jar</type>
-          <scope>runtime</scope>
-        </dependency>
-        <!-- this MUST come after the joda-timezone for the shade plugin
-             to pack it correctly -->
-        <dependency>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-          <version>${joda-time.version}</version>
-          <type>jar</type>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
 </project>
