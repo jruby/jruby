@@ -3,9 +3,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>jruby-parent</artifactId>
+    <artifactId>jruby-ext</artifactId>
     <version>1.7.5.dev</version>
-    <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>readline</artifactId>
   <version>1.0-SNAPSHOT</version>

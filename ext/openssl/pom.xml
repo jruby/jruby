@@ -4,9 +4,8 @@
 
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>jruby-parent</artifactId>
+    <artifactId>jruby-ext</artifactId>
     <version>1.7.5.dev</version>
-    <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>openssl</artifactId>
   <version>0.8.9-SNAPSHOT</version>
