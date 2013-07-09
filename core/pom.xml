@@ -308,7 +308,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
         <configuration>
           <encoding>utf-8</encoding>
           <debug>true</debug>
@@ -414,7 +413,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.8</version>
         <dependencies>
           <dependency>
             <groupId>biz.aQute</groupId>
@@ -457,7 +455,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
         <executions>
           <execution>
             <id>default-clean</id>
@@ -500,7 +497,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.3.2</version>
         <executions>
           <execution>
             <id>default-jar</id>
@@ -512,9 +508,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
         <executions>
           <execution>
             <id>pack jruby.jar</id>
@@ -563,9 +557,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
         <executions>
           <execution>
             <id>copy</id>
@@ -585,9 +577,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.15</version>
         <configuration>
           <forkCount>1C</forkCount>
           <reuseForks>false</reuseForks>
@@ -635,7 +625,6 @@
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
           <configuration>
             <lifecycleMappingMetadata>
               <pluginExecutions>
