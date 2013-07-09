@@ -25,6 +25,7 @@ public class DataIterator<T> implements Iterator<T> {
         this.negate = negate;
     }
 
+    @Override
     public boolean hasNext() {
         // Multiple hasNext calls with no next...hasNext still true
         if (nextEdge != null) return true;
@@ -46,6 +47,7 @@ public class DataIterator<T> implements Iterator<T> {
         return false;
     }
 
+    @Override
     public T next() {
         if (hasNext()) {
             Edge<T> tmp = nextEdge;
@@ -56,6 +58,7 @@ public class DataIterator<T> implements Iterator<T> {
         throw new NoSuchElementException();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Not supported");
     }    

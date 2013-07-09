@@ -19,6 +19,7 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
         this.negate = negate;
     }
 
+    @Override
     public boolean hasNext() {
         // Multiple hasNext calls with no next...hasNext still true
         if (nextEdge != null) return true;
@@ -42,6 +43,7 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
         return false;
     }
 
+    @Override
     public Edge<T> next() {
         if (hasNext()) {
             Edge<T> tmp = nextEdge;
@@ -52,6 +54,7 @@ public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
         throw new NoSuchElementException();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Not supported");
     }

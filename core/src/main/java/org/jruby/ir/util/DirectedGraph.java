@@ -57,7 +57,6 @@ public class DirectedGraph<T> {
                 }
             }
         }
-        return;
     }
 
     public Vertex<T> findVertexFor(T data) {

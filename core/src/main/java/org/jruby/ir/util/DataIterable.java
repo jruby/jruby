@@ -24,6 +24,7 @@ public class DataIterable<T> implements Iterable<T> {
         this.source = source;
     }
 
+    @Override
     public Iterator<T> iterator() {
         return new DataIterator<T>(edges, type, source, negate);
     }

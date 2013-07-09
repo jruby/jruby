@@ -21,6 +21,7 @@ public class EdgeTypeIterable<T> implements Iterable<Edge<T>> {
         this.negate = negate;
     }
 
+    @Override
     public Iterator<Edge<T>> iterator() {
         return new EdgeTypeIterator<T>(edges, type, negate);
     }
