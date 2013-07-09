@@ -107,7 +107,9 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.compiler.ASTInspector;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
+            out.println("import javax.annotation.Generated;");
 
+            out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
             out.println("    public void populate(RubyModule cls, Class clazz) {");
             if (DEBUG) {
