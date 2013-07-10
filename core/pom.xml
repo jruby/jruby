@@ -172,9 +172,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>yecht</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>yecht</artifactId>
-      <version>1.0</version>
+      <version>1.0-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
