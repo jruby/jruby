@@ -1,6 +1,7 @@
 #!/usr/bin/env jruby
 
 require 'optparse'
+require 'jruby'
 
 opts = {}
 options = {
@@ -8,8 +9,18 @@ options = {
   :print_sexp   => false,
   :print_ast    => true,
   :print_ir     => false,
+  :print_pass   => nil,
   :dot_format   => false
 }
+
+def get_ir_passes
+  ir_manager = org.jruby.ir.IRManager
+  ir_manager.DEFAULT_COMPILER_PASSES.split(',').map do |pass|
+    pass.to_sym
+  end
+end
+  
+ir_passes = get_ir_passes
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
@@ -25,6 +36,10 @@ OptionParser.new do |opts|
 
   opts.on('-i', '--ir', 'Dump all IR passes without executing') do |h|
     options[:print_ir] = true
+  end
+
+  opts.on('-p', '--pass NAME', ir_passes, 'Dump IR after running NAME pass') do |pass|
+    options[:print_pass] = pass
   end
   
   opts.on('-s', '--sexp', 'Display the S-Expression for the AST') do |t|
