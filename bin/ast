@@ -109,8 +109,6 @@ def print_passes_on(scope, passes)
   end
 end
 
-root = JRuby.parse(options[:expression])
-
 if options[:print_source]
   puts "Source:"
   puts options[:expression]
@@ -163,6 +161,8 @@ module DotGraph
     puts "}"
   end
 end
+
+root = JRuby.parse(options[:expression])
 
 if options[:print_ast]
   if options[:dot_format]
