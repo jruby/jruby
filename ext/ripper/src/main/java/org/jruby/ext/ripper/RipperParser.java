@@ -121,6 +121,10 @@ public class RipperParser {
     }
     
     public IRubyObject assignable(IRubyObject name) {
+        // MRI calls get_id(name), but we differ quite a bit and we only need to worry about strings
+        // for anything we care about.  Possibly this should return nil and not original value?
+        if (!(name instanceof RubyString)) return name;
+        
         String javaName = name.asJavaString();
         
         if (javaName.equals("self")) {
