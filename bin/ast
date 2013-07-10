@@ -38,7 +38,7 @@ OptionParser.new do |opts|
     options[:print_ir] = true
   end
 
-  opts.on('-p', '--pass NAME', ir_passes, 'Dump IR after running NAME pass') do |pass|
+  opts.on('-p', "--pass #{ir_passes}", ir_passes, 'Dump IR after running a pass') do |pass|
     options[:print_pass] = pass
   end
   
