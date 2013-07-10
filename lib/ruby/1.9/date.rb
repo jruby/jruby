@@ -234,7 +234,7 @@ class Date
   # month's numerical representation indexed into this array
   # gives the name of that month (hence the first element is nil).
   MONTHNAMES = [nil] + %w(January February March April May June July
-			  August September October November December)
+                          August September October November December)
 
   # Full names of days of the week, in English.  Days of the week
   # count from 0 to 6 (except in the commercial week); a day's numerical
@@ -243,7 +243,7 @@ class Date
 
   # Abbreviated month names, in English.
   ABBR_MONTHNAMES = [nil] + %w(Jan Feb Mar Apr May Jun
-			       Jul Aug Sep Oct Nov Dec)
+                               Jul Aug Sep Oct Nov Dec)
 
   # Abbreviated day names, in English.
   ABBR_DAYNAMES = %w(Sun Mon Tue Wed Thu Fri Sat)
@@ -277,11 +277,11 @@ class Date
       when Infinity; return d <=> other.d
       when Numeric; return d
       else
-	begin
-	  l, r = other.coerce(self)
-	  return l <=> r
-	rescue NoMethodError
-	end
+        begin
+          l, r = other.coerce(self)
+          return l <=> r
+        rescue NoMethodError
+        end
       end
       nil
     end
@@ -290,7 +290,7 @@ class Date
       case other
       when Numeric; return -d, d
       else
-	super
+        super
       end
     end
 
@@ -334,7 +334,7 @@ class Date
     def find_fdoy(y, sg) # :nodoc:
       j = nil
       1.upto(31) do |d|
-	break if j = _valid_civil?(y, 1, d, sg)
+        break if j = _valid_civil?(y, 1, d, sg)
       end
       j
     end
@@ -342,7 +342,7 @@ class Date
     def find_ldoy(y, sg) # :nodoc:
       j = nil
       31.downto(1) do |d|
-	break if j = _valid_civil?(y, 12, d, sg)
+        break if j = _valid_civil?(y, 12, d, sg)
       end
       j
     end
@@ -350,7 +350,7 @@ class Date
     def find_fdom(y, m, sg) # :nodoc:
       j = nil
       1.upto(31) do |d|
-	break if j = _valid_civil?(y, m, d, sg)
+        break if j = _valid_civil?(y, m, d, sg)
       end
       j
     end
@@ -358,7 +358,7 @@ class Date
     def find_ldom(y, m, sg) # :nodoc:
       j = nil
       31.downto(1) do |d|
-	break if j = _valid_civil?(y, m, d, sg)
+        break if j = _valid_civil?(y, m, d, sg)
       end
       j
     end
@@ -394,16 +394,16 @@ class Date
     # Returns the corresponding Julian Day Number.
     def civil_to_jd(y, m, d, sg=GREGORIAN) # :nodoc:
       if m <= 2
-	y -= 1
-	m += 12
+        y -= 1
+        m += 12
       end
       a = (y / 100.0).floor
       b = 2 - a + (a / 4.0).floor
       jd = (365.25 * (y + 4716)).floor +
-	(30.6001 * (m + 1)).floor +
-	d + b - 1524
+        (30.6001 * (m + 1)).floor +
+        d + b - 1524
       if jd < sg
-	jd -= b
+        jd -= b
       end
       jd
     end
@@ -416,10 +416,10 @@ class Date
     # as a three-element array.
     def jd_to_civil(jd, sg=GREGORIAN) # :nodoc:
       if jd < sg
-	a = jd
+        a = jd
       else
-	x = ((jd - 1867216.25) / 36524.25).floor
-	a = jd + 1 + x - (x / 4.0).floor
+        x = ((jd - 1867216.25) / 36524.25).floor
+        a = jd + 1 + x - (x / 4.0).floor
       end
       b = a + 1524
       c = ((b - 122.1) / 365.25).floor
@@ -427,11 +427,11 @@ class Date
       e = ((b - d) / 30.6001).floor
       dom = b - d - (30.6001 * e).floor
       if e <= 13
-	m = e - 1
-	y = c - 4716
+        m = e - 1
+        y = c - 4716
       else
-	m = e - 13
-	y = c - 4715
+        m = e - 13
+        y = c - 4715
       end
       return y, m, dom
     end
@@ -444,8 +444,8 @@ class Date
     def commercial_to_jd(y, w, d, sg=GREGORIAN) # :nodoc:
       j = find_fdoy(y, sg) + 3
       (j - (((j - 1) + 1) % 7)) +
-	7 * (w - 1) +
-	(d - 1)
+        7 * (w - 1) +
+        (d - 1)
     end
 
     # Convert a Julian Day Number to a Commercial Date
@@ -478,10 +478,10 @@ class Date
 
     def nth_kday_to_jd(y, m, n, k, sg=GREGORIAN) # :nodoc:
       j = if n > 0
-	    find_fdom(y, m, sg) - 1
-	  else
-	    find_ldom(y, m, sg) + 7
-	  end
+            find_fdom(y, m, sg) - 1
+          else
+            find_ldom(y, m, sg) + 7
+          end
       (j - (((j - k) + 1) % 7)) + 7 * n
     end
 
@@ -527,15 +527,15 @@ class Date
       Rational(Rational(1, 2), 2) # a challenge
 
       def time_to_day_fraction(h, min, s)
-	Rational(h * 3600 + min * 60 + s, 86400) # 4p
+        Rational(h * 3600 + min * 60 + s, 86400) # 4p
       end
     rescue
       def time_to_day_fraction(h, min, s)
-	if Integer === h && Integer === min && Integer === s
-	  Rational(h * 3600 + min * 60 + s, 86400) # 4p
-	else
-	  (h * 3600 + min * 60 + s).to_r/86400 # 4p
-	end
+        if Integer === h && Integer === min && Integer === s
+          Rational(h * 3600 + min * 60 + s, 86400) # 4p
+        else
+          (h * 3600 + min * 60 + s).to_r/86400 # 4p
+        end
       end
     end
 
@@ -589,10 +589,10 @@ class Date
     # +sg+ specifies the Day of Calendar Reform.
     def _valid_ordinal? (y, d, sg=GREGORIAN) # :nodoc:
       if d < 0
-	return unless j = find_ldoy(y, sg)
-	ny, nd = jd_to_ordinal(j + d + 1, sg)
-	return unless ny == y
-	d = nd
+        return unless j = find_ldoy(y, sg)
+        ny, nd = jd_to_ordinal(j + d + 1, sg)
+        return unless ny == y
+        d = nd
       end
       jd = ordinal_to_jd(y, d, sg)
       return unless [y, d] == jd_to_ordinal(jd, sg)
@@ -613,13 +613,13 @@ class Date
     # +sg+ specifies the Day of Calendar Reform.
     def _valid_civil? (y, m, d, sg=GREGORIAN) # :nodoc:
       if m < 0
-	m += 13
+        m += 13
       end
       if d < 0
-	return unless j = find_ldom(y, m, sg)
-	ny, nm, nd = jd_to_civil(j + d + 1, sg)
-	return unless [ny, nm] == [y, m]
-	d = nd
+        return unless j = find_ldom(y, m, sg)
+        ny, nm, nd = jd_to_civil(j + d + 1, sg)
+        return unless [ny, nm] == [y, m]
+        d = nd
       end
       jd = civil_to_jd(y, m, d, sg)
       return unless [y, m, d] == jd_to_civil(jd, sg)
@@ -642,13 +642,13 @@ class Date
     # +sg+ specifies the Day of Calendar Reform.
     def _valid_commercial? (y, w, d, sg=GREGORIAN) # :nodoc:
       if d < 0
-	d += 8
+        d += 8
       end
       if w < 0
-	ny, nw, nd =
-	  jd_to_commercial(commercial_to_jd(y + 1, 1, 1, sg) + w * 7, sg)
-	return unless ny == y
-	w = nw
+        ny, nw, nd =
+          jd_to_commercial(commercial_to_jd(y + 1, 1, 1, sg) + w * 7, sg)
+        return unless ny == y
+        w = nw
       end
       jd = commercial_to_jd(y, w, d, sg)
       return unless [y, w, d] == jd_to_commercial(jd, sg)
@@ -657,13 +657,13 @@ class Date
 
     def _valid_weeknum? (y, w, d, f, sg=GREGORIAN) # :nodoc:
       if d < 0
-	d += 7
+        d += 7
       end
       if w < 0
-	ny, nw, nd, nf =
-	  jd_to_weeknum(weeknum_to_jd(y + 1, 1, f, f, sg) + w * 7, f, sg)
-	return unless ny == y
-	w = nw
+        ny, nw, nd, nf =
+          jd_to_weeknum(weeknum_to_jd(y + 1, 1, f, f, sg) + w * 7, f, sg)
+        return unless ny == y
+        w = nw
       end
       jd = weeknum_to_jd(y, w, d, f, sg)
       return unless [y, w, d] == jd_to_weeknum(jd, f, sg)
@@ -672,15 +672,15 @@ class Date
 
     def _valid_nth_kday? (y, m, n, k, sg=GREGORIAN) # :nodoc:
       if k < 0
-	k += 7
+        k += 7
       end
       if n < 0
-	ny, nm = (y * 12 + m).divmod(12)
-	nm,    = (nm + 1)    .divmod(1)
-	ny, nm, nn, nk =
-	  jd_to_nth_kday(nth_kday_to_jd(ny, nm, 1, k, sg) + n * 7, sg)
-	return unless [ny, nm] == [y, m]
-	n = nn
+        ny, nm = (y * 12 + m).divmod(12)
+        nm,    = (nm + 1)    .divmod(1)
+        ny, nm, nn, nk =
+          jd_to_nth_kday(nth_kday_to_jd(ny, nm, 1, k, sg) + n * 7, sg)
+        return unless [ny, nm] == [y, m]
+        n = nn
       end
       jd = nth_kday_to_jd(y, m, n, k, sg)
       return unless [y, m, n, k] == jd_to_nth_kday(jd, sg)
@@ -701,11 +701,11 @@ class Date
       min += 60 if min < 0
       s   += 60 if s   < 0
       return unless ((0...24) === h &&
-		     (0...60) === min &&
-		     (0...60) === s) ||
-		     (24 == h &&
-		       0 == min &&
-		       0 == s)
+                     (0...60) === min &&
+                     (0...60) === s) ||
+                     (24 == h &&
+                       0 == min &&
+                       0 == s)
       time_to_day_fraction(h, min, s)
     end
 
@@ -875,16 +875,16 @@ class Date
   def self.complete_frags(elem) # :nodoc:
     i = 0
     g = [[:time, [:hour, :min, :sec]],
-	 [nil, [:jd]],
-	 [:ordinal, [:year, :yday, :hour, :min, :sec]],
-	 [:civil, [:year, :mon, :mday, :hour, :min, :sec]],
-	 [:commercial, [:cwyear, :cweek, :cwday, :hour, :min, :sec]],
-	 [:wday, [:wday, :hour, :min, :sec]],
-	 [:wnum0, [:year, :wnum0, :wday, :hour, :min, :sec]],
-	 [:wnum1, [:year, :wnum1, :wday, :hour, :min, :sec]],
-	 [nil, [:cwyear, :cweek, :wday, :hour, :min, :sec]],
-	 [nil, [:year, :wnum0, :cwday, :hour, :min, :sec]],
-	 [nil, [:year, :wnum1, :cwday, :hour, :min, :sec]]].
+         [nil, [:jd]],
+         [:ordinal, [:year, :yday, :hour, :min, :sec]],
+         [:civil, [:year, :mon, :mday, :hour, :min, :sec]],
+         [:commercial, [:cwyear, :cweek, :cwday, :hour, :min, :sec]],
+         [:wday, [:wday, :hour, :min, :sec]],
+         [:wnum0, [:year, :wnum0, :wday, :hour, :min, :sec]],
+         [:wnum1, [:year, :wnum1, :wday, :hour, :min, :sec]],
+         [nil, [:cwyear, :cweek, :wday, :hour, :min, :sec]],
+         [nil, [:year, :wnum0, :cwday, :hour, :min, :sec]],
+         [nil, [:year, :wnum1, :cwday, :hour, :min, :sec]]].
       collect{|k, a| e = elem.values_at(*a).compact; [k, a, e]}.
       select{|k, a, e| e.size > 0}.
       sort_by{|k, a, e| [e.size, i -= 1]}.last
@@ -896,45 +896,45 @@ class Date
 
       case g[0]
       when :ordinal
-	elem[:year] ||= d.year
-	elem[:yday] ||= 1
+        elem[:year] ||= d.year
+        elem[:yday] ||= 1
       when :civil
-	g[1].each do |e|
-	  break if elem[e]
-	  elem[e] = d.__send__(e)
-	end
-	elem[:mon]  ||= 1
-	elem[:mday] ||= 1
+        g[1].each do |e|
+          break if elem[e]
+          elem[e] = d.__send__(e)
+        end
+        elem[:mon]  ||= 1
+        elem[:mday] ||= 1
       when :commercial
-	g[1].each do |e|
-	  break if elem[e]
-	  elem[e] = d.__send__(e)
-	end
-	elem[:cweek] ||= 1
-	elem[:cwday] ||= 1
+        g[1].each do |e|
+          break if elem[e]
+          elem[e] = d.__send__(e)
+        end
+        elem[:cweek] ||= 1
+        elem[:cwday] ||= 1
       when :wday
-	elem[:jd] ||= (d - d.wday + elem[:wday]).jd
+        elem[:jd] ||= (d - d.wday + elem[:wday]).jd
       when :wnum0
-	g[1].each do |e|
-	  break if elem[e]
-	  elem[e] = d.__send__(e)
-	end
-	elem[:wnum0] ||= 0
-	elem[:wday]  ||= 0
+        g[1].each do |e|
+          break if elem[e]
+          elem[e] = d.__send__(e)
+        end
+        elem[:wnum0] ||= 0
+        elem[:wday]  ||= 0
       when :wnum1
-	g[1].each do |e|
-	  break if elem[e]
-	  elem[e] = d.__send__(e)
-	end
-	elem[:wnum1] ||= 0
-	elem[:wday]  ||= 1
+        g[1].each do |e|
+          break if elem[e]
+          elem[e] = d.__send__(e)
+        end
+        elem[:wnum1] ||= 0
+        elem[:wday]  ||= 1
       end
     end
 
     if g && g[0] == :time
       if self <= DateTime
-	d ||= Date.today
-	elem[:jd] ||= d.jd
+        d ||= Date.today
+        elem[:jd] ||= d.jd
       end
     end
 
@@ -952,56 +952,56 @@ class Date
     catch :jd do
       a = elem.values_at(:jd)
       if a.all?
-	if jd = _valid_jd?(*(a << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_jd?(*(a << sg))
+          throw :jd, jd
+        end
       end
 
       a = elem.values_at(:year, :yday)
       if a.all?
-	if jd = _valid_ordinal?(*(a << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_ordinal?(*(a << sg))
+          throw :jd, jd
+        end
       end
 
       a = elem.values_at(:year, :mon, :mday)
       if a.all?
-	if jd = _valid_civil?(*(a << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_civil?(*(a << sg))
+          throw :jd, jd
+        end
       end
 
       a = elem.values_at(:cwyear, :cweek, :cwday)
       if a[2].nil? && elem[:wday]
-	a[2] = elem[:wday].nonzero? || 7
+        a[2] = elem[:wday].nonzero? || 7
       end
       if a.all?
-	if jd = _valid_commercial?(*(a << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_commercial?(*(a << sg))
+          throw :jd, jd
+        end
       end
 
       a = elem.values_at(:year, :wnum0, :wday)
       if a[2].nil? && elem[:cwday]
-	a[2] = elem[:cwday] % 7
+        a[2] = elem[:cwday] % 7
       end
       if a.all?
-	if jd = _valid_weeknum?(*(a << 0 << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_weeknum?(*(a << 0 << sg))
+          throw :jd, jd
+        end
       end
 
       a = elem.values_at(:year, :wnum1, :wday)
       if a[2]
-	a[2] = (a[2] - 1) % 7
+        a[2] = (a[2] - 1) % 7
       end
       if a[2].nil? && elem[:cwday]
-	a[2] = (elem[:cwday] - 1) % 7
+        a[2] = (elem[:cwday] - 1) % 7
       end
       if a.all?
-	if jd = _valid_weeknum?(*(a << 1 << sg))
-	  throw :jd, jd
-	end
+        if jd = _valid_weeknum?(*(a << 1 << sg))
+          throw :jd, jd
+        end
       end
     end
   end
@@ -1102,13 +1102,13 @@ class Date
 
     def once(*ids) # :nodoc: -- restricted
       for id in ids
-	module_eval <<-"end;"
-	  alias_method :__#{id.object_id}__, :#{id.to_s}
-	  private :__#{id.object_id}__
-	  def #{id.to_s}(*args)
-	    @__ca__[#{id.object_id}] ||= __#{id.object_id}__(*args)
-	  end
-	end;
+        module_eval <<-"end;"
+          alias_method :__#{id.object_id}__, :#{id.to_s}
+          private :__#{id.object_id}__
+          def #{id.to_s}(*args)
+            @__ca__[#{id.object_id}] ||= __#{id.object_id}__(*args)
+          end
+        end;
       end
     end # <<dummy
 
@@ -1226,7 +1226,7 @@ class Date
   alias_method :second_fraction, :sec_fraction
 
   private :hour, :min, :sec, :sec_fraction,
-	  :minute, :second, :second_fraction
+          :minute, :second, :second_fraction
 
   def zone() strftime('%:z') end
 
@@ -1286,7 +1286,7 @@ class Date
   # Is this a leap year?
   def leap?
     jd_to_civil(civil_to_jd(year, 3, 1, fix_style) - 1,
-		fix_style)[-1] == 29
+                fix_style)[-1] == 29
   end
 
   once :leap?
@@ -1393,8 +1393,8 @@ class Date
     when Date;    return jd == other.jd
     else
       begin
-	l, r = other.coerce(self)
-	return l === r
+        l, r = other.coerce(self)
+        return l === r
       rescue NoMethodError
       end
     end
@@ -1570,7 +1570,7 @@ class DateTime < Date
   # All day/time values default to 0.
   def self.jd(jd=0, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_jd?(jd, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1595,7 +1595,7 @@ class DateTime < Date
   # day 0.  The time values default to 0.
   def self.ordinal(y=-4712, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_ordinal?(y, d, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1620,7 +1620,7 @@ class DateTime < Date
   # Number day 0.  The time values default to 0.
   def self.civil(y=-4712, m=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_civil?(y, m, d, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1648,7 +1648,7 @@ class DateTime < Date
   # The time values default to 0.
   def self.commercial(y=-4712, w=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_commercial?(y, w, d, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1659,7 +1659,7 @@ class DateTime < Date
 
   def self.weeknum(y=-4712, w=0, d=1, f=0, h=0, min=0, s=0, of=0, sg=ITALY) # :nodoc:
     unless (jd = _valid_weeknum?(y, w, d, f, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1672,7 +1672,7 @@ class DateTime < Date
 
   def self.nth_kday(y=-4712, m=1, n=1, k=1, h=0, min=0, s=0, of=0, sg=ITALY) # :nodoc:
     unless (jd = _valid_nth_kday?(y, m, n, k, sg)) &&
-	   (fr = _valid_time?(h, min, s))
+           (fr = _valid_time?(h, min, s))
       raise ArgumentError, 'invalid date'
     end
     if String === of
@@ -1687,7 +1687,7 @@ class DateTime < Date
     elem = rewrite_frags(elem)
     elem = complete_frags(elem)
     unless (jd = valid_date_frags?(elem, sg)) &&
-	   (fr = valid_time_frags?(elem))
+           (fr = valid_time_frags?(elem))
       raise ArgumentError, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400
@@ -1769,11 +1769,11 @@ class DateTime < Date
   end
 
   public :hour, :min, :sec, :sec_fraction, :zone, :offset, :new_offset,
-	 :minute, :second, :second_fraction
+         :minute, :second, :second_fraction
 
   def to_s # 4p
     format('%.4d-%02d-%02dT%02d:%02d:%02d%s',
-	   year, mon, mday, hour, min, sec, zone)
+           year, mon, mday, hour, min, sec, zone)
   end
 
 end
@@ -1792,7 +1792,7 @@ class Time
       Rational(subsec, 86400)
     of = Rational(utc_offset, 86400)
     DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of),
-		  of, DateTime::ITALY)
+                  of, DateTime::ITALY)
   end
 
 end
@@ -1834,9 +1834,9 @@ class DateTime < Date
     d = new_offset(0)
     d.instance_eval do
       Time.utc(year, mon, mday, hour, min, sec +
-	       sec_fraction)
+               sec_fraction)
     end.
-	getlocal
+        getlocal
   end
 
   def to_date() Date.new!(jd_to_ajd(jd, 0, 0), 0, @sg) end
