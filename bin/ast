@@ -98,17 +98,6 @@ def indent(string)
   string.gsub(/,\s*$/, '').squeeze("\n")
 end
 
-
-def print_passes_on(scope, passes)
-  if !scope.kind_of? org.jruby.ir.IRClosure
-    passes.each { |pass| pass.run(scope) } 
-  end
-
-  scope.lexical_scopes.each do |child_scope|
-    print_passes_on(child_scope, passes)
-  end
-end
-
 if options[:print_source]
   puts "Source:"
   puts options[:expression]
@@ -171,6 +160,16 @@ if options[:print_ast]
     print "AST:"
     puts indent(root.to_string) 
     puts
+  end
+end
+
+def print_passes_on(scope, passes)
+  if !scope.kind_of? org.jruby.ir.IRClosure
+    passes.each { |pass| pass.run(scope) } 
+  end
+
+  scope.lexical_scopes.each do |child_scope|
+    print_passes_on(child_scope, passes)
   end
 end
 
