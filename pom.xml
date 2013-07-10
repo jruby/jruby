@@ -30,6 +30,7 @@
     <rdoc.version>3.12</rdoc.version>
     <json.version>1.7.3</json.version>
     <base.java.version>1.6</base.java.version>
+    <main.basedir>${project.basedir}</main.basedir>
   </properties>
 
   <scm>
@@ -198,6 +199,7 @@
             </reportSet>
           </reportSets>
           <configuration>
+            <configLocation>${main.basedir}/docs/style_checks.xml</configLocation>
             <propertyExpansion>
               cacheFile=${project.build.directory}/checkstyle-cachefile
             </propertyExpansion>
