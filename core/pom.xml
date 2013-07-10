@@ -174,7 +174,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>yecht</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
       <type>jar</type>
     </dependency>
     <dependency>
