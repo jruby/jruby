@@ -71,8 +71,6 @@ elsif ! options.has_key?(:expression)
   abort "No script specified (see --help)"
 end
 
-require 'jruby'
-
 $indent_string = "  "
 
 def indexes(string, lindex, rindex)
@@ -177,7 +175,6 @@ if options[:print_ast]
 end
 
 if options[:print_ir]
-  require 'jruby'
   runtime = JRuby::runtime
   manager = runtime.ir_manager
 
