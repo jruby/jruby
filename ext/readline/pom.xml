@@ -16,6 +16,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <readline.dir>${project.basedir}/../../lib/ruby/shared/readline</readline.dir>
     <base.java.version>1.6</base.java.version>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
   <dependencies>
