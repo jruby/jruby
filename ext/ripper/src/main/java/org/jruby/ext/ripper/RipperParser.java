@@ -32,6 +32,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.ext.ripper.Warnings.ID;
 import org.jruby.runtime.Helpers;
@@ -311,8 +312,7 @@ public class RipperParser {
     
     public void yyerror(String message, String[] expected, String found) {
         compile_error(message + ", unexpected " + found + "\n");
-        
-        dispatch("on_parse_error", getRuntime().newString(text));
+
         throw new SyntaxException(SyntaxException.PID.CHARACTER_BAD, lexer.getPosition(), found, message, (Object)expected);
     }
 
