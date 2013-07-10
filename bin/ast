@@ -140,16 +140,20 @@ module DotGraph
       end
     end
   end
-end
 
-if options[:print_ast]
-  if options[:dot_format]
+  def self.print_graph(root_node)
     defs = {}
-    graph_section = DotGraph.dot(defs, root)
+    graph_section = DotGraph.dot(defs, root_node)
     puts "digraph AST {"
     puts defs.values.join('')
     puts graph_section
     puts "}"
+  end
+end
+
+if options[:print_ast]
+  if options[:dot_format]
+    DotGraph.print_graph(root)
   else
     print "AST:"
     puts indent(root.to_string) 
