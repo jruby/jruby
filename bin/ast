@@ -208,11 +208,10 @@ def ir_setup(root)
 end
 
 module IRPrettyPrinter
-
   def self.pretty_ir(scope, indent="")
     i = 0
     pretty_str = scope.instrs.map do |instr|
-      f_str = indent + "#{i}\s" + instr.to_s
+      f_str = "%s%3i\s\s%s" % [indent, i, instr]
       i += 1
       f_str 
     end
