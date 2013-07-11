@@ -230,6 +230,20 @@
         <module>docs</module>
         <module>maven</module>
       </modules>
+      <build>
+        <defaultGoal>post-site</defaultGoal>
+	<plugins>
+	  <plugin>
+	    <artifactId>maven-site-plugin</artifactId>
+	    <executions>
+	      <execution>
+                <phase>post-site</phase>
+                <goals><goal>stage</goal></goals>
+              </execution>
+            </executions>
+	  </plugin>
+	</plugins>
+      </build>
     </profile>
   </profiles>
     <reporting>
