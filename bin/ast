@@ -209,7 +209,7 @@ end
 
 module IRPrettyPrinter
 
-  def self.ir_instrs(scope, indent="")
+  def self.pretty_ir(scope, indent="")
     instrs = scope.instrs.map do |instr|
       indent + instr.to_s
     end
@@ -220,7 +220,7 @@ module IRPrettyPrinter
   end
 
   def self.print_ir(scope)
-    instrs = ir_instrs(scope)
+    instrs = pretty_ir(scope)
     instrs.each do |instr|
       puts instr
     end
