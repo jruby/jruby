@@ -173,7 +173,17 @@ def print_passes_on(scope, passes)
   end
 end
 
-if options[:print_ir]
+def print_pass_on(scope, pass)
+  if !scope.kind_of? org.jruby.ir.IRClosure
+    pass.run(scope)
+  end
+  
+  scope.lexical_scopes.each do |child_scope|
+    print_pass_on(child_scope, pass)
+  end
+end
+
+def ir_setup(root)
   runtime = JRuby::runtime
   manager = runtime.ir_manager
 
@@ -185,6 +195,15 @@ if options[:print_ir]
 
   scope = builder.new(manager).build_root(root)
   passes = manager.get_compiler_passes(scope)
+  [scope, passes]
+end
+
+if options[:print_pass]
+  scope, passes = ir_setup(root)
+end
+
+if options[:print_ir]
+  scope, passes = ir_setup(root)
 
   print_passes_on(scope, passes)
 end
