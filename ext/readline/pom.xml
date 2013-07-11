@@ -16,14 +16,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <readline.dir>${project.basedir}/../../lib/ruby/shared/readline</readline.dir>
     <base.java.version>1.6</base.java.version>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>

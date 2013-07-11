@@ -503,8 +503,10 @@ public final class Ruby {
         
         Node scriptNode = parseFromMain(inputStream, filename);
 
-        // done with the stream, shut it down
-        try {inputStream.close();} catch (IOException ioe) {}
+        // if no DATA, we're done with the stream, shut it down
+        if (fetchGlobalConstant("DATA") == null) {
+            try {inputStream.close();} catch (IOException ioe) {}
+        }
 
         ThreadContext context = getCurrentContext();
 
@@ -1093,10 +1095,25 @@ public final class Ruby {
     }
 
     /** rb_define_global_const
-     *
+     * Define a constant on the global namespace (i.e. Object) with the given
+     * name and value.
+     * 
+     * @param name the name
+     * @param value the value
      */
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);
+    }
+    
+    /**
+     * Fetch a constant from the global namespace (i.e. Object) with the given
+     * name.
+     * 
+     * @param name the name
+     * @return the value
+     */
+    public IRubyObject fetchGlobalConstant(String name) {
+        return objectClass.fetchConstant(name, false);
     }
 
     public boolean isClassDefined(String name) {
@@ -1631,7 +1648,6 @@ public final class Ruby {
         addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.FFIService");
         addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
-        addLazyBuiltin("rubinius.jar", "rubinius", "org.jruby.ext.rubinius.RubiniusLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
         addLazyBuiltin("io/try_nonblock.jar", "io/try_nonblock", "org.jruby.ext.io.try_nonblock.IOTryNonblockLibrary");
         addLazyBuiltin("pathname_ext.jar", "pathname_ext", "org.jruby.ext.pathname.PathnameLibrary");

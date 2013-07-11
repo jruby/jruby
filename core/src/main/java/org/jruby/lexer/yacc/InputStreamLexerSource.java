@@ -12,6 +12,8 @@ import org.jruby.util.ByteList;
 public class InputStreamLexerSource extends LexerSource {
     private static final int INITIAL_PUSHBACK_SIZE = 100;
     
+    public static final int DATA_READ_BUFFER_SIZE = 65536;
+    
     // Where we get our newest char's
     private final InputStream in;
     
@@ -317,20 +319,6 @@ public class InputStreamLexerSource extends LexerSource {
 
     @Override
     public InputStream getRemainingAsStream() throws IOException {
-        return bufferEntireStream(in);
-    }
-
-    private InputStream bufferEntireStream(InputStream stream) throws IOException {
-        byte[] allBytes = new byte[0];
-        byte[] b = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = stream.read(b)) != -1) {
-            byte[] newbuf = new byte[allBytes.length + bytesRead];
-            System.arraycopy(allBytes, 0, newbuf, 0, allBytes.length);
-            System.arraycopy(b, 0, newbuf, allBytes.length, bytesRead);
-            allBytes = newbuf;
-        }
-
-        return new ByteArrayInputStream(allBytes);
+        return in;
     }
 }

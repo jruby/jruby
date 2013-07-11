@@ -38,7 +38,7 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         assert hasMetaClass(receiver) : receiverClassName(receiver);
         
         // If reciever is self then we do the call the same way as vcall
-        CallSite callSite = selectCallSite(self, receiver);
+        CallSite callSite = callAdapter;
         callSite.call(context, self, receiver, param1, param2);
 
         return param2;
@@ -54,7 +54,7 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         assert hasMetaClass(receiver) : receiverClassName(receiver);
         
         // If reciever is self then we do the call the same way as vcall
-        CallSite callSite = selectCallSite(self, receiver);
+        CallSite callSite = callAdapter;
         callSite.call(context, self, receiver, param1, param2, value);
         
         return runtime.getNil();

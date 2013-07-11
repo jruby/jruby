@@ -50,6 +50,8 @@ See [README.test](docs/README.test.md) for more information.
 
 Visit http://jruby.org for more information.
 
+Visit http://jruby.github.io/jruby for the Maven Site documentation.
+
 ## License
 
 Read the [COPYING](COPYING) file.

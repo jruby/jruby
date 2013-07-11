@@ -88,7 +88,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean isSelf, boolean expr) {
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, isSelf ? CallType.VARIABLE : CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, isSelf ? CallType.FUNCTIONAL : CallType.NORMAL);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
 

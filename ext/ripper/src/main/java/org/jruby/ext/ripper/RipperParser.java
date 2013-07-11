@@ -32,6 +32,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.ext.ripper.Warnings.ID;
 import org.jruby.runtime.Helpers;
@@ -121,6 +122,10 @@ public class RipperParser {
     }
     
     public IRubyObject assignable(IRubyObject name) {
+        // MRI calls get_id(name), but we differ quite a bit and we only need to worry about strings
+        // for anything we care about.  Possibly this should return nil and not original value?
+        if (!(name instanceof RubyString)) return name;
+        
         String javaName = name.asJavaString();
         
         if (javaName.equals("self")) {
@@ -135,15 +140,18 @@ public class RipperParser {
             yyerror("Can't assign to __FILE__");
         } else if (javaName.equals("__LINE__")) {
             yyerror("Can't assign to __LINE__");
-        } else if (Character.isUpperCase(javaName.charAt(0))) {
+        } else if (Character.isUpperCase(javaName.charAt(0))) { // MRI: ID_CONST
             if (isInDef() || isInSingle()) dispatch("on_assign_error", name);
-        } else if (javaName.charAt(0) == '@') {
+            return name;
+        } else if (javaName.charAt(0) == '@') { // MRI: ID_CLASS & ID_INSTANCE
             if (javaName.charAt(1) == '@') {
+                return name;
             } else {
+                return name;
             }
-        } else if (javaName.charAt(0) == '$') {
-        } else {
-        }
+        } else if (javaName.charAt(0) == '$') { // MRI: ID_GLOBAL
+            return name;
+        } 
         
         return name;
     }
@@ -293,15 +301,18 @@ public class RipperParser {
     public StackState getCmdArgumentState() {
         return lexer.getCmdArgumentState();
     }
+    
+    public void compile_error(String message) {
+        dispatch("on_parse_error", getRuntime().newString(message));
+    }
 
     public void yyerror(String message) {
         throw new SyntaxException(SyntaxException.PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), message);
     }
     
     public void yyerror(String message, String[] expected, String found) {
-        String text = message + ", unexpected " + found + "\n";
-        
-        dispatch("on_parse_error", getRuntime().newString(text));
+        compile_error(message + ", unexpected " + found + "\n");
+
         throw new SyntaxException(SyntaxException.PID.CHARACTER_BAD, lexer.getPosition(), found, message, (Object)expected);
     }
 
