@@ -10,6 +10,7 @@ options = {
   :print_ast    => true,
   :print_ir     => false,
   :print_pass   => nil,
+  :pretty_ir    => true,
   :dot_format   => false
 }
 
@@ -40,6 +41,10 @@ OptionParser.new do |opts|
 
   opts.on('-p', "--pass #{ir_passes}", ir_passes, 'Dump IR after running a pass') do |pass|
     options[:print_pass] = pass
+  end
+
+  opts.on('-f', '--formatted-ir', 'Pretty printer for IR (without CFG)') do |f|
+    options[:pretty_ir] = f
   end
   
   opts.on('-s', '--sexp', 'Display the S-Expression for the AST') do |t|
@@ -200,6 +205,32 @@ def ir_setup(root)
   scope = builder.new(manager).build_root(root)
   passes = manager.get_compiler_passes(scope)
   [scope, passes]
+end
+
+module IRPrettyPrinter
+
+  def self.ir_instrs(scope, indent="")
+    instrs = scope.instrs.map do |instr|
+      indent + instr.to_s
+    end
+    scope.lexical_scopes.each do |lex_scope|
+      instrs += ir_instrs(lex_scope, indent + "\s" * 4)
+    end
+    instrs
+  end
+
+  def self.print_ir(scope)
+    instrs = ir_instrs(scope)
+    instrs.each do |instr|
+      puts instr
+    end
+  end
+end
+
+if options[:pretty_ir]
+  scope, passes = ir_setup(root)
+  puts "IR:"
+  IRPrettyPrinter.print_ir(scope)
 end
 
 if options[:print_pass]
