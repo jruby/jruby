@@ -10,7 +10,7 @@ options = {
   :print_ast    => true,
   :print_ir     => false,
   :print_pass   => nil,
-  :pretty_ir    => true,
+  :pretty_ir    => false,
   :dot_format   => false
 }
 
