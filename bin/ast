@@ -213,8 +213,9 @@ module IRPrettyPrinter
     instrs = scope.instrs.map do |instr|
       indent + instr.to_s
     end
+    instrs = [indent + scope.to_s] + instrs
     scope.lexical_scopes.each do |lex_scope|
-      instrs += ir_instrs(lex_scope, indent + "\s" * 4)
+      instrs += pretty_ir(lex_scope, indent + "\s" * 4)
     end
     instrs
   end
