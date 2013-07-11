@@ -210,14 +210,16 @@ end
 module IRPrettyPrinter
 
   def self.pretty_ir(scope, indent="")
-    instrs = scope.instrs.map do |instr|
-      indent + instr.to_s
+    i = 0
+    pretty_str = scope.instrs.map do |instr|
+      indent + "#{i}\s\s" + instr.to_s
+      i += 1
     end
-    instrs = [indent + scope.to_s] + instrs
+    pretty_str = [indent + scope.to_s] + pretty_str
     scope.lexical_scopes.each do |lex_scope|
-      instrs += pretty_ir(lex_scope, indent + "\s" * 4)
+      pretty_str += pretty_ir(lex_scope, indent + "\s" * 4)
     end
-    instrs
+    pretty_str
   end
 
   def self.print_ir(scope)
