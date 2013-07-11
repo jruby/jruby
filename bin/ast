@@ -71,6 +71,10 @@ elsif ! options.has_key?(:expression)
   abort "No script specified (see --help)"
 end
 
+if options[:print_ir] && options[:print_pass]
+  abort "-p and -i is not valid. Use only one of them (see --help)"
+end
+
 $indent_string = "  "
 
 def indexes(string, lindex, rindex)
@@ -200,6 +204,11 @@ end
 
 if options[:print_pass]
   scope, passes = ir_setup(root)
+  pass_name = options[:print_pass]
+  pass = passes.find do |p|
+    p.java_class.to_s.include?(pass_name.to_s)
+  end
+  print_pass_on(scope, pass)
 end
 
 if options[:print_ir]
