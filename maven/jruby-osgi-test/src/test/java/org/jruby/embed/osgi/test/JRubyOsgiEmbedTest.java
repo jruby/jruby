@@ -38,6 +38,7 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.osgi.OSGiScriptingContainer;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
@@ -48,6 +49,7 @@ import org.osgi.framework.FrameworkUtil;
 /**
  * @author ajuckel
  */
+@Ignore
 @RunWith(PaxExam.class)
 public class JRubyOsgiEmbedTest {
     private static final String SCRIPT_RESULT = "Foo!!!!!!!";
@@ -58,6 +60,7 @@ public class JRubyOsgiEmbedTest {
         return options(junitBundles(), bundle(f.toURI().toString()));
     }
 
+    @Ignore
     @Test
     public void testJRubyCreate() throws InterruptedException {
         Bundle b = FrameworkUtil.getBundle(JRubyOsgiEmbedTest.class);

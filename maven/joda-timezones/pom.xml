@@ -2,9 +2,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>1.7.5.dev</version>
+  </parent>
   <groupId>org.jruby</groupId>
   <artifactId>joda-timezones</artifactId>
   <version>2013d</version>
+  <name>JRuby Joda Timezones</name>
   <packaging>jar</packaging>
 
   <dependencies>
@@ -21,6 +27,7 @@
     <tzdata.ftpserver>ftp.iana.org</tzdata.ftpserver>
     <tzdata.ftp.dir>/tz/releases</tzdata.ftp.dir>
     <tzdata.tar.gz>${project.build.directory}/tzdata-${project.version}.tar.gz</tzdata.tar.gz>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
   <build>
     <plugins>
