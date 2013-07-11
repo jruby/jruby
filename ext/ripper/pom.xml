@@ -34,6 +34,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <shared.dir>${project.basedir}/../../lib/ruby/shared</shared.dir>
     <base.java.version>1.6</base.java.version>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
   <dependencies>
