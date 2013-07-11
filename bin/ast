@@ -212,8 +212,9 @@ module IRPrettyPrinter
   def self.pretty_ir(scope, indent="")
     i = 0
     pretty_str = scope.instrs.map do |instr|
-      indent + "#{i}\s\s" + instr.to_s
+      f_str = indent + "#{i}\s" + instr.to_s
       i += 1
+      f_str 
     end
     pretty_str = [indent + scope.to_s] + pretty_str
     scope.lexical_scopes.each do |lex_scope|
