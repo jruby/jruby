@@ -3,9 +3,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>jruby-parent</artifactId>
+    <artifactId>jruby-artifacts</artifactId>
     <version>1.7.5.dev</version>
-    <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby</artifactId>
@@ -26,6 +25,7 @@
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
   <build>
     <plugins>

@@ -3,20 +3,27 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.jruby</groupId>
-        <artifactId>shared</artifactId>
-        <version>1.7.4.dev</version>
-        <relativePath>../../pom.xml</relativePath>
+        <artifactId>jruby-artifacts</artifactId>
+        <version>1.7.5.dev</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>jruby-osgi-test</artifactId>
+    <name>JRuby OSGI Test</name>
 
     <properties>
         <exam.version>3.0.3</exam.version>
         <url.version>1.5.2</url.version>
         <logback.version>1.0.13</logback.version>
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
             <artifactId>pax-exam-container-forked</artifactId>
