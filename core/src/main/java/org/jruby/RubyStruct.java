@@ -121,7 +121,6 @@ public class RubyStruct extends RubyObject {
     
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = getRuntime();
         int h = getMetaClass().getRealClass().hashCode();
 
         for (int i = 0; i < values.length; i++) {
@@ -129,7 +128,7 @@ public class RubyStruct extends RubyObject {
             h ^= RubyNumeric.num2long(invokedynamic(context, values[i], HASH));
         }
         
-        return runtime.newFixnum(h);
+        return context.runtime.newFixnum(h);
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
@@ -489,20 +488,18 @@ public class RubyStruct extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();
-        
-        final Ruby runtime = getRuntime();
-        final RubyStruct otherStruct = (RubyStruct)other;
 
-        // identical
-        if (other == this) return runtime.getTrue();
+        if (other == this) return context.runtime.getTrue();
+        
+        final Ruby runtime = context.runtime;
+        final RubyStruct otherStruct = (RubyStruct)other;        
 
         // recursion guard
         return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
             @Override
             public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) {
-                    return runtime.getTrue();
-                }
+                if (recur) return runtime.getTrue();
+
                 for (int i = 0; i < values.length; i++) {
                     if (!equalInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
                 }
@@ -516,20 +513,18 @@ public class RubyStruct extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
-        
-        final Ruby runtime = getRuntime();
-        final RubyStruct otherStruct = (RubyStruct)other;
 
-        // identical
-        if (other == this) return runtime.getTrue();
+        if (other == this) return context.runtime.getTrue();
+        
+        final Ruby runtime = context.runtime;
+        final RubyStruct otherStruct = (RubyStruct)other;
 
         // recursion guard
         return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
             @Override
             public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) {
-                    return runtime.getTrue();
-                }
+                if (recur) return runtime.getTrue();
+
                 for (int i = 0; i < values.length; i++) {
                     if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
                 }
