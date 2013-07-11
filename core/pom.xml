@@ -32,6 +32,7 @@
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>http://github.com/jruby/jruby</url>
   </scm>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -229,6 +230,7 @@
     <!-- any version which is on maven repo will do -->
     <tzdata.jar.version>2013c</tzdata.jar.version>
     <tzdata.scope>provided</tzdata.scope>
+    <main.basedir>${project.parent.basedir}</main.basedir>
   </properties>
   <build>
     <defaultGoal>package</defaultGoal>
