@@ -57,8 +57,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
     private String name;
     private Node argsNode;
-    public CallSite variableCallAdapter;
-    public CallSite normalCallAdapter;
+    public CallSite callAdapter;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position);
@@ -72,8 +71,9 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.receiverNode = receiverNode;
         this.name = name;
         setArgsInternal(argsNode);
-        this.normalCallAdapter = MethodIndex.getCallSite(name);
-        this.variableCallAdapter = MethodIndex.getVariableCallSite(name);
+        this.callAdapter = receiverNode instanceof SelfNode ?
+                MethodIndex.getFunctionalCallSite(name) :
+                MethodIndex.getCallSite(name);
     }
 
     public NodeType getNodeType() {
@@ -198,7 +198,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         
         // If reciever is self then we do the call the same way as vcall
         CallSite callSite;
-        callSite = selectCallSite(self, receiver);
+        callSite = callAdapter;
         callSite.call(context, self, receiver, args);
 
         return args[args.length - 1];
@@ -210,10 +210,6 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     
     protected static String receiverClassName(IRubyObject object) {
         return object.getClass().getName();
-    }
-    
-    protected CallSite selectCallSite( IRubyObject self,IRubyObject receiver) {
-        return (receiver == self) ? variableCallAdapter : normalCallAdapter;
     }
     
     @Override
