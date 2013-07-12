@@ -113,10 +113,10 @@ public class CharsetTranscoder {
     public static class CodingErrorActions {
         final CodingErrorAction onUnmappableCharacter;
         final CodingErrorAction onMalformedInput;
-        final RubyString replaceWith;
+        final String replaceWith;
 
         CodingErrorActions(CodingErrorAction onUnmappableCharacter,
-                CodingErrorAction onMalformedInput, RubyString replaceWith) {
+                CodingErrorAction onMalformedInput, String replaceWith) {
             this.onUnmappableCharacter = onUnmappableCharacter;
             this.onMalformedInput = onMalformedInput;
             this.replaceWith = replaceWith;
@@ -138,7 +138,7 @@ public class CharsetTranscoder {
         RubyHash hash = (RubyHash) opts;
         CodingErrorAction onMalformedInput = CodingErrorAction.REPORT;
         CodingErrorAction onUnmappableCharacter = CodingErrorAction.REPORT;
-        RubyString replaceWith = null;
+        String replaceWith = null;
         
         IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
         if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
@@ -169,14 +169,14 @@ public class CharsetTranscoder {
                         }
                         break;
                     case 1:
-                        replaceWith = replaceWithStr;
+                        replaceWith = replaceWithStr.asJavaString();
                         break;
                     default:
                         // NIO does not support multi-character replacement
                         // TODO: Error?
                 }
             } else {
-                replaceWith = context.runtime.newString("?");
+                replaceWith = "?";
             }
         }
         
@@ -229,7 +229,7 @@ public class CharsetTranscoder {
         encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
         encoder.onMalformedInput(actions.onMalformedInput);
         if (actions.replaceWith != null) {
-            encoder.replaceWith(actions.replaceWith.getBytes());
+            encoder.replaceWith(actions.replaceWith.getBytes(charset));
         }
 
         return encoder;
