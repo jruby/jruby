@@ -4,7 +4,5 @@ fails:String#encode! given the :xml => :text option replaces undefined character
 fails:String#encode! given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails:String#encode when passed options calls #to_hash to convert the object
 fails:String#encode when passed to, options calls #to_hash to convert the options object
-fails:String#encode when passed to, from, options calls #to_hash to convert the options object
 fails:String#encode! when passed options calls #to_hash to convert the object
 fails:String#encode! when passed to, options calls #to_hash to convert the options object
-fails:String#encode! when passed to, from, options calls #to_hash to convert the options object

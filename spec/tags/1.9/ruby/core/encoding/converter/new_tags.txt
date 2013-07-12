@@ -1,5 +1,3 @@
-fails:Encoding::Converter.new accepts an Encoding object for the source encoding
-fails:Encoding::Converter.new accepts an Encoding object for the destination encoding
 fails:Encoding::Converter.new raises an Encoding::ConverterNotFoundError if both encodings are the same
 fails:Encoding::Converter.new sets replacement from the options Hash
 fails:Encoding::Converter.new calls #to_hash to convert the options argument to a Hash if not a Fixnum
