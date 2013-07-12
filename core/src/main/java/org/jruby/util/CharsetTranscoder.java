@@ -139,15 +139,7 @@ public class CharsetTranscoder {
         CodingErrorAction onMalformedInput = CodingErrorAction.REPORT;
         CodingErrorAction onUnmappableCharacter = CodingErrorAction.REPORT;
         RubyString replaceWith = null;
-            
-        IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
-        if (replace != null && !replace.isNil()) {
-            RubyString replaceWithStr = replace.convertToString();
-            if (replaceWithStr.size() == 1) { // we can only replaceWith a single char
-                replaceWith = replaceWithStr;
-            }
-        }
-            
+        
         IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
         if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
             onMalformedInput = CodingErrorAction.REPLACE;
@@ -158,8 +150,34 @@ public class CharsetTranscoder {
             onUnmappableCharacter = CodingErrorAction.REPLACE;
         }
         
-        if (replaceWith == null && (onUnmappableCharacter == CodingErrorAction.REPLACE || onMalformedInput == CodingErrorAction.REPLACE)) {
-            replaceWith = context.runtime.newString("?");
+        if (onUnmappableCharacter == CodingErrorAction.REPLACE || onMalformedInput == CodingErrorAction.REPLACE) {
+            
+            IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
+            
+            if (replace != null && !replace.isNil()) {
+                
+                RubyString replaceWithStr = replace.convertToString();
+                
+                switch (replaceWithStr.size()) {
+                    case 0:
+                        // replace with empty string is IGNORE in NIO transcoding
+                        if (onUnmappableCharacter == CodingErrorAction.REPLACE) {
+                            onUnmappableCharacter = CodingErrorAction.IGNORE;
+                        }
+                        if (onMalformedInput == CodingErrorAction.REPLACE) {
+                            onMalformedInput = CodingErrorAction.IGNORE;
+                        }
+                        break;
+                    case 1:
+                        replaceWith = replaceWithStr;
+                        break;
+                    default:
+                        // NIO does not support multi-character replacement
+                        // TODO: Error?
+                }
+            } else {
+                replaceWith = context.runtime.newString("?");
+            }
         }
         
         return new CodingErrorActions(onUnmappableCharacter, onMalformedInput, replaceWith);
