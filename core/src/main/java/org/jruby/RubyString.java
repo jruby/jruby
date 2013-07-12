@@ -7684,21 +7684,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             opts = TypeConverter.convertToTypeWithCheck(opts, context.runtime.getHash(), "to_hash");
         }
         
-        // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
-        if (fromName.equals("ASCII-8BIT") && toEncoding.maxLength() > 1) {
-            int length = value.length();
-            
-            for (int byteidx = 0; byteidx < length; byteidx++) {
-                byte b = (byte) value.get(byteidx);
-                if ((b & 0xFF) > 0x7F) {
-                    throw context.runtime.newConverterNotFoundError(
-                            "code converter not found (" 
-                            + fromName + " to " + toName + ")");
-                }
-            }
-        }
-        
-        
         ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts, is7BitASCII);
         
         boolean xmlConversion = false;

@@ -11,6 +11,7 @@ import java.util.Set;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_1Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
@@ -69,6 +70,16 @@ public class CharsetTranscoder {
         String toName = encoding.toString();
         String fromName = fromEncoding.toString();
         
+        // MRI does not allow ASCII-8BIT bytes > 127 to transcode to text-based
+        // encodings, so for transcoding purposes we treat it as US-ASCII. We
+        // also set the "invalid" action to "undef" option, since Java's decode
+        // logic throws "invalid" errors for high-byte US-ASCII rather than
+        // "undefined mapping" errors.
+        if (fromEncoding == ASCIIEncoding.INSTANCE && toEncoding != ASCIIEncoding.INSTANCE) {
+            fromEncoding = USASCIIEncoding.INSTANCE;
+            actions.onMalformedInput = actions.onUnmappableCharacter;
+        }
+        
         Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName, is7BitASCII);
         Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName, is7BitASCII);
 
@@ -111,8 +122,8 @@ public class CharsetTranscoder {
     }
 
     public static class CodingErrorActions {
-        final CodingErrorAction onUnmappableCharacter;
-        final CodingErrorAction onMalformedInput;
+        CodingErrorAction onUnmappableCharacter;
+        CodingErrorAction onMalformedInput;
         final String replaceWith;
 
         CodingErrorActions(CodingErrorAction onUnmappableCharacter,
