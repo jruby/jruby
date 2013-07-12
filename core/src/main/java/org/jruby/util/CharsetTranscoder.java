@@ -1,11 +1,14 @@
 package org.jruby.util;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
@@ -34,9 +37,13 @@ public class CharsetTranscoder {
         add("CP50221");
     }};
     
+    private static final Charset UTF16BE = Charset.forName("UTF-16BE");
+    
     private Encoding toEncoding;
     private CodingErrorActions actions;
     private Encoding forceEncoding = null;
+    private boolean didDecode;
+    private boolean didEncode;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
         this(context, toEncoding, null, getCodingErrorActions(context, options));
@@ -65,38 +72,124 @@ public class CharsetTranscoder {
         return transcode(context.runtime, value, fromEncoding, is7BitASCII);
     }
     
-    protected ByteList transcode(Ruby runtime, ByteList value, Encoding fromEncoding, boolean is7BitASCII) {
-        Encoding encoding = toEncoding != null ? toEncoding : value.getEncoding();
-        String toName = encoding.toString();
-        String fromName = fromEncoding.toString();
+    protected ByteList transcode(Ruby runtime, ByteList value, Encoding inEncoding, boolean is7BitASCII) {
+        Encoding outEncoding = toEncoding != null ? toEncoding : value.getEncoding();
+        String outName = outEncoding.toString();
+        String inName = inEncoding.toString();
         
         // MRI does not allow ASCII-8BIT bytes > 127 to transcode to text-based
         // encodings, so for transcoding purposes we treat it as US-ASCII. We
         // also set the "invalid" action to "undef" option, since Java's decode
         // logic throws "invalid" errors for high-byte US-ASCII rather than
         // "undefined mapping" errors.
-        if (fromEncoding == ASCIIEncoding.INSTANCE && toEncoding != ASCIIEncoding.INSTANCE) {
-            fromEncoding = USASCIIEncoding.INSTANCE;
+        if (inEncoding == ASCIIEncoding.INSTANCE && toEncoding != ASCIIEncoding.INSTANCE) {
+            inEncoding = USASCIIEncoding.INSTANCE;
             actions.onMalformedInput = actions.onUnmappableCharacter;
         }
         
-        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName, is7BitASCII);
-        Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName, is7BitASCII);
+        Charset inCharset = transcodeCharsetFor(runtime, inEncoding, inName, outName, is7BitASCII);
+        Charset outCharset = transcodeCharsetFor(runtime, outEncoding, inName, outName, is7BitASCII);
 
-        CharsetEncoder encoder = getCharsetEncoder(to);
-        CharsetDecoder decoder = getCharsetDecoder(from);
+        CharsetEncoder encoder = getCharsetEncoder(outCharset);
+        CharsetDecoder decoder = getCharsetDecoder(inCharset);
 
-        ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
+        ByteBuffer inBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
+        // TODO: dynamic buffer size?
+        CharBuffer temp = CharBuffer.allocate(1024);
+        int outN = (int)(inBytes.remaining() * decoder.averageCharsPerByte() * encoder.averageBytesPerChar());
+        ByteBuffer outBytes = ByteBuffer.allocate(outN);
+        byte[] replaceBytes = null;
+        didDecode = false;
+        didEncode = false;
         
-        try {
-            ByteBuffer toBytes = encoder.encode(decoder.decode(fromBytes));
+        if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE ||
+                actions.onMalformedInput == CodingErrorAction.REPLACE) {
+            
+            replaceBytes = actions.replaceWith == null ?
+                encoder.replacement() :
+                actions.replaceWith.getBytes(outCharset);
+        }
+        
+        while (inBytes.hasRemaining()) {
+            temp.clear();
+            didDecode = true;
+            CoderResult result = decoder.decode(inBytes, temp, true);
 
-            // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
-            return new ByteList(toBytes.array(), toBytes.arrayOffset(),
-                    toBytes.limit() - toBytes.arrayOffset(), encoding, false);
-        } catch (CharacterCodingException e) {
-            throw runtime.newUndefinedConversionError(e.getLocalizedMessage());
-        }        
+            if (!result.isError()) {
+                // buffer full, transfer to output
+                temp.flip();
+                outBytes = encode(runtime, encoder, temp, outBytes, replaceBytes);
+            } else {
+                if (result.isMalformed()) {
+                    if (actions.onMalformedInput == CodingErrorAction.REPORT) {
+                        throw runtime.newInvalidByteSequenceError("invalid bytes at offset " + inBytes.position());
+                    }
+                    
+                    // transfer to out and skip bad byte
+                    temp.flip();
+                    outBytes = encode(runtime, encoder, temp, outBytes, replaceBytes);
+                    inBytes.get();
+                    
+                    if (actions.onMalformedInput == CodingErrorAction.REPLACE) {
+                        outBytes = putReplacement(outBytes, replaceBytes);
+                    }
+                } else if (result.isUnmappable()) {
+                    if (actions.onUnmappableCharacter == CodingErrorAction.REPORT) {
+                        throw runtime.newUndefinedConversionError("unmappable character at " + inBytes.position());
+                    }
+                    
+                    // transfer to out and skip bad byte
+                    temp.flip();
+                    outBytes = encode(runtime, encoder, temp, outBytes, replaceBytes);
+                    inBytes.get();
+
+                    if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE) {
+                        outBytes = putReplacement(outBytes, replaceBytes);
+                    }
+                }
+            }
+        }
+        
+        // final flush of all coders
+        if (didDecode) {
+            temp.clear();
+            while (true) {
+                CoderResult result = decoder.flush(temp);
+                temp.flip();
+                outBytes = encode(runtime, encoder, temp, outBytes, replaceBytes);
+                if (result == CoderResult.UNDERFLOW) break;
+            }
+        }
+        
+        if (didEncode) {
+            while (encoder.flush(outBytes) == CoderResult.OVERFLOW) {
+                growBuffer(outBytes);
+                encoder.flush(outBytes);
+            }
+        }
+        
+        outBytes.flip();
+
+        // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
+        return new ByteList(outBytes.array(), outBytes.arrayOffset(),
+                outBytes.limit() - outBytes.arrayOffset(), outEncoding, false);
+    }
+    
+    private ByteBuffer growBuffer(ByteBuffer toBytes) {
+        int toN = toBytes.capacity();
+        if (toN == Integer.MAX_VALUE) {
+            // raise error; we can't make a bigger buffer
+            throw new ArrayIndexOutOfBoundsException("cannot allocate output buffer larger than " + Integer.MAX_VALUE + " bytes");
+        }
+        
+        // use long for new size so we don't overflow, but don't exceed int max
+        toN = (int)Math.min((long)toN * 2 + 1, Integer.MAX_VALUE);
+        
+        ByteBuffer newToBytes = ByteBuffer.allocate(toN);
+        toBytes.flip();
+        newToBytes.put(toBytes);
+        
+        return newToBytes;
     }
 
     /**
@@ -121,10 +214,43 @@ public class CharsetTranscoder {
         return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
     }
 
+    private ByteBuffer encode(Ruby runtime, CharsetEncoder encoder, CharBuffer inChars, ByteBuffer outBytes, byte[] replaceBytes) {
+        CoderResult result;
+        while (inChars.hasRemaining()) {
+            didEncode = true;
+            result = encoder.encode(inChars, outBytes, true);
+            if (result.isError() && result.isUnmappable()) {
+                // skip bad char
+                char badChar = inChars.get();
+                
+                if (actions.onUnmappableCharacter == CodingErrorAction.REPORT) {
+                    throw runtime.newUndefinedConversionError("unmappable character: `" + badChar);
+                }
+
+                if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE) {
+                    outBytes = putReplacement(outBytes, replaceBytes);
+                }
+            } else {
+                if (result == CoderResult.OVERFLOW) {
+                    outBytes = growBuffer(outBytes);
+                }
+            }
+        }
+        return outBytes;
+    }
+
+    private ByteBuffer putReplacement(ByteBuffer outBytes, byte[] replaceBytes) {
+        while (outBytes.remaining() < replaceBytes.length) {
+            outBytes = growBuffer(outBytes);
+        }
+        outBytes.put(replaceBytes);
+        return outBytes;
+    }
+
     public static class CodingErrorActions {
         CodingErrorAction onUnmappableCharacter;
         CodingErrorAction onMalformedInput;
-        final String replaceWith;
+        String replaceWith;
 
         CodingErrorActions(CodingErrorAction onUnmappableCharacter,
                 CodingErrorAction onMalformedInput, String replaceWith) {
@@ -166,28 +292,7 @@ public class CharsetTranscoder {
             IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
             
             if (replace != null && !replace.isNil()) {
-                
-                RubyString replaceWithStr = replace.convertToString();
-                
-                switch (replaceWithStr.size()) {
-                    case 0:
-                        // replace with empty string is IGNORE in NIO transcoding
-                        if (onUnmappableCharacter == CodingErrorAction.REPLACE) {
-                            onUnmappableCharacter = CodingErrorAction.IGNORE;
-                        }
-                        if (onMalformedInput == CodingErrorAction.REPLACE) {
-                            onMalformedInput = CodingErrorAction.IGNORE;
-                        }
-                        break;
-                    case 1:
-                        replaceWith = replaceWithStr.asJavaString();
-                        break;
-                    default:
-                        // NIO does not support multi-character replacement
-                        // TODO: Error?
-                }
-            } else {
-                replaceWith = "?";
+                replaceWith = replace.convertToString().asJavaString();
             }
         }
         
@@ -226,10 +331,10 @@ public class CharsetTranscoder {
     private CharsetDecoder getCharsetDecoder(Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
         
-        decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-        decoder.onMalformedInput(actions.onMalformedInput);
-        
-        if (actions.replaceWith != null) decoder.replaceWith(actions.replaceWith.toString());
+//        decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
+//        decoder.onMalformedInput(actions.onMalformedInput);
+//        
+//        if (actions.replaceWith != null) decoder.replaceWith(actions.replaceWith.toString());
 
         return decoder;
     }
@@ -237,11 +342,11 @@ public class CharsetTranscoder {
     private CharsetEncoder getCharsetEncoder(Charset charset) {
         CharsetEncoder encoder = charset.newEncoder();
         
-        encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-        encoder.onMalformedInput(actions.onMalformedInput);
-        if (actions.replaceWith != null) {
-            encoder.replaceWith(actions.replaceWith.getBytes(charset));
-        }
+//        encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
+//        encoder.onMalformedInput(actions.onMalformedInput);
+//        if (actions.replaceWith != null) {
+//            encoder.replaceWith(actions.replaceWith.getBytes(charset));
+//        }
 
         return encoder;
     } 
