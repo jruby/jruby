@@ -5,10 +5,10 @@
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-artifacts</artifactId>
+  <version>1.7.5.dev</version>
   <packaging>pom</packaging>
   <name>JRuby Artifacts</name>
 
@@ -21,6 +21,8 @@
         <module>jruby-complete</module>
         <module>jruby-rake-plugin</module>
         <module>jruby-dist</module>
+        <module>joda-timezones</module>
+        <module>jruby-osgi-test</module>
       </modules>
     </profile>
     <profile>
