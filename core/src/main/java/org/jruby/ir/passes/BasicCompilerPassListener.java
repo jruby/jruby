@@ -15,14 +15,17 @@ public class BasicCompilerPassListener implements CompilerPassListener {
     
     private Map<CompilerPass, Long> times = new HashMap<CompilerPass, Long>();
 
+    @Override
     public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope) {
     }
 
+    @Override
     public void startExecute(CompilerPass pass, IRScope scope, boolean childScope) {
         times.put(pass, new Long(System.currentTimeMillis()));
         LOG.info("Starting " + pass.getLabel() + " on scope " + scope);
     }
 
+    @Override
     public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope) {
         Long startTime = times.get(pass);
         long timeTaken = startTime != null ? System.currentTimeMillis() - startTime.longValue() : -1;

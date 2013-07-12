@@ -96,8 +96,9 @@ public class ExceptionRegion {
         return newR;
     }
 
+    @Override
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("--- Exception Region ---");
         buf.append("\n");
 

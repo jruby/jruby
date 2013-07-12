@@ -9,6 +9,7 @@ public class LinearizeCFG extends CompilerPass {
        add(CFGBuilder.class);
     }};
         
+    @Override
     public String getLabel() {
         return "Linearize CFG";
     }
@@ -18,12 +19,14 @@ public class LinearizeCFG extends CompilerPass {
         return DEPENDENCIES;
     }
 
+    @Override
     public Object execute(IRScope scope, Object... data) {
         scope.buildLinearization();
         
         return null;
     }
     
+    @Override
     public void invalidate(IRScope scope) {
         scope.resetLinearizationData();
     }

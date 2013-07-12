@@ -4,7 +4,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 
 import org.jruby.ir.IRScope;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBreakJump extends RuntimeException {

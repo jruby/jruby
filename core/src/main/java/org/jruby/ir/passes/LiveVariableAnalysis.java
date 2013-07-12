@@ -11,6 +11,7 @@ public class LiveVariableAnalysis extends CompilerPass {
        add(CFGBuilder.class);
     }};
     
+    @Override
     public String getLabel() {
         return "Live Variable Analysis";
     }
@@ -25,6 +26,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         return scope.getDataFlowSolution(LiveVariablesProblem.NAME);
     }
 
+    @Override
     public Object execute(IRScope scope, Object... data) {
         LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
         lvp.compute_MOP_Solution();

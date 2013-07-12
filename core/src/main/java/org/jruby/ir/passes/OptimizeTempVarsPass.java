@@ -18,7 +18,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.passes.CompilerPass;
 
 /**
  *
@@ -27,10 +26,12 @@ import org.jruby.ir.passes.CompilerPass;
 public class OptimizeTempVarsPass extends CompilerPass {
     boolean optimizedTempVars = false;
 
+    @Override
     public String getLabel() {
         return "Temporary Variable Reduction";
     }
 
+    @Override
     public Object execute(IRScope s, Object... data) {
         for (IRClosure c: s.getClosures()) {
             run(c, true);
@@ -48,6 +49,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         return optimizedTempVars ? new Object() : null;
     }
 
+    @Override
     public void invalidate(IRScope s) {
         // FIXME: How do we un-optmize?
     }

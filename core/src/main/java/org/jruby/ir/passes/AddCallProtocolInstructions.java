@@ -20,8 +20,6 @@ import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -29,6 +27,7 @@ import org.jruby.ir.representations.CFG;
 public class AddCallProtocolInstructions extends CompilerPass {
     boolean addedInstrs = false;
 
+    @Override
     public String getLabel() {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
     }
@@ -42,6 +41,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return DEPENDENCIES;
     }
 
+    @Override
     public Object execute(IRScope scope, Object... data) {
         StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
 

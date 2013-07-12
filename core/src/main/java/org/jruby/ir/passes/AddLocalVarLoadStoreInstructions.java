@@ -13,6 +13,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.representations.BasicBlock;
 
 public class AddLocalVarLoadStoreInstructions extends CompilerPass {
+    @Override
     public String getLabel() {
         return "Add Local Variable Load/Store Instructions";
     }
@@ -26,6 +27,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return DEPENDENCIES;
     }
 
+    @Override
     public Object execute(IRScope s, Object... data) {
         // SSS FIXME: In ancient times, I had this check that wrapped the code below.
         // Still useful?

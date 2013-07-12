@@ -23,6 +23,7 @@ public class LocalOptimizationPass extends CompilerPass {
        add(CFGBuilder.class);
     }};
     
+    @Override
     public String getLabel() {
         return "Local Optimizations";
     }
@@ -32,6 +33,7 @@ public class LocalOptimizationPass extends CompilerPass {
         return DEPENDENCIES;
     }
     
+    @Override
     public Object execute(IRScope s, Object... data) {
         // This let us compute execute scope flags for a method based on what all nested closures do
         for (IRClosure c: s.getClosures()) {
@@ -56,6 +58,7 @@ public class LocalOptimizationPass extends CompilerPass {
         return locallyOptimized ? new Object() : null;
     }
     
+    @Override
     public void invalidate(IRScope scope) {
         locallyOptimized = false;
     }

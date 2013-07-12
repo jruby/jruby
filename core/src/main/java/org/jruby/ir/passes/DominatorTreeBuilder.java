@@ -18,6 +18,7 @@ public class DominatorTreeBuilder extends CompilerPass {
        add(CFGBuilder.class);
     }};
     
+    @Override
     public String getLabel() {
         return "Build Dominator Tree";
     }
@@ -27,6 +28,7 @@ public class DominatorTreeBuilder extends CompilerPass {
         return DEPENDENCIES;
     }    
 
+    @Override
     public Object execute(IRScope scope, Object... data) {
         CFG cfg = (CFG) data[0];
 
@@ -39,6 +41,7 @@ public class DominatorTreeBuilder extends CompilerPass {
         return null;
     }
     
+    @Override
     public void invalidate(IRScope scope) {
         // FIXME: We never store our dominator tree anywhere right?
     }
