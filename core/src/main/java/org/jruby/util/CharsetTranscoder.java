@@ -2,13 +2,11 @@ package org.jruby.util;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
@@ -17,7 +15,6 @@ import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -36,8 +33,6 @@ public class CharsetTranscoder {
         add("CP50220");
         add("CP50221");
     }};
-    
-    private static final Charset UTF16BE = Charset.forName("UTF-16BE");
     
     private Encoding toEncoding;
     private CodingErrorActions actions;
@@ -330,23 +325,12 @@ public class CharsetTranscoder {
 
     private CharsetDecoder getCharsetDecoder(Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
-        
-//        decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-//        decoder.onMalformedInput(actions.onMalformedInput);
-//        
-//        if (actions.replaceWith != null) decoder.replaceWith(actions.replaceWith.toString());
 
         return decoder;
     }
 
     private CharsetEncoder getCharsetEncoder(Charset charset) {
         CharsetEncoder encoder = charset.newEncoder();
-        
-//        encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-//        encoder.onMalformedInput(actions.onMalformedInput);
-//        if (actions.replaceWith != null) {
-//            encoder.replaceWith(actions.replaceWith.getBytes(charset));
-//        }
 
         return encoder;
     } 
