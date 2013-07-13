@@ -252,6 +252,8 @@ class Date
     xs.each{|x| x.freeze unless x.nil?}.freeze
   end
 
+  JODA = org.joda.time
+
   class Infinity < Numeric # :nodoc:
 
     include Comparable
@@ -709,6 +711,35 @@ class Date
       time_to_day_fraction(h, min, s)
     end
 
+    def chronology(sg, of=0)
+      tz = if of == 0
+        JODA::DateTimeZone::UTC
+      elsif of = of * 1440 and Rational === of and of.denominator == 1
+        of = of.numerator
+        h, m = of.divmod(60)
+        JODA::DateTimeZone.forOffsetHoursMinutes(h, m)
+      else
+        JODA::DateTimeZone.forOffsetMillis((of * 60_000).to_i)
+      end
+
+      chrono = if sg == ITALY
+        JODA.chrono::GJChronology
+      elsif sg == JULIAN
+        JODA.chrono::JulianChronology
+      elsif sg == GREGORIAN
+        JODA.chrono::GregorianChronology
+      end
+
+      if chrono
+        chrono.getInstance(tz)
+      else
+        constructor = JODA::Instant.java_class.constructor(Java::long)
+        cutover = constructor.new_instance JODA::DateTimeUtils.fromJulianDay(jd_to_ajd(sg, 0))
+        return JODA.chrono::GJChronology.getInstance(tz, cutover)
+      end
+    end
+    private :chronology
+
   end
 
   extend  t
@@ -1136,7 +1167,14 @@ class Date
   # Using one of the factory methods such as Date::civil is
   # generally easier and safer.
   def initialize(ajd=0, of=0, sg=ITALY)
-    @ajd, @of, @sg = ajd, of, sg
+    # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
+    millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).round
+    @dt = JODA::DateTime.new(millis, chronology(sg, of))
+
+    @ajd = ajd
+    @of = offset
+    @sg = start
+
     @__ca__ = {}
   end
 
@@ -1179,20 +1217,35 @@ class Date
   private :civil, :ordinal, :commercial, :weeknum0, :weeknum1
 
   # Get the year of this date.
-  def year() civil[0] end
+  def year
+    year = @dt.getYear
+    if year > 0
+      year
+    else
+      # Joda-time returns -x for year x BC (so there is no year 0),
+      # while date.rb returns -x+1, following astronomical year numbering (with year 0)
+      year + 1
+    end
+  end
 
   # Get the day-of-the-year of this date.
   #
   # January 1 is day-of-the-year 1
-  def yday() ordinal[1] end
+  def yday
+    @dt.getDayOfYear
+  end
 
   # Get the month of this date.
   #
   # January is month 1.
-  def mon() civil[1] end
+  def mon
+    @dt.getMonthOfYear
+  end
 
   # Get the day-of-the-month of this date.
-  def mday() civil[2] end
+  def mday
+    @dt.getDayOfMonth
+  end
 
   alias_method :month, :mon
   alias_method :day, :mday
@@ -1210,13 +1263,19 @@ class Date
   private :time
 
   # Get the hour of this date.
-  def hour() time[0] end
+  def hour
+    @dt.getHourOfDay
+  end
 
   # Get the minute of this date.
-  def min() time[1] end
+  def min
+    @dt.getMinuteOfHour
+  end
 
   # Get the second of this date.
-  def sec() time[2] end
+  def sec
+    @dt.getSecondOfMinute
+  end
 
   # Get the fraction-of-a-second of this date.
   def sec_fraction() time[3] end
@@ -1292,7 +1351,17 @@ class Date
   once :leap?
 
   # When is the Day of Calendar Reform for this Date object?
-  def start() @sg end
+  def start
+    case @dt.getChronology
+    when JODA.chrono.JulianChronology
+      JULIAN
+    when JODA.chrono.GregorianChronology
+      GREGORIAN
+    else
+      ajd = JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
+      ajd_to_jd(ajd)[0]
+    end
+  end
 
   # Create a copy of this Date object using a new Day of Calendar Reform.
   def new_start(sg=self.class::ITALY) self.class.new!(@ajd, @of, sg) end
@@ -1313,7 +1382,9 @@ class Date
   # Calendar.
   def gregorian() new_start(self.class::GREGORIAN) end
 
-  def offset() @of end
+  def offset
+    Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
+  end
 
   def new_offset(of=0)
     if String === of
@@ -1499,8 +1570,8 @@ class Date
 
   # Load from Marshal format.
   def marshal_load(a)
-    @ajd, @of, @sg, = a
-    @__ca__ = {}
+    ajd, of, sg, = a
+    initialize(ajd, of, sg)
   end
 
 end
