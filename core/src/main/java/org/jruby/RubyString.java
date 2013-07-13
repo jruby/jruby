@@ -7673,8 +7673,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-        String toName = toEncoding.toString();
-        String fromName = fromEncoding.toString();
 
         if (opts.isNil() && toEncoding == fromEncoding) {
             return new ByteList(value.bytes(), toEncoding);
