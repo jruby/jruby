@@ -25,8 +25,8 @@ mvn package
 This will do all of the following:
 
 * Compile JRuby
-* Build lib/jruby.jar, needed for running at command line
-* Install rake, rspec, jruby-launcher, and a few other gems for running tests
+* Build `lib/jruby.jar`, needed for running at command line
+* Install `rake`, `rspec`, `jruby-launcher`, and a few other gems for running tests
 
 The environment is now suitable for hacking JRuby and running all test
 targets via Rake.
@@ -38,29 +38,29 @@ updated gems.
 Running JRuby
 -------------
 
-Once bootstrapped, JRuby can be run with the ```build/jruby``` executable. If
-the ```jruby-launcher``` gem installed successfully, this will be a native
+Once bootstrapped, JRuby can be run with the `build/jruby` executable. If
+the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
-```bin/jruby.bash``` bash script.
+`bin/jruby.bash` bash script.
 
 Bootstrapping will install the following gems:
 
-* rake
-* rspec
-* jruby-launcher
-* minitest
-* minitest-excludes
-* rdoc
+* `rake`
+* `rspec`
+* `jruby-launcher`
+* `minitest`
+* `minitest-excludes`
+* `rdoc`
 
-...and dependencies of these gems. A list of the gem versions can be found in
-test/pom.xml in the ```dependencies``` section.
+and dependencies of these gems. A list of the gem versions can be found in
+`test/pom.xml` in the `dependencies` section.
 
-RubyGems is installed by default, and available in ```bin/gem```. It will
-attempt to locate the ```jruby``` executable using ```/usr/bin/env```, so you
-will need the ```bin``` dir in your ```PATH``` environment or you will need to
-call it via JRuby using ```jruby -S gem ...```.
+RubyGems is installed by default, and available in `bin/gem`. It will
+attempt to locate the `jruby` executable using `/usr/bin/env`, so you
+will need the `bin` dir in your `PATH` environment or you will need to
+call it via JRuby using `jruby -S gem ...`.
 
-The ```-S``` flag will run any script installed in JRuby's bin dir by RubyGems.
+The `-S` flag will run any script installed in JRuby's bin dir by RubyGems.
 This can be a simple way to ensure you're running the JRuby (or Ruby) version
 you think you are.
 
