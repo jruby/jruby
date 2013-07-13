@@ -13,6 +13,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +42,7 @@ public class CharsetTranscoder {
     private boolean didEncode;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
-        this(context, toEncoding, null, getCodingErrorActions(context, options));
+        this(context, toEncoding, null, getCodingErrorActions(context, toEncoding, options));
     }
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, CodingErrorActions actions) {
@@ -49,7 +50,7 @@ public class CharsetTranscoder {
         this.forceEncoding = forceEncoding;
         
         if (actions == null) {
-            this.actions = getCodingErrorActions(context, null);
+            this.actions = getCodingErrorActions(context, toEncoding, null);
         } else {
             this.actions = actions;
         }
@@ -199,14 +200,14 @@ public class CharsetTranscoder {
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, false);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, toEncoding, opts)).transcode(context, value, false);
     }
     
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, toEncoding, opts)).transcode(context, value, is7BitASCII);
     }
 
     private ByteBuffer encode(Ruby runtime, CharsetEncoder encoder, CharBuffer inChars, ByteBuffer outBytes, byte[] replaceBytes) {
@@ -260,7 +261,7 @@ public class CharsetTranscoder {
         }
     }
     
-   public static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
+   public static CodingErrorActions getCodingErrorActions(ThreadContext context, Encoding out, IRubyObject opts) {
         if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
                     CodingErrorAction.REPORT, null);
@@ -287,7 +288,11 @@ public class CharsetTranscoder {
             IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
             
             if (replace != null && !replace.isNil()) {
-                replaceWith = replace.convertToString().asJavaString();
+                replaceWith = replace.convertToString().toString();
+            } else if (out instanceof UnicodeEncoding) {
+                replaceWith = "\uFFFD";
+            } else {
+                replaceWith = "?";
             }
         }
         
