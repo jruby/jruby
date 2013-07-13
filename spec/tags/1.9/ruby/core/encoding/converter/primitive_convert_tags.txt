@@ -1,5 +1,4 @@
 fails:Encoding::Converter#primitive_convert accepts a nil source buffer
-fails:Encoding::Converter#primitive_convert accepts a String as the source buffer
 fails:Encoding::Converter#primitive_convert accepts nil for the destination byte offset
 fails:Encoding::Converter#primitive_convert accepts an integer for the destination byte offset
 fails:Encoding::Converter#primitive_convert raises an ArgumentError if the destination byte offset is greater than the bytesize of the destination buffer

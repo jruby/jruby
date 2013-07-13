@@ -34,23 +34,17 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
+import org.jruby.util.CharsetTranscoder;
 
 import static org.jruby.CompatVersion.*;
-import org.jruby.exceptions.RaiseException;
+
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
     private RubyEncoding srcEncoding;
     private RubyEncoding destEncoding;
-    private CharsetDecoder srcDecoder;
-    private CharsetEncoder destEncoder;
+    private RubyHash opts;
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
@@ -104,16 +98,7 @@ public class RubyConverter extends RubyObject {
             throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
         }
 
-        try {
-            srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
-            destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
-        } catch (RaiseException e) {
-            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
-                throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
-            } else {
-                throw e;
-            }
-        }
+        opts = RubyHash.newHash(context.runtime);
 
         return context.runtime.getNil();
     }
@@ -122,11 +107,11 @@ public class RubyConverter extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject opt) {
         initialize(context, src, dest);
 
-        RubyHash options = opt.convertToHash();
+        opts = opt.convertToHash();
         RubySymbol replace = context.runtime.newSymbol("replace");
-        IRubyObject replacement = options.fastARef(replace);
-        if (replacement != null && !replacement.isNil()) {
-            replacement_set(context, replacement);
+        IRubyObject replacement = opts.fastARef(replace);
+        if(replacement != null && !replacement.isNil()) {
+            opts.fastASet(replace, replacement.convertToString());
         }
 
         return context.runtime.getNil();
@@ -134,7 +119,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + srcDecoder.charset().name() + " to " + destEncoder.charset().name());
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + srcEncoding.getEncoding().getName() + " to " + destEncoding.getEncoding().getName());
     }
 
     @JRubyMethod
@@ -160,7 +145,11 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject src, IRubyObject dest) {
-        RubyString result = (RubyString)convert(context, src);
+        ByteList srcBL = src.convertToString().getByteList();
+
+        if (srcBL.getRealSize() == 0) return context.runtime.newSymbol("source_buffer_empty");
+
+        RubyString result = (RubyString) convert(context, src);
         dest.convertToString().replace19(result);
 
         return context.runtime.newSymbol("finished");
@@ -168,47 +157,22 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject convert(ThreadContext context, IRubyObject srcBuffer) {
-        if (!(srcBuffer instanceof RubyString)) {
-            throw context.runtime.newTypeError(srcBuffer, context.runtime.getString());
-        }
+        ByteList srcBL = srcBuffer.convertToString().getByteList();
 
-        RubyString srcString = (RubyString)srcBuffer;
+        ByteList bytes = CharsetTranscoder.transcode(context, srcBL, srcEncoding.getEncoding(), destEncoding.getEncoding(), opts);
 
-        ByteList srcBL = srcString.getByteList();
-
-        if (srcBL.getRealSize() == 0) return context.runtime.newSymbol("source_buffer_empty");
-
-        ByteBuffer srcBB = ByteBuffer.wrap(srcBL.getUnsafeBytes(), srcBL.begin(), srcBL.getRealSize());
-        try {
-            CharBuffer srcCB = CharBuffer.allocate((int) (srcDecoder.maxCharsPerByte() * srcBL.getRealSize()) + 1);
-            CoderResult decodeResult = srcDecoder.decode(srcBB, srcCB, true);
-            srcCB.flip();
-
-            ByteBuffer destBB = ByteBuffer.allocate((int) (destEncoder.maxBytesPerChar() * srcCB.limit()) + 1);
-            CoderResult encodeResult = destEncoder.encode(srcCB, destBB, true);
-            destBB.flip();
-
-            byte[] destBytes = new byte[destBB.limit()];
-            destBB.get(destBytes);
-
-            srcDecoder.reset();
-            destEncoder.reset();
-            
-            return context.runtime.newString(new ByteList(destBytes, destEncoding.getEncoding(), false));
-        } catch (Exception e) {
-            throw context.runtime.newRuntimeError(e.getLocalizedMessage());
-        }
+        return context.runtime.newString(bytes);
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject replacement(ThreadContext context) {
-        return RubyString.newString(context.runtime, srcDecoder.replacement());
+        return opts.fastARef(context.runtime.newSymbol("replace"));
     }
 
 
     @JRubyMethod(name = "replacement=", compat = RUBY1_9)
     public IRubyObject replacement_set(ThreadContext context, IRubyObject replacement) {
-        srcDecoder.replaceWith(replacement.convertToString().asJavaString());
+        opts.fastASet(context.runtime.newSymbol("replace"), replacement.convertToString());
 
         return replacement;
     }}
