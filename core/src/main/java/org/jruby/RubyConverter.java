@@ -100,7 +100,10 @@ public class RubyConverter extends RubyObject {
             destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
         }
 
-        
+        if (srcEncoding.eql(destEncoding)) {
+            throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
+        }
+
         try {
             srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
             destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
