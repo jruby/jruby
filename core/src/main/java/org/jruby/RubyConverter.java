@@ -120,8 +120,15 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject opt) {
-        // TODO: opt
         initialize(context, src, dest);
+
+        RubyHash options = opt.convertToHash();
+        RubySymbol replace = context.runtime.newSymbol("replace");
+        IRubyObject replacement = options.fastARef(replace);
+        if (replacement != null && !replacement.isNil()) {
+            replacement_set(context, replacement);
+        }
+
         return context.runtime.getNil();
     }
 
