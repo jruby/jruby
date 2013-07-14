@@ -261,6 +261,10 @@ public class CharsetTranscoder {
         }
     }
     
+   public static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
+       return getCodingErrorActions(context, null, opts);
+   }
+    
    public static CodingErrorActions getCodingErrorActions(ThreadContext context, Encoding out, IRubyObject opts) {
         if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
@@ -289,7 +293,7 @@ public class CharsetTranscoder {
             
             if (replace != null && !replace.isNil()) {
                 replaceWith = replace.convertToString().toString();
-            } else if (out instanceof UnicodeEncoding) {
+            } else if (out != null && out instanceof UnicodeEncoding) {
                 replaceWith = "\uFFFD";
             } else {
                 replaceWith = "?";
