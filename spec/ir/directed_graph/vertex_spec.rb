@@ -262,4 +262,55 @@ describe "Vertex" do
 
   end
 
+  describe "toString" do
+
+    before do
+      @interim = Vertex.new(@graph, "interim", 3)
+    end
+
+    context "when vertex has no edges" do
+      it "returns string representation of the vertex" do
+        expect(@source.toString).to eq "foo:\n"
+      end
+    end
+
+    context "when vertex has only one outgoing edge" do
+      it "returns string representation of the vertex" do
+        @source.addEdgeTo(@dest)
+        expect(@source.toString).to eq "foo:>[2]\n"
+      end
+    end
+
+    context "when vertex has many outgoing edges" do
+      it "returns string representation of the vertex" do
+        @source.addEdgeTo(@dest)
+        @source.addEdgeTo(@interim)
+        expect(@source.toString).to eq "foo:>[2,3]\n"
+      end
+    end
+
+    context "when vertex has only one incoming edge" do
+      it "returns string representation of the vertex" do
+        @source.addEdgeTo(@dest)
+        expect(@dest.toString).to eq "bar:<[1]\n"
+      end
+    end
+
+    context "when vertex has many incoming edges" do
+      it "returns string representation of the vertex" do
+        @source.addEdgeTo(@dest)
+        @interim.addEdgeTo(@dest)
+        expect(@dest.toString).to eq "bar:<[1,3]\n"
+      end
+    end
+
+    context "when vertex has both incoming and outgoing edges" do
+      it "returns string representation of the vertex" do
+        @source.addEdgeTo(@interim)
+        @interim.addEdgeTo(@dest)
+        expect(@interim.toString).to eq "interim:>[2], <[1]\n"
+      end
+    end
+
+  end
 end
