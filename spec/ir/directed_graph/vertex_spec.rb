@@ -199,10 +199,64 @@ describe "Vertex" do
       end
     end
 
-    context "when there is no incoming edge to current vertex" do
+    context "when there is no incoming edge to the current vertex" do
       it "returns null" do
         @source.addEdgeTo(@dest)
         expect(@source.getIncomingSourceData).to be nil
+      end
+    end
+
+  end
+
+  describe "getIncomingSourceDataOfType" do
+
+    context "when there is atleast one incoming edge to the current vertex of the given type" do
+      it "returns data of the source of that first incoming edge of given type" do
+        @source.addEdgeTo(@dest)
+        expect(@dest.getIncomingSourceDataOfType(nil)).to eq "foo"
+      end
+    end
+
+    context "when there is no incoming edge to the current vertex of given type" do
+      it "returns null" do
+        @source.addEdgeTo(@dest, "foo")
+        expect(@dest.getIncomingEdgeOfType(nil)).to be nil
+      end
+    end
+
+  end
+
+  describe "getOutgoingDestinationData" do
+
+    context "when there is atleast one outgoing edge from the current vertex" do
+      it "returns data of the destination of that first outgoing edge" do
+        @source.addEdgeTo(@dest)
+        expect(@source.getOutgoingDestinationData).to eq "bar"
+      end
+    end
+
+    context "when there is no outgoing edge from the current vertex" do
+      it "returns null" do
+        @source.addEdgeTo(@dest)
+        expect(@dest.getOutgoingDestinationData).to be nil
+      end
+    end
+
+  end
+
+  describe "getOutgoingDestinationDataOfType" do
+
+    context "when there is atleast one outgoing edge from the current vertex of the given type" do
+      it "returns data of the source of that first outgoing edge of given type" do
+        @source.addEdgeTo(@dest)
+        expect(@source.getOutgoingDestinationDataOfType(nil)).to eq "bar"
+      end
+    end
+
+    context "when there is no outgoing edge from the current vertex of given type" do
+      it "returns null" do
+        @source.addEdgeTo(@dest, "foo")
+        expect(@source.getOutgoingDestinationDataOfType(nil)).to be nil
       end
     end
 
