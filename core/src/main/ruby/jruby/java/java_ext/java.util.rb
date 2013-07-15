@@ -100,15 +100,17 @@ module java::util::List
   def index(obj = (no_args = true))
     if !no_args
       ix = 0
-      while (has_next)
-        return ix if obj == self.next
+      iter = iterator
+      while (iter.has_next)
+        return ix if obj == iter.next
         ix +=1
       end
       return nil
     elsif block_given?
       ix = 0
-      while (has_next)
-        return ix if yield self.next
+      iter = iterator
+      while (iter.has_next)
+        return ix if yield iter.next
         ix +=1
       end
       return nil
