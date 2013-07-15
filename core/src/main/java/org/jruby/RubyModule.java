@@ -3423,7 +3423,9 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
-        assert IdUtil.isConstant(name) && value != null;
+        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
+        assert value != null : "value is null";
+        
         ensureConstantsSettable();
         return constantTableStore(name, value);
     }
