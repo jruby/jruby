@@ -42,7 +42,7 @@ public class CharsetTranscoder {
     private boolean didEncode;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
-        this(context, toEncoding, null, getCodingErrorActions(context, toEncoding, options));
+        this(context, toEncoding, null, getCodingErrorActions(context, options));
     }
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, CodingErrorActions actions) {
@@ -50,7 +50,7 @@ public class CharsetTranscoder {
         this.forceEncoding = forceEncoding;
         
         if (actions == null) {
-            this.actions = getCodingErrorActions(context, toEncoding, null);
+            this.actions = getCodingErrorActions(context, null);
         } else {
             this.actions = actions;
         }
@@ -101,9 +101,15 @@ public class CharsetTranscoder {
         if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE ||
                 actions.onMalformedInput == CodingErrorAction.REPLACE) {
             
-            replaceBytes = actions.replaceWith == null ?
-                encoder.replacement() :
-                actions.replaceWith.getBytes(outCharset);
+            if (actions.replaceWith != null) {
+                replaceBytes = actions.replaceWith.getBytes(outCharset);
+            } else {
+                if (outEncoding instanceof UnicodeEncoding) {
+                    replaceBytes = "\uFFFD".getBytes(outCharset);
+                } else {
+                    replaceBytes = "?".getBytes(outCharset);
+                }
+            }
         }
         
         while (inBytes.hasRemaining()) {
@@ -200,14 +206,14 @@ public class CharsetTranscoder {
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, toEncoding, opts)).transcode(context, value, false);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, false);
     }
     
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, toEncoding, opts)).transcode(context, value, is7BitASCII);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
     }
 
     private ByteBuffer encode(Ruby runtime, CharsetEncoder encoder, CharBuffer inChars, ByteBuffer outBytes, byte[] replaceBytes) {
@@ -262,10 +268,6 @@ public class CharsetTranscoder {
     }
     
    public static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
-       return getCodingErrorActions(context, null, opts);
-   }
-    
-   public static CodingErrorActions getCodingErrorActions(ThreadContext context, Encoding out, IRubyObject opts) {
         if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
                     CodingErrorAction.REPORT, null);
@@ -293,10 +295,6 @@ public class CharsetTranscoder {
             
             if (replace != null && !replace.isNil()) {
                 replaceWith = replace.convertToString().toString();
-            } else if (out != null && out instanceof UnicodeEncoding) {
-                replaceWith = "\uFFFD";
-            } else {
-                replaceWith = "?";
             }
         }
         
