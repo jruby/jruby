@@ -3,46 +3,52 @@ namespace :spec do
   # The specs below this section will run specs, but they will not retrieve
   # the specs they run against.  This is so we can run the similiar mspec
   # runs against a stable and head version of the rubyspecs.
+  
+  desc "Run rubyspecs expected to pass in interpreted mode (version-frozen)"
+  task :ruby => :ci_interpreted_18
+  desc "Run rubyspecs expected to pass in interpreted mode (version-frozen)"
+  task :'ruby:int' => :ci_interpreted_18
+  desc "Run rubyspecs expected to pass in interpreted 1.9 mode (version-frozen)"
+  task :ruby19 => :ci_interpreted_19
+  desc "Run rubyspecs expected to pass in interpreted 1.9 mode (version-frozen)"
+  task :'ruby19:int' => :ci_interpreted_19
+  desc "Run rubyspecs expected to pass in compiled mode (version-frozen)"
+  task :'ruby:jit' => :ci_compiled_18
+  desc "Run rubyspecs expected to pass in compiled mode (version-frozen)"
+  task :'ruby19:jit' => :ci_compiled_19
+  desc "Run rubyspecs expected to pass in precompiled mode (version-frozen)"
+  task :'ruby:aot' => :ci_precompiled_18
+  desc "Run rubyspecs expected to pass in precompiled mode (version-frozen)"
+  task :'ruby19:aot' => :ci_precompiled_19
 
   desc "Run simple set of tests over both 1.8 and 1.9 modes"
   task :short => 'spec:ci_interpreted_18_19'
 
   desc "Run rubyspecs expected to pass (version-frozen)"
-  task :ci => ['spec:fetch_stable_specs', 'spec:tagged_18']
+  task :ci => ['spec:tagged_18']
   task :ci_18 => :ci
 
   desc "Run rubyspecs expected to pass (version-frozen)"
-  task :ci_19 => ['spec:fetch_stable_specs', 'spec:tagged_19']
+  task :ci_19 => ['spec:tagged_19']
 
-  desc "Run rubyspecs expected to pass in interpreted mode (version-frozen)"
-  task :ci_interpreted_18 => ['spec:fetch_stable_specs', 'spec:interpreted_18']
-
-  desc "Run rubyspecs expected to pass in interpreted 1.9 mode (version-frozen)"
-  task :ci_interpreted_19 => ['spec:fetch_stable_specs', 'spec:interpreted_19']
-
-  desc "Run rubyspecs expected to pass in compiled mode (version-frozen)"
-  task :ci_compiled_18 => ['spec:fetch_stable_specs', 'spec:compiled_18']
-
-  desc "Run rubyspecs expected to pass in compiled mode (version-frozen)"
-  task :ci_compiled_19 => ['spec:fetch_stable_specs', 'spec:compiled_19']
-
-  desc "Run rubyspecs expected to pass in precompiled mode (version-frozen)"
-  task :ci_precompiled_18 => ['spec:fetch_stable_specs', 'spec:precompiled_18']
-
-  desc "Run rubyspecs expected to pass in precompiled mode (version-frozen)"
-  task :ci_precompiled_19 => ['spec:fetch_stable_specs', 'spec:precompiled_19']
+  task :ci_interpreted_18 => ['spec:interpreted_18']
+  task :ci_interpreted_19 => ['spec:interpreted_19']
+  task :ci_compiled_18 => ['spec:compiled_18']
+  task :ci_compiled_19 => ['spec:compiled_19']
+  task :ci_precompiled_18 => ['spec:precompiled_18']
+  task :ci_precompiled_19 => ['spec:precompiled_19']
 
   desc "Run rubyspecs expected to pass in interpreted mode (version-frozen, both 1.8 and 1.9)"
-  task :ci_interpreted_18_19 => ['spec:fetch_stable_specs', 'spec:interpreted_18', 'spec:interpreted_19']
+  task :ci_interpreted_18_19 => ['spec:interpreted_18', 'spec:interpreted_19']
 
   desc "Run all the specs including failures (version-frozen)"
-  task :ci_all => ['spec:fetch_stable_specs', 'spec:all_18']
+  task :ci_all => ['spec:all_18']
 
   desc "Run all the specs including failures (version-frozen)"
-  task :ci_all_19 => ['spec:fetch_stable_specs', 'spec:all_19']
+  task :ci_all_19 => ['spec:all_19']
 
   desc "Run all the specs in precompiled mode (version-frozen)"
-  task :ci_all_precompiled_18 => ['spec:fetch_stable_specs', 'spec:all_precompiled_18']
+  task :ci_all_precompiled_18 => ['spec:all_precompiled_18']
 
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_18']
