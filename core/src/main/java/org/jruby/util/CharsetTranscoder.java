@@ -15,6 +15,8 @@ import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyConverter;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -35,14 +37,23 @@ public class CharsetTranscoder {
         add("CP50221");
     }};
     
-    private Encoding toEncoding;
+    public final Encoding toEncoding;
     private CodingErrorActions actions;
-    private Encoding forceEncoding = null;
+    public final Encoding forceEncoding;
+    
     private boolean didDecode;
     private boolean didEncode;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
-        this(context, toEncoding, null, getCodingErrorActions(context, options));
+        this(context, toEncoding, null, processCodingErrorActions(context, options));
+    }
+    
+    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding) {
+        this(context, toEncoding, forceEncoding, processCodingErrorActions(context, null));
+    }
+    
+    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, IRubyObject options) {
+        this(context, toEncoding, forceEncoding, processCodingErrorActions(context, options));
     }
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, CodingErrorActions actions) {
@@ -50,7 +61,7 @@ public class CharsetTranscoder {
         this.forceEncoding = forceEncoding;
         
         if (actions == null) {
-            this.actions = getCodingErrorActions(context, null);
+            this.actions = processCodingErrorActions(context, null);
         } else {
             this.actions = actions;
         }
@@ -206,14 +217,14 @@ public class CharsetTranscoder {
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, false);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, processCodingErrorActions(context, opts)).transcode(context, value, false);
     }
     
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, processCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
     }
 
     private ByteBuffer encode(Ruby runtime, CharsetEncoder encoder, CharBuffer inChars, ByteBuffer outBytes, byte[] replaceBytes) {
@@ -265,34 +276,75 @@ public class CharsetTranscoder {
         public String toString() {
             return "UnmappableCharacter: " + onUnmappableCharacter + ", MalformedInput: " + onMalformedInput + ", replaceWith: " + replaceWith;
         }
+
+        public CodingErrorAction getOnUnmappableCharacter() {
+            return onUnmappableCharacter;
+        }
+
+        public void setOnUnmappableCharacter(CodingErrorAction onUnmappableCharacter) {
+            this.onUnmappableCharacter = onUnmappableCharacter;
+        }
+
+        public CodingErrorAction getOnMalformedInput() {
+            return onMalformedInput;
+        }
+
+        public void setOnMalformedInput(CodingErrorAction onMalformedInput) {
+            this.onMalformedInput = onMalformedInput;
+        }
+
+        public String getReplaceWith() {
+            return replaceWith;
+        }
+
+        public void setReplaceWith(String replaceWith) {
+            this.replaceWith = replaceWith;
+        }
     }
     
-   public static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
+    public CodingErrorActions getCodingErrorActions() {
+        return actions;
+    }
+    
+    public static CodingErrorActions processCodingErrorActions(ThreadContext context, IRubyObject opts) {
         if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
                     CodingErrorAction.REPORT, null);
         } 
 
         Ruby runtime = context.runtime;
-        RubyHash hash = (RubyHash) opts;
         CodingErrorAction onMalformedInput = CodingErrorAction.REPORT;
         CodingErrorAction onUnmappableCharacter = CodingErrorAction.REPORT;
         String replaceWith = null;
         
-        IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
-        if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-            onMalformedInput = CodingErrorAction.REPLACE;
-        }
+        if (opts instanceof RubyFixnum) {
+            int flags = (int)((RubyFixnum)opts).getLongValue();
+            
+            switch (flags & RubyConverter.INVALID_MASK) {
+                case RubyConverter.INVALID_REPLACE:
+                    onMalformedInput = CodingErrorAction.REPLACE;
+                    break;
+            }
+            
+            switch (flags & RubyConverter.UNDEF_MASK) {
+                case RubyConverter.UNDEF_REPLACE:
+                    onUnmappableCharacter = CodingErrorAction.REPLACE;
+                    break;
+            }
+        } else {
+            RubyHash hash = opts.convertToHash();
 
-        IRubyObject undef = hash.fastARef(runtime.newSymbol("undef"));
-        if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-            onUnmappableCharacter = CodingErrorAction.REPLACE;
-        }
-        
-        if (onUnmappableCharacter == CodingErrorAction.REPLACE || onMalformedInput == CodingErrorAction.REPLACE) {
-            
+            IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
+            if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
+                onMalformedInput = CodingErrorAction.REPLACE;
+            }
+
+            IRubyObject undef = hash.fastARef(runtime.newSymbol("undef"));
+            if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
+                onUnmappableCharacter = CodingErrorAction.REPLACE;
+            }
+
             IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
-            
             if (replace != null && !replace.isNil()) {
                 replaceWith = replace.convertToString().toString();
             }

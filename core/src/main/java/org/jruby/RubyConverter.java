@@ -49,13 +49,10 @@ import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.encoding.EncodingService;
-import sun.nio.cs.ext.ISO2022_JP;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
-    private RubyEncoding srcEncoding;
-    private RubyEncoding destEncoding;
-    private RubyHash opts;
+    private CharsetTranscoder transcoder;
     
     @JRubyConstant
     public static final int INVALID_MASK = 15;
@@ -131,79 +128,64 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest) {
-        
-        if (src instanceof RubyEncoding) {
-            srcEncoding = (RubyEncoding)src;
-        } else {
-            srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
-        }
-
-        
-        if (dest instanceof RubyEncoding) {
-            destEncoding = (RubyEncoding)dest;
-        } else {
-            destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
-        }
-
-        if (srcEncoding.eql(destEncoding)) {
-            throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
-        }
-
-        // Ensure we'll be able to get charsets fo these encodings
-        try {
-            context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding());
-            context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding());
-        } catch (RaiseException e) {
-            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
-                throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
-            } else {
-                throw e;
-            }
-        }
-
-        opts = RubyHash.newHash(context.runtime);
-
-        return context.runtime.getNil();
+        return initialize(context, src, dest, context.nil);
     }
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject opt) {
-        initialize(context, src, dest);
+        Ruby runtime = context.runtime;
+        EncodingService encodingService = runtime.getEncodingService();
+        
+        RubyEncoding srcEncoding = (RubyEncoding)encodingService.rubyEncodingFromObject(src);
+        RubyEncoding destEncoding = (RubyEncoding)encodingService.rubyEncodingFromObject(dest);
 
-        opts = opt.convertToHash();
-        RubySymbol replace = context.runtime.newSymbol("replace");
-        IRubyObject replacement = opts.fastARef(replace);
-        if(replacement != null && !replacement.isNil()) {
-            opts.fastASet(replace, replacement.convertToString());
+        if (srcEncoding.eql(destEncoding)) {
+            throw runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
         }
+
+        // Ensure we'll be able to get charsets fo these encodings
+        try {
+            encodingService.charsetForEncoding(srcEncoding.getEncoding());
+            encodingService.charsetForEncoding(destEncoding.getEncoding());
+        } catch (RaiseException e) {
+            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
+                throw runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
+            } else {
+                throw e;
+            }
+        }
+        
+        transcoder = new CharsetTranscoder(context, destEncoding.getEncoding(), srcEncoding.getEncoding(), opt);
 
         return context.runtime.getNil();
     }
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + srcEncoding.getEncoding().getName() + " to " + destEncoding.getEncoding().getName());
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.forceEncoding.getName() + " to " + transcoder.toEncoding.getName());
     }
 
     @JRubyMethod
     public IRubyObject convpath(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        EncodingService encodingService = runtime.getEncodingService();
         // we always pass through UTF-16
-        IRubyObject utf16Encoding = context.runtime.getEncodingService().getEncodingList()[UTF16.getIndex()];
+        IRubyObject utf16Encoding = encodingService.getEncodingList()[UTF16.getIndex()];
         return RubyArray.newArray(
-                context.runtime,
-                RubyArray.newArray(context.runtime, srcEncoding, utf16Encoding),
-                RubyArray.newArray(context.runtime, utf16Encoding, destEncoding)
+                runtime,
+                RubyArray.newArray(runtime, source_encoding(context), utf16Encoding),
+                RubyArray.newArray(runtime, utf16Encoding, destination_encoding(context))
         );
     }
 
     @JRubyMethod
-    public IRubyObject source_encoding() {
-        return srcEncoding;
+    public IRubyObject source_encoding(ThreadContext context) {
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.forceEncoding);
     }
 
     @JRubyMethod
-    public IRubyObject destination_encoding() {
-        return destEncoding;
+    public IRubyObject destination_encoding(ThreadContext context) {
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.toEncoding);
     }
 
     @JRubyMethod
@@ -220,22 +202,30 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject convert(ThreadContext context, IRubyObject srcBuffer) {
-        ByteList srcBL = srcBuffer.convertToString().getByteList();
+        RubyString srcString = srcBuffer.convertToString();
+        boolean is7BitAscii = srcString.isCodeRangeAsciiOnly();
+        ByteList srcBL = srcString.getByteList();
 
-        ByteList bytes = CharsetTranscoder.transcode(context, srcBL, srcEncoding.getEncoding(), destEncoding.getEncoding(), opts);
+        ByteList bytes = transcoder.transcode(context, srcBL, is7BitAscii);
 
         return context.runtime.newString(bytes);
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject replacement(ThreadContext context) {
-        return opts.fastARef(context.runtime.newSymbol("replace"));
+        String replacement = transcoder.getCodingErrorActions().getReplaceWith();
+        
+        if (replacement == null) {
+            return context.nil;
+        }
+        
+        return context.runtime.newString(replacement);
     }
 
 
     @JRubyMethod(name = "replacement=", compat = RUBY1_9)
     public IRubyObject replacement_set(ThreadContext context, IRubyObject replacement) {
-        opts.fastASet(context.runtime.newSymbol("replace"), replacement.convertToString());
+        transcoder.getCodingErrorActions().setReplaceWith(replacement.convertToString().asJavaString());
 
         return replacement;
     }

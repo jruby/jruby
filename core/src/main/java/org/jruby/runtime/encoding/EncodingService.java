@@ -380,14 +380,12 @@ public final class EncodingService {
 
         return findEntryWithError(name);
     }
-
-    /**
-     * Look up the pre-existing RubyEncoding object for an EncodingDB.Entry.
-     *
-     * @param str
-     * @return
-     */
+    
     public IRubyObject rubyEncodingFromObject(IRubyObject str) {
+        if (str instanceof RubyEncoding) {
+            return str;
+        }
+        
         Entry entry = findEntry(str);
         if (entry == null) return runtime.getNil();
         return getEncodingList()[entry.getIndex()];

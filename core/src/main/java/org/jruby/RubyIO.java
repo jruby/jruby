@@ -1082,7 +1082,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc2 = null;
                 }
             }
-            transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
+            transcodingActions = CharsetTranscoder.processCodingErrorActions(context, options);
             setReadEncoding(enc);
             setWriteEncoding(enc2);
         } else {
@@ -1099,7 +1099,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     
                     EncodingUtils.setupReadWriteEncodings(context, this, null, enc);
                 }
-                transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
+                transcodingActions = CharsetTranscoder.processCodingErrorActions(context, options);
             }
         }
 
