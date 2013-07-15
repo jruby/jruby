@@ -1,4 +1,3 @@
 fails:Encoding::Converter.search_convpath returns multiple encoding pairs when direct conversion is impossible
 fails:Encoding::Converter.search_convpath only lists a source encoding once
 fails:Encoding::Converter.search_convpath indicates if crlf_newline conversion would occur
-fails:Encoding::Converter.search_convpath raises an Encoding::ConverterNotFoundError if no conversion path exists

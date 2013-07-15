@@ -37,6 +37,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Visibility.*;
@@ -46,6 +47,33 @@ public class RubyConverter extends RubyObject {
     private RubyEncoding srcEncoding;
     private RubyEncoding destEncoding;
     private RubyHash opts;
+    
+    @JRubyConstant
+    public static final int INVALID_MASK = 15;
+    @JRubyConstant
+    public static final int INVALID_REPLACE = 2;
+    @JRubyConstant
+    public static final int UNDEF_MASK = 240;
+    @JRubyConstant
+    public static final int UNDEF_REPLACE = 32;
+    @JRubyConstant
+    public static final int UNDEF_HEX_CHARREF = 48;
+    @JRubyConstant
+    public static final int PARTIAL_INPUT = 65536;
+    @JRubyConstant
+    public static final int AFTER_OUTPUT = 131072;
+    @JRubyConstant
+    public static final int UNIVERSAL_NEWLINE_DECORATOR = 256;
+    @JRubyConstant
+    public static final int CRLF_NEWLINE_DECORATOR = 4096;
+    @JRubyConstant
+    public static final int CR_NEWLINE_DECORATOR = 8192;
+    @JRubyConstant
+    public static final int XML_TEXT_DECORATOR = 16384;
+    @JRubyConstant
+    public static final int XML_ATTR_CONTENT_DECORATOR = 32768;
+    @JRubyConstant
+    public static final int XML_ATTR_QUOTE_DECORATOR = 1048576;
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
@@ -55,6 +83,7 @@ public class RubyConverter extends RubyObject {
         converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 
         converterc.defineAnnotatedMethods(RubyConverter.class);
+        converterc.defineAnnotatedConstants(RubyConverter.class);
         return converterc;
     }
 
