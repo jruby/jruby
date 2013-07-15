@@ -97,6 +97,52 @@ module java::util::List
     val
   end
 
+  def index(obj = (no_args = true))
+    if !no_args
+      ix = 0
+      iter = iterator
+      while (iter.has_next)
+        return ix if obj == iter.next
+        ix +=1
+      end
+      return nil
+    elsif block_given?
+      ix = 0
+      iter = iterator
+      while (iter.has_next)
+        return ix if yield iter.next
+        ix +=1
+      end
+      return nil
+    else
+      Enumerator.new(self, :index)
+    end
+  end
+
+  def rindex(obj = (no_args = true))
+    if !no_args
+      i = size
+      while (i -= 1) >= 0
+        return i if obj == get(i)
+
+        # blocks can modify the list, don't go past bounds
+        i = size if i > size
+      end
+      return nil
+    elsif block_given?
+      i = size
+      while (i -= 1) >= 0
+        return i if yield get(i)
+
+        # blocks can modify the list, don't go past bounds
+        i = size if i > size
+      end
+      return nil
+    else
+      Enumerator.new(self, :rindex)
+    end
+  end
+
   def sort(&block)
     comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
     list = java::util::ArrayList.new
