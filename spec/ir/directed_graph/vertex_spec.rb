@@ -1,3 +1,7 @@
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../../helpers/ir"
+
+require 'vertex_helpers'
+
 import 'org.jruby.ir.util.DirectedGraph'
 import 'org.jruby.ir.util.Vertex'
 
@@ -16,11 +20,11 @@ describe "Vertex" do
     end
 
     it "adds outgoing edge to source" do
-      expect(@source.outDegree).to eq 1
+      expect(@source).to have_out_degree 1
     end
 
     it "adds incoming edge to destination" do
-      expect(@dest.inDegree).to eq 1
+      expect(@dest).to have_in_degree 1
     end
 
     it "adds the edge to the graph containing source" do
@@ -49,12 +53,12 @@ describe "Vertex" do
 
       it "removes an edge from outgoing edges of the source vertex" do
         @source.removeEdgeTo(@dest)
-        expect(@source.outDegree).to eq 0
+        expect(@source).to have_out_degree 0
       end
 
       it "removes an edge from incoming edges of the destination vertex" do
         @source.removeEdgeTo(@dest)
-        expect(@dest.inDegree).to eq 0
+        expect(@dest).to have_in_degree 0
       end
 
     end
