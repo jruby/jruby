@@ -37,6 +37,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Visibility.*;
 
@@ -96,6 +97,18 @@ public class RubyConverter extends RubyObject {
 
         if (srcEncoding.eql(destEncoding)) {
             throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
+        }
+
+        // Ensure we'll be able to get charsets fo these encodings
+        try {
+            context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding());
+            context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding());
+        } catch (RaiseException e) {
+            if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
+                throw context.runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
+            } else {
+                throw e;
+            }
         }
 
         opts = RubyHash.newHash(context.runtime);
