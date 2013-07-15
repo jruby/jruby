@@ -55,32 +55,6 @@ public final class EncodingService {
         javaDefault = javaDefaultEntry == null ? ascii8bit : javaDefaultEntry.getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
-
-        if (runtime.is1_9()) {
-            RubyEncoding.createEncodingClass(runtime);
-            RubyConverter.createConverterClass(runtime);
-            defineEncodings();
-            defineAliases();
-
-            // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-            String encoding = runtime.getInstanceConfig().getExternalEncoding();
-            if (encoding != null && !encoding.equals("")) {
-                Encoding loadedEncoding = loadEncoding(ByteList.create(encoding));
-                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-                runtime.setDefaultExternalEncoding(loadedEncoding);
-            } else {
-                Encoding consoleEncoding = getConsoleEncoding();
-                Encoding availableEncoding = consoleEncoding == null ? getLocaleEncoding() : consoleEncoding;
-                runtime.setDefaultExternalEncoding(availableEncoding);
-            }
-
-            encoding = runtime.getInstanceConfig().getInternalEncoding();
-            if (encoding != null && !encoding.equals("")) {
-                Encoding loadedEncoding = loadEncoding(ByteList.create(encoding));
-                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-                runtime.setDefaultInternalEncoding(loadedEncoding);
-            }
-        }
     }
 
     /**
@@ -90,7 +64,7 @@ public final class EncodingService {
      *
      * @return console codepage
      */
-    private Encoding getConsoleEncoding() {
+    public Encoding getConsoleEncoding() {
         if (!Platform.IS_WINDOWS) return null;
 
         Encoding consoleEncoding = null;
@@ -179,7 +153,7 @@ public final class EncodingService {
         return encodingIndex[enc.getIndex()];
     }
 
-    private void defineEncodings() {
+    public void defineEncodings() {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
@@ -191,7 +165,7 @@ public final class EncodingService {
         }
     }
 
-    private void defineAliases() {
+    public void defineAliases() {
         HashEntryIterator hei = aliases.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
