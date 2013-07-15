@@ -25,8 +25,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -41,6 +48,8 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Visibility.*;
+import org.jruby.runtime.encoding.EncodingService;
+import sun.nio.cs.ext.ISO2022_JP;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
@@ -74,6 +83,18 @@ public class RubyConverter extends RubyObject {
     public static final int XML_ATTR_CONTENT_DECORATOR = 32768;
     @JRubyConstant
     public static final int XML_ATTR_QUOTE_DECORATOR = 1048576;
+    
+    // TODO: This is a little ugly...we should have a table of these in jcodings.
+    private static final Map<Encoding, Encoding> NONASCII_TO_ASCII = new HashMap<Encoding, Encoding>();
+    static {
+        NONASCII_TO_ASCII.put(UTF16BEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(UTF16LEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(UTF32BEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(UTF32LEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("ISO-2022-JP".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("stateless-ISO-2022-JP".getBytes()).getEncoding());
+    }
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
@@ -217,4 +238,29 @@ public class RubyConverter extends RubyObject {
         opts.fastASet(context.runtime.newSymbol("replace"), replacement.convertToString());
 
         return replacement;
-    }}
+    }
+    
+    @JRubyMethod(compat = RUBY1_9, meta = true)
+    public static IRubyObject asciicompat_encoding(ThreadContext context, IRubyObject self, IRubyObject strOrEnc) {
+        Ruby runtime = context.runtime;
+        EncodingService encodingService = runtime.getEncodingService();
+        
+        Encoding encoding = encodingService.getEncodingFromObjectNoError(strOrEnc);
+        
+        if (encoding == null) {
+            return context.nil;
+        }
+        
+        if (encoding.isAsciiCompatible()) {
+            return context.nil;
+        }
+        
+        Encoding asciiCompat = NONASCII_TO_ASCII.get(encoding);
+        
+        if (asciiCompat == null) {
+            throw runtime.newConverterNotFoundError("no ASCII compatible encoding found for " + strOrEnc);
+        }
+        
+        return encodingService.convertEncodingToRubyEncoding(asciiCompat);
+    }
+}

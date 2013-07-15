@@ -265,6 +265,14 @@ public final class EncodingService {
     }
 
     public Encoding getEncodingFromObject(IRubyObject arg) {
+        return getEncodingFromObjectCommon(arg, true);
+    }
+
+    public Encoding getEncodingFromObjectNoError(IRubyObject arg) {
+        return getEncodingFromObjectCommon(arg, false);
+    }
+
+    private Encoding getEncodingFromObjectCommon(IRubyObject arg, boolean error) {
         if (arg == null) return null;
 
         Encoding encoding = null;
@@ -273,7 +281,11 @@ public final class EncodingService {
         } else if (arg instanceof RubyFixnum && RubyNKF.NKFCharsetMap.containsKey((int)arg.convertToInteger().getLongValue())) {
             return getEncodingFromNKFId(arg);
         } else if (!arg.isNil()) {
-            encoding = arg.convertToString().toEncoding(runtime);
+            if (error) {
+                encoding = findEncoding(arg.convertToString());
+            } else {
+                encoding = findEncodingNoError(arg.convertToString());
+            }
         }
         return encoding;
     }
@@ -316,6 +328,23 @@ public final class EncodingService {
      * @return the Encoding object found, nil (for internal), or raises ArgumentError
      */
     public Encoding findEncoding(IRubyObject str) {
+        return findEncodingCommon(str, true);
+    }
+
+    /**
+     * Find an encoding given a Ruby object, coercing it to a String in the process.
+     * This version does not raise a Ruby error if it can't find the encoding,
+     * and simply returns null.
+     *
+     * @param str the object to coerce and use to look up encoding. The coerced String
+     * must be ASCII-compatible.
+     * @return the Encoding object found, nil (for internal), or raises ArgumentError
+     */
+    public Encoding findEncodingNoError(IRubyObject str) {
+        return findEncodingCommon(str, false);
+    }
+    
+    private Encoding findEncodingCommon(IRubyObject str, boolean error) {
         ByteList name = str.convertToString().getByteList();
         checkAsciiEncodingName(name);
 
@@ -323,8 +352,14 @@ public final class EncodingService {
         if (special != null) {
             return special.toEncoding(runtime);
         }
+        
+        if (error) return findEncodingWithError(name);
+        
+        Entry e = findEncodingOrAliasEntry(name);
 
-        return findEncodingWithError(name);
+        if (e == null) return null;
+
+        return e.getEncoding();
     }
 
     /**
