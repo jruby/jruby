@@ -10,23 +10,7 @@
   <packaging>jar</packaging>
   
   <name>JRuby Core</name>
-  
-  <repositories>
-    <repository>
-      <id>localrepo</id>
-      <url>file:${jruby.basedir}/localrepo</url>
-    </repository>
-    <repository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
+
   <scm>
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>

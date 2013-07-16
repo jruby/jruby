@@ -9,6 +9,24 @@
 
   <name>JRuby</name>
 
+  <repositories>
+    <repository>
+      <id>localrepo</id>
+      <url>file:${basedir}/localrepo</url>
+    </repository>
+  <!-- we might need to remove that repo on release -->
+    <repository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <modules>
     <module>ext</module>
     <module>core</module>
@@ -46,6 +64,7 @@
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
     <rdoc.version>4.0.1</rdoc.version>
     <json.version>1.8.0</json.version>
+    <bc.version>1.47</bc.version>
     <base.java.version>1.6</base.java.version>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
@@ -298,6 +317,12 @@
   </dependencyManagement>
 
   <profiles>
+    <profile>
+      <id>gems</id>
+      <modules>
+        <module>gems</module>
+      </modules>
+    </profile>
     <profile>
       <id>docs</id>
       <modules>

@@ -15,7 +15,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <bc.version>1.47</bc.version>
     <openssl.dir>${project.basedir}/../../lib/ruby/shared</openssl.dir>
     <base.java.version>1.6</base.java.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
