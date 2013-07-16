@@ -951,10 +951,7 @@ public class RubyTime extends RubyObject {
         int pow = (int) Math.pow(10, 9 - ndigits);
         int rounded = ((nsec + pow/2) / pow) * pow;
         DateTime dt = this.dt.withMillisOfSecond(rounded / 1000000);
-        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass(), dt);
-        newTime.setNSec(rounded % 1000000);
-        
-        return newTime;
+        return newTime(context.runtime, dt, rounded % 1000000);
     }
 
    /* Time class methods */
