@@ -1210,6 +1210,7 @@ public class RubyTime extends RubyObject {
         int len = ARG_SIZE;
         Boolean isDst = null;
         boolean setTzRelative = false; 
+        long nanos = 0;
 
         DateTimeZone dtz;
         if (gmt) {
@@ -1320,9 +1321,10 @@ public class RubyTime extends RubyObject {
             // 1.9 will observe fractional seconds *if* not given usec
             if (runtime.is1_9() && !args[5].isNil()
                     && args[6].isNil()) {
-                double millis = RubyFloat.num2dbl(args[5]);
-                int int_millis = (int) (millis * 1000) % 1000;
+                double secs = RubyFloat.num2dbl(args[5]);
+                int int_millis = (int) (secs * 1000) % 1000;
                 dt = dt.plusMillis(int_millis);
+                nanos = ((long) (secs * 1000000000) % 1000000);
             }
 
             dt = dt.withZoneRetainFields(dtz);
@@ -1360,9 +1362,8 @@ public class RubyTime extends RubyObject {
 
             if (runtime.is1_9() && fractionalUSecGiven) {
                 double micros = RubyNumeric.num2dbl(args[6]);
-                double nanos = micros * 1000;
                 time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                time.setNSec((long)(nanos % 1000000));
+                nanos = ((long) (micros * 1000) % 1000000);
             } else {
                 int usec = int_args[4] % 1000;
                 int msec = int_args[4] / 1000;
@@ -1375,6 +1376,9 @@ public class RubyTime extends RubyObject {
                 time.setUSec(usec);
             }
         }
+
+        if (nanos != 0)
+            time.setNSec(nanos);
 
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         time.setIsTzRelative(setTzRelative);
