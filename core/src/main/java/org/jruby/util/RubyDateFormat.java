@@ -531,8 +531,7 @@ public class RubyDateFormat extends DateFormat {
                     }
                     break;
                 case FORMAT_SECONDS:
-                    value = dt.getSecondOfMinute();
-                    output = (value < 10 ? "0" : "") + Long.toString(value);
+                    output = twoCharDigit(dt.getSecondOfMinute());
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     output = formatWeekYear(java.util.Calendar.MONDAY);
