@@ -946,12 +946,13 @@ public class RubyTime extends RubyObject {
         } else if (ndigits < 0) {
             throw context.getRuntime().newArgumentError("negative ndigits given");
         }
-        
-        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass(), this.dt);
-        long millis = newTime.dt.getMillis();
-        double rounded = Math.round(millis * 1000000 / Math.pow(10, 9 - ndigits))
-                * Math.pow(10, 9 - ndigits);
-        newTime.dt = newTime.dt.withMillis((long) rounded / 1000000);
+
+        int nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
+        int pow = (int) Math.pow(10, 9 - ndigits);
+        int rounded = ((nsec + pow/2) / pow) * pow;
+        DateTime dt = this.dt.withMillisOfSecond(rounded / 1000000);
+        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass(), dt);
+        newTime.setNSec(rounded % 1000000);
         
         return newTime;
     }
