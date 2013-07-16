@@ -602,9 +602,19 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
                     if (ruby_1_9) value += nsec;
-                    String width = ruby_1_9 ? "9" : "3";
-                    if (formatter != null) width = formatter.getFormatter();
-                    output = String.format("%0" + width + "d", value).substring(0, Integer.valueOf(width));
+                    int width = ruby_1_9 ? 9 : 3;
+                    if (formatter != null) {
+                        int w = Integer.valueOf(formatter.getFormatter());
+                        if (w > 0)
+                            width = w;
+                    }
+                    output = String.format("%09d", value);
+                    if (width < 9) {
+                        output = output.substring(0, width);
+                    } else {
+                        while(output.length() < width)
+                            output += "0";
+                    }
                     formatter = null; // we are done with this formatter
                     break;
                 case FORMAT_WEEKYEAR:
