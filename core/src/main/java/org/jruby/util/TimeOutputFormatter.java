@@ -25,16 +25,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import org.jruby.util.RubyDateFormat.FieldType;
+
 /**
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
 public class TimeOutputFormatter {
-    private final String formatter;
-    private final int totalPadding;
+    final String format;
+    final int width;
 
-    public TimeOutputFormatter(String formatter, int totalPadding) {
-        this.formatter = formatter;
-        this.totalPadding = totalPadding;
+    public final static TimeOutputFormatter DEFAULT_FORMATTER = new TimeOutputFormatter("", 0);
+
+    public TimeOutputFormatter(String format, int width) {
+        this.format = format;
+        this.width = width;
     }
 
     // Really ugly stop-gap method to eliminate using regexp for create TimeOutputFormatter.
@@ -42,9 +46,10 @@ public class TimeOutputFormatter {
     public static TimeOutputFormatter getFormatter(String pattern) {
         int length = pattern.length();
         
-        if (length <= 1 || pattern.charAt(0) != '%') return null;
+        if (length <= 1 || pattern.charAt(0) != '%')
+           return null;
 
-        int totalPadding = 0;
+        int width = 0;
         
         int i = 1;
         boolean done = false;
@@ -53,12 +58,12 @@ public class TimeOutputFormatter {
         for (; i < length && !done; i++) {
             char c = pattern.charAt(i);
             switch(c) {
-                case '^': case '_': case '0': case '-':
+                case '-': case '_': case '0': case '^': case '#': case ':':
                     formatterFound = true;
                     break;
                 case '1': case '2': case '3': case '4': case '5': 
                 case '6': case '7': case '8': case '9':
-                    totalPadding = Character.getNumericValue(c);
+                    width = Character.getNumericValue(c);
                     done = true;
                     break;
                 default:
@@ -67,17 +72,18 @@ public class TimeOutputFormatter {
             }
         }
         
-        if (totalPadding == 0 && !formatterFound) return null;
+        if (width == 0 && !formatterFound) return null;
         
-        String formatter;
+        String format;
         if (i > 2) { // found something
-            formatter = pattern.substring(1, i-1);
+            format = pattern.substring(1, i-1);
         } else {
-            formatter = "";
+            format = "";
         }
 
         // We found some formatting instructions but no padding values.
-        if (totalPadding == 0 && i > 2) return new TimeOutputFormatter(formatter, 0);
+        if (width == 0 && i > 2)
+            return new TimeOutputFormatter(format, 0);
         
         done = false;
         for (; i < length && !done; i++) {
@@ -86,7 +92,7 @@ public class TimeOutputFormatter {
             switch(c) {
                 case '1': case '2': case '3': case '4': case '5': 
                 case '6': case '7': case '8': case '9': case '0':
-                    totalPadding = totalPadding * 10 + Character.getNumericValue(c);
+                    width = 10 * width + Character.getNumericValue(c);
                     break;
                 default:
                     done = true;
@@ -94,52 +100,106 @@ public class TimeOutputFormatter {
             }
         }
         
-        if (totalPadding != 0) return new TimeOutputFormatter(formatter, totalPadding);
-        
+        if (width != 0)
+            return new TimeOutputFormatter(format, width);
+
         return null;
     }
 
-    public String getFormatter() {
-        return (formatter != null ? formatter : "") + (totalPadding > 0 ? totalPadding : "");
+    public String getFormat() {
+        return format + (width > 0 ? width : "");
     }
 
-    public String format(String sequence) {
-        char paddedWith = ' ';
-        if (formatter != null) {
-            for (int i = 0; i < formatter.length(); i++) {
-                switch (formatter.charAt(i)) {
-                    case '^':
+    public int getNumberOfColons() {
+        int colons = 0;
+        for (int i = 0; i < format.length(); i++) {
+            if (format.charAt(i) == ':')
+                colons++;
+        }
+        return colons;
+    }
+
+    public int getWidth(int defaultWidth) {
+        if (format.contains("-")) // no padding
+            return 0;
+        return this.width != 0 ? this.width : defaultWidth; 
+    }
+
+    public char getPadder(char defaultPadder) {
+        char padder = defaultPadder;
+        for (int i = 0; i < format.length(); i++) {
+            switch (format.charAt(i)) {
+                case '_':
+                    padder = ' ';
+                    break;
+                case '0':
+                    padder = '0';
+                    break;
+                case '-': // no padding
+                    padder = '\0';
+                    break;
+            }
+        }
+        return padder;
+    }
+
+    public String format(String sequence, long value, FieldType type) {
+        int width = getWidth(type.defaultWidth);
+        char padder = getPadder(type.defaultPadder);
+
+        if (sequence == null) {
+            sequence = formatNumber(value, width, padder);
+        } else {
+            sequence = padding(sequence, width, padder);
+        }
+
+        for (int i = 0; i < format.length(); i++) {
+            switch (format.charAt(i)) {
+                case '^':
+                    sequence = sequence.toUpperCase();
+                    break;
+                case '#': // change case
+                    char last = sequence.charAt(sequence.length() - 1);
+                    if (Character.isLowerCase(last))
                         sequence = sequence.toUpperCase();
-                        break;
-                    case '_':
-                        paddedWith = ' ';
-                        break;
-                    case '0':
-                        paddedWith = '0';
-                        break;
-                    case '-':
-                        sequence = sequence.replaceAll("^[0 ]", "");
-                        break;
-                }
+                    else
+                        sequence = sequence.toLowerCase();
+                    break;
             }
         }
-        if (totalPadding > 0) {
-            sequence = padding(sequence, paddedWith);
-        }
+
         return sequence;
     }
 
-    private String padding(String sequence, char padder) {
-        if (formatter != null && formatter.contains("-")) return sequence;
+    static String formatNumber(long value, int width, char padder) {
+        if (value >= 0)
+            return padding(Long.toString(value), width, padder);
+        else
+            return "-" + padding(Long.toString(-value), width, padder);
+    }
 
-        if (sequence != null && sequence.length() < totalPadding) {
-            StringBuilder seqBuf = new StringBuilder(totalPadding);
-            for (int i = sequence.length(); i < totalPadding; i++) {
-                seqBuf.append(padder);
-            }
-            seqBuf.append(sequence);
-            return seqBuf.toString();
+    static String formatSignedNumber(long value, int width, char padder) {
+        if (padder == '0') {
+            if (value >= 0)
+                return "+" + padding(Long.toString(value), width - 1, padder);
+            else
+                return "-" + padding(Long.toString(-value), width - 1, padder);
+        } else {
+            if (value >= 0)
+                return padding("+" + Long.toString(value), width, padder);
+            else
+                return padding("-" + Long.toString(-value), width, padder);
         }
-        return sequence;
+    }
+
+    static String padding(String sequence, int width, char padder) {
+        if (sequence.length() >= width)
+            return sequence;
+
+        StringBuilder buf = new StringBuilder(width + sequence.length());
+        for (int i = sequence.length(); i < width; i++)
+            buf.append(padder);
+        buf.append(sequence);
+        return buf.toString();
     }
 }

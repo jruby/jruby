@@ -402,14 +402,17 @@ public class RubyTime extends RubyObject {
             return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
         } else {
             Matcher tzMatcher = TIME_OFFSET_PATTERN.matcher(args[0].toString());
-            String hours, minutes;
+            int hours, minutes, millis = 0;
             if (tzMatcher.matches()) {
-                hours = tzMatcher.group(2);
-                minutes = tzMatcher.group(3);
+                hours = Integer.parseInt(tzMatcher.group(2));
+                minutes = Integer.parseInt(tzMatcher.group(3));
+                millis = (hours * 60 + minutes) * 60 * 1000;
+                if (tzMatcher.group(1).equals("-"))
+                    millis = -millis;
             } else {
                 throw getRuntime().newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
             }
-            return newTime(getRuntime(), dt.withZone(DateTimeZone.forOffsetHoursMinutes(Integer.parseInt(hours), Integer.parseInt(minutes))), nsec);
+            return newTime(getRuntime(), dt.withZone(DateTimeZone.forOffsetMillis(millis)), nsec);
         }
     }
 

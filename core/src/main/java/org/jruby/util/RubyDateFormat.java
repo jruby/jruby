@@ -42,6 +42,8 @@ import java.util.Locale;
 
 import org.joda.time.DateTime;
 
+import static org.jruby.util.RubyDateFormat.FieldType.*;
+
 public class RubyDateFormat extends DateFormat {
     private static final long serialVersionUID = -250429218019023997L;
 
@@ -71,7 +73,7 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_DAY_WEEK = 18;
     private static final int FORMAT_YEAR_LONG = 19;
     private static final int FORMAT_YEAR_SHORT = 20;
-    private static final int FORMAT_ZONE_OFF = 21;
+    private static final int FORMAT_COLON_ZONE_OFF = 21;
     private static final int FORMAT_ZONE_ID = 22;
     private static final int FORMAT_CENTURY = 23;
     private static final int FORMAT_HOUR_BLANK = 24;
@@ -80,18 +82,12 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_DAY_WEEK2 = 27;
     private static final int FORMAT_WEEK_WEEKYEAR = 28;
     private static final int FORMAT_NANOSEC = 29;
-    private static final int FORMAT_PRECISION = 30;
-    private static final int FORMAT_WEEKYEAR = 31;
-    private static final int FORMAT_OUTPUT = 32;
-    private static final int FORMAT_COLON_ZONE_OFF = 33;
-    private static final int FORMAT_COLON_COLON_ZONE_OFF = 34;
-    private static final int FORMAT_COLON_COLON_COLON_ZONE_OFF = 35;
-
+    private static final int FORMAT_WEEKYEAR = 30;
+    private static final int FORMAT_OUTPUT = 31;
 
     private static class Token {
-        private int format;
-        private Object data;
-        private TimeOutputFormatter outputFormatter;
+        private final int format;
+        private final Object data;
         
         public Token(int format) {
             this(format, null);
@@ -326,53 +322,10 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_ZONE_ID));
                         break;
                     case 'z':
-                        compiledPattern.add(new Token(FORMAT_ZONE_OFF));
+                        compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
                         break;
                     case '%':
                         compiledPattern.add(new Token(FORMAT_STRING, "%"));
-                        break;
-                    case ':':
-                        i++;
-                        if(i == len) {
-                            compiledPattern.add(new Token(FORMAT_STRING, "%:"));
-                        } else {
-                            switch (pattern.charAt(i)) {
-                                case 'z':
-                                    compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
-                                    break;
-                                case ':':
-                                    i++;
-                                    if(i == len) {
-                                        compiledPattern.add(new Token(FORMAT_STRING, "%::"));
-                                    } else {
-                                        switch (pattern.charAt(i)) {
-                                            case 'z':
-                                                compiledPattern.add(new Token(FORMAT_COLON_COLON_ZONE_OFF));
-                                                break;
-                                            case ':':
-                                                i++;
-                                                if(i == len) {
-                                                    compiledPattern.add(new Token(FORMAT_STRING, "%:::"));
-                                                } else {
-                                                    switch (pattern.charAt(i)) {
-                                                        case 'z':
-                                                            compiledPattern.add(new Token(FORMAT_COLON_COLON_COLON_ZONE_OFF));
-                                                            break;
-                                                        case ':':
-                                                        default:
-                                                            compiledPattern.add(new Token(FORMAT_STRING, "%:::" + pattern.charAt(i)));
-                                                    }
-                                                }
-                                                break;
-                                            default:
-                                                compiledPattern.add(new Token(FORMAT_STRING, "%::" + pattern.charAt(i)));
-                                        }
-                                    }
-                                    break;
-                                default:
-                                    compiledPattern.add(new Token(FORMAT_STRING, "%:" + pattern.charAt(i)));
-                            }
-                        }
                         break;
                     default:
                         compiledPattern.add(new Token(FORMAT_STRING, "%" + pattern.charAt(i)));
@@ -392,16 +345,10 @@ public class RubyDateFormat extends DateFormat {
     private int addOutputFormatter(String pattern, int index) {
         TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern.substring(index - 1));
         if (outputFormatter != null) {
-            index += outputFormatter.getFormatter().length();
+            index += outputFormatter.getFormat().length();
             compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
         }
         return index;
-    }
-
-    private String formatOutput(TimeOutputFormatter formatter, String output) {
-        if (formatter == null) return output;
-        output = formatter.format(output);
-        return output;
     }
 
     private DateTime dt;
@@ -414,48 +361,40 @@ public class RubyDateFormat extends DateFormat {
     public void setNSec(long nsec) {
         this.nsec = nsec;
     }
-    
-    // Much faster then generic String.format()
-    private String twoCharDigit(long value) {
-        if (value == 0) return "00";
-        if (value < 10) return "0"+value;
-        return ""+value;        
-    }
-    
-    // Much faster then generic String.format()
-    private String threeCharDigit(long value) {
-        if (value == 0) return "000";
-        if (value < 10) return "00"+value;
-        if (value < 100) return "0"+value;
-        return ""+value;
-    }
 
-    // Much faster then generic String.format()
-    private String fourCharDigit(long value) {
-        if (value < 0) return "-" + fourCharDigit(-value);
-        if (value < 10) return "000"+value;
-        if (value < 100) return "00"+value;
-        if (value < 1000) return "0"+value;
-        return ""+value;
+    static enum FieldType {
+        NUMERIC('0', 0),
+        NUMERIC2('0', 2),
+        NUMERIC2BLANK(' ', 2),
+        NUMERIC3('0', 3),
+        NUMERIC4('0', 4),
+        TEXT(' ', 0);
+
+        char defaultPadder;
+        int defaultWidth;
+        FieldType(char padder, int width) {
+            defaultPadder = padder;
+            defaultWidth = width;
+        }
     }
 
     /**
      * @see DateFormat#format(Date, StringBuffer, FieldPosition)
      */
     public StringBuffer format(Date ignored, StringBuffer toAppendTo, FieldPosition fieldPosition) {
-        TimeOutputFormatter formatter = null;
+        TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
+
         for (Token token: compiledPattern) {
             String output = null;
             long value = 0;
-            boolean format = true;
+            FieldType type = TEXT;
 
             switch (token.getFormat()) {
                 case FORMAT_OUTPUT:
                     formatter = (TimeOutputFormatter) token.getData();
-                    break;
+                    continue; // go to next token
                 case FORMAT_STRING:
                     output = token.getData().toString();
-                    format = false;
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
@@ -480,173 +419,205 @@ public class RubyDateFormat extends DateFormat {
                     output = formatSymbols.getShortMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_DAY:
-                    output = twoCharDigit(dt.getDayOfMonth());
-                    break;
-                case FORMAT_DAY_S: 
+                    type = NUMERIC2;
                     value = dt.getDayOfMonth();
-                    output = (value < 10 ? " " : "") + Long.toString(value);
+                    break;
+                case FORMAT_DAY_S:
+                    type = NUMERIC2BLANK;
+                    value = dt.getDayOfMonth();
                     break;
                 case FORMAT_HOUR:
-                case FORMAT_HOUR_BLANK:
+                    type = NUMERIC2;
                     value = dt.getHourOfDay();
-                    output = "";
-                    if (value < 10) {
-                        output += token.getFormat() == FORMAT_HOUR ? "0" : " ";
-                    }
-                    output += value;
+                    break;
+                case FORMAT_HOUR_BLANK:
+                    type = NUMERIC2BLANK;
+                    value = dt.getHourOfDay();
                     break;
                 case FORMAT_HOUR_M:
                 case FORMAT_HOUR_S:
                     value = dt.getHourOfDay();
+                    if (value == 0)
+                        value = 12;
+                    else if (value > 12)
+                        value -= 12;
 
-                    if(value > 12) {
-                        value-=12;
-                    }
-
-                    if(value == 0) {
-                        output = "12";
-                    } else {
-                        output = "";
-                        if (value < 10) {
-                            output += token.getFormat() == FORMAT_HOUR_M ? "0" : " ";
-                        }
-                        output += value;
-                    }
+                    if (token.getFormat() == FORMAT_HOUR_M)
+                        type = NUMERIC2;
+                    else
+                        type = NUMERIC2BLANK;
                     break;
                 case FORMAT_DAY_YEAR:
-                    output = threeCharDigit(dt.getDayOfYear());
+                    type = NUMERIC3;
+                    value = dt.getDayOfYear();
                     break;
                 case FORMAT_MINUTES:
-                    output = twoCharDigit(dt.getMinuteOfHour());
+                    type = NUMERIC2;
+                    value = dt.getMinuteOfHour();
                     break;
                 case FORMAT_MONTH:
-                    output = twoCharDigit(dt.getMonthOfYear());
+                    type = NUMERIC2;
+                    value = dt.getMonthOfYear();
                     break;
                 case FORMAT_MERIDIAN:
+                    output = dt.getHourOfDay() < 12 ? "AM" : "PM";
+                    break;
                 case FORMAT_MERIDIAN_LOWER_CASE:
-                    if (dt.getHourOfDay() < 12) {
-                        output = token.getFormat() == FORMAT_MERIDIAN ? "AM" : "am";
-                    } else {
-                        output = token.getFormat() == FORMAT_MERIDIAN ? "PM" : "pm";
-                    }
+                    output = dt.getHourOfDay() < 12 ? "am" : "pm";
                     break;
                 case FORMAT_SECONDS:
-                    output = twoCharDigit(dt.getSecondOfMinute());
+                    type = NUMERIC2;
+                    value = dt.getSecondOfMinute();
                     break;
                 case FORMAT_WEEK_YEAR_M:
-                    output = formatWeekYear(java.util.Calendar.MONDAY);
+                    type = NUMERIC2;
+                    value = formatWeekYear(java.util.Calendar.MONDAY);
                     break;
                 case FORMAT_WEEK_YEAR_S:
-                    output = formatWeekYear(java.util.Calendar.SUNDAY);
+                    type = NUMERIC2;
+                    value = formatWeekYear(java.util.Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
+                    type = NUMERIC;
+                    value = dt.getDayOfWeek() % 7;
+                    break;
                 case FORMAT_DAY_WEEK2:
-                    value = dt.getDayOfWeek() ;
-                    if (token.getFormat() == FORMAT_DAY_WEEK) {
-                        value = value % 7;
-                    }
-                    output = Long.toString(value);
+                    type = NUMERIC;
+                    value = dt.getDayOfWeek();
                     break;
                 case FORMAT_YEAR_LONG:
-                    output = fourCharDigit(dt.getYear());
+                    type = NUMERIC4;
+                    value = dt.getYear();
                     break;
                 case FORMAT_YEAR_SHORT:
-                    output = twoCharDigit(dt.getYear() % 100);
+                    type = NUMERIC2;
+                    value = dt.getYear() % 100;
                     break;
-                case FORMAT_ZONE_OFF:
                 case FORMAT_COLON_ZONE_OFF:
-                case FORMAT_COLON_COLON_ZONE_OFF:
-                case FORMAT_COLON_COLON_COLON_ZONE_OFF:
-                    value = dt.getZone().getOffset(dt.getMillis());
-                    output = value < 0 ? "-" : "+";
-
-                    value = Math.abs(value) / 1000;
-
-                    // hours
-                    output += twoCharDigit(value / 3600);
-
-                    // :::z just shows hour
-                    if (token.getFormat() == FORMAT_COLON_COLON_COLON_ZONE_OFF) break;
-
-                    // :z and ::z have colon after hour
-                    if (token.getFormat() == FORMAT_COLON_ZONE_OFF ||
-                            token.getFormat() == FORMAT_COLON_COLON_ZONE_OFF) output += ':';
-
-                    // minutes
-                    output += twoCharDigit(value % 3600 / 60);
-
-                    // ::z includes colon and seconds
-                    if (token.getFormat() == FORMAT_COLON_COLON_ZONE_OFF) {
-                        output += ':';
-
-                        // seconds
-                        output += twoCharDigit(value % 60);
-                    }
+                    // custom logic because this is so weird
+                    value = dt.getZone().getOffset(dt.getMillis()) / 1000;
+                    int colons = formatter.getNumberOfColons();
+                    output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    toAppendTo.append(dt.getZone().getShortName(dt.getMillis()));
+                    output = dt.getZone().getShortName(dt.getMillis());
                     break;
                 case FORMAT_CENTURY:
-                    toAppendTo.append(dt.getCenturyOfEra());
+                    type = NUMERIC;
+                    value = dt.getCenturyOfEra();
                     break;
                 case FORMAT_MILLISEC:
-                    output = threeCharDigit(dt.getMillisOfSecond());
+                    type = NUMERIC3;
+                    value = dt.getMillisOfSecond();
                     break;
                 case FORMAT_EPOCH:
-                    output = Long.toString(dt.getMillis()/1000);
+                    type = NUMERIC;
+                    value = dt.getMillis() / 1000;
                     break;
                 case FORMAT_WEEK_WEEKYEAR:
-                    output = twoCharDigit(dt.getWeekOfWeekyear());
+                    type = NUMERIC2;
+                    value = dt.getWeekOfWeekyear();
                     break;
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
                     if (ruby_1_9) value += nsec;
                     int width = ruby_1_9 ? 9 : 3;
-                    if (formatter != null) {
-                        int w = Integer.valueOf(formatter.getFormatter());
-                        if (w > 0)
-                            width = w;
-                    }
-                    output = String.format("%09d", value);
+                    if (formatter.width > 0)
+                        width = formatter.width;
+                    output = TimeOutputFormatter.formatNumber(value, 9, '0');
                     if (width < 9) {
                         output = output.substring(0, width);
                     } else {
                         while(output.length() < width)
                             output += "0";
                     }
-                    formatter = null; // we are done with this formatter
+                    formatter = TimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    output = fourCharDigit(dt.getWeekyear());
+                    type = NUMERIC4;
+                    value = dt.getWeekyear();
                     break;
             }
 
-            if (output != null) {
-                if (format) {
-                    output = formatOutput(formatter, output);
-                    formatter = null;
-                }
-                toAppendTo.append(output);
-            }
+            output = formatter.format(output, value, type);
+            // reset formatter
+            formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
+            toAppendTo.append(output);
         }
 
         return toAppendTo;
     }
 
-	private String formatWeekYear(int firstDayOfWeek) {
-            java.util.Calendar dtCalendar = dt.toGregorianCalendar();
-            dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
-            dtCalendar.setMinimalDaysInFirstWeek(7);
-            int value = dtCalendar.get(java.util.Calendar.WEEK_OF_YEAR);
-            if ((value == 52 || value == 53) &&
-                    (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
-                // MRI behavior: Week values are monotonous.
-                // So, weeks that effectively belong to previous year,
-                // will get the value of 0, not 52 or 53, as in Java.
-                value = 0;
-            }
-            return twoCharDigit(value);
-	}
+    private int formatWeekYear(int firstDayOfWeek) {
+        java.util.Calendar dtCalendar = dt.toGregorianCalendar();
+        dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
+        dtCalendar.setMinimalDaysInFirstWeek(7);
+        int value = dtCalendar.get(java.util.Calendar.WEEK_OF_YEAR);
+        if ((value == 52 || value == 53) &&
+                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+            // MRI behavior: Week values are monotonous.
+            // So, weeks that effectively belong to previous year,
+            // will get the value of 0, not 52 or 53, as in Java.
+            value = 0;
+        }
+        return value;
+    }
+
+    private String formatZone(int colons, int value, TimeOutputFormatter formatter) {
+        int seconds = Math.abs(value);
+        int hours = seconds / 3600;
+        seconds %= 3600;
+        int minutes = seconds / 60;
+        seconds %= 60;
+
+        if (value < 0 && hours != 0) // see below when hours == 0
+            hours = -hours;
+
+        String mm = TimeOutputFormatter.formatNumber(minutes, 2, '0');
+        String ss = TimeOutputFormatter.formatNumber(seconds, 2, '0');
+
+        char padder = formatter.getPadder('0');
+        int defaultWidth = -1;
+        String after = null;
+
+        switch (colons) {
+            case 0: // %z -> +hhmm
+                defaultWidth = 5;
+                after = mm;
+                break;
+            case 1: // %:z -> +hh:mm
+                defaultWidth = 6;
+                after = ":" + mm;
+                break;
+            case 2: // %::z -> +hh:mm:ss
+                defaultWidth = 9;
+                after = ":" + mm + ":" + ss;
+                break;
+            case 3: // %:::z -> +hh[:mm[:ss]]
+                if (minutes == 0) {
+                    if (seconds == 0) { // +hh
+                        defaultWidth = 3;
+                        after = "";
+                    } else { // +hh:mm
+                        return formatZone(1, value, formatter);
+                    }
+                } else { // +hh:mm:ss
+                    return formatZone(2, value, formatter);
+                }
+                break;
+        }
+
+        int minWidth = defaultWidth - 1;
+        int width = formatter.getWidth(defaultWidth);
+        if (width < minWidth)
+            width = minWidth;
+        width -= after.length();
+        String before = TimeOutputFormatter.formatSignedNumber(hours, width, padder);
+
+        if (value < 0 && hours == 0) // the formatter could not handle this case
+            before = before.replace('+', '-');
+        return before + after;
+    }
 
     /**
      * @see DateFormat#parse(String, ParsePosition)
