@@ -91,13 +91,13 @@ public class TimeOutputFormatterTest extends TestCase {
         assertEquals("   UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
-    public void testFormatNoPaddingForBlankPaddedValues() {
-       TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
-        assertEquals("up", formatter.format(" up", 0, FieldType.TEXT));
+    public void testFormatNoPaddingForBlankPaddedNumericValues() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
+        assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 
-   public void testFormatNoPaddingForZeroPaddedValues() {
-       TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
-        assertEquals("up", formatter.format("0up", 0, FieldType.TEXT));
+    public void testFormatNoPaddingForZeroPaddedNumericValues() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-03H");
+        assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 }
