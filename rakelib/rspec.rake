@@ -59,6 +59,7 @@ namespace :spec do
 
     permute_specs "ir#{version_suffix}", compile_flags do |t|
       t.ruby_opts = [version_arg]
+      t.rspec_opts = "--options spec/java_integration/spec.opts"
       t.pattern = 'spec/ir/**/*_spec.rb'
     end
 
