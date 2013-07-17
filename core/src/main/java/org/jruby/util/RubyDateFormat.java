@@ -432,7 +432,7 @@ public class RubyDateFormat extends DateFormat {
 
     // Much faster then generic String.format()
     private String fourCharDigit(long value) {
-        if (value == 0) return "0000";
+        if (value < 0) return "-" + fourCharDigit(-value);
         if (value < 10) return "000"+value;
         if (value < 100) return "00"+value;
         if (value < 1000) return "0"+value;
@@ -617,7 +617,7 @@ public class RubyDateFormat extends DateFormat {
                     formatter = null; // we are done with this formatter
                     break;
                 case FORMAT_WEEKYEAR:
-                    output = Integer.toString(dt.getWeekyear());
+                    output = fourCharDigit(dt.getWeekyear());
                     break;
             }
 
