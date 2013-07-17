@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,9 +14,7 @@ import org.jruby.util.log.LoggerFactory;
 
 public class DominatorTreeBuilder extends CompilerPass {
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
-       add(CFGBuilder.class);
-    }};
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
     
     @Override
     public String getLabel() {

@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -32,9 +32,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
     }
 
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
-       add(CFGBuilder.class);
-    }};
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
 
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {

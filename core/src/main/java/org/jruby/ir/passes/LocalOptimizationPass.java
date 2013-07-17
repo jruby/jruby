@@ -1,6 +1,7 @@
 package org.jruby.ir.passes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -19,9 +20,7 @@ import org.jruby.ir.representations.CFG;
 public class LocalOptimizationPass extends CompilerPass {
     boolean locallyOptimized = false;
 
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
-       add(CFGBuilder.class);
-    }};
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
     
     @Override
     public String getLabel() {

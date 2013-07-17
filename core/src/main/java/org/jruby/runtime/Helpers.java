@@ -39,6 +39,8 @@ import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -408,6 +410,14 @@ public class Helpers {
             return selectInternalMM(runtime, visibility, callType);
         }
         return new MethodMissingMethod(methodMissing, callType);
+    }
+
+    public static final Map<String, String> map(String... keyValues) {
+        HashMap<String, String> map = new HashMap<String, String>(keyValues.length / 2);
+        for (int i = 0; i < keyValues.length;) {
+            map.put(keyValues[i++], keyValues[i++]);
+        }
+        return map;
     }
 
     private static class MethodMissingMethod extends DynamicMethod {

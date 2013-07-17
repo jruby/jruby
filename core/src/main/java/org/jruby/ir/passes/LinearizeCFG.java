@@ -1,13 +1,11 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jruby.ir.IRScope;
 
 public class LinearizeCFG extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
-       add(CFGBuilder.class);
-    }};
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
         
     @Override
     public String getLabel() {

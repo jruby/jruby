@@ -31,11 +31,13 @@ public class CharsetTranscoder {
     // some strings a little differently than MRI.  Since Java Charset transcoding
     // is a temporary implementation for us, having this gruesome hack is ok
     // for the time being.
-    private static Set<String> BAD_TRANSCODINGS_HACK = new HashSet<String>() {{
-        add("ISO-2022-JP-2");
-        add("CP50220");
-        add("CP50221");
-    }};
+    private static Set<String> BAD_TRANSCODINGS_HACK = new HashSet<String>();
+    
+    static {
+        BAD_TRANSCODINGS_HACK.add("ISO-2022-JP-2");
+        BAD_TRANSCODINGS_HACK.add("CP50220");
+        BAD_TRANSCODINGS_HACK.add("CP50221");
+    }
     
     public final Encoding toEncoding;
     private CodingErrorActions actions;

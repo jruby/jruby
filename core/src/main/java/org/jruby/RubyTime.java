@@ -62,6 +62,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
 import static org.jruby.CompatVersion.*;
+import org.jruby.runtime.Helpers;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -102,37 +103,36 @@ public class RubyTime extends RubyObject {
      * joda-time disallows use of three-letter time zone IDs.
      * Since MRI accepts these values, we need to translate them.
      */
-    private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>() {{
-        put("MET", "CET"); // JRUBY-2759
-        put("ROC", "Asia/Taipei"); // Republic of China
-        put("WET", "Europe/Lisbon"); // Western European Time
-        
-    }};
+    private static final Map<String, String> LONG_TZNAME = Helpers.map(
+        "MET", "CET", // JRUBY-2759
+        "ROC", "Asia/Taipei", // Republic of China
+        "WET", "Europe/Lisbon" // Western European Time
+    );
     
     /* github-215
      * Some non-JVM timezone names are recognized by MRI.
      * This map translate those to JVM-friendly names.
      */
-    private static final Map<String, String> NON_JVM_TZNAME = new HashMap<String, String>() {{
-        put("EDT", "EST");
-        put("CDT", "CST");
-        put("MDT", "MST");
-        put("PDT", "PST");
-    }};
+    private static final Map<String, String> NON_JVM_TZNAME = Helpers.map(
+        "EDT", "EST",
+        "CDT", "CST",
+        "MDT", "MST",
+        "PDT", "PST"
+    );
     
     /* Some TZ values need to be overriden for Time#zone
      */
-    private static final Map<String, String> SHORT_STD_TZNAME = new HashMap<String, String>() {{
-        put("Etc/UCT", "UCT");
-        put("MET", "MET"); // needs to be overriden
-        put("UCT","UCT");
-    }};
+    private static final Map<String, String> SHORT_STD_TZNAME = Helpers.map(
+        "Etc/UCT", "UCT",
+        "MET", "MET", // needs to be overriden
+        "UCT", "UCT"
+    );
 
-    private static final Map<String, String> SHORT_DL_TZNAME = new HashMap<String, String>() {{
-        put("Etc/UCT", "UCT");
-        put("MET", "MEST"); // needs to be overriden
-        put("UCT","UCT");
-    }};
+    private static final Map<String, String> SHORT_DL_TZNAME = Helpers.map(
+        "Etc/UCT", "UCT",
+        "MET", "MEST", // needs to be overriden
+        "UCT", "UCT"
+    );
     
     private void setIsTzRelative(boolean tzRelative) {
         isTzRelative = tzRelative;

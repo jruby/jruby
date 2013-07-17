@@ -33,6 +33,7 @@ import org.jruby.util.SafePropertyAccessor;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.runtime.Helpers;
 
 /**
  * Platform specific constants.
@@ -67,12 +68,9 @@ public class Platform {
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
 
-    public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
-        put("Mac OS X", DARWIN);
-    }};
-    public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>() {{
-        put("x86", "i386");
-    }};
+    public static final Map<String, String> OS_NAMES = Helpers.map("Mac OS X", DARWIN);
+    public static final Map<String, String> ARCH_NAMES = Helpers.map("x86", "i386");
+    
     private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
         for (String s : OS_NAMES.keySet()) {

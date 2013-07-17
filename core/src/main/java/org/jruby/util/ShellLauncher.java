@@ -158,10 +158,11 @@ public class ShellLauncher {
         }
 
         public void start() throws IOException {
-            config = new RubyInstanceConfig(parentRuntime.getInstanceConfig()) {{
-                setEnvironment(environmentMap(env));
-                setCurrentDirectory(pwd.toString());
-            }};
+            config = new RubyInstanceConfig(parentRuntime.getInstanceConfig());
+            
+            config.setEnvironment(environmentMap(env));
+            config.setCurrentDirectory(pwd.toString());
+            
             if (pipedStreams) {
                 config.setInput(new PipedInputStream(processInput));
                 config.setOutput(new PrintStream(new PipedOutputStream(processOutput)));

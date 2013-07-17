@@ -169,6 +169,13 @@ public class RubyInstanceConfig {
             environment = new HashMap();
         }
     }
+    
+    public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
+        this();
+        setInput(in);
+        setOutput(out);
+        setError(err);
+    }
 
     public LoadService createLoadService(Ruby runtime) {
         return creator.create(runtime);

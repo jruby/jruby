@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +18,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return "Add Local Variable Load/Store Instructions";
     }
 
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
-       add(LiveVariableAnalysis.class);
-    }};
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
 
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {

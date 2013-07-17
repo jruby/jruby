@@ -80,11 +80,7 @@ public class Main {
     }
 
     public Main(final InputStream in, final PrintStream out, final PrintStream err) {
-        this(new RubyInstanceConfig(){{
-            setInput(in);
-            setOutput(out);
-            setError(err);
-        }});
+        this(new RubyInstanceConfig(in, out, err));
     }
 
     public Main() {
