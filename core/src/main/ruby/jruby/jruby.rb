@@ -113,6 +113,10 @@ module JRuby
     def self.compiler_debug=(value)
       org.jruby.RubyInstanceConfig.IR_COMPILER_DEBUG = !!value
     end
+
+    def self.visualize=(value)
+      org.jruby.RubyInstanceConfig.IR_VISUALIZER = !!value
+    end
   end
   
   class CompiledScript
