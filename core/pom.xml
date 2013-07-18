@@ -335,23 +335,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>compile-constants</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-Duser.language=en</compilerArg>
-                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-              </compilerArgs>
-              <includes>
-                <include>${Constants.java}</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
@@ -368,9 +351,6 @@
                 <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
-              <excludes>
-                <exclude>${Constants.java}</exclude>
-              </excludes>
             </configuration>
           </execution>
           <execution>
