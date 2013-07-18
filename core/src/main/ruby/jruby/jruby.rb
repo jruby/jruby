@@ -110,12 +110,24 @@ module JRuby
       org.jruby.RubyInstanceConfig.IR_DEBUG = !!value
     end
 
+    def self.debug
+      org.jruby.RubyInstanceConfig.IR_DEBUG
+    end
+
     def self.compiler_debug=(value)
       org.jruby.RubyInstanceConfig.IR_COMPILER_DEBUG = !!value
     end
 
+    def self.compiler_debug
+      org.jruby.RubyInstanceConfig.IR_COMPILER_DEBUG
+    end
+
     def self.visualize=(value)
       org.jruby.RubyInstanceConfig.IR_VISUALIZER = !!value
+    end
+
+    def self.visualize
+      org.jruby.RubyInstanceConfig.IR_VISUALIZER
     end
   end
   
