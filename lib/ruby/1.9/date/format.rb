@@ -213,6 +213,12 @@ class Date
           :emit_a, :emit_ad, :emit_au
 
   def strftime(fmt='%F')
+    rdf = JRuby.runtime.current_context.getRubyDateFormat
+    rdf.applyPattern(fmt)
+    rdf.setDateTime(@dt)
+    rdf.setNSec((sec_fraction*1_000_000_000).to_i)
+    return rdf.format(nil)
+
     fmt.gsub(/%([-_0^#]+)?(\d+)?([EO]?(?::{1,3}z|.))/m) do
       f = {}
       m = $&
