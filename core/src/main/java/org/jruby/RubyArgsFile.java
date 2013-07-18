@@ -611,29 +611,50 @@ public class RubyArgsFile {
 
         return c;
     }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject getbyte(ThreadContext context, IRubyObject recv) {
+        ArgsFileData data = ArgsFileData.getDataFrom(recv);
+
+        while(true) {
+            if (!data.next_argv(context)) return context.runtime.getNil();
+            
+            IRubyObject bt;
+            if (!(data.currentFile instanceof RubyFile)) {
+                bt = data.currentFile.callMethod(context, "getbyte");
+            } else {
+                bt = ((RubyIO)data.currentFile).getbyte19(context);
+            }
+
+            if (!bt.isNil()) return bt;
+
+            data.next_p = 1;
+        }
+    }
+    
+    public static IRubyObject readbyte(ThreadContext context, IRubyObject recv) {
+        IRubyObject c = getbyte(context, recv);
+        
+        if (c.isNil()) throw context.runtime.newEOFError();
+        
+        return c;
+    }
 
     @JRubyMethod(name = "getc")
     public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
         while(true) {
+            if (!data.next_argv(context)) return context.runtime.getNil();
+
             IRubyObject bt;
-
-            if (!data.next_argv(context)) {
-                return context.runtime.getNil();
-            }
-
             if (!(data.currentFile instanceof RubyFile)) {
                 bt = data.currentFile.callMethod(context,"getc");
             } else {
                 bt = ((RubyIO)data.currentFile).getc();
             }
 
-            if (bt.isNil()) {
-                data.next_p = 1;
-                continue;
-            }
-            return bt;
+            if (!bt.isNil()) return bt;
         }
     }
 
