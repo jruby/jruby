@@ -15,6 +15,23 @@
     <module>test</module>
   </modules>
 
+  <description>
+    JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.
+  </description>
+  <url>https://github.com/jruby/jruby</url>
+
+  <ciManagement>
+    <system>Travis CI</system>
+    <url>https://travis-ci.org/jruby/parent/</url>
+  </ciManagement>
+
+  <inceptionYear>2001</inceptionYear>
+
+  <organization>
+    <name>JRuby</name>
+    <url>http://jruby.org</url>
+  </organization>
+
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.plugins.version>1.0.0-beta-1-SNAPSHOT</jruby.plugins.version>
@@ -34,11 +51,88 @@
     <github.global.server>github</github.global.server>
   </properties>
 
+    <mailingLists>
+      <mailingList>
+        <name>jruby</name>
+        <archive>http://markmail.org/search/list:org.codehaus.jruby.user</archive>
+      </mailingList>
+      <mailingList>
+         <name>jruby-dev</name>
+         <archive>http://markmail.org/search/list:org.codehaus.jruby.dev</archive>
+      </mailingList>
+      <mailingList>
+        <name>jruby-scm</name>
+        <archive>http://markmail.org/search/list:org.codehaus.jruby.scm</archive>
+      </mailingList>
+      <mailingList>
+        <name>jruby-announce</name>
+        <archive>http://markmail.org/search/list:org.codehaus.jruby.announce</archive>
+      </mailingList>
+    </mailingLists>
+
+    <licenses>
+      <license>
+        <name>GPL 3</name>
+        <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+      </license>
+      <license>
+        <name>LGPL 3</name>
+        <url>http://www.gnu.org/licenses/lgpl-3.0-standalone.html</url>
+      </license>
+      <license>
+        <name>EPL</name>
+        <url>http://www.eclipse.org/legal/epl-v10.html</url>
+      </license>
+    </licenses>
+
+  <developers>
+    <developer>
+      <id>headius</id>
+      <name>headius</name>
+      <roles>
+        <role>developer</role>
+      </roles>
+    </developer>
+      <developer>
+            <id>enebo</id>
+            <name>enebo</name>
+            <roles>
+              <role>developer</role>
+            </roles>
+          </developer>
+      <developer>
+            <id>wmeissner</id>
+            <name>wmeissner</name>
+            <roles>
+              <role>developer</role>
+            </roles>
+          </developer>
+      <developer>
+            <id>BanzaiMan</id>
+            <name>BanzaiMan</name>
+            <roles>
+              <role>developer</role>
+            </roles>
+      </developer>
+      <developer>
+            <id>mkristian</id>
+            <name>mkristian</name>
+            <roles>
+              <role>developer</role>
+            </roles>
+      </developer>
+  </developers>
+
   <scm>
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>https://github.com/jruby/jruby</url>
   </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/jruby/jruby/issues</url>
+  </issueManagement>
 
   <distributionManagement>
     <site>
@@ -291,14 +385,14 @@
             </propertyExpansion>
           </configuration>
         </plugin>
-      <!--  <plugin>
+      <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>cobertura-maven-plugin</artifactId>
           <version>2.5.1</version>
             <configuration>
                 <aggregate>true</aggregate>
             </configuration>
-        </plugin>  -->
+        </plugin>
         <plugin>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>2.8</version>
@@ -353,7 +447,7 @@
             <targetJdk>1.6</targetJdk>
           </configuration>
         </plugin>
-      <!--  <plugin>
+      <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
           <version>2.3</version>
@@ -361,6 +455,19 @@
             <linkJavadoc>true</linkJavadoc>
               <aggregate>true</aggregate>
           </configuration>
+        </plugin>
+      <!--  Causes GitHub API limit problem
+       <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-changes-plugin</artifactId>
+          <version>2.9</version>
+          <reportSets>
+            <reportSet>
+              <reports>
+                <report>github-report</report>
+              </reports>
+            </reportSet>
+          </reportSets>
         </plugin> -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

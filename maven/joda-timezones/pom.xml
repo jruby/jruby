@@ -34,7 +34,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>wagon-maven-plugin</artifactId>
-        <version>1.0-beta-3</version>
+        <version>1.0-beta-4</version>
         <executions>
           <execution>
             <id>tzdata</id>
