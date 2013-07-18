@@ -274,7 +274,7 @@ module JRuby::Compiler
       # ignore other nodes
     end
   end
-  
+
   class RubyScript
     BASE_IMPORTS = [
       "org.jruby.Ruby",
@@ -438,7 +438,7 @@ JAVA
 
       unless @has_constructor
         str << <<JAVA
-        
+
     /**
      * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
      * Ruby and RubyClass instances assocated with this class, and then invokes the
@@ -529,7 +529,7 @@ JAVA
 
     def conversion_string(var_names)
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+        var_names.map { |a| "        IRubyObject ruby_arg_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
       else
         str =  "        IRubyObject ruby_args[] = new IRubyObject[#{arity}];\n"
         var_names.each_with_index { |a, i| str += "        ruby_args[#{i}] = JavaUtil.convertJavaToRuby(__ruby__, #{a});\n" }
@@ -559,7 +559,7 @@ JAVA
       end
 
       annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(" ")
-      
+
       "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
@@ -600,7 +600,7 @@ JAVA
       return @passed_args if @passed_args
 
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        @passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+        @passed_args = var_names.map {|a| "ruby_arg_#{a}"}.join(', ')
         @passed_args = ', ' + @passed_args if args.size > 0
       else
         @passed_args = ", ruby_args";
