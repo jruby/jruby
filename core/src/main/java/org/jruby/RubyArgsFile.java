@@ -214,6 +214,31 @@ public class RubyArgsFile {
     public static IRubyObject to_io(ThreadContext context, IRubyObject recv) {
         return getData(context, recv, "no stream").currentFile;
     }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
+        return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding, IRubyObject internalEncoding) {
+        return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding, internalEncoding);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding, IRubyObject internalEncoding, IRubyObject options) {
+        return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding, internalEncoding, options);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject internal_encoding(ThreadContext context, IRubyObject recv) {
+        return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).internal_encoding(context);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject external_encoding(ThreadContext context, IRubyObject recv) {
+        return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).external_encoding(context);
+    }    
 
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
