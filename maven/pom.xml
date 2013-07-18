@@ -21,7 +21,6 @@
         <module>jruby-complete</module>
         <module>jruby-rake-plugin</module>
         <module>jruby-dist</module>
-        <module>joda-timezones</module>
         <module>jruby-osgi-test</module>
       </modules>
     </profile>
