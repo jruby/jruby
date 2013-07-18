@@ -463,25 +463,6 @@
               <failOnError>false</failOnError>
             </configuration>
           </execution>
-          <execution>
-            <id>clean-anno-files</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>clean</goal>
-            </goals>
-            <configuration>
-              <excludeDefaultDirectories>true</excludeDefaultDirectories>
-              <filesets>
-                <fileset>
-                  <directory>${anno.sources}</directory>
-                  <includes>
-                    <include>annotated_classes.txt</include>
-                  </includes>
-                </fileset>
-              </filesets>
-              <failOnError>false</failOnError>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>

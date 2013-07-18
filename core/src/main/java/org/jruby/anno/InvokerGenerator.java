@@ -29,11 +29,13 @@
 package org.jruby.anno;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.jruby.RubyModule.MethodClumper;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.util.JRubyClassLoader;
@@ -113,5 +115,7 @@ public class InvokerGenerator {
                 throw e;
             }
         }
+        // just delete the input file
+        new File(args[0]).delete();
     }
 }
