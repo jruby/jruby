@@ -199,7 +199,7 @@
   </dependencies>
   <properties>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
-    <unsafe.jar>${project.build.directory}/unsafe.jar</unsafe.jar>
+    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/8.0/unsafe-mock-8.0.jar</unsafe.jar>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
@@ -407,6 +407,7 @@
            </execution>
         </executions>
       </plugin>
+<!--
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <dependencies>
@@ -435,20 +436,12 @@
                   <outputDirectory>${project.build.directory}</outputDirectory>
                   <destFileName>bnd.jar</destFileName>
                 </artifactItem>
-                <artifactItem>
-                  <groupId>com.headius</groupId>
-                  <artifactId>unsafe-mock</artifactId>
-                  <version>8.0</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>unsafe.jar</destFileName>
-                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
         </executions>
       </plugin>
+-->
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
         <executions>
@@ -527,26 +520,6 @@
               </transformers>
             </configuration>
           </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy</id>
-            <phase>package</phase>
-            <configuration>
-              <tasks>
-                <exec executable="/bin/sh" osfamily="unix">
-                  <arg line="-c 'test -f &quot;${jruby.basedir}/bin/jruby&quot; || cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'"/>
-                </exec>
-                <chmod perm="755" file="${jruby.basedir}/bin/jruby"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution> 
         </executions>
       </plugin>
       <plugin>
@@ -695,6 +668,38 @@
     </pluginManagement>
   </build>
   <profiles>
+    <profile>
+      <id>jruby.bash</id>
+      <activation>
+        <file>
+          <missing>../bin/jruby</missing>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <exec executable="/bin/sh" osfamily="unix">
+                      <arg line="-c 'test -f &quot;${jruby.basedir}/bin/jruby&quot; || cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
+                    </exec>
+                    <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>native</id>
       <activation>
