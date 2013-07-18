@@ -436,6 +436,11 @@ public class RubyArgsFile {
         
         return recv;
     }
+    
+    @JRubyMethod(compat = RUBY1_9, optional = 1)
+    public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return each_line(context, recv, args, block);
+    }
 
     @JRubyMethod(name = "each_line", optional = 1, compat = RUBY1_9)
     public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
@@ -632,6 +637,7 @@ public class RubyArgsFile {
         }
     }
     
+    @JRubyMethod(compat = RUBY1_9)
     public static IRubyObject readbyte(ThreadContext context, IRubyObject recv) {
         IRubyObject c = getbyte(context, recv);
         
@@ -655,6 +661,8 @@ public class RubyArgsFile {
             }
 
             if (!bt.isNil()) return bt;
+            
+            data.next_p = 1;
         }
     }
 
