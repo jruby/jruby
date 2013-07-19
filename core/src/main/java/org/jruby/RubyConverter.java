@@ -188,14 +188,108 @@ public class RubyConverter extends RubyObject {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.toEncoding);
     }
 
-    @JRubyMethod
-    public IRubyObject primitive_convert(ThreadContext context, IRubyObject src, IRubyObject dest) {
-        ByteList srcBL = src.convertToString().getByteList();
+    @JRubyMethod(required = 2, optional = 4)
+    public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        
+        RubyString input;
+        RubyString output;
+        int outputByteoffset;
+        int outputBytesize;
+        int flags = 0;
+        
+        if (args.length <= 2 || args[2].isNil()) {
+            outputByteoffset = -1;
+        } else {
+            outputByteoffset = (int)args[2].convertToInteger().getLongValue();
+            if (outputByteoffset < 0) throw runtime.newArgumentError("negative offset");
+        }
+        
+        if (args.length <= 3 || args[3].isNil()) {
+            outputBytesize = 0;
+        } else {
+            outputBytesize = (int)args[3].convertToInteger().getLongValue();
+            if (outputBytesize < 0) throw runtime.newArgumentError("negative offset");
+        }
+        
+        if (args.length > 4 && !args[4].isNil()) {
+            if (args.length > 5 && !args[5].isNil()) {
+                throw runtime.newArgumentError(args.length, 5);
+            }
+            if (args[4] instanceof RubyHash) {
+                RubyHash opt = (RubyHash)args[4];
+                
+                IRubyObject partialInput = opt.fastARef(runtime.newSymbol("partial_input"));
+                if (partialInput != null && partialInput.isTrue()) {
+                    flags |= PARTIAL_INPUT;
+                }
+                
+                IRubyObject afterOutput = opt.fastARef(runtime.newSymbol("after_output"));
+                if (afterOutput != null && afterOutput.isTrue()) {
+                    flags |= AFTER_OUTPUT;
+                }
+            } else {
+                flags = (int)args[4].convertToInteger().getLongValue();
+            }
+        }
+        
+        ByteList inBytes;
+        ByteList outBytes;
+        
+        if (args[0].isNil()) {
+            inBytes = new ByteList();
+        } else {
+            inBytes = args[0].convertToString().getByteList();
+        }
+        
+        output = args[1].convertToString();
+        outBytes = output.getByteList();
+        
+        if (outputByteoffset == -1) {
+            outputByteoffset = outBytes.getRealSize();
+        } else if (outputByteoffset > outBytes.getRealSize()) {
+            throw runtime.newArgumentError("offset too big");
+        }
+        
+        int outputByteEnd = outputByteoffset + outputBytesize;
+        
+        if (outputByteEnd > outBytes.getRealSize()) {
+            outBytes.ensure(outputByteEnd);
+        }
 
-        if (srcBL.getRealSize() == 0) return context.runtime.newSymbol("source_buffer_empty");
+        if (inBytes.getRealSize() == 0 && (flags & PARTIAL_INPUT) == 0) return context.runtime.newSymbol("source_buffer_empty");
 
-        RubyString result = (RubyString) convert(context, src);
-        dest.convertToString().replace19(result);
+        CharsetTranscoder.RubyCoderResult result = transcoder.primitiveConvert(
+                runtime,
+                inBytes,
+                output.getByteList(),
+                outputByteoffset,
+                outputBytesize,
+                inBytes.getEncoding(),
+                inBytes.getEncoding().isAsciiCompatible(),
+                flags);
+        
+        outBytes.setEncoding(transcoder.toEncoding);
+
+        if (result != null) {
+            if (result.coderResult.isError()) {
+                if (result.coderResult.isMalformed()) {
+                    return runtime.newSymbol("invalid_byte_sequence");
+                } else if (result.coderResult.isUnmappable()) {
+                    return runtime.newSymbol("undefined_conversion");
+                }
+            } else {
+                if (result.coderResult.isUnderflow()) {
+                    if ((flags & PARTIAL_INPUT) == 0) {
+                        return runtime.newSymbol("incomplete_input");
+                    } else {
+                        return runtime.newSymbol("finished");
+                    }
+                } else if (result.coderResult.isOverflow()) {
+                    return runtime.newSymbol("destination_buffer_full");
+                }
+            }
+        }
 
         return context.runtime.newSymbol("finished");
     }
