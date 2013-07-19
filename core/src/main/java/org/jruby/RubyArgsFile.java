@@ -247,9 +247,7 @@ public class RubyArgsFile {
         IRubyObject line = null;
         while(retry) {
             retry = false;
-            if (!data.next_argv(context)) {
-                return context.runtime.getNil();
-            }
+            if (!data.next_argv(context)) return context.runtime.getNil();
 
             line = data.currentFile.callMethod(context, "gets", args);
 
@@ -276,9 +274,7 @@ public class RubyArgsFile {
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        if(!data.next_argv(context)) {
-            return context.runtime.getNil();
-        }
+        if (!data.next_argv(context)) return context.runtime.getNil();
 
         IRubyObject line;
         if (!(data.currentFile instanceof RubyIO)) {
@@ -300,9 +296,7 @@ public class RubyArgsFile {
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
-        if (line.isNil()) {
-            throw context.runtime.newEOFError();
-        }
+        if (line.isNil()) throw context.runtime.newEOFError();
         
         return line;
     }
@@ -635,6 +629,50 @@ public class RubyArgsFile {
 
             data.next_p = 1;
         }
+    }
+    
+    @JRubyMethod(compat = RUBY1_9, required = 1, optional = 1)
+    public static IRubyObject read_nonblock(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return getPartial(context, recv, args, true);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9, required = 1, optional = 1)
+    public static IRubyObject read_partial(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return getPartial(context, recv, args, false);
+    }
+    
+    private static IRubyObject getPartial(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean nonBlocking) {
+        ArgsFileData data = ArgsFileData.getDataFrom(recv);
+        
+        if (args.length > 1) args[1] = args[1].convertToString();
+        
+        if (!data.next_argv(context)) throw context.runtime.newEOFError();
+        
+        IRubyObject tmp;
+        if (!(data.currentFile instanceof RubyFile)) { // In MRI this is stdin && !FILE
+            tmp = data.currentFile.callMethod(context, "getpartial", args);
+        } else {
+            // In MRI io_getpartial.  Not split
+            if (nonBlocking) {
+                tmp = ((RubyIO) data.currentFile).read_nonblock(context, args); 
+            } else {
+                tmp = ((RubyIO) data.currentFile).readpartial(context, args);
+            }
+        }
+        
+        if (tmp.isNil()) {
+            if (data.next_p == -1) throw context.runtime.newEOFError();
+                
+            argf_close(context, data.currentFile);
+            data.next_p = 1;
+            // FIXME: Missing EOF error is no more argv element at this point
+
+            if (args.length > 1 && args[1].isNil()) return context.runtime.newString();
+
+            return args[1];
+        }
+        
+        return tmp;
     }
     
     @JRubyMethod(compat = RUBY1_9)
