@@ -211,7 +211,7 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
-                        compiledPattern.add(new Token(FORMAT_DAY));
+                        compiledPattern.add(new Token(FORMAT_DAY_S));
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         compiledPattern.add(new Token(FORMAT_STRING, ":"));
