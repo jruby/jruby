@@ -52,37 +52,69 @@ public class RubyDateFormat extends DateFormat {
 
     private final DateFormatSymbols formatSymbols;
 
+    /** raw string, no formatting */
     private static final int FORMAT_STRING = 0;
+    /** %A */
     private static final int FORMAT_WEEK_LONG = 1;
+    /** %a */
     private static final int FORMAT_WEEK_SHORT = 2;
+    /** %B */
     private static final int FORMAT_MONTH_LONG = 3;
+    /** %b, %h */
     private static final int FORMAT_MONTH_SHORT = 4;
+    /** %d */
     private static final int FORMAT_DAY = 5;
+    /** %e */
     private static final int FORMAT_DAY_S = 6;
+    /** %H */
     private static final int FORMAT_HOUR = 7;
+    /** %I */
     private static final int FORMAT_HOUR_M = 8;
+    /** %l */
     private static final int FORMAT_HOUR_S = 9;
+    /** %j */
     private static final int FORMAT_DAY_YEAR = 10;
+    /** %M */
     private static final int FORMAT_MINUTES = 11;
+    /** %m */
     private static final int FORMAT_MONTH = 12;
+    /** %p */
     private static final int FORMAT_MERIDIAN = 13;
+    /** %P */
     private static final int FORMAT_MERIDIAN_LOWER_CASE = 14;
+    /** %S */
     private static final int FORMAT_SECONDS = 15;
+    /** %U */
     private static final int FORMAT_WEEK_YEAR_S = 16;
+    /** %W */
     private static final int FORMAT_WEEK_YEAR_M = 17;
+    /** %w */
     private static final int FORMAT_DAY_WEEK = 18;
+    /** %Y */
     private static final int FORMAT_YEAR_LONG = 19;
+    /** %y */
     private static final int FORMAT_YEAR_SHORT = 20;
+    /** %z, %:z, %::z, %:::z */
     private static final int FORMAT_COLON_ZONE_OFF = 21;
+    /** %Z */
     private static final int FORMAT_ZONE_ID = 22;
+    /** %C */
     private static final int FORMAT_CENTURY = 23;
+    /** %k */
     private static final int FORMAT_HOUR_BLANK = 24;
+    /** %L */
     private static final int FORMAT_MILLISEC = 25;
+    /** %s */
     private static final int FORMAT_EPOCH = 26;
+    /** %u */
     private static final int FORMAT_DAY_WEEK2 = 27;
+    /** %V */
     private static final int FORMAT_WEEK_WEEKYEAR = 28;
+    /** %N */
     private static final int FORMAT_NANOSEC = 29;
+    /** %G */
     private static final int FORMAT_WEEKYEAR = 30;
+    /** formatter */
     private static final int FORMAT_OUTPUT = 31;
 
     private static class Token {
