@@ -116,6 +116,8 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_WEEKYEAR = 30;
     /** formatter */
     private static final int FORMAT_OUTPUT = 31;
+    /** %g */
+    private static final int FORMAT_WEEKYEAR_SHORT = 32;
 
     private static class Token {
         private final int format;
@@ -241,6 +243,9 @@ public class RubyDateFormat extends DateFormat {
                         break;
                     case 'G':
                         compiledPattern.add(new Token(FORMAT_WEEKYEAR));
+                        break;
+                    case 'g':
+                        compiledPattern.add(new Token(FORMAT_WEEKYEAR_SHORT));
                         break;
                     case 'H':
                         compiledPattern.add(new Token(FORMAT_HOUR));
@@ -571,6 +576,10 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_WEEKYEAR:
                     type = NUMERIC4;
                     value = dt.getWeekyear();
+                    break;
+                case FORMAT_WEEKYEAR_SHORT:
+                    type = NUMERIC2;
+                    value = dt.getWeekyear() % 100;
                     break;
             }
 
