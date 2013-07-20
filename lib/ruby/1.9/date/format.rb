@@ -214,7 +214,7 @@ class Date
 
   def strftime(fmt='%F')
     rdf = JRuby.runtime.current_context.getRubyDateFormat
-    rdf.applyPattern(fmt)
+    rdf.applyPattern(fmt, true)
     rdf.setDateTime(@dt)
     rdf.setNSec((sec_fraction*1_000_000_000).to_i)
     return rdf.format(nil)

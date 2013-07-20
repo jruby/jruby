@@ -118,6 +118,11 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_OUTPUT = 31;
     /** %g */
     private static final int FORMAT_WEEKYEAR_SHORT = 32;
+    /* Only for Date/DateTime from here */
+    /** %Q */
+    private static final int FORMAT_MICROSEC_EPOCH = 33;
+    /** %+ */
+    private static final int FORMAT_DATE_1 = 34;
 
     private static class Token {
         private final int format;
@@ -173,10 +178,14 @@ public class RubyDateFormat extends DateFormat {
     }
     
     public void applyPattern(String pattern) {
-        compilePattern(pattern);
+        applyPattern(pattern, false);
     }
     
-    private void compilePattern(String pattern) {
+    public void applyPattern(String pattern, boolean dateLibrary) {
+        compilePattern(pattern, dateLibrary);
+    }
+
+    private void compilePattern(String pattern, boolean dateLibrary) {
         compiledPattern = new LinkedList<Token>();
         
         int len = pattern.length();
@@ -186,7 +195,7 @@ public class RubyDateFormat extends DateFormat {
             if (pattern.charAt(i) == '%' || (ignoredModifier && !(ignoredModifier = false))) {
                 i++;
 
-                if(i == len) {
+                if (i == len) {
                     compiledPattern.add(new Token(FORMAT_STRING, "%"));
                 } else {
                     i = addOutputFormatter(pattern, i);
@@ -315,6 +324,12 @@ public class RubyDateFormat extends DateFormat {
                     case 'P':
                         compiledPattern.add(new Token(FORMAT_MERIDIAN_LOWER_CASE));
                         break;
+                    case 'Q':
+                        if (dateLibrary)
+                            compiledPattern.add(new Token(FORMAT_MICROSEC_EPOCH));
+                        else
+                            compiledPattern.add(new Token(FORMAT_STRING, "%Q"));
+                        break;
                     case 'R':
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         compiledPattern.add(new Token(FORMAT_STRING, ":"));
@@ -388,10 +403,40 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
                         break;
                     case 'Z':
-                        compiledPattern.add(new Token(FORMAT_ZONE_ID));
+                        if (dateLibrary) {
+                            // +HH:MM in 'date', never zone name
+                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(":", 0)));
+                            compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
+                        } else {
+                            compiledPattern.add(new Token(FORMAT_ZONE_ID));
+                        }
                         break;
                     case 'z':
                         compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
+                        break;
+                    case '+':
+                        if (!dateLibrary) {
+                            compiledPattern.add(new Token(FORMAT_STRING, "%+"));
+                            break;
+                        }
+                        // %a %b %e %H:%M:%S %Z %Y
+                        compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(new Token(FORMAT_DAY_S));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(new Token(FORMAT_HOUR));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_MINUTES));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_SECONDS));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        // %Z: +HH:MM in 'date', never zone name
+                        compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(":", 0)));
+                        compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
                     case '%':
                         compiledPattern.add(new Token(FORMAT_STRING, "%"));
@@ -612,6 +657,11 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_WEEKYEAR_SHORT:
                     type = NUMERIC2;
                     value = dt.getWeekyear() % 100;
+                    break;
+                case FORMAT_MICROSEC_EPOCH:
+                    // only available for Date
+                    type = NUMERIC;
+                    value = dt.getMillis();
                     break;
             }
 
