@@ -180,8 +180,10 @@ public class RubyDateFormat extends DateFormat {
         compiledPattern = new LinkedList<Token>();
         
         int len = pattern.length();
+        boolean ignoredModifier = false;
+        char next;
         for (int i = 0; i < len;) {
-            if (pattern.charAt(i) == '%') {
+            if (pattern.charAt(i) == '%' || (ignoredModifier && !(ignoredModifier = false))) {
                 i++;
 
                 if(i == len) {
@@ -231,6 +233,20 @@ public class RubyDateFormat extends DateFormat {
                     case 'd':
                         compiledPattern.add(new Token(FORMAT_DAY));
                         break;
+                    case 'E':
+                        next = '\0';
+                        if (i + 1 < len)
+                            next = pattern.charAt(i+1);
+                        switch (next) {
+                            case 'c': case 'C': case 'x': case 'X': case 'y': case 'Y':
+                                ignoredModifier = true;
+                                i--;
+                                break;
+                            default:
+                                compiledPattern.add(new Token(FORMAT_STRING, "%E"));
+                                break;
+                        }
+                        break;
                     case 'e':
                         compiledPattern.add(new Token(FORMAT_DAY_S));
                         break;
@@ -276,6 +292,22 @@ public class RubyDateFormat extends DateFormat {
                         break;
                     case 'n':
                         compiledPattern.add(new Token(FORMAT_STRING, "\n"));
+                        break;
+                    case 'O':
+                        next = '\0';
+                        if (i + 1 < len)
+                            next = pattern.charAt(i+1);
+                        switch (next) {
+                            case 'd': case 'e': case 'H': case 'k': case 'I': case 'l': case 'm':
+                            case 'M': case 'S': case 'u': case 'U': case 'V': case 'w': case 'W':
+                            case 'y':
+                                ignoredModifier = true;
+                                i--;
+                                break;
+                            default:
+                                compiledPattern.add(new Token(FORMAT_STRING, "%O"));
+                                break;
+                        }
                         break;
                     case 'p':
                         compiledPattern.add(new Token(FORMAT_MERIDIAN));
