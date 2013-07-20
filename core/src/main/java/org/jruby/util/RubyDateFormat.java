@@ -543,7 +543,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
-                    value = dt.getCenturyOfEra();
+                    value = dt.getYear() / 100;
                     break;
                 case FORMAT_MILLISEC:
                     type = NUMERIC3;
