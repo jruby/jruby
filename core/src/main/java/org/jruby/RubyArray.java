@@ -3820,7 +3820,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject hash = TypeConverter.checkHashType(context.runtime,
                         args[args.length - 1]);
                 if (!hash.isNil()) {
-                    randgen = ((RubyHash) hash).fastARef(context.runtime.newSymbol("random"));
+                    IRubyObject argRandgen = ((RubyHash) hash).fastARef(context.runtime.newSymbol("random"));
+                    if (argRandgen != null) {
+                        randgen = argRandgen;
+                    }
                     IRubyObject[] newargs = new IRubyObject[args.length - 1];
                     System.arraycopy(args, 0, newargs, 0, args.length - 1);
                     args = newargs;
