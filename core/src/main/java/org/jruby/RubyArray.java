@@ -3770,7 +3770,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (args.length > 0) {
             IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!hash.isNil()) {
-                randgen = ((RubyHash) hash).fastARef(context.runtime.newSymbol("random"));
+                IRubyObject argRandgen = ((RubyHash) hash).fastARef(context.runtime.newSymbol("random"));
+                if (argRandgen != null) {
+                    randgen = argRandgen;
+                }
             }
         }
         int i = realLength;
