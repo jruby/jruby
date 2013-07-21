@@ -80,7 +80,7 @@ public class RubyEncoding extends RubyObject {
         this.isDummy = isDummy;
     }
     
-    private RubyEncoding(Ruby runtime, byte[]name, boolean isDummy) {
+    private RubyEncoding(Ruby runtime, byte[] name, boolean isDummy) {
         this(runtime, name, 0, name.length, isDummy);
     }
 
@@ -88,6 +88,13 @@ public class RubyEncoding extends RubyObject {
         super(runtime, runtime.getEncoding());
         this.name = new ByteList(encoding.getName());
         this.isDummy = false;
+        this.encoding = encoding;
+    }
+
+    private RubyEncoding(Ruby runtime, byte[] name, Encoding encoding, boolean isDummy) {
+        super(runtime, runtime.getEncoding());
+        this.name = new ByteList(name);
+        this.isDummy = isDummy;
         this.encoding = encoding;
     }
 
@@ -366,6 +373,11 @@ public class RubyEncoding extends RubyObject {
         if (str instanceof RubyEncoding) return str;
 
         return runtime.getEncodingService().rubyEncodingFromObject(str);
+    }
+
+    @JRubyMethod(name = "replicate")
+    public IRubyObject replicate(ThreadContext context, IRubyObject arg) {
+        return new RubyEncoding(context.runtime, arg.convertToString().getBytes(), getEncoding(), isDummy);
     }
 
     @JRubyMethod(name = "_dump")
