@@ -349,6 +349,10 @@ public abstract class IRScope {
         }        
     }
 
+    public int getScopeId() {
+        return scopeId;
+    }
+
     @Override
     public int hashCode() {
         return scopeId;

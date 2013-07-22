@@ -455,7 +455,7 @@ public class Interpreter {
                     BreakInstr bi = (BreakInstr)instr;
                     IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
                     // This also handles breaks in lambdas -- by converting them to a return
-                    return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo(), rv, blockType);
+                    return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
                 }
                 case RETURN: {
                     return (IRubyObject)((ReturnBase)instr).getReturnValue().retrieve(context, self, currDynScope, temp);

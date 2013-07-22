@@ -2888,6 +2888,47 @@ public class Helpers {
         }
     }
 
+    public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
+        return context.runtime.newBoolean(!(obj.isTrue()));
+    }
+
+    public static IRubyObject irLoadOptArg(int minReqd, int argIndex, IRubyObject[] args) {
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        int kwArgHashCount = 0;
+        if (minReqd + kwArgHashCount < args.length) {
+            return args[argIndex];
+        } else {
+            return UndefinedValue.UNDEFINED;
+        }
+    }
+
+    public static IRubyObject irPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        int kwArgHashCount = 0;
+        int n = args.length;
+        int remaining = n - preReqdArgsCount - kwArgHashCount;
+        if (remaining <= argIndex) {
+            return null;  // For blocks!
+        } else {
+            return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount - kwArgHashCount + argIndex] : args[preReqdArgsCount + argIndex];
+        }
+    }
+
+    private static IRubyObject[] NO_PARAMS = new IRubyObject[0];
+    public static IRubyObject irLoadRestArg(ThreadContext context, int minReqd, int argIndex, IRubyObject[] args) {
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        int kwArgHashCount = 0;
+        IRubyObject[] ret;
+        int numAvailable = args.length - minReqd - kwArgHashCount;
+        if (numAvailable <= 0) {
+            ret = NO_PARAMS;
+        } else {
+            ret = new IRubyObject[numAvailable];
+            System.arraycopy(args, argIndex, ret, 0, numAvailable);
+        }
+        return context.getRuntime().newArray(ret);
+    }
+
     @Deprecated
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index) {
         return invokedynamic(context, self, MethodNames.values()[index]);

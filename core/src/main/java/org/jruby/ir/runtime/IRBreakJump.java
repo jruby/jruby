@@ -7,7 +7,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBreakJump extends RuntimeException {
-    public IRScope scopeToReturnTo;
+    public int scopeIdToReturnTo;
     public IRubyObject breakValue;
     public boolean caughtByLambda;
     public boolean breakInEval;
@@ -20,7 +20,7 @@ public class IRBreakJump extends RuntimeException {
 
     private static ThreadLocal<Reference<IRBreakJump>> threadLocalBJ = new ThreadLocal<Reference<IRBreakJump>>();
 
-    public static IRBreakJump create(IRScope s, IRubyObject rv) {
+    public static IRBreakJump create(int scopeIdToReturnTo, IRubyObject rv) {
         IRBreakJump bj;
         Reference<IRBreakJump> bjRef = threadLocalBJ.get();
         if (bjRef != null) {
@@ -29,7 +29,7 @@ public class IRBreakJump extends RuntimeException {
             bj = new IRBreakJump();
             threadLocalBJ.set(new SoftReference<IRBreakJump>(bj));
         }
-        bj.scopeToReturnTo = s;
+        bj.scopeIdToReturnTo = scopeIdToReturnTo;
         bj.breakValue = rv;
         bj.caughtByLambda = false;
         bj.breakInEval = false;

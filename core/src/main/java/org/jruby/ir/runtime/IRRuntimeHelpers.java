@@ -89,7 +89,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject initiateBreak(ThreadContext context, IRScope scope, IRScope scopeToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject initiateBreak(ThreadContext context, IRScope scope, int scopeIdToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
         if (inLambda(blockType)) {
             // Ensures would already have been run since the IR builder makes
             // sure that ensure code has run before we hit the break.  Treat
@@ -101,7 +101,7 @@ public class IRRuntimeHelpers {
                 throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             }
 
-            IRBreakJump bj = IRBreakJump.create(scopeToReturnTo, breakValue);
+            IRBreakJump bj = IRBreakJump.create(scopeIdToReturnTo, breakValue);
             if (scope instanceof IREvalScript) {
                 // If we are in an eval, record it so we can account for it
                 bj.breakInEval = true;
@@ -137,7 +137,7 @@ public class IRRuntimeHelpers {
                 bj.breakInEval = false;
                 throw bj;
             }
-        } else if (bj.scopeToReturnTo == scope) {
+        } else if (bj.scopeIdToReturnTo == scope.getScopeId()) {
             // Done!! Hurray!
             return bj.breakValue;
 /* ---------------------------------------------------------------

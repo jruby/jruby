@@ -12,7 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ReceiveRestArgInstr extends ReceiveArgBase {
     /** Number of arguments already accounted for */
-    private final int numUsedArgs;
+    public final int numUsedArgs;
 
     public ReceiveRestArgInstr(Variable result, int numUsedArgs, int argIndex) {
         super(Operation.RECV_REST_ARG, result, argIndex);

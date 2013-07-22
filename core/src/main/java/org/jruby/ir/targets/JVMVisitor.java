@@ -317,11 +317,13 @@ public class JVMVisitor extends IRVisitor {
         SkinnyMethodAdapter a = m.adapter;
         m.loadLocal(0); // context
         a.aload(1); // current scope
-        // FIXME: emit a constant-pool referencing breakInstr.scopeToReturnTo.some_id and load it here
-        // Also requires fixing up initiateBreak to accept StaticScope and extract IRScope and its id
-        // and compare them instead of the scope.
+        // FIXME: This can also be done in the helper itself
+        m.invokeVirtual(Type.getType(IRScope.class), Method.getMethod("org.jruby.ir.IRScope getIRScope()"));
+        a.ldc(breakInstr.getScopeToReturnTo().getScopeId());
         visit(breakInstr.getReturnValue());
         // FIXME: emit block-type for the scope that is currently executing
+        // For now, it is null
+        m.pushNil();
         a.invokestatic(p(IRubyObject.class), "initiateBreak", sig(ThreadContext.class, IRScope.class, IRScope.class, IRubyObject.class, Block.Type.class));
     }
 
@@ -832,8 +834,10 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void NotInstr(NotInstr notinstr) {
-        super.NotInstr(notinstr);    //To change body of overridden methods use File | Settings | File Templates.
+    public void NotInstr(NotInstr instr) {
+        visit(instr.getOperands()[0]);
+        // SSS FIXME: Does this really require a helper rather than being inlined?
+        jvm.method().invokeHelper("irNot", IRubyObject.class, ThreadContext.class, IRubyObject.class);
     }
 
     @Override
@@ -910,20 +914,43 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr receiveprereqdarginstr) {
-        int index = getJVMLocalVarIndex(receiveprereqdarginstr.getResult());
-        jvm.method().loadLocal(3 + receiveprereqdarginstr.getArgIndex());
+    public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
+        int index = getJVMLocalVarIndex(instr.getResult());
+        jvm.method().loadLocal(3 + instr.getArgIndex());
         jvm.method().storeLocal(index);
     }
 
     @Override
-    public void ReceiveOptArgInstr(ReceiveOptArgInstr receiveoptarginstr) {
-        super.ReceiveOptArgInstr(receiveoptarginstr);    //To change body of overridden methods use File | Settings | File Templates.
+    public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
+        // FIXME: Only works when args is in an array rather than being flattened out
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.numUsedArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.argOffset); // args array offset
+        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
     }
 
     @Override
-    public void ReceiveRestArgInstr(ReceiveRestArgInstr receiverestarginstr) {
-        super.ReceiveRestArgInstr(receiverestarginstr);    //To change body of overridden methods use File | Settings | File Templates.
+    public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
+        // FIXME: Only works when args is in an array rather than being flattened out
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        jvm.method().loadContext();
+        jvm.method().adapter.pushInt(instr.getArgIndex());
+        jvm.method().adapter.pushInt(instr.preReqdArgsCount);
+        jvm.method().adapter.pushInt(instr.postReqdArgsCount);
+        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().invokeHelper("irLoadPostReqdArg", IRubyObject.class, int.class, int.class, int.class, IRubyObject[].class);
+    }
+
+    @Override
+    public void ReceiveRestArgInstr(ReceiveRestArgInstr instr) {
+        // FIXME: Only works when args is in an array rather than being flattened out
+        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
+        jvm.method().loadContext();
+        jvm.method().adapter.pushInt(instr.numUsedArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.getArgIndex()); // args array offset
+        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);
     }
 
     @Override
@@ -1181,11 +1208,6 @@ public class JVMVisitor extends IRVisitor {
         super.GetEncodingInstr(getencodinginstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
-    @Override
-    public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivepostreqdarginstr) {
-        super.ReceivePostReqdArgInstr(receivepostreqdarginstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     // operands
     @Override
     public void Array(Array array) {
@@ -1283,12 +1305,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void MethAddr(MethAddr methaddr) {
-        super.MethAddr(methaddr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().adapter.ldc(methaddr.getName());
     }
 
     @Override
     public void MethodHandle(MethodHandle methodhandle) {
-        super.MethodHandle(methodhandle);    //To change body of overridden methods use File | Settings | File Templates.
+        // SSS FIXME: Unused at this time
+        throw new RuntimeException("Unsupported operand: " + methodhandle);
     }
 
     @Override
@@ -1378,7 +1401,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {
-        super.UnexecutableNil(unexecutablenil);    //To change body of overridden methods use File | Settings | File Templates.
+        throw new RuntimeException(this.getClass().getSimpleName() + " should never be directly executed!");
     }
 
     @Override
