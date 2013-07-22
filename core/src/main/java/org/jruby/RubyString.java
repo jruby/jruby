@@ -604,6 +604,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return newStringShared(runtime, new ByteList(bytes, false));
     }
 
+    public static RubyString newStringShared(Ruby runtime, byte[] bytes, Encoding encoding) {
+        return newStringShared(runtime, new ByteList(bytes, encoding, false));
+    }
+
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
         return newStringShared(runtime, new ByteList(bytes, start, length, false));
     }

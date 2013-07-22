@@ -17,8 +17,11 @@ import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyConverter;
+import static org.jruby.RubyConverter.PARTIAL_INPUT;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,12 +45,12 @@ public class CharsetTranscoder {
     
     private static final Charset UTF16 = Charset.forName("UTF-16");
     
+    private final Ruby runtime;
     public final Encoding toEncoding;
     private CodingErrorActions actions;
     public final Encoding forceEncoding;
-    
-    private boolean didDecode;
-    private boolean didEncode;
+    private RubyCoderResult lastResult;
+    private RaiseException lastError;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
         this(context, toEncoding, null, processCodingErrorActions(context, options));
@@ -62,6 +65,7 @@ public class CharsetTranscoder {
     }
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, CodingErrorActions actions) {
+        this.runtime = context.runtime;
         this.toEncoding = toEncoding;
         this.forceEncoding = forceEncoding;
         
@@ -113,23 +117,12 @@ public class CharsetTranscoder {
     }
     
     public void transcode(Ruby runtime, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII) {
-        RubyCoderResult result = primitiveConvert(runtime, inBuffer.dup(), outBuffer, 0, -1, inEncoding, is7BitASCII, 0);
+        primitiveConvert(runtime, inBuffer.dup(), outBuffer, 0, -1, inEncoding, is7BitASCII, 0);
         
-        if (result != null) {
-            // handle error
-            if (result.coderResult.isError()) {
-                if (result.coderResult.isMalformed()) {
-                    throw runtime.newInvalidByteSequenceError("1");
-                } else if (result.coderResult.isUnmappable()) {
-                    throw runtime.newUndefinedConversionError("2");
-                }
-            } else {
-                if (result.coderResult.isUnderflow()) {
-                    throw runtime.newInvalidByteSequenceError("1");
-                } else if (result.coderResult.isOverflow()) {
-                    throw new RuntimeException();
-                }
-            }
+        if (lastResult != null) {
+            createLastError();
+            
+            if (lastError != null) throw lastError;
         }
     }
     
@@ -166,14 +159,13 @@ public class CharsetTranscoder {
         
         TranscoderState state = new TranscoderState(inBytes, outBytes, growable, inCharset, outCharset, actions);
         
-        RubyCoderResult result = state.transcode(
-                (flags & RubyConverter.PARTIAL_INPUT) == 0,
-                (flags & RubyConverter.AFTER_OUTPUT) != 0);
+        lastResult = state.transcode(flags);
         
         // consume bytes from inBuffer
         inBuffer.setBegin(inBytes.position());
+        inBuffer.setRealSize(inBytes.remaining());
         
-        if (result != null) return result;
+        if (lastResult != null) return lastResult;
 
         outBytes = state.outBytes;
 
@@ -189,15 +181,74 @@ public class CharsetTranscoder {
         return null;
     }
     
+    public RubyCoderResult getLastResult() {
+        return lastResult;
+    }
+    
+    public RaiseException getLastError() {
+        createLastError();
+        
+        return lastError;
+    }
+
+    private void createLastError() {
+        if (lastResult != null) {
+            // handle error
+            if (lastResult.coderResult.isError()) {
+                if (lastResult.coderResult.isMalformed()) {
+                    lastError = runtime.newInvalidByteSequenceError("1");
+                    lastError.getException().dataWrapStruct(lastResult);
+                    return;
+                } else if (lastResult.coderResult.isUnmappable()) {
+                    lastError = runtime.newUndefinedConversionError("2");
+                    lastError.getException().dataWrapStruct(lastResult);
+                    return;
+                }
+            } else {
+                if (lastResult.coderResult.isUnderflow()) {
+                    lastError = runtime.newInvalidByteSequenceError("1");
+                    lastError.getException().dataWrapStruct(lastResult);
+                    return;
+                }
+            }
+        }
+        
+        lastError = null;
+    }
+    
     public static class RubyCoderResult {
         public final CoderResult coderResult;
+        public final String stringResult;
         public final byte[] errorBytes;
+        public final Charset inCharset;
         public final byte[] readagainBytes;
         
-        public RubyCoderResult(CoderResult coderResult, byte[] errorBytes, byte[] readagainBytes) {
+        public RubyCoderResult(CoderResult coderResult, Charset inCharset, byte[] errorBytes, byte[] readagainBytes, int flags) {
             this.coderResult = coderResult;
             this.errorBytes = errorBytes;
+            this.inCharset = inCharset;
             this.readagainBytes = readagainBytes;
+            if (coderResult.isError()) {
+                if (coderResult.isMalformed()) {
+                    stringResult = "invalid_byte_sequence";
+                } else if (coderResult.isUnmappable()) {
+                    stringResult = "undefined_conversion";
+                } else {
+                    stringResult = "finished";
+                }
+            } else {
+                if (coderResult.isUnderflow()) {
+                    if ((flags & PARTIAL_INPUT) == 0) {
+                        stringResult = "incomplete_input";
+                    } else {
+                        stringResult = "finished";
+                    }
+                } else if (coderResult.isOverflow()) {
+                    stringResult = "destination_buffer_full";
+                } else {
+                    stringResult = "finished";
+                }
+            }
         }
     }
     
@@ -235,7 +286,9 @@ public class CharsetTranscoder {
             this.actions = actions;
         }
     
-        public RubyCoderResult transcode(boolean completeInput, boolean afterOutput) {
+        public RubyCoderResult transcode(int flags) {
+            boolean completeInput = (flags & RubyConverter.PARTIAL_INPUT) == 0;
+            boolean afterOutput = (flags & RubyConverter.AFTER_OUTPUT) != 0;
             CodingErrorAction onMalformedInput = actions.onMalformedInput;
             CodingErrorAction onUnmappableCharacter = actions.onUnmappableCharacter;
 
@@ -266,39 +319,39 @@ public class CharsetTranscoder {
                     // buffer full, transfer to output
                     tmpChars.flip();
 
-                    if (!encode(replaceBytes)) return result;
+                    if (!encode(replaceBytes, flags)) return result;
                 } else {
                     if (coderResult.isMalformed()) {
                         if (onMalformedInput == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
                             inBytes.get(errorBytes);
-                            return result = new RubyCoderResult(coderResult, errorBytes, null);
+                            return result = new RubyCoderResult(coderResult, decoder.charset(), errorBytes, null, flags);
                         }
 
                         // transfer to out and skip bad byte
                         tmpChars.flip();
-                        if (!encode(replaceBytes)) return result;
+                        if (!encode(replaceBytes, flags)) return result;
 
                         inBytes.get();
 
                         if (onMalformedInput == CodingErrorAction.REPLACE) {
-                            if (!putReplacement(replaceBytes)) return result;
+                            if (!putReplacement(replaceBytes, flags)) return result;
                         }
                     } else if (coderResult.isUnmappable()) {
                         if (onUnmappableCharacter == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
                             inBytes.get(errorBytes);
-                            return result = new RubyCoderResult(coderResult, errorBytes, null);
+                            return result = new RubyCoderResult(coderResult, decoder.charset(), errorBytes, null, flags);
                         }
 
                         // transfer to out and skip bad byte
                         tmpChars.flip();
-                        if (!encode(replaceBytes)) return result;
+                        if (!encode(replaceBytes, flags)) return result;
 
                         inBytes.get();
 
                         if (onUnmappableCharacter == CodingErrorAction.REPLACE) {
-                            if (!putReplacement(replaceBytes)) return result;
+                            if (!putReplacement(replaceBytes, flags)) return result;
                         }
                     }
                 }
@@ -312,14 +365,14 @@ public class CharsetTranscoder {
                     while (true) {
                         CoderResult coderResult = decoder.flush(tmpChars);
                         tmpChars.flip();
-                        if (!encode(replaceBytes)) return result;
+                        if (!encode(replaceBytes, flags)) return result;
                         if (coderResult == CoderResult.UNDERFLOW) break;
                     }
                 }
 
                 if (didEncode) {
                     while (encoder.flush(outBytes) == CoderResult.OVERFLOW) {
-                        if (!growBuffer()) return result;
+                        if (!growBuffer(flags)) return result;
                         encoder.flush(outBytes);
                     }
                 }
@@ -330,9 +383,9 @@ public class CharsetTranscoder {
             return result;
         }
     
-        private boolean growBuffer() {
+        private boolean growBuffer(int flags) {
             if (!growable) {
-                result = new RubyCoderResult(CoderResult.OVERFLOW, null, null);
+                result = new RubyCoderResult(CoderResult.OVERFLOW, null, null, null, flags);
                 return false;
             }
 
@@ -353,7 +406,7 @@ public class CharsetTranscoder {
             return true;
         }
 
-        private boolean encode(byte[] replaceBytes) {
+        private boolean encode(byte[] replaceBytes, int flags) {
             CoderResult coderResult;
 
             while (tmpChars.hasRemaining()) {
@@ -365,16 +418,16 @@ public class CharsetTranscoder {
                     char badChar = tmpChars.get();
 
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPORT) {
-                        result = new RubyCoderResult(coderResult, Character.toString(badChar).getBytes(UTF16), null);
+                        result = new RubyCoderResult(coderResult, decoder.charset(), Character.toString(badChar).getBytes(decoder.charset()), null, flags);
                         return false;
                     }
 
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE) {
-                        if (!putReplacement(replaceBytes)) return false;
+                        if (!putReplacement(replaceBytes, flags)) return false;
                     }
                 } else {
                     if (coderResult == CoderResult.OVERFLOW) {
-                        if (!growBuffer()) return false;
+                        if (!growBuffer(flags)) return false;
                     }
                 }
             }
@@ -382,9 +435,9 @@ public class CharsetTranscoder {
             return true;
         }
 
-        private boolean putReplacement(byte[] replaceBytes) {
+        private boolean putReplacement(byte[] replaceBytes, int flags) {
             if (outBytes.remaining() < replaceBytes.length) {
-                if (!growBuffer()) return false;
+                if (!growBuffer(flags)) return false;
             }
 
             outBytes.put(replaceBytes);

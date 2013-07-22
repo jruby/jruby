@@ -34,6 +34,7 @@ import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.Transcoder;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -260,7 +261,7 @@ public class RubyConverter extends RubyObject {
             outBytes.ensure(outputByteEnd);
         }
 
-        if (inBytes.getRealSize() == 0 && (flags & PARTIAL_INPUT) == 0) return context.runtime.newSymbol("source_buffer_empty");
+        if (!args[0].isNil() && inBytes.getRealSize() == 0 && (flags & PARTIAL_INPUT) == 0) return context.runtime.newSymbol("source_buffer_empty");
 
         CharsetTranscoder.RubyCoderResult result = transcoder.primitiveConvert(
                 runtime,
@@ -274,27 +275,7 @@ public class RubyConverter extends RubyObject {
         
         outBytes.setEncoding(transcoder.toEncoding);
 
-        if (result != null) {
-            if (result.coderResult.isError()) {
-                if (result.coderResult.isMalformed()) {
-                    return runtime.newSymbol("invalid_byte_sequence");
-                } else if (result.coderResult.isUnmappable()) {
-                    return runtime.newSymbol("undefined_conversion");
-                }
-            } else {
-                if (result.coderResult.isUnderflow()) {
-                    if ((flags & PARTIAL_INPUT) == 0) {
-                        return runtime.newSymbol("incomplete_input");
-                    } else {
-                        return runtime.newSymbol("finished");
-                    }
-                } else if (result.coderResult.isOverflow()) {
-                    return runtime.newSymbol("destination_buffer_full");
-                }
-            }
-        }
-
-        return context.runtime.newSymbol("finished");
+        return symbolFromResult(result, runtime, flags, context);
     }
 
     @JRubyMethod
@@ -349,5 +330,95 @@ public class RubyConverter extends RubyObject {
         }
         
         return encodingService.convertEncodingToRubyEncoding(asciiCompat);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject last_error(ThreadContext context) {
+        RaiseException lastError = transcoder.getLastError();
+        
+        if (lastError != null) return lastError.getException();
+        
+        return context.nil;
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject primitive_errinfo(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyArray errinfo = RubyArray.newArray(context.runtime);
+        
+        CharsetTranscoder.RubyCoderResult lastResult = transcoder.getLastResult();
+        
+        if (lastResult == null) {
+            // no error
+            errinfo.append(runtime.newSymbol("finished"));
+        } else {
+            errinfo.append(runtime.newSymbol(lastResult.stringResult));
+        }
+        
+        // FIXME: gross
+        errinfo.append(runtime.newString(transcoder.forceEncoding.toString()));
+        errinfo.append(runtime.newString(transcoder.toEncoding.toString()));
+        
+        if (lastResult != null) {
+            if (lastResult.coderResult.isError() && lastResult.errorBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList errorBytes = new ByteList(lastResult.errorBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+                errinfo.append(RubyString.newString(runtime, errorBytes));
+            } else {
+                errinfo.append(RubyString.newEmptyString(runtime));
+            }
+
+            if (lastResult.readagainBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList readagainBytes = new ByteList(lastResult.readagainBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+                errinfo.append(RubyString.newString(runtime, readagainBytes));
+            } else {
+                errinfo.append(RubyString.newEmptyString(runtime));
+            }
+        } else {
+            errinfo.append(context.nil);
+            errinfo.append(context.nil);
+        }
+        
+        return errinfo;
+    }
+
+    private IRubyObject symbolFromResult(CharsetTranscoder.RubyCoderResult result, Ruby runtime, int flags, ThreadContext context) {
+        if (result != null) {
+            if (result.coderResult.isError()) {
+                if (result.coderResult.isMalformed()) {
+                    return runtime.newSymbol("invalid_byte_sequence");
+                } else if (result.coderResult.isUnmappable()) {
+                    return runtime.newSymbol("undefined_conversion");
+                }
+            } else {
+                if (result.coderResult.isUnderflow()) {
+                    if ((flags & PARTIAL_INPUT) == 0) {
+                        return runtime.newSymbol("incomplete_input");
+                    } else {
+                        return runtime.newSymbol("finished");
+                    }
+                } else if (result.coderResult.isOverflow()) {
+                    return runtime.newSymbol("destination_buffer_full");
+                }
+            }
+        }
+
+        return context.runtime.newSymbol("finished");
+    }
+    
+    public static class UndefinedConversionErrorMethods {
+        @JRubyMethod
+        public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            if (result != null && result.coderResult.isError() && result.errorBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList errorBytes = new ByteList(result.errorBytes, context.runtime.getEncodingService().getEncodingFromString(result.inCharset.name()), true);
+                return RubyString.newString(context.runtime, errorBytes);
+            }
+        
+            return context.nil;
+        }
     }
 }
