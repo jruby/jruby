@@ -637,7 +637,7 @@ public class RubyArgsFile {
     }
     
     @JRubyMethod(compat = RUBY1_9, required = 1, optional = 1)
-    public static IRubyObject read_partial(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject readpartial(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return getPartial(context, recv, args, false);
     }
     
