@@ -239,10 +239,13 @@ public class RubyConverter extends RubyObject {
         if (args[0].isNil()) {
             inBytes = new ByteList();
         } else {
-            inBytes = args[0].convertToString().getByteList();
+            input = args[0].convertToString();
+            input.modify19();
+            inBytes = input.getByteList();
         }
         
         output = args[1].convertToString();
+        output.modify19();
         outBytes = output.getByteList();
         
         if (outputByteoffset == -1) {

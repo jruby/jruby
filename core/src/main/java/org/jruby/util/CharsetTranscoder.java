@@ -113,7 +113,7 @@ public class CharsetTranscoder {
     }
     
     public void transcode(Ruby runtime, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII) {
-        RubyCoderResult result = primitiveConvert(runtime, inBuffer, outBuffer, 0, -1, inEncoding, is7BitASCII, 0);
+        RubyCoderResult result = primitiveConvert(runtime, inBuffer.dup(), outBuffer, 0, -1, inEncoding, is7BitASCII, 0);
         
         if (result != null) {
             // handle error
@@ -170,12 +170,19 @@ public class CharsetTranscoder {
                 (flags & RubyConverter.PARTIAL_INPUT) == 0,
                 (flags & RubyConverter.AFTER_OUTPUT) != 0);
         
+        // consume bytes from inBuffer
+        inBuffer.setBegin(inBytes.position());
+        
         if (result != null) return result;
 
         outBytes = state.outBytes;
 
         // grossly inefficient
-        outBuffer.replace(outOffset, outLimit - outOffset, Arrays.copyOfRange(outBytes.array(), realOffset, outBytes.limit()));
+        if (outOffset == outBuffer.getRealSize()) {
+            outBuffer.append(Arrays.copyOfRange(outBytes.array(), realOffset, outBytes.limit()));
+        } else {
+            outBuffer.replace(outOffset, outLimit - outOffset, Arrays.copyOfRange(outBytes.array(), realOffset, outBytes.limit()));
+        }
         
         outBuffer.setEncoding(outEncoding);
         
