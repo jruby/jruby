@@ -83,7 +83,7 @@ describe "Vertex" do
 
     it "removes all incoming edges to the vertex" do
       @source.removeAllIncomingEdges()
-      expect(@source.inDegree).to eq 0
+      expect(@source).to have_in_degree 0
     end
 
   end
@@ -98,7 +98,7 @@ describe "Vertex" do
 
     it "removes all outgoing edges from the vertex" do
       @source.removeAllOutgoingEdges()
-      expect(@source.outDegree).to eq 0
+      expect(@source).to have_out_degree 0
     end
 
   end
@@ -115,8 +115,8 @@ describe "Vertex" do
 
     it "removes all edges from the vertex" do
       @source.removeAllEdges()
-      expect(@source.outDegree).to eq 0
-      expect(@source.inDegree).to eq 0
+      expect(@source).to have_out_degree 0
+      expect(@source).to have_in_degree 0
     end
 
   end
