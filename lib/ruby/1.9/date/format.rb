@@ -215,8 +215,10 @@ class Date
   def strftime(fmt='%F')
     rdf = JRuby.runtime.current_context.getRubyDateFormat
     rdf.applyPattern(fmt, true)
-    rdf.setDateTime(@dt)
-    rdf.setNSec((sec_fraction*1_000_000_000).to_i)
+    nanos = (sec_fraction * 1_000_000_000).to_i
+    millis, nsec = nanos.divmod 1_000_000
+    rdf.setDateTime(@dt.withMillisOfSecond(millis))
+    rdf.setNSec(nsec)
     return rdf.format(nil)
 
     fmt.gsub(/%([-_0^#]+)?(\d+)?([EO]?(?::{1,3}z|.))/m) do
