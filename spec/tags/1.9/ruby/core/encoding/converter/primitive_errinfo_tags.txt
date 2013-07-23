@@ -1,4 +1,3 @@
-fails:Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil,nil] when no conversion has been attempted
 fails:Encoding::Converter#primitive_errinfo returns [:finished,nil,nil,nil,nil] when #primitive_convert last returned :finished
 fails:Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil, nil] when #convert last succeeded
 fails:Encoding::Converter#primitive_errinfo returns [:destination_buffer_full,nil,nil,nil,nil] when #primitive_convert last returned :destination_buffer_full

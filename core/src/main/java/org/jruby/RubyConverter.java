@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -124,7 +125,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject convpath) {
-        return context.runtime.getNil();
+        throw context.runtime.newNotImplementedError("custom convpath not supported");
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -133,21 +134,27 @@ public class RubyConverter extends RubyObject {
     }
 
     @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject opt) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject _opt) {
         Ruby runtime = context.runtime;
         EncodingService encodingService = runtime.getEncodingService();
         
-        RubyEncoding srcEncoding = (RubyEncoding)encodingService.rubyEncodingFromObject(src);
-        RubyEncoding destEncoding = (RubyEncoding)encodingService.rubyEncodingFromObject(dest);
+        // both may be null
+        Encoding srcEncoding = encodingService.getEncodingFromObjectNoError(src);
+        Encoding destEncoding = encodingService.getEncodingFromObjectNoError(dest);
+        
+        int flags = 0;
+        IRubyObject replace = context.nil;
 
-        if (srcEncoding.eql(destEncoding)) {
+        if (srcEncoding == destEncoding && srcEncoding != null) {
             throw runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
         }
 
         // Ensure we'll be able to get charsets fo these encodings
         try {
-            encodingService.charsetForEncoding(srcEncoding.getEncoding());
-            encodingService.charsetForEncoding(destEncoding.getEncoding());
+            if (srcEncoding != destEncoding) {
+                if (srcEncoding != null) encodingService.charsetForEncoding(srcEncoding);
+                if (destEncoding != null) encodingService.charsetForEncoding(destEncoding);
+            }
         } catch (RaiseException e) {
             if (e.getException().getMetaClass().getBaseName().equals("CompatibilityError")) {
                 throw runtime.newConverterNotFoundError("code converter not found (" + srcEncoding + " to " + destEncoding + ")");
@@ -156,14 +163,29 @@ public class RubyConverter extends RubyObject {
             }
         }
         
-        transcoder = new CharsetTranscoder(context, destEncoding.getEncoding(), srcEncoding.getEncoding(), opt);
+        if (!_opt.isNil()) {
+            if (_opt instanceof RubyHash) {
+                RubyHash opt = (RubyHash)_opt;
+                flags |= optHashToFlags(opt, runtime, flags);
+                
+                IRubyObject value = opt.fastARef(runtime.newSymbol("replace"));
+                if (value != null) {
+                    replace = value;
+                }
+            } else {
+                flags = (int)_opt.convertToInteger().getLongValue();
+                replace = context.nil;
+            }
+        }
+        
+        transcoder = new CharsetTranscoder(context, destEncoding, srcEncoding, flags, replace);
 
         return context.runtime.getNil();
     }
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.forceEncoding.getName() + " to " + transcoder.toEncoding.getName());
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.fromEncoding + " to " + transcoder.toEncoding);
     }
 
     @JRubyMethod
@@ -181,11 +203,15 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject source_encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.forceEncoding);
+        if (transcoder.fromEncoding == null) return context.nil;
+        
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.fromEncoding);
     }
 
     @JRubyMethod
     public IRubyObject destination_encoding(ThreadContext context) {
+        if (transcoder.toEncoding == null) return context.nil;
+        
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.toEncoding);
     }
 
@@ -195,43 +221,45 @@ public class RubyConverter extends RubyObject {
         
         RubyString input;
         RubyString output;
-        int outputByteoffset;
-        int outputBytesize;
-        int flags = 0;
+        int outputByteoffset = -1;
+        int outputBytesize = 0;
+        int flags = transcoder.getCodingErrorActions().flags;
         
-        if (args.length <= 2 || args[2].isNil()) {
-            outputByteoffset = -1;
-        } else {
-            outputByteoffset = (int)args[2].convertToInteger().getLongValue();
-            if (outputByteoffset < 0) throw runtime.newArgumentError("negative offset");
+        int hashArg = -1;
+        
+        if (args.length > 2 && !args[2].isNil()) {
+            if (args.length == 3 && args[2] instanceof RubyHash) {
+                hashArg = 2;
+            } else {
+                outputByteoffset = (int)args[2].convertToInteger().getLongValue();
+                if (outputByteoffset < 0) throw runtime.newArgumentError("negative offset");
+            }
         }
         
-        if (args.length <= 3 || args[3].isNil()) {
-            outputBytesize = 0;
-        } else {
-            outputBytesize = (int)args[3].convertToInteger().getLongValue();
-            if (outputBytesize < 0) throw runtime.newArgumentError("negative offset");
+        if (args.length > 3 && !args[3].isNil()) {
+            if (args.length == 4 && args[3] instanceof RubyHash) {
+                hashArg = 3;
+            } else {
+                outputBytesize = (int)args[3].convertToInteger().getLongValue();
+                if (outputBytesize < 0) throw runtime.newArgumentError("negative bytesize");
+            }
         }
         
         if (args.length > 4 && !args[4].isNil()) {
             if (args.length > 5 && !args[5].isNil()) {
                 throw runtime.newArgumentError(args.length, 5);
             }
+            
             if (args[4] instanceof RubyHash) {
-                RubyHash opt = (RubyHash)args[4];
-                
-                IRubyObject partialInput = opt.fastARef(runtime.newSymbol("partial_input"));
-                if (partialInput != null && partialInput.isTrue()) {
-                    flags |= PARTIAL_INPUT;
-                }
-                
-                IRubyObject afterOutput = opt.fastARef(runtime.newSymbol("after_output"));
-                if (afterOutput != null && afterOutput.isTrue()) {
-                    flags |= AFTER_OUTPUT;
-                }
+                hashArg = 4;
             } else {
                 flags = (int)args[4].convertToInteger().getLongValue();
             }
+        }
+        
+        if (hashArg != -1) {
+            RubyHash opt = (RubyHash)args[hashArg];
+            flags |= optHashToFlags(opt, runtime, flags);
         }
         
         ByteList inBytes;
@@ -260,8 +288,6 @@ public class RubyConverter extends RubyObject {
         if (outputByteEnd > outBytes.getRealSize()) {
             outBytes.ensure(outputByteEnd);
         }
-
-        if (!args[0].isNil() && inBytes.getRealSize() == 0 && (flags & PARTIAL_INPUT) == 0) return context.runtime.newSymbol("source_buffer_empty");
 
         CharsetTranscoder.RubyCoderResult result = transcoder.primitiveConvert(
                 runtime,
@@ -344,40 +370,42 @@ public class RubyConverter extends RubyObject {
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject primitive_errinfo(ThreadContext context) {
         Ruby runtime = context.runtime;
-        RubyArray errinfo = RubyArray.newArray(context.runtime);
         
         CharsetTranscoder.RubyCoderResult lastResult = transcoder.getLastResult();
         
+        // if we have not done anything, produce an empty errinfo
         if (lastResult == null) {
-            // no error
-            errinfo.append(runtime.newSymbol("finished"));
-        } else {
-            errinfo.append(runtime.newSymbol(lastResult.stringResult));
+            return runtime.newArray(new IRubyObject[] {
+               runtime.newSymbol("source_buffer_empty"),
+               context.nil,
+               context.nil,
+               context.nil,
+               context.nil
+            });
         }
         
-        // FIXME: gross
-        errinfo.append(runtime.newString(transcoder.forceEncoding.toString()));
-        errinfo.append(runtime.newString(transcoder.toEncoding.toString()));
+        RubyArray errinfo = RubyArray.newArray(context.runtime);
         
-        if (lastResult != null) {
-            if (lastResult.coderResult.isError() && lastResult.errorBytes != null) {
-                // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(lastResult.errorBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
-                errinfo.append(RubyString.newString(runtime, errorBytes));
-            } else {
-                errinfo.append(RubyString.newEmptyString(runtime));
-            }
-
-            if (lastResult.readagainBytes != null) {
-                // FIXME: do this elsewhere and cache it
-                ByteList readagainBytes = new ByteList(lastResult.readagainBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
-                errinfo.append(RubyString.newString(runtime, readagainBytes));
-            } else {
-                errinfo.append(RubyString.newEmptyString(runtime));
-            }
+        errinfo.append(runtime.newSymbol(lastResult.stringResult));
+        
+        // FIXME: gross
+        errinfo.append(runtime.newString(lastResult.inCharset.name()));
+        errinfo.append(runtime.newString(lastResult.outCharset.name()));
+        
+        if (lastResult.isError() && lastResult.errorBytes != null) {
+            // FIXME: do this elsewhere and cache it
+            ByteList errorBytes = new ByteList(lastResult.errorBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+            errinfo.append(RubyString.newString(runtime, errorBytes));
         } else {
-            errinfo.append(context.nil);
-            errinfo.append(context.nil);
+            errinfo.append(RubyString.newEmptyString(runtime));
+        }
+
+        if (lastResult.readagainBytes != null) {
+            // FIXME: do this elsewhere and cache it
+            ByteList readagainBytes = new ByteList(lastResult.readagainBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+            errinfo.append(RubyString.newString(runtime, readagainBytes));
+        } else {
+            errinfo.append(RubyString.newEmptyString(runtime));
         }
         
         return errinfo;
@@ -385,40 +413,163 @@ public class RubyConverter extends RubyObject {
 
     private IRubyObject symbolFromResult(CharsetTranscoder.RubyCoderResult result, Ruby runtime, int flags, ThreadContext context) {
         if (result != null) {
-            if (result.coderResult.isError()) {
-                if (result.coderResult.isMalformed()) {
-                    return runtime.newSymbol("invalid_byte_sequence");
-                } else if (result.coderResult.isUnmappable()) {
-                    return runtime.newSymbol("undefined_conversion");
-                }
+            return runtime.newSymbol(result.stringResult);
+        }
+
+        if ((flags & PARTIAL_INPUT) == 0) {
+            return context.runtime.newSymbol("finished");
+        } else {
+            return context.runtime.newSymbol("source_buffer_empty");
+        }
+    }
+
+    public static int optHashToFlags(RubyHash opt, Ruby runtime, int flags) {
+        IRubyObject value = opt.fastARef(runtime.newSymbol("partial_input"));
+        if (value != null) {
+            if (value.isTrue()) {
+                flags |= PARTIAL_INPUT;
             } else {
-                if (result.coderResult.isUnderflow()) {
-                    if ((flags & PARTIAL_INPUT) == 0) {
-                        return runtime.newSymbol("incomplete_input");
-                    } else {
-                        return runtime.newSymbol("finished");
-                    }
-                } else if (result.coderResult.isOverflow()) {
-                    return runtime.newSymbol("destination_buffer_full");
+                flags &= ~PARTIAL_INPUT;
+            }
+        }
+        value = opt.fastARef(runtime.newSymbol("after_output"));
+        if (value != null) {
+            if (value.isTrue()) {
+                flags |= AFTER_OUTPUT;
+            } else {
+                flags &= ~AFTER_OUTPUT;
+            }
+        }
+        
+        value = opt.fastARef(runtime.newSymbol("invalid"));
+        if (value != null) {
+            if (value.isNil()) {
+                flags &= ~INVALID_REPLACE;
+            } else {
+                if (value.equals(runtime.newSymbol("replace"))) {
+                    flags |= INVALID_REPLACE;
+                } else {
+                    throw runtime.newArgumentError("unknown value for invalid character option");
                 }
             }
         }
-
-        return context.runtime.newSymbol("finished");
+        value = opt.fastARef(runtime.newSymbol("undef"));
+        if (value != null) {
+            if (value.isNil()) {
+                flags &= ~UNDEF_REPLACE;
+            } else {
+                if (value.equals(runtime.newSymbol("replace"))) {
+                    flags |= UNDEF_REPLACE;
+                } else {
+                    throw runtime.newArgumentError("unknown value for undefined character option");
+                }
+            }
+        }
+        value = opt.fastARef(runtime.newSymbol("universal_newline"));
+        if (value != null) {
+            if (value.isTrue()) {
+                flags |= UNIVERSAL_NEWLINE_DECORATOR;
+            } else {
+                flags &= ~UNIVERSAL_NEWLINE_DECORATOR;
+            }
+        }
+        value = opt.fastARef(runtime.newSymbol("crlf_newline"));
+        if (value != null) {
+            if (value.isTrue()) {
+                flags |= CRLF_NEWLINE_DECORATOR;
+            } else {
+                flags &= ~CRLF_NEWLINE_DECORATOR;
+            }
+        }
+        value = opt.fastARef(runtime.newSymbol("cr_newline"));
+        if (value != null) {
+            if (value.isTrue()) {
+                flags |= CR_NEWLINE_DECORATOR;
+            } else {
+                flags &= ~CR_NEWLINE_DECORATOR;
+            }
+        }
+        value = opt.fastARef(runtime.newSymbol("xml"));
+        if (value != null) {
+            String valueString = value.toString();
+            if (value.equals(runtime.newSymbol("text"))) {
+                flags |= XML_TEXT_DECORATOR;
+            } else if (value.equals(runtime.newSymbol("attr"))) {
+                flags |= XML_ATTR_CONTENT_DECORATOR;
+            } else {
+                throw runtime.newArgumentError("unexpected value for xml option: " + value.toString());
+            }
+        }
+        
+        return flags;
     }
     
-    public static class UndefinedConversionErrorMethods {
+    public static class EncodingErrorMethods {
         @JRubyMethod
         public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
             CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
             
-            if (result != null && result.coderResult.isError() && result.errorBytes != null) {
+            if (result != null && result.isError() && result.errorBytes != null) {
                 // FIXME: do this elsewhere and cache it
                 ByteList errorBytes = new ByteList(result.errorBytes, context.runtime.getEncodingService().getEncodingFromString(result.inCharset.name()), true);
                 return RubyString.newString(context.runtime, errorBytes);
             }
         
             return context.nil;
+        }
+        
+        @JRubyMethod
+        public static IRubyObject readagain_bytes(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            if (result != null && result.isError() && result.readagainBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList errorBytes = new ByteList(result.readagainBytes, ASCIIEncoding.INSTANCE, true);
+                return RubyString.newString(context.runtime, errorBytes);
+            }
+        
+            return context.nil;
+        }
+        
+        @JRubyMethod(name = "incomplete_input?")
+        public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            if (result != null && result.isInvalid()) {
+                // FIXME: do this elsewhere and cache it
+                ByteList errorBytes = new ByteList(result.readagainBytes, ASCIIEncoding.INSTANCE, true);
+                return RubyString.newString(context.runtime, errorBytes);
+            }
+        
+            return context.nil;
+        }
+        
+        @JRubyMethod
+        public static IRubyObject source_encoding(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(context.runtime.getEncodingService().getEncodingFromString(result.inCharset.name()));
+        }
+        
+        @JRubyMethod
+        public static IRubyObject source_encoding_name(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            return context.runtime.newString(result.inCharset.name());
+        }
+        
+        @JRubyMethod
+        public static IRubyObject destination_encoding(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(context.runtime.getEncodingService().getEncodingFromString(result.outCharset.name()));
+        }
+        
+        @JRubyMethod
+        public static IRubyObject destination_encoding_name(ThreadContext context, IRubyObject self) {
+            CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
+            
+            return context.runtime.newString(result.outCharset.name());
         }
     }
 }

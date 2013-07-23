@@ -5079,7 +5079,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     protected Encoding readEncoding; // MRI:enc
     protected Encoding writeEncoding; // MRI:enc2
-    protected CharsetTranscoder.CodingErrorActions transcodingActions;
+    protected CharsetTranscoder.CodingActions transcodingActions;
     
     /**
      * If the stream is being used for popen, we don't want to destroy the process
