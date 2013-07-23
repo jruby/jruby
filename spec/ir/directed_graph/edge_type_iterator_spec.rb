@@ -1,3 +1,7 @@
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../../helpers/ir"
+
+require 'edge_helpers'
+
 import 'org.jruby.ir.util.DirectedGraph'
 import 'org.jruby.ir.util.EdgeTypeIterator'
 import 'java.util.NoSuchElementException'
@@ -105,7 +109,7 @@ describe "EdgeTypeIterable" do
 
       it "returns the next edge" do
         iterator = EdgeTypeIterator.new(@graph.edges(), "foo", false)
-        expect(iterator.next.getType).to eq "foo"
+        expect(iterator.next).to have_type("foo")
       end
     end
 
