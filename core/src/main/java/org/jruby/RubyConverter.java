@@ -185,7 +185,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.fromEncoding + " to " + transcoder.toEncoding);
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.inEncoding + " to " + transcoder.outEncoding);
     }
 
     @JRubyMethod
@@ -203,16 +203,16 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject source_encoding(ThreadContext context) {
-        if (transcoder.fromEncoding == null) return context.nil;
+        if (transcoder.inEncoding == null) return context.nil;
         
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.fromEncoding);
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.inEncoding);
     }
 
     @JRubyMethod
     public IRubyObject destination_encoding(ThreadContext context) {
-        if (transcoder.toEncoding == null) return context.nil;
+        if (transcoder.outEncoding == null) return context.nil;
         
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.toEncoding);
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(transcoder.outEncoding);
     }
 
     @JRubyMethod(required = 2, optional = 4)
@@ -299,7 +299,7 @@ public class RubyConverter extends RubyObject {
                 inBytes.getEncoding().isAsciiCompatible(),
                 flags);
         
-        outBytes.setEncoding(transcoder.toEncoding != null ? transcoder.toEncoding : inBytes.getEncoding());
+        outBytes.setEncoding(transcoder.outEncoding != null ? transcoder.outEncoding : inBytes.getEncoding());
 
         return symbolFromResult(result, runtime, flags, context);
     }
@@ -310,14 +310,19 @@ public class RubyConverter extends RubyObject {
         boolean is7BitAscii = srcString.isCodeRangeAsciiOnly();
         ByteList srcBL = srcString.getByteList();
 
-        ByteList bytes = transcoder.transcode(context, srcBL, is7BitAscii);
+        ByteList bytes = transcoder.convert(context, srcBL, is7BitAscii);
 
         return context.runtime.newString(bytes);
+    }
+    
+    @JRubyMethod
+    public IRubyObject finish(ThreadContext context) {
+        return context.runtime.newString(transcoder.finish());
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject replacement(ThreadContext context) {
-        String replacement = transcoder.getCodingErrorActions().getReplaceWith();
+        String replacement = transcoder.getReplaceWith();
         
         if (replacement == null) {
             return context.nil;
@@ -386,26 +391,37 @@ public class RubyConverter extends RubyObject {
         
         RubyArray errinfo = RubyArray.newArray(context.runtime);
         
-        errinfo.append(runtime.newSymbol(lastResult.stringResult));
-        
-        // FIXME: gross
-        errinfo.append(runtime.newString(lastResult.inCharset.name()));
-        errinfo.append(runtime.newString(lastResult.outCharset.name()));
-        
-        if (lastResult.isError() && lastResult.errorBytes != null) {
-            // FIXME: do this elsewhere and cache it
-            ByteList errorBytes = new ByteList(lastResult.errorBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
-            errinfo.append(RubyString.newString(runtime, errorBytes));
+        if (!lastResult.isError()) {
+            return runtime.newArray(new IRubyObject[] {
+               runtime.newSymbol(lastResult.stringResult),
+               context.nil,
+               context.nil,
+               context.nil,
+               context.nil
+            });
         } else {
-            errinfo.append(RubyString.newEmptyString(runtime));
-        }
+            errinfo.append(runtime.newSymbol(lastResult.stringResult));
+            
+            // FIXME: gross
+            errinfo.append(runtime.newString(lastResult.inCharset.name()));
+            errinfo.append(runtime.newString(lastResult.outCharset.name()));
 
-        if (lastResult.readagainBytes != null) {
-            // FIXME: do this elsewhere and cache it
-            ByteList readagainBytes = new ByteList(lastResult.readagainBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
-            errinfo.append(RubyString.newString(runtime, readagainBytes));
-        } else {
-            errinfo.append(RubyString.newEmptyString(runtime));
+            if (lastResult.isError() && lastResult.errorBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList errorBytes = new ByteList(lastResult.errorBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+                errinfo.append(RubyString.newString(runtime, errorBytes));
+            } else {
+                errinfo.append(RubyString.newEmptyString(runtime));
+            }
+            
+
+            if (lastResult.readagainBytes != null) {
+                // FIXME: do this elsewhere and cache it
+                ByteList readagainBytes = new ByteList(lastResult.readagainBytes, runtime.getEncodingService().getEncodingFromString(lastResult.inCharset.name()), true);
+                errinfo.append(RubyString.newString(runtime, readagainBytes));
+            } else {
+                errinfo.append(RubyString.newEmptyString(runtime));
+            }
         }
         
         return errinfo;
@@ -535,10 +551,12 @@ public class RubyConverter extends RubyObject {
         public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
             CharsetTranscoder.RubyCoderResult result = (CharsetTranscoder.RubyCoderResult)self.dataGetStruct();
             
-            if (result != null && result.isInvalid()) {
-                // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(result.readagainBytes, ASCIIEncoding.INSTANCE, true);
-                return RubyString.newString(context.runtime, errorBytes);
+            if (result != null) {
+                if (result.isInvalid()) {
+                    return context.runtime.getTrue();
+                } else {
+                    return context.runtime.getFalse();
+                }
             }
         
             return context.nil;

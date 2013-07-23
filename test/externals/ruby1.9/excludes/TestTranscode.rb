@@ -1,5 +1,6 @@
 exclude :test_Big5_UAO, "needs investigation"
 exclude :test_TIS_620, "needs investigation"
+exclude test_ascii_range, "requires encodings for which we have no charsets"
 exclude :test_all_bytes, "needs investigation"
 exclude :test_encodings, "needs investigation"
 exclude :test_errors, "needs investigation"

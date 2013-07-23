@@ -45,24 +45,25 @@ public class CharsetTranscoder {
     private static final Charset UTF16 = Charset.forName("UTF-16");
     
     private final Ruby runtime;
-    public final Encoding toEncoding;
+    public final Encoding outEncoding;
     private CodingActions actions;
-    public final Encoding fromEncoding;
+    public final Encoding inEncoding;
+    private Transcoder transcoder;
     private RubyCoderResult lastResult;
     private RaiseException lastError;
     
-    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding fromEncoding) {
-        this(context, toEncoding, fromEncoding, processCodingErrorActions(context, null));
+    public CharsetTranscoder(ThreadContext context, Encoding outEncoding, Encoding inEncoding) {
+        this(context, outEncoding, inEncoding, processCodingErrorActions(context, null));
     }
     
-    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding fromEncoding, int flags, IRubyObject replace) {
-        this(context, toEncoding, fromEncoding, processCodingErrorActions(context, flags, replace));
+    public CharsetTranscoder(ThreadContext context, Encoding outEncoding, Encoding inEncoding, int flags, IRubyObject replace) {
+        this(context, outEncoding, inEncoding, processCodingErrorActions(context, flags, replace));
     }
     
-    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding fromEncoding, CodingActions actions) {
+    public CharsetTranscoder(ThreadContext context, Encoding outEncoding, Encoding inEncoding, CodingActions actions) {
         this.runtime = context.runtime;
-        this.toEncoding = toEncoding;
-        this.fromEncoding = fromEncoding;
+        this.outEncoding = outEncoding;
+        this.inEncoding = inEncoding;
         
         if (actions == null) {
             this.actions = processCodingErrorActions(context, null);
@@ -94,24 +95,36 @@ public class CharsetTranscoder {
     }
     
     public ByteList transcode(ThreadContext context, ByteList value) {
-        Encoding fromEncoding = this.fromEncoding != null ? this.fromEncoding : value.getEncoding();
+        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
         
         ByteList result = new ByteList();
-        transcode(context.runtime, value, result, fromEncoding, false);
+        transcode(context.runtime, value, result, fromEncoding, false, true);
         
         return result;
     }
     
     public ByteList transcode(ThreadContext context, ByteList value, boolean is7BitASCII) {
-        Encoding fromEncoding = this.fromEncoding != null ? this.fromEncoding : value.getEncoding();
+        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
         
         ByteList result = new ByteList();
-        transcode(context.runtime, value, result, fromEncoding, is7BitASCII);
+        transcode(context.runtime, value, result, fromEncoding, is7BitASCII, true);
         
         return result;
     }
     
-    public void transcode(Ruby runtime, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII) {
+    // from Converter#convert
+    public ByteList convert(ThreadContext context, ByteList value, boolean is7BitASCII) {
+        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
+        
+        ByteList result = new ByteList();
+        transcode(context.runtime, value, result, fromEncoding, is7BitASCII, false);
+        
+        lastResult = new RubyCoderResult("finished", transcoder.decoder.charset(), transcoder.encoder.charset(), null, null);
+        
+        return result;
+    }
+    
+    private void transcode(Ruby runtime, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII, boolean finish) {
         primitiveConvert(runtime, inBuffer.dup(), outBuffer, 0, -1, inEncoding, is7BitASCII, actions.flags);
         
         if (lastResult != null) {
@@ -119,25 +132,12 @@ public class CharsetTranscoder {
             
             if (lastError != null) throw lastError;
         }
+        
+        if (finish) outBuffer.append(finish());
     }
     
     public RubyCoderResult primitiveConvert(Ruby runtime, ByteList inBuffer, ByteList outBuffer, int outOffset, int outLimit, Encoding inEncoding, boolean is7BitASCII, int flags) {
-        Encoding outEncoding = toEncoding != null ? toEncoding : inBuffer.getEncoding();
-        String outName = outEncoding.toString();
-        String inName = inEncoding.toString();
-        
-        // MRI does not allow ASCII-8BIT bytes > 127 to transcode to text-based
-        // encodings, so for transcoding purposes we treat it as US-ASCII. We
-        // also set the "invalid" action to "undef" option, since Java's decode
-        // logic throws "invalid" errors for high-byte US-ASCII rather than
-        // "undefined mapping" errors.
-        if (inEncoding == ASCIIEncoding.INSTANCE && toEncoding != ASCIIEncoding.INSTANCE) {
-            inEncoding = USASCIIEncoding.INSTANCE;
-            actions.onMalformedInput = actions.onUnmappableCharacter;
-        }
-        
-        Charset inCharset = transcodeCharsetFor(runtime, inEncoding, inName, outName, is7BitASCII);
-        Charset outCharset = transcodeCharsetFor(runtime, outEncoding, inName, outName, is7BitASCII);
+        Encoding outEncoding = this.outEncoding != null ? this.outEncoding : inBuffer.getEncoding();
 
         ByteBuffer inBytes = ByteBuffer.wrap(inBuffer.getUnsafeBytes(), inBuffer.begin(), inBuffer.length());
         
@@ -152,9 +152,14 @@ public class CharsetTranscoder {
         int realOffset = outBuffer.getBegin() + outOffset;
         ByteBuffer outBytes = ByteBuffer.wrap(outBuffer.getUnsafeBytes(), realOffset, outLimit - outOffset);
         
-        TranscoderState state = new TranscoderState(inBytes, outBytes, growable, inCharset, outCharset, actions);
+        // if no transcoder or encodings differ, recreate
+        if (transcoder == null || outEncoding != this.outEncoding || inEncoding != this.inEncoding) {
+            createTranscoder(inEncoding, outEncoding, actions, is7BitASCII);
+        }
         
-        lastResult = state.transcode(flags);
+        Transcoder.TranscoderState state = transcoder.new TranscoderState(inBytes, outBytes, growable);
+        
+        lastResult = transcoder.transcode(state, flags);
         
         // consume bytes from inBuffer
         inBuffer.setBegin(inBytes.position());
@@ -174,6 +179,19 @@ public class CharsetTranscoder {
         return lastResult;
     }
     
+    public ByteList finish() {
+        if (transcoder == null) return new ByteList();
+        
+        ByteList finish = transcoder.finish();
+        
+        finish.setEncoding(outEncoding);
+        
+        // clear
+        transcoder.reset();
+        
+        return finish;
+    }
+    
     public RubyCoderResult getLastResult() {
         return lastResult;
     }
@@ -183,23 +201,60 @@ public class CharsetTranscoder {
         
         return lastError;
     }
+    
+    public String getReplaceWith() {
+        if (actions.replaceWith == null) {
+            if (transcoder == null) {
+                if (outEncoding != null && outEncoding.getCharset() != null) {
+                    return replaceStringFromActions(actions, outEncoding.getCharset());
+                }
+                
+                return "?";
+            }
+        } else if (transcoder == null) {
+            return actions.replaceWith;
+        }
+        
+        return replaceStringFromActions(actions, transcoder.encoder.charset());
+    }
 
     private void createLastError() {
-        if (lastResult.isError()) {
-            RubyString errorBytes = runtime.newString(new ByteList(lastResult.errorBytes, ASCIIEncoding.INSTANCE, true));
-            errorBytes.setEncoding(ASCIIEncoding.INSTANCE);
-            
-            // handle error
-            if (lastResult.isInvalid()) {
-                // FIXME: gross error message construction
-                lastError = runtime.newInvalidByteSequenceError("\"" + errorBytes.inspect19().toString() + "\" on " + lastResult.inCharset);
-                lastError.getException().dataWrapStruct(lastResult);
-            } else if (lastResult.isUndefined()) {
-                // FIXME: gross error message construction
-                lastError = runtime.newUndefinedConversionError("\"" + errorBytes.inspect19().toString() + "\" from " + lastResult.inCharset + " to " + lastResult.outCharset);
-                lastError.getException().dataWrapStruct(lastResult);
+        if (lastResult != null) {
+            if (lastResult.isError()) {
+                RubyString errorBytes = runtime.newString(new ByteList(lastResult.errorBytes, ASCIIEncoding.INSTANCE, true));
+                errorBytes.setEncoding(ASCIIEncoding.INSTANCE);
+
+                // handle error
+                if (lastResult.isInvalid()) {
+                    // FIXME: gross error message construction
+                    lastError = runtime.newInvalidByteSequenceError("\"" + errorBytes.inspect19().toString() + "\" on " + lastResult.inCharset);
+                    lastError.getException().dataWrapStruct(lastResult);
+                } else if (lastResult.isUndefined()) {
+                    // FIXME: gross error message construction
+                    lastError = runtime.newUndefinedConversionError("\"" + errorBytes.inspect19().toString() + "\" from " + lastResult.inCharset + " to " + lastResult.outCharset);
+                    lastError.getException().dataWrapStruct(lastResult);
+                }
             }
         }
+    }
+
+    private void createTranscoder(Encoding inEncoding, Encoding outEncoding, CodingActions actions, boolean is7BitASCII) {
+        // MRI does not allow ASCII-8BIT bytes > 127 to transcode to text-based
+        // encodings, so for transcoding purposes we treat it as US-ASCII. We
+        // also set the "invalid" action to "undef" option, since Java's decode
+        // logic throws "invalid" errors for high-byte US-ASCII rather than
+        // "undefined mapping" errors.
+        if (inEncoding == ASCIIEncoding.INSTANCE && outEncoding != ASCIIEncoding.INSTANCE) {
+            inEncoding = USASCIIEncoding.INSTANCE;
+            actions.onMalformedInput = actions.onUnmappableCharacter;
+        }
+        
+        Charset inCharset = transcodeCharsetFor(runtime, inEncoding, is7BitASCII);
+        Charset outCharset = transcodeCharsetFor(runtime, outEncoding, is7BitASCII);
+        
+        this.transcoder = new Transcoder(
+                inCharset,
+                outCharset);
     }
     
     public static class RubyCoderResult {
@@ -237,42 +292,29 @@ public class CharsetTranscoder {
         }
     }
     
-    public static class TranscoderState {
-        public final ByteBuffer inBytes;
+    public class Transcoder {
         public CharBuffer tmpChars;
-        public ByteBuffer outBytes;
         public final CharsetDecoder decoder;
         public final CharsetEncoder encoder;
         public boolean binaryToCharacter;
-        public boolean growable;
         public RubyCoderResult result;
         public boolean didDecode;
         public boolean didEncode;
-        private CodingActions actions;
         
-        public TranscoderState(ByteBuffer inBytes, ByteBuffer outBytes, boolean growable, Charset inCharset, Charset outCharset, CodingActions actions) {
+        public Transcoder(Charset inCharset, Charset outCharset) {
             this.encoder = outCharset.newEncoder();
             this.decoder = inCharset.newDecoder();
             
-            this.growable = growable;
-        
-            this.inBytes = inBytes;
-            
-            if (outBytes == null) {
-                int outN = (int)(inBytes.remaining() * decoder.averageCharsPerByte() * encoder.averageBytesPerChar());
-                outBytes = ByteBuffer.allocate(outN);
-            }
-            
-            this.outBytes = outBytes;
-            
             // TODO: dynamic buffer size?
             this.tmpChars = CharBuffer.allocate(1024);
-            
-            this.actions = actions;
+        }
+        
+        public float averageByteRatio() {
+            return encoder.averageBytesPerChar() * decoder.averageCharsPerByte();
         }
     
-        public RubyCoderResult transcode(int flags) {
-            boolean completeInput = (flags & RubyConverter.PARTIAL_INPUT) == 0;
+        public RubyCoderResult transcode(TranscoderState state, int flags) {
+            boolean partialInput = (flags & RubyConverter.PARTIAL_INPUT) != 0;
             boolean afterOutput = (flags & RubyConverter.AFTER_OUTPUT) != 0;
             boolean universalNewline = (flags & RubyConverter.UNIVERSAL_NEWLINE_DECORATOR) != 0;
             boolean crlfNewline = (flags & RubyConverter.CRLF_NEWLINE_DECORATOR) != 0;
@@ -292,87 +334,89 @@ public class CharsetTranscoder {
                 onMalformedInput = onUnmappableCharacter;
             }
 
-            byte[] replaceBytes = null;
+            String replaceString = null;
             didDecode = false;
             didEncode = false;
 
             if (onUnmappableCharacter == CodingErrorAction.REPLACE ||
                     onMalformedInput == CodingErrorAction.REPLACE) {
-                replaceBytes = replaceBytesFromString(actions, encoder.charset());
+                replaceString = replaceStringFromActions(actions, encoder.charset());
+            }
+            
+            // pre-string quote
+            if (xmlAttr) {
+                tmpChars.clear();
+                tmpChars.put("\"");
+                tmpChars.flip();
+                encode(state, tmpChars, replaceString, flags, false);
             }
 
-            while (inBytes.hasRemaining()) {
+            while (state.inBytes.hasRemaining()) {
                 tmpChars.clear();
                 didDecode = true;
-                CoderResult coderResult = decoder.decode(inBytes, tmpChars, completeInput);
+                CoderResult coderResult = decoder.decode(state.inBytes, tmpChars, !partialInput);
 
                 if (!coderResult.isError()) {
-                    // buffer full, transfer to output
+                    // buffer full or done with input, transfer to output
                     tmpChars.flip();
 
                     if (!encode(
-                            doCRLFTranslation(universalNewline, crlfNewline, crNewline, xmlText, xmlAttr),
-                            replaceBytes,
-                            flags)) return result;
+                            state,
+                            doTranslations(universalNewline, crlfNewline, crNewline, xmlText, xmlAttr),
+                            replaceString,
+                            flags, false)) return result;
+                    
+                    if (coderResult.isUnderflow()) {
+                        // ran out of input, bail out
+                        break;
+                    }
                 } else {
                     if (coderResult.isMalformed()) {
                         if (onMalformedInput == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
-                            inBytes.get(errorBytes);
+                            state.inBytes.get(errorBytes);
                             return result = new RubyCoderResult(stringFromCoderResult(coderResult, flags), decoder.charset(), encoder.charset(), errorBytes, null);
                         }
 
                         // transfer to out and skip bad byte
                         tmpChars.flip();
-                        if (!encode(tmpChars, replaceBytes, flags)) return result;
+                        if (!encode(state, tmpChars, replaceString, flags, false)) return result;
 
-                        inBytes.get();
+                        state.inBytes.get();
 
                         if (onMalformedInput == CodingErrorAction.REPLACE) {
-                            if (!putReplacement(replaceBytes, flags)) return result;
+                            if (!putReplacement(state, replaceString, flags)) return result;
                         }
                     } else if (coderResult.isUnmappable()) {
                         if (onUnmappableCharacter == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
-                            inBytes.get(errorBytes);
+                            state.inBytes.get(errorBytes);
                             return result = new RubyCoderResult(stringFromCoderResult(coderResult, flags), decoder.charset(), encoder.charset(), errorBytes, null);
                         }
 
                         // transfer to out and skip bad byte
                         tmpChars.flip();
-                        if (!encode(tmpChars, replaceBytes, flags)) return result;
+                        if (!encode(state, tmpChars, replaceString, flags, false)) return result;
 
-                        inBytes.get();
+                        state.inBytes.get();
 
                         if (onUnmappableCharacter == CodingErrorAction.REPLACE) {
-                            if (!putReplacement(replaceBytes, flags)) return result;
+                            if (!putReplacement(state, replaceString, flags)) return result;
                         }
                     }
                 }
                 if (afterOutput) break;
             }
-
-            // final flush of all coders if this is the end of input
-            if (completeInput) {
-                if (didDecode) {
-                    tmpChars.clear();
-                    while (true) {
-                        CoderResult coderResult = decoder.flush(tmpChars);
-                        tmpChars.flip();
-                        if (!encode(tmpChars, replaceBytes, flags)) return result;
-                        if (coderResult == CoderResult.UNDERFLOW) break;
-                    }
-                }
-
-                if (didEncode) {
-                    while (encoder.flush(outBytes) == CoderResult.OVERFLOW) {
-                        if (!growBuffer(flags)) return result;
-                        encoder.flush(outBytes);
-                    }
-                }
+            
+            // post-string quote
+            if (xmlAttr) {
+                tmpChars.clear();
+                tmpChars.put("\"");
+                tmpChars.flip();
+                encode(state, tmpChars, replaceString, flags, false);
             }
 
-            outBytes.flip();
+            state.outBytes.flip();
             
             if ((flags & PARTIAL_INPUT) == 0) {
                 result = new RubyCoderResult("finished", decoder.charset(), encoder.charset(), null, null);
@@ -382,14 +426,66 @@ public class CharsetTranscoder {
             
             return result;
         }
+        
+        public ByteList finish() {
+            TranscoderState state = new TranscoderState(null, ByteBuffer.allocate(16), true);
+            
+            CharBuffer tmpChars = this.tmpChars;
+            CoderResult result;
+            
+            // final flush of all coders if this is the end of input
+            tmpChars.clear();
+            if (didDecode) {
+                result = decoder.flush(tmpChars);
+                
+                while (result == CoderResult.OVERFLOW) {
+                    tmpChars.flip();
+                    CharBuffer newTmp = CharBuffer.allocate(tmpChars.capacity() * 2);
+                    newTmp.put(tmpChars);
+                    tmpChars = newTmp;
+                    result = decoder.flush(tmpChars);
+                }
+                
+                tmpChars.flip();
+                
+                if (tmpChars.hasRemaining()) {
+                    encode(state, tmpChars, actions.replaceWith, 0, true);
+                } else {
+                    // if nothing to encode, still signal that we're done
+                    encoder.encode(tmpChars, state.outBytes, true);
+                }
+            } else {
+                // we did not decode anything, but signal that we're done
+                tmpChars.limit(tmpChars.position());
+                encoder.encode(tmpChars, state.outBytes, true);
+            }
+
+            if (didEncode) {
+                result = encoder.flush(state.outBytes);
+                while (result == CoderResult.OVERFLOW) {
+                    growBuffer(state, 0);
+                    result = encoder.flush(state.outBytes);
+                }
+            }
+            
+            state.outBytes.flip();
+            
+            return new ByteList(state.outBytes.array(), state.outBytes.position(), state.outBytes.limit() - state.outBytes.position());
+        }
+        
+        public void reset() {
+            decoder.reset();
+            encoder.reset();
+            tmpChars.clear();
+        }
     
-        private boolean growBuffer(int flags) {
-            if (!growable) {
+        private boolean growBuffer(TranscoderState state, int flags) {
+            if (!state.growable) {
                 result = new RubyCoderResult(stringFromCoderResult(CoderResult.OVERFLOW, flags), decoder.charset(), encoder.charset(), null, null);
                 return false;
             }
 
-            int toN = outBytes.capacity();
+            int toN = state.outBytes.capacity();
             if (toN == Integer.MAX_VALUE) {
                 // raise error; we can't make a bigger buffer
                 throw new ArrayIndexOutOfBoundsException("cannot allocate output buffer larger than " + Integer.MAX_VALUE + " bytes");
@@ -399,19 +495,22 @@ public class CharsetTranscoder {
             toN = (int)Math.min((long)toN * 2 + 1, Integer.MAX_VALUE);
 
             ByteBuffer newOutBytes = ByteBuffer.allocate(toN);
-            outBytes.flip();
-            newOutBytes.put(outBytes);
-            outBytes = newOutBytes;
+            state.outBytes.flip();
+            newOutBytes.put(state.outBytes);
+            state.outBytes = newOutBytes;
 
             return true;
         }
 
-        private boolean encode(CharBuffer inChars, byte[] replaceBytes, int flags) {
+        private boolean encode(TranscoderState state, CharBuffer inChars, String replaceString, int flags, boolean endOfInput) {
+            boolean undefHexCharRef = (flags & RubyConverter.UNDEF_MASK) == RubyConverter.UNDEF_HEX_CHARREF;
+            
             CoderResult coderResult;
 
             while (inChars.hasRemaining()) {
                 didEncode = true;
-                coderResult = encoder.encode(inChars, outBytes, true);
+                
+                coderResult = encoder.encode(inChars, state.outBytes, endOfInput);
                 
                 if (coderResult.isError() && coderResult.isUnmappable()) {
                     // skip bad char
@@ -423,11 +522,16 @@ public class CharsetTranscoder {
                     }
 
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE) {
-                        if (!putReplacement(replaceBytes, flags)) return false;
+                        if (undefHexCharRef) {
+                            // replace with hex entity
+                            if (!putReplacement(state, "&#x" + Integer.toHexString(badChar).toUpperCase() + ";", flags)) return false;
+                        } else {
+                            if (!putReplacement(state, replaceString, flags)) return false;
+                        }
                     }
                 } else {
                     if (coderResult == CoderResult.OVERFLOW) {
-                        if (!growBuffer(flags)) return false;
+                        if (!growBuffer(state, flags)) return false;
                     }
                 }
             }
@@ -435,17 +539,17 @@ public class CharsetTranscoder {
             return true;
         }
 
-        private boolean putReplacement(byte[] replaceBytes, int flags) {
-            if (outBytes.remaining() < replaceBytes.length) {
-                if (!growBuffer(flags)) return false;
+        private boolean putReplacement(TranscoderState state, String replaceString, int flags) {
+            while (state.outBytes.remaining() < replaceString.length() * encoder.maxBytesPerChar()) {
+                if (!growBuffer(state, flags)) return false;
             }
 
-            outBytes.put(replaceBytes);
+            encoder.encode(CharBuffer.wrap(replaceString), state.outBytes, false);
 
             return true;
         }
 
-        private CharBuffer doCRLFTranslation(boolean universalNewline, boolean crlfNewline, boolean crNewline, boolean xmlText, boolean xmlAttr) {
+        private CharBuffer doTranslations(boolean universalNewline, boolean crlfNewline, boolean crNewline, boolean xmlText, boolean xmlAttr) {
             CharBuffer inChars = tmpChars;
             if (universalNewline || crlfNewline || crNewline) {
                 // translate intermediate buffer before encoding
@@ -529,9 +633,18 @@ public class CharsetTranscoder {
                     
                     if (ch >= 128) {
                         builder.append(ch);
-                    } else if ((xmlText && (replace = XMLTextCharacterTranslator[ch]) != null) ||
-                            (xmlAttr && (replace = XMLTextCharacterTranslator[ch]) != null)) {
-                        builder.append(replace);
+                    } else if (xmlText) {
+                        if ((replace = XMLTextCharacterTranslator[ch]) != null) {
+                            builder.append(replace);
+                        } else {
+                            builder.append(ch);
+                        }
+                    } else if (xmlAttr) {
+                        if ((replace = XMLAttrCharacterTranslator[ch]) != null) {
+                            builder.append(replace);
+                        } else {
+                            builder.append(ch);
+                        }
                     } else {
                         builder.append(ch);
                     }
@@ -541,6 +654,23 @@ public class CharsetTranscoder {
             }
             
             return inChars;
+        }
+    
+        public class TranscoderState {
+            public final ByteBuffer inBytes;
+            public ByteBuffer outBytes;
+            public boolean growable;
+
+            public TranscoderState(ByteBuffer inBytes, ByteBuffer outBytes, boolean growable) {
+                this.growable = growable;
+                this.inBytes = inBytes;
+                this.outBytes = outBytes;
+            }
+
+            // unused but may be someday
+            public TranscoderState(ByteBuffer inBytes, boolean growable) {
+                this(inBytes, ByteBuffer.allocate((int)(inBytes.remaining() * averageByteRatio())), growable);
+            }
         }
     }
     
@@ -607,18 +737,18 @@ public class CharsetTranscoder {
         UNICODE_CHARSETS = Collections.unmodifiableSet(charsets);
     }
 
-    private static byte[] replaceBytesFromString(CodingActions actions, Charset outCharset) {
-        byte[] replaceBytes;
+    private static String replaceStringFromActions(CodingActions actions, Charset outCharset) {
+        String replaceString;
         if (actions.replaceWith != null) {
-            replaceBytes = actions.replaceWith.getBytes(outCharset);
+            replaceString = actions.replaceWith;
         } else {
             if (UNICODE_CHARSETS.contains(outCharset)) {
-                replaceBytes = "\uFFFD".getBytes(outCharset);
+                replaceString = "\uFFFD";
             } else {
-                replaceBytes = "?".getBytes(outCharset);
+                replaceString = "?";
             }
         }
-        return replaceBytes;
+        return replaceString;
     }
 
     public static class CodingActions {
@@ -683,7 +813,8 @@ public class CharsetTranscoder {
             onMalformedInput = CodingErrorAction.REPLACE;
         }
             
-        if ((flags & RubyConverter.UNDEF_MASK) == RubyConverter.UNDEF_REPLACE) {
+        if ((flags & RubyConverter.UNDEF_MASK) == RubyConverter.UNDEF_REPLACE ||
+                (flags & RubyConverter.UNDEF_MASK) == RubyConverter.UNDEF_HEX_CHARREF) {
             onUnmappableCharacter = CodingErrorAction.REPLACE;
         }
         
@@ -711,7 +842,7 @@ public class CharsetTranscoder {
         return processCodingErrorActions(context, flags, replace);
     }
     
-    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName, boolean is7Bit) {
+    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, boolean is7Bit) {
         if (encoding == ASCIIEncoding.INSTANCE) {
             return ISO8859_1Encoding.INSTANCE.getCharset();
         }
@@ -746,11 +877,9 @@ public class CharsetTranscoder {
         } catch (Exception e) {}
         
         if (from == null) {
-            if (is7Bit) {
-                from = Charset.forName("US-ASCII");
-            } else {
-                throw runtime.newConverterNotFoundError("code converter not found (" + fromName + " to " + toName + ")");
-            }
+            if (is7Bit) return Charset.forName("US-ASCII");
+            
+            throw runtime.newConverterNotFoundError("code converter not found for " + encoding.toString());
         }
 
         return from;
