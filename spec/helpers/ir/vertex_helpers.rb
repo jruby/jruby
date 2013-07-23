@@ -36,3 +36,25 @@ class Object
   include HaveInDegree
   include HaveOutDegree
 end
+
+class Vertex
+  def add_edge(options=nil)
+    self.addEdgeTo(options[:to], options[:type])
+  end
+
+  def outgoing_edge(options=nil)
+    if options.nil?
+      self.getOutgoingEdge
+    else
+      self.getOutgoingEdgeOfType(options[:type])
+    end
+  end
+
+  def incoming_edge(options=nil)
+    if options.nil?
+      self.getIncomingEdge
+    else
+      self.getIncomingEdgeOfType(options[:type])
+    end
+  end
+end
