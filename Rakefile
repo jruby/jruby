@@ -9,6 +9,13 @@
 
 require File.dirname(__FILE__) + '/rakelib/helpers.rb'
 
+# Suppress .java lines from non-traced backtrace
+begin
+  Rake.application.options.suppress_backtrace_pattern =
+    /(#{Rake::Backtrace::SUPPRESS_PATTERN})|(.*\.java)/
+rescue
+end
+
 task :default => [:build]
 
 desc "Build JRuby"
