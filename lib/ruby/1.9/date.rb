@@ -1220,12 +1220,12 @@ class Date
   # Get the year of this date.
   def year
     year = @dt.getYear
-    if year > 0
-      year
-    else
-      # Joda-time returns -x for year x BC (so there is no year 0),
+    if year < 0 and julian?
+      # Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
       # while date.rb returns -x+1, following astronomical year numbering (with year 0)
       year + 1
+    else
+      year
     end
   end
 
