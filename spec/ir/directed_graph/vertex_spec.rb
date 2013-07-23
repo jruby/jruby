@@ -1,6 +1,7 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../../helpers/ir"
 
 require 'vertex_helpers'
+require 'edge_helpers'
 
 import 'org.jruby.ir.util.DirectedGraph'
 import 'org.jruby.ir.util.Vertex'
@@ -32,13 +33,13 @@ describe "Vertex" do
     end
 
     it "sets edge type to null if is not provided" do
-      expect(@graph.edges().first.getType).to be nil
+      expect(@graph.edges().first).to have_type(nil)
     end
 
     it "sets edge type to the given value if is provided" do
       @source.removeEdgeTo(@dest)
       @source.addEdgeTo(@dest, "foobar")
-      expect(@graph.edges.first.getType).to eq "foobar"
+      expect(@graph.edges.first).to have_type("foobar")
     end
 
   end
@@ -129,8 +130,7 @@ describe "Vertex" do
     it "returns first outgoing edge from the vertex not of type 'null'" do
       @source.addEdgeTo(@dest, "not_null")
       @source.addEdgeTo(@null_vertex, nil)
-      expect(@source.getOutgoingEdge.getType).to_not be nil
-      expect(@source.getOutgoingEdge.getType).to eq "not_null"
+      expect(@source.getOutgoingEdge).to have_type("not_null")
     end
 
     it "returns null when all outgoing edges from the vertex are of type 'null'" do
@@ -149,8 +149,7 @@ describe "Vertex" do
     it "returns first incoming edge to the vertex not of type 'null'" do
       @source.addEdgeTo(@dest, "not_null")
       @null_vertex.addEdgeTo(@dest, nil)
-      expect(@dest.getIncomingEdge.getType).to_not be nil
-      expect(@dest.getIncomingEdge.getType).to eq "not_null"
+      expect(@dest.getIncomingEdge).to have_type("not_null")
     end
 
     it "returns null when all incoming edges to the vertex are of type 'null'" do
@@ -165,7 +164,7 @@ describe "Vertex" do
     context "when the edge of given type exists" do
       it "returns first outgoing edge of the given type" do
         @source.addEdgeTo(@dest, "baz")
-        expect(@source.getOutgoingEdgeOfType("baz").getType).to eq "baz"
+        expect(@source.getOutgoingEdgeOfType("baz")).to have_type("baz")
       end
     end
 
@@ -182,7 +181,7 @@ describe "Vertex" do
     context "when the edge of given type exists" do
       it "returns first incoming edge of the given type" do
         @source.addEdgeTo(@dest, "baz")
-        expect(@dest.getIncomingEdgeOfType("baz").getType).to eq "baz"
+        expect(@dest.getIncomingEdgeOfType("baz")).to have_type("baz")
       end
     end
 
