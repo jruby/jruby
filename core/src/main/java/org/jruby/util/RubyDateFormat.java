@@ -504,8 +504,9 @@ public class RubyDateFormat extends DateFormat {
             String output = null;
             long value = 0;
             FieldType type = TEXT;
+            int format = token.getFormat();
 
-            switch (token.getFormat()) {
+            switch (format) {
                 case FORMAT_OUTPUT:
                     formatter = (TimeOutputFormatter) token.getData();
                     continue; // go to next token
@@ -559,11 +560,7 @@ public class RubyDateFormat extends DateFormat {
                         value -= 12;
                     }
 
-                    if (token.getFormat() == FORMAT_HOUR_M) {
-                        type = NUMERIC2;
-                    } else {
-                        type = NUMERIC2BLANK;
-                    }
+                    type = (format == FORMAT_HOUR_M) ? NUMERIC2 : NUMERIC2BLANK;
                     break;
                 case FORMAT_DAY_YEAR:
                     type = NUMERIC3;
@@ -624,10 +621,6 @@ public class RubyDateFormat extends DateFormat {
                     type = NUMERIC;
                     value = dt.getYear() / 100;
                     break;
-                case FORMAT_MILLISEC:
-                    type = NUMERIC3;
-                    value = dt.getMillisOfSecond();
-                    break;
                 case FORMAT_EPOCH:
                     type = NUMERIC;
                     value = dt.getMillis() / 1000;
@@ -636,14 +629,14 @@ public class RubyDateFormat extends DateFormat {
                     type = NUMERIC2;
                     value = dt.getWeekOfWeekyear();
                     break;
+                case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
                     if (ruby_1_9) value += nsec;
-                    int width = ruby_1_9 ? 9 : 3;
-                    if (formatter.width > 0) {
-                        width = formatter.width;
-                    }
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
+
+                    int defaultWidth = (format == FORMAT_NANOSEC) ? 9 : 3;
+                    int width = formatter.getWidth(defaultWidth);
                     if (width < 9) {
                         output = output.substring(0, width);
                     } else {
