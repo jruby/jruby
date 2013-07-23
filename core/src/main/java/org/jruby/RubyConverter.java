@@ -299,7 +299,7 @@ public class RubyConverter extends RubyObject {
                 inBytes.getEncoding().isAsciiCompatible(),
                 flags);
         
-        outBytes.setEncoding(transcoder.toEncoding);
+        outBytes.setEncoding(transcoder.toEncoding != null ? transcoder.toEncoding : inBytes.getEncoding());
 
         return symbolFromResult(result, runtime, flags, context);
     }
