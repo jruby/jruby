@@ -82,7 +82,7 @@ describe "Vertex" do
     end
 
     it "removes all incoming edges to the vertex" do
-      @source.remove_edges(direction: :incoming)
+      @source.remove_edges(direction: :in)
       expect(@source).to have_in_degree 0
     end
 
@@ -97,7 +97,7 @@ describe "Vertex" do
     end
 
     it "removes all outgoing edges from the vertex" do
-      @source.remove_edges(direction: :outgoing)
+      @source.remove_edges(direction: :out)
       expect(@source).to have_out_degree 0
     end
 
@@ -198,14 +198,14 @@ describe "Vertex" do
     context "when there is atleast one incoming edge to the current vertex" do
       it "returns data of the source of that first incoming edge" do
         @source.add_edge(to: @dest)
-        expect(@dest.getIncomingSourceData).to eq "foo"
+        expect(@dest.data(direction: :in)).to eq "foo"
       end
     end
 
     context "when there is no incoming edge to the current vertex" do
       it "returns null" do
         @source.add_edge(to: @dest)
-        expect(@source.getIncomingSourceData).to be nil
+        expect(@source.data(direction: :in)).to be nil
       end
     end
 
@@ -216,7 +216,7 @@ describe "Vertex" do
     context "when there is atleast one incoming edge to the current vertex of the given type" do
       it "returns data of the source of that first incoming edge of given type" do
         @source.add_edge(to: @dest)
-        expect(@dest.getIncomingSourceDataOfType(nil)).to eq "foo"
+        expect(@dest.data(direction: :in, type: nil)).to eq "foo"
       end
     end
 
@@ -234,14 +234,14 @@ describe "Vertex" do
     context "when there is atleast one outgoing edge from the current vertex" do
       it "returns data of the destination of that first outgoing edge" do
         @source.add_edge(to: @dest)
-        expect(@source.getOutgoingDestinationData).to eq "bar"
+        expect(@source.data(direction: :out)).to eq "bar"
       end
     end
 
     context "when there is no outgoing edge from the current vertex" do
       it "returns null" do
         @source.add_edge(to: @dest)
-        expect(@dest.getOutgoingDestinationData).to be nil
+        expect(@dest.data(direction: :out)).to be nil
       end
     end
 
@@ -252,14 +252,14 @@ describe "Vertex" do
     context "when there is atleast one outgoing edge from the current vertex of the given type" do
       it "returns data of the source of that first outgoing edge of given type" do
         @source.add_edge(to: @dest)
-        expect(@source.getOutgoingDestinationDataOfType(nil)).to eq "bar"
+        expect(@source.data(direction: :out, type: nil)).to eq "bar"
       end
     end
 
     context "when there is no outgoing edge from the current vertex of given type" do
       it "returns null" do
         @source.add_edge(to: @dest, type: "foo")
-        expect(@source.getOutgoingDestinationDataOfType(nil)).to be nil
+        expect(@source.data(direction: :out, type: nil)).to be nil
       end
     end
 

@@ -46,11 +46,11 @@ class Vertex
     self.removeEdgeTo(options[:to])
   end
 
-  def remove_edges(options=nil)
+  def remove_edges(options={})
     case options[:direction]
-    when :incoming
+    when :in
       self.removeAllIncomingEdges()
-    when :outgoing
+    when :out
       self.removeAllOutgoingEdges()
     else
       self.removeAllEdges()
@@ -70,6 +70,23 @@ class Vertex
       self.getIncomingEdge
     else
       self.getIncomingEdgeOfType(options[:type])
+    end
+  end
+
+  def data(options={})
+    case options[:direction]
+    when :in
+      if options.keys.include?(:type)
+        self.getIncomingSourceDataOfType(options[:type])
+      else
+        self.getIncomingSourceData()
+      end
+    when :out
+      if options.keys.include?(:type)
+        self.getOutgoingDestinationDataOfType(options[:type])
+      else
+        self.getOutgoingDestinationData()
+      end
     end
   end
 end
