@@ -288,7 +288,7 @@ describe "Vertex" do
       it "returns string representation of the vertex" do
         @source.add_edge(to: @dest)
         @source.add_edge(to: @interim)
-        expect(@source.toString).to eq "foo:>[2,3]\n"
+        expect(["foo:>[2,3]\n", "foo:>[3,2]\n"]).to include @source.toString
       end
     end
 
@@ -303,7 +303,7 @@ describe "Vertex" do
       it "returns string representation of the vertex" do
         @source.add_edge(to: @dest)
         @interim.add_edge(to: @dest)
-        expect(@dest.toString).to eq "bar:<[1,3]\n"
+        expect(["bar:<[1,3]\n", "bar:<[3,1]\n"]).to include @dest.toString
       end
     end
 
