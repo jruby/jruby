@@ -37,7 +37,7 @@ describe "Vertex" do
     end
 
     it "sets edge type to the given value if is provided" do
-      @source.removeEdgeTo(@dest)
+      @source.remove_edge(to: @dest)
       @source.add_edge(to: @dest, type: "foobar")
       expect(@graph.edges.first).to have_type("foobar")
     end
@@ -53,12 +53,12 @@ describe "Vertex" do
     context "Destination of any one of the outgoing edges from the current vertex matched with given destination" do
 
       it "removes an edge from outgoing edges of the source vertex" do
-        @source.removeEdgeTo(@dest)
+        @source.remove_edge(to: @dest)
         expect(@source).to have_out_degree 0
       end
 
       it "removes an edge from incoming edges of the destination vertex" do
-        @source.removeEdgeTo(@dest)
+        @source.remove_edge(to: @dest)
         expect(@dest).to have_in_degree 0
       end
 
@@ -67,7 +67,7 @@ describe "Vertex" do
     context "Destination of all of the outgoing edges from the current vertex doesn't match with given destination" do
       it "returns false" do
         non_existent_destination = Vertex.new(@graph, "baz", 3)
-        expect(@source.removeEdgeTo(non_existent_destination)).to be false
+        expect(@source.remove_edge(to: non_existent_destination)).to be false
       end
     end
 
@@ -82,7 +82,7 @@ describe "Vertex" do
     end
 
     it "removes all incoming edges to the vertex" do
-      @source.removeAllIncomingEdges()
+      @source.remove_edges(direction: :incoming)
       expect(@source).to have_in_degree 0
     end
 
@@ -97,7 +97,7 @@ describe "Vertex" do
     end
 
     it "removes all outgoing edges from the vertex" do
-      @source.removeAllOutgoingEdges()
+      @source.remove_edges(direction: :outgoing)
       expect(@source).to have_out_degree 0
     end
 
@@ -114,7 +114,7 @@ describe "Vertex" do
     end
 
     it "removes all edges from the vertex" do
-      @source.removeAllEdges()
+      @source.remove_edges
       expect(@source).to have_out_degree 0
       expect(@source).to have_in_degree 0
     end

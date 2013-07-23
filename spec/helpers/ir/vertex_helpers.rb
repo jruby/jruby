@@ -42,6 +42,21 @@ class Vertex
     self.addEdgeTo(options[:to], options[:type])
   end
 
+  def remove_edge(options=nil)
+    self.removeEdgeTo(options[:to])
+  end
+
+  def remove_edges(options=nil)
+    case options[:direction]
+    when :incoming
+      self.removeAllIncomingEdges()
+    when :outgoing
+      self.removeAllOutgoingEdges()
+    else
+      self.removeAllEdges()
+    end
+  end
+
   def outgoing_edge(options=nil)
     if options.nil?
       self.getOutgoingEdge
