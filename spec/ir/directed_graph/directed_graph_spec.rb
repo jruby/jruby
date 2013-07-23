@@ -52,7 +52,6 @@ describe "Directed Graph Utility" do
     @graph.findVertexFor(100).should be_nil
     @graph.addEdge(1,2,'foo')
     @graph.findVertexFor(1).getData().should be 1
-    @graph.findVertexFor(1).data.should be 1
   end
 
   it "gives correct size of graph" do
