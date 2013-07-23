@@ -369,6 +369,8 @@ public class RubyDateFormat extends DateFormat {
                     case 'v':
                         compiledPattern.add(new Token(FORMAT_DAY_S));
                         compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        if (!dateLibrary)
+                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter("^", 0)));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
                         compiledPattern.add(new Token(FORMAT_STRING, "-"));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
