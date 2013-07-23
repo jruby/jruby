@@ -1169,6 +1169,7 @@ class Date
   def initialize(ajd=0, of=0, sg=ITALY)
     # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
     millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).round
+    raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
     @dt = JODA::DateTime.new(millis, chronology(sg, of))
 
     @ajd = ajd
