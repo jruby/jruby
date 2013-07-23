@@ -714,12 +714,8 @@ class Date
     def chronology(sg, of=0)
       tz = if of == 0
         JODA::DateTimeZone::UTC
-      elsif of = of * 1440 and Rational === of and of.denominator == 1
-        of = of.numerator
-        h, m = of.divmod(60)
-        JODA::DateTimeZone.forOffsetHoursMinutes(h, m)
       else
-        JODA::DateTimeZone.forOffsetMillis((of * 60_000).to_i)
+        JODA::DateTimeZone.forOffsetMillis((of * 86_400_000).to_i)
       end
 
       chrono = if sg == ITALY
