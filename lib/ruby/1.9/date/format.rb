@@ -350,7 +350,7 @@ class Date
 
   def iso8601() strftime('%F') end
 
-  def rfc3339() iso8601 end
+  def rfc3339() strftime('%FT%T%:z') end
 
   def xmlschema() iso8601 end # :nodoc:
 
