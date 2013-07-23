@@ -74,7 +74,6 @@ import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.XMLConverter;
 import org.jruby.util.string.JavaCrypt;
 
 import java.io.UnsupportedEncodingException;
@@ -7687,12 +7686,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         
         ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts, is7BitASCII);
-        
-        boolean xmlConversion = false;
-        xmlConversion = !opts.isNil() && ((RubyHash)opts).fastARef(context.runtime.newSymbol("xml")) != null;
-        if (xmlConversion) {
-            output = XMLConverter.convert(context, output, opts);
-        }
         
         return output;
     }

@@ -103,7 +103,6 @@ import org.jruby.runtime.Arity;
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.internal.runtime.ThreadedRunnable;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.ShellLauncher.POpenProcess;

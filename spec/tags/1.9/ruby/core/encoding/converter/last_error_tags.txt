@@ -1,5 +1,3 @@
 fails:Encoding::Converter#last_error returns nil when the no conversion has been attempted
 fails:Encoding::Converter#last_error returns nil when #primitive_convert last returned :destination_buffer_full
-fails:Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when #primitive_convert last returned :invalid_byte_sequence
 fails:Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when #primitive_convert last returned :incomplete_input
-fails:Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when the last call to #convert produced one

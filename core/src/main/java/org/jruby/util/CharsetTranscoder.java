@@ -311,7 +311,7 @@ public class CharsetTranscoder {
                     tmpChars.flip();
 
                     if (!encode(
-                            doCRLFTranslation(universalNewline, crlfNewline, crNewline),
+                            doCRLFTranslation(universalNewline, crlfNewline, crNewline, xmlText, xmlAttr),
                             replaceBytes,
                             flags)) return result;
                 } else {
@@ -445,7 +445,7 @@ public class CharsetTranscoder {
             return true;
         }
 
-        private CharBuffer doCRLFTranslation(boolean universalNewline, boolean crlfNewline, boolean crNewline) {
+        private CharBuffer doCRLFTranslation(boolean universalNewline, boolean crlfNewline, boolean crNewline, boolean xmlText, boolean xmlAttr) {
             CharBuffer inChars = tmpChars;
             if (universalNewline || crlfNewline || crNewline) {
                 // translate intermediate buffer before encoding
@@ -519,8 +519,43 @@ public class CharsetTranscoder {
                 newTmp.flip();
                 inChars = newTmp;
             }
+            
+            if (xmlText || xmlAttr) {
+                StringBuilder builder = new StringBuilder(inChars.remaining());
+                
+                while (inChars.hasRemaining()) {
+                    char ch = inChars.get();
+                    String replace = null;
+                    
+                    if (ch >= 128) {
+                        builder.append(ch);
+                    } else if ((xmlText && (replace = XMLTextCharacterTranslator[ch]) != null) ||
+                            (xmlAttr && (replace = XMLTextCharacterTranslator[ch]) != null)) {
+                        builder.append(replace);
+                    } else {
+                        builder.append(ch);
+                    }
+                }
+                
+                inChars = CharBuffer.wrap(builder);
+            }
+            
             return inChars;
         }
+    }
+    
+    public static final String[] XMLTextCharacterTranslator = new String[128];
+    public static final String[] XMLAttrCharacterTranslator = new String[128];
+    
+    static {
+        XMLTextCharacterTranslator['&'] = "&amp;";
+        XMLTextCharacterTranslator['<'] = "&lt;";
+        XMLTextCharacterTranslator['>'] = "&gt;";
+        
+        XMLAttrCharacterTranslator['&'] = "&amp;";
+        XMLAttrCharacterTranslator['<'] = "&lt;";
+        XMLAttrCharacterTranslator['>'] = "&gt;";
+        XMLAttrCharacterTranslator['\"'] = "&quot;";
     }
     
     public static String stringFromCoderResult(CoderResult coderResult, int flags) {
