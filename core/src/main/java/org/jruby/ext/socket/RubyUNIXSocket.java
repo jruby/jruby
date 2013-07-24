@@ -231,7 +231,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
         ByteList path = _path.convertToString().getByteList();
-        fpath = path.toString();
+        fpath = Helpers.decodeByteList(runtime, path);
 
         int maxSize = 103; // Max size from Darwin, lowest common value we know of
         if (fpath.length() > 103) {

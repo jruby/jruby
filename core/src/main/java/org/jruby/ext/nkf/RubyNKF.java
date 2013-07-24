@@ -48,6 +48,7 @@ import org.jruby.RubyString;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -529,7 +530,7 @@ public class RubyNKF {
         }
 
         RubyString convert(ByteList str) {
-            String s = str.toString();
+            String s = Helpers.decodeByteList(context.runtime, str);
             String[] token = s.split("\\s");
             ArrayList<ByteList> raw_data = new ArrayList<ByteList>();
 

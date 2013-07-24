@@ -9,6 +9,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.util.List;
+import org.jruby.runtime.Helpers;
 
 /**
  * Represents a literal string value.
@@ -25,7 +26,7 @@ public class StringLiteral extends Operand {
 
     public StringLiteral(ByteList val) {
         bytelist = val;
-        string = bytelist.toString();
+        string = Helpers.byteListToString(bytelist);
     }
     
     public StringLiteral(String s) {

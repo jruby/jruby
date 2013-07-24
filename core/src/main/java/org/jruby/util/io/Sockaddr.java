@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import org.jruby.RubyString;
 import org.jruby.ext.socket.SocketUtils;
+import org.jruby.runtime.Helpers;
 
 public class Sockaddr {
 
@@ -60,7 +62,7 @@ public class Sockaddr {
         }
 
         ByteList path = new ByteList(raw, 2, end, false);
-        String pathStr = path.toString();
+        String pathStr = Helpers.decodeByteList(context.runtime, path);
 
         return new UnixSocketAddress(new File(pathStr));
     }

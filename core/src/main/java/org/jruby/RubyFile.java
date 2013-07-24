@@ -86,6 +86,7 @@ import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.io.EncodingUtils;
@@ -1904,19 +1905,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         File testFile ;
         File childFile = new File(filename.getUnicodeValue() );
+        String filenameString = Helpers.decodeByteList(runtime, filename.getByteList());
 
         if ( childFile.isAbsolute() ) {
             testFile = childFile ;
         } else {
-            testFile = new File(runtime.getCurrentDirectory(), filename.getByteList().toString());
+            testFile = new File(runtime.getCurrentDirectory(), filenameString);
         }
 
         if (!testFile.exists()) {
-            throw runtime.newErrnoENOENTError(filename.getByteList().toString());
+            throw runtime.newErrnoENOENTError(filenameString);
         }
 
         if (newLength.getLongValue() < 0) {
-            throw runtime.newErrnoEINVALError(filename.toString());
+            throw runtime.newErrnoEINVALError(filenameString);
         }
 
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };

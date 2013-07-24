@@ -743,34 +743,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @return A decoded Java String, based on this Ruby string's encoding.
      */
     public String decodeString() {
-        Ruby runtime = getRuntime();
-        // Note: we always choose UTF-8 for outbound strings in 1.8 mode.  This is clearly undesirable
-        // but we do not mark any incoming Strings from JI with their real encoding so we just pick utf-8.
-        
-        if (runtime.is1_9()) {
-            Encoding encoding = getEncoding();
-            
-            if (encoding == UTF8) {
-                // faster UTF8 decoding
-                return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
-            }
-            
-            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
-
-            // charset is not defined for this encoding in jcodings db.  Try letting Java resolve this.
-            if (charset == null) {
-                try {
-                    return new String(value.getUnsafeBytes(), value.begin(), value.length(), encoding.toString());
-                } catch (UnsupportedEncodingException uee) {
-                    return value.toString();
-                }
-            }
-            
-            return RubyEncoding.decode(value.getUnsafeBytes(), value.begin(), value.length(), charset);
-        } else {
-            // fast UTF8 decoding
-            return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
-        }
+        return Helpers.decodeByteList(getRuntime(), value);
     }
 
     /**

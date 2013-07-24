@@ -64,6 +64,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import org.jruby.runtime.Helpers;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -395,7 +396,8 @@ public class SocketUtils {
 
     public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
-        String addressString = address.toString();
+        // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
+        String addressString = Helpers.byteListToString(address);
 
         if (addressString.equals(BROADCAST)) {
             return InetAddress.getByAddress(INADDR_BROADCAST);
@@ -404,7 +406,7 @@ public class SocketUtils {
             return InetAddress.getByAddress(INADDR_ANY);
 
         } else {
-            return InetAddress.getByName(address.toString());
+            return InetAddress.getByName(addressString);
 
         }
     }
