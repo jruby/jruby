@@ -57,6 +57,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -912,5 +913,29 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
     public Encoding getMarshalEncoding() {
         return symbolBytes.getEncoding();
+    }
+    
+    /**
+     * Properly stringify an object for the current "raw bytes" representation
+     * of a symbol.
+     * 
+     * Symbols are represented internally as a Java string, but decoded using
+     * raw bytes in ISO-8859-1 representation. This means they do not in their
+     * normal String form represent a readable Java string, but it does allow
+     * differently-encoded strings to map to different symbol objects.
+     * 
+     * See #736
+     * 
+     * @param object the object to symbolify
+     * @return the symbol string associated with the object's string representation
+     */
+    public static String objectToSymbolString(IRubyObject object) {
+        if (object instanceof RubySymbol) {
+            return ((RubySymbol)object).toString();
+        } else if (object instanceof RubyString) {
+            return ((RubyString)object).getByteList().toString();
+        } else {
+            return object.convertToString().getByteList().toString();
+        }
     }
 }

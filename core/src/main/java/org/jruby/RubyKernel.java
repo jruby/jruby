@@ -1940,7 +1940,7 @@ public class RubyKernel {
             throw context.runtime.newArgumentError("no method name given");
         }
 
-        String name = args[0].asJavaString();
+        String name = RubySymbol.objectToSymbolString(args[0]);
         int newArgsLength = args.length - 1;
 
         IRubyObject[] newArgs;

@@ -1499,25 +1499,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, block);
     }
     @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
-        String name = args[0].asJavaString();
+        String name = RubySymbol.objectToSymbolString(args[0]);
         int newArgsLength = args.length - 1;
 
         IRubyObject[] newArgs;
@@ -2585,24 +2585,24 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         throw context.runtime.newArgumentError(0, 1);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = arg0.asJavaString();
+        String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length == 0) return send(context, block);
         
-        String name = args[0].asJavaString();
+        String name = RubySymbol.objectToSymbolString(args[0]);
         int newArgsLength = args.length - 1;
 
         IRubyObject[] newArgs;
