@@ -133,7 +133,7 @@ public class CharsetTranscoder {
     }
     
     private void transcode(Ruby runtime, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII, boolean finish) {
-        primitiveConvert(runtime, inBuffer.dup(), outBuffer, 0, -1, inEncoding, is7BitASCII, actions.flags);
+        primitiveConvert(runtime, inBuffer.shallowDup(), outBuffer, 0, -1, inEncoding, is7BitASCII, actions.flags);
         
         if (lastResult != null) {
             createLastError();
