@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class used to launch the interpreter.
@@ -247,14 +248,29 @@ public class Main {
         
         doProcessArguments(in);
         
-        Ruby runtime;
+        Ruby _runtime;
 
         if (DripMain.DRIP_RUNTIME != null) {
             // use drip's runtime, reinitializing config
-            runtime = DripMain.DRIP_RUNTIME;
-            runtime.reinitialize(true);
+            _runtime = DripMain.DRIP_RUNTIME;
+            _runtime.reinitialize(true);
         } else {
-            runtime = Ruby.newInstance(config);
+            _runtime = Ruby.newInstance(config);
+        }
+        
+        final Ruby runtime = _runtime;
+        final AtomicBoolean didTeardown = new AtomicBoolean();
+        
+        if (config.isHardExit()) {
+            // we're the command-line JRuby, and should set a shutdown hook for
+            // teardown.
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    if (didTeardown.compareAndSet(false, true)) {
+                        runtime.tearDown();
+                    }
+                }
+            });
         }
 
         try {
@@ -274,7 +290,9 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            runtime.tearDown();
+            if (didTeardown.compareAndSet(false, true)) {
+                runtime.tearDown();
+            }
         }
     }
 
