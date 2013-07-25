@@ -673,7 +673,7 @@ public abstract class IRScope {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
-        for (CompilerPass pass: getManager().getCompilerPasses(this)) {
+        for (CompilerPass pass: getManager().getCompilerPasses()) {
             pass.run(this);
         }
     }
@@ -1285,7 +1285,7 @@ public abstract class IRScope {
         resetState();
 
         // Re-run opts
-        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
+        for (CompilerPass pass: getManager().getInliningCompilerPasses()) {
             pass.run(this);
         }
     }

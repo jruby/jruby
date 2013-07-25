@@ -62,11 +62,11 @@ public class IRManager {
         return object;
     }
     
-    public List<CompilerPass> getCompilerPasses(IRScope scope) {
+    public List<CompilerPass> getCompilerPasses() {
         return compilerPasses;
     }
     
-    public List<CompilerPass> getInliningCompilerPasses(IRScope scope) {
+    public List<CompilerPass> getInliningCompilerPasses() {
         return inliningCompilerPasses;
     }
     
