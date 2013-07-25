@@ -199,11 +199,10 @@ def ir_setup(root)
   manager.dry_run = true
   JRuby::IR.compiler_debug = true
 
-
   builder = runtime.is1_9 ? org.jruby.ir.IRBuilder19 : org.jruby.ir.IRBuilder
 
   scope = builder.new(manager).build_root(root)
-  passes = manager.get_compiler_passes(scope)
+  passes = manager.compiler_passes
   [scope, passes]
 end
 
