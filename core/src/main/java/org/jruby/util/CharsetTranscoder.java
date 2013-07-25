@@ -23,6 +23,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 /**
  * Encapsulate all logic associated with using Java Charset transcoding 
@@ -41,8 +42,15 @@ public class CharsetTranscoder {
         BAD_TRANSCODINGS_HACK.add("CP50220");
         BAD_TRANSCODINGS_HACK.add("CP50221");
     }
-    
-    private static final Charset UTF16 = Charset.forName("UTF-16");
+        
+    private static final int MAX_ARRAY_SIZE;
+    static {
+        if (UnsafeHolder.U != null) {
+            MAX_ARRAY_SIZE = Integer.MAX_VALUE - UnsafeHolder.U.arrayBaseOffset(byte[].class);
+        } else {
+            MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+        }
+    }
     
     private final Ruby runtime;
     public final Encoding outEncoding;
@@ -486,13 +494,13 @@ public class CharsetTranscoder {
             }
 
             int toN = state.outBytes.capacity();
-            if (toN == Integer.MAX_VALUE) {
+            if (toN == MAX_ARRAY_SIZE) {
                 // raise error; we can't make a bigger buffer
-                throw new ArrayIndexOutOfBoundsException("cannot allocate output buffer larger than " + Integer.MAX_VALUE + " bytes");
+                throw new ArrayIndexOutOfBoundsException("cannot allocate output buffer larger than " + MAX_ARRAY_SIZE + " bytes");
             }
 
             // use long for new size so we don't overflow, but don't exceed int max
-            toN = (int)Math.min((long)toN * 2 + 1, Integer.MAX_VALUE);
+            toN = (int)Math.min((long)toN * 2 + 1, MAX_ARRAY_SIZE);
 
             ByteBuffer newOutBytes = ByteBuffer.allocate(toN);
             state.outBytes.flip();
