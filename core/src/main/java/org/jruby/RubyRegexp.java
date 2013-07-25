@@ -582,6 +582,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } // while
     }
 
+    /**
+     * Unescape escaped non-ascii character at start position, appending all
+     * to the given bytelist if provided.
+     * 
+     * @param runtime current runtime
+     * @param to output bytelist; if null, no appending will be done
+     * @param bytes incoming bytes
+     * @param p start position
+     * @param end end position
+     * @param enc bytes' encoding
+     * @param encp out param for fixed encoding
+     * @param str original bytes wrapper
+     * @param mode error mode
+     * @return new position after performing unescaping
+     */
     // MRI: unescape_escapted_nonascii
     private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         byte[]chBuf = new byte[enc.maxLength()];
@@ -598,7 +613,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         if (chLen > 1 || (chBuf[0] & 0x80) != 0) {
-            to.append(chBuf, 0, chLen);
+            if (to != null) to.append(chBuf, 0, chLen);
 
             if (encp[0] == null) {
                 encp[0] = enc;
@@ -606,7 +621,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 raisePreprocessError(runtime, str, "escaped non ASCII character in UTF-8 regexp", mode);
             }
         } else {
-            Sprintf.sprintf(runtime, to, "\\x%02X", chBuf[0] & 0xff);
+            if (to != null) Sprintf.sprintf(runtime, to, "\\x%02X", chBuf[0] & 0xff);
         }
         return p;
     }
@@ -618,14 +633,27 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    private static void appendUtf8(Ruby runtime, ByteList to, int code, Encoding[]enc, ByteList str, ErrorMode mode) {
+    /**
+     * Append the given utf8 characters to the buffer, if given, checking for
+     * errors along the way.
+     * 
+     * @param runtime current runtime
+     * @param to output buffer; if null, no appending will be done
+     * @param code utf8 character code
+     * @param enc output param for new encoding
+     * @param str original wrapper of source bytes
+     * @param mode error mode
+     */
+    private static void appendUtf8(Ruby runtime, ByteList to, int code, Encoding[] enc, ByteList str, ErrorMode mode) {
         checkUnicodeRange(runtime, code, str, mode);
 
         if (code < 0x80) {
             Sprintf.sprintf(runtime, to, "\\x%02X", code);
         } else {
-            to.ensure(to.getRealSize() + 6);
-            to.setRealSize(to.getRealSize() + Pack.utf8Decode(runtime, to.getUnsafeBytes(), to.getBegin() + to.getRealSize(), code));
+            if (to != null) {
+                to.ensure(to.getRealSize() + 6);
+                to.setRealSize(to.getRealSize() + Pack.utf8Decode(runtime, to.getUnsafeBytes(), to.getBegin() + to.getRealSize(), code));
+            }
             if (enc[0] == null) {
                 enc[0] = UTF8Encoding.INSTANCE;
             } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used
@@ -634,6 +662,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
     
+    /**
+     * Unescape unicode characters at given offset, appending to the given
+     * out buffer if provided.
+     * 
+     * @param runtime current runtime
+     * @param to output buffer; if null, no appending will be done
+     * @param bytes input bytes
+     * @param p start position
+     * @param end end position
+     * @param encp out param for fixed encoding
+     * @param str original bytes wrapper
+     * @param mode error mode
+     * @return new position after unescaping
+     */
     private static int unescapeUnicodeList(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ByteList str, ErrorMode mode) {
         while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
 
@@ -644,7 +686,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (len == 0) break;
             if (len > 6) raisePreprocessError(runtime, str, "invalid Unicode range", mode);
             p += len;
-            appendUtf8(runtime, to, code, encp, str, mode);
+            if (to != null) appendUtf8(runtime, to, code, encp, str, mode);
             hasUnicode = true;
             while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
         }
@@ -653,7 +695,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return p;
     }
 
-    private static int unescapeUnicodeBmp(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ByteList str, ErrorMode mode) {
+    /**
+     * Unescape unicode BMP char at given offset, appending to the specified
+     * buffer if non-null.
+     * 
+     * @param runtime current runtime
+     * @param to output buffer; if null, no appending will be done
+     * @param bytes input bytes
+     * @param p start position
+     * @param end end position
+     * @param encp out param for fixed encoding
+     * @param str original bytes wrapper
+     * @param mode error mode
+     * @return new position after unescaping
+     */
+    private static int unescapeUnicodeBmp(Ruby runtime, ByteList to, byte[] bytes, int p, int end, Encoding[] encp, ByteList str, ErrorMode mode) {
         if (p + 4 > end) raisePreprocessError(runtime, str, "invalid Unicode escape", mode);
         int code = StringSupport.scanHex(bytes, p, 4);
         int len = StringSupport.hexLength(bytes, p, 4);
@@ -662,6 +718,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return p + 4;
     }
 
+    /**
+     * Unescape non-ascii elements in the given string, appending the results
+     * to the given bytelist if provided.
+     * 
+     * @param runtime current runtime
+     * @param to output bytelist; if null, no appending will be done
+     * @param bytes the bytes to unescape
+     * @param p starting position
+     * @param end ending position
+     * @param enc bytes' encoding
+     * @param encp out param for fixed encoding
+     * @param str original wrapper for the bytes
+     * @param mode error mode
+     * @return whether any propery elements were encountered while walking
+     */
     private static boolean unescapeNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         boolean hasProperty = false;
 
@@ -669,7 +740,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int cl = StringSupport.preciseLength(enc, bytes, p, end);
             if (cl <= 0) raisePreprocessError(runtime, str, "invalid multibyte character", mode);
             if (cl > 1 || (bytes[p] & 0x80) != 0) {
-                to.append(bytes, p, cl);
+                if (to != null) to.append(bytes, p, cl);
                 p += cl;
                 if (encp[0] == null) {
                     encp[0] = enc;
@@ -687,7 +758,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case '1': case '2': case '3':
                 case '4': case '5': case '6': case '7': /* \O, \OO, \OOO or backref */
                     if (StringSupport.scanOct(bytes, p - 1, end - (p - 1)) <= 0177) {
-                        to.append('\\').append(c);
+                        if (to != null) to.append('\\').append(c);
                         break;
                     }
 
@@ -711,22 +782,37 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     break;
                 case 'p': /* \p{Hiragana} */
                     if (encp[0] == null) hasProperty = true;
-                    to.append('\\').append(c);
+                    if (to != null) to.append('\\').append(c);
                     break;
 
                 default:
-                    to.append('\\').append(c);
+                    if (to != null) to.append('\\').append(c);
                     break;
                 } // inner switch
                 break;
 
             default:
-                to.append(c);
+                if (to != null) to.append(c);
             } // switch
         } // while
         return hasProperty;
     }
 
+
+    /**
+     * Preprocess the given string for use in regexp, raising errors for encoding
+     * incompatibilities that arise.
+     * 
+     * This version produces a new unescaped version of the string based on
+     * fixes performed while walking.
+     * 
+     * @param runtime current runtime
+     * @param str string to preprocess
+     * @param enc string's encoding
+     * @param fixedEnc new encoding after fixing
+     * @param mode mode of errors
+     * @return a new unescaped string
+     */
     private static ByteList preprocess(Ruby runtime, ByteList str, Encoding enc, Encoding[]fixedEnc, ErrorMode mode) {
         ByteList to = new ByteList(str.getRealSize());
 
@@ -743,6 +829,30 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return to;
     }
 
+    /**
+     * Preprocess the given string for use in regexp, raising errors for encoding
+     * incompatibilities that arise.
+     * 
+     * This version does not produce a new, unescaped version of the bytelist,
+     * and simply does the string-walking portion of the logic.
+     * 
+     * @param runtime current runtime
+     * @param str string to preprocess
+     * @param enc string's encoding
+     * @param fixedEnc new encoding after fixing
+     * @param mode mode of errors
+     */
+    private static void preprocessLight(Ruby runtime, ByteList str, Encoding enc, Encoding[]fixedEnc, ErrorMode mode) {
+        if (enc.isAsciiCompatible()) {
+            fixedEnc[0] = null;
+        } else {
+            fixedEnc[0] = enc;
+        }
+
+        boolean hasProperty = unescapeNonAscii(runtime, null, str.getUnsafeBytes(), str.getBegin(), str.getBegin() + str.getRealSize(), enc, fixedEnc, str, mode);
+        if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
+    }
+
     public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
     }
@@ -751,6 +861,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
         RubyString string = null;
         Encoding regexpEnc = null;
+        Encoding[] fixedEnc = new Encoding[1];
         
         for (int i = 0; i < strings.length; i++) {
             RubyString str = strings[i].convertToString();
@@ -763,8 +874,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 strEnc = ASCIIEncoding.INSTANCE;
             }
             
-            Encoding[] fixedEnc = new Encoding[1];
-            ByteList buf = RubyRegexp.preprocess(runtime, str.getByteList(), strEnc, fixedEnc, RubyRegexp.ErrorMode.PREPROCESS);
+            // This used to call preprocess, but the resulting bytelist was not
+            // used. Since the preprocessing error-checking can be done without
+            // creating a new bytelist, I added a "light" path.
+            RubyRegexp.preprocessLight(runtime, str.getByteList(), strEnc, fixedEnc, RubyRegexp.ErrorMode.PREPROCESS);
             
             if (fixedEnc[0] != null) {
                 if (regexpEnc != null && regexpEnc != fixedEnc[0]) {
