@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.RubyInstanceConfig;
@@ -10,6 +11,7 @@ import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
+import org.jruby.ir.passes.CompilerPassScheduler;
 
 /**
  */
@@ -60,6 +62,22 @@ public class IRManager {
 
     public IRModuleBody getObject() {
         return object;
+    }
+    
+    public CompilerPassScheduler schedulePasses() {
+        CompilerPassScheduler scheduler = new CompilerPassScheduler() {
+            private Iterator<CompilerPass> iterator;
+            {
+                this.iterator = compilerPasses.iterator();
+            }                        
+
+            @Override
+            public Iterator<CompilerPass> iterator() {
+                return this.iterator;
+            }
+
+        };
+        return scheduler;
     }
     
     public List<CompilerPass> getCompilerPasses(IRScope scope) {
