@@ -1,0 +1,11 @@
+#-*- mode: ruby -*-
+
+require 'maven/ruby/tasks'
+
+task :maven do
+  Maven::Ruby::Maven.instance.verbose = true
+end
+        
+task :default => :build
+
+# vim: syntax=Ruby

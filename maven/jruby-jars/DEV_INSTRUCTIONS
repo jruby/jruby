@@ -1,0 +1,7 @@
+In order to build a new jruby-jars gem, here is the process:
+
+* Run 'rake gem'
+
+The 'update' task will update version.rb and create the jar files.
+You may commit the contents of the version.rb file, but it is not a requirement.
+However update should always be run before building the gem to ensure the latest code is pulled in.

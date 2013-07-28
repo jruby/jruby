@@ -1,0 +1,24 @@
+#-*- mode: ruby -*-
+
+gemspec :include_jars => true
+
+inherit "org.jruby:jruby-gems:#{model.version}"
+
+name "JRuby Jars Gem"
+
+jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
+jar 'org.jruby:jruby-stdlib-complete', '${project.parent.version}'
+
+plugin( :clean, '2.5' ) do
+  execute_goals( :clean,
+                 :phase => :clean, 
+                 :id => 'clean-lib',
+                 :filesets => [ { :directory => '${basedir}/lib',
+                                  :includes => ['*.jar'] } ],
+                 :failOnError => false )
+end
+
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readonly' => true )
+
+# vim: syntax=Ruby
