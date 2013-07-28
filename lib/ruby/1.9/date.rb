@@ -1169,8 +1169,8 @@ class Date
     @dt = JODA::DateTime.new(millis, chronology(sg, of))
 
     @ajd = ajd
-    @of = offset
-    @sg = start
+    @of = of # offset
+    @sg = sg # start
 
     @__ca__ = {}
   end
