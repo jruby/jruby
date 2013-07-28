@@ -902,28 +902,116 @@ class Date
   end
 
   def self._iso8601(str) # :nodoc:
-    if /\A\s*(([-+]?\d{2,}|-)-\d{2}-\d{2}|
-              ([-+]?\d{2,})?-\d{3}|
-              (\d{2}|\d{4})?-w\d{2}-\d|
-              -w-\d)
-        (t
-        \d{2}:\d{2}(:\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(([-+]?(\d{2}|\d{4})|--)\d{2}\d{2}|
-              ([-+]?(\d{2}|\d{4}))?\d{3}|-\d{3}|
-              (\d{2}|\d{4})?w\d{2}\d)
-        (t?
-        \d{2}\d{2}(\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(\d{2}:\d{2}(:\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(\d{2}\d{2}(\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
+    h = {}
+    if /\A\s*
+      (?:
+          (?<year>[-+]?\d{2,} | -) - (?<mon>\d{2})? - (?<mday>\d{2})
+        | (?<year2>[-+]?\d{2,})? - (?<yday>\d{3})
+        | (?<cwyear>\d{4}|\d{2})? - w(?<cweek>\d{2}) - (?<cwday>\d)
+        | -w- (?<cwday2>\d)
+      )
+      (?:
+        t
+        (?<hour>\d{2}) : (?<min>\d{2}) (?: :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
+        (?<zone>z | [-+]\d{2}(?::?\d{2})?)?
+      )?
+      \s*\z/ix =~ str
+
+      if mday
+        h[:mday] = i mday
+        h[:year] = comp_year69(year) if year != "-"
+
+        if mon
+          h[:mon] = i mon
+        else
+          return {} if year != "-"
+        end
+      elsif yday
+        h[:yday] = i yday
+        h[:year] = comp_year69(year2) if year2
+      elsif cwday
+        h[:cweek] = i cweek
+        h[:cwday] = i cwday
+        h[:cwyear] = comp_year69(cwyear) if cwyear
+      elsif cwday2
+        h[:cwday] = i cwday2
+      end
+
+      if hour
+        h[:hour] = i hour
+        h[:min] = i min
+        h[:sec] = i sec if sec
+      end
+
+      h[:sec_fraction] = sec_fraction if sec_fraction
+      set_zone(h, zone)
+
+    elsif /\A\s*
+      (?:
+          (?<year>[-+]?(?:\d{4}|\d{2})|--) (?<mon>\d{2}|-) (?<mday>\d{2})
+        | (?<year>[-+]?(?:\d{4}|\d{2})) (?<yday>\d{3})
+        | -(?<yday2>\d{3})
+        | (?<cwyear>\d{4}|\d{2}|-) w(?<cweek>\d{2}|-) (?<cwday>\d)
+      )
+      (?:
+        t?
+        (?<hour>\d{2}) (?<min>\d{2}) (?:(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
+        (?<zone>z | [-+]\d{2}(?:\d{2})?)?
+      )?
+      \s*\z/ix =~ str
+
+      if mday
+        h[:mday] = i mday
+        h[:year] = comp_year69(year) if year != "--"
+        if mon != "-"
+          h[:mon] = i mon
+        else
+          return {} if year != "--"
+        end
+      elsif yday
+        h[:yday] = i yday
+        h[:year] = comp_year69(year)
+      elsif yday2
+        h[:yday] = i yday2
+      elsif cwday
+        h[:cweek] = i cweek if cweek != "-"
+        h[:cwday] = i cwday
+        h[:cwyear] = comp_year69(cwyear) if cwyear != "-"
+      end
+
+      if hour
+        h[:hour] = i hour
+        h[:min] = i min
+        h[:sec] = i sec if sec
+      end
+
+      h[:sec_fraction] = sec_fraction if sec_fraction
+      set_zone(h, zone)
+
+    elsif /\A\s*
+      (?<hour>\d{2})
+      (?:
+        : (?<min>\d{2})
+        (?:
+          :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?
+          (?<zone>z | [-+]\d{2}(?: :?\d{2})?)?
+        )?
+      |
+        (?<min>\d{2})
+        (?:
+          (?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?
+          (?<zone>z | [-+]\d{2}(?:\d{2})?)?
+        )?
+      )
+      \s*\z/ix =~ str
+
+      h[:hour] = i hour
+      h[:min] = i min
+      h[:sec] = i sec if sec
+      h[:sec_fraction] = i sec_fraction if sec_fraction
+      set_zone(h, zone)
     end
+    h
   end
 
   def self._rfc3339(str) # :nodoc:
@@ -1082,6 +1170,31 @@ class Date
   extend  t
   include t
 
+  extend Module.new {
+    def set_zone(h, zone)
+      if zone
+        h[:zone] = zone
+        h[:offset] = zone_to_diff(zone)
+      end
+    end
+
+    def comp_year69(year)
+      y = i year
+      if year.length < 4
+        if y >= 69
+          y + 1900
+        else
+          y + 2000
+        end
+      else
+        y
+      end
+    end
+
+    def i(str)
+      Integer(str, 10)
+    end
+  }
 end
 
 class DateTime < Date
