@@ -24,6 +24,18 @@
       <version>0.8.9-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>${bc.version}</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${bc.version}</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -71,6 +83,9 @@
           <include>lib/ruby/2.0/**</include>
           <include>lib/ruby/shared/**</include>
         </includes>
+        <excludes>
+          <exclude>lib/**/bc*.jar</exclude>
+        </excludes>
       </resource>
     </resources>
 

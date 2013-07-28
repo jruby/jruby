@@ -11,9 +11,11 @@
   <packaging>jar</packaging>
   <name>JRuby Complete</name>
 
-    <properties>
-        <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    </properties>
+  <properties>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -25,10 +27,29 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>${jruby.basedir}/lib</directory>
+        <targetPath>${jruby.complete.home}/lib</targetPath>
+        <includes>
+          <include>**/bc*.jar</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
