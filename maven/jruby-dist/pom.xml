@@ -12,7 +12,8 @@
   <name>JRuby Dist</name>
 
     <properties>
-        <main.basedir>${project.parent.parent.basedir}</main.basedir>
+      <jruby.basedir>${basedir}/../..</jruby.basedir>
+      <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
   <dependencies>
@@ -29,4 +30,25 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/jruby.xml</descriptor>
+          </descriptors>
+	</configuration>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>single</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
