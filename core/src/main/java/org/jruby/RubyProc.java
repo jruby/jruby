@@ -34,12 +34,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Arrays;
-
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -47,14 +44,17 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.CompatVersion.*;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+
+import java.util.Arrays;
+
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
 
 /**
  * @author  jpetersen
@@ -227,9 +227,12 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         return call(context, args, null, Block.NULL_BLOCK);
     }
-    
-    private IRubyObject[] prepareProcArgs(ThreadContext context, IRubyObject[] args) {
-        Arity arity = block.arity();
+
+    /**
+     * Transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
+     * arity of one, etc.)
+     */
+    public static IRubyObject[] prepareProcArgs(ThreadContext context, Arity arity, IRubyObject[] args) {
         boolean isFixed = arity.isFixed();
         int required = arity.required();
         int actual = args.length;
@@ -263,7 +266,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (isLambda()) {
             block.arity().checkArity(context.runtime, args.length);
         }
-        if (isProc()) args = prepareProcArgs(context, args);
+        if (isProc()) args = prepareProcArgs(context, block.arity(), args);
 
         return call(context, args, null, blockCallArg);
     }

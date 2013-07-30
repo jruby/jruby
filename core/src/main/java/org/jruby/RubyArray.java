@@ -37,7 +37,30 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.java.util.ArrayUtils;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
+import org.jruby.util.Pack;
+import org.jruby.util.Qsort;
+import org.jruby.util.RecursiveComparator;
+import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -51,36 +74,12 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 
-import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
-
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
-import org.jruby.java.util.ArrayUtils;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.ByteList;
-import org.jruby.util.Pack;
-import org.jruby.util.Qsort;
-import org.jruby.util.RecursiveComparator;
-import org.jruby.util.TypeConverter;
-
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.CompatVersion.RUBY2_0;
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
@@ -4007,7 +4006,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     // Enumerable direct implementations (non-"each" versions)
     public IRubyObject all_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block, Arity.OPTIONAL);
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
@@ -4051,7 +4050,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public IRubyObject find_index(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, block);
+        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, block, Arity.OPTIONAL);
 
         for (int i = 0; i < realLength; i++) {
             if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.newFixnum(i);
