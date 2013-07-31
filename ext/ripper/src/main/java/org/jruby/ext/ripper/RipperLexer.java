@@ -885,7 +885,6 @@ public class RipperLexer implements Warnings {
         }
         
         commentBuf.append(src.readLineBytesPlusNewline());
-        
         dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
         
         return '\n';
@@ -1063,6 +1062,7 @@ public class RipperLexer implements Warnings {
             }
         } else {
             arg = parser.getRuntime().newString((ByteList) value);
+            lastEventLocation = getPosition();
         }
         return parser.dispatch(tokenToEventId(token), arg);
     }
