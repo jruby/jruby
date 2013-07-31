@@ -976,60 +976,38 @@ class Date
   private_class_method :complete_frags
 
   def self.valid_date_frags?(elem, sg) # :nodoc:
-    catch :jd do
-      a = elem.values_at(:jd)
-      if a.all?
-        if jd = _valid_jd?(*(a << sg))
-          throw :jd, jd
-        end
-      end
+    if jd = elem[:jd] and
+      jd = _valid_jd?(jd, sg)
+      return jd
+    end
 
-      a = elem.values_at(:year, :yday)
-      if a.all?
-        if jd = _valid_ordinal?(*(a << sg))
-          throw :jd, jd
-        end
-      end
+    year = elem[:year]
 
-      a = elem.values_at(:year, :mon, :mday)
-      if a.all?
-        if jd = _valid_civil?(*(a << sg))
-          throw :jd, jd
-        end
-      end
+    if year and yday = elem[:yday] and
+      jd = _valid_ordinal?(year, yday, sg)
+      return jd
+    end
 
-      a = elem.values_at(:cwyear, :cweek, :cwday)
-      if a[2].nil? && elem[:wday]
-        a[2] = elem[:wday].nonzero? || 7
-      end
-      if a.all?
-        if jd = _valid_commercial?(*(a << sg))
-          throw :jd, jd
-        end
-      end
+    if year and mon = elem[:mon] and mday = elem[:mday] and
+      jd = _valid_civil?(year, mon, mday, sg)
+      return jd
+    end
 
-      a = elem.values_at(:year, :wnum0, :wday)
-      if a[2].nil? && elem[:cwday]
-        a[2] = elem[:cwday] % 7
-      end
-      if a.all?
-        if jd = _valid_weeknum?(*(a << 0 << sg))
-          throw :jd, jd
-        end
-      end
+    if cwyear = elem[:cwyear] and cweek = elem[:cweek] and cwday = (elem[:cwday] || elem[:wday].nonzero? || 7) and
+      jd = _valid_commercial?(cwyear, cweek, cwday, sg)
+      return jd
+    end
 
-      a = elem.values_at(:year, :wnum1, :wday)
-      if a[2]
-        a[2] = (a[2] - 1) % 7
-      end
-      if a[2].nil? && elem[:cwday]
-        a[2] = (elem[:cwday] - 1) % 7
-      end
-      if a.all?
-        if jd = _valid_weeknum?(*(a << 1 << sg))
-          throw :jd, jd
-        end
-      end
+    if year and wnum0 = elem[:wnum0] and wday = (elem[:wday] || (elem[:cwday] && elem[:cwday] % 7)) and
+      jd = _valid_weeknum?(year, wnum0, wday, 0, sg)
+      return jd
+    end
+
+    if year and wnum1 = elem[:wnum1] and wday = (
+        (elem[:wday]  && (elem[:wday]  - 1) % 7) ||
+        (elem[:cwday] && (elem[:cwday] - 1) % 7)
+      ) and jd = _valid_weeknum?(year, wnum1, wday, 1, sg)
+      return jd
     end
   end
 
