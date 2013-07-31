@@ -1021,6 +1021,12 @@ class Date
   private_class_method :valid_time_frags?
 
   def self.new_by_frags(elem, sg) # :nodoc:
+    # fast path
+    if elem and !elem.key?(:jd) and !elem.key?(:yday) and
+        year = elem[:year] and mon = elem[:mon] and mday = elem[:mday]
+      return Date.civil(year, mon, mday, sg)
+    end
+
     elem = rewrite_frags(elem)
     elem = complete_frags(elem)
     unless jd = valid_date_frags?(elem, sg)
