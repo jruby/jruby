@@ -1020,6 +1020,8 @@ class Date
         \d{2}:\d{2}:\d{2}(\.\d+)?
         (z|[-+]\d{2}:\d{2})\s*\z/ix =~ str
       _parse(str)
+    else
+      {}
     end
   end
 
@@ -1064,6 +1066,8 @@ class Date
         e.offset = zone_to_diff($4)
       end
       e.to_hash
+    else
+      {}
     end
   end
 
@@ -1083,6 +1087,8 @@ class Date
         end
       end
       e
+    else
+      {}
     end
   end
 
@@ -1109,6 +1115,8 @@ class Date
         \d{2}:\d{2}:\d{2}\s+
         \d{4}\s*\z/iox =~ str
       _parse(str)
+    else
+      {}
     end
   end
 
