@@ -899,26 +899,31 @@ class Date
 
   private_class_method :rewrite_frags
 
+  COMPLETE_FRAGS = [
+    [:time,       []],
+    [nil,         [:jd]],
+    [:ordinal,    [:year, :yday]],
+    [:civil,      [:year, :mon, :mday]],
+    [:commercial, [:cwyear, :cweek, :cwday]],
+    [:wday,       [:wday, :__need_jd_filling]],
+    [:wnum0,      [:year, :wnum0, :wday]],
+    [:wnum1,      [:year, :wnum1, :wday]],
+    [nil,         [:cwyear, :cweek, :wday]],
+    [nil,         [:year, :wnum0, :cwday]],
+    [nil,         [:year, :wnum1, :cwday]]
+  ]
+
   def self.complete_frags(elem) # :nodoc:
-    i = 0
-    g = [[:time, [:hour, :min, :sec]],
-         [nil, [:jd]],
-         [:ordinal, [:year, :yday, :hour, :min, :sec]],
-         [:civil, [:year, :mon, :mday, :hour, :min, :sec]],
-         [:commercial, [:cwyear, :cweek, :cwday, :hour, :min, :sec]],
-         [:wday, [:wday, :hour, :min, :sec]],
-         [:wnum0, [:year, :wnum0, :wday, :hour, :min, :sec]],
-         [:wnum1, [:year, :wnum1, :wday, :hour, :min, :sec]],
-         [nil, [:cwyear, :cweek, :wday, :hour, :min, :sec]],
-         [nil, [:year, :wnum0, :cwday, :hour, :min, :sec]],
-         [nil, [:year, :wnum1, :cwday, :hour, :min, :sec]]].
-      collect{|k, a| e = elem.values_at(*a).compact; [k, a, e]}.
-      select{|k, a, e| e.size > 0}.
-      sort_by{|k, a, e| [e.size, i -= 1]}.last
+    g = COMPLETE_FRAGS.max_by { |kind, fields|
+      fields.count { |field| elem.key? field }
+    }
+    c = g[1].count { |field| elem.key? field }
 
-    d = nil
+    if c == 0 and [:hour, :min, :sec].none? { |field| elem.key? field }
+      g = nil
+    end
 
-    if g && g[0] && (g[1].size - g[2].size) != 0
+    if g && g[0] && g[1].size != c
       d ||= Date.today
 
       case g[0]
@@ -958,17 +963,18 @@ class Date
       end
     end
 
-    if g && g[0] == :time
-      if self <= DateTime
+    if self <= DateTime
+      if g && g[0] == :time
         d ||= Date.today
         elem[:jd] ||= d.jd
       end
-    end
 
-    elem[:hour] ||= 0
-    elem[:min]  ||= 0
-    elem[:sec]  ||= 0
-    elem[:sec] = [elem[:sec], 59].min
+      elem[:hour] ||= 0
+      elem[:min]  ||= 0
+      elem[:sec]  ||= 0
+      # see [ruby-core:47226] and the "fix", nonsense!
+      # elem[:sec] = [elem[:sec], 59].min
+    end
 
     elem
   end
