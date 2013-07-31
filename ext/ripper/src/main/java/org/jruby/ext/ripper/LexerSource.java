@@ -63,6 +63,9 @@ public class LexerSource {
     // How many bytes into the source are we?
     protected int offset = 0;
     
+    // In case of reading a newline and the unreading it we need to restore offset.
+    protected int savedOffset = 0;
+    
     // For 'list' and only populated if list is not null.
     private StringBuilder lineBuffer;
 
@@ -249,7 +252,11 @@ public class LexerSource {
         
         advance(c);
         
-        if (c == '\n') line++;
+        if (c == '\n') {
+            line++;
+            savedOffset = offset;
+            offset = 0;
+        }
             
         return c; 
     }
@@ -265,7 +272,10 @@ public class LexerSource {
         
         retreat();
             
-        if (c == '\n') line--;
+        if (c == '\n') {
+            offset = savedOffset;
+            line--;
+        }
 
         buf[++bufLength] = (char) c;
         

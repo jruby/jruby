@@ -1294,6 +1294,10 @@ public class RipperLexer implements Warnings {
                 continue;
             }
             case '#':		/* it's a comment */
+                // FIXME: God this is ugly...
+                src.unread('#');
+                lastEventLocation = getPosition();
+                src.read();
                 if (readComment() == EOF) return EOF;
                     
                 fallthru = true;
