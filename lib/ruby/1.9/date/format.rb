@@ -1171,6 +1171,7 @@ class Date
   include t
 
   extend Module.new {
+    private
     def set_zone(h, zone)
       if zone
         h[:zone] = zone
