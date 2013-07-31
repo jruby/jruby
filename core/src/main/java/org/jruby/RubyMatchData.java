@@ -288,10 +288,9 @@ public class RubyMatchData extends RubyObject {
         int j = 0;
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            int[] refs = e.getBackRefs();
-            int length = refs.length;
 
-            values[j++] = length == 0 ? runtime.getNil() : RubyRegexp.nth_match(refs[length - 1], this);
+            int nth = pattern.nameToBackrefNumber(e.name, e.nameP, e.nameEnd, regs);
+            values[j++] = RubyRegexp.nth_match(nth, this);
         }
 
         return values;
