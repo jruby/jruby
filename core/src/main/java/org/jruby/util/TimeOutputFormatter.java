@@ -181,10 +181,10 @@ public class TimeOutputFormatter {
     }
 
     static String formatNumber(long value, int width, char padder) {
-        if (value >= 0) {
+        if (value >= 0 || padder != '0') {
             return padding(Long.toString(value), width, padder);
         } else {
-            return "-" + padding(Long.toString(-value), width, padder);
+            return "-" + padding(Long.toString(-value), width - 1, padder);
         }
     }
 
@@ -199,7 +199,7 @@ public class TimeOutputFormatter {
             if (value >= 0) {
                 return padding("+" + Long.toString(value), width, padder);
             } else {
-                return padding("-" + Long.toString(-value), width, padder);
+                return padding(Long.toString(value), width, padder);
             }
         }
     }
