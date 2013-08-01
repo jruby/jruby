@@ -906,7 +906,7 @@ class Date
     if /\A\s*
       (?:
           (?<year>[-+]?\d{2,} | -) - (?<mon>\d{2})? - (?<mday>\d{2})
-        | (?<year2>[-+]?\d{2,})? - (?<yday>\d{3})
+        | (?<year>[-+]?\d{2,})? - (?<yday>\d{3})
         | (?<cwyear>\d{4}|\d{2})? - w(?<cweek>\d{2}) - (?<cwday>\d)
         | -w- (?<cwday2>\d)
       )
@@ -928,7 +928,7 @@ class Date
         end
       elsif yday
         h[:yday] = i yday
-        h[:year] = comp_year69(year2) if year2
+        h[:year] = comp_year69(year) if year
       elsif cwday
         h[:cweek] = i cweek
         h[:cwday] = i cwday
