@@ -1750,6 +1750,10 @@ class DateTime < Date
     end
     fr += (elem[:sec_fraction] || 0) / 86400
     of = Rational(elem[:offset] || 0, 86400)
+    if of < -1 || of > 1
+      of = 0
+      warn "invalid offset is ignored" if $VERBOSE
+    end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
 
