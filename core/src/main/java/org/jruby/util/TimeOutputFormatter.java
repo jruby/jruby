@@ -96,6 +96,9 @@ public class TimeOutputFormatter {
                 case '6': case '7': case '8': case '9': case '0':
                     width = 10 * width + Character.getNumericValue(c);
                     break;
+                case ':':
+                    format += ':'; /* Make it part of the format */
+                    break;
                 default:
                     done = true;
                     break;
