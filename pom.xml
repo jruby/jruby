@@ -335,6 +335,9 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+	<defaultGoal>install</defaultGoal>
+      </build>
     </profile>
     <profile>
       <id>jruby-jars</id>
@@ -347,12 +350,18 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+	<defaultGoal>install</defaultGoal>
+      </build>
     </profile>
     <profile>
       <id>rake-plugin</id>
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+	<defaultGoal>install</defaultGoal>
+      </build>
     </profile>
     <profile>
       <id>dist</id>

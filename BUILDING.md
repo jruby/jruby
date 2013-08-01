@@ -107,3 +107,41 @@ jruby --1.8 spec/mspec/bin/mspec ci
 The complete CI test suite will take anywhere from 20 to 45 minutes to
 complete, but provides the most accurate indication of the stability of
 your local JRuby source.
+
+Distribution Packages
+---------------------
+
+###the tar.gz and zip distribution packages###
+
+```
+mvn -Pdist
+```
+
+the files will be found in ./maven/jruby-dist/target
+
+###jruby-complete.jar###
+
+```
+mvn -Pcomplete
+```
+
+the file will be in ./maven/jruby-complete/target
+
+###jruby maven artifacts###
+
+```
+mvn -Pmain
+```
+
+and those files will be installed in you maven local-repository ready to use with maven, ivy, buildr, etc
+
+###jruby jars gem###
+
+```
+mvn -Pjruby-jars
+```
+
+the gem will be in ./maven/jruby-jars/target
+
+
+
