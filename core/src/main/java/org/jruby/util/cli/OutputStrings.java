@@ -69,7 +69,7 @@ public class OutputStrings {
                 .append("  --headless      do not launch a GUI window, no matter what\n")
                 .append("  --1.8           specify Ruby 1.8.x compatibility\n")
                 .append("  --1.9           specify Ruby 1.9.x compatibility (default)\n")
-                .append("  --2.0           specify Ruby 2.0 compatibility\n")
+                .append("  --2.0           specify Ruby 2.0.x compatibility\n")
                 .append("  --bytecode      show the JVM bytecode produced by compiling specified code\n")
                 .append("  --version       print the version\n")
                 .append("  --disable-gems  do not load RubyGems on startup\n");
