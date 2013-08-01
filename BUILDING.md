@@ -143,5 +143,9 @@ mvn -Pjruby-jars
 
 the gem will be in ./maven/jruby-jars/target
 
+### building ALL packages ###
 
+```
+mvn -Pall
+```
 

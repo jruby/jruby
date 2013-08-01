@@ -375,6 +375,9 @@
         <module>docs</module>
         <module>maven</module>
       </modules>
+      <build>
+	<defaultGoal>install</defaultGoal>
+      </build>
     </profile>
   </profiles>
     <reporting>
