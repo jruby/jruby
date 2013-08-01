@@ -487,6 +487,7 @@ public class RubyDateFormat extends DateFormat {
         NUMERIC2BLANK(' ', 2),
         NUMERIC3('0', 3),
         NUMERIC4('0', 4),
+        NUMERIC5('0', 5),
         TEXT(' ', 0);
 
         char defaultPadder;
@@ -604,8 +605,8 @@ public class RubyDateFormat extends DateFormat {
                     value = dt.getDayOfWeek();
                     break;
                 case FORMAT_YEAR_LONG:
-                    type = NUMERIC4;
                     value = year(dt.getYear());
+                    type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_YEAR_SHORT:
                     type = NUMERIC2;
@@ -649,8 +650,8 @@ public class RubyDateFormat extends DateFormat {
                     formatter = TimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    type = NUMERIC4;
                     value = year(dt.getWeekyear());
+                    type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
                     type = NUMERIC2;
