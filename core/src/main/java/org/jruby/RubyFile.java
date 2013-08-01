@@ -1232,7 +1232,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 IRubyObject theInternal = internalEncoding == null ? 
                         runtime.getNil() : runtime.getEncodingService().getEncoding(internalEncoding);
 
-                setEncoding(runtime.getCurrentContext(), theInternal, theBom, null);
+                setEncoding(runtime.getCurrentContext(), theBom, theInternal, null);
             }
         }
     }
