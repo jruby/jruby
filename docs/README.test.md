@@ -8,7 +8,7 @@
    one-per-line in `test/jruby_index` (and other `test/*_index` files).
    Note: some are commented out.
 
-   c) `Rubyspecs`, a recent point-in-time copy of [RubySepc](http://rubyspec.org)
+   c) `Rubyspecs`, a recent point-in-time copy of [RubySpec](http://rubyspec.org)
    project. The specs
    are written in `rspec `format and aim to test conformance of JRuby
    against the Ruby specification.
