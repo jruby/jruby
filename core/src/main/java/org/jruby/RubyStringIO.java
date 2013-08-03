@@ -117,5 +117,7 @@ public abstract class RubyStringIO extends RubyObject {
     public abstract IRubyObject external_encoding(ThreadContext context);
     public abstract IRubyObject internal_encoding(ThreadContext context);
     @Override
-    public abstract void checkFrozen();
+    public void checkFrozen() {
+        super.checkFrozen();
+    }
 }
