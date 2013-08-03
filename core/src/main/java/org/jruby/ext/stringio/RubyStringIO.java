@@ -390,7 +390,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     private boolean isEOF() {
-        return isEndOfString() || ptr.eof;
+        return isEndOfString() || (getRuntime().is1_8() && ptr.eof);
     }
     
     private boolean isEndOfString() {
@@ -829,7 +829,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         if (ptr.pos < 0) throw getRuntime().newErrnoEINVALError("Invalid argument");
 
-        if (!isEndOfString()) ptr.eof = false;
+        if (getRuntime().is1_8() && !isEndOfString()) ptr.eof = false;
 
         return getRuntime().getNil();
     }
@@ -975,7 +975,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return makeString(runtime, buf, true);
     }
 
-    @SuppressWarnings("fallthrough")
     @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         if (context.is19) {
@@ -1006,8 +1005,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 if (len < 0) {
                     throw getRuntime().newArgumentError("negative length " + len + " given");
                 }
-                if ((len > 0 && isEndOfString()) || ptr.eof) {
-                    ptr.eof = true;
+                if ((len > 0 && isEndOfString())) {
                     if (!str.isNil()) ((RubyString)str).resize(0);
                     return getRuntime().getNil();
                 }
@@ -1018,7 +1016,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             len = ptr.internal.getByteList().length();
 
             if (len <= ptr.pos) {
-                ptr.eof = true;
                 if (str.isNil()) {
                     str = runtime.newString();
                 } else {
@@ -1227,7 +1224,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = "reopen", required = 0, optional = 2)
     @Override
     public IRubyObject reopen(IRubyObject[] args) {
-        if (getRuntime().is2_0()) checkFrozen();
+        checkFrozen();
         
         if (args.length == 1 && !(args[0] instanceof RubyString)) {
             return initialize_copy(args[0]);
@@ -1251,6 +1248,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
     private void doRewind() {
         this.ptr.pos = 0;
+        // used in 1.8 mode only
         this.ptr.eof = false;
         this.ptr.lineno = 0;
     }
@@ -1281,6 +1279,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         if (newPosition < 0) throw getRuntime().newErrnoEINVALError("invalid seek value");
 
         ptr.pos = newPosition;
+        // used in 1.8 mode only
         ptr.eof = false;
 
         return RubyFixnum.zero(getRuntime());
@@ -1289,8 +1288,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = "string=", required = 1)
     @Override
     public IRubyObject set_string(IRubyObject arg) {
-        checkFrozen();
-        
         return reopen(new IRubyObject[] { arg.convertToString() });
     }
 
