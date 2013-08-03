@@ -38,6 +38,14 @@ updated gems.
 Running JRuby
 -------------
 
+*Note: For RVM users, you must first run:*
+
+```
+rvm use system
+```
+
+*to use the version of JRuby and the gems you just built*
+
 Once bootstrapped, JRuby can be run with the `build/jruby` executable. If
 the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
