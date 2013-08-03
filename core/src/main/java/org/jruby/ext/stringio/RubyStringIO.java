@@ -448,9 +448,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         if (len > rlen) len = rlen;
         if (len < 0) len = 0;
+        
+        // This line is not in MRI; they may reference a bogus pointer, but never dereference it.
+        // http://bugs.ruby-lang.org/issues/8728
+        if (len == 0) return RubyString.newEmptyString(runtime, enc);
+        
         return RubyString.newStringShared(runtime, strBytes, strByteList.getBegin() + pos, len, enc);
     }
-
 
     private IRubyObject internalGets18(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -988,7 +992,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
         Ruby runtime = getRuntime();
         IRubyObject str = runtime.getNil();
-        int len = 0;
+        int len;
         boolean binary = false;
 
         switch (args.length) {
@@ -1005,7 +1009,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 if (len < 0) {
                     throw getRuntime().newArgumentError("negative length " + len + " given");
                 }
-                if ((len > 0 && isEndOfString())) {
+                if (len > 0 && isEndOfString()) {
                     if (!str.isNil()) ((RubyString)str).resize(0);
                     return getRuntime().getNil();
                 }
@@ -1013,8 +1017,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 break;
             }
         case 0:
-            len = ptr.internal.getByteList().length();
-
+            len = ptr.internal.size();
             if (len <= ptr.pos) {
                 if (str.isNil()) {
                     str = runtime.newString();
@@ -1028,7 +1031,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             }
             break;
         default:
-            getRuntime().newArgumentError(args.length, 0);
+            throw getRuntime().newArgumentError(args.length, 0);
         }
 
         if (str.isNil()) {
@@ -1252,33 +1255,41 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         this.ptr.eof = false;
         this.ptr.lineno = 0;
     }
+    
+    @Override
+    @Deprecated
+    public IRubyObject seek(IRubyObject[] args) {
+        return seek(getRuntime().getCurrentContext(), args);
+    }
 
     @JRubyMethod(required = 1, optional = 1)
-    @Override
-    public IRubyObject seek(IRubyObject[] args) {
+    public IRubyObject seek(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
+        checkFinalized();
+        
+        int offset = RubyNumeric.num2int(args[0]);
+        IRubyObject whence = context.nil;
+
+        if (args.length > 1 && !args[0].isNil()) whence = args[1];
         
         checkOpen();
-        checkFinalized();
-        int amount = RubyNumeric.num2int(args[0]);
-        int whence = Stream.SEEK_SET;
-        int newPosition = ptr.pos;
 
-        if (args.length > 1 && !args[0].isNil()) whence = RubyNumeric.fix2int(args[1]);
-
-        if (whence == Stream.SEEK_CUR) {
-            newPosition += amount;
-        } else if (whence == Stream.SEEK_END) {
-            newPosition = ptr.internal.getByteList().length() + amount;
-        } else if (whence == Stream.SEEK_SET) {
-            newPosition = amount;
-        } else {
-            throw getRuntime().newErrnoEINVALError("invalid whence");
+        switch (whence.isNil() ? 0 : RubyNumeric.num2int(whence)) {
+            case 0:
+                break;
+            case 1:
+                offset += ptr.pos;
+                break;
+            case 2:
+                offset += ptr.internal.size();
+                break;
+            default:
+                throw getRuntime().newErrnoEINVALError("invalid whence");
         }
+        
+        if (offset < 0) throw getRuntime().newErrnoEINVALError("invalid seek value");
 
-        if (newPosition < 0) throw getRuntime().newErrnoEINVALError("invalid seek value");
-
-        ptr.pos = newPosition;
+        ptr.pos = offset;
         // used in 1.8 mode only
         ptr.eof = false;
 
