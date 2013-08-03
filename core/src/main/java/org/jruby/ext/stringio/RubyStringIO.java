@@ -156,7 +156,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         switch (args.length) {
             case 0:
-                ptr.internal = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(getRuntime());
+                ptr.internal = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(runtime);
                 modeArgument = "r+";
                 break;
             case 1:
@@ -176,7 +176,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         initializeModes(modeArgument);
 
         if (ptr.modes.isWritable() && ptr.internal.isFrozen()) {
-            throw getRuntime().newErrnoEACCESError("Permission denied");
+            throw runtime.newErrnoEACCESError("Permission denied");
         }
 
         if (ptr.modes.isTruncate()) {
