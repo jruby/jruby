@@ -1475,7 +1475,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return context.nil;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod(name = {"each_codepoint", "codepoints"}, compat = RUBY1_9)
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
         return block.isGiven() ? eachCodepointInternal(context, block) : enumeratorize(context.runtime, this, "each_codepoint");
     }
