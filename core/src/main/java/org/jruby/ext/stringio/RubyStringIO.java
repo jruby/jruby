@@ -63,10 +63,11 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Stream;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import org.jruby.runtime.encoding.EncodingCapable;
 
 @JRubyClass(name="StringIO")
 @SuppressWarnings("deprecation")
-public class RubyStringIO extends org.jruby.RubyStringIO {
+public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapable {
     static class StringIOData {
         int pos = 0;
         int lineno = 0;
@@ -101,6 +102,16 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         }
 
         return stringIOClass;
+    }
+
+    @Override
+    public Encoding getEncoding() {
+        return ptr.internal.getEncoding();
+    }
+
+    @Override
+    public void setEncoding(Encoding e) {
+        ptr.internal.setEncoding(e);
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -280,10 +291,29 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each", args);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    public IRubyObject each19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", args);
+        
+        if (args.length > 0 && !args[args.length - 1].isNil() && args[args.length - 1].checkStringType19().isNil() &&
+                RubyNumeric.num2long(args[args.length - 1]) == 0) {
+            throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
+        }
+        
+        return eachInternal(context, args, block);
+    }
+
+    @JRubyMethod(optional = 1, compat = RUBY1_8)
     @Override
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
+    }
+
+    @JRubyMethod(name = "each_line", optional = 2, compat = RUBY1_9)
+    public IRubyObject each_line19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", args);
+        
+        return each19(context, args, block);
     }
 
     @JRubyMethod(optional = 1)
@@ -1174,6 +1204,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @JRubyMethod(name = "readlines", optional = 1)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         checkReadable();
+        
+        if (context.is19) {
+            if (args.length > 0 && !args[args.length - 1].isNil() && args[args.length - 1].checkStringType19().isNil() &&
+                    RubyNumeric.num2long(args[args.length - 1]) == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
+            }
+        }
 
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(isEOF())) {
@@ -1252,6 +1289,8 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @JRubyMethod(name = "string=", required = 1)
     @Override
     public IRubyObject set_string(IRubyObject arg) {
+        checkFrozen();
+        
         return reopen(new IRubyObject[] { arg.convertToString() });
     }
 
