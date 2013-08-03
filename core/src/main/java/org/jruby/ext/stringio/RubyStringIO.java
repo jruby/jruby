@@ -35,6 +35,7 @@ import org.jcodings.Encoding;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Regex;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
@@ -956,104 +957,73 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     private IRubyObject read19(IRubyObject[] args) {
         checkReadable();
 
-        ByteList buf = null;
-        int length = 0;
-        boolean lengthGiven = false;
-        int oldLength = 0;
-        RubyString originalString = null;
+        Ruby runtime = getRuntime();
+        IRubyObject str = runtime.getNil();
+        int len = 0;
+        boolean binary = false;
 
         switch (args.length) {
         case 2:
-            if (!args[1].isNil()) {
-                originalString = args[1].convertToString();
-                // must let original string know we're modifying, so shared buffers aren't damaged
-                originalString.modify();
-                buf = originalString.getByteList();
+            str = args[1];
+            if (!str.isNil()) {
+                str = str.convertToString();
+                ((RubyString)str).modify();
             }
         case 1:
             if (!args[0].isNil()) {
-                length = RubyNumeric.fix2int(args[0]);
-                lengthGiven = true;
-                oldLength = length;
+                len = RubyNumeric.fix2int(args[0]);
 
-                if (length < 0) {
-                    throw getRuntime().newArgumentError("negative length " + length + " given");
+                if (len < 0) {
+                    throw getRuntime().newArgumentError("negative length " + len + " given");
                 }
-                if (length > 0 && isEndOfString()) {
+                if ((len > 0 && isEndOfString()) || data.eof) {
                     data.eof = true;
-                    if (buf != null) buf.setRealSize(0);
-                    return getRuntime().getNil();
-                } else if (data.eof) {
-                    if (buf != null) buf.setRealSize(0);
+                    if (!str.isNil()) ((RubyString)str).resize(0);
                     return getRuntime().getNil();
                 }
+                binary = true;
                 break;
             }
         case 0:
-            oldLength = -1;
-            length = data.internal.getByteList().length();
+            len = data.internal.getByteList().length();
 
-            if (length <= data.pos) {
+            if (len <= data.pos) {
                 data.eof = true;
-                if (buf == null) {
-                    buf = new ByteList();
+                if (str.isNil()) {
+                    str = runtime.newString();
                 } else {
-                    buf.setRealSize(0);
+                    ((RubyString)str).resize(0);
                 }
 
-                return makeString(getRuntime(), buf, true);
+                return str;
             } else {
-                length -= data.pos;
+                len -= data.pos;
             }
             break;
         default:
             getRuntime().newArgumentError(args.length, 0);
         }
 
-        if (buf == null) {
-            int internalLength = data.internal.getByteList().length();
-
-            if (internalLength > 0) {
-                if (internalLength >= data.pos + length) {
-                    buf = new ByteList(data.internal.getByteList(), (int) data.pos, length);
-                } else {
-                    int rest = (int) (data.internal.getByteList().length() - data.pos);
-
-                    if (length > rest) length = rest;
-                    buf = new ByteList(data.internal.getByteList(), (int) data.pos, length);
-                }
-            }
+        if (str.isNil()) {
+            str = strioSubstr(runtime, data.pos, len);
+            if (binary) ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
         } else {
-            int rest = (int) (data.internal.getByteList().length() - data.pos);
-
-            if (length > rest) length = rest;
-
-            // Yow...this is still ugly
-            byte[] target = buf.getUnsafeBytes();
-            if (target.length > length) {
-                System.arraycopy(data.internal.getByteList().getUnsafeBytes(), (int) data.pos, target, 0, length);
-                buf.setBegin(0);
-                buf.setRealSize(length);
+            int rest = data.internal.size() - data.pos;
+            if (len > rest) len = rest;
+            ((RubyString)str).resize(len);
+            ByteList strByteList = ((RubyString)str).getByteList();
+            byte[] strBytes = strByteList.getUnsafeBytes();
+            ByteList dataByteList = data.internal.getByteList();
+            byte[] dataBytes = dataByteList.getUnsafeBytes();
+            System.arraycopy(dataBytes, dataByteList.getBegin() + data.pos, strBytes, strByteList.getBegin(), len);
+            if (binary) {
+                ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
             } else {
-                target = new byte[length];
-                System.arraycopy(data.internal.getByteList().getUnsafeBytes(), (int) data.pos, target, 0, length);
-                buf.setBegin(0);
-                buf.setRealSize(length);
-                buf.setUnsafeBytes(target);
+                ((RubyString)str).setEncoding(data.internal.getEncoding());
             }
         }
-
-        if (buf == null) {
-            if (!data.eof) buf = new ByteList();
-            length = 0;
-        } else {
-            length = buf.length();
-            data.pos += length;
-        }
-
-        if (oldLength < 0 || oldLength > length) data.eof = true;
-
-        return originalString != null ? originalString : makeString(getRuntime(), buf, !lengthGiven);
+        data.pos += ((RubyString)str).size();
+        return str;
     }
     
     private IRubyObject read18(IRubyObject[] args) {
