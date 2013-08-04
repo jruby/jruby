@@ -1464,6 +1464,16 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
     
     @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored) {
+        return set_encoding(context, enc);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored1, IRubyObject ignored2) {
+        return set_encoding(context, enc);
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
     @Override
     public IRubyObject external_encoding(ThreadContext context) {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.internal.getEncoding());
