@@ -1,1 +1,0 @@
-fails:StringIO#getc increments #pos by the byte size of the character in multibyte strings

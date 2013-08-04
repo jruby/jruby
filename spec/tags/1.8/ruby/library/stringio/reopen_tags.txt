@@ -1,2 +1,0 @@
-fails:StringIO#reopen when passed [Object, Integer] raises an Errno::EACCES when trying to reopen self with a frozen String in write-mode
-fails:StringIO#reopen when passed [Object, Object] raises an Errno::EACCES error when trying to reopen self with a frozen String in write-mode

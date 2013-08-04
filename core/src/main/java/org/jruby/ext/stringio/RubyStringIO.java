@@ -316,10 +316,16 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return each19(context, args, block);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, compat = RUBY1_8)
     @Override
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "lines", args);
+    }
+
+    @JRubyMethod(name = "lines", optional = 2, compat = RUBY1_9)
+    public IRubyObject lines19(ThreadContext context, IRubyObject[] args, Block block) {
+        context.runtime.getWarnings().warn("StringIO#lines is deprecated; use #each_line instead");
+        return block.isGiven() ? each19(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
     }
 
     @Override
@@ -436,7 +442,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         checkReadable();
         if (isEndOfString()) return context.runtime.getNil();
 
-        return context.runtime.newString("" + (char) (ptr.internal.getByteList().get((int) ptr.pos++) & 0xFF));
+        int start = ptr.pos;
+        int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(ptr.internal.getByteList(), start + 1);
+        
+        ptr.pos += total;
+        
+        return context.runtime.newString(ptr.internal.getByteList().makeShared(start, total));
     }
     
     private RubyString strioSubstr(Ruby runtime, int pos, int len) {
@@ -1201,8 +1212,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return line;
     }
 
-    @JRubyMethod(name = "readlines", optional = 1)
+    @JRubyMethod(name = "readlines", optional = 1, compat = RUBY1_8)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
+        return readlines19(context, args);
+    }
+
+    @JRubyMethod(name = "readlines", optional = 2, compat = RUBY1_9)
+    public IRubyObject readlines19(ThreadContext context, IRubyObject[] args) {
         checkReadable();
         
         if (context.is19) {
@@ -1212,23 +1228,21 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             }
         }
 
-        List<IRubyObject> lns = new ArrayList<IRubyObject>();
+        RubyArray ary = context.runtime.newArray();
         while (!(isEOF())) {
             IRubyObject line = context.is19 ? internalGets19(context, args) : internalGets18(context, args);
             if (line.isNil()) {
                 break;
             }
-            lns.add(line);
+            ary.append(line);
         }
 
-        return getRuntime().newArray(lns);
+        return ary;
     }
 
     @JRubyMethod(name = "reopen", required = 0, optional = 2)
     @Override
     public IRubyObject reopen(IRubyObject[] args) {
-        checkFrozen();
-        
         if (args.length == 1 && !(args[0] instanceof RubyString)) {
             return initialize_copy(args[0]);
         }
@@ -1392,32 +1406,39 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     private void ungetbyteCommon(RubyString ungetBytes) {
+        ByteList ungetByteList = ungetBytes.getByteList();
+        int len = ungetByteList.getRealSize();
+        int start = ptr.pos;
+        
+        if (len == 0) return;
+        
         ptr.internal.modify();
-        ptr.pos--;
+        
+        if (len > ptr.pos) {
+            start = 0;
+        } else {
+            start = ptr.pos - len;
+        }
         
         ByteList bytes = ptr.internal.getByteList();
+        
+        if (isEndOfString()) bytes.length(Math.max(ptr.pos, len));
 
-        if (isEndOfString()) bytes.length((int)ptr.pos + 1);
-
-        if (ptr.pos == -1) {
-            bytes.replace(0, 0, ungetBytes.getByteList());
-            ptr.pos = 0;
-        } else {
-            bytes.replace(ptr.pos, 1, ungetBytes.getByteList());
-        }
+        bytes.replace(start, ptr.pos - start, ungetBytes.getByteList());
+        
+        ptr.pos = start;
     }
     
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject arg) {
         checkReadable();
+        
+        if (arg.isNil()) return arg;
 
-        if (!arg.isNil()) {
-            int c;
-            if (arg instanceof RubyFixnum) {
-                ungetbyteCommon(RubyNumeric.fix2int(arg));
-            } else {
-                ungetbyteCommon(arg.convertToString());
-            }
+        if (arg instanceof RubyFixnum) {
+            ungetbyteCommon(RubyNumeric.fix2int(arg));
+        } else {
+            ungetbyteCommon(arg.convertToString());
         }
 
         return context.nil;
