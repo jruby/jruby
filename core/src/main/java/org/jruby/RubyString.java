@@ -82,6 +82,7 @@ import java.util.Locale;
 
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.CompatVersion.RUBY2_0;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -7177,6 +7178,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon19(context, arg, block) : 
             enumeratorize(context.runtime, this, "lines", arg);
+    }
+
+    @JRubyMethod(name = "lines", compat = RUBY2_0)
+    public IRubyObject lines20(ThreadContext context, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, block) :
+            enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
+    }
+
+    @JRubyMethod(name = "lines", compat = RUBY2_0)
+    public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, arg, block) :
+            enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
