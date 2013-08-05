@@ -134,50 +134,58 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         ptr = new StringIOData();
     }
 
-    private void initializeModes(Object modeArgument) {
+    private ModeFlags initializeModes(Object modeArgument) {
         Ruby runtime = getRuntime();
 
         if (modeArgument == null) {
-            ptr.modes = RubyIO.newModeFlags(runtime, "r+");
+            return RubyIO.newModeFlags(runtime, "r+");
         } else if (modeArgument instanceof Long) {
-            ptr.modes = RubyIO.newModeFlags(runtime, ((Long) modeArgument).longValue());
+            return RubyIO.newModeFlags(runtime, ((Long) modeArgument).longValue());
         } else {
-            ptr.modes = RubyIO.newModeFlags(runtime, (String) modeArgument);
+            return RubyIO.newModeFlags(runtime, (String) modeArgument);
         }
-
-        setupModes();
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        Object modeArgument = null;
         Ruby runtime = getRuntime();
+        ModeFlags flags;
+        RubyString str;
         
         switch (args.length) {
             case 0:
-                ptr.internal = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(runtime);
-                modeArgument = "r+";
+                str = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(runtime);
+                flags = initializeModes("r+");
                 break;
             case 1:
-                ptr.internal = args[0].convertToString();
-                modeArgument = ptr.internal.isFrozen() ? "r" : "r+";
+                str = args[0].convertToString();
+                flags = initializeModes(str.isFrozen() ? "r" : "r+");
+                
                 break;
             case 2:
-                ptr.internal = args[0].convertToString();
+                str = args[0].convertToString();
+                Object modeArgument;
                 if (args[1] instanceof RubyFixnum) {
                     modeArgument = RubyFixnum.fix2long(args[1]);
                 } else {
                     modeArgument = args[1].convertToString().toString();
                 }
+                
+                flags = initializeModes(modeArgument);
+                if (flags.isWritable() && str.isFrozen()) {
+                    throw runtime.newErrnoEACCESError("Permission denied");
+                }
                 break;
+            default:
+                // not reached
+                throw runtime.newArgumentError(args.length, 2);
         }
 
-        initializeModes(modeArgument);
-
-        if (ptr.modes.isWritable() && ptr.internal.isFrozen()) {
-            throw runtime.newErrnoEACCESError("Permission denied");
-        }
+        ptr.internal = str;
+        ptr.modes = flags;
+        
+        setupModes();
 
         if (ptr.modes.isTruncate()) {
             ptr.internal.modifyCheck();
@@ -1243,6 +1251,8 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = "reopen", required = 0, optional = 2)
     @Override
     public IRubyObject reopen(IRubyObject[] args) {
+        checkFrozen();
+        
         if (args.length == 1 && !(args[0] instanceof RubyString)) {
             return initialize_copy(args[0]);
         }
@@ -1313,7 +1323,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = "string=", required = 1)
     @Override
     public IRubyObject set_string(IRubyObject arg) {
-        return reopen(new IRubyObject[] { arg.convertToString() });
+        checkFrozen();
+        RubyString str = arg.convertToString();
+        ptr.modes = ModeFlags.createModeFlags(str.isFrozen() ? ModeFlags.RDONLY : ModeFlags.RDWR);
+        ptr.pos = 0;
+        ptr.lineno = 0;
+        return ptr.internal = str;
     }
 
     @JRubyMethod(name = "sync=", required = 1)
@@ -1576,7 +1591,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             throw getRuntime().newIOError("closed stream");
         }
     }
-
+    
     private void setupModes() {
         ptr.closedWrite = false;
         ptr.closedRead = false;
@@ -1584,6 +1599,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         if (ptr.modes.isReadOnly()) ptr.closedWrite = true;
         if (!ptr.modes.isReadable()) ptr.closedRead = true;
     }
+
     
     @Override
     @Deprecated
