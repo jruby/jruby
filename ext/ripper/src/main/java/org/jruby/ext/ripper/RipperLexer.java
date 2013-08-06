@@ -1028,7 +1028,7 @@ public class RipperLexer implements Warnings {
         }
     }
     
-    private void dispatchScanEvent(int token, Object value) {
+    public void dispatchScanEvent(int token, Object value) {
         // String processing generates extra tSTRING_END which we don't want to see for things like heredocs
         if (ignoreNextScanEvent) { 
             ignoreNextScanEvent = false;

@@ -125,8 +125,7 @@ public class HeredocTerm extends StrTerm {
                     syntaxError(src);
                 }
                 if (c != '\n') {
-                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
-                    lexer.ignoreNextScanEvent = true;
+                    lexer.setValue(lexer.createStr(lexer.getPosition(), str, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 str.append(src.read());
