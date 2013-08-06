@@ -21,6 +21,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
 /**
@@ -117,24 +118,41 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     public RubyGzipFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
         mtime = RubyTime.newTime(runtime, new DateTime());
-        readEncoding = null;
-        writeEncoding = null;
+        enc = null;
+        enc2 = null;
+    }
+    
+    // rb_gzfile_ecopts
+    protected void ecopts(ThreadContext context, IRubyObject opts) {
+        if (!opts.isNil()) {
+            EncodingUtils.getEncodingOptionFromObject(context, this, opts);
+        }
+        if (enc2 != null) {
+            IRubyObject[] outOpts = new IRubyObject[]{opts};
+            ecflags = EncodingUtils.econvPrepareOpts(context, opts, outOpts);
+            ec = EncodingUtils.econvOpenOpts(context, enc.getName(), enc2.getName(), ecflags, opts);
+            ecopts = opts;
+        }
+    }
+    
+    Encoding getEnc() {
+        return enc == null ? getRuntime().getDefaultExternalEncoding() : enc;
     }
 
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
         if (runtime.is1_9()) {
-            if (writeEncoding == null) {
-                // FIXME: MRI does initialize readEncoding to def external, but we are missing something in some
-                // initialization cases where that would make this go bad.  Bandage until then.
-                Encoding encoding = readEncoding == null ? runtime.getEncodingService().getAscii8bitEncoding() : readEncoding;
-
-                return RubyString.newString(runtime, value, encoding);
+            if (enc2 == null) {
+                return RubyString.newString(runtime, value, getEnc());
             }
-
-            return RubyString.newStringNoCopy(runtime, CharsetTranscoder.transcode(
-                    runtime.getCurrentContext(), value, readEncoding, writeEncoding,
-                    runtime.getNil()));
+            
+            if (ec != null && enc2.isDummy()) {
+                value = ec.convert(runtime.getCurrentContext(), value, false);
+                return RubyString.newString(runtime, value, getEnc());
+            }
+            
+            value = CharsetTranscoder.transcode(runtime.getCurrentContext(), value, enc2, getEnc(), ecopts);
+            return RubyString.newString(runtime, value);
         } 
 
         return RubyString.newString(runtime, value);
@@ -216,13 +234,13 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     }
     
     @Override
-    public void setReadEncoding(Encoding readEncoding) {
-        this.readEncoding = readEncoding;
+    public void setEnc(Encoding readEncoding) {
+        this.enc = readEncoding;
     }
     
     @Override
-    public void setWriteEncoding(Encoding writeEncoding) {
-        this.writeEncoding = writeEncoding;
+    public void setEnc2(Encoding writeEncoding) {
+        this.enc2 = writeEncoding;
     }
     
     @Override
@@ -239,8 +257,11 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected RubyString nullFreeComment;
     protected IRubyObject realIo;
     protected RubyTime mtime;
-    protected Encoding readEncoding;    // enc
-    protected Encoding writeEncoding;   // enc2
+    protected Encoding enc;
+    protected Encoding enc2;
+    protected int ecflags;
+    protected IRubyObject ecopts;
+    protected CharsetTranscoder ec;
     protected boolean sync = false;
     protected CharsetTranscoder readTranscoder = null;
     protected CharsetTranscoder writeTranscoder = null;    

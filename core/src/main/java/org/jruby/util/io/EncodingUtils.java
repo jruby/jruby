@@ -5,13 +5,40 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
+import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyProc;
+import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.TypeConverter;
 
 public class EncodingUtils {    
+    public static final int ECONV_ERROR_HANDLER_MASK               = 0x000000ff;
+
+    public static final int ECONV_INVALID_MASK                     = 0x0000000f;
+    public static final int ECONV_INVALID_REPLACE                  = 0x00000002;
+
+    public static final int ECONV_UNDEF_MASK                       = 0x000000f0;
+    public static final int ECONV_UNDEF_REPLACE                    = 0x00000020;
+    public static final int ECONV_UNDEF_HEX_CHARREF                = 0x00000030;
+
+    public static final int ECONV_DECORATOR_MASK                   = 0x0000ff00;
+    public static final int ECONV_NEWLINE_DECORATOR_MASK           = 0x00003f00;
+    public static final int ECONV_NEWLINE_DECORATOR_READ_MASK      = 0x00000f00;
+    public static final int ECONV_NEWLINE_DECORATOR_WRITE_MASK     = 0x00003000;
+
+    public static final int ECONV_UNIVERSAL_NEWLINE_DECORATOR      = 0x00000100;
+    public static final int ECONV_CRLF_NEWLINE_DECORATOR           = 0x00001000;
+    public static final int ECONV_CR_NEWLINE_DECORATOR             = 0x00002000;
+    public static final int ECONV_XML_TEXT_DECORATOR               = 0x00004000;
+    public static final int ECONV_XML_ATTR_CONTENT_DECORATOR       = 0x00008000;
+
+    public static final int ECONV_STATEFUL_DECORATOR_MASK          = 0x00f00000;
+    public static final int ECONV_XML_ATTR_QUOTE_DECORATOR         = 0x00100000;
+
     public static Encoding toEncoding(ThreadContext context, IRubyObject object) {
         if (object instanceof RubyEncoding) return ((RubyEncoding) object).getEncoding();
         
@@ -158,55 +185,68 @@ public class EncodingUtils {
 
     // mri: rb_io_extract_encoding_option
     public static boolean getEncodingOptionFromObject(ThreadContext context, IOEncodable ioEncodable, IRubyObject options) {
-        if (options == null || options.isNil()) return false;
+        Ruby runtime = context.runtime;
         
-        options = TypeConverter.checkHashType(context.runtime, options);        
-
-        // FIXME: This is workaround for MRI compat (they do this differently) and I think a bug: http://bugs.ruby-lang.org/issues/7837
-        if (!(options instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (3 for 1..2)");
-
-
-        RubyHash opts = (RubyHash) options;        
+        IRubyObject encoding = context.nil;
+        IRubyObject extenc = null;
+        IRubyObject intenc = null;
+        IRubyObject tmp;
         boolean extracted = false;
-        Encoding externalEncoding = null;
+        Encoding extencoding = null;
+        Encoding intencoding = null;
         
-        Ruby runtime = options.getRuntime();
-        IRubyObject encodingOpt = opts.fastARef(runtime.newSymbol("encoding"));
-        IRubyObject externalOpt = opts.fastARef(runtime.newSymbol("external_encoding"));
-        IRubyObject internalOpt = opts.fastARef(runtime.newSymbol("internal_encoding"));
-        
-        if ((externalOpt != null || internalOpt != null) && encodingOpt != null && !encodingOpt.isNil()) {
-                runtime.getWarnings().warn("Ignoring encoding parameter '" + encodingOpt + "': " + 
-                        (externalOpt == null ? "internal" : "external") + "_encoding is used");
-                encodingOpt = null;
+        if (options != null || !options.isNil()) {
+            RubyHash opts = (RubyHash) options;
+
+            IRubyObject encodingOpt = opts.op_aref(context, runtime.newSymbol("encoding"));
+            if (!encodingOpt.isNil()) encoding = encodingOpt;
+            IRubyObject externalOpt = opts.op_aref(context, runtime.newSymbol("external_encoding"));
+            if (!externalOpt.isNil()) extenc = externalOpt;
+            IRubyObject internalOpt = opts.op_aref(context, runtime.newSymbol("internal_encoding"));
+            if (!internalOpt.isNil()) intenc = internalOpt;
         }
         
-        if (externalOpt != null && !externalOpt.isNil()) externalEncoding = toEncoding(context, externalOpt);
-
-        Encoding internalEncoding = null;
-
-        if (internalOpt != null) {
-            if (internalOpt.isNil() || internalOpt.asString().toString().equals("-")) {
-                internalEncoding = null;
-            } else {
-                internalEncoding = toEncoding(context, internalOpt);
+        if ((extenc != null || intenc != null) && !encoding.isNil()) {
+            if (runtime.isVerbose()) {
+                    runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " + 
+                            (extenc == null ? "internal" : "external") + "_encoding is used");
             }
-            
-            if (externalEncoding == internalEncoding) internalEncoding = null;
+            encoding = context.nil;
         }
         
-        if (encodingOpt != null && !encodingOpt.isNil()) {
+        if (extenc != null && !extenc.isNil()) {
+            extencoding = toEncoding(context, extenc);
+        }
+
+        if (intenc != null) {
+            if (intenc.isNil()) {
+                intencoding = null;
+            } else if (!(tmp = intenc.checkStringType19()).isNil()) {
+                String p = tmp.toString();
+                if (p.equals("-")) {
+                    intencoding = null;
+                } else {
+                    intencoding = toEncoding(context, intenc);
+                }
+            } else {
+                intencoding = toEncoding(context, intenc);
+            }
+            if (extencoding == intencoding) {
+                intencoding = null;
+            }
+        }
+        
+        if (!encoding.isNil()) {
             extracted = true;
             
-            IRubyObject tmp = encodingOpt.checkStringType19();
-            if (!tmp.isNil()) {
+            if (!(tmp = encoding.checkStringType19()).isNil()) {
                 parseModeEncoding(context, ioEncodable, tmp.convertToString().toString());
             } else {
-                setupReadWriteEncodings(context, ioEncodable, null, toEncoding(context, encodingOpt));
+                setupReadWriteEncodings(context, ioEncodable, null, toEncoding(context, encoding));
             }
-        } else if (externalOpt != null || internalEncoding != null) {
+        } else if (extenc != null || intenc != null) {
             extracted = true;
-            setupReadWriteEncodings(context, ioEncodable, internalEncoding, externalEncoding);
+            setupReadWriteEncodings(context, ioEncodable, intencoding, extencoding);
         }
         
         return extracted;
@@ -227,11 +267,11 @@ public class EncodingUtils {
         }
         
         if (internal == null || internal == external) { // missing internal == nil?
-            encodable.setReadEncoding((defaultExternal && internal != external) ? null : external);
-            encodable.setWriteEncoding(null);
+            encodable.setEnc((defaultExternal && internal != external) ? null : external);
+            encodable.setEnc2(null);
         } else {
-            encodable.setReadEncoding(internal);
-            encodable.setWriteEncoding(external);
+            encodable.setEnc(internal);
+            encodable.setEnc2(external);
         }
     }    
 
@@ -260,4 +300,162 @@ public class EncodingUtils {
 
         setupReadWriteEncodings(context, ioEncodable, intEncoding, extEncoding);
     }
+    
+    // rb_econv_prepare_opts
+    public static int econvPrepareOpts(ThreadContext context, IRubyObject opthash, IRubyObject[] opts) {
+        return econvPrepareOptions(context, opthash, opts, 0);
+    }
+    
+    // rb_econv_prepare_options
+    public static int econvPrepareOptions(ThreadContext context, IRubyObject opthash, IRubyObject[] opts, int ecflags) {
+        IRubyObject newhash = context.nil;
+        IRubyObject v;
+        
+        if (opthash.isNil()) {
+            opts[0] = context.nil;
+            return ecflags;
+        }
+        ecflags = econvOpts(context, opthash, ecflags);
+        
+        v = ((RubyHash)opthash).op_aref(context, context.runtime.newSymbol("replace"));
+        if (!v.isNil()) {
+            RubyString v_str = v.convertToString();
+            if (v_str.isCodeRangeBroken()) {
+                throw context.runtime.newArgumentError("replacement string is broken: " + v_str);
+            }
+            v = v_str.freeze(context);
+            newhash = RubyHash.newHash(context.runtime);
+            ((RubyHash)newhash).op_aset(context, context.runtime.newSymbol("replace"), v);
+        }
+        
+        v = ((RubyHash)opthash).op_aref(context, context.runtime.newSymbol("fallback"));
+        if (!v.isNil()) {
+            IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
+            boolean condition;
+            if (h.isNil()) {
+                condition = (h instanceof RubyProc || h instanceof RubyMethod || h.respondsTo("[]"));
+            } else {
+                v = h;
+                condition = true;
+            }
+            
+            if (condition) {
+                if (newhash.isNil()) {
+                    newhash = RubyHash.newHash(context.runtime);
+                }
+                ((RubyHash)newhash).op_aset(context, context.runtime.newSymbol("fallback"), v);
+            }
+        }
+        
+        if (!newhash.isNil()) {
+            newhash.setFrozen(true);
+        }
+        opts[0] = newhash;
+        
+        return ecflags;
+    }
+    
+    // rb_econv_opts
+    public static int econvOpts(ThreadContext context, IRubyObject opt, int ecflags) {
+        Ruby runtime = context.runtime;
+        IRubyObject v;
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("invalid"));
+        if (v.isNil()) {
+        } else if (v == runtime.newSymbol("replace")) {
+            ecflags |= ECONV_INVALID_REPLACE;
+        } else {
+            throw runtime.newArgumentError("unknown value for invalid character option");
+        }
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("undef"));
+        if (v.isNil()) {
+        } else if (v == runtime.newSymbol("replace")) {
+            ecflags |= ECONV_UNDEF_REPLACE;
+        } else {
+            throw runtime.newArgumentError("unknown value for undefined character option");
+        }
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("replace"));
+        if (!v.isNil() && (ecflags & ECONV_INVALID_REPLACE) != 0) {
+            ecflags |= ECONV_UNDEF_REPLACE;
+        }
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("xml"));
+        if (!v.isNil()) {
+            if (v == runtime.newSymbol("text")) {
+                ecflags |= ECONV_XML_TEXT_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
+            } else if (v == runtime.newSymbol("text")) {
+                ecflags |= ECONV_XML_ATTR_CONTENT_DECORATOR|ECONV_XML_ATTR_QUOTE_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
+            } else {
+                throw runtime.newArgumentError("unexpected value for xml option: " + v);
+            }
+        }
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("newline"));
+        if (!v.isNil()) {
+            ecflags &= ~ECONV_NEWLINE_DECORATOR_MASK;
+            if (v == runtime.newSymbol("universal")) {
+                ecflags |= ECONV_UNIVERSAL_NEWLINE_DECORATOR;
+            } else if (v == runtime.newSymbol("crlf")) {
+                ecflags |= ECONV_CRLF_NEWLINE_DECORATOR;
+            } else if (v == runtime.newSymbol("cr")) {
+                ecflags |= ECONV_CR_NEWLINE_DECORATOR;
+            } else if (v == runtime.newSymbol("lf")) {
+//                ecflags |= ECONV_LF_NEWLINE_DECORATOR;
+            } else {
+                throw runtime.newArgumentError("unexpected value for newline option");
+            }
+        }
+        
+        int setflags = 0;
+        boolean newlineflag = false;
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("newline"));
+        if (v.isTrue()) {
+            setflags |= ECONV_UNIVERSAL_NEWLINE_DECORATOR;
+        }
+        newlineflag |= !v.isNil();
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("crlf_newline"));
+        if (v.isTrue()) {
+            setflags |= ECONV_CRLF_NEWLINE_DECORATOR;
+        }
+        newlineflag |= !v.isNil();
+        
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("cr_newline"));
+        if (v.isTrue()) {
+            setflags |= ECONV_CR_NEWLINE_DECORATOR;
+        }
+        newlineflag |= !v.isNil();
+        
+        if (newlineflag) {
+            ecflags &= ~ECONV_NEWLINE_DECORATOR_MASK;
+            ecflags |= setflags;
+        }
+        
+        return ecflags;
+    }
+    
+    // rb_econv_open_opts
+    public static CharsetTranscoder econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
+        Ruby runtime = context.runtime;
+        CharsetTranscoder ec;
+        IRubyObject replacement;
+        
+        if (opthash.isNil()) {
+            replacement = context.nil;
+        } else {
+            if (!(opthash instanceof RubyHash) || !opthash.isFrozen()) {
+                throw runtime.newRuntimeError("bug: EncodingUtils.econvOpenOpts called with invalid opthash");
+            }
+            replacement = ((RubyHash)opthash).op_aref(context, runtime.newSymbol("replace"));
+        }
+        
+        return CharsetTranscoder.open(context, sourceEncoding, destinationEncoding, ecflags, replacement);
+        // missing logic for checking replacement encoding, may live in CharsetTranscoder
+        // already...
+    }
 }
+
+    

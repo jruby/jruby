@@ -29,6 +29,7 @@ package org.jruby.util;
 
 import java.io.InputStream;
 import java.io.IOException;
+import org.jcodings.Encoding;
 
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;

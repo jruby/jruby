@@ -733,16 +733,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // mri: io_read_encoding
     private Encoding getReadEncoding(Ruby runtime) {
-        return readEncoding != null ? readEncoding : runtime.getDefaultExternalEncoding();
+        return enc != null ? enc : runtime.getDefaultExternalEncoding();
     }
     
     // mri: io_input_encoding
     private Encoding getInputEncoding(Ruby runtime) {
-        return writeEncoding != null ? writeEncoding : getReadEncoding(runtime);
+        return enc2 != null ? enc2 : getReadEncoding(runtime);
     }
     
     protected Encoding getInternalEncoding(Ruby runtime) {
-        if (writeEncoding == null) return null;
+        if (enc2 == null) return null;
         
         return getReadEncoding(runtime);
     }
@@ -1026,10 +1026,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject external_encoding(ThreadContext context) {
         EncodingService encodingService = context.runtime.getEncodingService();
         
-        if (writeEncoding != null) return encodingService.getEncoding(writeEncoding);
+        if (enc2 != null) return encodingService.getEncoding(enc2);
         
         if (openFile.isWritable()) {
-            return readEncoding == null ? context.runtime.getNil() : encodingService.getEncoding(readEncoding);
+            return enc == null ? context.runtime.getNil() : encodingService.getEncoding(enc);
         }
         
         return encodingService.getEncoding(getReadEncoding(context.runtime));
@@ -1037,7 +1037,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject internal_encoding(ThreadContext context) {
-        if (writeEncoding == null) return context.runtime.getNil();
+        if (enc2 == null) return context.runtime.getNil();
         
         return context.runtime.getEncodingService().getEncoding(getReadEncoding(context.runtime));
     }
@@ -1082,8 +1082,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
             transcodingActions = CharsetTranscoder.processCodingErrorActions(context, options);
-            setReadEncoding(enc);
-            setWriteEncoding(enc2);
+            setEnc(enc);
+            setEnc2(enc2);
         } else {
             if (external.isNil()) {
                 EncodingUtils.setupReadWriteEncodings(context, this, null, null);
@@ -1107,8 +1107,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     private void validateEncodingBinmode() {
-        if (openFile.isReadable() && writeEncoding == null && 
-                !openFile.isBinmode() && readEncoding != null && !readEncoding.isAsciiCompatible()) {
+        if (openFile.isReadable() && enc2 == null && 
+                !openFile.isBinmode() && enc != null && !enc.isAsciiCompatible()) {
             throw getRuntime().newArgumentError("ASCII incompatible encoding needs binmode");
         }
         
@@ -4968,14 +4968,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // MRI: NEED_READCONF (FIXME: Windows has slightly different version)
     private boolean needsReadConversion() {
-        return writeEncoding != null; //FIXME: Ucomment once crlf is in transcoding layer || openFile.isTextMode();
+        return enc2 != null; //FIXME: Ucomment once crlf is in transcoding layer || openFile.isTextMode();
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
     private boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
-        return (readEncoding != null && readEncoding != ascii8bit); //FIXME: Ucomment once crlf is in transcoding layer  || openFile.isTextMode();
+        return (enc != null && enc != ascii8bit); //FIXME: Ucomment once crlf is in transcoding layer  || openFile.isTextMode();
         // This is basically from MRI and until I understand it better I am leaving it out
         // ||  ((ecflags & (DECORATOR_MASK|STATEFUL_DECORATOR_MASK)) != 0);
     }
@@ -4985,8 +4985,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private void makeReadConversion(ThreadContext context) {
         if (readTranscoder != null) return;
         
-        if (writeEncoding != null) {
-            readTranscoder = new CharsetTranscoder(context, readEncoding, writeEncoding, transcodingActions);
+        if (enc2 != null) {
+            readTranscoder = new CharsetTranscoder(context, enc, enc2, transcodingActions);
         } else {
             Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
             
@@ -5001,18 +5001,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
-        if (readEncoding == null || (readEncoding == ascii8bit  && writeEncoding == null)) { // No encoding conversion
+        if (enc == null || (enc == ascii8bit  && enc2 == null)) { // No encoding conversion
             // Leave for extra MRI bittwiddling which is missing from our IO
             // Hack to initialize transcoder but do no transcoding
             writeTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, transcodingActions);
         } else {
-            Encoding fromEncoding = readEncoding;
+            Encoding fromEncoding = enc;
             Encoding toEncoding;
-            if (writeEncoding != null) {
-                toEncoding = writeEncoding;
+            if (enc2 != null) {
+                toEncoding = enc2;
             } else {
                 fromEncoding = null;
-                toEncoding = readEncoding;
+                toEncoding = enc;
             }
             // If no write then default -> readEncoding
             // If write then writeEncoding -> readEncoding
@@ -5027,13 +5027,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     @Override
-    public void setWriteEncoding(Encoding writeEncoding) {
-        this.writeEncoding = writeEncoding;
+    public void setEnc2(Encoding enc2) {
+        this.enc2 = enc2;
     }
     
     @Override
-    public void setReadEncoding(Encoding readEncoding) {
-        this.readEncoding = readEncoding;
+    public void setEnc(Encoding enc) {
+        this.enc = enc;
     }
     
     @Override
@@ -5047,8 +5047,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         openFile.setBinmode();
         openFile.clearTextMode();
-        readEncoding = ascii8bit;
-        writeEncoding = null;
+        enc = ascii8bit;
+        enc2 = null;
     }
     
     protected CharsetTranscoder readTranscoder = null;
@@ -5076,8 +5076,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * Note: This naming is clearly wrong, but it is no worse then enc/enc2 so
      * I did not feel the need to fix it.
      */
-    protected Encoding readEncoding; // MRI:enc
-    protected Encoding writeEncoding; // MRI:enc2
+    protected Encoding enc; // MRI:enc
+    protected Encoding enc2; // MRI:enc2
     protected CharsetTranscoder.CodingActions transcodingActions;
     
     /**

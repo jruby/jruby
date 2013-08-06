@@ -64,6 +64,7 @@ import org.jruby.util.io.Stream;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.util.CharsetTranscoder;
 
 @JRubyClass(name="StringIO")
 @SuppressWarnings("deprecation")
@@ -79,7 +80,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
          * ATTN: the value of internal might be reset to null
          * (during StringIO.open with block), so watch out for that.
          */
-        RubyString internal;
+        RubyString string;
     }
     StringIOData ptr;
 
@@ -106,12 +107,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
     @Override
     public Encoding getEncoding() {
-        return ptr.internal.getEncoding();
+        return ptr.string.getEncoding();
     }
 
     @Override
     public void setEncoding(Encoding e) {
-        ptr.internal.setEncoding(e);
+        ptr.string.setEncoding(e);
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -182,14 +183,14 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 throw runtime.newArgumentError(args.length, 2);
         }
 
-        ptr.internal = str;
+        ptr.string = str;
         ptr.modes = flags;
         
         setupModes();
 
         if (ptr.modes.isTruncate()) {
-            ptr.internal.modifyCheck();
-            ptr.internal.empty();
+            ptr.string.modifyCheck();
+            ptr.string.empty();
         }
 
         return this;
@@ -239,7 +240,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     private void doFinalize() {
         ptr.closedRead = true;
         ptr.closedWrite = true;
-        ptr.internal = null;
+        ptr.string = null;
     }
 
     @JRubyMethod(name = "closed?")
@@ -340,7 +341,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     public IRubyObject each_byte(ThreadContext context, Block block) {
         checkReadable();
         Ruby runtime = context.runtime;
-        ByteList bytes = ptr.internal.getByteList();
+        ByteList bytes = ptr.string.getByteList();
 
         // Check the length every iteration, since
         // the block can modify this string.
@@ -367,7 +368,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         checkReadable();
 
         Ruby runtime = context.runtime;
-        ByteList bytes = ptr.internal.getByteList();
+        ByteList bytes = ptr.string.getByteList();
         int len = bytes.getRealSize();
         int end = bytes.getBegin() + len;
         Encoding enc = runtime.is1_9() ? bytes.getEncoding() : runtime.getKCode().getEncoding();        
@@ -379,7 +380,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
             ptr.pos += n;
 
-            block.yield(context, ptr.internal.makeShared19(runtime, pos, n));
+            block.yield(context, ptr.string.makeShared19(runtime, pos, n));
         }
 
         return this;
@@ -408,7 +409,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
     
     private boolean isEndOfString() {
-        return ptr.pos >= ptr.internal.getByteList().length();
+        return ptr.pos >= ptr.string.getByteList().length();
     }    
 
     @JRubyMethod(name = "fcntl")
@@ -441,7 +442,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         checkReadable();
         if (isEndOfString()) return getRuntime().getNil();
 
-        return getRuntime().newFixnum(ptr.internal.getByteList().get((int)ptr.pos++) & 0xFF);
+        return getRuntime().newFixnum(ptr.string.getByteList().get((int)ptr.pos++) & 0xFF);
     }
 
     @JRubyMethod(name = "getc", compat = CompatVersion.RUBY1_9)
@@ -451,15 +452,15 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         if (isEndOfString()) return context.runtime.getNil();
 
         int start = ptr.pos;
-        int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(ptr.internal.getByteList(), start + 1);
+        int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(ptr.string.getByteList(), start + 1);
         
         ptr.pos += total;
         
-        return context.runtime.newString(ptr.internal.getByteList().makeShared(start, total));
+        return context.runtime.newString(ptr.string.getByteList().makeShared(start, total));
     }
     
     private RubyString strioSubstr(Ruby runtime, int pos, int len) {
-        RubyString str = ptr.internal;
+        RubyString str = ptr.string;
         ByteList strByteList = str.getByteList();
         byte[] strBytes = strByteList.getUnsafeBytes();
         Encoding enc = str.getEncoding();
@@ -468,10 +469,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         if (len > rlen) len = rlen;
         if (len < 0) len = 0;
         
-        // This line is not in MRI; they may reference a bogus pointer, but never dereference it.
-        // http://bugs.ruby-lang.org/issues/8728
-        if (len == 0) return RubyString.newEmptyString(runtime, enc);
-        
+        if (len == 0) return RubyString.newEmptyString(runtime);
         return RubyString.newStringShared(runtime, strBytes, strByteList.getBegin() + pos, len, enc);
     }
 
@@ -488,13 +486,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
             if (sepArg != null) {
                 if (sepArg.isNil()) {
-                    int bytesAvailable = ptr.internal.getByteList().getRealSize() - (int)ptr.pos;
+                    int bytesAvailable = ptr.string.getByteList().getRealSize() - (int)ptr.pos;
                     int bytesToUse = (limit < 0 || limit >= bytesAvailable ? bytesAvailable : limit);
                     
                     // add additional bytes to fix trailing broken character
-                    bytesToUse += StringSupport.bytesToFixBrokenTrailingCharacter(ptr.internal.getByteList(), bytesToUse);
+                    bytesToUse += StringSupport.bytesToFixBrokenTrailingCharacter(ptr.string.getByteList(), bytesToUse);
                     
-                    ByteList buf = ptr.internal.getByteList().makeShared(
+                    ByteList buf = ptr.string.getByteList().makeShared(
                         (int)ptr.pos, bytesToUse);
                     ptr.pos += buf.getRealSize();
                     return makeString(runtime, buf);
@@ -507,7 +505,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 }
             }
 
-            ByteList ss = ptr.internal.getByteList();
+            ByteList ss = ptr.string.getByteList();
 
             if (isParagraph) {
                 swallowLF(ss);
@@ -520,7 +518,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
             ByteList add;
             if (-1 == sepIndex) {
-                sepIndex = ptr.internal.getByteList().getRealSize();
+                sepIndex = ptr.string.getByteList().getRealSize();
                 add = ByteList.EMPTY_BYTELIST;
             } else {
                 add = sep;
@@ -533,7 +531,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             int bytesToUseWithSep = (limit < 0 || limit >= bytesWithSep ? bytesWithSep : limit);
 
             ByteList line = new ByteList(bytesToUseWithSep);
-            line.append(ptr.internal.getByteList(), (int)ptr.pos, bytesToUse);
+            line.append(ptr.string.getByteList(), (int)ptr.pos, bytesToUse);
             ptr.pos += bytesToUse;
 
             int sepBytesToUse = bytesToUseWithSep - bytesToUse;
@@ -589,11 +587,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 break;
         }
         
-        if (ptr.pos >= (n = ptr.internal.size())) {
+        if (ptr.pos >= (n = ptr.string.size())) {
             return context.nil;
         }
         
-        ByteList dataByteList = ptr.internal.getByteList();
+        ByteList dataByteList = ptr.string.getByteList();
         byte[] dataBytes = dataByteList.getUnsafeBytes();
         int begin = dataByteList.getBegin();
         int s = begin + ptr.pos;
@@ -810,7 +808,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @Override
     public IRubyObject length() {
         checkFinalized();
-        return getRuntime().newFixnum(ptr.internal.getByteList().length());
+        return getRuntime().newFixnum(ptr.string.getByteList().length());
     }
 
     @JRubyMethod(name = "lineno")
@@ -907,8 +905,8 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         byte c = RubyNumeric.num2chr(obj);
         checkFrozen();
 
-        ptr.internal.modify();
-        ByteList bytes = ptr.internal.getByteList();
+        ptr.string.modify();
+        ByteList bytes = ptr.string.getByteList();
         if (ptr.modes.isAppendable()) {
             ptr.pos = bytes.length();
             bytes.append(c);
@@ -986,7 +984,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     // uniform method for makeing strings (we have a slightly different variant
     // of this in RubyIO.
     private RubyString makeString(Ruby runtime, ByteList buf, boolean setEncoding) {
-        if (runtime.is1_9() && setEncoding) buf.setEncoding(ptr.internal.getEncoding());
+        if (runtime.is1_9() && setEncoding) buf.setEncoding(ptr.string.getEncoding());
 
         RubyString str = RubyString.newString(runtime, buf);
         str.setTaint(true);
@@ -1036,7 +1034,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 break;
             }
         case 0:
-            len = ptr.internal.size();
+            len = ptr.string.size();
             if (len <= ptr.pos) {
                 if (str.isNil()) {
                     str = runtime.newString();
@@ -1057,18 +1055,18 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             str = strioSubstr(runtime, ptr.pos, len);
             if (binary) ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
         } else {
-            int rest = ptr.internal.size() - ptr.pos;
+            int rest = ptr.string.size() - ptr.pos;
             if (len > rest) len = rest;
             ((RubyString)str).resize(len);
             ByteList strByteList = ((RubyString)str).getByteList();
             byte[] strBytes = strByteList.getUnsafeBytes();
-            ByteList dataByteList = ptr.internal.getByteList();
+            ByteList dataByteList = ptr.string.getByteList();
             byte[] dataBytes = dataByteList.getUnsafeBytes();
             System.arraycopy(dataBytes, dataByteList.getBegin() + ptr.pos, strBytes, strByteList.getBegin(), len);
             if (binary) {
                 ((RubyString)str).setEncoding(ASCIIEncoding.INSTANCE);
             } else {
-                ((RubyString)str).setEncoding(ptr.internal.getEncoding());
+                ((RubyString)str).setEncoding(ptr.string.getEncoding());
             }
         }
         ptr.pos += ((RubyString)str).size();
@@ -1109,7 +1107,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             }
         case 0:
             oldLength = -1;
-            length = ptr.internal.getByteList().length();
+            length = ptr.string.getByteList().length();
 
             if (length <= ptr.pos) {
                 ptr.eof = true;
@@ -1129,32 +1127,32 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         }
 
         if (buf == null) {
-            int internalLength = ptr.internal.getByteList().length();
+            int internalLength = ptr.string.getByteList().length();
 
             if (internalLength > 0) {
                 if (internalLength >= ptr.pos + length) {
-                    buf = new ByteList(ptr.internal.getByteList(), (int) ptr.pos, length);
+                    buf = new ByteList(ptr.string.getByteList(), (int) ptr.pos, length);
                 } else {
-                    int rest = (int) (ptr.internal.getByteList().length() - ptr.pos);
+                    int rest = (int) (ptr.string.getByteList().length() - ptr.pos);
 
                     if (length > rest) length = rest;
-                    buf = new ByteList(ptr.internal.getByteList(), (int) ptr.pos, length);
+                    buf = new ByteList(ptr.string.getByteList(), (int) ptr.pos, length);
                 }
             }
         } else {
-            int rest = (int) (ptr.internal.getByteList().length() - ptr.pos);
+            int rest = (int) (ptr.string.getByteList().length() - ptr.pos);
 
             if (length > rest) length = rest;
 
             // Yow...this is still ugly
             byte[] target = buf.getUnsafeBytes();
             if (target.length > length) {
-                System.arraycopy(ptr.internal.getByteList().getUnsafeBytes(), (int) ptr.pos, target, 0, length);
+                System.arraycopy(ptr.string.getByteList().getUnsafeBytes(), (int) ptr.pos, target, 0, length);
                 buf.setBegin(0);
                 buf.setRealSize(length);
             } else {
                 target = new byte[length];
-                System.arraycopy(ptr.internal.getByteList().getUnsafeBytes(), (int) ptr.pos, target, 0, length);
+                System.arraycopy(ptr.string.getByteList().getUnsafeBytes(), (int) ptr.pos, target, 0, length);
                 buf.setBegin(0);
                 buf.setRealSize(length);
                 buf.setUnsafeBytes(target);
@@ -1305,7 +1303,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
                 offset += ptr.pos;
                 break;
             case 2:
-                offset += ptr.internal.size();
+                offset += ptr.string.size();
                 break;
             default:
                 throw getRuntime().newErrnoEINVALError("invalid whence");
@@ -1328,7 +1326,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         ptr.modes = ModeFlags.createModeFlags(str.isFrozen() ? ModeFlags.RDONLY : ModeFlags.RDWR);
         ptr.pos = 0;
         ptr.lineno = 0;
-        return ptr.internal = str;
+        return ptr.string = str;
     }
 
     @JRubyMethod(name = "sync=", required = 1)
@@ -1342,9 +1340,9 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = "string")
     @Override
     public IRubyObject string() {
-        if (ptr.internal == null) return getRuntime().getNil();
+        if (ptr.string == null) return getRuntime().getNil();
 
-        return ptr.internal;
+        return ptr.string;
     }
 
     @JRubyMethod(name = "sync")
@@ -1378,8 +1376,8 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             throw getRuntime().newErrnoEINVALError("negative legnth");
         }
 
-        ptr.internal.modify();
-        ByteList buf = ptr.internal.getByteList();
+        ptr.string.modify();
+        ByteList buf = ptr.string.getByteList();
         if (len < buf.length()) {
             Arrays.fill(buf.getUnsafeBytes(), len, buf.length(), (byte) 0);
         }
@@ -1405,10 +1403,10 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     private void ungetbyteCommon(int c) {
-        ptr.internal.modify();
+        ptr.string.modify();
         ptr.pos--;
         
-        ByteList bytes = ptr.internal.getByteList();
+        ByteList bytes = ptr.string.getByteList();
 
         if (isEndOfString()) bytes.length((int)ptr.pos + 1);
 
@@ -1427,7 +1425,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         if (len == 0) return;
         
-        ptr.internal.modify();
+        ptr.string.modify();
         
         if (len > ptr.pos) {
             start = 0;
@@ -1435,7 +1433,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             start = ptr.pos - len;
         }
         
-        ByteList bytes = ptr.internal.getByteList();
+        ByteList bytes = ptr.string.getByteList();
         
         if (isEndOfString()) bytes.length(Math.max(ptr.pos, len));
 
@@ -1462,27 +1460,68 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(name = {"write", "write_nonblock", "syswrite"}, required = 1)
     @Override
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
-        return context.runtime.newFixnum(writeInternal(context, arg));
+        return context.runtime.newFixnum(writeInternal18(context, arg));
     }
-
-    private int writeInternal(ThreadContext context, IRubyObject arg) {
+    
+    // This logic was ported from MRI, but did not appear to match behavior for
+    // unknown reasons.
+    private int writeInternal19(ThreadContext context, IRubyObject arg) {
         checkWritable();
         checkFrozen();
 
+        RubyString str = arg.asString();
+        int len;
+        int olen;
+        
+        // This logic exists in MRI, but I can't figure out when and why it
+        // actually fires. With it in place, incoming bytes should get
+        // transcoded, but they don't appear to do so. Baffling.
+        /*
+        Encoding enc;
+        Encoding enc2;
+
+        enc = ptr.string.getEncoding();
+        enc2 = str.getEncoding();
+        if (enc != enc2 && enc != ASCIIEncoding.INSTANCE) {
+            str = context.runtime.newString(CharsetTranscoder.transcode(context, str.getByteList(), enc2, enc, context.nil));
+        }
+        */
+        
+        len = str.size();
+        if (len == 0) return 0;
+        checkWritable();
+        olen = ptr.string.size();
+        if (ptr.modes.isAppendable()) {
+            ptr.pos = olen;
+        }
+        if (ptr.pos < olen) {
+            ptr.string.resize(olen + len);
+        }
+        ptr.string.getByteList().append(str.getByteList());
+        ptr.string.setCodeRange(StringSupport.CR_UNKNOWN);
+        
+        ptr.pos += len;
+        
+        return len;
+    }
+
+    private int writeInternal18(ThreadContext context, IRubyObject arg) {
+        checkWritable();
+
         RubyString val = arg.asString();
-        ptr.internal.modify();
+        ptr.string.modify();
 
         if (ptr.modes.isAppendable()) {
-            ptr.internal.getByteList().append(val.getByteList());
-            ptr.pos = ptr.internal.getByteList().length();
+            ptr.string.getByteList().append(val.getByteList());
+            ptr.pos = ptr.string.getByteList().length();
         } else {
-            int left = ptr.internal.getByteList().length()-(int)ptr.pos;
-            ptr.internal.getByteList().replace((int)ptr.pos,Math.min(val.getByteList().length(),left),val.getByteList());
+            int left = ptr.string.getByteList().length()-(int)ptr.pos;
+            ptr.string.getByteList().replace((int)ptr.pos,Math.min(val.getByteList().length(),left),val.getByteList());
             ptr.pos += val.getByteList().length();
         }
 
         if (val.isTaint()) {
-            ptr.internal.setTaint(true);
+            ptr.string.setTaint(true);
         }
 
         return val.getByteList().length();
@@ -1495,7 +1534,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             enc = context.runtime.getEncodingService().getDefaultExternal();
         }
         Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
-        ptr.internal.setEncoding(encoding);
+        ptr.string.setEncoding(encoding);
         return this;
     }
     
@@ -1512,7 +1551,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @JRubyMethod(compat = RUBY1_9)
     @Override
     public IRubyObject external_encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.internal.getEncoding());
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.string.getEncoding());
     }
     
     @JRubyMethod(compat = RUBY1_9)
@@ -1530,11 +1569,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         Ruby runtime = context.runtime;
         checkReadable();
         
-        Encoding enc = ptr.internal.getEncoding();
-        byte[] unsafeBytes = ptr.internal.getByteList().getUnsafeBytes();
-        int begin = ptr.internal.getByteList().getBegin();
+        Encoding enc = ptr.string.getEncoding();
+        byte[] unsafeBytes = ptr.string.getByteList().getUnsafeBytes();
+        int begin = ptr.string.getByteList().getBegin();
         for (;;) {
-            if (ptr.pos >= ptr.internal.size()) {
+            if (ptr.pos >= ptr.string.size()) {
                 return this;
             }
             
@@ -1550,7 +1589,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     public void checkFrozen() {
         super.checkFrozen();
         checkInitialized();
-        if (ptr.internal.isFrozen()) throw getRuntime().newIOError("not modifiable string");
+        if (ptr.string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
     }
 
     /* rb: readable */
@@ -1581,7 +1620,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     private void checkFinalized() {
-        if (ptr.internal == null) {
+        if (ptr.string == null) {
             throw getRuntime().newIOError("not opened");
         }
     }

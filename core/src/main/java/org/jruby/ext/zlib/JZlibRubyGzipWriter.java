@@ -3,6 +3,7 @@
 package org.jruby.ext.zlib;
 
 import java.io.IOException;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.DateTime;
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
@@ -95,21 +96,20 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject[] args, Block unused) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block unused) {
         // args: recv, path, level = nil, strategy = nil, opts = {}
         IRubyObject obj = initializeCommon(args[0]);
-        if (args.length > 2) {
-            IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
-            if (!opt.isNil()) {
-                EncodingUtils.getEncodingOptionFromObject(getRuntime().getCurrentContext(), this, opt);
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length - 1);
-                args = newArgs;
-            }
+        IRubyObject opt = context.nil;
+        if (args.length > 3) {
+            opt = args[args.length - 1];
         }
+        
+        ecopts(context, opt);
+        
         if (args.length > 2) {
             checkLevel(getRuntime(), RubyNumeric.fix2int(args[2]));
         }
+        
         if (realIo.respondsTo("path")) {
             obj.getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(obj.getSingletonClass(), Visibility.PUBLIC) {
                 @Override
@@ -295,12 +295,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         ByteList bytes = p1.asString().getByteList();
         Ruby runtime = getRuntime();
         if (runtime.is1_9()) {
-            if (writeEncoding != null
-                    && writeEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
-                bytes = CharsetTranscoder.transcode(runtime.getCurrentContext(), bytes, null,
-                        writeEncoding, runtime.getNil());
+            if (enc2 != null
+                    && enc2 != ASCIIEncoding.INSTANCE) {
+                bytes = CharsetTranscoder.transcode(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
+                        enc2, runtime.getNil());
             }
         }
+        
         try {
             // TODO: jzlib-1.1.0.jar throws IndexOutOfBoundException for zero length buffer.
             if (bytes.length() > 0) {
@@ -310,6 +311,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         }
+    }
+    
+    private void blah() {
+        
     }
 
     @Override

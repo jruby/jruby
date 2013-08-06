@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -28,6 +29,8 @@ import org.jruby.util.unsafe.UnsafeHolder;
 /**
  * Encapsulate all logic associated with using Java Charset transcoding 
  * facilities.
+ * 
+ * This is roughly equivalent to rb_econv_t in MRI.
  */
 // FIXME: Originally this was meant to capture invariant state.  Use specialization to make this much more efficient.
 public class CharsetTranscoder {
@@ -80,6 +83,21 @@ public class CharsetTranscoder {
         }
     }
     
+    public static CharsetTranscoder open(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int flags, IRubyObject replace) {
+        EncodingDB.Entry src = context.runtime.getEncodingService().findEncodingOrAliasEntry(new ByteList(sourceEncoding, false));
+        EncodingDB.Entry dest = context.runtime.getEncodingService().findEncodingOrAliasEntry(new ByteList(destinationEncoding, false));
+        
+        if (src != null && dest != null) {
+            return new CharsetTranscoder(context,
+                    dest.getEncoding(),
+                    src.getEncoding(),
+                    flags,
+                    replace);
+        }
+        
+        return null;
+    }
+    
     /**
      * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
      * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
@@ -91,6 +109,21 @@ public class CharsetTranscoder {
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding fromEncoding,
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;
+        if (fromEncoding == null) fromEncoding = value.getEncoding();
+        if (fromEncoding == toEncoding) return value;
+        
+        // This logic appears to not work like in MRI; following code will not
+        // properly decode the string:
+        // "\x00a".force_encoding("ASCII-8BIT").encode("UTF-8", "UTF-16BE")
+        /*
+        if ((toEncoding.isAsciiCompatible() && StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT) ||
+                toEncoding == ASCIIEncoding.INSTANCE) {
+            if (value.getEncoding() != toEncoding) {
+                value = value.shallowDup();
+                value.setEncoding(toEncoding);
+            }
+            return value;
+        }*/
         
         return new CharsetTranscoder(context, toEncoding, fromEncoding, processCodingErrorActions(context, opts)).transcode(context, value, false);
     }
@@ -98,6 +131,22 @@ public class CharsetTranscoder {
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding fromEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         if (toEncoding == null) return value;
+        if (fromEncoding == null) fromEncoding = value.getEncoding();
+        if (fromEncoding == toEncoding) return value;
+        
+        // This logic appears to not work like in MRI; following code will not
+        // properly decode the string:
+        // "\x00a".force_encoding("ASCII-8BIT").encode("UTF-8", "UTF-16BE")
+        /*
+        if ((toEncoding.isAsciiCompatible() && is7BitASCII) ||
+                toEncoding == ASCIIEncoding.INSTANCE) {
+            if (value.getEncoding() != toEncoding) {
+                value = value.shallowDup();
+                value.setEncoding(toEncoding);
+            }
+            return value;
+        }
+        */
         
         return new CharsetTranscoder(context, toEncoding, fromEncoding, processCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
     }
@@ -126,6 +175,17 @@ public class CharsetTranscoder {
         
         ByteList result = new ByteList();
         transcode(context.runtime, value, result, fromEncoding, is7BitASCII, false);
+        
+        lastResult = new RubyCoderResult("finished", transcoder.decoder.charset(), transcoder.encoder.charset(), null, null);
+        
+        return result;
+    }
+    
+    public ByteList econvStrConvert(ThreadContext context, ByteList value, boolean finish) {
+        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
+        
+        ByteList result = new ByteList();
+        transcode(context.runtime, value, result, fromEncoding, false, finish);
         
         lastResult = new RubyCoderResult("finished", transcoder.decoder.charset(), transcoder.encoder.charset(), null, null);
         

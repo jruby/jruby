@@ -530,28 +530,27 @@ public final class StringSupport {
     }
     
     public static int bytesToFixBrokenTrailingCharacter(ByteList val, int usingLength) {
+        return bytesToFixBrokenTrailingCharacter(val.getUnsafeBytes(), val.getBegin(), val.getRealSize(), val.getEncoding(), usingLength);
+    }
+    
+    public static int bytesToFixBrokenTrailingCharacter(byte[] bytes, int begin, int byteSize, Encoding encoding, int usingLength) {
         // read additional bytes to fix broken char
-        if (val.length() > 0) {
-            
-            Encoding encoding = val.getEncoding();
-            int begin = val.getBegin();
-            int size = usingLength;
-            
+        if (byteSize > 0) {
             // get head offset of broken character
             int charHead = encoding.leftAdjustCharHead(
-                    val.getUnsafeBytes(), // string bytes
+                    bytes, // string bytes
                     begin, // start of string
-                    begin + size - 1, // last byte
-                    begin + size); // end of string
+                    begin + usingLength - 1, // last byte
+                    begin + usingLength); // end of using
             
             // external offset
             charHead -= begin;
             
             // byte at char head
-            byte byteHead = (byte)(val.get(charHead) & 0xFF);
+            byte byteHead = (byte)(bytes[begin + charHead] & 0xFF);
             
             // total bytes we would need to complete character
-            int extra = val.getEncoding().length(byteHead);
+            int extra = encoding.length(byteHead);
             
             // what we already have
             extra -= usingLength - charHead;

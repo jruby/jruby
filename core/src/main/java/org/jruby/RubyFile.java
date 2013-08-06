@@ -1136,7 +1136,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
         IRubyObject[] pm = new IRubyObject[]{null, null};
-        RubyHash options = null;
+        IRubyObject options = context.nil;
         
         switch(args.length) {
             case 1:
@@ -1256,7 +1256,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }
