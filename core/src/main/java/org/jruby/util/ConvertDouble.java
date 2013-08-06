@@ -32,7 +32,7 @@ public class ConvertDouble {
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
-    public static final double byteListToDouble(ByteList bytes, boolean strict) {
+    public static double byteListToDouble(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, false);
     }
 
@@ -41,7 +41,7 @@ public class ConvertDouble {
      * same as byteListToDouble, but leading underscores are no longer skipped
      * in 1.9 (e.g. __1 == 0.0 in 1.9 while 1.8 parses it as 1.0).
      */
-    public static final double byteListToDouble19(ByteList bytes, boolean strict) {
+    public static double byteListToDouble19(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, true);
     }
 
@@ -53,6 +53,11 @@ public class ConvertDouble {
         private boolean is19;
         private char[] chars; // result string we use to parse.
         private int charsIndex;
+        // To match MRI so that we end up rounding on values greater than being storable in a 64
+        // bit value in the same fashion we are using 30.  Based on wikipedia a note recommends 
+        //17 + 3 (or 20), but I don't know why that is recommended and we would rather be compatible 
+        //behaviorally with MRI.
+        private final int DECIMAL_IGNORE_LIMIT = 30;  
 
         public DoubleConverter() {}
 
@@ -225,17 +230,18 @@ public class ConvertDouble {
                 return true;
             }
             
+            int digitsProcessed = 0;
             byte value = next();
 
             if (isDigit(value)) {
-                addToResult(value);
+                if (++digitsProcessed <= DECIMAL_IGNORE_LIMIT) addToResult(value);
             } else if (value == '_') {
                 if (isStrict) strictError();
                 while (!isEOS()) {    // Wonky, but 12._2e2 is 1200.0 and 12.__e2 is 12.0
                     value = next();
-
+                    
                     if (isDigit(value)) {
-                        addToResult(value);
+                        if (++digitsProcessed <= DECIMAL_IGNORE_LIMIT) addToResult(value);
                         break;
                     } else if (value != '_') {
                         return true;
@@ -250,7 +256,7 @@ public class ConvertDouble {
                 value = next();
 
                 if (isDigit(value)) {
-                    addToResult(value);
+                    if (++digitsProcessed <= DECIMAL_IGNORE_LIMIT) addToResult(value);
                 } else if (isExponent(value)) {
                     addToResult(value);
                     return parseExponent();
