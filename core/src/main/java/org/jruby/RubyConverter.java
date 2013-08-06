@@ -51,37 +51,38 @@ import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.io.EncodingUtils;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
     private CharsetTranscoder transcoder;
     
     @JRubyConstant
-    public static final int INVALID_MASK = 15;
+    public static final int INVALID_MASK = EncodingUtils.ECONV_INVALID_MASK;
     @JRubyConstant
-    public static final int INVALID_REPLACE = 2;
+    public static final int INVALID_REPLACE = EncodingUtils.ECONV_INVALID_REPLACE;
     @JRubyConstant
-    public static final int UNDEF_MASK = 240;
+    public static final int UNDEF_MASK = EncodingUtils.ECONV_UNDEF_MASK;
     @JRubyConstant
-    public static final int UNDEF_REPLACE = 32;
+    public static final int UNDEF_REPLACE = EncodingUtils.ECONV_UNDEF_REPLACE;
     @JRubyConstant
-    public static final int UNDEF_HEX_CHARREF = 48;
+    public static final int UNDEF_HEX_CHARREF = EncodingUtils.ECONV_UNDEF_HEX_CHARREF;
     @JRubyConstant
-    public static final int PARTIAL_INPUT = 65536;
+    public static final int PARTIAL_INPUT = EncodingUtils.ECONV_PARTIAL_INPUT;
     @JRubyConstant
-    public static final int AFTER_OUTPUT = 131072;
+    public static final int AFTER_OUTPUT = EncodingUtils.ECONV_AFTER_OUTPUT;
     @JRubyConstant
-    public static final int UNIVERSAL_NEWLINE_DECORATOR = 256;
+    public static final int UNIVERSAL_NEWLINE_DECORATOR = EncodingUtils.ECONV_UNIVERSAL_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int CRLF_NEWLINE_DECORATOR = 4096;
+    public static final int CRLF_NEWLINE_DECORATOR = EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int CR_NEWLINE_DECORATOR = 8192;
+    public static final int CR_NEWLINE_DECORATOR = EncodingUtils.ECONV_CR_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int XML_TEXT_DECORATOR = 16384;
+    public static final int XML_TEXT_DECORATOR = EncodingUtils.ECONV_XML_TEXT_DECORATOR;
     @JRubyConstant
-    public static final int XML_ATTR_CONTENT_DECORATOR = 32768;
+    public static final int XML_ATTR_CONTENT_DECORATOR = EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR;
     @JRubyConstant
-    public static final int XML_ATTR_QUOTE_DECORATOR = 1048576;
+    public static final int XML_ATTR_QUOTE_DECORATOR = EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR;
     
     // TODO: This is a little ugly...we should have a table of these in jcodings.
     private static final Map<Encoding, Encoding> NONASCII_TO_ASCII = new HashMap<Encoding, Encoding>();
@@ -166,7 +167,7 @@ public class RubyConverter extends RubyObject {
         if (!_opt.isNil()) {
             if (_opt instanceof RubyHash) {
                 RubyHash opt = (RubyHash)_opt;
-                flags |= optHashToFlags(opt, runtime, flags);
+                flags |= EncodingUtils.econvPrepareOpts(context, opt, new IRubyObject[]{opt});
                 
                 IRubyObject value = opt.fastARef(runtime.newSymbol("replace"));
                 if (value != null) {
@@ -259,7 +260,7 @@ public class RubyConverter extends RubyObject {
         
         if (hashArg != -1) {
             RubyHash opt = (RubyHash)args[hashArg];
-            flags |= optHashToFlags(opt, runtime, flags);
+            flags |= EncodingUtils.econvPrepareOpts(context, opt, new IRubyObject[] {opt});
         }
         
         ByteList inBytes;
@@ -437,87 +438,6 @@ public class RubyConverter extends RubyObject {
         } else {
             return context.runtime.newSymbol("source_buffer_empty");
         }
-    }
-
-    public static int optHashToFlags(RubyHash opt, Ruby runtime, int flags) {
-        IRubyObject value = opt.fastARef(runtime.newSymbol("partial_input"));
-        if (value != null) {
-            if (value.isTrue()) {
-                flags |= PARTIAL_INPUT;
-            } else {
-                flags &= ~PARTIAL_INPUT;
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("after_output"));
-        if (value != null) {
-            if (value.isTrue()) {
-                flags |= AFTER_OUTPUT;
-            } else {
-                flags &= ~AFTER_OUTPUT;
-            }
-        }
-        
-        value = opt.fastARef(runtime.newSymbol("invalid"));
-        if (value != null) {
-            if (value.isNil()) {
-                flags &= ~INVALID_REPLACE;
-            } else {
-                if (value.equals(runtime.newSymbol("replace"))) {
-                    flags |= INVALID_REPLACE;
-                } else {
-                    throw runtime.newArgumentError("unknown value for invalid character option");
-                }
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("undef"));
-        if (value != null) {
-            if (value.isNil()) {
-                flags &= ~UNDEF_REPLACE;
-            } else {
-                if (value.equals(runtime.newSymbol("replace"))) {
-                    flags |= UNDEF_REPLACE;
-                } else {
-                    throw runtime.newArgumentError("unknown value for undefined character option");
-                }
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("universal_newline"));
-        if (value != null) {
-            if (value.isTrue()) {
-                flags |= UNIVERSAL_NEWLINE_DECORATOR;
-            } else {
-                flags &= ~UNIVERSAL_NEWLINE_DECORATOR;
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("crlf_newline"));
-        if (value != null) {
-            if (value.isTrue()) {
-                flags |= CRLF_NEWLINE_DECORATOR;
-            } else {
-                flags &= ~CRLF_NEWLINE_DECORATOR;
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("cr_newline"));
-        if (value != null) {
-            if (value.isTrue()) {
-                flags |= CR_NEWLINE_DECORATOR;
-            } else {
-                flags &= ~CR_NEWLINE_DECORATOR;
-            }
-        }
-        value = opt.fastARef(runtime.newSymbol("xml"));
-        if (value != null) {
-            String valueString = value.toString();
-            if (value.equals(runtime.newSymbol("text"))) {
-                flags |= XML_TEXT_DECORATOR;
-            } else if (value.equals(runtime.newSymbol("attr"))) {
-                flags |= XML_ATTR_CONTENT_DECORATOR;
-            } else {
-                throw runtime.newArgumentError("unexpected value for xml option: " + value.toString());
-            }
-        }
-        
-        return flags;
     }
     
     public static class EncodingErrorMethods {

@@ -38,6 +38,9 @@ public class EncodingUtils {
 
     public static final int ECONV_STATEFUL_DECORATOR_MASK          = 0x00f00000;
     public static final int ECONV_XML_ATTR_QUOTE_DECORATOR         = 0x00100000;
+    
+    public static final int ECONV_PARTIAL_INPUT                    = 0x00010000;
+    public static final int ECONV_AFTER_OUTPUT                     = 0x00020000;
 
     public static Encoding toEncoding(ThreadContext context, IRubyObject object) {
         if (object instanceof RubyEncoding) return ((RubyEncoding) object).getEncoding();
@@ -385,7 +388,7 @@ public class EncodingUtils {
         if (!v.isNil()) {
             if (v == runtime.newSymbol("text")) {
                 ecflags |= ECONV_XML_TEXT_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
-            } else if (v == runtime.newSymbol("text")) {
+            } else if (v == runtime.newSymbol("attr")) {
                 ecflags |= ECONV_XML_ATTR_CONTENT_DECORATOR|ECONV_XML_ATTR_QUOTE_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
             } else {
                 throw runtime.newArgumentError("unexpected value for xml option: " + v);

@@ -39,17 +39,6 @@ import org.jruby.util.io.Stream;
  */
 @JRubyClass(name = "Zlib::GzipReader", parent = "Zlib::GzipFile", include = "Enumerable")
 public class JZlibRubyGzipReader extends RubyGzipFile {
-
-    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
-        // fix broken trailing character
-        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getEnc(), result.length());
-        for (int i = 0; i < extraBytes; i++) {
-            int read = bufferedStream.read();
-            if (read == -1) break;
-            
-            result.append(read);
-        }
-    }
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")
     public static class Error {}
     
@@ -285,34 +274,36 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     private final static int BUFF_SIZE = 4096;
 
     @JRubyMethod(name = "read", optional = 1)
-    public IRubyObject read(IRubyObject[] args) {
+    public IRubyObject read(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
         try {
             if (args.length == 0 || args[0].isNil()) return readAll();
 
             int len = RubyNumeric.fix2int(args[0]);
             
-            if (len < 0) throw getRuntime().newArgumentError("negative length " + len + " given");
+            if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
             if (len > 0) {
+                // rb_gzfile_read
                 ByteList buf = readSize(len);
                 
-                if (buf == null) return getRuntime().getNil();
+                if (buf == null) return runtime.getNil();
                 
-                return newStr(getRuntime(), buf);
+                return runtime.newString(buf);
             }
 
-            return RubyString.newEmptyString(getRuntime());
+            return RubyString.newEmptyString(runtime);
         } catch (IOException ioe) {
             String m = ioe.getMessage();
             if (m.startsWith("Unexpected end of ZLIB input stream")) {
-                throw RubyZlib.newGzipFileError(getRuntime(), ioe.getMessage());
+                throw RubyZlib.newGzipFileError(runtime, ioe.getMessage());
             } else if (m.startsWith("footer is not found")) {
-                throw RubyZlib.newNoFooter(getRuntime(), "footer is not found");
+                throw RubyZlib.newNoFooter(runtime, "footer is not found");
             } else if (m.startsWith("incorrect data check")) {
-                throw RubyZlib.newCRCError(getRuntime(), "invalid compressed data -- crc error");
+                throw RubyZlib.newCRCError(runtime, "invalid compressed data -- crc error");
             } else if (m.startsWith("incorrect length check")) {
-                throw RubyZlib.newLengthError(getRuntime(), "invalid compressed data -- length error");
+                throw RubyZlib.newLengthError(runtime, "invalid compressed data -- length error");
             } else {
-                throw RubyZlib.newDataError(getRuntime(), ioe.getMessage());
+                throw RubyZlib.newDataError(runtime, ioe.getMessage());
             }
         }
     }
@@ -395,10 +386,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             toRead -= read;
             offset += read;
         } // hmm...
-        this.position += buffer.length;
+        this.position += length - toRead;
 
-        // Because we have the IO wrapped in IOInputStream, we need to restore
-        // the result's encoding here.
         return new ByteList(buffer, 0, length - toRead, false);
     }
 
@@ -594,10 +583,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     @JRubyMethod(optional = 1)
-    public IRubyObject readlines(IRubyObject[] args) {
+    public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         List<IRubyObject> array = new ArrayList<IRubyObject>();
         if (args.length != 0 && args[0].isNil()) {
-            array.add(read(new IRubyObject[0]));
+            array.add(read(context, new IRubyObject[0]));
         } else {
             ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
             if (args.length > 0) sep = args[0].convertToString().getByteList();
@@ -626,6 +615,17 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             throw getRuntime().newIOErrorFromException(ioe);
         }
         return getRuntime().getNil();
+    }
+
+    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
+        // fix broken trailing character
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getEnc(), result.length());
+        for (int i = 0; i < extraBytes; i++) {
+            int read = bufferedStream.read();
+            if (read == -1) break;
+            
+            result.append(read);
+        }
     }
 
     private int line = 0;

@@ -24,6 +24,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 /**
@@ -149,6 +150,54 @@ public class CharsetTranscoder {
         */
         
         return new CharsetTranscoder(context, toEncoding, fromEncoding, processCodingErrorActions(context, opts)).transcode(context, value, is7BitASCII);
+    }
+    
+    public static ByteList strTranscode(ThreadContext context, RubyString self, Encoding fromEncoding, Encoding toEncoding, IRubyObject opt) {
+        int ecflags = 0;
+        IRubyObject[] ecopts_p = new IRubyObject[1];
+        
+        if (!opt.isNil()) {
+            ecflags = EncodingUtils.econvPrepareOpts(context, opt, ecopts_p);
+        }
+        
+        return strTranscode0(context, self, fromEncoding, toEncoding, ecflags, ecopts_p[0]);
+    }
+    
+    // rb_str_transcode0
+    public static ByteList strTranscode0(ThreadContext context, RubyString self, Encoding senc, Encoding denc, int ecflags, IRubyObject ecopts) {
+        ByteList selfByteList = self.getByteList();
+        boolean is7BitASCII = self.isCodeRangeAsciiOnly();
+        IRubyObject replace = ecopts != null && !ecopts.isNil() ?
+                ((RubyHash)ecopts).op_aref(context, context.runtime.newSymbol("replace")) :
+                context.nil;
+        
+        if ((ecflags & (EncodingUtils.ECONV_NEWLINE_DECORATOR_MASK
+                | EncodingUtils.ECONV_XML_TEXT_DECORATOR
+                | EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR
+                | EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR)) == 0) {
+            if (senc != null && senc == denc) {                
+                // TODO: Ruby 2.0 or 2.1 use String#scrub here
+                if ((ecflags & EncodingUtils.ECONV_INVALID_MASK) != 0) {
+                    // TODO: scrub with replacement
+                    return selfByteList;
+                } else {
+                    // TODO: scrub without replacement
+                    return selfByteList;
+                }
+            } else if (senc != null && denc != null && senc.isAsciiCompatible() && denc.isAsciiCompatible()) {
+                if (self.scanForCodeRange() == StringSupport.CR_7BIT) {
+                    ByteList value = selfByteList.shallowDup();
+                    value.setEncoding(denc);
+                    return value;
+                }
+            }
+            // FIXME: I think this should be doing a lookup of the names to see if they're equivalent encodings
+//            if (Arrays.equals(fromEncoding.getName(), toEncoding.getName())) {
+//                return selfByteList;
+//            }
+        }
+        
+        return new CharsetTranscoder(context, denc, senc, processCodingErrorActions(context, ecflags, replace)).transcode(context, selfByteList, is7BitASCII);
     }
     
     public ByteList transcode(ThreadContext context, ByteList value) {
@@ -903,7 +952,7 @@ public class CharsetTranscoder {
         int flags = 0;
         
         RubyHash hash = opts.convertToHash();
-        flags |= RubyConverter.optHashToFlags(hash, runtime, flags);
+        flags |= EncodingUtils.econvPrepareOpts(context, opts, new IRubyObject[]{opts});
 
         IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
         

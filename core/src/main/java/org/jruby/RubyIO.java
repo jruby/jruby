@@ -858,6 +858,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if(options != null && !options.isNil() && !(options instanceof RubyHash) && !(options.respondsTo("to_hash"))) {
             throw runtime.newArgumentError("last argument must be a hash!");
         }
+        
+        IRubyObject opt = context.nil;
+        if (options != null && !options.isNil()) {
+            opt = options.convertToHash();
+        }
 
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
@@ -867,7 +872,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             descriptor.checkOpen();
 
             IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
-            int oflags = EncodingUtils.extractModeEncoding(context, this, pm, options, false);
+            int oflags = EncodingUtils.extractModeEncoding(context, this, pm, opt, false);
             
             if (pm[EncodingUtils.VMODE] == null || pm[EncodingUtils.VMODE].isNil()) {
                 oflags = descriptor.getOriginalModes().getFlags();
@@ -4968,14 +4973,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // MRI: NEED_READCONF (FIXME: Windows has slightly different version)
     private boolean needsReadConversion() {
-        return enc2 != null; //FIXME: Ucomment once crlf is in transcoding layer || openFile.isTextMode();
+        return enc2 != null || openFile.isTextMode();
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
     private boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
-        return (enc != null && enc != ascii8bit); //FIXME: Ucomment once crlf is in transcoding layer  || openFile.isTextMode();
+        return (enc != null && enc != ascii8bit) || openFile.isTextMode();
         // This is basically from MRI and until I understand it better I am leaving it out
         // ||  ((ecflags & (DECORATOR_MASK|STATEFUL_DECORATOR_MASK)) != 0);
     }
