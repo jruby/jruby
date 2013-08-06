@@ -1318,6 +1318,7 @@ public class RipperLexer implements Warnings {
                         continue loop;
                 }
 
+                ByteList whitespaceBuf = new ByteList(); // FIXME: bytelist encoding hookedup
                 boolean done = false;
                 while (!done) {
                     c = src.read();
@@ -1329,6 +1330,7 @@ public class RipperLexer implements Warnings {
                         case '\r':
                         case '\13': /* '\v' */
                             spaceSeen = true;
+                            whitespaceBuf.append(c);
                             continue;
                         case '.': {
                             if ((c = src.read()) != '.') {
@@ -1344,6 +1346,8 @@ public class RipperLexer implements Warnings {
                     }
                 }
 
+                // We do not have same pointer-based lexer as MRI so we are delaying this
+                if (spaceSeen) addDelayedValue(Tokens.tSP, new Token(whitespaceBuf, getPosition()));
 
                 if (c != -1) {
                     src.unread(c);
