@@ -1371,7 +1371,7 @@ public class RipperLexer implements Warnings {
             case '=':
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
-                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != 0) {
+                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != null) {
                         ByteList markerValue = new ByteList();
                         markerValue.append('=').append(BEGIN_DOC_MARKER);
                         c = src.read();
@@ -1402,7 +1402,7 @@ public class RipperLexer implements Warnings {
                                     embValue.append(c);
                                     continue;
                                 }
-                                if (src.wasBeginOfLine() &&  src.matchMarker(END_DOC_MARKER, false, false) != 0) {
+                                if (src.wasBeginOfLine() &&  src.matchMarker(END_DOC_MARKER, false, false) != null) {
                                     dispatchScanEvent(Tokens.tEMBDOC, embValue);
                                     markerValue = new ByteList();
                                     markerValue.append('=').append(END_DOC_MARKER);
@@ -1511,12 +1511,10 @@ public class RipperLexer implements Warnings {
                 return at();
             case '_':
                 if (src.wasBeginOfLine()) {
-                    int match = src.matchMarker(END_MARKER, false, true);
+                    ByteList match = src.matchMarker(END_MARKER, false, true);
 
-                    if (match != 0) {
-                        String endString = match == '\n' ? "__END__\n" : "__END__";
-                        
-                        dispatchScanEvent(Tokens.k__END__, new Token(endString, getPosition()));
+                    if (match != null) {
+                        dispatchScanEvent(Tokens.k__END__, new Token(match, getPosition()));
                         return EOF;
                     }
                 }
