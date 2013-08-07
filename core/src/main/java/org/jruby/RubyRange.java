@@ -668,6 +668,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "===", compat = RUBY1_9)
     public IRubyObject eqq_p19(ThreadContext context, IRubyObject obj) {
+        if (isBuiltin("include?")) return include_p19(context, obj);
+        
         return callMethod(context, "include?", obj);
     }
 
