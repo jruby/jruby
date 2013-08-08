@@ -64,7 +64,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
@@ -103,6 +103,7 @@ import static org.jruby.util.StringSupport.toLower;
 import static org.jruby.util.StringSupport.toUpper;
 import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Implementation of Ruby String class
@@ -234,7 +235,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final boolean isCodeRangeBroken() {
-        return (flags & CR_BROKEN) != 0;
+        return (flags & CR_BROKEN) == CR_BROKEN;
     }
 
     static int codeRangeAnd(int cr1, int cr2) {
@@ -7541,160 +7542,61 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject encoding(ThreadContext context) {
         return context.runtime.getEncodingService().getEncoding(value.getEncoding());
     }
-
-    @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context) {
-        modify19();
-        Ruby runtime = context.runtime;
-        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-
-        if (defaultInternal == null) return this;
-
-        value = transcode(context, this, null, defaultInternal, runtime.getNil());
-
-        return this;
+    
+    // TODO: re-split this
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0) {
+        return encode_bang(context, new IRubyObject[]{arg0});
+    }
+    
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return encode_bang(context, new IRubyObject[]{arg0,arg1});
+    }
+    
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return encode_bang(context, new IRubyObject[]{arg0,arg1,arg2});
     }
 
-    @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        modify19();
-        Encoding toEncoding;
-        IRubyObject options;
-
-        if (arg instanceof RubyHash) {
-            toEncoding = runtime.getDefaultInternalEncoding();
-            if (toEncoding == null) toEncoding = runtime.getEncodingService().getLocaleEncoding();
-            options = arg;
-        } else {
-            toEncoding = getEncoding(runtime, arg);
-            options = runtime.getNil();
-        }
-
-        value = transcode(context, this, null, toEncoding, options);
-
-        return this;
-    }
-
-    @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        modify19();
-        Encoding forceEncoding;
-        IRubyObject options;
+    @JRubyMethod(name = "encode!", optional = 3, compat = RUBY1_9)
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
+        IRubyObject[] newstr_p;
+        Encoding encindex;
         
-        if (arg instanceof RubyHash) {
-            forceEncoding = null;
-            options = arg;
-        } else {
-            forceEncoding = getEncoding(runtime, arg);
-            options = runtime.getNil();
-        }
-
-        value = transcode(context, this, forceEncoding, getEncoding(runtime, toEncoding), options);
-
-        return this;
-    }
-
-    @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject forceEncoding, IRubyObject opts) {
-        Ruby runtime = context.runtime;
         modify19();
-
-        value = transcode(context, this, getEncoding(runtime, forceEncoding),
-                getEncoding(runtime, toEncoding), opts);
-
+        
+        newstr_p = new IRubyObject[]{this};
+        encindex = EncodingUtils.strTranscode(context, args, newstr_p);
+        
+        if (encindex == null) return this;
+        if (newstr_p[0] == this) {
+            this.setEncoding(encindex);
+            return this;
+        }
+        replace(newstr_p[0]);
+        this.setEncoding(encindex);
         return this;
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-
-        if (defaultInternal == null) return dup();
-
-        return runtime.newString(transcode(context, this, null, defaultInternal, runtime.getNil()));
+        return EncodingUtils.strEncode(context, this);
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        Encoding toEncoding;
-        IRubyObject options;
-
-        if (arg instanceof RubyHash) {
-            toEncoding = runtime.getDefaultInternalEncoding();
-            if (toEncoding == null) toEncoding = runtime.getEncodingService().getLocaleEncoding();
-            if (toEncoding == null) return dup();
-            options = arg;
-        } else {
-            toEncoding = getEncoding(runtime, arg);
-            options = runtime.getNil();
-        }
-
-        return runtime.newString(transcode(context, this, null, toEncoding, options));
+        return EncodingUtils.strEncode(context, this, arg);
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        Encoding forceEncoding;
-        IRubyObject options;
-
-        if (arg instanceof RubyHash) {
-            forceEncoding = null;
-            options = arg;
-        } else {
-            forceEncoding = getEncoding(runtime, arg);
-            options = runtime.getNil();
-        }
-
-        return runtime.newString(transcode(context, this, forceEncoding,
-                getEncoding(runtime, toEncoding), options));
+        return EncodingUtils.strEncode(context, this, toEncoding, arg);
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding,
             IRubyObject forcedEncoding, IRubyObject opts) {
         Ruby runtime = context.runtime;
-
-        return runtime.newString(transcode(context, this, getEncoding(runtime, forcedEncoding),
-                getEncoding(runtime, toEncoding), opts));
-    }
-
-    public static ByteList transcode(ThreadContext context, RubyString value, Encoding forceEncoding,
-            Encoding toEncoding, IRubyObject opts) {
-        Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-
-        if (opts.isNil() && toEncoding == fromEncoding) {
-            return new ByteList(value.getByteList().bytes(), toEncoding);
-        }
         
-        if (!(opts instanceof RubyHash)) {
-            opts = TypeConverter.convertToTypeWithCheck(opts, context.runtime.getHash(), "to_hash");
-        }
-        
-        ByteList output = CharsetTranscoder.strTranscode(context, value, fromEncoding, toEncoding, opts);
-        
-        return output;
-    }
-
-    public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
-            Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
-        Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-
-        if (opts.isNil() && toEncoding == fromEncoding) {
-            return new ByteList(value.bytes(), toEncoding);
-        }
-        
-        if (!(opts instanceof RubyHash)) {
-            opts = TypeConverter.convertToTypeWithCheck(opts, context.runtime.getHash(), "to_hash");
-        }
-        
-        ByteList output = CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts);
-        
-        return output;
+        return EncodingUtils.strEncode(context, this, toEncoding, forcedEncoding, opts);
     }
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {

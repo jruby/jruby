@@ -612,7 +612,7 @@ public class RubyBasicSocket extends RubyIO {
 
     protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
         // continue with normal initialization
-        openFile = new OpenFile();
+        MakeOpenFile();
 
         try {
             openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));

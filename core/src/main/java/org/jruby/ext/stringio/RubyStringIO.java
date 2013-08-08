@@ -64,7 +64,7 @@ import org.jruby.util.io.Stream;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.encoding.Transcoder;
 
 @JRubyClass(name="StringIO")
 @SuppressWarnings("deprecation")

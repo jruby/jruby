@@ -88,26 +88,26 @@ public class OpenFile {
         return modeString;
     }
     
-    public static int getModeFlagsAsIntFrom(int oflags) {
-        int flags = 0;
+    public static int getModeFlagsAsIntFrom(int fmode) {
+        int oflags = 0;
         
-        if ((oflags & READABLE) != 0) {
-            if ((oflags & WRITABLE) != 0) {
-                flags |= ModeFlags.RDWR;
+        if ((fmode & READABLE) != 0) {
+            if ((fmode & WRITABLE) != 0) {
+                oflags |= ModeFlags.RDWR;
             } else {
-                flags |= ModeFlags.RDONLY;
+                oflags |= ModeFlags.RDONLY;
             }
-        } else if ((oflags & WRITABLE) != 0) {
-            flags |= ModeFlags.WRONLY;
+        } else if ((fmode & WRITABLE) != 0) {
+            oflags |= ModeFlags.WRONLY;
         }
         
-        if ((oflags & APPEND) != 0) flags |= ModeFlags.APPEND;
-        if ((oflags & CREATE) != 0) flags |= ModeFlags.CREAT;
-        if ((oflags & BINMODE) != 0) flags |= ModeFlags.BINARY;
-        if ((oflags & TEXTMODE) != 0) flags |= ModeFlags.TEXT;
-        if ((oflags & TRUNC) != 0) flags |= ModeFlags.TRUNC;
+        if ((fmode & APPEND) != 0) oflags |= ModeFlags.APPEND;
+        if ((fmode & CREATE) != 0) oflags |= ModeFlags.CREAT;
+        if ((fmode & BINMODE) != 0) oflags |= ModeFlags.BINARY;
+        if ((fmode & TEXTMODE) != 0) oflags |= ModeFlags.TEXT;
+        if ((fmode & TRUNC) != 0) oflags |= ModeFlags.TRUNC;
         
-        return flags;
+        return oflags;
     }
     
     // mri: rb_io_modestr_fmode

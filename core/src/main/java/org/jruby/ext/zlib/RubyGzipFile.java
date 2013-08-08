@@ -20,7 +20,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
@@ -125,7 +125,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     // rb_gzfile_ecopts
     protected void ecopts(ThreadContext context, IRubyObject opts) {
         if (!opts.isNil()) {
-            EncodingUtils.getEncodingOptionFromObject(context, this, opts);
+            EncodingUtils.ioExtractEncodingOption(context, this, opts, null);
         }
         if (enc2 != null) {
             IRubyObject[] outOpts = new IRubyObject[]{opts};
@@ -135,15 +135,27 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         }
     }
     
-    Encoding getEnc() {
+    public Encoding getReadEncoding() {
         return enc == null ? getRuntime().getDefaultExternalEncoding() : enc;
+    }
+    
+    public Encoding getEnc() {
+        return enc;
+    }
+    
+    public Encoding getInternalEncoding() {
+        return enc2 == null ? getEnc() : enc2;
+    }
+    
+    public Encoding getEnc2() {
+        return enc2;
     }
 
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
         if (runtime.is1_9()) {
             if (enc2 == null) {
-                return RubyString.newString(runtime, value, getEnc());
+                return RubyString.newString(runtime, value, getReadEncoding());
             }
             
             if (ec != null && enc2.isDummy()) {
@@ -151,7 +163,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
                 return RubyString.newString(runtime, value, getEnc());
             }
             
-            value = CharsetTranscoder.transcode(runtime.getCurrentContext(), value, enc2, getEnc(), ecopts);
+            value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
             return RubyString.newString(runtime, value);
         } 
 
@@ -244,8 +256,33 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     }
     
     @Override
+    public void setEcflags(int ecflags) {
+        this.ecflags = ecflags;
+    }
+    
+    @Override
+    public int getEcflags() {
+        return ecflags;
+    }
+    
+    @Override
+    public void setEcopts(IRubyObject ecopts) {
+        this.ecopts = ecopts;
+    }
+    
+    @Override
+    public IRubyObject getEcopts() {
+        return ecopts;
+    }
+    
+    @Override
     public void setBOM(boolean bom) {
         this.hasBOM = bom;
+    }
+    
+    @Override
+    public boolean getBOM() {
+        return hasBOM;
     }
     
     protected boolean closed = false;
@@ -261,8 +298,8 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected Encoding enc2;
     protected int ecflags;
     protected IRubyObject ecopts;
-    protected CharsetTranscoder ec;
+    protected Transcoder ec;
     protected boolean sync = false;
-    protected CharsetTranscoder readTranscoder = null;
-    protected CharsetTranscoder writeTranscoder = null;    
+    protected Transcoder readTranscoder = null;
+    protected Transcoder writeTranscoder = null;    
 }

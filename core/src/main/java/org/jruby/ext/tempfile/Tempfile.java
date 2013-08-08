@@ -120,7 +120,7 @@ public class Tempfile extends org.jruby.RubyFile {
                         // TODO: encoding options do not appear to actually get passed through to file init logic
                         RubyHash options = (RubyHash)args[args.length - 1];
                         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-                        EncodingUtils.getEncodingOptionFromObject(context, Tempfile.this, options);
+                        EncodingUtils.ioExtractEncodingOption(context, Tempfile.this, options, null);
                     }
                 }
             }
@@ -154,12 +154,17 @@ public class Tempfile extends org.jruby.RubyFile {
 
     private void initializeOpen(IOOptions ioOptions) {
         getRuntime().getPosix().chmod(path, 0600);
-        sysopenInternal(path, ioOptions.getModeFlags(), 0600);
+        MakeOpenFile();
+        
+        openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
+        openFile.setPath(path);
+            
+        sysopenInternal(path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
     }
 
     @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open() {
-        if (!isClosed()) close();
+        if (!isClosed()) ioClose(getRuntime());
 
         openInternal(path, openFile.getModeAsString(getRuntime()));
 

@@ -27,10 +27,8 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.IOOutputStream;
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingUtils;
 
 /**
  *
@@ -297,8 +295,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         if (runtime.is1_9()) {
             if (enc2 != null
                     && enc2 != ASCIIEncoding.INSTANCE) {
-                bytes = CharsetTranscoder.transcode(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
-                        enc2, runtime.getNil());
+                bytes = Transcoder.strConvEncOpts(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
+                        enc2, 0, runtime.getNil());
             }
         }
         

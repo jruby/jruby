@@ -22,6 +22,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Iterator;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 
 public final class EncodingService {
@@ -268,6 +269,7 @@ public final class EncodingService {
         return getEncodingFromObjectCommon(arg, true);
     }
 
+    // rb_to_encoding_index
     public Encoding getEncodingFromObjectNoError(IRubyObject arg) {
         return getEncodingFromObjectCommon(arg, false);
     }
@@ -275,19 +277,21 @@ public final class EncodingService {
     private Encoding getEncodingFromObjectCommon(IRubyObject arg, boolean error) {
         if (arg == null) return null;
 
-        Encoding encoding = null;
         if (arg instanceof RubyEncoding) {
-            encoding = ((RubyEncoding) arg).getEncoding();
+            return ((RubyEncoding) arg).getEncoding();
         } else if (arg instanceof RubyFixnum && RubyNKF.NKFCharsetMap.containsKey((int)arg.convertToInteger().getLongValue())) {
             return getEncodingFromNKFId(arg);
-        } else if (!arg.isNil()) {
+        } else if ((arg = arg.checkStringType19()).isNil()) {
+            return null;
+        } else if (!((RubyString)arg).getEncoding().isAsciiCompatible()) {
+            return null;
+        } else {
             if (error) {
-                encoding = findEncoding(arg.convertToString());
+                return findEncoding((RubyString)arg);
             } else {
-                encoding = findEncodingNoError(arg.convertToString());
+                return findEncodingNoError((RubyString)arg);
             }
         }
-        return encoding;
     }
     
     private Encoding getEncodingFromNKFId(IRubyObject id) {

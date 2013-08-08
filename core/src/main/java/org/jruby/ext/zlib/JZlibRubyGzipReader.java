@@ -619,7 +619,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
         // fix broken trailing character
-        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getEnc(), result.length());
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getReadEncoding(), result.length());
         for (int i = 0; i < extraBytes; i++) {
             int read = bufferedStream.read();
             if (read == -1) break;

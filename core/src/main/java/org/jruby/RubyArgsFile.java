@@ -469,7 +469,7 @@ public class RubyArgsFile {
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
         if(file instanceof RubyIO) {
-            ((RubyIO)file).close2(context.runtime);
+            ((RubyIO)file).ioClose(context.runtime);
         } else {
             file.callMethod(context, "close");
         }

@@ -88,8 +88,9 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.CharsetTranscoder;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.IOEncodable;
 
 /**
  * Ruby File class equivalent in java.
@@ -225,9 +226,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
     
-    @JRubyMethod
     @Override
-    public IRubyObject close() {
+    protected IRubyObject ioClose(Ruby runtime) {
         // Make sure any existing lock is released before we try and close the file
         if (currentLock != null) {
             try {
@@ -236,7 +236,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw getRuntime().newIOError(e.getMessage());
             }
         }
-        return super.close();
+        return super.ioClose(runtime);
     }
 
     @JRubyMethod(required = 1)
@@ -324,7 +324,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = RUBY1_8)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (openFile == null) {
+        if (openFile != null) {
             throw getRuntime().newRuntimeError("reinitializing File");
         }
         
@@ -339,7 +339,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "initialize", required = 1, optional = 2, visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
-        if (openFile == null) {
+        if (openFile != null) {
             throw context.runtime.newRuntimeError("reinitializing File");
         }
 
@@ -1167,11 +1167,37 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 break;
         }
         
-        int oflags = EncodingUtils.extractModeEncoding(context, this, pm, options, false);
+        int[] oflags_p = {0}, fmode_p = {0};
+        EncodingUtils.extractModeEncoding(context, this, pm, options, oflags_p, fmode_p);
         int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
                 RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
+        
+        return fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], this, perm);
+    }
+    
+    // rb_file_open_generic
+    public IRubyObject fileOpenGeneric(ThreadContext context, IRubyObject filename, int oflags, int fmode, IOEncodable convConfig, int perm) {
+        // unused in JRuby at the moment
+//        if (convConfig == null) {
+//            EncodingUtils.ioExtIntToEncs(context, convConfig, null, null, fmode);
+//            convConfig.setEcflags(0);
+//            convConfig.setEcopts(context.nil);
+//        }
+        
+        int[] fmode_p = {fmode};
+        
+        EncodingUtils.validateEncodingBinmode(context, fmode_p, convConfig.getEcflags(), convConfig);
+        
+        MakeOpenFile();
+        
+        openFile.setMode(fmode_p[0]);
+        openFile.setPath(filename.asJavaString());
 
-        sysopenInternal(path, ModeFlags.createModeFlags(oflags), perm);
+        sysopenInternal(openFile.getPath(), oflags, perm);
+        
+        if ((fmode & OpenFile.SETENC_BY_BOM) != 0) {
+            EncodingUtils.ioSetEncodingByBOM(context, this);
+        }
 
         return this;
     }
@@ -1190,8 +1216,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if ((args.length > 1 && args[1] instanceof RubyFixnum) || (args.length > 2 && !args[2].isNil())) {
             modes = parseIOOptions(args[1]);
             perm = getFilePermissions(args);
+            
+            MakeOpenFile();
+        
+            openFile.setMode(modes.getModeFlags().getOpenFileFlags());
+            openFile.setPath(path);
 
-            sysopenInternal(path, modes.getModeFlags(), perm);
+            sysopenInternal(path, modes.getModeFlags().getOpenFileFlags(), perm);
         } else {
             modeString = "r";
             if (args.length > 1 && !args[1].isNil()) {
@@ -1208,51 +1239,25 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
-    // mri: rb_file_open_generic
-    protected void sysopenInternal(String path, ModeFlags modes, int perm) {
+    // mri: rb_sysopen and rb_sysopen_internal
+    protected void sysopenInternal(String path, int oflags, int perm) {
         if (path.startsWith("jar:")) path = path.substring(4);
-        
-        openFile = new OpenFile();
-
-        openFile.setPath(path);
-        openFile.setMode(modes.getOpenFileFlags());
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
+        
+        ModeFlags modes = ModeFlags.createModeFlags(oflags);
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
-        if (hasBom) {
-            // FIXME: Wonky that we acquire RubyEncoding to pass these encodings through
-            Ruby runtime = getRuntime();
-            Encoding bomEncoding = encodingFromBOM();
-            if (bomEncoding != null) {
-                IRubyObject theBom = runtime.getEncodingService().getEncoding(bomEncoding);
-                Encoding internalEncoding = getInternalEncoding(getRuntime());
-                IRubyObject theInternal = internalEncoding == null ? 
-                        runtime.getNil() : runtime.getEncodingService().getEncoding(internalEncoding);
-
-                setEncoding(runtime.getCurrentContext(), theBom, theInternal, null);
-            }
-        }
-    }
-
-    @Deprecated
-    protected void openInternal(String path, ModeFlags modes) {
-        if (path.startsWith("jar:")) path = path.substring(4);
-
-        openFile = new OpenFile();
-
-        openFile.setMode(modes.getOpenFileFlags());
-        openFile.setPath(path);
-        openFile.setMainStream(fopen(path, modes));
     }
 
     protected void openInternal(String path, String modeString) {
         if (path.startsWith("jar:")) {
             path = path.substring(4);
         }
-        openFile = new OpenFile();
+        
+        MakeOpenFile();
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
@@ -1350,19 +1355,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
     private static RubyString filePathConvert(ThreadContext context, RubyString path) {
-        Ruby runtime = context.getRuntime();
-        EncodingService encodingService = runtime.getEncodingService();
-        Encoding pathEncoding = path.getEncoding();
+        if (!org.jruby.platform.Platform.IS_WINDOWS) {
+            Ruby runtime = context.getRuntime();
+            EncodingService encodingService = runtime.getEncodingService();
+            Encoding pathEncoding = path.getEncoding();
 
-        // If we are not ascii and do not match fs encoding then transcode to fs.
-        if (runtime.getDefaultInternalEncoding() != null &&
-                pathEncoding != encodingService.getUSAsciiEncoding() &&
-                pathEncoding != encodingService.getAscii8bitEncoding() &&
-                pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
-                !path.isAsciiOnly()) {
-            ByteList bytes = CharsetTranscoder.transcode(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime), null);
-            path = RubyString.newString(runtime, bytes);
-        }                
+            // If we are not ascii and do not match fs encoding then transcode to fs.
+            if (runtime.getDefaultInternalEncoding() != null &&
+                    pathEncoding != encodingService.getUSAsciiEncoding() &&
+                    pathEncoding != encodingService.getAscii8bitEncoding() &&
+                    pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
+                    !path.isAsciiOnly()) {
+                ByteList bytes = Transcoder.strConvEnc(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime));
+                path = RubyString.newString(runtime, bytes);
+            }
+        }
 
         return path;
     }

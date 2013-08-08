@@ -84,6 +84,21 @@ public final class StringSupport {
         return n;
     }
     
+    // MBCLEN_NEEDMORE_P, ONIGENC_MBCLEN_NEEDMORE_P
+    public static boolean MBCLEN_NEEDMORE_P(int r) {
+        return r < -1;
+    }
+    
+    // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
+    public static boolean MBCLEN_INVALID_P(int r) {
+        return r == -1;
+    }
+    
+    // MBCLEN_CHARFOUND_LEN, ONIGENC_CHARFOUND_LEN
+    public static int MBCLEN_CHARFOUND_LEN(int r) {
+        return r;
+    }
+    
     public static int searchNonAscii(byte[]bytes, int p, int end) {
         while (p < end) {
             if (!Encoding.isAscii(bytes[p])) return p;
