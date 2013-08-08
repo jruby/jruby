@@ -93,7 +93,7 @@ public abstract class Transcoder {
         }
         
         denc = null;
-        if (sourceEncoding.length > 0) {
+        if (destinationEncoding.length > 0) {
             EncodingDB.Entry dest = context.runtime.getEncodingService().findEncodingOrAliasEntry(new ByteList(destinationEncoding, false));
             if (dest != null) {
                 denc = dest.getEncoding();
@@ -192,7 +192,7 @@ public abstract class Transcoder {
     
     public abstract RubyCoderResult primitiveConvert(ThreadContext context, ByteList inBuffer, ByteList outBuffer, int outOffset, int outLimit, Encoding inEncoding, boolean is7BitASCII, int flags);
     
-    public abstract ByteList finish();
+    public abstract ByteList finish(Encoding altEncoding);
     
     public RubyCoderResult getLastResult() {
         return lastResult;

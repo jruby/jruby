@@ -284,7 +284,7 @@ public class CharsetTranscoder extends Transcoder {
             if (lastError != null) throw lastError;
         }
         
-        if (finish) outBuffer.append(finish());
+        if (finish) outBuffer.append(finish(inBuffer.getEncoding()));
         
         return lastResult;
     }
@@ -335,7 +335,9 @@ public class CharsetTranscoder extends Transcoder {
         return lastResult;
     }
     
-    public ByteList finish() {
+    public ByteList finish(Encoding altEncoding) {
+        Encoding outEncoding = this.outEncoding != null ? this.outEncoding : altEncoding;
+        
         if (transcoder == null) return new ByteList();
         
         ByteList finish = transcoder.finish();

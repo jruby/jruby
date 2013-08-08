@@ -35,6 +35,7 @@ public class OpenFile {
     private int lineNumber = 0;
     private String path;
     private Finalizer finalizer;
+    private boolean stdio;
 
     public Stream getMainStream() {
         return mainStream;
@@ -368,6 +369,14 @@ public class OpenFile {
         if ((myMain = mainStream) != null) myMain.setAutoclose(autoclose);
         if ((myPipe = pipeStream) != null) myPipe.setAutoclose(autoclose);
     }
+    
+    public void setStdio(boolean stdio) {
+        this.stdio = true;
+    }
+    
+    public boolean isStdio() {
+        return stdio;
+    }
 
     public Finalizer getFinalizer() {
         return finalizer;
@@ -388,6 +397,10 @@ public class OpenFile {
     public void finalize(Ruby runtime, boolean raise) {
         try {
             ChannelDescriptor pipe = null;
+            
+            // TODO: writeconv the remaining bytes in the stream?
+            
+            if (isStdio()) return;
             
             // Recent JDKs shut down streams in the parent when child
             // terminates, so we can't trust that they'll be open for our

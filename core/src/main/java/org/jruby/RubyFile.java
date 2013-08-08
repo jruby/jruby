@@ -1193,7 +1193,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMode(fmode_p[0]);
         openFile.setPath(filename.asJavaString());
 
-        sysopenInternal(openFile.getPath(), oflags, perm);
+        sysopenInternal19(openFile.getPath(), oflags, perm);
         
         if ((fmode & OpenFile.SETENC_BY_BOM) != 0) {
             EncodingUtils.ioSetEncodingByBOM(context, this);
@@ -1222,7 +1222,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             openFile.setMode(modes.getModeFlags().getOpenFileFlags());
             openFile.setPath(path);
 
-            sysopenInternal(path, modes.getModeFlags().getOpenFileFlags(), perm);
+            sysopenInternal(path, modes.getModeFlags(), perm);
         } else {
             modeString = "r";
             if (args.length > 1 && !args[1].isNil()) {
@@ -1238,9 +1238,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private int getFilePermissions(IRubyObject[] args) {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
+    protected void sysopenInternal(String path, ModeFlags modes, int perm) {
+        if (path.startsWith("jar:")) path = path.substring(4);
 
-    // mri: rb_sysopen and rb_sysopen_internal
-    protected void sysopenInternal(String path, int oflags, int perm) {
+        int umask = getUmaskSafe( getRuntime() );
+        perm = perm - (perm & umask);
+
+        ChannelDescriptor descriptor = sysopen(path, modes, perm);
+        openFile.setMainStream(fdopen(descriptor, modes));
+    }
+
+    // mri19: rb_sysopen and rb_sysopen_internal
+    protected void sysopenInternal19(String path, int oflags, int perm) {
         if (path.startsWith("jar:")) path = path.substring(4);
 
         int umask = getUmaskSafe( getRuntime() );
@@ -1261,7 +1270,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
+        if (getRuntime().is1_9() && modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }

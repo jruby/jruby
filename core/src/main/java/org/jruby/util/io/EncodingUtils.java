@@ -621,8 +621,35 @@ public class EncodingUtils {
             // set to same superclass
             ((RubyBasicObject)newstr).setMetaClass(str.getMetaClass());
         }
-        ((RubyString)newstr).setEncoding(encindex);
-        return newstr;
+        ((RubyString)newstr).modify19();
+        return strEncodeAssociate(context, newstr, encindex);
+    }
+    
+    // str_encode_associate
+    public static IRubyObject strEncodeAssociate(ThreadContext context, IRubyObject str, Encoding encidx) {
+        encAssociateIndex(str, encidx);
+        
+        if (encAsciicompat(encidx)) {
+            ((RubyString)str).scanForCodeRange();
+        } else {
+            ((RubyString)str).setCodeRange(StringSupport.CR_VALID);
+        }
+        
+        return str;
+    }
+    
+    // rb_enc_associate_index
+    public static IRubyObject encAssociateIndex(IRubyObject obj, Encoding encidx) {
+        ((RubyBasicObject)obj).checkFrozen();
+        if (((EncodingCapable)obj).getEncoding() == encidx) {
+            return obj;
+        }
+        if (!((RubyString)obj).isCodeRangeAsciiOnly() ||
+                encAsciicompat(encidx)) {
+            ((RubyString)obj).clearCodeRange();
+        }
+        ((EncodingCapable)obj).setEncoding(encidx);
+        return obj;
     }
     
     // str_encode
@@ -665,9 +692,8 @@ public class EncodingUtils {
     public static Encoding strTranscode0(ThreadContext context, IRubyObject[] args, IRubyObject[] self_p, int ecflags, IRubyObject ecopts) {
         Ruby runtime = context.runtime;
         
-        int argc;
         IRubyObject str = self_p[0];
-        IRubyObject arg1 = null, arg2 = null;
+        IRubyObject arg1, arg2;
         Encoding[] senc_p = {null}, denc_p = {null};
         byte[][] sname_p = {null}, dname_p = {null};
         Encoding dencindex;
@@ -735,9 +761,7 @@ public class EncodingUtils {
     }
     
     public static Encoding strTranscodeEncArgs(ThreadContext context, IRubyObject str, IRubyObject arg1, IRubyObject arg2, byte[][] sname_p, Encoding[] senc_p, byte[][] dname_p, Encoding[] denc_p) {
-        Encoding senc, denc;
-        byte[] sname, dname;
-        Encoding sencindex, dencindex;
+        Encoding dencindex;
         
         dencindex = encArg(context, arg1, dname_p, denc_p);
         

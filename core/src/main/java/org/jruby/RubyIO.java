@@ -35,12 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.sun.corba.se.spi.ior.MakeImmutable;
-import org.jcodings.specific.UTF16BEEncoding;
-import org.jcodings.specific.UTF16LEEncoding;
-import org.jcodings.specific.UTF32BEEncoding;
-import org.jcodings.specific.UTF32LEEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -67,7 +61,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
@@ -233,6 +226,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
         // never autoclose stdio streams
         openFile.setAutoclose(false);
+        openFile.setStdio(true);
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {

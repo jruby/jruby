@@ -329,7 +329,8 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject finish(ThreadContext context) {
-        return context.runtime.newString(transcoder.finish());
+        // alternate encoding here should be smarter
+        return context.runtime.newString(transcoder.finish(ASCIIEncoding.INSTANCE));
     }
 
     @JRubyMethod(compat = RUBY1_9)
