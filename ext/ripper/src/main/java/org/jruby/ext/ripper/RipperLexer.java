@@ -884,7 +884,6 @@ public class RipperLexer implements Warnings {
         
         commentBuf.append(src.readLineBytesPlusNewline());
         dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
-        
         return '\n';
     }
     
@@ -1358,6 +1357,9 @@ public class RipperLexer implements Warnings {
 
                 commandStart = true;
                 setState(LexState.EXPR_BEG);
+                
+                // We swallow the newline during comment processing and no don't need to dispatch it.
+                if (fallthru) continue loop;
                 
                 yaccValue = new Token("\n", getPosition());
                 
