@@ -1981,10 +1981,8 @@ public class RipperLexer implements Warnings {
                 lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                src.unread(c2);
                 setState(LexState.EXPR_BEG);
-                src.read();
-                yaccValue = new Token(tempVal, getPosition());
+                yaccValue = new Token(tempVal + ':', getPosition());
                 return Tokens.tLABEL;
             }
             src.unread(c2);
