@@ -864,11 +864,9 @@ public class RipperLexer implements Warnings {
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
             if (src.peek('!')) {
-                commentBuf = src.readUntil('\n');
-
-                // TODO: Eat whitespace
-                
-                if (!src.peek('#')) return '\n';
+                commentBuf.append(src.readLineBytesPlusNewline());
+                dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
+                return 0;
             }
 
             commentLine = src.readLineBytesPlusNewline();
