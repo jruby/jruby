@@ -2389,7 +2389,7 @@ public class RipperLexer implements Warnings {
     
     private int singleQuote() throws IOException {
         lex_strterm = new StringTerm(str_squote, '\0', '\'');
-
+        yaccValue = new Token("\'", getPosition());
         return Tokens.tSTRING_BEG;
     }
     
