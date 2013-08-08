@@ -1369,9 +1369,10 @@ public class RipperLexer implements Warnings {
             case '=':
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
-                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != null) {
-                        ByteList markerValue = new ByteList();
-                        markerValue.append('=').append(BEGIN_DOC_MARKER);
+                    ByteList markerValue = null;
+                    if ((markerValue = src.matchMarker(BEGIN_DOC_MARKER, false, false)) != null) {
+                        markerValue.prepend((byte) '=');
+                        
                         c = src.read();
                         
                         if (Character.isWhitespace(c)) {
@@ -1385,8 +1386,7 @@ public class RipperLexer implements Warnings {
                             for (;;) {
                                 c = src.read();
 
-                                // If a line is followed by a blank line put
-                                // it back.
+                                // If a line is followed by a blank line put it back.
                                 while (c == '\n') {
                                     embValue.append(c);
                                     c = src.read();
@@ -1400,10 +1400,8 @@ public class RipperLexer implements Warnings {
                                     embValue.append(c);
                                     continue;
                                 }
-                                if (src.wasBeginOfLine() &&  src.matchMarker(END_DOC_MARKER, false, false) != null) {
+                                if (src.wasBeginOfLine() &&  (markerValue = src.matchMarker(END_DOC_MARKER, false, false)) != null) {
                                     dispatchScanEvent(Tokens.tEMBDOC, embValue);
-                                    markerValue = new ByteList();
-                                    markerValue.append('=').append(END_DOC_MARKER);
                                     markerValue.append(src.readLineBytesPlusNewline());
                                     dispatchScanEvent(Tokens.tEMBDOC_END, markerValue);
                                     break;
@@ -1412,7 +1410,7 @@ public class RipperLexer implements Warnings {
 
                             continue;
                         }
-						src.unread(c);
+                        src.unread(c);
                     }
                 }
 

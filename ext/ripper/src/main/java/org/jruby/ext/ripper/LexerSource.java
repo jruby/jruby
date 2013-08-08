@@ -413,7 +413,7 @@ public class LexerSource {
 
         if (c == RipperLexer.EOF) return buffer;
 
-        if (c == '\n') {
+        if (checkNewline && c == '\n') {
             buffer.append(c);
             return buffer;
         }
