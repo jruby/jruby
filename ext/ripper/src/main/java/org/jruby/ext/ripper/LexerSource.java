@@ -407,8 +407,6 @@ public class LexerSource {
         
         if (!matches(match, buffer, length)) return null;
         
-        buffer.append(match);
-        
         int c = read();
 
         if (c == RipperLexer.EOF) return buffer;

@@ -1389,6 +1389,8 @@ public class RipperLexer implements Warnings {
                                 // If a line is followed by a blank line put it back.
                                 while (c == '\n') {
                                     embValue.append(c);
+                                    dispatchScanEvent(Tokens.tEMBDOC, embValue);
+                                    embValue = new ByteList();
                                     c = src.read();
                                 }
                                 if (c == EOF) {
@@ -1403,6 +1405,7 @@ public class RipperLexer implements Warnings {
                                 if (src.wasBeginOfLine() &&  (markerValue = src.matchMarker(END_DOC_MARKER, false, false)) != null) {
                                     dispatchScanEvent(Tokens.tEMBDOC, embValue);
                                     markerValue.append(src.readLineBytesPlusNewline());
+                                    markerValue.prepend((byte) '=');
                                     dispatchScanEvent(Tokens.tEMBDOC_END, markerValue);
                                     break;
                                 }
