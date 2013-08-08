@@ -70,15 +70,13 @@ public class HeredocTerm extends StrTerm {
             return RipperLexer.EOF;
         }
 
-        int match;
         ByteList matchedMarker = null;
         // Found end marker for this heredoc
         if (src.lastWasBeginOfLine() && (matchedMarker = src.matchMarker(marker, indent, true)) != null) {
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
-            
-            lexer.addDelayedValue(Tokens.tHEREDOC_END, matchedMarker);
-            lexer.ignoreNextScanEvent = true;
+  
+            lexer.dispatchScanEvent(Tokens.tHEREDOC_END, matchedMarker);
 
             return Tokens.tSTRING_END;
         }
@@ -130,7 +128,7 @@ public class HeredocTerm extends StrTerm {
                 str.append(src.read());
                 
                 if (src.peek(RipperLexer.EOF)) {
-                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
+                    lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
                     syntaxError(src);
                     return RipperLexer.EOF;
                 }
@@ -141,8 +139,8 @@ public class HeredocTerm extends StrTerm {
         
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.addDelayedValue(Tokens.tSTRING_CONTENT, lexer.createStr(position, str, 0));
-        lexer.addDelayedValue(Tokens.tHEREDOC_END, matchedMarker);
+        lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT, lexer.createStr(position, str, 0));
+        lexer.dispatchScanEvent(Tokens.tHEREDOC_END, matchedMarker);
         lexer.ignoreNextScanEvent = true;
         return Tokens.tSTRING_CONTENT;
     }
