@@ -1,8 +1,0 @@
-fails:String#encode! transcodes to the default internal encoding with no argument
-fails:String#encode! transcodes self to the given encoding
-fails:String#encode! raises UndefinedConversionError if the String contains characters invalid for the target     encoding
-fails:String#encode! replaces invalid characters
-fails:String#encode! replaces undefined characters
-fails:String#encode! replaces xml characters
-fails:String#encode! replaces xml characters and quotes the result
-fails:String#encode! tags the String with the given encoding

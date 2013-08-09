@@ -407,8 +407,8 @@ public class CharsetTranscoder extends Transcoder {
             actions.onMalformedInput = actions.onUnmappableCharacter;
         }
         
-        Charset inCharset = transcodeCharsetFor(runtime, inEncoding, is7BitASCII);
-        Charset outCharset = transcodeCharsetFor(runtime, outEncoding, is7BitASCII);
+        Charset inCharset = transcodeCharsetFor(runtime, inEncoding.getName(), inEncoding, is7BitASCII);
+        Charset outCharset = transcodeCharsetFor(runtime, outEncoding.getName(), outEncoding, is7BitASCII);
         
         this.transcoder = new TranscoderEngine(
                 inCharset,
@@ -968,7 +968,13 @@ public class CharsetTranscoder extends Transcoder {
         return processCodingErrorActions(context, flags, replace);
     }
     
-    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, boolean is7Bit) {
+    public static Charset transcodeCharsetFor(Ruby runtime, byte[] name, Encoding encoding, boolean is7Bit) {
+        if (encoding == null) {
+            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(name);
+            if (entry == null) return null;
+            encoding = entry.getEncoding();
+        }
+        
         if (encoding == ASCIIEncoding.INSTANCE) {
             return ISO8859_1Encoding.INSTANCE.getCharset();
         }

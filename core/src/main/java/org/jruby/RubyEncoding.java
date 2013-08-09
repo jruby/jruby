@@ -49,6 +49,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import static org.jruby.CompatVersion.*;
+import org.jruby.util.io.EncodingUtils;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
@@ -456,31 +457,26 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
-    public static IRubyObject getDefaultExternal(IRubyObject recv) {
-        return recv.getRuntime().getEncodingService().getDefaultExternal();
+    public static IRubyObject getDefaultExternal(ThreadContext context, IRubyObject recv) {
+        return context.runtime.getEncodingService().getDefaultExternal();
     }
 
     @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
-    public static IRubyObject setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
-        Ruby runtime = recv.getRuntime();
-        EncodingService service = runtime.getEncodingService();
-        if (encoding.isNil()) {
-            throw runtime.newArgumentError("default_external can not be nil");
-        }
-        runtime.setDefaultExternalEncoding(service.getEncodingFromObject(encoding));
+    public static IRubyObject setDefaultExternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
+        context.runtime.getWarnings().warning("setting Encoding.default_external");
+        EncodingUtils.rbEncSetDefaultExternal(context, encoding);
         return encoding;
     }
 
     @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return recv.getRuntime().getEncodingService().getDefaultInternal();
+    public static IRubyObject getDefaultInternal(ThreadContext context, IRubyObject recv) {
+        return context.runtime.getEncodingService().getDefaultInternal();
     }
 
     @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
-    public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
-        Ruby runtime = recv.getRuntime();
-        EncodingService service = runtime.getEncodingService();
-        runtime.setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
+    public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
+        context.runtime.getWarnings().warning("setting Encoding.default_internal");
+        EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
     }
 

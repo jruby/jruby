@@ -111,11 +111,24 @@ public final class EncodingService {
         return encodings.get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    public Entry findEncodingEntry(byte[] bytes) {
+        return encodings.get(bytes);
+    }
+
     public Entry findAliasEntry(ByteList bytes) {
         return aliases.get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    public Entry findAliasEntry(byte[] bytes) {
+        return aliases.get(bytes);
+    }
+
     public Entry findEncodingOrAliasEntry(ByteList bytes) {
+        Entry e = findEncodingEntry(bytes);
+        return e != null ? e : findAliasEntry(bytes);
+    }
+
+    public Entry findEncodingOrAliasEntry(byte[] bytes) {
         Entry e = findEncodingEntry(bytes);
         return e != null ? e : findAliasEntry(bytes);
     }

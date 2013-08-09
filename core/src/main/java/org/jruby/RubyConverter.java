@@ -512,7 +512,7 @@ public class RubyConverter extends RubyObject {
         public static IRubyObject destination_encoding(ThreadContext context, IRubyObject self) {
             RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
             
-            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(result.inEncoding);
+            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(result.outEncoding);
         }
         
         @JRubyMethod

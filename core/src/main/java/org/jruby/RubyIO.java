@@ -1109,7 +1109,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject tmp;
         
         if (!v2.isNil()) {
-            enc2 = EncodingUtils.toEncoding(context, v1);
+            enc2 = EncodingUtils.rbToEncoding(context, v1);
             tmp = v2.checkStringType19();
             
             if (!tmp.isNil()) {
@@ -1120,7 +1120,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc = enc2;
                     enc2 = null;
                 } else {
-                    enc = EncodingUtils.toEncoding(context, internalAsString);
+                    enc = EncodingUtils.rbToEncoding(context, internalAsString);
                 }
                 
                 if (enc == enc2) {
@@ -1129,7 +1129,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     enc2 = null;
                 }
             } else {
-                enc = EncodingUtils.toEncoding(context, v2);
+                enc = EncodingUtils.rbToEncoding(context, v2);
             }
             EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(this.getEnc2(), ecflags);
             ecflags = EncodingUtils.econvPrepareOptions(context, opt, ecopts_p, ecflags);
@@ -1145,7 +1145,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(this.getEnc2(), ecflags);
                     ecflags = EncodingUtils.econvPrepareOptions(context, opt, ecopts_p, ecflags);
                 } else {
-                    EncodingUtils.ioExtIntToEncs(context, this, EncodingUtils.toEncoding(context, v1), null, 0);
+                    EncodingUtils.ioExtIntToEncs(context, this, EncodingUtils.rbToEncoding(context, v1), null, 0);
                     EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(this.getEnc2(), ecflags);
                 }
             }

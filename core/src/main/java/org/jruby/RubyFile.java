@@ -215,6 +215,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile());
+        MakeOpenFile();
         this.path = path;
         try {
             this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in))));

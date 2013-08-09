@@ -280,6 +280,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected void init_sock(Ruby runtime) {
         try {
             ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
+            MakeOpenFile();
 
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel, modes)));
             openFile.setPipeStream(openFile.getMainStreamSafe());

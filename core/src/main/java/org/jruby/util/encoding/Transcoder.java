@@ -104,9 +104,16 @@ public abstract class Transcoder {
             // no transcoding; for our purposes, we force both to be binary
             senc = denc = ASCIIEncoding.INSTANCE;
         } else {
-            // set up transcoding path
+            Charset from;
+            Charset to;
+            
+            // inefficient; doing Charset lookup here *and* in the transcoder
+            if (CharsetTranscoder.transcodeCharsetFor(context.runtime, sourceEncoding, senc, false) == null ||
+                    CharsetTranscoder.transcodeCharsetFor(context.runtime, destinationEncoding, denc, false) == null) {
+                return null;
+            }
         }
-        
+            
         return new CharsetTranscoder(context,
                 denc,
                 senc,
