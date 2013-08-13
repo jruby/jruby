@@ -7,18 +7,22 @@ java_import "java_integration.fixtures.PublicField"
 java_import "java_integration.fixtures.PackageField"
 
 describe "A JavaClass" do
+  let(:privatestrField){PrivateField.java_class.declared_field(:strField)}
+  let(:protectedstrField){ProtectedField.java_class.declared_field(:strField)}
+  let(:publicstrField){PublicField.java_class.declared_field(:strField)}
+  let(:packagestrField){PackageField.java_class.declared_field(:strField)}
   it "should provide a look up for fields using a Java formatted name" do
-    PrivateField.java_class.declared_field(:strField).should_not == nil
-    ProtectedField.java_class.declared_field(:strField).should_not == nil
-    PublicField.java_class.declared_field(:strField).should_not == nil
-    PackageField.java_class.declared_field(:strField).should_not == nil
+    privatestrField.should_not == nil
+    protectedstrField.should_not == nil
+    publicstrField.should_not == nil
+    packagestrField.should_not == nil
   end
 
   it "should provide a look up for a fields using a Ruby formatted name" do
-    PrivateField.java_class.declared_field(:str_field).should_not == nil
-    ProtectedField.java_class.declared_field(:str_field).should_not == nil
-    PublicField.java_class.declared_field(:str_field).should_not == nil
-    PackageField.java_class.declared_field(:str_field).should_not == nil
+    privatestrField.should_not == nil
+    protectedstrField.should_not == nil
+    publicstrField.should_not == nil
+    packagestrField.should_not == nil
   end
 end
 
