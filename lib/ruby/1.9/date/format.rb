@@ -1217,11 +1217,12 @@ class DateTime < Date
   end
 
   def iso8601_timediv(n) # :nodoc:
+    n = n.to_i
     strftime('T%T' +
              if n < 1
                ''
              else
-               '.%0*d' % [n, (sec_fraction / Rational(1, 10**n)).round]
+               '.%0*d' % [n, (sec_fraction * 10**n).round]
              end +
              '%:z')
   end
