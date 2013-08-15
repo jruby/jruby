@@ -276,21 +276,24 @@ class Date
 
     def <=> (other)
       case other
-      when Infinity; return d <=> other.d
-      when Numeric; return d
+      when Infinity
+        d <=> other.d
+      when Numeric
+        d
       else
         begin
           l, r = other.coerce(self)
-          return l <=> r
+          l <=> r
         rescue NoMethodError
+          nil
         end
       end
-      nil
     end
 
     def coerce(other)
       case other
-      when Numeric; return -d, d
+      when Numeric
+        [-d, d]
       else
         super
       end
@@ -1393,9 +1396,11 @@ class Date
   # particular, two Dates cannot be added to each other.
   def + (n)
     case n
-    when Numeric; return self.class.new!(@ajd + n, @of, @sg)
+    when Numeric
+      self.class.new!(@ajd + n, @of, @sg)
+    else
+      raise TypeError, 'expected numeric'
     end
-    raise TypeError, 'expected numeric'
   end
 
   # If +x+ is a Numeric value, create a new Date object that is
@@ -1408,10 +1413,13 @@ class Date
   # If +x+ is neither Numeric nor a Date, a TypeError is raised.
   def - (x)
     case x
-    when Numeric; return self.class.new!(@ajd - x, @of, @sg)
-    when Date;    return @ajd - x.ajd
+    when Numeric
+      self.class.new!(@ajd - x, @of, @sg)
+    when Date
+      @ajd - x.ajd
+    else
+      raise TypeError, 'expected numeric or date'
     end
-    raise TypeError, 'expected numeric or date'
   end
 
   # Compare this date with another date.
@@ -1427,16 +1435,18 @@ class Date
   # considered as falling on midnight UTC.
   def <=> (other)
     case other
-    when Numeric; return @ajd <=> other
-    when Date;    return @ajd <=> other.ajd
+    when Numeric
+      @ajd <=> other
+    when Date
+      @ajd <=> other.ajd
     else
       begin
         l, r = other.coerce(self)
-        return l <=> r
+        l <=> r
       rescue NoMethodError
+        nil
       end
     end
-    nil
   end
 
   # The relationship operator for Date.
@@ -1447,16 +1457,18 @@ class Date
   # fall on the same date in local time.
   def === (other)
     case other
-    when Numeric; return jd == other
-    when Date;    return jd == other.jd
+    when Numeric
+      jd == other
+    when Date
+      jd == other.jd
     else
       begin
         l, r = other.coerce(self)
-        return l === r
+        l === r
       rescue NoMethodError
+        false
       end
     end
-    false
   end
 
   def next_day(n=1) self + n end
