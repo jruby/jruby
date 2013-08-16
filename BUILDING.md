@@ -1,6 +1,8 @@
 Building JRuby from Source
 ==========================
 
+NOTE: needs maven-3.0.x - maven-3.1.0 is pending and might fail.
+
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
 
