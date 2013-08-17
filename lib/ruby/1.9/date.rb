@@ -833,10 +833,25 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.civil(y=-4712, m=1, d=1, sg=ITALY)
-    unless jd = _valid_civil?(y, m, d, sg)
-      raise ArgumentError, 'invalid date'
+    if Fixnum === y and Fixnum === m and Fixnum === d
+      m += 13 if m < 0
+      y -= 1 if y < 0 and sg > 0 # TODO
+      begin
+        dt = if d < 0
+          JODA::DateTime.new(y, m, 1, 0, 0, 0, chronology(sg)).plusMonths(1).plusDays(d)
+        else
+          JODA::DateTime.new(y, m, d, 0, 0, 0, chronology(sg))
+        end
+      rescue JODA::IllegalFieldValueException
+        raise ArgumentError, 'invalid date'
+      end
+      new!(dt, 0, sg)
+    else
+      unless jd = _valid_civil?(y, m, d, sg)
+        raise ArgumentError, 'invalid date'
+      end
+      new!(jd_to_ajd(jd, 0, 0), 0, sg)
     end
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
 
   class << self; alias_method :new, :civil end
@@ -1154,10 +1169,15 @@ class Date
   # Using one of the factory methods such as Date::civil is
   # generally easier and safer.
   def initialize(ajd=0, of=0, sg=ITALY)
-    # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-    millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).round
-    raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
-    @dt = JODA::DateTime.new(millis, chronology(sg, of))
+    if JODA::DateTime === ajd
+      @dt = ajd
+      ajd = Rational JODA::DateTimeUtils.toJulianDay(@dt.getMillis)
+    else
+      # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
+      millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).round
+      raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
+      @dt = JODA::DateTime.new(millis, chronology(sg, of))
+    end
 
     @ajd = ajd
     @of = of # offset
