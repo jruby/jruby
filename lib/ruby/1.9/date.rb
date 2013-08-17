@@ -734,11 +734,9 @@ class Date
       else
         constructor = JODA::Instant.java_class.constructor(Java::long)
         cutover = constructor.new_instance JODA::DateTimeUtils.fromJulianDay(jd_to_ajd(sg, 0))
-        return JODA.chrono::GJChronology.getInstance(tz, cutover)
+        JODA.chrono::GJChronology.getInstance(tz, cutover)
       end
     end
-    private :chronology
-
   end
 
   extend  t
