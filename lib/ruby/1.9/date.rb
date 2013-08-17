@@ -833,15 +833,11 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.civil(y=-4712, m=1, d=1, sg=ITALY)
-    if Fixnum === y and Fixnum === m and Fixnum === d
+    if Fixnum === y and Fixnum === m and Fixnum === d and d > 0
       m += 13 if m < 0
       y -= 1 if y < 0 and sg > 0 # TODO
       begin
-        dt = if d < 0
-          JODA::DateTime.new(y, m, 1, 0, 0, 0, chronology(sg)).plusMonths(1).plusDays(d)
-        else
-          JODA::DateTime.new(y, m, d, 0, 0, 0, chronology(sg))
-        end
+        dt = JODA::DateTime.new(y, m, d, 0, 0, 0, chronology(sg))
       rescue JODA::IllegalFieldValueException
         raise ArgumentError, 'invalid date'
       end
