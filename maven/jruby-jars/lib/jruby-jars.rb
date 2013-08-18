@@ -1,3 +1,5 @@
+require 'jruby-jars/version'
+
 module JRubyJars
   PATH = File.expand_path(File.dirname(__FILE__))
 
