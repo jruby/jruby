@@ -18,7 +18,7 @@ describe "Ruby IO" do
     String.from_java_bytes(output.to_byte_array).should == "12345"
   end
 
-  it "coercible to java.io.InputStream with IO#to_inputstream" do
+  it "is coercible to java.io.InputStream with IO#to_inputstream" do
     file = File.open(__FILE__)
     first_ten = file.read(10)
     file.seek(0)
@@ -30,7 +30,7 @@ describe "Ruby IO" do
     String.from_java_bytes(bytes).should == first_ten
   end
 
-  it "coercible to java.io.OutputStream with IO#to_outputstream" do
+  it "is coercible to java.io.OutputStream with IO#to_outputstream" do
     file = Tempfile.new("io_spec")
     stream = file.to_outputstream
     java.io.OutputStream.should === stream 
@@ -59,7 +59,7 @@ describe "Ruby IO" do
     String.from_java_bytes(output.to_byte_array).should == "12345"
   end
 
-  it "coercible to java.nio.channels.Channel with IO#to_channel" do
+  it "is coercible to java.nio.channels.Channel with IO#to_channel" do
     file = Tempfile.new("io_spec")
     channel = file.to_channel
     java.nio.channels.Channel.should === channel 
