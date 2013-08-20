@@ -738,7 +738,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // mri: io_read_encoding
     public Encoding getReadEncoding() {
-        return enc != null ? enc : getRuntime().getDefaultExternalEncoding();
+        return enc != null ? enc : EncodingUtils.defaultExternalEncoding(getRuntime());
     }
     
     // fptr->enc2 and codeconv->enc2
@@ -2623,7 +2623,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // io_enc_str
     private IRubyObject ioEncStr(IRubyObject str) {
         str.setTaint(true);
-        ((EncodingCapable)str).setEncoding(getReadEncoding());
+        if (getRuntime().is1_9()) ((EncodingCapable)str).setEncoding(getReadEncoding());
         return str;
     }
     
@@ -3749,18 +3749,32 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     // open_key_args
-    private static IRubyObject openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] args, IRubyObject opt) {
-        IRubyObject path;
+    private static IRubyObject openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] argv, IRubyObject opt) {
+        Ruby runtime = context.runtime;
+        IRubyObject path, v;
         
-        path = RubyFile.get_path(context, args[0]);
-        failIfDirectory(context.runtime, (RubyString)path); // only in JRuby
+        path = RubyFile.get_path(context, argv[0]);
+        failIfDirectory(runtime, (RubyString)path); // only in JRuby
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
         
         if (opt.isNil()) {
-            return ioOpen(context, path, context.runtime.newFixnum(ModeFlags.RDONLY), context.runtime.newFixnum(0666), opt);
+            return ioOpen(context, path, runtime.newFixnum(ModeFlags.RDONLY), runtime.newFixnum(0666), opt);
         }
         
-        // TODO: opt[:open_args] support
+        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("open_args"));
+        if (!v.isNil()) {
+            IRubyObject args;
+            int n;
+            
+            v = v.convertToArray();
+            n = ((RubyArray)v).size() + 1;
+            
+            args = runtime.newArray(n);
+            ((RubyArray)args).push_m19(new IRubyObject[]{path});
+            ((RubyArray)args).concat19(v);
+            
+            return RubyKernel.open19(context, recv, ((RubyArray)args).toJavaArray(), Block.NULL_BLOCK);
+        }
         
         return ioOpen(context, path, context.nil, context.nil, opt);
     }

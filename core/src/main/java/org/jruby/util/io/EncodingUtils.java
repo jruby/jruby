@@ -20,7 +20,6 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -1009,5 +1008,12 @@ public class EncodingUtils {
         }
         
         return overridden;
+    }
+    
+    // rb_default_external_encoding
+    public static Encoding defaultExternalEncoding(Ruby runtime) {
+        if (runtime.getDefaultExternalEncoding() != null) return runtime.getDefaultExternalEncoding();
+        
+        return runtime.getEncodingService().getLocaleEncoding();
     }
 }

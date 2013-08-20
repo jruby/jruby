@@ -463,7 +463,7 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
     public static IRubyObject setDefaultExternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
-        context.runtime.getWarnings().warning("setting Encoding.default_external");
+        if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_external");
         EncodingUtils.rbEncSetDefaultExternal(context, encoding);
         return encoding;
     }
@@ -475,7 +475,7 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
-        context.runtime.getWarnings().warning("setting Encoding.default_internal");
+        if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
     }

@@ -400,7 +400,7 @@ public class OpenFile {
             
             // TODO: writeconv the remaining bytes in the stream?
             
-            if (isStdio()) return;
+//            if (isStdio()) return;
             
             // Recent JDKs shut down streams in the parent when child
             // terminates, so we can't trust that they'll be open for our
