@@ -137,4 +137,12 @@ public final class ArgsUtil {
     public static int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
+    
+    public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject... args) {
+        if (args.length >= 1) {
+            return TypeConverter.checkHashType(runtime, args[args.length - 1]);
+            
+        }
+        return runtime.getNil();
+    }
 }

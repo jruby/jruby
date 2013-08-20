@@ -1178,12 +1178,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     // rb_file_open_generic
     public IRubyObject fileOpenGeneric(ThreadContext context, IRubyObject filename, int oflags, int fmode, IOEncodable convConfig, int perm) {
-        // unused in JRuby at the moment
+        // unused in JRuby at the moment since we don't have a path where this happens
 //        if (convConfig == null) {
 //            EncodingUtils.ioExtIntToEncs(context, convConfig, null, null, fmode);
 //            convConfig.setEcflags(0);
 //            convConfig.setEcopts(context.nil);
 //        }
+        // test for null instead
+        convConfig.getClass();
         
         int[] fmode_p = {fmode};
         
@@ -1192,7 +1194,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         MakeOpenFile();
         
         openFile.setMode(fmode_p[0]);
-        openFile.setPath(filename.asJavaString());
+        openFile.setPath(RubyFile.get_path(context, filename).asJavaString());
 
         sysopenInternal19(openFile.getPath(), oflags, perm);
         

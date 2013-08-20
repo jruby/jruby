@@ -214,14 +214,12 @@ public class EncodingUtils {
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
                     oflags_p[0] |= ModeFlags.BINARY;
-                }
-
-                if (!hasEnc) {
-                    ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
-                } else if (DEFAULT_TEXTMODE != 0) {
-                    if (vmode == null || vmode.isNil()) {
-                        fmode_p[0] |= DEFAULT_TEXTMODE;
+                
+                    if (!hasEnc) {
+                        ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
                     }
+                } else if (DEFAULT_TEXTMODE != 0 && (vmode == null || vmode.isNil())) {
+                    fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
 
                 if (!hasVmode) {
@@ -588,6 +586,31 @@ public class EncodingUtils {
     // rb_enc_asciicompat
     public static boolean encAsciicompat(Encoding enc) {
         return encMbminlen(enc) == 1 && !encDummy(enc);
+    }
+    
+    // rb_enc_ascget
+    public static int encAscget(byte[] bytes, int offset, int end, int[] chlen, Encoding enc) {
+        int c;
+        int l;
+        
+        if (enc.isAsciiCompatible()) {
+            c = bytes[offset];
+            if (!Encoding.isAscii((byte)c)) {
+                return -1;
+            }
+            if (chlen != null) chlen[0] = 1;
+            return c;
+        }
+        l = StringSupport.preciseLength(enc, bytes, offset, end);
+        if (StringSupport.MBCLEN_CHARFOUND_LEN(l) == 0) {
+            return -1;
+        }
+        c = enc.mbcToCode(bytes, offset, end);
+        if (!Encoding.isAscii(c)) {
+            return -1;
+        }
+        if (chlen != null) chlen[0] = 1;
+        return c;
     }
     
     // rb_enc_mbminlen

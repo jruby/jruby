@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import java.util.Arrays;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -35,11 +36,13 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.MethodData;
 
 /**
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
 public class AttrWriterMethod extends JavaMethodOne {
+    private MethodData methodData;
     private final String variableName;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
@@ -66,4 +69,11 @@ public class AttrWriterMethod extends JavaMethodOne {
         return localAccessor;
     }
     
+    @Override
+    public MethodData getMethodData() {
+        if (methodData == null){
+            methodData = new MethodData(name, "dummyfile", Arrays.asList(variableName));
+        }
+        return methodData;
+    }
 }
