@@ -31,7 +31,7 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
-import org.jruby.RubyHash;
+import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.ext.ripper.Warnings.ID;
@@ -223,11 +223,7 @@ public class RipperParser {
     }
     
     public IRubyObject new_assoc(IRubyObject key, IRubyObject value) {
-        RubyHash hash = RubyHash.newHash(context.runtime);
-        
-        hash.fastASet(value, value);
-        
-        return hash;
+        return RubyArray.newArray(context.runtime, key, value);
     }    
     
     public IRubyObject new_bv(IRubyObject identifier) {

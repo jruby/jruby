@@ -4,7 +4,7 @@ if ENV_JAVA['jruby.cext.enabled'] == 'true'
   msg = "JRuby does not support native extensions or the `mkmf' library very well.\n" +
         "Check https://wiki.jruby.org/C-Extension-Alternatives for alternatives.\n"
 else
-  msg = "C extension support is not enabled. Pass -Xcext.enabled=true to JRuby or set JRUBY_OPTS or modify .jrubyrc to enable.\n"
+  msg = "C extension support is not enabled. Pass -Xcext.enabled=true to JRuby or set JRUBY_OPTS.\n"
   raise NotImplementedError, msg
 end
 

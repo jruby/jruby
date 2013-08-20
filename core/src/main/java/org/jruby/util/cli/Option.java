@@ -221,7 +221,7 @@ public abstract class Option<T> {
             sb.append("# Options: ").append(Arrays.toString(option.options)).append(", Default: ").append(encodeWhitespace(option.defval)).append(".\n");
             
             sb.append("\n#");
-            sb.append(option.displayName).append('=').append(encodeWhitespace(option.load()));
+            sb.append(option.displayName).append('=').append(outputForValue(option.load()));
             
             sb.append("\n\n");
         }
@@ -268,6 +268,14 @@ public abstract class Option<T> {
             return "\"" + sb.toString() + "\"";
         } else {
             return str;
+        }
+    }
+    
+    private static String outputForValue(Object obj) {
+        if (obj == null) {
+            return "";
+        } else {
+            return encodeWhitespace(obj);
         }
     }
 

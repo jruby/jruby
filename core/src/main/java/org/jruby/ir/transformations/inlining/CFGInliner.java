@@ -9,6 +9,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ModuleVersionGuardInstr;
@@ -110,6 +111,17 @@ public class CFGInliner {
                     for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
                         BasicBlock b = e.getDestination().getData();
                         if (b != mExit) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
+                    }
+                }
+            }
+        }
+
+        if (callBB == null) {
+            for (BasicBlock x: cfg.getBasicBlocks()) {
+                for (Instr i: x.getInstrs()) {
+                    if (i == call) {
+                        callBB = x;
+                        break;
                     }
                 }
             }

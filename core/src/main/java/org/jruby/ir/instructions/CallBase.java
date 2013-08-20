@@ -29,13 +29,16 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class CallBase extends Instr implements Specializeable {
+    private static long callSiteCounter = 1;
+
+    public final long callSiteId;
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
     protected MethAddr methAddr;
     protected CallSite callSite;
     private final CallType callType;
-    
+
     private boolean flagsComputed;
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
@@ -46,6 +49,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
 
+        this.callSiteId = callSiteCounter++;
         this.receiver = receiver;
         this.arguments = args;
         this.closure = closure;

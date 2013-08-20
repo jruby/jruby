@@ -394,22 +394,31 @@ public class LexerSource {
      * then it reverts lexer source back to point when this method was invoked.
      * 
      * @param marker to match against
-     * @param indent eat any leading whitespace
+     * @param indent include leading whitespace
      * @param withNewline includes a check that marker is followed by newline or EOF
      * @return 0 if no match -1 is EOF and '\n' if newline (only if withNewline is true).
      * @throws IOException if an error occurred reading from underlying IO source
      */
-    public int matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
+    public ByteList matchMarker(ByteList match, boolean indent, boolean checkNewline) throws IOException {
         int length = match.length();
         ByteList buffer = new ByteList(length + 1);
         
-        if (indent) {
-            indentLoop(buffer);
+        if (indent) indentLoop(buffer);
+        
+        if (!matches(match, buffer, length)) return null;
+        
+        int c = read();
+
+        if (c == RipperLexer.EOF) return buffer;
+
+        if (checkNewline && c == '\n') {
+            buffer.append(c);
+            return buffer;
         }
         
-        if (!matches(match, buffer, length)) return 0;
-        
-        return finishMarker(checkNewline, buffer); 
+        unread(c);
+
+        return buffer;
     }
 
     private void indentLoop(ByteList buffer) throws IOException {
@@ -434,21 +443,6 @@ public class LexerSource {
             }
         }
         return true;
-    }
-
-    private int finishMarker(boolean checkNewline, ByteList buffer) throws IOException {
-
-        if (!checkNewline) return -1;
-
-        int c = read();
-
-        if (c == RipperLexer.EOF) return -1;
-        if (c == '\n') return '\n';
-
-        buffer.append(c);
-        unreadMany(buffer);
-
-        return 0;
     }
     
     /**

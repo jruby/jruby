@@ -864,11 +864,9 @@ public class RipperLexer implements Warnings {
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
             if (src.peek('!')) {
-                commentBuf = src.readUntil('\n');
-
-                // TODO: Eat whitespace
-                
-                if (!src.peek('#')) return '\n';
+                commentBuf.append(src.readLineBytesPlusNewline());
+                dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
+                return 0;
             }
 
             commentLine = src.readLineBytesPlusNewline();
@@ -886,7 +884,6 @@ public class RipperLexer implements Warnings {
         
         commentBuf.append(src.readLineBytesPlusNewline());
         dispatchScanEvent(Tokens.tCOMMENT, commentBuf);
-        
         return '\n';
     }
     
@@ -1028,7 +1025,7 @@ public class RipperLexer implements Warnings {
         }
     }
     
-    private void dispatchScanEvent(int token, Object value) {
+    public void dispatchScanEvent(int token, Object value) {
         // String processing generates extra tSTRING_END which we don't want to see for things like heredocs
         if (ignoreNextScanEvent) { 
             ignoreNextScanEvent = false;
@@ -1318,6 +1315,7 @@ public class RipperLexer implements Warnings {
                         continue loop;
                 }
 
+                ByteList whitespaceBuf = new ByteList(); // FIXME: bytelist encoding hookedup
                 boolean done = false;
                 while (!done) {
                     c = src.read();
@@ -1329,6 +1327,7 @@ public class RipperLexer implements Warnings {
                         case '\r':
                         case '\13': /* '\v' */
                             spaceSeen = true;
+                            whitespaceBuf.append(c);
                             continue;
                         case '.': {
                             if ((c = src.read()) != '.') {
@@ -1344,6 +1343,8 @@ public class RipperLexer implements Warnings {
                     }
                 }
 
+                // We do not have same pointer-based lexer as MRI so we are delaying this
+                if (spaceSeen) addDelayedValue(Tokens.tSP, new Token(whitespaceBuf, getPosition()));
 
                 if (c != -1) {
                     src.unread(c);
@@ -1357,6 +1358,9 @@ public class RipperLexer implements Warnings {
                 commandStart = true;
                 setState(LexState.EXPR_BEG);
                 
+                // We swallow the newline during comment processing and no don't need to dispatch it.
+                if (fallthru) continue loop;
+                
                 yaccValue = new Token("\n", getPosition());
                 
                 return '\n';
@@ -1367,9 +1371,10 @@ public class RipperLexer implements Warnings {
             case '=':
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
-                    if (src.matchMarker(BEGIN_DOC_MARKER, false, false) != 0) {
-                        ByteList markerValue = new ByteList();
-                        markerValue.append('=').append(BEGIN_DOC_MARKER);
+                    ByteList markerValue = null;
+                    if ((markerValue = src.matchMarker(BEGIN_DOC_MARKER, false, false)) != null) {
+                        markerValue.prepend((byte) '=');
+                        
                         c = src.read();
                         
                         if (Character.isWhitespace(c)) {
@@ -1383,10 +1388,11 @@ public class RipperLexer implements Warnings {
                             for (;;) {
                                 c = src.read();
 
-                                // If a line is followed by a blank line put
-                                // it back.
+                                // If a line is followed by a blank line put it back.
                                 while (c == '\n') {
                                     embValue.append(c);
+                                    dispatchScanEvent(Tokens.tEMBDOC, embValue);
+                                    embValue = new ByteList();
                                     c = src.read();
                                 }
                                 if (c == EOF) {
@@ -1398,11 +1404,10 @@ public class RipperLexer implements Warnings {
                                     embValue.append(c);
                                     continue;
                                 }
-                                if (src.wasBeginOfLine() &&  src.matchMarker(END_DOC_MARKER, false, false) != 0) {
+                                if (src.wasBeginOfLine() &&  (markerValue = src.matchMarker(END_DOC_MARKER, false, false)) != null) {
                                     dispatchScanEvent(Tokens.tEMBDOC, embValue);
-                                    markerValue = new ByteList();
-                                    markerValue.append('=').append(END_DOC_MARKER);
                                     markerValue.append(src.readLineBytesPlusNewline());
+                                    markerValue.prepend((byte) '=');
                                     dispatchScanEvent(Tokens.tEMBDOC_END, markerValue);
                                     break;
                                 }
@@ -1410,7 +1415,7 @@ public class RipperLexer implements Warnings {
 
                             continue;
                         }
-						src.unread(c);
+                        src.unread(c);
                     }
                 }
 
@@ -1507,12 +1512,10 @@ public class RipperLexer implements Warnings {
                 return at();
             case '_':
                 if (src.wasBeginOfLine()) {
-                    int match = src.matchMarker(END_MARKER, false, true);
+                    ByteList match = src.matchMarker(END_MARKER, false, true);
 
-                    if (match != 0) {
-                        String endString = match == '\n' ? "__END__\n" : "__END__";
-                        
-                        dispatchScanEvent(Tokens.k__END__, new Token(endString, getPosition()));
+                    if (match != null) {
+                        dispatchScanEvent(Tokens.k__END__, new Token(match, getPosition()));
                         return EOF;
                     }
                 }
@@ -1979,10 +1982,8 @@ public class RipperLexer implements Warnings {
                 lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                src.unread(c2);
                 setState(LexState.EXPR_BEG);
-                src.read();
-                yaccValue = new Token(tempVal, getPosition());
+                yaccValue = new Token(tempVal + ':', getPosition());
                 return Tokens.tLABEL;
             }
             src.unread(c2);
@@ -2388,7 +2389,7 @@ public class RipperLexer implements Warnings {
     
     private int singleQuote() throws IOException {
         lex_strterm = new StringTerm(str_squote, '\0', '\'');
-
+        yaccValue = new Token("\'", getPosition());
         return Tokens.tSTRING_BEG;
     }
     

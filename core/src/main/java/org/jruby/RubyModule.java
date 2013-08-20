@@ -105,6 +105,7 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
@@ -1458,9 +1459,15 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.runtime;
-        String name = arg0.asJavaString().intern();
+        String name = TypeConverter.convertToIdentifier(arg0);
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
+
+        // We need our identifier to be retrievable and creatable as a symbol.  This side-effect
+        // populates this name into our symbol table so it will exist later if needed.  The
+        // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
+        // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
+        RubySymbol.newSymbol(runtime, arg0);
         
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
@@ -1483,9 +1490,15 @@ public class RubyModule extends RubyObject {
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject body;
-        String name = arg0.asJavaString().intern();
+        String name = TypeConverter.convertToIdentifier(arg0);
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
+        
+        // We need our identifier to be retrievable and creatable as a symbol.  This side-effect
+        // populates this name into our symbol table so it will exist later if needed.  The
+        // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
+        // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
+        RubySymbol.newSymbol(runtime, arg0);
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places

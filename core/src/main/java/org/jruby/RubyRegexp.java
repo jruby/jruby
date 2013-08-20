@@ -236,6 +236,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
+        regexpClass.getSingletonClass().defineAlias("compile", "new");
 
         return regexpClass;
     }
@@ -902,15 +903,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private void check() {
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
-    }
-
-    @JRubyMethod(name = {"new", "compile"}, rest = true, meta = true)
-    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyClass klass = (RubyClass)recv;
-        RubyRegexp re = (RubyRegexp) klass.allocate();
-
-        re.callInit(args, Block.NULL_BLOCK);
-        return re;
     }
 
     @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
@@ -2517,5 +2509,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (regexp.getOptions().isFixed()) options |= ARG_ENCODING_FIXED;
         
         output.writeByte(options);
+    }
+
+    @Deprecated
+    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass)recv;
+        RubyRegexp re = (RubyRegexp) klass.allocate();
+
+        re.callInit(args, Block.NULL_BLOCK);
+        return re;
     }
 }

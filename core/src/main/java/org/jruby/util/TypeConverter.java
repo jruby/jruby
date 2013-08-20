@@ -26,15 +26,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 
 public class TypeConverter {
     /**
@@ -164,6 +171,23 @@ public class TypeConverter {
         return obj.getMetaClass().getRealClass().getName();
     }
 
+    /**
+     * Convert the supplied object into an internal identifier String.  Basically, symbols
+     * are stored internally as raw bytes from whatever encoding they were originally sourced from.
+     * When methods are stored they must also get stored in this same raw fashion so that if we
+     * use symbols to look up methods or make symbols from these method names they will match up.
+     */
+    public static String convertToIdentifier(IRubyObject obj) {
+        // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
+        // Assume all other objects cannot participate in providing raw bytes since we cannot
+        // grab it's string representation without calling a method which properly encodes
+        // the string.
+        if (obj instanceof RubyString) {
+            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+        }
+        
+        return obj.asJavaString().intern();
+    }
     /**
      * Higher level conversion utility similar to convertToType but it can throw an
      * additional TypeError during conversion (MRI: rb_check_convert_type).

@@ -311,14 +311,8 @@ public class JavaUtil {
     }
 
     /**
-     * For methods that match /(([a-z0-9])([A-Z])|([A-Za-z0-9])([A-Z][a-z]))/,
-     * return the snake-cased equivalent (inserting _ between groups 2 and 3 or
-     * 4 and 5).
-     *
-     * Does not use regex for performance reasons.
-     *
-     * @param javaCasedName the camelCased name to convert
-     * @return the snake_cased result
+     * Build a Ruby name from a Java name by treating aA as _ divider and successive
+     * caps as all the same word.
      */
     public static String getRubyCasedName(String javaCasedName) {
         StringBuilder b = new StringBuilder();
