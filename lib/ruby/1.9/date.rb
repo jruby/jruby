@@ -972,29 +972,29 @@ class Date
 
   def self.valid_date_frags?(elem, sg) # :nodoc:
     if jd = elem[:jd] and
-      jd = _valid_jd?(jd, sg)
+        jd = _valid_jd?(jd, sg)
       return jd
     end
 
     year = elem[:year]
 
     if year and yday = elem[:yday] and
-      jd = _valid_ordinal?(year, yday, sg)
+        jd = _valid_ordinal?(year, yday, sg)
       return jd
     end
 
     if year and mon = elem[:mon] and mday = elem[:mday] and
-      jd = _valid_civil?(year, mon, mday, sg)
+        jd = _valid_civil?(year, mon, mday, sg)
       return jd
     end
 
     if cwyear = elem[:cwyear] and cweek = elem[:cweek] and cwday = (elem[:cwday] || elem[:wday].nonzero? || 7) and
-      jd = _valid_commercial?(cwyear, cweek, cwday, sg)
+        jd = _valid_commercial?(cwyear, cweek, cwday, sg)
       return jd
     end
 
     if year and wnum0 = elem[:wnum0] and wday = (elem[:wday] || (elem[:cwday] && elem[:cwday] % 7)) and
-      jd = _valid_weeknum?(year, wnum0, wday, 0, sg)
+        jd = _valid_weeknum?(year, wnum0, wday, 0, sg)
       return jd
     end
 
