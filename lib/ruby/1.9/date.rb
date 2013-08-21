@@ -1514,7 +1514,7 @@ class Date
   def eql? (other) Date === other && self == other end
 
   # Calculate a hash value for this date.
-  def hash() ajd.hash end
+  def hash() @dt.getMillis end
 
   # Return internal object state as a programmer-readable string.
   def inspect
