@@ -1863,8 +1863,7 @@ class Date
   # +sg+ specifies the Day of Calendar Reform.
   def self.today(sg=ITALY)
     t = Time.now
-    jd = civil_to_jd(t.year, t.mon, t.mday, sg)
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
+    civil(t.year, t.mon, t.mday, sg)
   end
 
   # Create a new DateTime object representing the current time.
