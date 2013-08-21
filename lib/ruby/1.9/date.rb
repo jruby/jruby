@@ -1171,8 +1171,6 @@ class Date
     if JODA::DateTime === ajd
       @dt = ajd
       @sub_millis = sub_millis
-      # ajd = Rational(@dt.getMillis + sub_millis, 86400000) + 2440587.5
-      ajd = Rational(210866760000000 + @dt.getMillis + sub_millis, 86400000)
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
       millis, @sub_millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
@@ -1180,7 +1178,6 @@ class Date
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
     end
 
-    @ajd = ajd
     @of = of # offset
     @sg = sg # start
 
@@ -1188,18 +1185,23 @@ class Date
   end
 
   # Get the date as an Astronomical Julian Day Number.
-  def ajd() @ajd end
+  def ajd
+    # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
+    Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
+  end
+
+  once :ajd
 
   # Get the date as an Astronomical Modified Julian Day Number.
-  def amjd() ajd_to_amjd(@ajd) end
+  def amjd() ajd_to_amjd(ajd) end
 
   once :amjd
 
   # Get the date as a Julian Day Number.
-  def jd() ajd_to_jd(@ajd, @of)[0] end
+  def jd() ajd_to_jd(ajd, @of)[0] end
 
   # Get any fractional day part of the date.
-  def day_fraction() ajd_to_jd(@ajd, @of)[1] end
+  def day_fraction() ajd_to_jd(ajd, @of)[1] end
 
   # Get the date as a Modified Julian Day Number.
   def mjd() jd_to_mjd(jd) end
@@ -1373,7 +1375,7 @@ class Date
   end
 
   # Create a copy of this Date object using a new Day of Calendar Reform.
-  def new_start(sg=self.class::ITALY) self.class.new!(@ajd, @of, sg) end
+  def new_start(sg=self.class::ITALY) self.class.new!(ajd, @of, sg) end
 
   # Create a copy of this Date object that uses the Italian/Catholic
   # Day of Calendar Reform.
@@ -1399,7 +1401,7 @@ class Date
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
     end
-    self.class.new!(@ajd, of, @sg)
+    self.class.new!(ajd, of, @sg)
   end
 
   private :offset, :new_offset
@@ -1418,7 +1420,7 @@ class Date
     when Fixnum
       self.class.new!(@dt.plusDays(n), @of, @sg, @sub_millis)
     when Numeric
-      self.class.new!(@ajd + n, @of, @sg)
+      self.class.new!(ajd + n, @of, @sg)
     else
       raise TypeError, 'expected numeric'
     end
@@ -1437,7 +1439,7 @@ class Date
     when Numeric
       self + (-x)
     when Date
-      @ajd - x.ajd
+      ajd - x.ajd
     else
       raise TypeError, 'expected numeric or date'
     end
@@ -1457,9 +1459,9 @@ class Date
   def <=> (other)
     case other
     when Numeric
-      @ajd <=> other
+      ajd <=> other
     when Date
-      @ajd <=> other.ajd
+      ajd <=> other.ajd
     else
       begin
         l, r = other.coerce(self)
@@ -1571,11 +1573,11 @@ class Date
   def eql? (other) Date === other && self == other end
 
   # Calculate a hash value for this date.
-  def hash() @ajd.hash end
+  def hash() ajd.hash end
 
   # Return internal object state as a programmer-readable string.
   def inspect
-    format('#<%s: %s (%s,%s,%s)>', self.class, to_s, @ajd, @of, @sg)
+    format('#<%s: %s (%s,%s,%s)>', self.class, to_s, ajd, @of, @sg)
   end
 
   # Return the date as a human-readable string.
@@ -1584,7 +1586,7 @@ class Date
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
   # Dump to Marshal format.
-  def marshal_dump() [@ajd, @of, @sg] end
+  def marshal_dump() [ajd, @of, @sg] end
 
   # Load from Marshal format.
   def marshal_load(a)
