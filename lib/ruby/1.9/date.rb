@@ -1212,15 +1212,7 @@ class Date
 
   once :jd, :day_fraction, :mjd, :ld
 
-  # Get the date as a Commercial Date, [year, week_of_year, day_of_week]
-  def commercial() jd_to_commercial(jd, @sg) end # :nodoc:
-
-  once :commercial
-  private :commercial
-
-  # Get the year of this date.
-  def year
-    year = @dt.getYear
+  def joda_year_to_date_year(year)
     if year < 0 and julian?
       # Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
       # while date.rb returns -x+1, following astronomical year numbering (with year 0)
@@ -1228,6 +1220,12 @@ class Date
     else
       year
     end
+  end
+  private :joda_year_to_date_year
+
+  # Get the year of this date.
+  def year
+    joda_year_to_date_year(@dt.getYear)
   end
 
   # Get the day-of-the-year of this date.
@@ -1285,14 +1283,20 @@ class Date
 
   # Get the commercial year of this date.  See *Commercial* *Date*
   # in the introduction for how this differs from the normal year.
-  def cwyear() commercial[0] end
+  def cwyear
+    joda_year_to_date_year(@dt.getWeekyear)
+  end
 
   # Get the commercial week of the year of this date.
-  def cweek() commercial[1] end
+  def cweek
+    @dt.getWeekOfWeekyear
+  end
 
   # Get the commercial day of the week of this date.  Monday is
   # commercial day-of-week 1; Sunday is commercial day-of-week 7.
-  def cwday() commercial[2] end
+  def cwday
+    @dt.getDayOfWeek
+  end
 
   # Get the week day of this date.  Sunday is day-of-week 0;
   # Saturday is day-of-week 6.
