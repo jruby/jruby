@@ -1647,14 +1647,32 @@ class DateTime < Date
   # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is Julian Day
   # Number day 0.  The time values default to 0.
   def self.civil(y=-4712, m=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
-    unless (jd = _valid_civil?(y, m, d, sg)) &&
-           (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
-    end
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
     end
-    new!(jd_to_ajd(jd, fr, of), of, sg)
+
+    if Fixnum === y and Fixnum === m and Fixnum === d and
+        Fixnum === h and Fixnum === min and
+        (Fixnum === s or (Rational === s and 1000 % s.denominator == 0)) and
+        m > 0 and d > 0 and h >= 0 and h < 24 and min >= 0 and s >= 0
+      y -= 1 if y < 0 and sg > 0 # TODO
+      ms = 0
+      if Rational === s
+        s, ms = (s.numerator * 1000 / s.denominator).divmod(1000)
+      end
+      begin
+        dt = JODA::DateTime.new(y, m, d, h, min, s, ms, chronology(sg, of))
+      rescue JODA::IllegalFieldValueException
+        raise ArgumentError, 'invalid date'
+      end
+      new!(dt, of, sg)
+    else
+      unless (jd = _valid_civil?(y, m, d, sg)) &&
+             (fr = _valid_time?(h, min, s))
+        raise ArgumentError, 'invalid date'
+      end
+      new!(jd_to_ajd(jd, fr, of), of, sg)
+    end
   end
   class << self; alias_method :new, :civil end
 
