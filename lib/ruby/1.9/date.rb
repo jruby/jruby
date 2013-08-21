@@ -1405,7 +1405,7 @@ class Date
     when Numeric
       ajd <=> other
     when Date
-      ajd <=> other.ajd
+      @dt.compareTo(other.dt)
     else
       begin
         l, r = other.coerce(self)
