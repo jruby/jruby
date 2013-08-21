@@ -1163,7 +1163,6 @@ class Date
 
   # Get the date as an Astronomical Modified Julian Day Number.
   def amjd() ajd_to_amjd(ajd) end
-  once :amjd
 
   # Get the date as a Julian Day Number.
   def jd() ajd_to_jd(ajd, @of)[0] end
@@ -1175,12 +1174,10 @@ class Date
 
   # Get the date as a Modified Julian Day Number.
   def mjd() jd_to_mjd(jd) end
-  once :mjd
 
   # Get the date as the number of days since the Day of Calendar
   # Reform (in Italy and the Catholic countries).
   def ld() jd_to_ld(jd) end
-  once :ld
 
   def joda_year_to_date_year(year)
     if year < 0 and julian?
@@ -1270,7 +1267,6 @@ class Date
   def wday
     @dt.getDayOfWeek % 7
   end
-  once :wday
 
   DAYNAMES.each_with_index do |n, i|
     define_method(n.downcase + '?'){wday == i}
@@ -1304,7 +1300,6 @@ class Date
   def leap?
     julian? ? Date.julian_leap?(year) : Date.gregorian_leap?(year)
   end
-  once :leap?
 
   # When is the Day of Calendar Reform for this Date object?
   def start
