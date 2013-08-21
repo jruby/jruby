@@ -262,8 +262,8 @@ public class RubyRational extends RubyNumeric {
         num = f_idiv(context, num, gcd);
         den = f_idiv(context, den, gcd);
 
-        if (Numeric.CANON) {
-            if (f_one_p(context, den) && canonicalization) return num;
+        if (Numeric.CANON && canonicalization && f_one_p(context, den)) {
+            return num;
         }
 
         return new RubyRational(context.runtime, clazz, num, den);
@@ -280,10 +280,10 @@ public class RubyRational extends RubyNumeric {
             den = f_negate(context, den);
         } else if (res == RubyFixnum.zero(runtime)) {
             throw runtime.newZeroDivisionError();            
-        }        
+        }
 
-        if (Numeric.CANON) {
-            if (f_one_p(context, den) && canonicalization) return num;
+        if (Numeric.CANON && canonicalization && f_one_p(context, den)) {
+            return num;
         }
 
         return new RubyRational(context.runtime, clazz, num, den);
