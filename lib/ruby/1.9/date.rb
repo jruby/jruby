@@ -755,8 +755,8 @@ class Date
   # All years divisible by 4 are leap years in the Gregorian calendar,
   # except for years divisible by 100 and not by 400.
   def self.gregorian_leap? (y) y % 4 == 0 && y % 100 != 0 || y % 400 == 0 end
-
   class << self; alias_method :leap?, :gregorian_leap? end
+
   class << self; alias_method :new!, :new end
 
   def self.valid_jd? (jd, sg=ITALY)
@@ -770,7 +770,6 @@ class Date
   def self.valid_civil? (y, m, d, sg=ITALY)
     !!_valid_civil?(y, m, d, sg)
   end
-
   class << self; alias_method :valid_date?, :valid_civil? end
 
   def self.valid_commercial? (y, w, d, sg=ITALY)
@@ -780,19 +779,16 @@ class Date
   def self.valid_weeknum? (y, w, d, f, sg=ITALY) # :nodoc:
     !!_valid_weeknum?(y, w, d, f, sg)
   end
-
   private_class_method :valid_weeknum?
 
   def self.valid_nth_kday? (y, m, n, k, sg=ITALY) # :nodoc:
     !!_valid_nth_kday?(y, m, n, k, sg)
   end
-
   private_class_method :valid_nth_kday?
 
   def self.valid_time? (h, min, s) # :nodoc:
     !!_valid_time?(h, min, s)
   end
-
   private_class_method :valid_time?
 
   # Create a new Date object from a Julian Day Number.
@@ -852,7 +848,6 @@ class Date
       new!(jd_to_ajd(jd, 0, 0), 0, sg)
     end
   end
-
   class << self; alias_method :new, :civil end
 
   # Create a new Date object for the Commercial Date specified by
@@ -882,7 +877,6 @@ class Date
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
-
   private_class_method :weeknum
 
   def self.nth_kday(y=-4712, m=1, n=1, k=1, sg=ITALY)
@@ -891,7 +885,6 @@ class Date
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
-
   private_class_method :nth_kday
 
   def self.rewrite_frags(elem) # :nodoc:
@@ -911,7 +904,6 @@ class Date
     end
     elem
   end
-
   private_class_method :rewrite_frags
 
   COMPLETE_FRAGS = [
@@ -993,7 +985,6 @@ class Date
 
     elem
   end
-
   private_class_method :complete_frags
 
   def self.valid_date_frags?(elem, sg) # :nodoc:
@@ -1031,14 +1022,12 @@ class Date
       return jd
     end
   end
-
   private_class_method :valid_date_frags?
 
   def self.valid_time_frags? (elem) # :nodoc:
     h, min, s = elem.values_at(:hour, :min, :sec)
     _valid_time?(h, min, s)
   end
-
   private_class_method :valid_time_frags?
 
   def self.new_by_frags(elem, sg) # :nodoc:
@@ -1055,7 +1044,6 @@ class Date
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
-
   private_class_method :new_by_frags
 
   # Create a new Date object by parsing from a String
@@ -1117,7 +1105,6 @@ class Date
     elem = _rfc2822(str)
     new_by_frags(elem, sg)
   end
-
   class << self; alias_method :rfc822, :rfc2822 end
 
   def self.httpdate(str='Mon, 01 Jan -4712 00:00:00 GMT', sg=ITALY) # :nodoc:
@@ -1143,7 +1130,6 @@ class Date
         end;
       end
     end # <<dummy
-
     private :once
 
   end
@@ -1189,12 +1175,10 @@ class Date
     # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
     Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
   end
-
   once :ajd
 
   # Get the date as an Astronomical Modified Julian Day Number.
   def amjd() ajd_to_amjd(ajd) end
-
   once :amjd
 
   # Get the date as a Julian Day Number.
@@ -1209,7 +1193,6 @@ class Date
   # Get the date as the number of days since the Day of Calendar
   # Reform (in Italy and the Catholic countries).
   def ld() jd_to_ld(jd) end
-
   once :jd, :day_fraction, :mjd, :ld
 
   def joda_year_to_date_year(year)
@@ -1241,13 +1224,12 @@ class Date
   def mon
     @dt.getMonthOfYear
   end
+  alias_method :month, :mon
 
   # Get the day-of-the-month of this date.
   def mday
     @dt.getDayOfMonth
   end
-
-  alias_method :month, :mon
   alias_method :day, :mday
 
   # Get the hour of this date.
@@ -1259,26 +1241,24 @@ class Date
   def min
     @dt.getMinuteOfHour
   end
+  alias_method :minute, :min
 
   # Get the second of this date.
   def sec
     @dt.getSecondOfMinute
   end
+  alias_method :second, :sec
 
   # Get the fraction-of-a-second of this date.
   def sec_fraction
     Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
   end
-
-  alias_method :minute, :min
-  alias_method :second, :sec
   alias_method :second_fraction, :sec_fraction
 
   private :hour, :min, :sec, :sec_fraction,
           :minute, :second, :second_fraction
 
   def zone() strftime('%:z') end
-
   private :zone
 
   # Get the commercial year of this date.  See *Commercial* *Date*
@@ -1303,7 +1283,6 @@ class Date
   def wday
     @dt.getDayOfWeek % 7
   end
-
   once :wday
 
   DAYNAMES.each_with_index do |n, i|
@@ -1313,7 +1292,6 @@ class Date
   def nth_kday? (n, k)
     k == wday && jd === nth_kday_to_jd(year, mon, n, k, start)
   end
-
   private :nth_kday?
 
   # Is the current date old-style (Julian Calendar)?
@@ -1323,18 +1301,16 @@ class Date
                         # Oddly, much faster than chrono.getGregorianCutover.isAfter(@dt)
        chrono.is_a?(JODA.chrono::GJChronology) && chrono.getGregorianCutover.getMillis > @dt.getMillis)
   end
+  once :julian?
 
   # Is the current date new-style (Gregorian Calendar)?
   def gregorian? () !julian? end
-
-  once :julian?, :gregorian?
 
   def fix_style # :nodoc:
     if julian?
     then self.class::JULIAN
     else self.class::GREGORIAN end
   end
-
   private :fix_style
 
   # Is this a leap year?
@@ -1342,7 +1318,6 @@ class Date
     jd_to_civil(civil_to_jd(year, 3, 1, fix_style) - 1,
                 fix_style)[-1] == 29
   end
-
   once :leap?
 
   # When is the Day of Calendar Reform for this Date object?
@@ -1387,7 +1362,6 @@ class Date
     end
     self.class.new!(ajd, of, @sg)
   end
-
   private :offset, :new_offset
 
   # Return a new Date object that is +n+ days later than the
@@ -1483,7 +1457,6 @@ class Date
 
   # Return a new Date one day after this one.
   def next() next_day end
-
   alias_method :succ, :next
 
   # Return a new Date object that is +n+ months later than
@@ -1514,8 +1487,6 @@ class Date
   def prev_year(n=1)
     next_year(-n)
   end
-
-  require 'enumerator'
 
   # Step the current date forward +step+ days at a
   # time (or backward, if +step+ is negative) until
@@ -1703,7 +1674,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
   class << self; alias_method :new, :civil end
 
   # Create a new DateTime object corresponding to the specified
@@ -1742,7 +1712,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
   private_class_method :weeknum
 
   def self.nth_kday(y=-4712, m=1, n=1, k=1, h=0, min=0, s=0, of=0, sg=ITALY) # :nodoc:
@@ -1755,7 +1724,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
   private_class_method :nth_kday
 
   def self.new_by_frags(elem, sg) # :nodoc:
@@ -1773,7 +1741,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
   private_class_method :new_by_frags
 
   # Create a new DateTime object by parsing from a String
@@ -1834,7 +1801,6 @@ class DateTime < Date
     elem = _rfc2822(str)
     new_by_frags(elem, sg)
   end
-
   class << self; alias_method :rfc822, :rfc2822 end
 
   def self.httpdate(str='Mon, 01 Jan -4712 00:00:00 GMT', sg=ITALY) # :nodoc:
@@ -1902,7 +1868,6 @@ class Date
     of = Rational(t.utc_offset, 86400)
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
   private_class_method :now
 
 end
