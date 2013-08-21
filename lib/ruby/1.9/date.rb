@@ -1435,7 +1435,7 @@ class Date
   def - (x)
     case x
     when Numeric
-      self.class.new!(@ajd - x, @of, @sg)
+      self + (-x)
     when Date
       @ajd - x.ajd
     else
