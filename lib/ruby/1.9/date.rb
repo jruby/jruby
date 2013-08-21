@@ -1836,10 +1836,10 @@ class Time
   def to_datetime
     of = Rational(utc_offset, 86400)
     s = [sec, 59].min
-    if (ss = subsec) != 0
-      s += ss
-    end
-    DateTime.civil(year, mon, mday, hour, min, s, of, DateTime::ITALY)
+    ms, sub_millis = nsec.divmod(1_000_000) # expects ns precision for Time
+    sub_millis = Rational(sub_millis, 1_000_000)
+    dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, Date::ITALY, of))
+    DateTime.new!(dt, of, Date::ITALY, sub_millis)
   end
 
 end
