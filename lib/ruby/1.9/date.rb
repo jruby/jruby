@@ -1316,7 +1316,9 @@ class Date
   end
 
   # Create a copy of this Date object using a new Day of Calendar Reform.
-  def new_start(sg=self.class::ITALY) self.class.new!(ajd, @of, sg) end
+  def new_start(sg=self.class::ITALY)
+    self.class.new!(@dt.withChronology(chronology(sg, @of)), @of, sg, @sub_millis)
+  end
 
   # Create a copy of this Date object that uses the Italian/Catholic
   # Day of Calendar Reform.
@@ -1342,7 +1344,7 @@ class Date
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
     end
-    self.class.new!(ajd, of, @sg)
+    self.class.new!(@dt.withChronology(chronology(@sg, of)), of, @sg, @sub_millis)
   end
   private :offset, :new_offset
 
