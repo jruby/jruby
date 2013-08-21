@@ -1305,9 +1305,9 @@ class Date
   # When is the Day of Calendar Reform for this Date object?
   def start
     case @dt.getChronology
-    when JODA.chrono.JulianChronology
+    when JODA.chrono::JulianChronology
       JULIAN
-    when JODA.chrono.GregorianChronology
+    when JODA.chrono::GregorianChronology
       GREGORIAN
     else
       JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
