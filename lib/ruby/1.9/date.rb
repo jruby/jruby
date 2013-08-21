@@ -1102,16 +1102,14 @@ class Date
 
   class << self
 
-    def once(*ids) # :nodoc: -- restricted
-      for id in ids
-        module_eval <<-"end;"
-          alias_method :__#{id.object_id}__, :#{id.to_s}
-          private :__#{id.object_id}__
-          def #{id.to_s}(*args)
-            @__ca__[#{id.object_id}] ||= __#{id.object_id}__(*args)
-          end
-        end;
-      end
+    def once(id) # :nodoc: -- restricted
+      module_eval <<-"end;"
+        alias_method :__#{id.object_id}__, :#{id.to_s}
+        private :__#{id.object_id}__
+        def #{id.to_s}(*args)
+          @__ca__[#{id.object_id}] ||= __#{id.object_id}__(*args)
+        end
+      end;
     end # <<dummy
     private :once
 
@@ -1169,17 +1167,20 @@ class Date
 
   # Get the date as a Julian Day Number.
   def jd() ajd_to_jd(ajd, @of)[0] end
+  once :jd
 
   # Get any fractional day part of the date.
   def day_fraction() ajd_to_jd(ajd, @of)[1] end
+  once :day_fraction
 
   # Get the date as a Modified Julian Day Number.
   def mjd() jd_to_mjd(jd) end
+  once :mjd
 
   # Get the date as the number of days since the Day of Calendar
   # Reform (in Italy and the Catholic countries).
   def ld() jd_to_ld(jd) end
-  once :jd, :day_fraction, :mjd, :ld
+  once :ld
 
   def joda_year_to_date_year(year)
     if year < 0 and julian?
