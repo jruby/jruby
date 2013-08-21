@@ -1212,20 +1212,14 @@ class Date
 
   once :jd, :day_fraction, :mjd, :ld
 
-  # Get the date as a Civil Date, [year, month, day_of_month]
-  def civil() jd_to_civil(jd, @sg) end # :nodoc:
-
-  # Get the date as an Ordinal Date, [year, day_of_year]
-  def ordinal() jd_to_ordinal(jd, @sg) end # :nodoc:
-
   # Get the date as a Commercial Date, [year, week_of_year, day_of_week]
   def commercial() jd_to_commercial(jd, @sg) end # :nodoc:
 
   def weeknum0() jd_to_weeknum(jd, 0, @sg) end # :nodoc:
   def weeknum1() jd_to_weeknum(jd, 1, @sg) end # :nodoc:
 
-  once :civil, :ordinal, :commercial, :weeknum0, :weeknum1
-  private :civil, :ordinal, :commercial, :weeknum0, :weeknum1
+  once :commercial, :weeknum0, :weeknum1
+  private :commercial, :weeknum0, :weeknum1
 
   # Get the year of this date.
   def year
