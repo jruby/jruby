@@ -1315,8 +1315,7 @@ class Date
 
   # Is this a leap year?
   def leap?
-    jd_to_civil(civil_to_jd(year, 3, 1, fix_style) - 1,
-                fix_style)[-1] == 29
+    julian? ? Date.julian_leap?(year) : Date.gregorian_leap?(year)
   end
   once :leap?
 
