@@ -1153,6 +1153,9 @@ class Date
     @__ca__ = {}
   end
 
+  attr_reader :dt, :sub_millis
+  protected   :dt, :sub_millis
+
   # Get the date as an Astronomical Julian Day Number.
   def ajd
     # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
