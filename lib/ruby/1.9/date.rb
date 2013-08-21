@@ -1215,11 +1215,8 @@ class Date
   # Get the date as a Commercial Date, [year, week_of_year, day_of_week]
   def commercial() jd_to_commercial(jd, @sg) end # :nodoc:
 
-  def weeknum0() jd_to_weeknum(jd, 0, @sg) end # :nodoc:
-  def weeknum1() jd_to_weeknum(jd, 1, @sg) end # :nodoc:
-
-  once :commercial, :weeknum0, :weeknum1
-  private :commercial, :weeknum0, :weeknum1
+  once :commercial
+  private :commercial
 
   # Get the year of this date.
   def year
@@ -1254,11 +1251,6 @@ class Date
 
   alias_method :month, :mon
   alias_method :day, :mday
-
-  def wnum0() weeknum0[1] end # :nodoc:
-  def wnum1() weeknum1[1] end # :nodoc:
-
-  private :wnum0, :wnum1
 
   # Get the hour of this date.
   def hour
