@@ -793,7 +793,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     
     /* rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
-        return makeShared(runtime, runtime.getString(), index, len);
+        return runtime.is1_9()
+                ? makeShared19(runtime, runtime.getString(), index, len)
+                : makeShared(runtime, runtime.getString(), index, len);
     }
     
     public RubyString makeSharedString19(Ruby runtime, int index, int len) {
@@ -801,7 +803,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final RubyString makeShared(Ruby runtime, int index, int len) {
-        return makeShared(runtime, getType(), index, len);
+        return runtime.is1_9()
+                ? makeShared19(runtime, getType(), index, len)
+                : makeShared(runtime, getType(), index, len);
     }
 
     public final RubyString makeShared(Ruby runtime, RubyClass meta, int index, int len) {
@@ -823,6 +827,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public final RubyString makeShared19(Ruby runtime, int index, int len) {
         return makeShared19(runtime, value, index, len);
+    }
+
+    public final RubyString makeShared19(Ruby runtime, RubyClass meta, int index, int len) {
+        return makeShared19(runtime, meta, value, index, len);
     }
 
     private RubyString makeShared19(Ruby runtime, ByteList value, int index, int len) {
@@ -3508,7 +3516,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         int end = Math.min(length, beg + len);
-        return makeShared(runtime, beg, end - beg);
+        return runtime.is1_9()
+                ? makeShared19(runtime, beg, end - beg)
+                : makeShared(runtime, beg, end - beg);
     }
 
     /* str_byte_substr */

@@ -3809,7 +3809,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 filenameByteList.getBegin() + filenameByteList.getRealSize(),
                 null,
                 filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared(context.runtime, 0, 1).infectBy(filenameOrCommand);
+            return filenameStr.makeShared19(context.runtime, 0, 1).infectBy(filenameOrCommand);
         }
         return context.nil;
     }

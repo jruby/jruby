@@ -2169,7 +2169,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (start == -1) return runtime.getNil();
 
-        RubyString str = m.str.makeShared(runtime, m.str.getType(), start, end - start);
+        RubyString str = runtime.is1_9()
+                ? m.str.makeShared19(runtime, m.str.getType(), start, end - start)
+                : m.str.makeShared(runtime, m.str.getType(), start, end - start);
         str.infectBy(m);
         return str;
     }
@@ -2191,7 +2193,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) runtime.getNil(); 
-        return m.str.makeShared(runtime, m.str.getType(), 0,  m.begin).infectBy(m);
+        return runtime.is1_9()
+                ? m.str.makeShared19(runtime, m.str.getType(), 0,  m.begin).infectBy(m)
+                : m.str.makeShared(runtime, m.str.getType(), 0,  m.begin).infectBy(m);
     }
 
     /** rb_reg_match_post
@@ -2204,7 +2208,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) return runtime.getNil();
-        return m.str.makeShared(runtime, m.str.getType(), m.end, m.str.getByteList().getRealSize() - m.end).infectBy(m);
+        return runtime.is1_9()
+                ? m.str.makeShared19(runtime, m.str.getType(), m.end, m.str.getByteList().getRealSize() - m.end).infectBy(m)
+                : m.str.makeShared(runtime, m.str.getType(), m.end, m.str.getByteList().getRealSize() - m.end).infectBy(m);
     }
 
     /** rb_reg_match_last
