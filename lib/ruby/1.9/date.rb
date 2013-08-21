@@ -1315,7 +1315,12 @@ class Date
   private :nth_kday?
 
   # Is the current date old-style (Julian Calendar)?
-  def julian? () jd < @sg end
+  def julian?
+    chrono = @dt.getChronology and
+      (chrono.is_a?(JODA.chrono::JulianChronology) or
+                        # Oddly, much faster than chrono.getGregorianCutover.isAfter(@dt)
+       chrono.is_a?(JODA.chrono::GJChronology) && chrono.getGregorianCutover.getMillis > @dt.getMillis)
+  end
 
   # Is the current date new-style (Gregorian Calendar)?
   def gregorian? () !julian? end
