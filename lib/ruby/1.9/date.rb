@@ -1300,7 +1300,9 @@ class Date
 
   # Get the week day of this date.  Sunday is day-of-week 0;
   # Saturday is day-of-week 6.
-  def wday() jd_to_wday(jd) end
+  def wday
+    @dt.getDayOfWeek % 7
+  end
 
   once :wday
 
