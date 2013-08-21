@@ -1828,16 +1828,16 @@ class Time
   def to_time() getlocal end
 
   def to_date
-    Date.jd(Date.__send__(:civil_to_jd, year, mon, mday, Date::GREGORIAN))
+    Date.civil(year, mon, mday, Date::GREGORIAN)
   end
 
   def to_datetime
-    jd = DateTime.__send__(:civil_to_jd, year, mon, mday, DateTime::ITALY)
-    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) +
-      Rational(subsec, 86400)
     of = Rational(utc_offset, 86400)
-    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of),
-                  of, DateTime::ITALY)
+    s = [sec, 59].min
+    if (ss = subsec) != 0
+      s += ss
+    end
+    DateTime.civil(year, mon, mday, hour, min, s, of, DateTime::ITALY)
   end
 
 end
