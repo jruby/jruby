@@ -357,7 +357,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, RegexpOptions options) {
         try {
-            return new RubyRegexp(runtime, pattern, options);
+            return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             throw runtime.newSyntaxError(re.getMessage());
         }
@@ -366,7 +366,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
         try {
-            return new RubyRegexp(runtime, pattern.getByteList(), options);
+            return new RubyRegexp(runtime, pattern.getByteList(), (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             throw runtime.newRegexpError(re.getMessage());
         }
