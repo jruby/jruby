@@ -1266,13 +1266,6 @@ class Date
 
   private :wnum0, :wnum1
 
-  # Get the time of this date as [hours, minutes, seconds,
-  # fraction_of_a_second]
-  def time() day_fraction_to_time(day_fraction) end # :nodoc:
-
-  once :time
-  private :time
-
   # Get the hour of this date.
   def hour
     @dt.getHourOfDay
@@ -1289,7 +1282,9 @@ class Date
   end
 
   # Get the fraction-of-a-second of this date.
-  def sec_fraction() time[3] end
+  def sec_fraction
+    Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
+  end
 
   alias_method :minute, :min
   alias_method :second, :sec
