@@ -1304,14 +1304,6 @@ class Date
 
   once :wday
 
-=begin
-  MONTHNAMES.each_with_index do |n, i|
-    if n
-      define_method(n.downcase + '?'){mon == i}
-    end
-  end
-=end
-
   DAYNAMES.each_with_index do |n, i|
     define_method(n.downcase + '?'){wday == i}
   end
