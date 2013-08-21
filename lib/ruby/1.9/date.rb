@@ -1310,8 +1310,7 @@ class Date
     when JODA.chrono.GregorianChronology
       GREGORIAN
     else
-      ajd = JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
-      ajd_to_jd(ajd)[0]
+      JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
     end
   end
 
