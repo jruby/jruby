@@ -1164,13 +1164,15 @@ class Date
   #
   # Using one of the factory methods such as Date::civil is
   # generally easier and safer.
-  def initialize(ajd=0, of=0, sg=ITALY)
+  def initialize(ajd=0, of=0, sg=ITALY, sub_millis=0)
     if JODA::DateTime === ajd
       @dt = ajd
-      ajd = Rational JODA::DateTimeUtils.toJulianDay(@dt.getMillis)
+      @sub_millis = sub_millis
+      # ajd = Rational(@dt.getMillis + sub_millis, 86400000) + 2440587.5
+      ajd = Rational(210866760000000 + @dt.getMillis + sub_millis, 86400000)
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-      millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).round
+      millis, @sub_millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
       raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
     end
@@ -1410,6 +1412,8 @@ class Date
   # particular, two Dates cannot be added to each other.
   def + (n)
     case n
+    when Fixnum
+      self.class.new!(@dt.plusDays(n), @of, @sg, @sub_millis)
     when Numeric
       self.class.new!(@ajd + n, @of, @sg)
     else
@@ -1500,14 +1504,7 @@ class Date
   # than the last day of the target month, the day-of-the-month
   # of the returned Date will be the last day of the target month.
   def >> (n)
-    y, m = (year * 12 + (mon - 1) + n).divmod(12)
-    m,   = (m + 1)                    .divmod(1)
-    d = mday
-    until jd2 = _valid_civil?(y, m, d, @sg)
-      d -= 1
-      raise ArgumentError, 'invalid date' unless d > 0
-    end
-    self + (jd2 - jd)
+    self.class.new!(@dt.plusMonths(n.to_i), @of, @sg, @sub_millis)
   end
 
   # Return a new Date object that is +n+ months earlier than
@@ -1521,8 +1518,13 @@ class Date
   def next_month(n=1) self >> n end
   def prev_month(n=1) self << n end
 
-  def next_year(n=1) self >> n * 12 end
-  def prev_year(n=1) self << n * 12 end
+  def next_year(n=1)
+    self.class.new!(@dt.plusYears(n.to_i), @of, @sg, @sub_millis)
+  end
+
+  def prev_year(n=1)
+    next_year(-n)
+  end
 
   require 'enumerator'
 
