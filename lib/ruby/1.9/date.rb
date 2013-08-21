@@ -319,12 +319,7 @@ class Date
 
   HALF_DAYS_IN_DAY       = Rational(1, 2) # :nodoc:
   HOURS_IN_DAY           = Rational(1, 24) # :nodoc:
-  MINUTES_IN_DAY         = Rational(1, 1440) # :nodoc:
   SECONDS_IN_DAY         = Rational(1, 86400) # :nodoc:
-  MILLISECONDS_IN_DAY    = Rational(1, 86400*10**3) # :nodoc:
-  NANOSECONDS_IN_DAY     = Rational(1, 86400*10**9) # :nodoc:
-  MILLISECONDS_IN_SECOND = Rational(1, 10**3) # :nodoc:
-  NANOSECONDS_IN_SECOND  = Rational(1, 10**9) # :nodoc:
 
   MJD_EPOCH_IN_AJD       = Rational(4800001, 2) # 1858-11-17 # :nodoc:
   UNIX_EPOCH_IN_AJD      = Rational(4881175, 2) # 1970-01-01 # :nodoc:
