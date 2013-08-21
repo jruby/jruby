@@ -714,8 +714,11 @@ class Date
       time_to_day_fraction(h, min, s)
     end
 
+    CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
+
     def chronology(sg, of=0)
       tz = if of == 0
+        return CHRONO_ITALY_UTC if sg == ITALY
         JODA::DateTimeZone::UTC
       else
         JODA::DateTimeZone.forOffsetMillis((of * 86_400_000).to_i)
