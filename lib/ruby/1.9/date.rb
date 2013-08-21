@@ -1825,7 +1825,9 @@ end
 
 class Time
 
-  def to_time() getlocal end
+  def to_time
+    getlocal
+  end
 
   def to_date
     Date.civil(year, mon, mday, Date::GREGORIAN)
@@ -1844,9 +1846,17 @@ end
 
 class Date
 
-  def to_time() Time.local(year, mon, mday) end
-  def to_date() self end
-  def to_datetime() DateTime.new!(jd_to_ajd(jd, 0, 0), @of, @sg) end
+  def to_time
+    Time.local(year, mon, mday)
+  end
+
+  def to_date
+    self
+  end
+
+  def to_datetime
+    DateTime.new!(@dt.withTimeAtStartOfDay, @of, @sg)
+  end
 
   # Create a new Date object representing today.
   #
@@ -1875,16 +1885,16 @@ end
 class DateTime < Date
 
   def to_time
-    d = new_offset(0)
-    d.instance_eval do
-      Time.utc(year, mon, mday, hour, min, sec +
-               sec_fraction)
-    end.
-        getlocal
+    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400).to_i).getlocal
   end
 
-  def to_date() Date.new!(jd_to_ajd(jd, 0, 0), 0, @sg) end
-  def to_datetime() self end
+  def to_date
+    Date.civil(year, mon, mday, @sg)
+  end
+
+  def to_datetime
+    self
+  end
 
   private_class_method :today
   public_class_method  :now
