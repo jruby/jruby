@@ -1530,7 +1530,11 @@ class Date
 
   # Return internal object state as a programmer-readable string.
   def inspect
-    format('#<%s: %s (%s,%s,%s)>', self.class, to_s, ajd, @of, @sg)
+    s = (hour * 60 + min) * 60 + sec
+    ns = ((@dt.getMillisOfSecond + @sub_millis) * 1_000_000).inspect
+    of = "%+d" % (@of * 86_400)
+    sg = "%.0f" % @sg
+    "#<#{self.class}: #{to_s} ((#{jd}j,#{s}s,#{ns}n),#{of}s,#{sg}j)>"
   end
 
   # Return the date as a human-readable string.
