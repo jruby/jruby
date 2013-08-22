@@ -1162,14 +1162,20 @@ class Date
   once :ajd
 
   # Get the date as an Astronomical Modified Julian Day Number.
-  def amjd() ajd_to_amjd(ajd) end
+  def amjd
+    ajd_to_amjd(ajd)
+  end
 
   # Get the date as a Julian Day Number.
-  def jd() ajd_to_jd(ajd, @of)[0] end
-  once :jd
+  def jd
+    JODA::DateTimeUtils.toJulianDayNumber(@dt.getMillis)
+  end
 
   # Get any fractional day part of the date.
-  def day_fraction() ajd_to_jd(ajd, @of)[1] end
+  def day_fraction
+    ms = ((hour * 60 + min) * 60 + sec) * 1000 + @dt.getMillisOfSecond + @sub_millis
+    Rational(ms, 86_400_000)
+  end
   once :day_fraction
 
   # Get the date as a Modified Julian Day Number.
