@@ -96,7 +96,10 @@ public class RipperParser {
     }    
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
-        if (arg2 == null) return arg1;
+        // This has to be an MRI bug
+        if (arg2 == null) return dispatch("on_args_add_block", arg1, getRuntime().getFalse());
+        
+        if (arg2.isNil()) return arg1;
         
         return dispatch("on_args_add_block", arg1, arg2);
     }
