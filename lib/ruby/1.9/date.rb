@@ -1134,17 +1134,17 @@ class Date
   #
   # Using one of the factory methods such as Date::civil is
   # generally easier and safer.
-  def initialize(ajd=0, of=0, sg=ITALY, sub_millis=0)
-    if JODA::DateTime === ajd
-      @dt = ajd
+  def initialize(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
+    if JODA::DateTime === dt_or_ajd
+      @dt = dt_or_ajd
       @sub_millis = sub_millis
       @__ca__ = {}
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-      millis, @sub_millis = ((ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
+      millis, @sub_millis = ((dt_or_ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
       raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
-      @__ca__ = { :ajd.object_id => ajd }
+      @__ca__ = { :ajd.object_id => dt_or_ajd }
     end
 
     @of = of # offset
