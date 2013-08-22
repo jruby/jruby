@@ -1833,13 +1833,13 @@ class Time
     Date.civil(year, mon, mday, Date::GREGORIAN)
   end
 
-  def to_datetime
+  def to_datetime(sg = Date::ITALY, klass = DateTime)
     of = Rational(utc_offset, 86400)
     s = [sec, 59].min
     ms, sub_millis = nsec.divmod(1_000_000) # expects ns precision for Time
     sub_millis = Rational(sub_millis, 1_000_000)
-    dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, Date::ITALY, of))
-    DateTime.new!(dt, of, Date::ITALY, sub_millis)
+    dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, sg, of))
+    klass.new!(dt, of, sg, sub_millis)
   end
 
 end
@@ -1870,12 +1870,7 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.now(sg=ITALY)
-    t = Time.now
-    jd = civil_to_jd(t.year, t.mon, t.mday, sg)
-    fr = time_to_day_fraction(t.hour, t.min, [t.sec, 59].min) +
-      Rational(t.subsec, 86400)
-    of = Rational(t.utc_offset, 86400)
-    new!(jd_to_ajd(jd, fr, of), of, sg)
+    Time.now.to_datetime(sg, self)
   end
   private_class_method :now
 
