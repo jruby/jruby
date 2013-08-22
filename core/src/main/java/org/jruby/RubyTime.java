@@ -539,7 +539,7 @@ public class RubyTime extends RubyObject {
         long newMillisPart = currentMillis + adjustMillis;
         long newNanosPart = nsec + adjustNanosLeft;
 
-        if (newNanosPart > 1000000) {
+        if (newNanosPart >= 1000000) {
             newNanosPart -= 1000000;
             newMillisPart++;
         }
