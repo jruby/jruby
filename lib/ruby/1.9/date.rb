@@ -1360,7 +1360,14 @@ class Date
     when Fixnum
       self.class.new!(@dt.plusDays(n), @of, @sg, @sub_millis)
     when Numeric
-      self.class.new!(ajd + n, @of, @sg)
+      ms, sub = (n * 86_400_000).divmod(1)
+      sub = 0 if sub == 0 # avoid Rational(0, 1)
+      sub_millis = @sub_millis + sub
+      if sub_millis >= 1
+        sub_millis -= 1
+        ms += 1
+      end
+      self.class.new!(@dt.plusMillis(ms), @of, @sg, sub_millis)
     else
       raise TypeError, 'expected numeric'
     end
