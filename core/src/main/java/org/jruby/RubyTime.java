@@ -539,6 +539,11 @@ public class RubyTime extends RubyObject {
         long newMillisPart = currentMillis + adjustMillis;
         long newNanosPart = nsec + adjustNanosLeft;
 
+        if (newNanosPart > 1000000) {
+            newNanosPart -= 1000000;
+            newMillisPart++;
+        }
+
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
         newTime.dt = new DateTime(newMillisPart).withZone(dt.getZone());
         newTime.setNSec(newNanosPart);
