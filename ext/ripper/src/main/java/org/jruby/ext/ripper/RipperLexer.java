@@ -374,6 +374,7 @@ public class RipperLexer implements Warnings {
         
         if (token == EOF) {
             dispatchAllDelayedTokens();
+            lastEventLocation = getPosition();
             return 0;
         }
         

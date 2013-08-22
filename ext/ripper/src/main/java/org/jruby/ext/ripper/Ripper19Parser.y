@@ -356,7 +356,7 @@ stmt            : kALIAS fitem {
                 }
                 | expr
 
-command_asgn    : lhs '=' command_call {
+command_asgn    : lhs '=' command_call {                    
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' command_asgn {
