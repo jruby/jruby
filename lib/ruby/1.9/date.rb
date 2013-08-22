@@ -1386,7 +1386,10 @@ class Date
     when Numeric
       self + (-x)
     when Date
-      ajd - x.ajd
+      diff = @dt.getMillis - x.dt.getMillis
+      diff_sub = @sub_millis - x.sub_millis
+      diff += diff_sub if diff_sub != 0
+      Rational(diff, 86_400_000)
     else
       raise TypeError, 'expected numeric or date'
     end
