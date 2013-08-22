@@ -1837,7 +1837,7 @@ class Time
     of = Rational(utc_offset, 86400)
     s = [sec, 59].min
     ms, sub_millis = nsec.divmod(1_000_000) # expects ns precision for Time
-    sub_millis = Rational(sub_millis, 1_000_000)
+    sub_millis = Rational(sub_millis, 1_000_000) if sub_millis != 0
     dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, sg, of))
     klass.new!(dt, of, sg, sub_millis)
   end
