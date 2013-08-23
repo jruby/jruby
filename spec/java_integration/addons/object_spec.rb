@@ -24,14 +24,14 @@ describe "Object extensions" do
       class Foo
         java_import java.util.Properties
       end
-      Foo.constants.should have_strings_or_symbols 'Properties'
+      expect(Foo.constants).to have_strings_or_symbols 'Properties'
     end
 
     it "should allow inclusion of Java class constants in module context" do 
       module Foo
         java_import java.util.Properties
       end
-      Foo.constants.should have_strings_or_symbols 'Properties'
+      expect(Foo.constants).to have_strings_or_symbols 'Properties'
     end
 
     it "should allow inclusion of Java class constants in instance context" do
