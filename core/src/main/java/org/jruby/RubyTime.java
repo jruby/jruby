@@ -41,6 +41,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -61,6 +62,8 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
+import org.jruby.util.RubyDateFormat.Token;
+
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.Helpers;
 
@@ -418,11 +421,10 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
-        final RubyDateFormat rubyDateFormat = getRuntime().getCurrentContext().getRubyDateFormat();
-        rubyDateFormat.applyPattern(format.convertToString().getUnicodeValue());
-        rubyDateFormat.setDateTime(dt);
-        rubyDateFormat.setNSec(nsec);
-        String result = rubyDateFormat.format(null);
+        final RubyDateFormat rdf = getRuntime().getCurrentContext().getRubyDateFormat();
+        String pattern = format.convertToString().getUnicodeValue();
+        List<Token> compiledPattern = rdf.compilePattern(pattern, false);
+        String result = rdf.format(compiledPattern, dt, nsec);
         return getRuntime().newString(result);
     }
 

@@ -136,12 +136,8 @@ class Date
 
   def strftime(fmt='%F')
     rdf = JRuby.runtime.current_context.getRubyDateFormat
-    rdf.applyPattern(fmt, true)
-    nanos = (sec_fraction * 1_000_000_000).to_i
-    millis, nsec = nanos.divmod 1_000_000
-    rdf.setDateTime(@dt.withMillisOfSecond(millis))
-    rdf.setNSec(nsec)
-    return rdf.format(nil)
+    nsec = (@sub_millis * 1_000_000).to_i
+    rdf.format(rdf.compilePattern(fmt, true), @dt, nsec)
   end
 
 # alias_method :format, :strftime

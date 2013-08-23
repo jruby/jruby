@@ -32,7 +32,6 @@ package org.jruby.util;
 
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
-import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.util.Calendar;
 import java.util.Date;
@@ -47,11 +46,10 @@ import org.joda.time.chrono.JulianChronology;
 
 import static org.jruby.util.RubyDateFormat.FieldType.*;
 
-public class RubyDateFormat extends DateFormat {
+public class RubyDateFormat {
     private static final long serialVersionUID = -250429218019023997L;
 
     private boolean ruby_1_9;
-    private List<Token> compiledPattern;
 
     private final DateFormatSymbols formatSymbols;
 
@@ -127,7 +125,7 @@ public class RubyDateFormat extends DateFormat {
     /** %+ */
     private static final int FORMAT_DATE_1 = 34;
 
-    private static class Token {
+    public static class Token {
         private final int format;
         private final Object data;
         
@@ -160,37 +158,15 @@ public class RubyDateFormat extends DateFormat {
     /**
      * Constructor for RubyDateFormat.
      */
-    public RubyDateFormat() {
-        this("", new DateFormatSymbols());
-    }
-
-    public RubyDateFormat(String pattern, Locale aLocale) {
-        this(pattern, new DateFormatSymbols(aLocale));
-    }
-
-    public RubyDateFormat(String pattern, Locale aLocale, boolean ruby_1_9) {
-        this(pattern, aLocale);
-        this.ruby_1_9 = ruby_1_9;
-    }
-    
-    public RubyDateFormat(String pattern, DateFormatSymbols formatSymbols) {
+    public RubyDateFormat(boolean ruby19) {
         super();
-
-        this.formatSymbols = formatSymbols;
-        applyPattern(pattern);
-    }
-    
-    public void applyPattern(String pattern) {
-        applyPattern(pattern, false);
-    }
-    
-    public void applyPattern(String pattern, boolean dateLibrary) {
-        compilePattern(pattern, dateLibrary);
+        this.formatSymbols = new DateFormatSymbols(Locale.US);
+        this.ruby_1_9 = ruby19;
     }
 
-    private void compilePattern(String pattern, boolean dateLibrary) {
-        compiledPattern = new LinkedList<Token>();
-        
+    public List<Token> compilePattern(String pattern, boolean dateLibrary) {
+        List<Token> compiledPattern = new LinkedList<Token>();
+
         int len = pattern.length();
         boolean ignoredModifier = false;
         char next;
@@ -201,7 +177,7 @@ public class RubyDateFormat extends DateFormat {
                 if (i == len) {
                     compiledPattern.add(new Token(FORMAT_STRING, "%"));
                 } else {
-                    i = addOutputFormatter(pattern, i);
+                    i = addOutputFormatter(compiledPattern, pattern, i);
 
                     switch (pattern.charAt(i)) {
                     case 'A' :
@@ -459,26 +435,16 @@ public class RubyDateFormat extends DateFormat {
                 compiledPattern.add(new Token(FORMAT_STRING, sb.toString()));
             }
         }
+        return compiledPattern;
     }
 
-    private int addOutputFormatter(String pattern, int index) {
+    private int addOutputFormatter(List<Token> compiledPattern, String pattern, int index) {
         TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern.substring(index - 1));
         if (outputFormatter != null) {
             index += outputFormatter.getFormat().length();
             compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
         }
         return index;
-    }
-
-    private DateTime dt;
-    private long nsec;
-
-    public void setDateTime(final DateTime dt) {
-        this.dt = dt;
-    }
-
-    public void setNSec(long nsec) {
-        this.nsec = nsec;
     }
 
     static enum FieldType {
@@ -498,11 +464,9 @@ public class RubyDateFormat extends DateFormat {
         }
     }
 
-    /**
-     * @see DateFormat#format(Date, StringBuffer, FieldPosition)
-     */
-    public StringBuffer format(Date ignored, StringBuffer toAppendTo, FieldPosition fieldPosition) {
+    public String format(List<Token> compiledPattern, DateTime dt, long nsec) {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
+        StringBuffer toAppendTo = new StringBuffer();
 
         for (Token token: compiledPattern) {
             String output = null;
@@ -590,11 +554,11 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     type = NUMERIC2;
-                    value = formatWeekYear(java.util.Calendar.MONDAY);
+                    value = formatWeekYear(dt, java.util.Calendar.MONDAY);
                     break;
                 case FORMAT_WEEK_YEAR_S:
                     type = NUMERIC2;
-                    value = formatWeekYear(java.util.Calendar.SUNDAY);
+                    value = formatWeekYear(dt, java.util.Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
                     type = NUMERIC;
@@ -605,12 +569,12 @@ public class RubyDateFormat extends DateFormat {
                     value = dt.getDayOfWeek();
                     break;
                 case FORMAT_YEAR_LONG:
-                    value = year(dt.getYear());
+                    value = year(dt, dt.getYear());
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_YEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt.getYear()) % 100;
+                    value = year(dt, dt.getYear()) % 100;
                     break;
                 case FORMAT_COLON_ZONE_OFF:
                     // custom logic because this is so weird
@@ -623,7 +587,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
-                    value = year(dt.getYear()) / 100;
+                    value = year(dt, dt.getYear()) / 100;
                     break;
                 case FORMAT_EPOCH:
                     type = NUMERIC;
@@ -650,12 +614,12 @@ public class RubyDateFormat extends DateFormat {
                     formatter = TimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = year(dt.getWeekyear());
+                    value = year(dt, dt.getWeekyear());
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt.getWeekyear()) % 100;
+                    value = year(dt, dt.getWeekyear()) % 100;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
                     // only available for Date
@@ -670,14 +634,14 @@ public class RubyDateFormat extends DateFormat {
             toAppendTo.append(output);
         }
 
-        return toAppendTo;
+        return toAppendTo.toString();
     }
 
     /**
      * Ruby always follows Astronomical year numbering,
      * that is BC x is -x+1 and there is a year 0 (BC 1)
      * but Joda-time returns -x for year x BC in Julian chronology (no year 0) */
-    private int year(int year) {
+    private int year(DateTime dt, int year) {
         Chronology c;
         if (year < 0 && (
                 (c = dt.getChronology()) instanceof JulianChronology ||
@@ -686,7 +650,7 @@ public class RubyDateFormat extends DateFormat {
         return year;
     }
 
-    private int formatWeekYear(int firstDayOfWeek) {
+    private int formatWeekYear(DateTime dt, int firstDayOfWeek) {
         java.util.Calendar dtCalendar = dt.toGregorianCalendar();
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);

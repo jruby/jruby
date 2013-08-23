@@ -302,8 +302,8 @@ public final class ThreadContext {
     }
     
     public RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new RubyDateFormat("-", Locale.US, runtime.is1_9());
-        
+        if (dateFormat == null)
+            dateFormat = new RubyDateFormat(runtime.is1_9());
         return dateFormat;
     }
     
