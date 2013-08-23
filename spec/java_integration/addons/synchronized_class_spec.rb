@@ -11,11 +11,11 @@ describe "JRuby::Synchronized" do
       end
 
       def expect_synchronized
-        lambda { call_wait }.should_not raise_error
+        expect { call_wait }.not_to raise_error
       end
 
       def expect_unsynchronized
-        lambda { call_wait }.should raise_error(java.lang.IllegalMonitorStateException)
+        expect { call_wait }.to raise_error(java.lang.IllegalMonitorStateException)
       end
     end
   end
