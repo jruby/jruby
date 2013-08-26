@@ -81,6 +81,7 @@ test_thread
 test_thread_backtrace
 test_threaded_nonlocal_return
 test_time_nil_ops
+test_time_tz
 test_unicode_paths
 test_unmarshal
 test_variables
