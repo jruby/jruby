@@ -146,7 +146,6 @@ public class HeredocTerm extends StrTerm {
         } else {
             ByteList tok = new ByteList();
             tok.setEncoding(lexer.getEncoding());
-            c = lexer.nextc();
             if (c == '#') {
                 switch (c = lexer.nextc()) {
                 case '$':
