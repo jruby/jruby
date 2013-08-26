@@ -32,7 +32,6 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ext.ripper.RipperLexer.LexState;
-import org.jruby.ext.ripper.Warnings.ID;
 
 public class Ripper19Parser extends RipperParser {
     public Ripper19Parser(ThreadContext context, IRubyObject ripper, LexerSource source) {
@@ -291,7 +290,7 @@ stmt            : kALIAS fitem {
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (p.isInDef() || p.isInSingle()) {
-                        p.warn(ID.END_IN_METHOD, p.getPosition(), "END in method; use at_exit");
+                        p.warn("END in method; use at_exit");
                     }
                     $$ = p.dispatch("on_END", $3);
                 }
@@ -1032,7 +1031,7 @@ primary         : literal
                 | tLPAREN_ARG expr {
                     p.setState(LexState.EXPR_ENDARG); 
                 } rparen {
-                    p.warning(ID.GROUPED_EXPRESSION, p.getPosition(), "(...) interpreted as grouped expression");
+                    p.warning("(...) interpreted as grouped expression");
                     $$ = p.dispatch("on_paren", $2);
                 }
                 | tLPAREN compstmt tRPAREN {

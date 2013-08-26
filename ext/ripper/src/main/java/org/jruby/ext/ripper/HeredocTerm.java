@@ -47,107 +47,143 @@ import org.jruby.util.ByteList;
  */
 public class HeredocTerm extends StrTerm {
     // Marker delimiting heredoc boundary
-    private final ByteList marker;
+    private final ByteList nd_lit;
 
     // Expand variables, Indentation of final marker
     private final int flags;
+    
+    protected final int nth;
+    
+    protected final int line;
 
     // Portion of line right after beginning marker
-    private final ByteList lastLine;
+    protected final ByteList lastLine;
     
-    public HeredocTerm(ByteList marker, int func, ByteList lastLine) {
-        this.marker = marker;
+    public HeredocTerm(ByteList marker, int func, int nth, int line, ByteList lastLine) {
+        this.nd_lit = marker;
         this.flags = func;
+        this.nth = nth;
+        this.line = line;
         this.lastLine = lastLine;
+    }
+    
+    protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
+        lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
+
+        if (lexer.delayed != null) {
+            lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT);
+        } else {
+            if (str != null) {
+                lexer.delayed.append(str);
+            } else {
+                len = lexer.lex_p - lexer.tokp;
+                if (len > 0) {
+                    lexer.delayed.append(new ByteList(lexer.lexb.makeShared(lexer.tokp, len)));
+                }
+            }
+            lexer.dispatchDelayedToken(Tokens.tSTRING_CONTENT);
+        }
+        lexer.lex_goto_eol();
+
+        return restore(lexer);
+    }
+    
+    protected int restore(RipperLexer lexer) {
+        lexer.heredoc_restore(this);
+        lexer.setStrTerm(null);
+        
+        return RipperLexer.EOF;        
     }
     
     @Override
     public int parseString(RipperLexer lexer, LexerSource src) throws java.io.IOException {
+        ByteList str = null;
+        ByteList eos = nd_lit;
+        int len = nd_lit.length() - 1;
         boolean indent = (flags & RipperLexer.STR_FUNC_INDENT) != 0;
-
-        if (src.peek(RipperLexer.EOF)) {
-            syntaxError(src);
-            return RipperLexer.EOF;
+        int c = lexer.nextc();
+        
+        if (c == RipperLexer.EOF) {
+            return error(lexer, len, str, eos);
         }
 
-        ByteList matchedMarker = null;
         // Found end marker for this heredoc
-        if (src.lastWasBeginOfLine() && (matchedMarker = src.matchMarker(marker, indent, true)) != null) {
-            // Put back lastLine for any elements past start of heredoc marker
-            src.unreadMany(lastLine);
-  
-            lexer.dispatchScanEvent(Tokens.tHEREDOC_END, matchedMarker);
-
+        if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
+            lexer.dispatchHeredocEnd();
+            lexer.heredoc_restore(this);
             return Tokens.tSTRING_END;
         }
 
-        ByteList str = new ByteList();
-        str.setEncoding(lexer.getEncoding());
-        Position position;
-        
         if ((flags & RipperLexer.STR_FUNC_EXPAND) == 0) {
             do {
-                str.append(src.readLineBytes());
-                str.append('\n');
-                if (src.peek(RipperLexer.EOF)) {
-                    syntaxError(src);
-                    lexer.addDelayedValue(Tokens.tSTRING_CONTENT, str);
-                    return RipperLexer.EOF;
+                ByteList lbuf = lexer.lex_lastline;
+                int p = 0;
+                int pend = lexer.lex_pend;
+                if (pend > p) {
+                    switch(lexer.lexb.get(pend-1)) { // ENEBO: This seems wrong.
+                        case '\n':
+                            pend--;
+                            if (pend == p || lexer.lexb.get(pend-1) == '\r') {
+                                pend++;
+                                break;
+                            }
+                        case '\r':
+                            pend--;
+                    }
                 }
-                position = lexer.getPosition();
-            } while ((matchedMarker = src.matchMarker(marker, indent, true)) == null);
+                if (str != null) {
+                    str.append(lbuf.makeShared(p, pend - p));
+                } else {
+                    str = new ByteList(lbuf.makeShared(p, pend - p));
+                }
+                
+                if (pend < lexer.lex_pend) str.append('\n');
+                lexer.lex_goto_eol();
+                if (lexer.nextc() == -1) {
+                    if (str != null) return error(lexer, len, str, eos);
+                }
+            } while(!lexer.whole_match_p(eos, indent));
         } else {
-            int c = src.read();
+            ByteList tok = new ByteList();
+            tok.setEncoding(lexer.getEncoding());
+            c = lexer.nextc();
             if (c == '#') {
-                switch (c = src.read()) {
+                switch (c = lexer.nextc()) {
                 case '$':
                 case '@':
-                    src.unread(c);
-                    lexer.setValue(new Token("#", lexer.getPosition()));
+                    lexer.pushback(c);
                     return Tokens.tSTRING_DVAR;
                 case '{':
-                    lexer.setValue(new Token("#{", lexer.getPosition()));
+                    lexer.commandStart = true;
                     return Tokens.tSTRING_DBEG;
                 }
-                str.append('#');
+                tok.append('#');
             }
 
-            src.unread(c);
-
-            // MRI has extra pointer which makes our code look a little bit
-            // more strange in
-            // comparison
+            // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, str)) == RipperLexer.EOF) {
-                    syntaxError(src);
+                lexer.pushback(c);
+                
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok)) == RipperLexer.EOF) {
+                    if (lexer.eofp) return error(lexer, len, tok, eos);
+                    return restore(lexer);
                 }
                 if (c != '\n') {
-                    lexer.setValue(lexer.createStr(lexer.getPosition(), str, 0));
+                    lexer.setValue(lexer.createStr(tok, 0));
+                    lexer.flush_string_content();
                     return Tokens.tSTRING_CONTENT;
                 }
-                str.append(src.read());
+                tok.append(lexer.nextc());
                 
-                if (src.peek(RipperLexer.EOF)) {
-                    lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT, lexer.createStr(lexer.getPosition(), str, 0));
-                    syntaxError(src);
-                    return RipperLexer.EOF;
-                }
-                position = lexer.getPosition();
-                
-            } while ((matchedMarker = src.matchMarker(marker, indent, true)) == null);
+                if ((c = lexer.nextc()) == RipperLexer.EOF) return error(lexer, len, tok, eos);
+            } while (!lexer.whole_match_p(nd_lit, indent));
+            str = tok;
         }
         
-        src.unreadMany(lastLine);
+        lexer.dispatchHeredocEnd();
+        lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT, lexer.createStr(position, str, 0));
-        lexer.dispatchScanEvent(Tokens.tHEREDOC_END, matchedMarker);
-        lexer.ignoreNextScanEvent = true;
+        lexer.setValue(str);
         return Tokens.tSTRING_CONTENT;
-    }
-    
-    private void syntaxError(LexerSource src) {
-        // FIXME: Ripper error here
-//        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), src.getCurrentLine(), 
-//                "can't find string \"" + marker + "\" anywhere before EOF", marker);
     }
 }

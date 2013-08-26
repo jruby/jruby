@@ -35,13 +35,12 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ext.ripper.RipperLexer.LexState;
-import org.jruby.ext.ripper.Warnings.ID;
 
 public class Ripper19Parser extends RipperParser {
     public Ripper19Parser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 45 "-"
+					// line 44 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -2712,7 +2711,7 @@ states[82] = new RipperParserState() {
 };
 states[283] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.warning(ID.GROUPED_EXPRESSION, p.getPosition(), "(...) interpreted as grouped expression");
+                    p.warning("(...) interpreted as grouped expression");
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-2+yyTop]));
     return yyVal;
   }
@@ -3884,7 +3883,7 @@ states[363] = new RipperParserState() {
 states[28] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     if (p.isInDef() || p.isInSingle()) {
-                        p.warn(ID.END_IN_METHOD, p.getPosition(), "END in method; use at_exit");
+                        p.warn("END in method; use at_exit");
                     }
                     yyVal = p.dispatch("on_END", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
@@ -4290,6 +4289,6 @@ states[267] = new RipperParserState() {
   }
 };
 }
-					// line 2061 "Ripper19Parser.y"
+					// line 2060 "Ripper19Parser.y"
 }
-					// line 8245 "-"
+					// line 8244 "-"

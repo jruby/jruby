@@ -29,43 +29,32 @@ package org.jruby.ext.ripper;
 
 
 public class Token {
-	Position position = null;
-	Object value;
-	int type = 0;
-	
-	public Token(Object value, Position position) {
-	    this.value = value;
-	    this.position = position;
-	}
-	
-	public Token(Object value, int type, Position position) {
-		this.value = value;
-		this.position = position;
-		this.type = type;
-	}
-	
-	public void setValue(Object value) {
-		this.value = value;
-	}
-	
-	public Object getValue() {
-		return value;
-	}
-	
-	public int getType() {
-	    return type;
-	}
-	
-	public Position getPosition() {
-		return position;
-	}
-	
-	public void setPosition(Position position) {
-		this.position = position;
-	}
-    
+    private Object value;
+    private int type = 0;
+
+    public Token(Object value) {
+        this.value = value;
+    }
+
+    public Token(Object value, int type) {
+        this.value = value;
+        this.type = type;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public int getType() {
+        return type;
+    }
+
     @Override
     public String toString() {
-        return "Token { Value=" + value + ", Position=" + position + "}";
+        return "Token { Value=" + value + ", Type=" + type + "}";
     }
 }
