@@ -907,9 +907,8 @@ public class RipperLexer implements Warnings {
         }
 
         dispatchScanEvent(Tokens.tHEREDOC_BEG);
-        
+        int len = lex_p - lex_pbeg;        
         lex_goto_eol();
-        int len = lex_p - lex_pbeg;
         lex_strterm = new HeredocTerm(markerValue, func, len, ruby_sourceline, lex_lastline);
 
         flush();
@@ -1197,8 +1196,9 @@ public class RipperLexer implements Warnings {
     }
     
     private IRubyObject scanEventValue(int token) { // mri: ripper_scane_event_val
-        IRubyObject value = parser.getRuntime().newString(lexb.makeShared(lex_p, lex_p - tokp));
-        IRubyObject returnValue = parser.dispatch(tokenToEventId(token), value);
+        IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
+        String event = tokenToEventId(token);
+        IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
     }
@@ -2692,7 +2692,7 @@ public class RipperLexer implements Warnings {
                     break;
                 default :
                     pushback(c);
-                return getNumberToken(tokenBuffer.toString(), seen_e || seen_point, nondigit);
+                    return getNumberToken(tokenBuffer.toString(), seen_e || seen_point, nondigit);
             }
         }
     }
