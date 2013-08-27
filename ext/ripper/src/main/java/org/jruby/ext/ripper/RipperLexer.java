@@ -399,13 +399,13 @@ public class RipperLexer implements Warnings {
             // Left over stuffs...Add to delayed for later processing.
             if (tokp < lex_pend) {
                 if (delayed == null) {
-                    delayed = new ByteList(1024);
+                    delayed = new ByteList();
                     delayed.setEncoding(current_enc);
-                    delayed.append(delayed, tokp, lex_pend - tokp);
+                    delayed.append(lexb, tokp, lex_pend - tokp);
                     delayed_line = ruby_sourceline;
                     delayed_col = tokp - lex_pbeg;
                 } else {
-                    delayed.append(delayed, tokp, lex_pend - tokp);
+                    delayed.append(lexb, tokp, lex_pend - tokp);
                 }
             }
         
@@ -1176,8 +1176,11 @@ public class RipperLexer implements Warnings {
         ruby_sourceline = delayed_line;
         tokp = lex_pbeg + delayed_col;
         
+        //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);        
         IRubyObject value = parser.getRuntime().newString(delayed.dup());
-        yaccValue = parser.dispatch(tokenToEventId(token), value);
+        String event = tokenToEventId(token);
+        //System.out.println("EVENT: " + event + ", VALUE: " + value);
+        yaccValue = parser.dispatch(event, value);
         delayed = null;
         ruby_sourceline = saved_line;
         tokp = saved_tokp;
@@ -1196,8 +1199,10 @@ public class RipperLexer implements Warnings {
     }
     
     private IRubyObject scanEventValue(int token) { // mri: ripper_scane_event_val
+        //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
+        //System.out.println("EVENT: " + event + ", VALUE: " + value);
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
