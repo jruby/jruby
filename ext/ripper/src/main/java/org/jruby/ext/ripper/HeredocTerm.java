@@ -103,9 +103,7 @@ public class HeredocTerm extends StrTerm {
         boolean indent = (flags & RipperLexer.STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
         
-        if (c == RipperLexer.EOF) {
-            return error(lexer, len, str, eos);
-        }
+        if (c == RipperLexer.EOF) return error(lexer, len, str, eos);
 
         // Found end marker for this heredoc
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
@@ -182,7 +180,7 @@ public class HeredocTerm extends StrTerm {
         lexer.dispatchHeredocEnd();
         lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.setValue(str);
+        lexer.setValue(lexer.createStr(str, 0));
         return Tokens.tSTRING_CONTENT;
     }
 }
