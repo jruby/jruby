@@ -1759,11 +1759,6 @@ public final class Ruby {
     }
 
     public void setCurrentDirectory(String dir) {
-        try {
-          System.setProperty("user.dir", dir);
-        } catch (SecurityException e) {
-          // do nothing
-        }
         currentDirectory = dir;
     }
 
