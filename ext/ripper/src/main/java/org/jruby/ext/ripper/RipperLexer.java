@@ -470,7 +470,7 @@ public class RipperLexer implements Warnings {
     private boolean strncmp(ByteList one, ByteList two, int length) {
         if (one.length() < length || two.length() < length) return false;
         
-        return one.makeShared(0, one.length()).equal(two.makeShared(0, length));
+        return one.makeShared(0, length).equal(two.makeShared(0, length));
     }
     
     public void pushback(int c) {
@@ -488,8 +488,8 @@ public class RipperLexer implements Warnings {
     }
     
     public void compile_error(String message) {
-// FIXME: Must dispatch and not throw here to parser.compile_error
-        throw new SyntaxException(lexb.toString(), message); // FIXME: toString is wrong...
+        parser.dispatch("compile_error", getRuntime().newString(message));
+//        throw new SyntaxException(lexb.toString(), message);
     }
     
     // FIXME: This is our main lexer code mangled into here...
@@ -632,9 +632,15 @@ public class RipperLexer implements Warnings {
     private void setEncoding(ByteList name) {
         Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
-        if (newEncoding == null) compile_error("unknown encoding name: " + name.toString());
+        if (newEncoding == null) {
+            compile_error("unknown encoding name: " + name.toString());
+            return;
+        }
 
-        if (!newEncoding.isAsciiCompatible()) compile_error(name.toString() + " is not ASCII compatible");
+        if (!newEncoding.isAsciiCompatible()) {
+            compile_error(name.toString() + " is not ASCII compatible");
+            return;
+        }
 
         setEncoding(newEncoding);
     }

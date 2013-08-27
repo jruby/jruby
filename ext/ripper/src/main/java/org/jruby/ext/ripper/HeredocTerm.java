@@ -70,7 +70,7 @@ public class HeredocTerm extends StrTerm {
     protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
 
-        if (lexer.delayed != null) {
+        if (lexer.delayed == null) {
             lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT);
         } else {
             if (str != null) {
@@ -78,7 +78,7 @@ public class HeredocTerm extends StrTerm {
             } else {
                 len = lexer.lex_p - lexer.tokp;
                 if (len > 0) {
-                    lexer.delayed.append(new ByteList(lexer.lexb.makeShared(lexer.tokp, len)));
+                    lexer.delayed.append(lexer.lexb.makeShared(lexer.tokp, len));
                 }
             }
             lexer.dispatchDelayedToken(Tokens.tSTRING_CONTENT);
@@ -162,7 +162,7 @@ public class HeredocTerm extends StrTerm {
                 lexer.pushback(c);
                 
                 if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok)) == RipperLexer.EOF) {
-                    if (lexer.eofp) return error(lexer, len, tok, eos);
+                    if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
                 if (c != '\n') {
@@ -172,8 +172,8 @@ public class HeredocTerm extends StrTerm {
                 }
                 tok.append(lexer.nextc());
                 
-                if ((c = lexer.nextc()) == RipperLexer.EOF) return error(lexer, len, tok, eos);
-            } while (!lexer.whole_match_p(nd_lit, indent));
+                if ((c = lexer.nextc()) == RipperLexer.EOF) return error(lexer, len, str, eos);
+            } while (!lexer.whole_match_p(eos, indent));
             str = tok;
         }
         
