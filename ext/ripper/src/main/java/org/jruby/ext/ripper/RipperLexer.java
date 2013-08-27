@@ -600,19 +600,20 @@ public class RipperLexer implements Warnings {
         int p = lex_pbeg;
         
         if (indent) {
-
-            for (int i = 0; i < len; i++) {
-                if (!Character.isSpaceChar(lexb.get(i+p))) break;
-                p++;
+            for (int i = 0; i < lex_pend; i++) {
+                if (!Character.isWhitespace(lexb.get(i+p))) {
+                    p += i;
+                    break;
+                }
             }
         }
-        
         int n = lex_pend - (p + len);
         if (n < 0 || (n > 0 && lexb.get(p+len) != '\n' && lexb.get(p+len) != '\r')) return false;
-        
+
         return strncmp(eos, lexb.makeShared(p, len), len);
     }
     
+    @Override
     public Ruby getRuntime() {
         return parser.context.getRuntime();
     }
