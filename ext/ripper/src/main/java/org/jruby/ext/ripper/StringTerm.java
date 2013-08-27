@@ -128,6 +128,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
+        lexer.flush_string_content();
         return Tokens.tSTRING_CONTENT;
     }
 
