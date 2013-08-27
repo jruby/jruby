@@ -4,7 +4,7 @@ describe "Dir" do
   before(:each) do
     @path_in_jar = "file:" + File.dirname(__FILE__) + "/../../../test/target/junit.jar!/META-INF"
     @local_file_path = "file:" + File.dirname(__FILE__) + "/../../../test/target"
-    @fs_path = File.expand_path(File.dirname(__FILE__), '..')
+    @fs_path = File.absolute_path(File.join(File.dirname(__FILE__), '..'))
   end
 
   describe "new" do
