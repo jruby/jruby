@@ -371,6 +371,12 @@ public class RipperLexer implements Warnings {
     private int heredoc_end = 0;
     private int line_count = 0;
     
+    /**
+     * Has lexing started yet?
+     */
+    public boolean hasStarted() {
+        return lexb != null; // if no current line then nextc has never been called.
+    }
     protected void flush_string_content() {
         if (delayed != null) {
             int len = lex_p - tokp;
@@ -452,7 +458,6 @@ public class RipperLexer implements Warnings {
     }
     
     public int lineno() {
-        // FIXME: Arg error if parser not initialized (although can that really happen?)
         return ruby_sourceline;
     }
     

@@ -363,6 +363,14 @@ public class RipperParser {
         return lexer.lineno();
     }
     
+    public boolean hasStarted() {
+        return lexer.hasStarted();
+    }
+    
+    public Encoding encoding() {
+        return lexer.getEncoding();
+    }
+    
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RipperLexer lexer;

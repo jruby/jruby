@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -271,12 +270,14 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
+        if (!parser.hasStarted()) return context.runtime.getNil();
+        
         return context.runtime.newFixnum(parser.getColumn());
     }
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        return null;
+        return context.runtime.getEncodingService().getEncoding(parser.encoding());
     }
 
     @JRubyMethod(name = "end_seen?")
@@ -291,6 +292,8 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
+        if (!parser.hasStarted()) return context.runtime.getNil();
+            
         return context.runtime.newFixnum(parser.getLineno());
     }
     
