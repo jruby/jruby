@@ -282,7 +282,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return null;
+        return context.runtime.newBoolean(parser.isEndSeen());
     }
     
     @JRubyMethod

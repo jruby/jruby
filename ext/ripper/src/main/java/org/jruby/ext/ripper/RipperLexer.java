@@ -54,7 +54,7 @@ public class RipperLexer implements Warnings {
     public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
     public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
     
-    private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
+    private static ByteList END_MARKER = new ByteList(new byte[] {'_', '_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
     private static ByteList CODING = new ByteList(new byte[] {'c', 'o', 'd', 'i', 'n', 'g'});
@@ -377,6 +377,11 @@ public class RipperLexer implements Warnings {
     public boolean hasStarted() {
         return lexb != null; // if no current line then nextc has never been called.
     }
+    
+    public boolean isEndSeen() {
+        return __end__seen;
+    }
+    
     protected void flush_string_content() {
         if (delayed != null) {
             int len = lex_p - tokp;
@@ -1644,7 +1649,7 @@ public class RipperLexer implements Warnings {
                     
                     lex_goto_eol();
                     dispatchScanEvent(Tokens.k__END__);
-                    return -1;
+                    return EOF;
                 }
                 return identifier(c, commandState);
             default:

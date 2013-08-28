@@ -379,6 +379,10 @@ public class RipperParser {
         this.yydebug = yydebug;
     }
     
+    public boolean isEndSeen() {
+        return lexer.isEndSeen();
+    }    
+    
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RipperLexer lexer;
