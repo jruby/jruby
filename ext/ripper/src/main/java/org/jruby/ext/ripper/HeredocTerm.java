@@ -118,10 +118,10 @@ public class HeredocTerm extends StrTerm {
                 int p = 0;
                 int pend = lexer.lex_pend;
                 if (pend > p) {
-                    switch(lexer.lexb.get(pend-1)) { // ENEBO: This seems wrong.
+                    switch(lexer.p(pend-1)) { // ENEBO: This seems wrong.
                         case '\n':
                             pend--;
-                            if (pend == p || lexer.lexb.get(pend-1) == '\r') {
+                            if (pend == p || lexer.p(pend-1) == '\r') {
                                 pend++;
                                 break;
                             }

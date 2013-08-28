@@ -325,6 +325,10 @@ public class RipperLexer {
         }
     }
     
+    public int p(int offset) {
+        return lexb.get(offset) & 0xff;
+    }
+    
     public int nextc() {
         if (lex_p == lex_pend) {
             ByteList v = lex_nextline;
@@ -367,7 +371,7 @@ public class RipperLexer {
             lex_lastline = v;
         }
         
-        int c = lexb.get(lex_p) & 0xff;
+        int c = p(lex_p);
         lex_p++;
         if (c == '\r' && peek('\n')) {
             lex_p++;
@@ -383,7 +387,7 @@ public class RipperLexer {
     }
     
     private boolean peek(int c, int n) {
-        return lex_p+n < lex_pend && lexb.get(lex_p+n) == c;
+        return lex_p+n < lex_pend && p(lex_p+n) == c;
     }
     
     protected void lex_goto_eol() {
@@ -421,7 +425,7 @@ public class RipperLexer {
         
         lex_p--;
         
-        if (lex_p > lex_pbeg && lexb.get(lex_p) == '\n' && lexb.get(lex_p-1) == '\r') {
+        if (lex_p > lex_pbeg && p(lex_p) == '\n' && p(lex_p-1) == '\r') {
             lex_p--;
         }
     }
@@ -483,8 +487,7 @@ public class RipperLexer {
                 if (peek('!')) has_shebang = true;
                 break;
             case 0xef:
-                if (lex_pend - lex_p >= 2 &&
-                        (lexb.get(lex_p) & 0xff) == 0xbb && (lexb.get(lex_p + 1) & 0xff) == 0xbf) {
+                if (lex_pend - lex_p >= 2 && p(lex_p) == 0xbb && p(lex_p + 1) == 0xbf) {
                     current_enc = ASCII8BIT_ENCODING;
                     lex_p += 2;
                     lex_pbeg = lex_p;
@@ -544,14 +547,14 @@ public class RipperLexer {
         
         if (indent) {
             for (int i = 0; i < lex_pend; i++) {
-                if (!Character.isWhitespace(lexb.get(i+p))) {
+                if (!Character.isWhitespace(p(i+p))) {
                     p += i;
                     break;
                 }
             }
         }
         int n = lex_pend - (p + len);
-        if (n < 0 || (n > 0 && lexb.get(p+len) != '\n' && lexb.get(p+len) != '\r')) return false;
+        if (n < 0 || (n > 0 && p(p+len) != '\n' && p(p+len) != '\r')) return false;
 
         return strncmp(eos, lexb.makeShared(p, len), len);
     }
@@ -912,7 +915,7 @@ public class RipperLexer {
         int pend = lex_p - 1;
         if (line_count != (has_shebang ? 2 : 1)) return false;
         while (p < pend) {
-            if (!Character.isSpaceChar(lexb.get(p))) return false;
+            if (!Character.isSpaceChar(p(p))) return false;
             p++;
         }
         return true;
@@ -952,7 +955,7 @@ public class RipperLexer {
         for (;;) {
             if (send - str <= 6) return;
             
-            switch(lexb.get(str+6)) {
+            switch(p(str+6)) {
                 case 'C': case 'c': str += 6; continue;
                 case 'O': case 'o': str += 5; continue;
                 case 'D': case 'd': str += 4; continue;
@@ -965,7 +968,7 @@ public class RipperLexer {
                     break;
                 default:
                     str += 6;
-                    if (Character.isSpaceChar(lexb.get(str))) break;
+                    if (Character.isSpaceChar(p(str))) break;
                     continue;
             }
             if (lexb.makeShared(str - 6, 6).caseInsensitiveCmp(CODING) == 0) break;
@@ -975,16 +978,16 @@ public class RipperLexer {
             do {
                 str++;
                 if (str >= send) return;
-            } while(Character.isSpaceChar(lexb.get(str)));
+            } while(Character.isSpaceChar(p(str)));
             if (sep) break;
             
-            if (lexb.get(str) != '=' && lexb.get(str) != ':') return;
+            if (p(str) != '=' && p(str) != ':') return;
             sep = true;
             str++;
         }
         
         int beg = str;
-        while ((lexb.get(str) == '-' || lexb.get(str) == '_' || Character.isLetterOrDigit(lexb.get(str))) && ++str < send) {}
+        while ((p(str) == '-' || p(str) == '_' || Character.isLetterOrDigit(p(str))) && ++str < send) {}
         setEncoding(lexb.makeShared(beg, str - beg));
         src.setEncoding(getEncoding()); // Change source to know what bytelist encodings to send for next source lines
         lexb.setEncoding(getEncoding()); // Also retroactively change current line to new encoding
@@ -1167,7 +1170,7 @@ public class RipperLexer {
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
-        System.out.println("EVENT: " + event + ", VALUE: " + value);
+        //System.out.println("EVENT: " + event + ", VALUE: " + value);
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
@@ -1454,7 +1457,7 @@ public class RipperLexer {
                 // documentation nodes
                 if (was_bol()) {
                     if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.length()) && 
-                            Character.isWhitespace(lexb.get(lex_p + 5))) {
+                            Character.isWhitespace(p(lex_p + 5))) {
                         boolean first_p = true;
                         
                         lex_goto_eol();
@@ -1476,7 +1479,7 @@ public class RipperLexer {
                             if (c != '=') continue;
 
                             if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.length()) &&
-                                    (lex_p + 3 == lex_pend || Character.isWhitespace(lexb.get(lex_p + 3)))) {
+                                    (lex_p + 3 == lex_pend || Character.isWhitespace(p(lex_p + 3)))) {
                                 break;
                             }
                         }
