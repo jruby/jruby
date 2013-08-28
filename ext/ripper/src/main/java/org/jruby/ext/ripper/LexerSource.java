@@ -58,6 +58,7 @@ public class LexerSource {
     protected LexerSource(String sourceName, byte[] in, int lineOffset) {
         this.completeSource = new ByteList(in);
         this.name = sourceName;
+        if (lineOffset != 0) lineOffset--;
         this.lineOffset = lineOffset;
     }
 

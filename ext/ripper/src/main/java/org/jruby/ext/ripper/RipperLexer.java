@@ -458,7 +458,7 @@ public class RipperLexer implements Warnings {
     }
     
     public int lineno() {
-        return ruby_sourceline;
+        return ruby_sourceline + src.getLineOffset();
     }
     
     public void dispatchHeredocEnd() {
