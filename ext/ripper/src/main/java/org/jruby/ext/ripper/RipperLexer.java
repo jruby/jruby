@@ -49,7 +49,7 @@ import org.jruby.util.StringSupport;
  *
  * @author enebo
  */
-public class RipperLexer implements Warnings {
+public class RipperLexer {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
     public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
     public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
@@ -128,7 +128,6 @@ public class RipperLexer implements Warnings {
         return Tokens.tFLOAT;
     }
 
-    @Override
     public boolean isVerbose() {
         return parser.getRuntime().isVerbose();
     }
@@ -139,73 +138,6 @@ public class RipperLexer implements Warnings {
     
     public void warning(String message) {
         throw new UnsupportedOperationException("Not supported yet.");
-    }    
-            
-            // FIXME: Remove all these bad warns.
-    @Override
-    public void warn(ID id, Position position, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void warn(ID id, String fileName, int lineNumber, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void warn(ID id, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void warning(ID id, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void warning(ID id, Position position, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void warning(ID id, String fileName, int lineNumber, String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warn(ID id, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warning(ID id, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warn(ID id, Position position, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warning(ID id, Position position, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @Deprecated
-    public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     public enum Keyword {
@@ -624,7 +556,6 @@ public class RipperLexer implements Warnings {
         return strncmp(eos, lexb.makeShared(p, len), len);
     }
     
-    @Override
     public Ruby getRuntime() {
         return parser.context.getRuntime();
     }
