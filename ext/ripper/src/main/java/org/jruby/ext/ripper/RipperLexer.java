@@ -1495,7 +1495,7 @@ public class RipperLexer implements Warnings {
                 // documentation nodes
                 if (was_bol()) {
                     if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.length()) && 
-                            isSpaceArg(lexb.get(lex_p + 5), spaceSeen)) {
+                            Character.isWhitespace(lexb.get(lex_p + 5))) {
                         boolean first_p = true;
                         
                         lex_goto_eol();
@@ -1509,15 +1509,19 @@ public class RipperLexer implements Warnings {
                             
                             c = nextc();
 
-                            if (c == EOF) compile_error("embedded document meets end of file");
-                                
+                            if (c == EOF) {
+                                compile_error("embedded document meets end of file");
+                                return EOF;
+                            }
+
                             if (c != '=') continue;
 
                             if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.length()) &&
-                                    (lex_p + 3 == lex_pend || isSpaceArg(lexb.get(lex_p + 3), spaceSeen))) {
+                                    (lex_p + 3 == lex_pend || Character.isWhitespace(lexb.get(lex_p + 3)))) {
                                 break;
                             }
                         }
+                        lex_goto_eol();
                         dispatchScanEvent(Tokens.tEMBDOC_END);
                         
                         continue loop;
