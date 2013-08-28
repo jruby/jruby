@@ -57,6 +57,7 @@ public class RipperLexer implements Warnings {
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
+    private static ByteList CODING = new ByteList(new byte[] {'c', 'o', 'd', 'i', 'n', 'g'});
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -959,14 +960,6 @@ public class RipperLexer implements Warnings {
         return -1;
     }
 
-
-    private boolean magicCommentSpecialChar(char c) {
-        switch (c) {
-            case '\'': case '"': case ':': case ';': return true;
-        }
-        return false;
-    }
-
     private static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
     private static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
     
@@ -984,7 +977,6 @@ public class RipperLexer implements Warnings {
     // MRI: parser_magic_comment
     protected boolean parseMagicComment(ByteList magicLine) throws IOException {
         int length = magicLine.length();
-
         if (length <= 7) return false;
         int beg = magicCommentMarker(magicLine, 0);
         if (beg < 0) return false;
@@ -996,7 +988,6 @@ public class RipperLexer implements Warnings {
         int begin = magicLine.getBegin();
         Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
         int result = RubyRegexp.matcherSearch(getRuntime(), matcher, begin, begin + realSize, Option.NONE);
-
         if (result < 0) return false;
 
         // Regexp is guarateed to have three matches
@@ -1012,23 +1003,47 @@ public class RipperLexer implements Warnings {
         return true;
     }
 
-    // TODO: Make hand-rolled version of this
-    private static final String encodingString = "[cC][oO][dD][iI][nN][gG]\\s*[=:]\\s*([a-zA-Z0-9\\-_]+)";
-    private static final Regex encodingRegexp = new Regex(encodingString.getBytes(), 0,
-            encodingString.length(), 0, Encoding.load("ASCII"));
-
-    protected void handleFileEncodingComment(ByteList encodingLine) throws IOException {
-        int realSize = encodingLine.getRealSize();
-        int begin = encodingLine.getBegin();
-        Matcher matcher = encodingRegexp.matcher(encodingLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = RubyRegexp.matcherSearch(getRuntime(), matcher, begin, begin + realSize, Option.IGNORECASE);
-
-        if (result < 0) return;
-
-        int begs[] = matcher.getRegion().beg;
-        int ends[] = matcher.getRegion().end;
-
-        setEncoding(new ByteList(encodingLine.getUnsafeBytes(), begs[1], ends[1] - begs[1]));
+    protected void set_file_encoding(int str, int send) {
+        boolean sep = false;
+        for (;;) {
+            if (send - str <= 6) return;
+            
+            switch(lexb.get(str+6)) {
+                case 'C': case 'c': str += 6; continue;
+                case 'O': case 'o': str += 5; continue;
+                case 'D': case 'd': str += 4; continue;
+                case 'I': case 'i': str += 3; continue;
+                case 'N': case 'n': str += 2; continue;
+                case 'G': case 'g': str += 1; continue;
+                case '=': case ':':
+                    sep = true;
+                    str += 6;
+                    break;
+                default:
+                    str += 6;
+                    if (Character.isSpaceChar(lexb.get(str))) break;
+                    continue;
+            }
+            if (lexb.makeShared(str - 6, 6).caseInsensitiveCmp(CODING) == 0) break;
+        }
+        
+        for(;;) {
+            do {
+                str++;
+                if (str >= send) return;
+            } while(Character.isSpaceChar(lexb.get(str)));
+            if (sep) break;
+            
+            if (lexb.get(str) != '=' && lexb.get(str) != ':') return;
+            sep = true;
+            str++;
+        }
+        
+        int beg = str;
+        while ((lexb.get(str) == '-' || lexb.get(str) == '_' || Character.isLetterOrDigit(lexb.get(str))) && ++str < send) {}
+        setEncoding(lexb.makeShared(beg, str - beg));
+        src.setEncoding(getEncoding()); // Change source to know what bytelist encodings to send for next source lines
+        lexb.setEncoding(getEncoding()); // Also retroactively change current line to new encoding
     }
 
     /*
@@ -1438,7 +1453,7 @@ public class RipperLexer implements Warnings {
             case '#':		/* it's a comment */
                 if (!parseMagicComment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
                     if (comment_at_top()) {
-                        setEncoding(lexb.makeShared(lex_p, lex_pend - lex_p));
+                        set_file_encoding(lex_p, lex_pend);
                     }
                 }
                 lex_p = lex_pend;

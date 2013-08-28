@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
+import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
 
 /**
@@ -70,6 +71,10 @@ public class LexerSource {
     
     public int getLineOffset() {
         return lineOffset;
+    }
+    
+    public void setEncoding(Encoding encoding) {
+        completeSource.setEncoding(encoding);
     }
     
     public ByteList gets() {
