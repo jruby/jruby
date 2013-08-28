@@ -435,7 +435,7 @@ public class RipperLexer implements Warnings {
             lex_lastline = v;
         }
         
-        int c = lexb.get(lex_p);
+        int c = lexb.get(lex_p) & 0xff;
         lex_p++;
         if (c == '\r' && peek('\n')) {
             lex_p++;
@@ -552,7 +552,7 @@ public class RipperLexer implements Warnings {
                 break;
             case 0xef:
                 if (lex_pend - lex_p >= 2 &&
-                        lexb.get(lex_p) == 0xbb && lexb.get(lex_p + 1) == 0xbf) {
+                        (lexb.get(lex_p) & 0xff) == 0xbb && (lexb.get(lex_p + 1) & 0xff) == 0xbf) {
                     current_enc = ASCII8BIT_ENCODING;
                     lex_p += 2;
                     lex_pbeg = lex_p;
@@ -1236,7 +1236,7 @@ public class RipperLexer implements Warnings {
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
-        //System.out.println("EVENT: " + event + ", VALUE: " + value);
+        System.out.println("EVENT: " + event + ", VALUE: " + value);
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
