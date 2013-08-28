@@ -202,7 +202,7 @@ public class RipperParser {
         ident.intern();
         char c = ident.charAt(0);
         
-        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return false;
+        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
         return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
     }
