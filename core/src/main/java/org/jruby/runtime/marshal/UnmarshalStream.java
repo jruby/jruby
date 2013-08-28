@@ -370,15 +370,19 @@ public class UnmarshalStream extends InputStream {
         int count = unmarshalInt();
 
         RubyClass cls = object.getMetaClass().getRealClass();
-        for (int i = count; --i >= 0; ) {
+        
+        for (int i = 0; i < count; i++) {
+            
             IRubyObject key = unmarshalObject(false);
-            if (i == 0) { // first ivar
-                if (runtime.is1_9()
-                        && (object instanceof RubyString || object instanceof RubyRegexp)
-                        && count >= 1) { // 1.9 string encoding
+            
+            if (i == 0) { // first ivar provides encoding
+                
+                if (runtime.is1_9() && object instanceof EncodingCapable) {
+                    
                     EncodingCapable strObj = (EncodingCapable)object;
 
                     if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
+                        
                         // special case for USASCII and UTF8
                         if (unmarshalObject().isTrue()) {
                             strObj.setEncoding(UTF8Encoding.INSTANCE);
@@ -386,7 +390,9 @@ public class UnmarshalStream extends InputStream {
                             strObj.setEncoding(USASCIIEncoding.INSTANCE);
                         }
                         continue;
+                        
                     } else if (key.asJavaString().equals("encoding")) {
+                        
                         IRubyObject encodingNameObj = unmarshalObject(false);
                         String encodingNameStr = encodingNameObj.asJavaString();
                         ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
@@ -398,9 +404,11 @@ public class UnmarshalStream extends InputStream {
                         Encoding encoding = entry.getEncoding();
                         strObj.setEncoding(encoding);
                         continue;
+                        
                     } // else fall through as normal ivar
                 }
             }
+            
             String name = key.asJavaString();
             IRubyObject value = unmarshalObject();
 
