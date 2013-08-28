@@ -807,7 +807,10 @@ public class RipperLexer implements Warnings {
             value = value + (char) begin;
             if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) compile_error("unknown type of %string");
         }
-        if (c == EOF || begin == EOF) compile_error("unterminated quoted string meets end of file");
+        if (c == EOF || begin == EOF) {
+            compile_error("unterminated quoted string meets end of file");
+            return EOF;
+        }
         
         // Figure end-char.  '\0' is special to indicate begin=end and that no nesting?
         switch(begin) {
@@ -1722,9 +1725,13 @@ public class RipperLexer implements Warnings {
         }
         
         if (Character.isDigit(c)) {
-            if (tokenBuffer.length() == 1) compile_error("`@" + c + "' is not allowed as an instance variable name");
+            if (tokenBuffer.length() == 1) {
+                compile_error("`@" + c + "' is not allowed as an instance variable name");
+                return EOF;
+            }
 
             compile_error("`@@" + c + "' is not allowed as a class variable name");
+            return EOF;
         }
         
         if (!isIdentifierChar(c)) {
@@ -2337,7 +2344,10 @@ public class RipperLexer implements Warnings {
         }
         
         c = nextc();
-        if (c == EOF) compile_error("incomplete character syntax");
+        if (c == EOF) {
+            compile_error("incomplete character syntax");
+            return EOF;
+        }
 
         if (Character.isWhitespace(c)){
             if (!isARG()) {

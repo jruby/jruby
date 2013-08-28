@@ -124,7 +124,13 @@ public class StringTerm extends StrTerm {
         lexer.pushback(c);
         
         if (parseStringIntoBuffer(lexer, src, buffer) == RipperLexer.EOF) {
-            lexer.compile_error("unterminated string meets end of file");
+            if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
+                lexer.compile_error("unterminated regexp meets end of file");
+                return Tokens.tREGEXP_END;
+            } else {
+                lexer.compile_error("unterminated string meets end of file");
+                return Tokens.tSTRING_END;
+            }
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
