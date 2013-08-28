@@ -375,7 +375,7 @@ public class RipperLexer implements Warnings {
      * Has lexing started yet?
      */
     public boolean hasStarted() {
-        return lexb != null; // if no current line then nextc has never been called.
+        return src != null; // if no current line then nextc has never been called.
     }
     
     public boolean isEndSeen() {

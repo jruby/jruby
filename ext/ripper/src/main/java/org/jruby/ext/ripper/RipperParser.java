@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.ext.ripper.RipperLexer.LexState;
-import org.jruby.ext.ripper.Warnings.ID;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
@@ -381,7 +380,11 @@ public class RipperParser {
     
     public boolean isEndSeen() {
         return lexer.isEndSeen();
-    }    
+    }
+    
+    public ThreadContext getContext() {
+        return context;
+    }
     
     protected IRubyObject ripper;
     protected ThreadContext context;
