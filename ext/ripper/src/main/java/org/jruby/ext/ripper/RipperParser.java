@@ -371,11 +371,20 @@ public class RipperParser {
         return lexer.getEncoding();
     }
     
+    public boolean getYYDebug() {
+        return yydebug;
+    }
+    
+    public void setYYDebug(boolean yydebug) {
+        this.yydebug = yydebug;
+    }
+    
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
+    protected boolean yydebug; // FIXME: Hook up to jay yydebug
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;

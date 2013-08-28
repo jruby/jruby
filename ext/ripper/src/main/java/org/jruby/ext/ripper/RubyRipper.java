@@ -311,12 +311,13 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return null;
+        return context.runtime.newBoolean(parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
-    public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg0) {
-        return null;
+    public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg) {
+        parser.setYYDebug(arg.isTrue());
+        return arg;
     }
     
     private String sourceAsString(ThreadContext context, IRubyObject src) {
