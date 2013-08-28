@@ -55,8 +55,8 @@ public class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, byte[] in, int lineOffset) {
-        this.completeSource = new ByteList(in);
+    protected LexerSource(String sourceName, ByteList in, int lineOffset) {
+        this.completeSource = in;
         this.name = sourceName;
         if (lineOffset != 0) lineOffset--;
         this.lineOffset = lineOffset;
@@ -72,6 +72,10 @@ public class LexerSource {
     
     public int getLineOffset() {
         return lineOffset;
+    }
+    
+    public Encoding getEncoding() {
+        return completeSource.getEncoding();
     }
     
     public void setEncoding(Encoding encoding) {

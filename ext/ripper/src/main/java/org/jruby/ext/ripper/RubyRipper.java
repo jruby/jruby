@@ -260,7 +260,7 @@ public class RubyRipper extends RubyObject {
     
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
-        byte[] stringSource = sourceAsString(context, src);
+        ByteList stringSource = sourceAsString(context, src);
         filename = filenameAsString(context, file);
         int lineno = lineAsInt(context, line);
         LexerSource source = new LexerSource(filename.asJavaString(), stringSource, lineno);
@@ -327,15 +327,15 @@ public class RubyRipper extends RubyObject {
         return arg;
     }
     
-    private byte[] sourceAsString(ThreadContext context, IRubyObject src) {
+    private ByteList sourceAsString(ThreadContext context, IRubyObject src) {
         // FIXME: respond_to? returns private methods
         DynamicMethod method = src.getMetaClass().searchMethod("gets");
         
         if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
-            return src.convertToString().getByteList().bytes();
+            return src.convertToString().getByteList();
         }
 
-        return src.callMethod(context, "gets").convertToString().getByteList().bytes();
+        return src.callMethod(context, "gets").convertToString().getByteList();
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {

@@ -283,7 +283,7 @@ public class RipperLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
-        current_enc = USASCII_ENCODING;
+        current_enc = src.getEncoding();
     }
     
     protected int tokp = 0; // Where last token started
@@ -314,10 +314,11 @@ public class RipperLexer {
         return __end__seen;
     }
     
-    protected void flush_string_content() {
+    protected void flush_string_content(Encoding encoding) {
         if (delayed != null) {
             int len = lex_p - tokp;
             if (len > 0) {
+                delayed.setEncoding(encoding);
                 delayed.append(lexb.makeShared(tokp, len));
             }
             dispatchDelayedToken(Tokens.tSTRING_CONTENT);
@@ -2713,6 +2714,7 @@ public class RipperLexer {
         } else { // handle \\uxxxx
             scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
         }
+        buffer.setEncoding(UTF8_ENCODING);
     }
 
     private byte[] mbcBuf = new byte[6];

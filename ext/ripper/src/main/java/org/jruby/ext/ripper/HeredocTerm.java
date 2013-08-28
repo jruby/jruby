@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
+import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
 
 
@@ -161,13 +162,16 @@ public class HeredocTerm extends StrTerm {
             do {
                 lexer.pushback(c);
                 
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok)) == RipperLexer.EOF) {
+                Encoding enc[] = new Encoding[1];
+                enc[0] = lexer.getEncoding();
+                
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok, enc)) == RipperLexer.EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
                 if (c != '\n') {
                     lexer.setValue(lexer.createStr(tok, 0));
-                    lexer.flush_string_content();
+                    lexer.flush_string_content(enc[0]);
                     return Tokens.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
