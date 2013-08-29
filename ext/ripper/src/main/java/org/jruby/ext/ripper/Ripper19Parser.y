@@ -201,14 +201,10 @@ top_compstmt  : top_stmts opt_terms {
               }
 
 top_stmts     : none {
-                  $$ = p.dispatch("on_stmts_add", 
-                                        p.dispatch("on_stmts_new"), 
-                                        p.dispatch("on_void_stmt"));
+                  $$ = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), p.dispatch("on_void_stmt"));
               }
               | top_stmt {
-                  $$ = p.dispatch("on_stmts_add", 
-                                        p.dispatch("on_stmts_new"), 
-                                        $1);
+                  $$ = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), $1);
               }
               | top_stmts terms top_stmt {
                   $$ = p.dispatch("on_stmts_add", $1, $3);
@@ -227,11 +223,7 @@ top_stmt      : stmt
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  $$ = p.dispatch("on_bodystmt", 
-                                        p.escape($1),
-                                        p.escape($2),
-                                        p.escape($3),
-                                        p.escape($4));
+                  $$ = p.dispatch("on_bodystmt", p.escape($1), p.escape($2), p.escape($3), p.escape($4));
                 }
 
 compstmt        : stmts opt_terms {
@@ -239,14 +231,10 @@ compstmt        : stmts opt_terms {
                 }
 
  stmts          : none {
-                    $$ = p.dispatch("on_stmts_add", 
-                                          p.dispatch("on_stmts_new"),
-                                          p.dispatch("on_void_stmt"));
+                    $$ = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), p.dispatch("on_void_stmt"));
                 }
                 | stmt {
-                    $$ = p.dispatch("on_stmts_add",
-                                          p.dispatch("on_stmts_new"), 
-                                          $1);
+                    $$ = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), $1);
                 }
                 | stmts terms stmt {
                     $$ = p.dispatch("on_stmts_add", $1, $3);
@@ -267,8 +255,7 @@ stmt            : kALIAS fitem {
                     $$ = p.dispatch("on_var_alias", $2, $3);
                 }
                 | kALIAS tGVAR tNTH_REF {
-                    $$ = p.dispatch("on_alias_error", 
-                                          p.dispatch("on_var_alias", $2, $3));
+                    $$ = p.dispatch("on_alias_error", p.dispatch("on_var_alias", $2, $3));
                 }
                 | kUNDEF undef_list {
                     $$ = p.dispatch("on_undef", $2);
@@ -303,46 +290,35 @@ stmt            : kALIAS fitem {
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_aref_field", 
-                                                           $1, 
-                                                           p.escape($3)),
-                                          $5, $6);
+                                    p.dispatch("on_aref_field", $1, p.escape($3)),
+                                    $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field", 
-                                                           $1, 
-                                                           p.intern("."),
-                                                           $3), 
-                                          $4, $5);
+                                    p.dispatch("on_field", $1, p.intern("."), $3), 
+                                    $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field",
-                                                           $1,
-                                                           p.intern("."),
-                                                           $3),
-                                          $4, $5);
+                                    p.dispatch("on_field",$1, p.intern("."), $3),
+                                    $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
                     $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_opassign", 
-                                                           p.dispatch("on_const_path_field", $1, $3), 
-                                                           $4, $5));
+                                    p.dispatch("on_opassign", 
+                                    p.dispatch("on_const_path_field", $1, $3), 
+                                    $4, $5));
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field", 
-                                                           $1, 
-                                                           p.intern("::"),
-                                                           $3), 
-                                          $4, $5);
+                                    p.dispatch("on_field", $1, p.intern("::"), $3), 
+                                    $4, $5);
                 }
                 | backref tOP_ASGN command_call {
                     $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_assign", 
-                                                           p.dispatch("on_var_field", $1), 
-                                                           $3));
+                                    p.dispatch("on_assign", 
+                                    p.dispatch("on_var_field", $1), 
+                                    $3));
                }
                 | lhs '=' mrhs {
                     $$ = p.dispatch("on_assign", $1, $3);
@@ -365,16 +341,10 @@ command_asgn    : lhs '=' command_call {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr kAND expr {
-                    $$ = p.dispatch("on_binary",
-                                          $1,
-                                          p.intern("and"),
-                                          $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("and"), $3);
                 }
                 | expr kOR expr {
-                    $$ = p.dispatch("on_binary",
-                                          $1,
-                                          p.intern("or"),
-                                          $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern("or"), $3);
                 }
                 | kNOT opt_nl expr {
                     $$ = p.dispatch("on_unary", p.intern("not"), $3);
@@ -397,19 +367,13 @@ command_call    : command
 block_command   : block_call
                 | block_call tDOT operation2 command_args {
                     $$ = p.dispatch("on_method_add_arg", 
-                                          p.dispatch("on_call",
-                                                           $1,
-                                                           p.intern("."),
-                                                           $3),
-                                          $4);
+                                    p.dispatch("on_call", $1, p.intern("."), $3),
+                                    $4);
                 }
                 | block_call tCOLON2 operation2 command_args {
                     $$ = p.dispatch("on_method_add_arg", 
-                                          p.dispatch("on_call",
-                                                           $1,
-                                                           p.intern("::"),
-                                                           $3),
-                                          $4);
+                                    p.dispatch("on_call", $1, p.intern("::"), $3),
+                                    $4);
                 }
 
 // :brace_block - [!null]
@@ -426,32 +390,24 @@ command        : operation command_args %prec tLOWEST {
                 }
                 | operation command_args cmd_brace_block {
                     $$ = p.dispatch("on_method_add_block",
-                                          p.dispatch("on_command", 
-                                                           $1,
-                                                           $2),
-                                          $3);
+                                    p.dispatch("on_command", $1, $2),
+                                    $3);
                 }
                 | primary_value tDOT operation2 command_args %prec tLOWEST {
                     $$ = p.dispatch("on_command_call", $1, p.intern("."), $3, $4);
                 }
                 | primary_value tDOT operation2 command_args cmd_brace_block {
                     $$ = p.dispatch("on_method_add_block",
-                                          p.dispatch("on_command_call",
-                                                           $1,
-                                                           p.intern("."),
-                                                           $3, $4),
-                                          $5); 
+                                    p.dispatch("on_command_call", $1, p.intern("."), $3, $4),
+                                    $5); 
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
                     $$ = p.dispatch("on_command_call", $1, p.intern("::"), $3, $4);
                 }
                 | primary_value tCOLON2 operation2 command_args cmd_brace_block {
                     $$ = p.dispatch("on_method_add_block",
-                                          p.dispatch("on_command_call",
-                                                           $1,
-                                                           p.intern("::"),
-                                                           $3, $4),
-                                          $5);
+                                    p.dispatch("on_command_call", $1, p.intern("::"), $3, $4),
+                                    $5);
                 }
                 | kSUPER command_args {
                     $$ = p.dispatch("on_super", $2);
@@ -494,44 +450,32 @@ mlhs_basic      : mlhs_head {
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
                     $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_add_star",
-                                                           $1,
-                                                           $3),
-                                          $5);
+                                    p.dispatch("on_mlhs_add_star", $1, $3),
+                                    $5);
                 }
                 | mlhs_head tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
                     $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_add_star",
-                                                           $1,
-                                                           null),
-                                          $4);
+                                    p.dispatch("on_mlhs_add_star", $1, null),
+                                    $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = p.dispatch("on_mlhs_add_star",
-                                          p.dispatch("on_mlhs_new"),
-                                          $2);
+                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
                     $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_add_star",
-                                                           p.dispatch("on_mlhs_new"),
-                                                           $2),
-                                          $4);
+                                    p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2),
+                                    $4);
                 }
                 | tSTAR {
-                    $$ = p.dispatch("on_mlhs_add_star",
-                                          p.dispatch("on_mlhs_new"),
-                                          null);
+                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
                 }
                 | tSTAR ',' mlhs_post {
                     $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_add_star",
-                                                           p.dispatch("on_mlhs_new"),
-                                                           null),
-                                          $3);
+                                    p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null),
+                                    $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -541,9 +485,7 @@ mlhs_item       : mlhs_node
 
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
 mlhs_head       : mlhs_item ',' {
-                    $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_new"),
-                                          $1);
+                    $$ = p.dispatch("on_mlhs_add", p.dispatch("on_mlhs_new"), $1);
                 }
                 | mlhs_head mlhs_item ',' {
                     $$ = p.dispatch("on_mlhs_add", $1, $2);
@@ -551,9 +493,7 @@ mlhs_head       : mlhs_item ',' {
 
 // Set of mlhs terms at end of mlhs (a, *b, d, e = arr  # d,e is post)
 mlhs_post       : mlhs_item {
-                    $$ = p.dispatch("on_mlhs_add",
-                                          p.dispatch("on_mlhs_new"),
-                                          $1);
+                    $$ = p.dispatch("on_mlhs_add", p.dispatch("on_mlhs_new"), $1);
                 }
                 | mlhs_post ',' mlhs_item {
                     $$ = p.dispatch("on_mlhs_add", $1, $3);
@@ -830,7 +770,7 @@ arg             : lhs '=' arg {
                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
                 }
                 | arg tGEQ arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern("<="), $3);
+                    $$ = p.dispatch("on_binary", $1, p.intern(">="), $3);
                 }
                 | arg tLT arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("<"), $3);
