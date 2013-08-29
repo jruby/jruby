@@ -300,13 +300,12 @@ public class RipperParser {
     }
 
     public void yyerror(String message) {
+        compile_error(message);
         throw new SyntaxException(message, message);
     }
     
     public void yyerror(String message, String[] expected, String found) {
         compile_error(message + ", unexpected " + found + "\n");
-
-        throw new SyntaxException(found, message);
     }
 
     public Integer getLeftParenBegin() {
