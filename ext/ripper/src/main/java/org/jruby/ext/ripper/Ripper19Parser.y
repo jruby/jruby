@@ -1065,7 +1065,7 @@ primary         : literal
                     $$ = p.dispatch("on_yield0");
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
-                    $$ = p.dispatch("on_defined", $5);
+                    $$ = p.dispatch("on_defined", $4);
                 }
                 | kNOT tLPAREN2 expr rparen {
                     $$ = p.dispatch("on_unary", p.intern("not"), $3);
