@@ -1444,7 +1444,7 @@ lambda          : /* none */  {
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
-                    $$ = $2;
+                    $$ = p.dispatch("on_paren", $2);
                 }
                 | f_args opt_bv_decl {
                     $$ = $1;
