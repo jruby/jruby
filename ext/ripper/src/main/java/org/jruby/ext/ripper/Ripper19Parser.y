@@ -1111,7 +1111,7 @@ primary         : literal
                     $$ = p.dispatch("on_case", $2, $4);
                 }
                 | kCASE opt_terms case_body kEND {
-                    $$ = p.dispatch("on_case", null, $4);
+                    $$ = p.dispatch("on_case", null, $3);
                 }
                 | kFOR for_var kIN {
                     p.getConditionState().begin();

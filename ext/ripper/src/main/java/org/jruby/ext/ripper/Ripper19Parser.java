@@ -2090,7 +2090,7 @@ states[376] = new RipperParserState() {
 };
 states[309] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_case", null, ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.dispatch("on_case", null, ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
