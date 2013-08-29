@@ -39,7 +39,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
@@ -260,11 +259,8 @@ public class RubyRipper extends RubyObject {
     
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
-        ByteList stringSource = sourceAsString(context, src);
         filename = filenameAsString(context, file);
-        int lineno = lineAsInt(context, line);
-        LexerSource source = new ByteListLexerSource(filename.asJavaString(), lineno, stringSource);
-        parser = new Ripper19Parser(context, this, source);
+        parser = new Ripper19Parser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
          
         return context.runtime.getNil();
     }
@@ -327,15 +323,15 @@ public class RubyRipper extends RubyObject {
         return arg;
     }
     
-    private ByteList sourceAsString(ThreadContext context, IRubyObject src) {
+    private LexerSource source(ThreadContext context, IRubyObject src, String filename, int lineno) {
         // FIXME: respond_to? returns private methods
         DynamicMethod method = src.getMetaClass().searchMethod("gets");
         
         if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
-            return src.convertToString().getByteList();
+            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList());
         }
 
-        return src.callMethod(context, "gets").convertToString().getByteList();
+        return new GetsLexerSource(filename, lineno, src);
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {

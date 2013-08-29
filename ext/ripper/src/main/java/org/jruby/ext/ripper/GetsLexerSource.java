@@ -14,31 +14,44 @@ import org.jruby.util.ByteList;
  */
 public class GetsLexerSource extends LexerSource {
     private IRubyObject io;
+    private Encoding encoding;
     
     public GetsLexerSource(String sourceName, int line, IRubyObject io) {
         super(sourceName, line);
         
         this.io = io;
+        encoding = frobnicateEncoding();
     }
 
     // FIXME: Should be a hard failure likely if no encoding is possible
-    @Override
-    public Encoding getEncoding() {
+    public final Encoding frobnicateEncoding() {
         if (!io.respondsTo("encoding")) return null;
         
         IRubyObject encodingObject = io.callMethod(io.getRuntime().getCurrentContext(), "encoding");
 
-        return encodingObject instanceof RubyEncoding ? ((RubyEncoding) encodingObject).getEncoding() : null;
+        return encodingObject instanceof RubyEncoding ? 
+                ((RubyEncoding) encodingObject).getEncoding() : io.getRuntime().getDefaultExternalEncoding();
+    }
+    
+    @Override
+    public Encoding getEncoding() {
+        return encoding;
     }
 
     @Override
     public void setEncoding(Encoding encoding) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.encoding = encoding;
     }
 
     @Override
     public ByteList gets() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        IRubyObject result = io.callMethod(io.getRuntime().getCurrentContext(), "gets");
+        
+        if (result.isNil()) return null;
+        
+        ByteList bytelist = result.convertToString().getByteList();
+        bytelist.setEncoding(encoding);
+        return bytelist;
     }
     
 }

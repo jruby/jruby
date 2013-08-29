@@ -489,7 +489,7 @@ public class RipperLexer {
                 break;
             case 0xef:
                 if (lex_pend - lex_p >= 2 && p(lex_p) == 0xbb && p(lex_p + 1) == 0xbf) {
-                    current_enc = ASCII8BIT_ENCODING;
+                    setEncoding(UTF8_ENCODING);
                     lex_p += 2;
                     lex_pbeg = lex_p;
                     return;
@@ -591,8 +591,13 @@ public class RipperLexer {
         setEncoding(newEncoding);
     }
 
+    // FIXME: This is mucked up...current line knows it's own encoding so that must be changed.  but we also have two
+    // other sources.  I am thinking current_enc should be removed in favor of src since it needs to know encoding to
+    // provide next line.
     public void setEncoding(Encoding encoding) {
         this.current_enc = encoding;
+        src.setEncoding(encoding);
+        lexb.setEncoding(encoding);
     }
 
     public StrTerm getStrTerm() {
@@ -2912,28 +2917,5 @@ public class RipperLexer {
         }
 
         return value;
-    }
-    
-    // FIXME: Also sucks that matchMarker will strip off valuable bytes and not work for this (could be a one-liner)
-    private void detectUTF8BOM() throws IOException {
-        int b1 = nextc();
-        if (b1 == 0xef) {
-            int b2 = nextc();
-            if (b2 == 0xbb) {
-                int b3 = nextc();
-                if (b3 == 0xbf) {
-                    setEncoding(UTF8_ENCODING);
-                } else {
-                    pushback(b3);
-                    pushback(b2);
-                    pushback(b1);
-                }
-            } else {
-                pushback(b2);
-                pushback(b1);
-            }
-        } else {
-            pushback(b1);
-        }
-    }    
+    } 
 }
