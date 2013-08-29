@@ -34,31 +34,16 @@ import org.jruby.util.ByteList;
 /**
  * Simple source capable of providing the next line in Ruby source file being lex'd.
  */
-public class LexerSource {
+public abstract class LexerSource {
     // The name of this source (e.g. a filename: foo.rb)
     private final String name; // mri: parser_ruby_sourcefile
-    
-    // The entire source of the file
-    private ByteList completeSource;
-
-    // Offset into source overall
-    private int offset = 0; // mri: lex_gets_ptr
     
     // Offset specified where to add to actual offset
     private int lineOffset;
 
-    /**
-     * Create our food-source for the lexer
-     * 
-     * @param sourceName is the file we are reading
-     * @param reader is what represents the contents of file sourceName
-     * @param line starting line number for source (used by eval)
-     * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
-     */
-    protected LexerSource(String sourceName, ByteList in, int lineOffset) {
-        this.completeSource = in;
+    public LexerSource(String sourceName, int lineOffset) {
         this.name = sourceName;
-        if (lineOffset != 0) lineOffset--;
+        if (lineOffset != 0) lineOffset--; // make sure first line is line lineoffset (1-index fudging)
         this.lineOffset = lineOffset;
     }
 
@@ -74,32 +59,9 @@ public class LexerSource {
         return lineOffset;
     }
     
-    public Encoding getEncoding() {
-        return completeSource.getEncoding();
-    }
+    public abstract Encoding getEncoding();
     
-    public void setEncoding(Encoding encoding) {
-        completeSource.setEncoding(encoding);
-    }
+    public abstract void setEncoding(Encoding encoding);
     
-    public ByteList gets() {
-        int length = completeSource.length();
-        if (offset == length) return null; // At end of source/eof
-
-        int end = offset;
-        
-        while (end < length) {
-            if (completeSource.get(end) == '\n') {
-                end++; // include newline
-                break;
-            }
-            end++;
-        }
-
-        ByteList line = completeSource.makeShared(offset, end - offset);
-
-        offset = end;
-        
-        return line;
-    }
+    public abstract ByteList gets();
 }
