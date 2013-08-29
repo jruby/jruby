@@ -15,15 +15,14 @@ public class ByteListLexerSource extends LexerSource {
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
     
     /**
-     * Create our food-source for the lexer
+     * Create our food-source for the lexer.
      * 
      * @param sourceName is the file we are reading
-     * @param reader is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
-     * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
+     * @param in the ByteList backing the source we want to lex
      */
-    public ByteListLexerSource(String sourceName, ByteList in, int lineOffset) {
-        super(sourceName, lineOffset);
+    public ByteListLexerSource(String sourceName, int line, ByteList in) {
+        super(sourceName, line);
         this.completeSource = in;
     }
     
