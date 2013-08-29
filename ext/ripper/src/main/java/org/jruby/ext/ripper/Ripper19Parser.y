@@ -1681,7 +1681,7 @@ string_content  : tSTRING_CONTENT
                    p.getConditionState().restart();
                    p.getCmdArgumentState().restart();
                    p.setStrTerm($<StrTerm>2);
-                   $$ = p.dispatch("on_string_embexpr", $4);
+                   $$ = p.dispatch("on_string_embexpr", $3);
                 }
 
 string_dvar     : tGVAR {

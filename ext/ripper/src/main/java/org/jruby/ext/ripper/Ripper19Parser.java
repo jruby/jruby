@@ -2319,7 +2319,7 @@ states[446] = new RipperParserState() {
                    p.getConditionState().restart();
                    p.getCmdArgumentState().restart();
                    p.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
-                   yyVal = p.dispatch("on_string_embexpr", ((IRubyObject)yyVals[0+yyTop]));
+                   yyVal = p.dispatch("on_string_embexpr", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
