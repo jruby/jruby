@@ -1489,13 +1489,13 @@ states[234] = new RipperParserState() {
 };
 states[100] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[301] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_unless", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_unless", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -1567,14 +1567,14 @@ states[302] = new RipperParserState() {
 };
 states[403] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_do_block", p.escape(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
     return yyVal;
   }
 };
 states[336] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_elsif", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_elsif", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1646,7 +1646,7 @@ states[303] = new RipperParserState() {
 };
 states[404] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_when", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_when", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
     return yyVal;
   }
@@ -1683,7 +1683,7 @@ states[371] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_block_var", 
                                     p.dispatch("on_params", null, null, null, null, null), 
-                                    p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                                    ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -1832,7 +1832,7 @@ states[440] = new RipperParserState() {
 };
 states[373] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_block_var", p.escape(((IRubyObject)yyVals[-2+yyTop])), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_block_var", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -1874,7 +1874,7 @@ states[474] = new RipperParserState() {
 };
 states[407] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_rescue", p.escape(((IRubyObject)yyVals[-4+yyTop])), p.escape(((IRubyObject)yyVals[-3+yyTop])), p.escape(((IRubyObject)yyVals[-1+yyTop])), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_rescue", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2296,7 +2296,7 @@ states[312] = new RipperParserState() {
 };
 states[245] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_arg_paren", p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_arg_paren", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -2320,7 +2320,7 @@ states[346] = new RipperParserState() {
 };
 states[11] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = p.dispatch("on_bodystmt", p.escape(((IRubyObject)yyVals[-3+yyTop])), p.escape(((IRubyObject)yyVals[-2+yyTop])), p.escape(((IRubyObject)yyVals[-1+yyTop])), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                  yyVal = p.dispatch("on_bodystmt", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2688,7 +2688,7 @@ states[317] = new RipperParserState() {
 };
 states[485] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2757,7 +2757,7 @@ states[318] = new RipperParserState() {
 };
 states[486] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2826,7 +2826,7 @@ states[319] = new RipperParserState() {
 };
 states[487] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2862,7 +2862,7 @@ states[18] = new RipperParserState() {
 };
 states[387] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_do_block", p.escape(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
     return yyVal;
   }
@@ -2888,13 +2888,13 @@ states[320] = new RipperParserState() {
 };
 states[488] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[354] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2912,7 +2912,7 @@ states[86] = new RipperParserState() {
 };
 states[287] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_array", p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -2958,7 +2958,7 @@ states[321] = new RipperParserState() {
 };
 states[489] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2970,7 +2970,7 @@ states[422] = new RipperParserState() {
 };
 states[355] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2988,7 +2988,7 @@ states[87] = new RipperParserState() {
 };
 states[288] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_hash", p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_hash", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3048,7 +3048,7 @@ states[322] = new RipperParserState() {
 };
 states[490] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3060,7 +3060,7 @@ states[423] = new RipperParserState() {
 };
 states[356] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3139,7 +3139,7 @@ states[55] = new RipperParserState() {
 };
 states[491] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-1+yyTop]), null, null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-1+yyTop]), null, null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3151,7 +3151,7 @@ states[424] = new RipperParserState() {
 };
 states[357] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params",((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params",((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3232,7 +3232,7 @@ states[559] = new RipperParserState() {
 };
 states[492] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3244,7 +3244,7 @@ states[425] = new RipperParserState() {
 };
 states[358] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3304,7 +3304,7 @@ states[258] = new RipperParserState() {
 };
 states[57] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_brace_block", p.escape(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
     return yyVal;
   }
@@ -3317,7 +3317,7 @@ states[560] = new RipperParserState() {
 };
 states[493] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3336,7 +3336,7 @@ states[359] = new RipperParserState() {
 };
 states[91] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3397,7 +3397,7 @@ states[259] = new RipperParserState() {
 };
 states[494] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-1+yyTop]), null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-1+yyTop]), null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3409,7 +3409,7 @@ states[427] = new RipperParserState() {
 };
 states[360] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3466,7 +3466,7 @@ states[260] = new RipperParserState() {
 };
 states[495] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3478,7 +3478,7 @@ states[428] = new RipperParserState() {
 };
 states[361] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-1+yyTop]), null, null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", ((RubyArray)yyVals[-1+yyTop]), null, null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3538,7 +3538,7 @@ states[261] = new RipperParserState() {
 };
 states[496] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3550,7 +3550,7 @@ states[429] = new RipperParserState() {
 };
 states[362] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3612,7 +3612,7 @@ states[61] = new RipperParserState() {
 };
 states[497] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3624,7 +3624,7 @@ states[430] = new RipperParserState() {
 };
 states[363] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3713,7 +3713,7 @@ states[431] = new RipperParserState() {
 };
 states[364] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-1+yyTop]), null, null, p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-1+yyTop]), null, null, ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3775,7 +3775,7 @@ states[432] = new RipperParserState() {
 };
 states[365] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3811,7 +3811,7 @@ states[533] = new RipperParserState() {
 };
 states[399] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_aref", ((IRubyObject)yyVals[-3+yyTop]), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_aref", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3853,7 +3853,7 @@ states[433] = new RipperParserState() {
 };
 states[366] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-1+yyTop]), null, p.escape(((IRubyObject)yyVals[0+yyTop])));     
+                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));     
     return yyVal;
   }
 };
@@ -3896,7 +3896,7 @@ states[333] = new RipperParserState() {
 states[199] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_opassign", 
-                                    p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), p.escape(((IRubyObject)yyVals[-3+yyTop]))),
+                                    p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -3927,14 +3927,14 @@ states[434] = new RipperParserState() {
 };
 states[367] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), p.escape(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_params", null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[32] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_opassign", 
-                                    p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), p.escape(((IRubyObject)yyVals[-3+yyTop]))),
+                                    p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -3953,13 +3953,13 @@ states[99] = new RipperParserState() {
 };
 states[300] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_if", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), p.escape(((IRubyObject)yyVals[-1+yyTop])));
+                    yyVal = p.dispatch("on_if", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[401] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_brace_block", p.escape(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
     return yyVal;
   }
