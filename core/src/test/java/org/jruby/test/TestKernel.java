@@ -57,17 +57,17 @@ public class TestKernel extends TestRubyBase {
 
     public void testLoad() throws Exception {
         //load should work several times in a row
-        assertEquals("0", eval("load 'test/loadTest.rb'"));
-        assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest.rb'"));
+        assertEquals("0", eval("load '../test/loadTest.rb'"));
+        assertEquals("load did not load the same file several times", "1", eval("load '../test/loadTest.rb'"));
     }
 
     public void testRequire() throws Exception {
         //reset the $loadTestvar
         eval("$loadTest = nil");
-        assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
-        assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
+        assertEquals("failed to load the file test/loadTest", "0", eval("require '../test/loadTest'"));
+        assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require '../test/loadTest'"));
 
-        assertEquals("incorrect value for $\" variable", "test/loadTest.rb", eval("print $\"[-1]"));
+        assertEquals("incorrect value for $\" variable", "true", eval("print $\"[-1].end_with?('test/loadTest.rb')"));
     }
 
     public void testPrintf() throws Exception {
