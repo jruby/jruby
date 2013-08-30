@@ -529,8 +529,7 @@ mlhs_node       : user_variable {
                     $$ = p.dispatch("on_top_const_field", $2);
                 }
                 | backref {
-                    $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_var_field", $1));
+                    $$ = p.dispatch("on_assign_error", p.dispatch("on_var_field", $1));
                 }
 
 lhs             : user_variable {
@@ -643,70 +642,51 @@ arg             : lhs '=' arg {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    $$ = p.dispatch("on_assign", $1, 
-                                          p.dispatch("on_rescue_mod", 
-                                                           $3, $5));
+                    $$ = p.dispatch("on_assign", $1, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
-                    $$ = p.dispatch("on_opassign", $1, $2,
-                                          p.dispatch("on_rescue_mod", 
-                                                           $3, $5));
+                    $$ = p.dispatch("on_opassign", $1, $2, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_aref_field", 
-                                                           $1, 
-                                                           p.escape($3)),
-                                          $5, $6);
+                                    p.dispatch("on_aref_field", $1, p.escape($3)),
+                                    $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field", $1, 
-                                                           p.intern("."),
-                                                           $3),
-                                          $4, $5);
+                                    p.dispatch("on_field", $1, p.intern("."), $3),
+                                    $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field", 
-                                                           $1, 
-                                                           p.intern("."),
-                                                           $3),
-                                          $4, $5);
+                                    p.dispatch("on_field", $1, p.intern("."), $3),
+                                    $4, $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
-                                          p.dispatch("on_field",
-                                                           $1,
-                                                           p.intern("::"),
-                                                           $3),
-                                          $4, $5);
+                                    p.dispatch("on_field", $1, p.intern("::"), $3),
+                                    $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
                     $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_opassign", 
-                                                           p.dispatch("on_const_path_field",
-                                                                            $1,
-                                                                            $3),
-                                                           $4, $5));
+                                    p.dispatch("on_opassign", 
+                                               p.dispatch("on_const_path_field", $1, $3),
+                                               $4, $5));
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
                     $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_opassign", 
-                                                           p.dispatch("on_top_const_field",
-                                                                            $2),
-                                                           $3,
-                                                           $4));
+                                    p.dispatch("on_opassign", 
+                                               p.dispatch("on_top_const_field", $2),
+                                               $3, $4));
                 }
                 | backref tOP_ASGN arg {
                     $$ = p.dispatch("on_assign_error", 
-                                          p.dispatch("on_opassign",
-                                                           p.dispatch("on_var_field",
-                                                                            $1),
-                                                           $2, $3));
+                                    p.dispatch("on_opassign",
+                                               p.dispatch("on_var_field", $1),
+                                               $2, $3));
                 }
                 | arg tDOT2 arg {
                     $$ = p.dispatch("on_dot2", $1, $3);
@@ -734,19 +714,13 @@ arg             : lhs '=' arg {
                 }
                 | tUMINUS_NUM tINTEGER tPOW arg {
                     $$ = p.dispatch("on_unary", 
-                                          p.intern("-@"), 
-                                          p.dispatch("on_binary", 
-                                                           $2, 
-                                                           p.intern("**"),
-                                                           $4));
+                                    p.intern("-@"), 
+                                    p.dispatch("on_binary", $2, p.intern("**"), $4));
                 }
                 | tUMINUS_NUM tFLOAT tPOW arg {
                     $$ = p.dispatch("on_unary", 
-                                          p.intern("-@"), 
-                                          p.dispatch("on_binary", 
-                                                           $2, 
-                                                           p.intern("**"),
-                                                           $4));
+                                    p.intern("-@"), 
+                                    p.dispatch("on_binary", $2, p.intern("**"), $4));
                 }
                 | tUPLUS arg {
                     $$ = p.dispatch("on_unary", p.intern("+@"), $2);
@@ -831,15 +805,13 @@ aref_args       : none
                 }
                 | args ',' assocs trailer {
                     $$ = p.dispatch("on_args_add", 
-                                          $1,
-                                          p.dispatch("on_bare_assoc_hash",
-                                                           $3));
+                                    $1,
+                                    p.dispatch("on_bare_assoc_hash", $3));
                 }
                 | assocs trailer {
                     $$ = p.dispatch("on_args_add", 
-                                          p.dispatch("on_args_new"),
-                                          p.dispatch("on_bare_assoc_hash",
-                                                           $1));
+                                    p.dispatch("on_args_new"),
+                                    p.dispatch("on_bare_assoc_hash", $1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -854,45 +826,35 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = p.dispatch("on_args_add", 
-                                          $1,
-                                          p.dispatch("on_bare_assoc_hash",
-                                                           $3));
+                    $$ = p.dispatch("on_args_add", $1, p.dispatch("on_bare_assoc_hash", $3));
                 }
                 | assocs ',' {
                     $$ = p.dispatch("on_args_add", 
-                                          p.dispatch("on_args_new"),
-                                          p.dispatch("on_bare_assoc_hash",
-                                                           $1));
+                                    p.dispatch("on_args_new"),
+                                    p.dispatch("on_bare_assoc_hash", $1));
                 }
 
 // [!null]
 call_args       : command {
-                    $$ = p.dispatch("on_args_add", 
-                                          p.dispatch("on_args_new"),
-                                          $1);
+                    $$ = p.dispatch("on_args_add", p.dispatch("on_args_new"), $1);
                 }
                 | args opt_block_arg {
                     $$ = p.arg_add_optblock($1, $2);
                 }
                 | assocs opt_block_arg {
                     $$ =  p.arg_add_optblock(p.dispatch("on_args_add", 
-                                                                    p.dispatch("on_args_new"),
-                                                                    p.dispatch("on_bare_assoc_hash",
-                                                                                     $1)),
-                                                   $2);
+                                                        p.dispatch("on_args_new"),
+                                                        p.dispatch("on_bare_assoc_hash", $1)),
+                                             $2);
                 }
                 | args ',' assocs opt_block_arg {
                     $$ = p.arg_add_optblock(p.dispatch("on_args_add", 
-                                                                   $1,
-                                                                   p.dispatch("on_bare_assoc_hash",
-                                                                                    $3)),
-                                                  $4);
+                                            $1,
+                                            p.dispatch("on_bare_assoc_hash", $3)),
+                                            $4);
                 }
                 | block_arg {
-                    $$ = p.dispatch("on_args_add_block", 
-                                          p.dispatch("on_args_new"),
-                                          $1);
+                    $$ = p.dispatch("on_args_add_block", p.dispatch("on_args_new"), $1);
                 }
 
 command_args    : /* none */ {
@@ -913,14 +875,10 @@ opt_block_arg   : ',' block_arg {
 
 // [!null]
 args            : arg_value {
-                    $$ = p.dispatch("on_args_add",
-                                          p.dispatch("on_args_new"),
-                                          $1);
+                    $$ = p.dispatch("on_args_add", p.dispatch("on_args_new"), $1);
                 }
                 | tSTAR arg_value {
-                    $$ = p.dispatch("on_args_add_star", 
-                                          p.dispatch("on_args_new"),
-                                          $2);
+                    $$ = p.dispatch("on_args_add_star", p.dispatch("on_args_new"), $2);
                 }
                 | args ',' arg_value {
                     $$ = p.dispatch("on_args_add", $1, $3);
@@ -931,20 +889,16 @@ args            : arg_value {
 
 mrhs            : args ',' arg_value {
                     $$ = p.dispatch("on_mrhs_add", 
-                                          p.dispatch("on_mrhs_new_from_args",
-                                                           $1), 
-                                          $3);
+                                    p.dispatch("on_mrhs_new_from_args", $1), 
+                                    $3);
                 }
                 | args ',' tSTAR arg_value {
                     $$ = p.dispatch("on_mrhs_add_star",
-                                          p.dispatch("on_mrhs_new_from_args",
-                                                           $1),
-                                          $4);
+                                    p.dispatch("on_mrhs_new_from_args", $1),
+                                    $4);
                 }
                 | tSTAR arg_value {
-                    $$ = p.dispatch("on_mrhs_add_star",
-                                          p.dispatch("on_mrhs_new"),
-                                          $2);
+                    $$ = p.dispatch("on_mrhs_add_star", p.dispatch("on_mrhs_new"), $2);
                 }
 
 primary         : literal
@@ -956,9 +910,7 @@ primary         : literal
                 | var_ref
                 | backref
                 | tFID {
-                    $$ = p.dispatch("on_method_add_arg", 
-                                          p.dispatch("on_fcall", $1), 
-                                          p.dispatch("on_args_new"));
+                    $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), p.dispatch("on_args_new"));
                 }
                 | kBEGIN bodystmt kEND {
                     $$ = p.dispatch("on_begin", $2);
@@ -966,7 +918,7 @@ primary         : literal
                 | tLPAREN_ARG {
                     p.setState(LexState.EXPR_ENDARG);
                 } rparen {
-                    $$ = p.dispatch("on_paren", $2);
+                    $$ = p.dispatch("on_paren", null);
                 }
                 | tLPAREN_ARG expr {
                     p.setState(LexState.EXPR_ENDARG); 
