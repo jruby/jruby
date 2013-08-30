@@ -437,15 +437,17 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_HOUR_M:
                 case FORMAT_HOUR_S:
                     value = dt.getHourOfDay();
-                    if (value == 0)
+                    if (value == 0) {
                         value = 12;
-                    else if (value > 12)
+                    } else if (value > 12) {
                         value -= 12;
+                    }
 
-                    if (token.getFormat() == FORMAT_HOUR_M)
+                    if (token.getFormat() == FORMAT_HOUR_M) {
                         type = NUMERIC2;
-                    else
+                    } else {
                         type = NUMERIC2BLANK;
+                    }
                     break;
                 case FORMAT_DAY_YEAR:
                     type = NUMERIC3;
@@ -522,8 +524,9 @@ public class RubyDateFormat extends DateFormat {
                     value = dt.getMillisOfSecond() * 1000000;
                     if (ruby_1_9) value += nsec;
                     int width = ruby_1_9 ? 9 : 3;
-                    if (formatter.width > 0)
+                    if (formatter.width > 0) {
                         width = formatter.width;
+                    }
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
                     if (width < 9) {
                         output = output.substring(0, width);
@@ -570,8 +573,9 @@ public class RubyDateFormat extends DateFormat {
         int minutes = seconds / 60;
         seconds %= 60;
 
-        if (value < 0 && hours != 0) // see below when hours == 0
+        if (value < 0 && hours != 0) { // see below when hours == 0
             hours = -hours;
+        }
 
         String mm = TimeOutputFormatter.formatNumber(minutes, 2, '0');
         String ss = TimeOutputFormatter.formatNumber(seconds, 2, '0');
@@ -609,8 +613,9 @@ public class RubyDateFormat extends DateFormat {
 
         int minWidth = defaultWidth - 1;
         int width = formatter.getWidth(defaultWidth);
-        if (width < minWidth)
+        if (width < minWidth) {
             width = minWidth;
+        }
         width -= after.length();
         String before = TimeOutputFormatter.formatSignedNumber(hours, width, padder);
 

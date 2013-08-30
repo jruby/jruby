@@ -46,8 +46,9 @@ public class TimeOutputFormatter {
     public static TimeOutputFormatter getFormatter(String pattern) {
         int length = pattern.length();
         
-        if (length <= 1 || pattern.charAt(0) != '%')
+        if (length <= 1 || pattern.charAt(0) != '%') {
            return null;
+        }
 
         int width = 0;
         
@@ -82,8 +83,9 @@ public class TimeOutputFormatter {
         }
 
         // We found some formatting instructions but no padding values.
-        if (width == 0 && i > 2)
+        if (width == 0 && i > 2) {
             return new TimeOutputFormatter(format, 0);
+        }
         
         done = false;
         for (; i < length && !done; i++) {
@@ -100,8 +102,9 @@ public class TimeOutputFormatter {
             }
         }
         
-        if (width != 0)
+        if (width != 0) {
             return new TimeOutputFormatter(format, width);
+        }
 
         return null;
     }
@@ -113,15 +116,17 @@ public class TimeOutputFormatter {
     public int getNumberOfColons() {
         int colons = 0;
         for (int i = 0; i < format.length(); i++) {
-            if (format.charAt(i) == ':')
+            if (format.charAt(i) == ':') {
                 colons++;
+            }
         }
         return colons;
     }
 
     public int getWidth(int defaultWidth) {
-        if (format.contains("-")) // no padding
+        if (format.contains("-")) { // no padding
             return 0;
+        }
         return this.width != 0 ? this.width : defaultWidth; 
     }
 
@@ -160,10 +165,11 @@ public class TimeOutputFormatter {
                     break;
                 case '#': // change case
                     char last = sequence.charAt(sequence.length() - 1);
-                    if (Character.isLowerCase(last))
+                    if (Character.isLowerCase(last)) {
                         sequence = sequence.toUpperCase();
-                    else
+                    } else {
                         sequence = sequence.toLowerCase();
+                    }
                     break;
             }
         }
@@ -172,33 +178,38 @@ public class TimeOutputFormatter {
     }
 
     static String formatNumber(long value, int width, char padder) {
-        if (value >= 0)
+        if (value >= 0) {
             return padding(Long.toString(value), width, padder);
-        else
+        } else {
             return "-" + padding(Long.toString(-value), width, padder);
+        }
     }
 
     static String formatSignedNumber(long value, int width, char padder) {
         if (padder == '0') {
-            if (value >= 0)
+            if (value >= 0) {
                 return "+" + padding(Long.toString(value), width - 1, padder);
-            else
+            } else {
                 return "-" + padding(Long.toString(-value), width - 1, padder);
+            }
         } else {
-            if (value >= 0)
+            if (value >= 0) {
                 return padding("+" + Long.toString(value), width, padder);
-            else
+            } else {
                 return padding("-" + Long.toString(-value), width, padder);
+            }
         }
     }
 
     static String padding(String sequence, int width, char padder) {
-        if (sequence.length() >= width)
+        if (sequence.length() >= width) {
             return sequence;
+        }
 
         StringBuilder buf = new StringBuilder(width + sequence.length());
-        for (int i = sequence.length(); i < width; i++)
+        for (int i = sequence.length(); i < width; i++) {
             buf.append(padder);
+        }
         buf.append(sequence);
         return buf.toString();
     }
