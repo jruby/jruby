@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.ext.ripper.RipperLexer.LexState;
-import org.jruby.ext.ripper.Warnings.ID;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
@@ -92,11 +91,15 @@ public class RipperParser {
         }
         //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
         
+        lexer.parser_prepare();
         return (IRubyObject) yyparse(lexer, debugger);
     }    
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
-        if (arg2 == null) return arg1;
+        // This has to be an MRI bug
+        if (arg2 == null) return dispatch("on_args_add_block", arg1, getRuntime().getFalse());
+        
+        if (arg2.isNil()) return arg1;
         
         return dispatch("on_args_add_block", arg1, arg2);
     }
@@ -188,9 +191,8 @@ public class RipperParser {
         return shadowing_lvar(identifier);
     }
     
-    protected void getterIdentifierError(Position position, String identifier) {
-        throw new SyntaxException(SyntaxException.PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
-                "identifier " + identifier + " is not valid", identifier);
+    protected void getterIdentifierError(String identifier) {
+        throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
     // FIXME: Consider removing identifier.
@@ -199,7 +201,7 @@ public class RipperParser {
         ident.intern();
         char c = ident.charAt(0);
         
-        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return false;
+        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
         return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
     }
@@ -229,7 +231,7 @@ public class RipperParser {
     public IRubyObject new_bv(IRubyObject identifier) {
         String ident = lexer.getIdent();
         
-        if (!is_local_id(ident)) getterIdentifierError(lexer.getPosition(), ident);
+        if (!is_local_id(ident)) getterIdentifierError(ident);
 
         return arg_var(shadowing_lvar(identifier));
     }
@@ -260,8 +262,7 @@ public class RipperParser {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
             
             if (lexer.isVerbose() && current.isDefined(name) >= 0) {
-                lexer.warning(ID.STATEMENT_NOT_REACHED,lexer.getPosition(),
-                        "shadowing outer local variable - " + name);
+                lexer.warning("shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
             yyerror("duplicated argument name");
@@ -272,10 +273,6 @@ public class RipperParser {
 
     public StackState getConditionState() {
         return lexer.getConditionState();
-    }
-    
-    public Position getPosition() {
-        return lexer.getPosition();
     }
 
     public boolean isInDef() {
@@ -303,13 +300,12 @@ public class RipperParser {
     }
 
     public void yyerror(String message) {
-        throw new SyntaxException(SyntaxException.PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), message);
+        compile_error(message);
+        throw new SyntaxException(message, message);
     }
     
     public void yyerror(String message, String[] expected, String found) {
         compile_error(message + ", unexpected " + found + "\n");
-
-        throw new SyntaxException(SyntaxException.PID.CHARACTER_BAD, lexer.getPosition(), found, message, (Object)expected);
     }
 
     public Integer getLeftParenBegin() {
@@ -336,12 +332,12 @@ public class RipperParser {
         lexer.setState(lexState);
     }
 
-    public void warning(ID id, Position position, String message) {
-        if (lexer.isVerbose()) lexer.warning(id, position, message);
+    public void warning(String message) {
+        if (lexer.isVerbose()) lexer.warning(message);
     }
 
-    public void warn(ID id, Position position, String message) {
-        lexer.warn(id, position, message);
+    public void warn(String message) {
+        lexer.warn(message);
     }
 
     public Integer incrementParenNest() {
@@ -358,11 +354,35 @@ public class RipperParser {
     }
     
     public long getColumn() {
-        return lexer.getEventLocation().getStartOffset();
+        return lexer.column();
     }
 
     public long getLineno() {
-        return lexer.getEventLocation().getStartLine() + 1; //position is zero-based
+        return lexer.lineno();
+    }
+    
+    public boolean hasStarted() {
+        return lexer.hasStarted();
+    }
+    
+    public Encoding encoding() {
+        return lexer.getEncoding();
+    }
+    
+    public boolean getYYDebug() {
+        return yydebug;
+    }
+    
+    public void setYYDebug(boolean yydebug) {
+        this.yydebug = yydebug;
+    }
+    
+    public boolean isEndSeen() {
+        return lexer.isEndSeen();
+    }
+    
+    public ThreadContext getContext() {
+        return context;
     }
     
     protected IRubyObject ripper;
@@ -370,6 +390,7 @@ public class RipperParser {
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
+    protected boolean yydebug; // FIXME: Hook up to jay yydebug
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;

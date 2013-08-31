@@ -127,6 +127,15 @@ public class CFGInliner {
             }
         }
 
+        if (callBB == null) {
+            System.out.println("----------------------------------");
+            System.out.println("Did not find BB with call: " + call);
+            System.out.println("Host cfg   :" + cfg.toStringGraph());
+            System.out.println("Host instrs:" + cfg.toStringInstrs());
+            System.out.println("----------------------------------");
+            return;
+        }
+
         // 3. split callsite bb, move outbound edges from callsite bb to split bb, and unhook call bb
         splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
         cfg.addBasicBlock(splitBB);

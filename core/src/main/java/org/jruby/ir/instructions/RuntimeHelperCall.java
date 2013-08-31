@@ -52,7 +52,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         // SSS FIXME: array of args cloning should be part of utility class
         Operand[] clonedArgs = new Operand[args.length];
         for (int i = 0; i < args.length; i++) {
-            clonedArgs[i++] = args[i].cloneForInlining(ii);
+            clonedArgs[i] = args[i].cloneForInlining(ii);
         }
         Variable var = getResult();
         return new RuntimeHelperCall(var == null ? null : ii.getRenamedVariable(var), helperMethod, clonedArgs);

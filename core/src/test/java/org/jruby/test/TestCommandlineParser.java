@@ -42,6 +42,7 @@ public class TestCommandlineParser extends TestCase {
     private PrintStream out;
     private PrintStream err;
 
+    @Override
     public void setUp() {
         out = new PrintStream(new ByteArrayOutputStream());
         err = new PrintStream(new ByteArrayOutputStream());
@@ -116,7 +117,7 @@ public class TestCommandlineParser extends TestCase {
     }
 
     public void testCommandExtractScript() {
-        String[] args = new String[] { "-xtest", "testDoc.foo"};
+        String[] args = new String[] { "-x ../../../test", "testDoc.foo"};
         RubyInstanceConfig parser = new RubyInstanceConfig();
         parser.processArguments(args);
         assertEquals(true, parser.isXFlag());

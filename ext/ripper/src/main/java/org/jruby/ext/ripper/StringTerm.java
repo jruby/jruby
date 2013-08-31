@@ -29,7 +29,6 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jruby.ext.ripper.SyntaxException.PID;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
@@ -60,9 +59,7 @@ public class StringTerm extends StrTerm {
     private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
             if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0) {
                 flags = -1;
-                lexer.getPosition();
                 buffer.append(end);
-                lexer.setValue(new Token(buffer, lexer.getPosition()));
                 return ' ';
             }
 
@@ -70,12 +67,11 @@ public class StringTerm extends StrTerm {
                 String options = parseRegexpFlags(lexer, src);
                 buffer.append(options.getBytes());
 
-                lexer.setValue(new Token(buffer, lexer.getPosition()));
                 return Tokens.tREGEXP_END;
             }
 
             buffer.append(end);
-            lexer.setValue(new Token(buffer, lexer.getPosition()));
+            lexer.setValue(new Token(buffer));
             return Tokens.tSTRING_END;
     }
 
@@ -87,18 +83,18 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue(new Token("" + end, lexer.getPosition()));
+            lexer.setValue(new Token("" + end));
             lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;
         }
         
         ByteList buffer = createByteList(lexer);        
 
-        c = src.read();
+        c = lexer.nextc();
         if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { 
                 buffer.append((char) c);
-                c = src.read();
+                c = lexer.nextc();
             } while (Character.isWhitespace(c));
             spaceSeen = true;
         }
@@ -108,34 +104,40 @@ public class StringTerm extends StrTerm {
         }
         
         if (spaceSeen) {
-            src.unread(c);
-            lexer.getPosition();
-            lexer.setValue(new Token(buffer, lexer.getPosition()));
+            lexer.pushback(c);
+            lexer.setValue(new Token(buffer));
             return ' ';
         }        
 
         if ((flags & RipperLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = src.read();
+            c = lexer.nextc();
             switch (c) {
             case '$':
             case '@':
-                src.unread(c);
-                lexer.setValue(new Token("#", lexer.getPosition()));
+                lexer.pushback(c);
                 return Tokens.tSTRING_DVAR;
             case '{':
-                lexer.setValue(new Token("#{", lexer.getPosition())); 
                 return Tokens.tSTRING_DBEG;
             }
             buffer.append((byte) '#');
         }
-        src.unread(c);
+        lexer.pushback(c);
         
-        if (parseStringIntoBuffer(lexer, src, buffer) == RipperLexer.EOF) {
-            throw new SyntaxException(PID.STRING_HITS_EOF, lexer.getPosition(),
-                    src.getCurrentLine(), "unterminated string meets end of file");
+        Encoding enc[] = new Encoding[1];
+        enc[0] = lexer.getEncoding();
+        
+        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.EOF) {
+            if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
+                lexer.compile_error("unterminated regexp meets end of file");
+                return Tokens.tREGEXP_END;
+            } else {
+                lexer.compile_error("unterminated string meets end of file");
+                return Tokens.tSTRING_END;
+            }
         }
 
-        lexer.setValue(lexer.createStr(lexer.getPosition(), buffer, flags));
+        lexer.setValue(lexer.createStr(buffer, flags));
+        lexer.flush_string_content(enc[0]);
         return Tokens.tSTRING_CONTENT;
     }
 
@@ -145,8 +147,8 @@ public class StringTerm extends StrTerm {
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
-        for (c = src.read(); c != RipperLexer.EOF
-                && Character.isLetter(c); c = src.read()) {
+        for (c = lexer.nextc(); c != RipperLexer.EOF
+                && Character.isLetter(c); c = lexer.nextc()) {
             switch (c) {
                 case 'i': case 'x': case 'm': case 'o': case 'n':
                 case 'e': case 's': case 'u':
@@ -157,22 +159,19 @@ public class StringTerm extends StrTerm {
                 break;
             }
         }
-        src.unread(c);
+        lexer.pushback(c);
         if (unknownFlags.length() != 0) {
-            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, lexer.getPosition(), "unknown regexp option"
-                    + (unknownFlags.length() > 1 ? "s" : "") + " - "
-                    + unknownFlags.toString(), unknownFlags.toString());
+            lexer.compile_error("unknown regexp option" + (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags.toString());
         }
         return buf.toString();
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        throw new SyntaxException(PID.MIXED_ENCODING,lexer.getPosition(), "",
-                foundEncoding + " mixed within " + parserEncoding);
+        lexer.compile_error(" mixed within " + parserEncoding);
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
+    public int parseStringIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer, Encoding enc[]) throws IOException {
         boolean qwords = (flags & RipperLexer.STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & RipperLexer.STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & RipperLexer.STR_FUNC_ESCAPE) != 0;
@@ -180,28 +179,27 @@ public class StringTerm extends StrTerm {
         boolean symbol = (flags & RipperLexer.STR_FUNC_SYMBOL) != 0;
         boolean hasNonAscii = false;
         int c;
-        Encoding encoding = lexer.getEncoding();
 
-        while ((c = src.read()) != RipperLexer.EOF) {
+        while ((c = lexer.nextc()) != RipperLexer.EOF) {
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {
                 if (nest == 0) {
-                    src.unread(c);
+                    lexer.pushback(c);
                     break;
                 }
                 nest--;
-            } else if (expand && c == '#' && !src.peek('\n')) {
-                int c2 = src.read();
+            } else if (expand && c == '#' && !lexer.peek('\n')) {
+                int c2 = lexer.nextc();
 
                 if (c2 == '$' || c2 == '@' || c2 == '{') {
-                    src.unread(c2);
-                    src.unread(c);
+                    lexer.pushback(c2);
+                    lexer.pushback(c);
                     break;
                 }
-                src.unread(c2);
+                lexer.pushback(c2);
             } else if (c == '\\') {
-                c = src.read();
+                c = lexer.nextc();
                 switch (c) {
                 case '\n':
                     if (qwords) break;
@@ -225,23 +223,23 @@ public class StringTerm extends StrTerm {
                         lexer.readUTFEscape(buffer, true, symbol);
                     }
 
-                    if (hasNonAscii && buffer.getEncoding() != encoding) {
-                        mixedEscape(lexer, buffer.getEncoding(), encoding);
+                    if (hasNonAscii && buffer.getEncoding() != enc[0]) {
+                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                     }
 
                     continue;
                 default:
                     if (regexp) {
-                        src.unread(c);
+                        lexer.pushback(c);
                         parseEscapeIntoBuffer(lexer, src, buffer);
 
-                        if (hasNonAscii && buffer.getEncoding() != encoding) {
-                            mixedEscape(lexer, buffer.getEncoding(), encoding);
+                        if (hasNonAscii && buffer.getEncoding() != enc[0]) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                         }
                         
                         continue;
                     } else if (expand) {
-                        src.unread(c);
+                        lexer.pushback(c);
                         if (escape) buffer.append('\\');
                         c = lexer.readEscape();
                     } else if (qwords && Character.isWhitespace(c)) {
@@ -251,13 +249,12 @@ public class StringTerm extends StrTerm {
                     }
                 }
             } else if (!Encoding.isAscii((byte) c)) {
-                if (buffer.getEncoding() != encoding) {
-                    mixedEscape(lexer, buffer.getEncoding(), encoding);
+                if (buffer.getEncoding() != enc[0]) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                 }
-                c = src.readCodepoint(c, encoding);
+                c = lexer.readCodepoint(c, enc[0]);
                 if (c == -2) { // FIXME: Hack
-                    throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
-                            null, "invalid multibyte char (" + encoding + ")");
+                    lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
                 }
 
                 // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
@@ -265,7 +262,7 @@ public class StringTerm extends StrTerm {
 
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
-                src.unread(c);
+                lexer.pushback(c);
                 break;
             }
 
@@ -276,12 +273,14 @@ public class StringTerm extends StrTerm {
                             * } else*/
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
-                if (buffer.getEncoding() != encoding) {
-                    mixedEscape(lexer, buffer.getEncoding(), encoding);
+                if (buffer.getEncoding() != enc[0]) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                 }
             }
             buffer.append(c);
         }
+        
+        enc[0] = buffer.getEncoding();
         
         return c;
     }
@@ -290,13 +289,12 @@ public class StringTerm extends StrTerm {
     private void escaped(RipperLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
-        switch (c = src.read()) {
+        switch (c = lexer.nextc()) {
         case '\\':
             parseEscapeIntoBuffer(lexer, src, buffer);
             break;
         case RipperLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                    src.getCurrentLine(), "Invalid escape character syntax");
+            lexer.compile_error("Invalid escape character syntax");
         default:
             buffer.append(c);
         }
@@ -305,7 +303,7 @@ public class StringTerm extends StrTerm {
     private void parseEscapeIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
 
-        switch (c = src.read()) {
+        switch (c = lexer.nextc()) {
         case '\n':
             break; /* just ignore */
         case '0':
@@ -319,13 +317,12 @@ public class StringTerm extends StrTerm {
             buffer.append('\\');
             buffer.append(c);
             for (int i = 0; i < 2; i++) {
-                c = src.read();
+                c = lexer.nextc();
                 if (c == RipperLexer.EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                            src.getCurrentLine(), "Invalid escape character syntax");
+                    lexer.compile_error("Invalid escape character syntax");
                 }
                 if (!RipperLexer.isOctChar(c)) {
-                    src.unread(c);
+                    lexer.pushback(c);
                     break;
                 }
                 buffer.append(c);
@@ -334,31 +331,28 @@ public class StringTerm extends StrTerm {
         case 'x': /* hex constant */
             buffer.append('\\');
             buffer.append(c);
-            c = src.read();
+            c = lexer.nextc();
             if (!RipperLexer.isHexChar(c)) {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(c);
-            c = src.read();
+            c = lexer.nextc();
             if (RipperLexer.isHexChar(c)) {
                 buffer.append(c);
             } else {
-                src.unread(c);
+                lexer.pushback(c);
             }
             break;
         case 'M':
-            if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+            if ((c = lexer.nextc()) != '-') {
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
             escaped(lexer, src, buffer);
             break;
         case 'C':
-            if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+            if ((c = lexer.nextc()) != '-') {
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
             escaped(lexer, src, buffer);
@@ -368,8 +362,7 @@ public class StringTerm extends StrTerm {
             escaped(lexer, src, buffer);
             break;
         case RipperLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, lexer.getPosition(),
-                    src.getCurrentLine(), "Invalid escape character syntax");
+            lexer.compile_error("Invalid escape character syntax");
         default:
             if (c != '\\' || c != end) {
                 buffer.append('\\');

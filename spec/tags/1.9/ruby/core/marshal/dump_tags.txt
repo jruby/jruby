@@ -1,0 +1,15 @@
+fails:Marshal.dump dumps subsequent appearances of a symbol as a link
+fails:Marshal.dump dumps subsequent appearances of an object as a link
+fails:Marshal.dump ignores the recursion limit if the limit is negative
+fails:Marshal.dump with an object responding to #_dump dumps the object returned by #marshal_dump
+fails:Marshal.dump with a String dumps a blank String
+fails:Marshal.dump with a String dumps a short String
+fails:Marshal.dump with a String dumps a long String
+fails:Marshal.dump with a String dumps a String extended with a Module
+fails:Marshal.dump with a String dumps multiple strings using symlinks for the :E (encoding) symbol
+fails:Marshal.dump with an Array dumps an empty Array
+fails:Marshal.dump with an Array dumps a non-empty Array
+fails:Marshal.dump with an Array dumps a recursive Array
+fails(gh-631):Marshal.dump with a Hash dumps an extended Hash
+fails(gh-631):Marshal.dump with a Regexp dumps a binary Regexp
+fails(gh-631):Marshal.dump with an Array dumps an extended Array

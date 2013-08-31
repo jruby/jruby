@@ -71,6 +71,7 @@ import org.jruby.runtime.Helpers;
 public class Interpreter {
     private static class IRCallSite {
         IRScope  s;
+        int      v; // scope version
         CallBase call;
         long     count;
         InterpretedIRMethod tgtM;
@@ -79,6 +80,7 @@ public class Interpreter {
 
         public IRCallSite(IRCallSite cs) {
             this.s     = cs.s;
+            this.v     = cs.v;
             this.call  = cs.call;
             this.count = 0;
         }
@@ -101,6 +103,9 @@ public class Interpreter {
     private static IRCallSite callerSite = new IRCallSite();
 
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
+
+    private static int versionCount = 1;
+    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
 
     private static int inlineCount = 0;
     private static int interpInstrsCount = 0;
@@ -190,6 +195,8 @@ public class Interpreter {
     }
 
     private static void analyzeProfile() {
+        versionCount++;
+
         //if (inlineCount == 2) return;
 
         if (codeModificationsCount == 0) numCyclesWithNoModifications++;
@@ -212,8 +219,15 @@ public class Interpreter {
             Long c;
 
             CallSiteProfile csp = callProfile.get(id);
+            IRCallSite      cs  = csp.cs;
+
+            if (cs.v != scopeVersionMap.get(cs.s).intValue()) {
+                // System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
+                continue;
+            }
+
             Set<IRScope> calledScopes = csp.counters.keySet();
-            csp.cs.count = 0;
+            cs.count = 0;
             for (IRScope s: calledScopes) {
                 c = scopeCounts.get(s);
                 if (c == null) {
@@ -223,27 +237,27 @@ public class Interpreter {
 
                 long x = csp.counters.get(s).count;
                 c += x;
-                csp.cs.count += x;
+                cs.count += x;
             }
 
-            CallBase call = csp.cs.call;
+            CallBase call = cs.call;
             if (calledScopes.size() == 1 && !call.inliningBlocked()) {
-                CallSite cs = call.getCallSite();
-                if (cs != null && (cs instanceof CachingCallSite)) {
-                    CachingCallSite ccs = (CachingCallSite)cs;
+                CallSite runtimeCS = call.getCallSite();
+                if (runtimeCS != null && (runtimeCS instanceof CachingCallSite)) {
+                    CachingCallSite ccs = (CachingCallSite)runtimeCS;
                     CacheEntry ce = ccs.getCache();
 
                     if (!(ce.method instanceof InterpretedIRMethod)) {
                         // System.out.println("NOT IR-M!");
                         continue;
                     } else {
-                        callSites.add(csp.cs);
-                        csp.cs.tgtM = (InterpretedIRMethod)ce.method;
+                        callSites.add(cs);
+                        cs.tgtM = (InterpretedIRMethod)ce.method;
                     }
                 }
             }
 
-            total += csp.cs.count;
+            total += cs.count;
         }
 
         Collections.sort(callSites, new java.util.Comparator<IRCallSite> () {
@@ -283,12 +297,13 @@ public class Interpreter {
             hs = isHotClosure ? hs.getLexicalParent() : hs;
 
             IRScope tgtMethod = ircs.tgtM.getIRMethod();
+
             Instr[] instrs = tgtMethod.getInstrsForInterpretation();
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
             if ((instrs == null) || instrs.length > 500) {
-                //if (instrs == null) System.out.println("no instrs!");
-                //else System.out.println("large method with " + instrs.length + " instrs. skipping!");
+                // if (instrs == null) System.out.println("no instrs!");
+                // else System.out.println("large method with " + instrs.length + " instrs. skipping!");
                 continue;
             }
 
@@ -307,11 +322,10 @@ public class Interpreter {
                 hs.inlineMethod(tgtMethod, implClass, classToken, null, call);
                 inlinedScopes.add(hs);
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + tgtMethod + " in " + hs +
-                    " @ instr " + call + " in time (ms): "
-                    + (end-start) + " # instrs: " + instrs.length);
+                // System.out.println("Inlined " + tgtMethod + " in " + hs +
+                //     " @ instr " + call + " in time (ms): "
+                //     + (end-start) + " # instrs: " + instrs.length);
 
-                // reset tp counters
                 inlineCount++;
             } else {
                 //System.out.println("--no inlining--");
@@ -319,6 +333,9 @@ public class Interpreter {
         }
 
         for (IRScope x: inlinedScopes) {
+            // update version count for 'hs'
+            scopeVersionMap.put(x, versionCount);
+            // System.out.println("Updating version of " + x + " to " + versionCount);
             //System.out.println("--- pre-inline-instrs ---");
             //System.out.println(x.getCFG().toStringInstrs());
             //System.out.println("--- post-inline-instrs ---");
@@ -416,6 +433,7 @@ public class Interpreter {
 
         // Set up thread-poll counter for this scope
         Counter tpCount = null;
+        Integer scopeVersion = 0;
         if (profile) {
             /* SSS: Not being used currently
             tpCount = scopeThreadPollCounts.get(scope);
@@ -424,6 +442,12 @@ public class Interpreter {
                 scopeThreadPollCounts.put(scope, tpCount);
             }
             */
+
+            scopeVersion = scopeVersionMap.get(scope);
+            if (scopeVersion == null) {
+                scopeVersionMap.put(scope, versionCount);
+                scopeVersion = new Integer(versionCount);
+            }
 
             if (callerSite.call != null) {
                 Long id = callerSite.call.callSiteId;
@@ -616,6 +640,7 @@ public class Interpreter {
                 case CALL:
                     if (profile) {
                         callerSite.s = scope;
+                        callerSite.v = scopeVersion;
                         callerSite.call = (CallBase)instr;
                     }
                 default:

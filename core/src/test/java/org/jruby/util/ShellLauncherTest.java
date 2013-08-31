@@ -107,7 +107,7 @@ public class ShellLauncherTest extends TestCase {
     public void testUsesRubyEnvPathToRunShellPrograms() {
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         RubyString path = runtime.newString("PATH");
-        RubyString utilPath = runtime.newString(System.getProperty("jruby.home") + "/test/org/jruby/util");
+        RubyString utilPath = runtime.newString(System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
         ThreadContext context = runtime.getCurrentContext();
         env.op_aset(context, path, 
                 env.op_aref(context, path).convertToString()

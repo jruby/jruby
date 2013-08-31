@@ -1,5 +1,0 @@
-exclude :test_ignored_nl, "needs investigation"
-exclude :test_kw, "needs investigation"
-exclude :test_lex, "needs investigation"
-exclude :test_location, "needs investigation"
-exclude :test_nl, "needs investigation"

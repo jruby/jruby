@@ -194,12 +194,14 @@ public class RubyPathname extends RubyObject {
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         String toPath = toPathMethod(context.runtime);
-        if (path.respondsTo(toPath))
+        if (path.respondsTo(toPath)) {
             path = path.callMethod(context, toPath);
+        }
 
         RubyString str = path.convertToString();
-        if (str.getByteList().indexOf('\0') != -1)
+        if (str.getByteList().indexOf('\0') != -1) {
             throw context.runtime.newArgumentError("pathname contains null byte");
+        }
 
         infectBy(str);
         this.path = (RubyString) str.dup();
@@ -246,10 +248,11 @@ public class RubyPathname extends RubyObject {
     @Override
     @JRubyMethod(name = { "==", "eql?" })
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyPathname)
+        if (other instanceof RubyPathname) {
             return Helpers.rbEqual(context, path, ((RubyPathname) other).path);
-        else
+        } else {
             return context.runtime.getFalse();
+        }
     }
 
     private int cmp(RubyPathname other) {
@@ -259,17 +262,22 @@ public class RubyPathname extends RubyObject {
         for (i = 0; i < a.length && i < b.length; i++) {
             byte ca = a[i];
             byte cb = b[i];
-            if (ca == '/')
+            if (ca == '/') {
                 ca = '\0';
-            if (cb == '/')
+            }
+            if (cb == '/') {
                 cb = '\0';
-            if (ca != cb)
+            }
+            if (ca != cb) {
                 return ca < cb ? -1 : 1;
+            }
         }
-        if (i < a.length)
+        if (i < a.length) {
             return 1;
-        if (i < b.length)
+        }
+        if (i < b.length) {
             return -1;
+        }
         return 0;
     }
 
@@ -389,8 +397,9 @@ public class RubyPathname extends RubyObject {
         try {
             return context.runtime.getDir().callMethod(context, "unlink", path);
         } catch (RaiseException ex) {
-            if (!context.runtime.getErrno().getClass("ENOTDIR").isInstance(ex.getException()))
+            if (!context.runtime.getErrno().getClass("ENOTDIR").isInstance(ex.getException())) {
                 throw ex;
+            }
             return context.runtime.getFile().callMethod(context, "unlink", path);
         }
     }
@@ -407,11 +416,13 @@ public class RubyPathname extends RubyObject {
 
     private static IRubyObject[] insert(IRubyObject[] old, int i, IRubyObject obj) {
         IRubyObject[] ary = new IRubyObject[old.length + 1];
-        if (i > 0)
+        if (i > 0) {
             System.arraycopy(old, 0, ary, 0, i);
+        }
         ary[i] = obj;
-        if (old.length > i)
+        if (old.length > i) {
             System.arraycopy(old, i, ary, i + 1, old.length - i);
+        }
         return ary;
     }
 

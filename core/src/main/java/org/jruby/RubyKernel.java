@@ -1815,6 +1815,7 @@ public class RubyKernel {
         
         boolean nativeFailed = false;
         boolean nativeExec = Options.NATIVE_EXEC.load();
+        System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
             try {
@@ -1832,7 +1833,7 @@ public class RubyKernel {
 
                 String[] argv = cfg.getExecArgs();
 
-                System.setProperty("user.dir", runtime.getCurrentDirectory());
+                runtime.getPosix().chdir(System.getProperty("user.dir"));
                 
                 if (Platform.IS_WINDOWS) {
                     // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it

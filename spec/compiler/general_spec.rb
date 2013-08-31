@@ -41,7 +41,16 @@ end
 
 describe "JRuby's compiler" do
   include CompilerTestUtils
-  
+  let(:base){"'0123456789A' =~ /(1)(2)(3)(4)(5)(6)(7)(8)(9)/; "}
+  let(:expected){[[1, 2, 3, 4, 5, 6, 7, 8],
+          [9, 10, 11, 12, 13, 14, 15, 16],
+          [17, 18, 19, 20, 21, 22, 23, 24],
+          [25, 26, 27, 28, 29, 30, 31, 32],
+          [33, 34, 35, 36, 37, 38, 39, 40],
+          [41, 42, 43, 44, 45, 46, 47, 48],
+          [49, 50, 51, 52, 53, 54, 55, 56],
+          [57, 58, 59, 60, 61, 62, 63, 64]]}
+
   StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
   ASTCompiler = is19 ? org.jruby.compiler.ASTCompiler19 : org.jruby.compiler.ASTCompiler
   ASTInspector = org.jruby.compiler.ASTInspector
@@ -49,37 +58,37 @@ describe "JRuby's compiler" do
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
   it "assigns literal values to locals" do
-    compile_and_run("a = 5; a").should == 5
-    compile_and_run("a = 5.5; a").should == 5.5
-    compile_and_run("a = 'hello'; a").should == 'hello'
-    compile_and_run("a = :hello; a").should == :hello
-    compile_and_run("a = 1111111111111111111111111111; a").should == 1111111111111111111111111111
-    compile_and_run("a = [1, ['foo', :hello]]; a").should == [1, ['foo', :hello]]
-    compile_and_run("{}").should == {}
-    compile_and_run("a = {:foo => {:bar => 5.5}}; a").should == {:foo => {:bar => 5.5}}
-    compile_and_run("a = /foo/; a").should == /foo/
-    compile_and_run("1..2").should == (1..2)
+    expect(compile_and_run("a = 5; a")).to eq 5
+    expect(compile_and_run("a = 5.5; a")).to eq 5.5
+    expect(compile_and_run("a = 'hello'; a")).to eq 'hello'
+    expect(compile_and_run("a = :hello; a")).to eq :hello
+    expect(compile_and_run("a = 1111111111111111111111111111; a")).to eq 1111111111111111111111111111
+    expect(compile_and_run("a = [1, ['foo', :hello]]; a")).to match_array([1, ['foo', :hello]])
+    expect(compile_and_run("{}")).to eq({})
+    expect(compile_and_run("a = {:foo => {:bar => 5.5}}; a")).to eq({:foo => {:bar => 5.5}})
+    expect(compile_and_run("a = /foo/; a")).to eq(/foo/)
+    expect(compile_and_run("1..2")).to eq (1..2)
   end
   
   it "compiles interpolated strings" do
-    compile_and_run('a = "hello#{42}"; a').should == 'hello42'
-    compile_and_run('i = 1; a = "hello#{i + 42}"; a').should == "hello43"
+    expect(compile_and_run('a = "hello#{42}"; a')).to eq('hello42')
+    expect(compile_and_run('i = 1; a = "hello#{i + 42}"; a')).to eq("hello43")
   end
   
   it "compiles calls" do
-    compile_and_run("'bar'.capitalize").should == 'Bar'
-    compile_and_run("rand(10)").class.should == Fixnum
+    expect(compile_and_run("'bar'.capitalize")).to eq 'Bar'
+    expect(compile_and_run("rand(10)")).to be_a_kind_of Fixnum
   end
   
   it "compiles branches" do
-    compile_and_run("a = 1; if 1 == a; 2; else; 3; end").should == 2
-    compile_and_run("a = 1; unless 1 == a; 2; else; 3; end").should == 3
-    compile_and_run("a = 1; while a < 10; a += 1; end; a").should == 10
-    compile_and_run("a = 1; until a == 10; a += 1; end; a").should == 10
-    compile_and_run("2 if true").should == 2
-    compile_and_run("2 if false").should == nil
-    compile_and_run("2 unless true").should == nil
-    compile_and_run("2 unless false").should == 2
+    expect(compile_and_run("a = 1; if 1 == a; 2; else; 3; end")).to eq 2
+    expect(compile_and_run("a = 1; unless 1 == a; 2; else; 3; end")).to eq 3
+    expect(compile_and_run("a = 1; while a < 10; a += 1; end; a")).to  eq 10
+    expect(compile_and_run("a = 1; until a == 10; a += 1; end; a")).to eq 10
+    expect(compile_and_run("2 if true")).to eq 2
+    expect(compile_and_run("2 if false")).to be_nil
+    expect(compile_and_run("2 unless true")).to be_nil
+    expect(compile_and_run("2 unless false")).to eq 2
   end
   
   it "compiles while loops with no body" do
@@ -87,68 +96,67 @@ describe "JRuby's compiler" do
   end
   
   it "compiles boolean operators" do
-    compile_and_run("1 && 2").should == 2
-    compile_and_run("nil && 2").should == nil
-    compile_and_run("nil && fail").should == nil
-    compile_and_run("1 || 2").should == 1
-    compile_and_run("nil || 2").should == 2
-    lambda {compile_and_run(nil || fail)}.should raise_error(RuntimeError)
-    compile_and_run("1 and 2").should == 2
-    compile_and_run("1 or 2").should == 1
+    expect(compile_and_run("1 && 2")).to eq 2
+    expect(compile_and_run("nil && 2")).to be_nil
+    expect(compile_and_run("nil && fail")).to be_nil
+    expect(compile_and_run("1 || 2")).to eq 1
+    expect(compile_and_run("nil || 2")).to eq 2
+    expect {compile_and_run(nil || fail)}.to raise_error(RuntimeError)
+    expect(compile_and_run("1 and 2")).to eq 2
+    expect(compile_and_run("1 or 2")).to eq 1
   end
   
   it "compiles begin blocks" do
-    compile_and_run("begin; a = 4; end; a").should == 4
+    expect(compile_and_run("begin; a = 4; end; a")).to eq 4
   end
   
   it "compiles regexp matches" do
-    compile_and_run("/foo/ =~ 'foo'").should == 0
-    compile_and_run("'foo' =~ /foo/").should == 0
-    compile_and_run(":aaa =~ /foo/").should == (is19 ? nil : false)
+    expect(compile_and_run("/foo/ =~ 'foo'")).to eq 0
+    expect(compile_and_run("'foo' =~ /foo/")).to eq 0
+    expect(compile_and_run(":aaa =~ /foo/")).to (is19 ? be_nil : be_false)
   end
 
   it "compiles method definitions" do
-    compile_and_run("def foo3(arg); arg + '2'; end; foo3('baz')").should == 'baz2'
-    compile_and_run("def self.foo3(arg); arg + '2'; end; self.foo3('baz')").should == 'baz2'
+    expect(compile_and_run("def foo3(arg); arg + '2'; end; foo3('baz')")).to  eq 'baz2'
+    expect(compile_and_run("def self.foo3(arg); arg + '2'; end; self.foo3('baz')")).to eq 'baz2'
   end
   
   it "compiles calls with closures" do
-    compile_and_run("def foo2(a); a + yield.to_s; end; foo2('baz') { 4 }").should == 'baz4'
-    compile_and_run("def foo2(a); a + yield.to_s; end; foo2('baz') {}").should == 'baz'
-    compile_and_run("def self.foo2(a); a + yield.to_s; end; self.foo2('baz') { 4 }").should == 'baz4'
-    compile_and_run("def self.foo2(a); a + yield.to_s; end; self.foo2('baz') {}").should == 'baz'
+    expect(compile_and_run("def foo2(a); a + yield.to_s; end; foo2('baz') { 4 }")).to  eq 'baz4'
+    expect(compile_and_run("def foo2(a); a + yield.to_s; end; foo2('baz') {}")).to eq 'baz'
+    expect(compile_and_run("def self.foo2(a); a + yield.to_s; end; self.foo2('baz') { 4 }")).to  eq 'baz4'
+    expect(compile_and_run("def self.foo2(a); a + yield.to_s; end; self.foo2('baz') {}")).to eq 'baz'
   end
   
   if is19
     it "compiles strings with encoding" do
       str8bit = '"\300"'
       str8bit_result = compile_and_run(str8bit)
-      str8bit_result.should == "\300"
-      str8bit_result.encoding.should == Encoding::ASCII_8BIT
+      expect(str8bit_result).to eq "\300"
+      expect(str8bit_result.encoding).to eq Encoding::ASCII_8BIT
     end
   end
   
   it "compiles backrefs" do
-    base = "'0123456789A' =~ /(1)(2)(3)(4)(5)(6)(7)(8)(9)/; "
-    compile_and_run(base + "$~").class.should == MatchData
-    compile_and_run(base + "$`").should == '0'
-    compile_and_run(base + "$'").should == 'A'
-    compile_and_run(base + "$+").should == '9'
-    compile_and_run(base + "$0").should == $0 # main script name, not related to matching
-    compile_and_run(base + "$1").should == '1'
-    compile_and_run(base + "$2").should == '2'
-    compile_and_run(base + "$3").should == '3'
-    compile_and_run(base + "$4").should == '4'
-    compile_and_run(base + "$5").should == '5'
-    compile_and_run(base + "$6").should == '6'
-    compile_and_run(base + "$7").should == '7'
-    compile_and_run(base + "$8").should == '8'
-    compile_and_run(base + "$9").should == '9'
+    expect(compile_and_run(base + "$~")).to  be_a_kind_of MatchData
+    expect(compile_and_run(base + "$`")).to eq '0'
+    expect(compile_and_run(base + "$'")).to eq 'A'
+    expect(compile_and_run(base + "$+")).to  eq '9'
+    expect(compile_and_run(base + "$0")).to eq $0 # main script name, not related to matching
+    expect(compile_and_run(base + "$1")).to eq '1'
+    expect(compile_and_run(base + "$2")).to eq '2'
+    expect(compile_and_run(base + "$3")).to eq '3'
+    expect(compile_and_run(base + "$4")).to eq '4'
+    expect(compile_and_run(base + "$5")).to eq '5'
+    expect(compile_and_run(base + "$6")).to eq '6'
+    expect(compile_and_run(base + "$7")).to eq '7'
+    expect(compile_and_run(base + "$8")).to eq '8'
+    expect(compile_and_run(base + "$9")).to eq '9'
   end
   
   it "compiles aliases" do
-    compile_and_run("alias :to_string1 :to_s; defined?(self.to_string1)").should == "method"
-    compile_and_run("alias to_string2 to_s; defined?(self.to_string2)").should == "method"
+    expect(compile_and_run("alias :to_string1 :to_s; defined?(self.to_string1)")).to eq "method"
+    expect(compile_and_run("alias to_string2 to_s; defined?(self.to_string2)")).to eq "method"
   end
   
   it "compiles block-local variables" do
@@ -176,11 +184,11 @@ describe "JRuby's compiler" do
       arr << x
       arr
       EOS
-    compile_and_run(blocks_code).should == [1,2,3,4,5,6]
+    expect(compile_and_run(blocks_code)).to match_array([1,2,3,4,5,6])
   end
   
   it "compiles yield" do
-    compile_and_run("def foo; yield 1; end; foo {|a| a + 2}").should == 3
+    expect(compile_and_run("def foo; yield 1; end; foo {|a| a + 2}")).to eq 3
     
     yield_in_block = <<-EOS
       def foo
@@ -200,34 +208,34 @@ describe "JRuby's compiler" do
       p = foo { 1 }
       p.call
       EOS
-    compile_and_run(yield_in_proc).should == 1
+    expect(compile_and_run(yield_in_proc)).to eq 1
   end
   
   it "compiles attribute assignment" do
-    compile_and_run("def a=(x); 2; end; self.a = 1").should == 1
-    compile_and_run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2").should == 1
-    compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]").should == [1,1]
-    compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2").should == nil
-    compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]").should == [1,1]
+    expect(compile_and_run("def a=(x); 2; end; self.a = 1")).to eq 1
+    expect(compile_and_run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2")).to eq 1
+    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]")).to match_array([1,1])
+    expect(compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2")).to  be_nil
+    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]")).to match_array([1,1])
   end
   
   it "compiles lastline" do
-    compile_and_run("def foo; $_ = 1; bar; $_; end; def bar; $_ = 2; end; foo").should == 1
+    expect(compile_and_run("def foo; $_ = 1; bar; $_; end; def bar; $_ = 2; end; foo")).to  eq 1
   end
   
   it "compiles closure arguments" do
-    compile_and_run("a = 0; [1].each {|a|}; a").should == (is19 ? 0 : 1)
-    compile_and_run("a = 0; [1].each {|x| a = x}; a").should == 1
+    expect(compile_and_run("a = 0; [1].each {|a|}; a")).to  is19 ? eq(0) : eq(1)
+    expect(compile_and_run("a = 0; [1].each {|x| a = x}; a")).to  eq 1
     if !is19
-      compile_and_run("[1].each {|@a|}; @a").should == 1
-      compile_and_run("[[1]].each {|@a|}; @a").should == [1]
-      compile_and_run("1.times {|@@a|}; @@a").should == 0
-      compile_and_run("a = []; 1.times {|a[0]|}; a[0]").should == 0
-      compile_and_run("a = Class.new do; attr_accessor :foo; end.new; 1.times {|a.foo|}; a.foo").should == 0
+      expect(compile_and_run("[1].each {|@a|}; @a")).to eq 1
+      expect(compile_and_run("[[1]].each {|@a|}; @a")).to match_array([1])
+      expect(compile_and_run("1.times {|@@a|}; @@a")).to eq 0
+      expect(compile_and_run("a = []; 1.times {|a[0]|}; a[0]")).to eq 0
+      expect(compile_and_run("a = Class.new do; attr_accessor :foo; end.new; 1.times {|a.foo|}; a.foo")).to  eq 0
     end
-    compile_and_run("[[1,2,3]].each {|x,*y| break y}").should == [2,3]
-    compile_and_run("1.times {|x,*y| break y}").should == []
-    compile_and_run("1.times {|x,*|; break x}").should == 0
+    expect(compile_and_run("[[1,2,3]].each {|x,*y| break y}")).to  match_array([2,3])
+    expect(compile_and_run("1.times {|x,*y| break y}")).to  match_array([])
+    expect(compile_and_run("1.times {|x,*|; break x}")).to eq 0
   end
   
   it "compiles class definitions" do
@@ -239,7 +247,7 @@ describe "JRuby's compiler" do
       end
       CompiledClass1.new.foo
       EOS
-    compile_and_run(class_string).should == 'cc1'
+    expect(compile_and_run(class_string)).to  eq 'cc1'
   end
   
   it "compiles module definitions" do
@@ -252,138 +260,138 @@ describe "JRuby's compiler" do
       CompiledModule1.bar
     EOS
     
-    compile_and_run(module_string).should == 'cm1'
+    expect(compile_and_run(module_string)).to  eq 'cm1'
   end
   
   it "compiles operator assignment" do
-    compile_and_run("class H; attr_accessor :v; end; H.new.v ||= 1").should == 1
-    compile_and_run("class H; def initialize; @v = true; end; attr_accessor :v; end; H.new.v &&= 2").should == 2
-    compile_and_run("class H; def initialize; @v = 1; end; attr_accessor :v; end; H.new.v += 3").should == 4
+    expect(compile_and_run("class H; attr_accessor :v; end; H.new.v ||= 1")).to eq 1
+    expect(compile_and_run("class H; def initialize; @v = true; end; attr_accessor :v; end; H.new.v &&= 2")).to eq 2
+    expect(compile_and_run("class H; def initialize; @v = 1; end; attr_accessor :v; end; H.new.v += 3")).to eq 4
   end
   
   it "compiles optional method arguments" do
-    compile_and_run("def foo(a,b=1);[a,b];end;foo(1)").should == [1,1]
-    compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2)").should == [1,2]
-    lambda{compile_and_run("def foo(a,b=1);[a,b];end;foo")}.should raise_error(ArgumentError)
-    lambda{compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2,3)")}.should raise_error(ArgumentError)
-    compile_and_run("def foo(a=(b=1));[a,b];end;foo").should == [1,1]
-    compile_and_run("def foo(a=(b=1));[a,b];end;foo(2)").should == [2,nil]
-    compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1)").should == [1,1,1]
-    compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2)").should == [1,2,nil]
-    lambda{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.should raise_error(ArgumentError)
+    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1)")).to  match_array([1,1])
+    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2)")).to match_array([1,2])
+    expect{compile_and_run("def foo(a,b=1);[a,b];end;foo")}.to raise_error(ArgumentError)
+    expect{compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2,3)")}.to raise_error(ArgumentError)
+    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo")).to  match_array([1,1])
+    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo(2)")).to  match_array([2,nil])
+    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1)")).to match_array([1,1,1])
+    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2)")).to match_array([1,2,nil])
+    expect{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
   end
   
   if is19
     it "compiles grouped and intra-list rest args" do
       result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
-      result.should == [1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12]
+      expect(result).to match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
     end
   end
   
   it "compiles splatted values" do
-    compile_and_run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])").should == [1,2,3]
-    compile_and_run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]").should == [1,2,3]
+    expect(compile_and_run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])")).to  match_array([1,2,3])
+    expect(compile_and_run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]")).to  match_array([1,2,3])
   end
   
   it "compiles multiple assignment" do
-    compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a").should == [1,2,3]
-    compile_and_run("a, (b, c) = 1; [a, b, c]").should == [1,nil,nil]
-    compile_and_run("a, (b, c) = 1, 2; [a, b, c]").should == [1,2,nil]
-    compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]").should == [1,2,3]
-    compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]").should == [1,2,3]
+    expect(compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a")).to  match_array([1,2,3])
+    expect(compile_and_run("a, (b, c) = 1; [a, b, c]")).to  match_array([1,nil,nil])
+    expect(compile_and_run("a, (b, c) = 1, 2; [a, b, c]")).to  match_array([1,2,nil])
+    expect(compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]")).to match_array([1,2,3])
+    expect(compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]")).to  match_array([1,2,3])
     if is19
       result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
-      result.should == [1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12]
+      expect(result).to  match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
     end
   end
   
   it "compiles dynamic regexp" do
-    compile_and_run('"foo" =~ /#{"foo"}/').should == 0
-    compile_and_run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary').should == [0, 0]
+    expect(compile_and_run('"foo" =~ /#{"foo"}/')).to  eq 0
+    expect(compile_and_run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary')).to  match_array([0, 0])
   end
   
   it "compiles implicit and explicit return" do
-    compile_and_run("def foo; 1; end; foo").should == 1
-    compile_and_run("def foo; return; end; foo").should == nil
-    compile_and_run("def foo; return 1; end; foo").should == 1
+    expect(compile_and_run("def foo; 1; end; foo")).to eq 1
+    expect(compile_and_run("def foo; return; end; foo")).to be_nil
+    expect(compile_and_run("def foo; return 1; end; foo")).to eq 1
   end
   
   it "compiles class reopening" do
-    compile_and_run("class Fixnum; def x; 3; end; end; 1.x").should == 3
+    expect(compile_and_run("class Fixnum; def x; 3; end; end; 1.x")).to  eq 3
   end
   
   it "compiles singleton method definitions" do
-    compile_and_run("a = 'bar'; def a.foo; 'foo'; end; a.foo").should == "foo"
-    compile_and_run("class Fixnum; def self.foo; 'foo'; end; end; Fixnum.foo").should == "foo"
-    compile_and_run("def String.foo; 'foo'; end; String.foo").should == "foo"
+    expect(compile_and_run("a = 'bar'; def a.foo; 'foo'; end; a.foo")).to  eq "foo"
+    expect(compile_and_run("class Fixnum; def self.foo; 'foo'; end; end; Fixnum.foo")).to eq "foo"
+    expect(compile_and_run("def String.foo; 'foo'; end; String.foo")).to eq "foo"
   end
 
   it "compiles singleton class definitions" do
-    compile_and_run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar").should == "bar"
-    compile_and_run("class Fixnum; class << self; def bar; 'bar'; end; end; end; Fixnum.bar").should == "bar"
+    expect(compile_and_run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar")).to  eq "bar"
+    expect(compile_and_run("class Fixnum; class << self; def bar; 'bar'; end; end; end; Fixnum.bar")).to  eq "bar"
     result = compile_and_run("class Fixnum; def self.metaclass; class << self; self; end; end; end; Fixnum.metaclass")
-    result.should == class << Fixnum; self; end
+    expect(result).to  eq class << Fixnum; self; end
   end
   
   it "compiles loops with flow control" do
     # some loop flow control tests
-    compile_and_run("a = true; b = while a; a = false; break; end; b").should == nil
-    compile_and_run("a = true; b = while a; a = false; break 1; end; b").should == 1
-    compile_and_run("a = 0; while true; a += 1; next if a < 2; break; end; a").should == 2
-    compile_and_run("a = 0; while true; a += 1; next 1 if a < 2; break; end; a").should == 2
-    compile_and_run("a = 0; while true; a += 1; redo if a < 2; break; end; a").should == 2
-    compile_and_run("a = false; b = until a; a = true; break; end; b").should == nil
-    compile_and_run("a = false; b = until a; a = true; break 1; end; b").should == 1
-    compile_and_run("a = 0; until false; a += 1; next if a < 2; break; end; a").should == 2
-    compile_and_run("a = 0; until false; a += 1; next 1 if a < 2; break; end; a").should == 2
-    compile_and_run("a = 0; until false; a += 1; redo if a < 2; break; end; a").should == 2
+    expect(compile_and_run("a = true; b = while a; a = false; break; end; b")).to  be_nil
+    expect(compile_and_run("a = true; b = while a; a = false; break 1; end; b")).to  eq 1
+    expect(compile_and_run("a = 0; while true; a += 1; next if a < 2; break; end; a")).to eq 2
+    expect(compile_and_run("a = 0; while true; a += 1; next 1 if a < 2; break; end; a")).to eq 2
+    expect(compile_and_run("a = 0; while true; a += 1; redo if a < 2; break; end; a")).to eq 2
+    expect(compile_and_run("a = false; b = until a; a = true; break; end; b")).to be_nil
+    expect(compile_and_run("a = false; b = until a; a = true; break 1; end; b")).to  eq 1
+    expect(compile_and_run("a = 0; until false; a += 1; next if a < 2; break; end; a")).to eq 2
+    expect(compile_and_run("a = 0; until false; a += 1; next 1 if a < 2; break; end; a")).to eq 2
+    expect(compile_and_run("a = 0; until false; a += 1; redo if a < 2; break; end; a")).to  eq 2
     # same with evals
-    compile_and_run("a = true; b = while a; a = false; eval 'break'; end; b").should == nil
-    compile_and_run("a = true; b = while a; a = false; eval 'break 1'; end; b").should == 1
-    compile_and_run("a = 0; while true; a += 1; eval 'next' if a < 2; eval 'break'; end; a").should == 2
-    compile_and_run("a = 0; while true; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a").should == 2
-    compile_and_run("a = 0; while true; a += 1; eval 'redo' if a < 2; eval 'break'; end; a").should == 2
-    compile_and_run("a = false; b = until a; a = true; eval 'break'; end; b").should == nil
-    compile_and_run("a = false; b = until a; a = true; eval 'break 1'; end; b").should == 1
-    compile_and_run("a = 0; until false; a += 1; eval 'next' if a < 2; eval 'break'; end; a").should == 2
-    compile_and_run("a = 0; until false; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a").should == 2
-    compile_and_run("a = 0; until false; a += 1; eval 'redo' if a < 2; eval 'break'; end; a").should == 2
+    expect(compile_and_run("a = true; b = while a; a = false; eval 'break'; end; b")).to be_nil
+    expect(compile_and_run("a = true; b = while a; a = false; eval 'break 1'; end; b")).to eq 1
+    expect(compile_and_run("a = 0; while true; a += 1; eval 'next' if a < 2; eval 'break'; end; a")).to eq 2
+    expect(compile_and_run("a = 0; while true; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a")).to eq 2
+    expect(compile_and_run("a = 0; while true; a += 1; eval 'redo' if a < 2; eval 'break'; end; a")).to eq 2
+    expect(compile_and_run("a = false; b = until a; a = true; eval 'break'; end; b")).to be_nil
+    expect(compile_and_run("a = false; b = until a; a = true; eval 'break 1'; end; b")).to eq 1
+    expect(compile_and_run("a = 0; until false; a += 1; eval 'next' if a < 2; eval 'break'; end; a")).to eq 2
+    expect(compile_and_run("a = 0; until false; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a")).to eq 2
+    expect(compile_and_run("a = 0; until false; a += 1; eval 'redo' if a < 2; eval 'break'; end; a")).to eq 2
   end
   
   it "compiles loops with non-local flow control" do
     # non-local flow control with while loops
-    compile_and_run("a = 0; 1.times { a += 1; redo if a < 2 }; a").should == 2
-    compile_and_run("def foo(&b); while true; b.call; end; end; foo { break 3 }").should == 3
+    expect(compile_and_run("a = 0; 1.times { a += 1; redo if a < 2 }; a")).to eq 2
+    expect(compile_and_run("def foo(&b); while true; b.call; end; end; foo { break 3 }")).to eq 3
     # this one doesn't work normally, so I wouldn't expect it to work here yet
     #compile_and_run("a = 0; 1.times { a += 1; eval 'redo' if a < 2 }; a").should == 2
-    compile_and_run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }").should == 3
+    expect(compile_and_run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }")).to  eq 3
   end
   
   it "compiles block passing" do
     # block pass node compilation
-    compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil),foo(&p)]").should == [false, true]
-    compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil),self.foo(&p)]").should == [false, true]
+    expect(compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil),foo(&p)]")).to  match_array([false, true])
+    expect(compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil),self.foo(&p)]")).to match_array([false, true])
   end
   
   it "compiles splatted element assignment" do
-    compile_and_run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a").should == "fasdfo"
+    expect(compile_and_run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a")).to match "fasdfo"
   end
   
   it "compiles constant access" do
     const_code = <<-EOS
       A = 'a'; module X; B = 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
     EOS
-    compile_and_run(const_code).should == ["a", "b", "a"]
+    expect(compile_and_run(const_code)).to  match_array(["a", "b", "a"])
   end
   
   it "compiles flip-flop" do
     # flip (taken from http://redhanded.hobix.com/inspect/hopscotchingArraysWithFlipFlops.html)
-    compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s) }").should == [1, 3, 5, 7, 9]
-    compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s = !s) }").should == [1, 4, 7, 10]
+    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s) }")).to match_array([1, 3, 5, 7, 9])
+    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s = !s) }")).to match_array([1, 4, 7, 10])
     big_flip = <<-EOS
     s = true; (1..10).inject([]) do |ary, v|; ary << [] unless (s = !s) .. (s = !s); ary.last << v; ary; end
     EOS
-    compile_and_run(big_flip).should == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
+    expect(compile_and_run(big_flip)).to  match_array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]])
     big_triple_flip = <<-EOS
     s = true
     (1..64).inject([]) do |ary, v|
@@ -394,27 +402,19 @@ describe "JRuby's compiler" do
         ary
     end
     EOS
-    expected = [[1, 2, 3, 4, 5, 6, 7, 8],
-          [9, 10, 11, 12, 13, 14, 15, 16],
-          [17, 18, 19, 20, 21, 22, 23, 24],
-          [25, 26, 27, 28, 29, 30, 31, 32],
-          [33, 34, 35, 36, 37, 38, 39, 40],
-          [41, 42, 43, 44, 45, 46, 47, 48],
-          [49, 50, 51, 52, 53, 54, 55, 56],
-          [57, 58, 59, 60, 61, 62, 63, 64]]
-    compile_and_run(big_triple_flip).should == expected
+    expect(compile_and_run(big_triple_flip)).to  match_array(expected)
   end
 
   it "gracefully handles named captures when there's no match" do
-    lambda do
+    expect do
       compile_and_run('/(?<a>.+)/ =~ ""')
-    end.should_not raise_error
+    end.to_not raise_error
   end
 
   it "handles module/class opening from colon2 with non-method, non-const LHS" do
-    lambda do
+    expect do
       compile_and_run('m = Object; class m::FOOCLASS1234; end; module m::FOOMOD1234; end')
-    end.should_not raise_error
+    end.to_not raise_error
   end
 
   it "properly handles non-local flow for a loop inside an ensure (JRUBY-6836)" do
@@ -436,7 +436,7 @@ describe "JRuby's compiler" do
 
       main'
 
-    result.should == [1,2,3]
+    expect(result).to  match_array([1,2,3])
   end
 
   if is19
@@ -449,7 +449,7 @@ describe "JRuby's compiler" do
 
         foo]
 
-      result.should == '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
+      expect(result).to  eq '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
     end
   end
 
@@ -466,7 +466,7 @@ ary = []
 ary
     EOC
 
-    result.should == [nil, 1]
+    expect(result).to  match_array([nil, 1])
   end
 
   if is19
@@ -480,7 +480,7 @@ ary
       foo
       EOC
 
-      result.should == ["0.1+0i", "1/10"]
+      expect(result).to  match_array(["0.1+0i", "1/10"])
     end
   end
   
@@ -501,7 +501,7 @@ ary
       end
     EOC
     
-    result.should == 42
+    expect(result).to eq 42
   end
   
   it "matches any true value for a caseless case/when with > 3 args" do
@@ -512,130 +512,130 @@ ary
       end
     EOC
     
-    result.should == 42
+    expect(result).to eq 42
   end
   
   it "properly handles method-root rescue logic with returns (GH\#733)" do
-    compile_and_run("def foo; return 1; rescue; return 2; else; return 3; end; foo").should == 1
-    compile_and_run("def foo; 1; rescue; return 2; else; return 3; end; foo").should == 3
-    compile_and_run("def foo; raise; rescue; return 2; else; return 3; end; foo").should == 2
+    expect(compile_and_run("def foo; return 1; rescue; return 2; else; return 3; end; foo")).to eq 1
+    expect(compile_and_run("def foo; 1; rescue; return 2; else; return 3; end; foo")).to eq 3
+    expect(compile_and_run("def foo; raise; rescue; return 2; else; return 3; end; foo")).to eq 2
   end
   
   it "does a bunch of other stuff" do
     silence_warnings {
       # bug 1305, no values yielded to single-arg block assigns a null into the arg
-      compile_and_run("def foo; yield; end; foo {|x| x.class}").should == NilClass
+      expect(compile_and_run("def foo; yield; end; foo {|x| x.class}")).to  eq NilClass
     }
 
     # ensure that invalid classes and modules raise errors
     AFixnum = 1;
-    lambda { compile_and_run("class AFixnum; end")}.should raise_error(TypeError)
-    lambda { compile_and_run("class B < AFixnum; end")}.should raise_error(TypeError)
-    lambda { compile_and_run("module AFixnum; end")}.should raise_error(TypeError)
+    expect { compile_and_run("class AFixnum; end")}.to raise_error(TypeError)
+    expect { compile_and_run("class B < AFixnum; end")}.to raise_error(TypeError)
+    expect { compile_and_run("module AFixnum; end")}.to raise_error(TypeError)
 
     # attr assignment in multiple assign
-    compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz','bar'; a.b").should == "bar"
-    compile_and_run("a = []; a[0], a[1] = 'foo','bar'; a").should == ["foo", "bar"]
+    expect(compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz','bar'; a.b")).to eq "bar"
+    expect(compile_and_run("a = []; a[0], a[1] = 'foo','bar'; a")).to match_array(["foo", "bar"])
 
     # for loops
-    compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a").should == [2, 4, 6]
-    compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort").should == [1, 2, 3]
+    expect(compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a")).to  match_array([2, 4, 6])
+    expect(compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")).to  match_array([1, 2, 3])
 
     # ensure blocks
-    compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a").should == 1
-    compile_and_run("$a = 2; def foo; return; ensure; $a = 1; end; foo; $a").should == 1
+    expect(compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a")).to eq 1
+    expect(compile_and_run("$a = 2; def foo; return; ensure; $a = 1; end; foo; $a")).to eq 1
 
     # op element assign
-    compile_and_run("a = []; [a[0] ||= 4, a[0]]").should == [4, 4]
-    compile_and_run("a = [4]; [a[0] ||= 5, a[0]]").should == [4, 4]
-    compile_and_run("a = [1]; [a[0] += 3, a[0]]").should == [4, 4]
-    compile_and_run("a = {}; a[0] ||= [1]; a[0]").should == [1]
-    compile_and_run("a = [1]; a[0] &&= 2; a[0]").should == 2
+    expect(compile_and_run("a = []; [a[0] ||= 4, a[0]]")).to  match_array([4, 4])
+    expect(compile_and_run("a = [4]; [a[0] ||= 5, a[0]]")).to  match_array([4, 4])
+    expect(compile_and_run("a = [1]; [a[0] += 3, a[0]]")).to  match_array([4, 4])
+    expect(compile_and_run("a = {}; a[0] ||= [1]; a[0]")).to  match_array([1])
+    expect(compile_and_run("a = [1]; a[0] &&= 2; a[0]")).to eq 2
 
     # non-local return
-    compile_and_run("def foo; loop {return 3}; return 4; end; foo").should == 3
+    expect(compile_and_run("def foo; loop {return 3}; return 4; end; foo")).to eq 3
 
     # class var declaration
-    compile_and_run("class Foo; @@foo = 3; end").should == 3
-    compile_and_run("class Bar; @@bar = 3; def self.bar; @@bar; end; end; Bar.bar").should == 3
+    expect(compile_and_run("class Foo; @@foo = 3; end")).to eq 3
+    expect(compile_and_run("class Bar; @@bar = 3; def self.bar; @@bar; end; end; Bar.bar")).to eq 3
 
     # rescue
-    compile_and_run("x = begin; 1; raise; rescue; 2; end").should == 2
-    compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end").should == 3
-    compile_and_run("x = begin; 1; rescue; 2; else; 4; end").should == 4
-    compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo").should == 4
+    expect(compile_and_run("x = begin; 1; raise; rescue; 2; end")).to eq 2
+    expect(compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end")).to eq 3
+    expect(compile_and_run("x = begin; 1; rescue; 2; else; 4; end")).to eq 4
+    expect(compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo")).to eq 4
 
     # test that $! is getting reset/cleared appropriately
     $! = nil
-    compile_and_run("begin; raise; rescue; end; $!").should == nil
-    compile_and_run("1.times { begin; raise; rescue; next; end }; $!").should == nil
-    compile_and_run("begin; raise; rescue; begin; raise; rescue; end; $!; end").should_not == nil
-    compile_and_run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end").should_not == nil
+    expect(compile_and_run("begin; raise; rescue; end; $!")).to  be_nil
+    expect(compile_and_run("1.times { begin; raise; rescue; next; end }; $!")).to  be_nil
+    expect(compile_and_run("begin; raise; rescue; begin; raise; rescue; end; $!; end")).to_not be_nil
+    expect(compile_and_run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end")).to_not be_nil
 
     # break in a while in an ensure
-    compile_and_run("begin; x = while true; break 5; end; ensure; end").should == 5
+    expect(compile_and_run("begin; x = while true; break 5; end; ensure; end")).to eq 5
 
     # JRUBY-1388, Foo::Bar broke in the compiler
-    compile_and_run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3").should == 5
+    expect(compile_and_run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3")).to eq 5
 
-    compile_and_run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}").should == 5
+    expect(compile_and_run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}")).to eq 5
 
     # END block
-    lambda { compile_and_run("END {}") }.should_not raise_error
+    expect { compile_and_run("END {}") }.to_not raise_error
 
     # BEGIN block
-    compile_and_run("BEGIN { $begin = 5 }; $begin").should == 5
+    expect(compile_and_run("BEGIN { $begin = 5 }; $begin")).to eq 5
 
     # nothing at all!
-    compile_and_run("").should == nil
+    expect(compile_and_run("")).to  be_nil
 
     # JRUBY-2043
-    compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo").should == 5
-    compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo").should == {"1" => 2}
+    expect(compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo")).to eq 5
+    expect(compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo")).to  eq({"1" => 2})
 
     # JRUBY-2246
     long_src = "a = 1\n"
     5000.times { long_src << "a += 1\n" }
-    compile_and_run(long_src).should == 5001
+    expect(compile_and_run(long_src)).to eq 5001
 
     # variable assignment of various types from loop results
-    compile_and_run("a = while true; break 1; end; a").should == 1
-    compile_and_run("@a = while true; break 1; end; @a").should == 1
-    compile_and_run("@@a = while true; break 1; end; @@a").should == 1
-    compile_and_run("$a = while true; break 1; end; $a").should == 1
-    compile_and_run("a = until false; break 1; end; a").should == 1
-    compile_and_run("@a = until false; break 1; end; @a").should == 1
-    compile_and_run("@@a = until false; break 1; end; @@a").should == 1
-    compile_and_run("$a = until false; break 1; end; $a").should == 1
+    expect(compile_and_run("a = while true; break 1; end; a")).to eq 1
+    expect(compile_and_run("@a = while true; break 1; end; @a")).to eq 1
+    expect(compile_and_run("@@a = while true; break 1; end; @@a")).to eq 1
+    expect(compile_and_run("$a = while true; break 1; end; $a")).to eq 1
+    expect(compile_and_run("a = until false; break 1; end; a")).to eq 1
+    expect(compile_and_run("@a = until false; break 1; end; @a")).to eq 1
+    expect(compile_and_run("@@a = until false; break 1; end; @@a")).to eq 1
+    expect(compile_and_run("$a = until false; break 1; end; $a")).to eq 1
 
     # same assignments but loop is within a begin
-    compile_and_run("a = begin; while true; break 1; end; end; a").should == 1
-    compile_and_run("@a = begin; while true; break 1; end; end; @a").should == 1
-    compile_and_run("@@a = begin; while true; break 1; end; end; @@a").should == 1
-    compile_and_run("$a = begin; while true; break 1; end; end; $a").should == 1
-    compile_and_run("a = begin; until false; break 1; end; end; a").should == 1
-    compile_and_run("@a = begin; until false; break 1; end; end; @a").should == 1
-    compile_and_run("@@a = begin; until false; break 1; end; end; @@a").should == 1
-    compile_and_run("$a = begin; until false; break 1; end; end; $a").should == 1
+    expect(compile_and_run("a = begin; while true; break 1; end; end; a")).to eq 1
+    expect(compile_and_run("@a = begin; while true; break 1; end; end; @a")).to eq 1
+    expect(compile_and_run("@@a = begin; while true; break 1; end; end; @@a")).to eq 1
+    expect(compile_and_run("$a = begin; while true; break 1; end; end; $a")).to eq 1
+    expect(compile_and_run("a = begin; until false; break 1; end; end; a")).to eq 1
+    expect(compile_and_run("@a = begin; until false; break 1; end; end; @a")).to eq 1
+    expect(compile_and_run("@@a = begin; until false; break 1; end; end; @@a")).to eq 1
+    expect(compile_and_run("$a = begin; until false; break 1; end; end; $a")).to eq 1
 
     # other contexts that require while to preserve stack
-    compile_and_run("1 + while true; break 1; end").should == 2
-    compile_and_run("1 + begin; while true; break 1; end; end").should == 2
-    compile_and_run("1 + until false; break 1; end").should == 2
-    compile_and_run("1 + begin; until false; break 1; end; end").should == 2
-    compile_and_run("def foo(a); a; end; foo(while false; end)").should == nil
-    compile_and_run("def foo(a); a; end; foo(until true; end)").should == nil
+    expect(compile_and_run("1 + while true; break 1; end")).to eq 2
+    expect(compile_and_run("1 + begin; while true; break 1; end; end")).to eq 2
+    expect(compile_and_run("1 + until false; break 1; end")).to eq 2
+    expect(compile_and_run("1 + begin; until false; break 1; end; end")).to eq 2
+    expect(compile_and_run("def foo(a); a; end; foo(while false; end)")).to  be_nil
+    expect(compile_and_run("def foo(a); a; end; foo(until true; end)")).to be_nil
 
     # test that 100 symbols compiles ok; that hits both types of symbol caching/creation
     syms = [:a]
     99.times {|i| syms << ('foo' + i.to_s).intern }
     # 100 first instances of a symbol
-    compile_and_run(syms.inspect).should == syms
+    expect(compile_and_run(syms.inspect)).to eq syms
     # 100 first instances and 100 second instances (caching)
-    compile_and_run("[#{syms.inspect},#{syms.inspect}]").should == [syms,syms]
+    expect(compile_and_run("[#{syms.inspect},#{syms.inspect}]")).to match_array([syms,syms])
 
     # class created using local var as superclass
-    compile_and_run(<<-EOS).should == 'AFromLocal'
+    expect(compile_and_run(<<-EOS)).to eq 'AFromLocal'
     a = Object
     class AFromLocal < a
     end
@@ -656,20 +656,21 @@ ary
     large_hash = large_array.clone
     large_hash.gsub!('[', '{')
     large_hash.gsub!(']', '}')
-    compile_and_run(large_array).should == eval(large_array)
-    compile_and_run(large_hash).should == eval(large_hash) unless is19 # invalid syntax in 1.9
+    expect(compile_and_run(large_array)).to  eq(eval(large_array))
+    expect(compile_and_run(large_hash)).to  eq(eval(large_hash)) unless is19 # invalid syntax in 1.9
 
     if is19 # block arg spreading cases
-      compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}").should == [1]
-      compile_and_run("x = nil; [[1]].each {|a| x = a}; x").should == [1]
-      compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}").should == [1,2]
+      expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to match_array([1])
+      expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  match_array([1])
+      expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  match_array([1,2])
     end
 
     # non-expr case statement with return with if modified with call
     # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
-    compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo").should == 3
+    expect(compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo")).to eq 3
 
     if is19 # named groups with capture
+      expect(
       compile_and_run("
       def foo
         ary = []
@@ -684,11 +685,11 @@ ary
         ary << b
         ary
       end
-      foo").should == [nil,'ell', 'o', 'ell']
+      foo")).to  match_array([nil,'ell', 'o', 'ell'])
     end
 
     if is19 # chained argscat and argspush
-      compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]").should == [1,2,3,1,2,4,5]
+      expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  match_array([1,2,3,1,2,4,5])
     end
 
     # JRUBY-5840
@@ -699,7 +700,7 @@ ary
       '
       old_kcode = $KCODE
       $KCODE = 'UTF-8'
-      compile_and_run(test).should == eval(test)
+      expect(compile_and_run(test)).to  eq(eval(test))
       $KCODE = old_kcode
     end
 
@@ -707,7 +708,7 @@ ary
     test = '
     %w[foo bar].__send__ :to_enum, *[], &nil
     '
-    compile_and_run(test).map {|line| line + 'yum'}.should == ["fooyum", "baryum"]
+    expect(compile_and_run(test).map {|line| line + 'yum'}).to  match_array(["fooyum", "baryum"])
 
     # These two cases triggered ArgumentError when Enumerator was fixed to enforce
     # 3 required along its varargs path. Testing both here to ensure super/zsuper
@@ -721,9 +722,9 @@ ary
     end
     "
 
-    lambda {
+    expect {
       JRuby5871A.new("foo", :each_byte)
-    }.should_not raise_error
+    }.to_not raise_error
     
     compile_and_run "
     class JRuby5871B < #{enumerable}
@@ -733,16 +734,16 @@ ary
     end
     "
 
-    lambda {
+    expect {
       JRuby5871B.new("foo", :each_byte)
-    }.should_not raise_error
+    }.to_not raise_error
 
     class JRUBY4925
     end
 
     x = compile_and_run 'JRUBY4925::BLAH, a = 1, 2'
-    JRUBY4925::BLAH.should == 1
+    expect(JRUBY4925::BLAH).to eq 1
     x = compile_and_run '::JRUBY4925_BLAH, a = 1, 2'
-    JRUBY4925_BLAH.should == 1
+    expect(JRUBY4925_BLAH).to eq 1
   end
 end

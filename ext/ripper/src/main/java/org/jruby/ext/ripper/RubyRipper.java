@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -260,29 +259,29 @@ public class RubyRipper extends RubyObject {
     
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
-        String stringSource = sourceAsString(context, src);
         filename = filenameAsString(context, file);
-        int lineno = lineAsInt(context, line);
-        ByteArrayInputStream bos = new ByteArrayInputStream(stringSource.getBytes());
-        LexerSource source = new LexerSource(filename.asJavaString(), bos, lineno);
-        parser = new Ripper19Parser(context, this, source);
+        parser = new Ripper19Parser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
          
         return context.runtime.getNil();
     }
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
+        if (!parser.hasStarted()) context.runtime.newArgumentError("method called for uninitialized object");
+            
+        if (!parseStarted) return context.runtime.getNil();
+        
         return context.runtime.newFixnum(parser.getColumn());
     }
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        return null;
+        return context.runtime.getEncodingService().getEncoding(parser.encoding());
     }
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return null;
+        return context.runtime.newBoolean(parser.isEndSeen());
     }
     
     @JRubyMethod
@@ -292,11 +291,17 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
+        if (!parser.hasStarted()) context.runtime.newArgumentError("method called for uninitialized object");
+        
+        if (!parseStarted) return context.runtime.getNil();
+            
         return context.runtime.newFixnum(parser.getLineno());
     }
     
     @JRubyMethod
     public IRubyObject parse(ThreadContext context) {
+        parseStarted = true;
+        
         try {
             return (IRubyObject) parser.parse(true);
         } catch (IOException e) {
@@ -309,23 +314,24 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return null;
+        return context.runtime.newBoolean(parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
-    public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg0) {
-        return null;
+    public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg) {
+        parser.setYYDebug(arg.isTrue());
+        return arg;
     }
     
-    private String sourceAsString(ThreadContext context, IRubyObject src) {
+    private LexerSource source(ThreadContext context, IRubyObject src, String filename, int lineno) {
         // FIXME: respond_to? returns private methods
         DynamicMethod method = src.getMetaClass().searchMethod("gets");
         
         if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
-            return src.convertToString().asJavaString();
+            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList());
         }
 
-        return src.callMethod(context, "gets").asJavaString();
+        return new GetsLexerSource(filename, lineno, src);
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {
@@ -342,4 +348,5 @@ public class RubyRipper extends RubyObject {
     
     private RipperParser parser = null;
     private IRubyObject filename = null;
+    private boolean parseStarted = false;
 }

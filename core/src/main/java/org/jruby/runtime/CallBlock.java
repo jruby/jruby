@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -78,12 +78,12 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.runtime, arg0, arg1)}, Block.NULL_BLOCK);
+        return yield(context, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.runtime, arg0, arg1, arg2)}, Block.NULL_BLOCK);
+        return yield(context, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -102,7 +102,13 @@ public class CallBlock extends BlockBody {
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+        IRubyObject[] args = value.respondsTo("to_a") ? value.convertToArray().toJavaArray() : new IRubyObject[] {value};
+        return yield(context, args, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject yield(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject[] preppedArgs = RubyProc.prepareProcArgs(context, arity(), args);
+        return callback.call(context, preppedArgs, Block.NULL_BLOCK);
     }
     
     public StaticScope getStaticScope() {

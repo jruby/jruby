@@ -71,7 +71,7 @@ public class RubyEnumerator extends RubyObject {
         RubyModule enm = runtime.getClassFromPath("Enumerable");
         
         final RubyClass enmr;
-        if (runtime.is1_9()) {
+        if (runtime.is1_9() || runtime.is2_0()) {
             enmr = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
         } else {
             enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
