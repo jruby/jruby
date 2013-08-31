@@ -339,7 +339,7 @@ class TestThread < Test::Unit::TestCase
   def test_default_priority
     require 'java'
     t = Thread.new { sleep 1 while true }
-    assert_equal java.lang.Thread::NORM_PRIORITY, t.priority
+    assert_equal 0, t.priority
     t.exit
   end
 end
