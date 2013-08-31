@@ -50,7 +50,7 @@ public class TestRequire extends TestRubyBase {
 
     public void testLoadErrorsDuringRequireShouldRaise() throws Exception {
         try {
-            eval("require 'test/load_error'");
+            eval("require '../test/load_error'");
             fail("should have raised LoadError");
         } catch (RaiseException re) {
             assertTrue(re.getException().toString().indexOf("bogus_missing_lib") >= 0);
@@ -62,9 +62,9 @@ public class TestRequire extends TestRubyBase {
         try {
             eval(
             "begin\n"
-            + "require 'test/load_error'\n" +
+            + "require '../test/load_error'\n" +
             "rescue LoadError => e\n"
-            + " require 'test/load_error'\n" +
+            + " require '../test/load_error'\n" +
             "end");
             fail("should raise exception");
         } catch (RaiseException re) {
@@ -75,7 +75,7 @@ public class TestRequire extends TestRubyBase {
 
     public void testParseErrorsDuringRequireShouldRaise() throws Exception {
         try {
-            eval("require 'test/parse_error'");
+            eval("require '../test/parse_error'");
             fail("should have raised SyntaxError");
         } catch (RaiseException re) {
             assertEquals("SyntaxError", re.getException().getMetaClass().toString());
