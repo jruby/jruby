@@ -128,6 +128,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile WeakReference<ThreadContext> contextRef;
 
     private static final boolean DEBUG = false;
+    private int RUBY_MIN_THREAD_PRIORITY = -3;
+    private int RUBY_MAX_THREAD_PRIORITY = 3;
 
     /** Thread statuses */
     public static enum Status { 
@@ -240,10 +242,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void beforeStart() {
         // store initial priority, for restoring pooled threads to normal
-        initialPriority = threadImpl.getPriority();
-
-        // set to "normal" priority
-        threadImpl.setPriority(Thread.NORM_PRIORITY);
+        this.initialPriority = Thread.currentThread().getPriority();
     }
 
     /**
@@ -835,25 +834,53 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     
     @JRubyMethod(name = "priority")
     public RubyFixnum priority() {
-        return RubyFixnum.newFixnum(getRuntime(), threadImpl.getPriority());
+        return RubyFixnum.newFixnum(getRuntime(), javaPriorityToRubyPriority(threadImpl.getPriority()));
     }
 
     @JRubyMethod(name = "priority=", required = 1)
     public IRubyObject priority_set(IRubyObject priority) {
-        // FIXME: This should probably do some translation from Ruby priority levels to Java priority levels (until we have green threads)
         int iPriority = RubyNumeric.fix2int(priority);
         
-        if (iPriority < Thread.MIN_PRIORITY) {
-            iPriority = Thread.MIN_PRIORITY;
-        } else if (iPriority > Thread.MAX_PRIORITY) {
-            iPriority = Thread.MAX_PRIORITY;
+        if (iPriority < RUBY_MIN_THREAD_PRIORITY) {
+            iPriority = RUBY_MIN_THREAD_PRIORITY;
+        } else if (iPriority > RUBY_MAX_THREAD_PRIORITY) {
+            iPriority = RUBY_MAX_THREAD_PRIORITY;
         }
-        
+
         if (threadImpl.isAlive()) {
-            threadImpl.setPriority(iPriority);
+            int jPriority = rubyPriorityToJavaPriority(iPriority);
+            if (jPriority < Thread.MIN_PRIORITY) {
+                jPriority = Thread.MIN_PRIORITY;
+            } else if (jPriority > Thread.MAX_PRIORITY) {
+                jPriority = Thread.MAX_PRIORITY;
+            }
+            threadImpl.setPriority(jPriority);
         }
 
         return RubyFixnum.newFixnum(getRuntime(), iPriority);
+    }
+     
+    /* helper methods to translate java thread priority (1-10) to
+     * Ruby thread priority (-3 to 3) using a quadratic polynoimal ant its
+     * inverse
+     * i.e., j = r^2/18 + 3*r/2 + 5
+     *       r = 3/2*sqrt(8*j + 41) - 27/2
+     */
+    private int javaPriorityToRubyPriority(int javaPriority) {
+        double d; // intermediate value
+        d = 1.5 * Math.sqrt(8.0*javaPriority + 41) - 13.5;
+        return Math.round((float) d);
+    }
+    
+    private int rubyPriorityToJavaPriority(int rubyPriority) {
+        double d;
+        if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
+            rubyPriority = RUBY_MIN_THREAD_PRIORITY;
+        } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {
+            rubyPriority = RUBY_MAX_THREAD_PRIORITY;
+        }
+        d = Math.pow(rubyPriority, 2.0)/18.0 + 1.5 * rubyPriority + 5;
+        return Math.round((float) d);
     }
 
     @JRubyMethod(optional = 3)
