@@ -121,7 +121,16 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
+    public static IRubyObject count18(ThreadContext context, IRubyObject self, final Block block) {
+        if (!block.isGiven() && self.respondsTo("size")) {
+            return self.callMethod(context, "size");
+        }
+
+        return count(context, self, block);
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
@@ -134,8 +143,6 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            if (self.respondsTo("size")) return self.callMethod(context, "size");
-            
             each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.NO_ARGUMENTS) {
                 public IRubyObject yield(ThreadContext context, IRubyObject unusedValue) {
                     result[0]++;
@@ -145,8 +152,13 @@ public class RubyEnumerable {
         }
         return RubyFixnum.newFixnum(runtime, result[0]);
     }
-    
-    @JRubyMethod
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
+    public static IRubyObject count18(ThreadContext context, IRubyObject self, final IRubyObject methodArg, final Block block) {
+        return count(context, self, methodArg, block);
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
     public static IRubyObject count(ThreadContext context, IRubyObject self, final IRubyObject methodArg, final Block block) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
