@@ -139,7 +139,11 @@ public class RubyDateFormat {
             this.format = formatString;
             this.data = data;
         }
-        
+
+        public static Token str(String str) {
+            return new Token(FORMAT_STRING, str);
+        }
+
         /**
          * Gets the data.
          * @return Returns a Object
@@ -177,7 +181,7 @@ public class RubyDateFormat {
                 i++;
 
                 if (i == len) {
-                    compiledPattern.add(new Token(FORMAT_STRING, "%"));
+                    compiledPattern.add(Token.str("%"));
                 } else {
                     i = addOutputFormatter(compiledPattern, pattern, i);
 
@@ -200,24 +204,24 @@ public class RubyDateFormat {
                         break;
                     case 'c' :
                         compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
                     case 'D':
                         compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(Token.str("/"));
                         compiledPattern.add(new Token(FORMAT_DAY));
-                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(Token.str("/"));
                         compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
                         break;
                     case 'd':
@@ -233,7 +237,7 @@ public class RubyDateFormat {
                                 i--;
                                 break;
                             default:
-                                compiledPattern.add(new Token(FORMAT_STRING, "%E"));
+                                compiledPattern.add(Token.str("%E"));
                                 break;
                         }
                         break;
@@ -242,9 +246,9 @@ public class RubyDateFormat {
                         break;
                     case 'F':
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
-                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(Token.str("-"));
                         compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(Token.str("-"));
                         compiledPattern.add(new Token(FORMAT_DAY));
                         break;
                     case 'G':
@@ -281,7 +285,7 @@ public class RubyDateFormat {
                         compiledPattern.add(new Token(FORMAT_NANOSEC));
                         break;
                     case 'n':
-                        compiledPattern.add(new Token(FORMAT_STRING, "\n"));
+                        compiledPattern.add(Token.str("\n"));
                         break;
                     case 'O':
                         next = '\0';
@@ -295,7 +299,7 @@ public class RubyDateFormat {
                                 i--;
                                 break;
                             default:
-                                compiledPattern.add(new Token(FORMAT_STRING, "%O"));
+                                compiledPattern.add(Token.str("%O"));
                                 break;
                         }
                         break;
@@ -309,20 +313,20 @@ public class RubyDateFormat {
                         if (dateLibrary)
                             compiledPattern.add(new Token(FORMAT_MICROSEC_EPOCH));
                         else
-                            compiledPattern.add(new Token(FORMAT_STRING, "%Q"));
+                            compiledPattern.add(Token.str("%Q"));
                         break;
                     case 'R':
                         compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
                         break;
                     case 'r':
                         compiledPattern.add(new Token(FORMAT_HOUR_M));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_MERIDIAN));
                         break;
                     case 's':
@@ -333,13 +337,13 @@ public class RubyDateFormat {
                         break;
                     case 'T':
                         compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         break;
                     case 't':
-                        compiledPattern.add(new Token(FORMAT_STRING,"\t"));
+                        compiledPattern.add(Token.str("\t"));
                         break;
                     case 'u':
                         compiledPattern.add(new Token(FORMAT_DAY_WEEK2));
@@ -349,11 +353,11 @@ public class RubyDateFormat {
                         break;
                     case 'v':
                         compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(Token.str("-"));
                         if (!dateLibrary)
                             compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create("^"), 0)));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(Token.str("-"));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
                     case 'V':
@@ -367,16 +371,16 @@ public class RubyDateFormat {
                         break;
                     case 'X':
                         compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         break;
                     case 'x':
                         compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(Token.str("/"));
                         compiledPattern.add(new Token(FORMAT_DAY));
-                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(Token.str("/"));
                         compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
                         break;
                     case 'Y':
@@ -399,33 +403,33 @@ public class RubyDateFormat {
                         break;
                     case '+':
                         if (!dateLibrary) {
-                            compiledPattern.add(new Token(FORMAT_STRING, "%+"));
+                            compiledPattern.add(Token.str("%+"));
                             break;
                         }
                         // %a %b %e %H:%M:%S %Z %Y
                         compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(Token.str(":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         // %Z: +HH:MM in 'date', never zone name
                         compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create(":"), 0)));
                         compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
-                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(Token.str(" "));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
                     case '%':
-                        compiledPattern.add(new Token(FORMAT_STRING, "%"));
+                        compiledPattern.add(Token.str("%"));
                         break;
                     default:
-                        compiledPattern.add(new Token(FORMAT_STRING, "%" + pattern.charAt(i)));
+                        compiledPattern.add(Token.str("%" + pattern.charAt(i)));
                     }
                     i++;
                 }
@@ -434,7 +438,7 @@ public class RubyDateFormat {
                 for (;i < len && pattern.get(i) != '%'; i++) {
                     sb.append(pattern.charAt(i));
                 }
-                compiledPattern.add(new Token(FORMAT_STRING, sb.toString()));
+                compiledPattern.add(Token.str(sb.toString()));
             }
         }
         return compiledPattern;
