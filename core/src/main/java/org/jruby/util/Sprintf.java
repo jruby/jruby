@@ -730,6 +730,7 @@ public class Sprintf {
                     if (len < precision) {
                         if (leadChar == 0) {
                             if (fchar != 'd' || usePrefixForZero || !negative ||
+                                    (flags & FLAG_PRECISION) != 0 ||
                                     ((flags & FLAG_ZERO) != 0 && (flags & FLAG_MINUS) == 0)) {
                                 buf.fill('0', precision - len);
                             }
