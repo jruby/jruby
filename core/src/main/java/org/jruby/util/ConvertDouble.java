@@ -355,11 +355,14 @@ public class ConvertDouble {
                         return tooLargeExponent(chars[0] == '-', negative);
                     }
                 } else if (isWhitespace(value)) {
-                    return skipWhitespace();
+                    skipWhitespace();
+                    break;
                 } else if (value == '_') {
                     verifyNumberAfterUnderscore();
                 } else {
-                    return strictError();
+                    strictError();
+                    stopParsing();
+                    break;
                 }
             } 
 
@@ -372,7 +375,7 @@ public class ConvertDouble {
             if (-MAX_EXPONENT <= exponent && exponent <= MAX_EXPONENT) {
                 addExponentToResult(exponent);
                 wroteExponent = true;
-                return true; // Exponent end of double...let's finish.
+                return isEOS(); // Exponent end of double...let's finish.
             } else {
                 return tooLargeExponent(chars[0] == '-', negative);
             }
