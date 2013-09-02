@@ -48,8 +48,6 @@ import static org.jruby.util.RubyDateFormat.FieldType.*;
 import static org.jruby.util.RubyDateFormat.Format.*;
 
 public class RubyDateFormat {
-    private static final long serialVersionUID = -250429218019023997L;
-
     private boolean ruby_1_9;
 
     private final DateFormatSymbols formatSymbols;
