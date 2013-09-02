@@ -639,7 +639,9 @@ public class RubyDateFormat {
             // reset formatter
             formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
 
-            toAppendTo.append(output.getBytes(Charset.forName("US-ASCII")));
+            for (int i = 0; i < output.length(); i++) {
+                toAppendTo.append(output.charAt(i));
+            }
         }
 
         return toAppendTo;
