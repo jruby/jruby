@@ -208,9 +208,9 @@
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
-    <tzdata.version>2013d</tzdata.version>
+    <tzdata.version>2013c</tzdata.version>
     <!-- any version which is on maven repo will do -->
-    <tzdata.jar.version>2013d</tzdata.jar.version>
+    <tzdata.jar.version>2013c</tzdata.jar.version>
     <tzdata.scope>provided</tzdata.scope>
     <main.basedir>${project.parent.basedir}</main.basedir>
   </properties>
