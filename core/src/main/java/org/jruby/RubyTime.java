@@ -422,9 +422,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
         final RubyDateFormat rdf = getRuntime().getCurrentContext().getRubyDateFormat();
-        ByteList pattern = format.convertToString().getByteList();
-        List<Token> compiledPattern = rdf.compilePattern(pattern, false);
-        ByteList result = rdf.format(compiledPattern, dt, nsec);
+        ByteList result = rdf.compileAndFormat(format.convertToString().getByteList(), false, dt, nsec);
         return getRuntime().newString(result);
     }
 

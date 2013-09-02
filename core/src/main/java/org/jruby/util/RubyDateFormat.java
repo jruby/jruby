@@ -466,6 +466,11 @@ public class RubyDateFormat {
         }
     }
 
+    /** Convenience method when using no pattern caching */
+    public ByteList compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec) {
+        return format(compilePattern(pattern, dateLibrary), dt, nsec);
+    }
+
     public ByteList format(List<Token> compiledPattern, DateTime dt, long nsec) {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
