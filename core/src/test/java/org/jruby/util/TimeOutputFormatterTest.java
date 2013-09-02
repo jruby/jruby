@@ -35,69 +35,72 @@ import org.jruby.util.RubyDateFormat.FieldType;
 import junit.framework.TestCase;
 
 public class TimeOutputFormatterTest extends TestCase {
+    private TimeOutputFormatter getFormatter(String str) {
+        return TimeOutputFormatter.getFormatter(ByteList.create(str), 0);
+    }
 
     public void testGetFormatterFails() {
-        assertNull(TimeOutputFormatter.getFormatter("%I"));
+        assertNull(getFormatter("%I"));
     }
 
     public void testGetFormatterPasses() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^05H");
+        TimeOutputFormatter formatter = getFormatter("%^05H");
         assertNotNull(formatter);
         assertEquals("^05", formatter.getFormat());
     }
 
     public void testFormatUpperCase() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^H");
+        TimeOutputFormatter formatter = getFormatter("%^H");
         assertEquals("UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingBlank() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%_5H");
+        TimeOutputFormatter formatter = getFormatter("%_5H");
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingZeros() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%05H");
+        TimeOutputFormatter formatter = getFormatter("%05H");
         assertEquals("000up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatNoPadding() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-5H");
+        TimeOutputFormatter formatter = getFormatter("%-5H");
         assertEquals("up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingBlankAndUpperCase() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^_5H");
+        TimeOutputFormatter formatter = getFormatter("%^_5H");
         assertEquals("   UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingWithoutFormat() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%5H");
+        TimeOutputFormatter formatter = getFormatter("%5H");
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingZeroFirstOption() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%0_5H");
+        TimeOutputFormatter formatter = getFormatter("%0_5H");
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingBlankFirstOption() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%_05H");
+        TimeOutputFormatter formatter = getFormatter("%_05H");
         assertEquals("000up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingWithUpperCase() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^5H");
+        TimeOutputFormatter formatter = getFormatter("%^5H");
         assertEquals("   UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatNoPaddingForBlankPaddedNumericValues() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
+        TimeOutputFormatter formatter = getFormatter("%-3H");
         assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 
     public void testFormatNoPaddingForZeroPaddedNumericValues() {
-        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-03H");
+        TimeOutputFormatter formatter = getFormatter("%-03H");
         assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 }

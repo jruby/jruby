@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParsePosition;
@@ -165,14 +166,14 @@ public class RubyDateFormat {
         this.ruby_1_9 = ruby19;
     }
 
-    public List<Token> compilePattern(String pattern, boolean dateLibrary) {
+    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<Token>();
 
         int len = pattern.length();
         boolean ignoredModifier = false;
-        char next;
+        int next;
         for (int i = 0; i < len;) {
-            if (pattern.charAt(i) == '%' || (ignoredModifier && !(ignoredModifier = false))) {
+            if (pattern.get(i) == '%' || (ignoredModifier && !(ignoredModifier = false))) {
                 i++;
 
                 if (i == len) {
@@ -180,7 +181,7 @@ public class RubyDateFormat {
                 } else {
                     i = addOutputFormatter(compiledPattern, pattern, i);
 
-                    switch (pattern.charAt(i)) {
+                    switch (pattern.get(i)) {
                     case 'A' :
                         compiledPattern.add(new Token(FORMAT_WEEK_LONG));
                         break;
@@ -225,7 +226,7 @@ public class RubyDateFormat {
                     case 'E':
                         next = '\0';
                         if (i + 1 < len)
-                            next = pattern.charAt(i+1);
+                            next = pattern.get(i+1);
                         switch (next) {
                             case 'c': case 'C': case 'x': case 'X': case 'y': case 'Y':
                                 ignoredModifier = true;
@@ -285,7 +286,7 @@ public class RubyDateFormat {
                     case 'O':
                         next = '\0';
                         if (i + 1 < len)
-                            next = pattern.charAt(i+1);
+                            next = pattern.get(i+1);
                         switch (next) {
                             case 'd': case 'e': case 'H': case 'k': case 'I': case 'l': case 'm':
                             case 'M': case 'S': case 'u': case 'U': case 'V': case 'w': case 'W':
@@ -350,7 +351,7 @@ public class RubyDateFormat {
                         compiledPattern.add(new Token(FORMAT_DAY_S));
                         compiledPattern.add(new Token(FORMAT_STRING, "-"));
                         if (!dateLibrary)
-                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter("^", 0)));
+                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create("^"), 0)));
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
                         compiledPattern.add(new Token(FORMAT_STRING, "-"));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
@@ -387,7 +388,7 @@ public class RubyDateFormat {
                     case 'Z':
                         if (dateLibrary) {
                             // +HH:MM in 'date', never zone name
-                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(":", 0)));
+                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create(":"), 0)));
                             compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
                         } else {
                             compiledPattern.add(new Token(FORMAT_ZONE_ID));
@@ -415,7 +416,7 @@ public class RubyDateFormat {
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
                         // %Z: +HH:MM in 'date', never zone name
-                        compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(":", 0)));
+                        compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create(":"), 0)));
                         compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
@@ -430,7 +431,7 @@ public class RubyDateFormat {
                 }
             } else {
                 StringBuilder sb = new StringBuilder();
-                for (;i < len && pattern.charAt(i) != '%'; i++) {
+                for (;i < len && pattern.get(i) != '%'; i++) {
                     sb.append(pattern.charAt(i));
                 }
                 compiledPattern.add(new Token(FORMAT_STRING, sb.toString()));
@@ -439,8 +440,8 @@ public class RubyDateFormat {
         return compiledPattern;
     }
 
-    private int addOutputFormatter(List<Token> compiledPattern, String pattern, int index) {
-        TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern.substring(index - 1));
+    private int addOutputFormatter(List<Token> compiledPattern, ByteList pattern, int index) {
+        TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern, index - 1);
         if (outputFormatter != null) {
             index += outputFormatter.getFormat().length();
             compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
@@ -465,9 +466,9 @@ public class RubyDateFormat {
         }
     }
 
-    public String format(List<Token> compiledPattern, DateTime dt, long nsec) {
+    public ByteList format(List<Token> compiledPattern, DateTime dt, long nsec) {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
-        StringBuffer toAppendTo = new StringBuffer();
+        ByteList toAppendTo = new ByteList();
 
         for (Token token: compiledPattern) {
             String output = null;
@@ -632,10 +633,11 @@ public class RubyDateFormat {
             output = formatter.format(output, value, type);
             // reset formatter
             formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
-            toAppendTo.append(output);
+
+            toAppendTo.append(output.getBytes(Charset.forName("US-ASCII")));
         }
 
-        return toAppendTo.toString();
+        return toAppendTo;
     }
 
     /**
