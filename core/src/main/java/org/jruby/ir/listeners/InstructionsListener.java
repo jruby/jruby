@@ -36,5 +36,5 @@ public interface InstructionsListener {
         ADD, REMOVE, UPDATE
     }
     
-    public void instrChanged(List<Instr> instrs, Instr instr, int index, OperationType type);
+    public void instrChanged(List<Instr> instrs, Instr oldInstr, Instr newInstr, int index, OperationType type);
 }
