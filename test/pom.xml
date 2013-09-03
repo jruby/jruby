@@ -74,6 +74,14 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>requireTest</groupId>
+      <artifactId>requireTest</artifactId>
+      <version>1.0</version>
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${basedir}/requireTest-1.0.jar</systemPath>
+    </dependency>
 
     <dependency>
       <groupId>rubygems</groupId>
