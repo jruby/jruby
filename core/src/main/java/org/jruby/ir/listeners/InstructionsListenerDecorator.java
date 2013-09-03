@@ -10,57 +10,76 @@ public class InstructionsListenerDecorator implements List<Instr> {
     private final List<Instr> instrs;
     
     private class InstructionsListIterator implements ListIterator<Instr> {
-        private final Instr currentInstr;
-        private final int currentIndex;
+        private Instr currentInstr;
+        private int currentIndex;
+        private final ListIterator<Instr> listIterator;
         
         public InstructionsListIterator() {
             this.currentInstr = null;
             this.currentIndex = -1;
+            this.listIterator = instrs.listIterator();
         }
 
         @Override
         public boolean hasNext() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            return listIterator.hasNext();
         }
 
         @Override
         public Instr next() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            currentInstr = listIterator.next();
+            currentIndex += 1;
+            return currentInstr;
         }
 
         @Override
         public boolean hasPrevious() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            return listIterator.hasPrevious();
         }
 
         @Override
         public Instr previous() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            currentInstr = listIterator.previous();
+            currentIndex -= 1;
+            return currentInstr;
         }
 
         @Override
         public int nextIndex() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            int index = currentIndex + 1;
+            if (index < instrs.size()) {
+                return index;
+            } else {
+                return instrs.size();
+            }
         }
 
         @Override
         public int previousIndex() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            int index = currentIndex - 1;
+            if (index > -1) {
+                return index;
+            } else {
+                return -1;
+            }
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            // TODO emit event on removal
+            listIterator.remove();
         }
 
         @Override
         public void set(Instr e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            // TODO emit update event
+            listIterator.set(e);
         }
 
         @Override
         public void add(Instr e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            // TODO emit add event
+            listIterator.add(e);
         }
         
     }
