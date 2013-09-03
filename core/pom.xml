@@ -148,7 +148,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jsr292</groupId>
+      <groupId>com.headius</groupId>
       <artifactId>jsr292-mock</artifactId>
       <version>1.0-SNAPSHOT</version>
       <type>jar</type>
