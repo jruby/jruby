@@ -3,10 +3,10 @@
   <groupId>org.jruby</groupId>
   <artifactId>joda-timezones</artifactId>
   <versioning>
-    <release>2013c</release>
+    <release>2013d</release>
     <versions>
-      <version>2013c</version>
+      <version>2013d</version>
     </versions>
-    <lastUpdated>20130630100530</lastUpdated>
+    <lastUpdated>20130903084046</lastUpdated>
   </versioning>
 </metadata>
