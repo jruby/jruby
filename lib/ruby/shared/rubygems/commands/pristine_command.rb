@@ -10,7 +10,8 @@ class Gem::Commands::PristineCommand < Gem::Command
   def initialize
     super 'pristine',
           'Restores installed gems to pristine condition from files located in the gem cache',
-          :version => Gem::Requirement.default, :extensions => true,
+          :version => Gem::Requirement.default,
+          :extensions => true,
           :all => false
 
     add_option('--all',
@@ -20,7 +21,8 @@ class Gem::Commands::PristineCommand < Gem::Command
     end
 
     add_option('--[no-]extensions',
-               'Restore gems with extensions') do |value, options|
+               'Restore gems with extensions',
+               'in addition to regular gems') do |value, options|
       options[:extensions] = value
     end
 
@@ -37,28 +39,28 @@ class Gem::Commands::PristineCommand < Gem::Command
   end
 
   def defaults_str # :nodoc:
-    "--all --extensions"
+    '--extensions'
   end
 
   def description # :nodoc:
     <<-EOF
-The pristine command compares the installed gems with the contents of the
-cached gem and restores any files that don't match the cached gem's copy.
+The pristine command compares an installed gem with the contents of its
+cached .gem file and restores any files that don't match the cached .gem's
+copy.
 
-If you have made modifications to your installed gems, the pristine command
-will revert them.  After all the gem's files have been checked all bin stubs
-for the gem are regenerated.
+If you have made modifications to an installed gem, the pristine command
+will revert them.  All extensions are rebuilt and all bin stubs for the gem
+are regenerated after checking for modifications.
 
-If the cached gem cannot be found, you will need to use `gem install` to
-revert the gem.
+If the cached gem cannot be found it will be downloaded.
 
-If --no-extensions is provided pristine will not attempt to restore gems with
-extensions.
+If --no-extensions is provided pristine will not attempt to restore a gem
+with an extension.
     EOF
   end
 
   def usage # :nodoc:
-    "#{program_name} [args]"
+    "#{program_name} [GEMNAME ...]"
   end
 
   def execute

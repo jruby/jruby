@@ -9,6 +9,7 @@ require 'rubygems/package'
 require 'rubygems/ext'
 require 'rubygems/user_interaction'
 require 'fileutils'
+require 'thread'
 
 ##
 # The installer installs the files contained in the .gem into the Gem.home.
@@ -30,6 +31,14 @@ class Gem::Installer
   # /bin
 
   ENV_PATHS = %w[/usr/bin/env /bin/env]
+
+  ##
+  # The builder shells-out to run various commands after changing the
+  # directory.  This means multiple installations cannot be allowed to build
+  # extensions in parallel as they may change each other's directories leading
+  # to broken extensions or failed installations.
+
+  CHDIR_MUTEX = Mutex.new # :nodoc:
 
   ##
   # Raised when there is an error while building extensions.
@@ -331,8 +340,9 @@ class Gem::Installer
   # specifications directory.
 
   def write_spec
-    File.open(spec_file, "w") do |file|
+    open spec_file, 'w' do |file|
       file.puts spec.to_ruby_for_cache
+      file.fsync rescue nil # for filesystems without fsync(2)
     end
   end
 
@@ -674,11 +684,13 @@ TEXT
       begin
         FileUtils.mkdir_p dest_path
 
-        Dir.chdir extension_dir do
-          results = builder.build(extension, gem_dir, dest_path,
-                                  results, @build_args)
+        CHDIR_MUTEX.synchronize do
+          Dir.chdir extension_dir do
+            results = builder.build(extension, gem_dir, dest_path,
+                                    results, @build_args)
 
-          say results.join("\n") if Gem.configuration.really_verbose
+            say results.join("\n") if Gem.configuration.really_verbose
+          end
         end
       rescue
         extension_build_error(extension_dir, results.join("\n"), $@)
@@ -773,7 +785,13 @@ EOF
   def write_build_info_file
     return if @build_args.empty?
 
-    open spec.build_info_file, 'w' do |io|
+    build_info_dir = File.join gem_home, 'build_info'
+
+    FileUtils.mkdir_p build_info_dir
+
+    build_info_file = File.join build_info_dir, "#{spec.full_name}.info"
+
+    open build_info_file, 'w' do |io|
       @build_args.each do |arg|
         io.puts arg
       end
