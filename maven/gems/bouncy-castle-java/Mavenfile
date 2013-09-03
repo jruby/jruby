@@ -1,8 +1,10 @@
 #-*- mode: ruby -*-
+
+# tell maven to include the jar files
 gemspec :include_jars => true
 
 resource do
-  directory '../../lib/ruby/shared/'
+  directory '../../../lib/ruby/shared/'
   target_path '${basedir}/lib'
   includes 'bouncy-castle-java.rb'
 end
