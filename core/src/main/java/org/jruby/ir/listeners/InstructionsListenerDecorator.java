@@ -8,6 +8,7 @@ import org.jruby.ir.instructions.Instr;
 
 public class InstructionsListenerDecorator implements List<Instr> {
     private final List<Instr> instrs;
+    private final InstructionsListener listener;
     
     private class InstructionsListIterator implements ListIterator<Instr> {
         private Instr currentInstr;
@@ -66,26 +67,27 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
         @Override
         public void remove() {
-            // TODO emit event on removal
+            listener.instrChanged(instrs, currentInstr, null, currentIndex, InstructionsListener.OperationType.REMOVE);
             listIterator.remove();
         }
 
         @Override
         public void set(Instr e) {
-            // TODO emit update event
+            listener.instrChanged(instrs, currentInstr, e, currentIndex, InstructionsListener.OperationType.UPDATE);
             listIterator.set(e);
         }
 
         @Override
         public void add(Instr e) {
-            // TODO emit add event
+            listener.instrChanged(instrs, instrs.get(currentIndex +1), e, currentIndex +1 , InstructionsListener.OperationType.ADD);
             listIterator.add(e);
         }
         
     }
     
-    public InstructionsListenerDecorator(List<Instr> instrs) {
+    public InstructionsListenerDecorator(List<Instr> instrs, InstructionsListener listener) {
         this.instrs = instrs;
+        this.listener = listener;
     }
 
     @Override
