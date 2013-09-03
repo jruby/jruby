@@ -29,6 +29,7 @@
 package org.jruby.ir.listeners;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -169,26 +170,42 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public boolean addAll(int index, Collection<? extends Instr> c) {
-        // TODO emit adds
-        return instrs.addAll(index, c);
+        ListIterator<Instr> iterator = listIterator(index);
+        if (c.isEmpty()) return false;
+        for (Instr instr : c) {
+            iterator.add(instr);
+        }
+        return true;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        // TODO emit events on removal instrs
-        return instrs.removeAll(c);
+        boolean hasChanged = false;
+        for (Object item : c) {
+            boolean hasRemoved = remove(item);
+            if (!hasChanged) hasChanged = hasRemoved;
+        }
+        return hasChanged;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        // TODO emit events on removing of all not in c
-        return instrs.retainAll(c);
+        boolean hasChanged = false;
+        ListIterator<Instr> iterator = listIterator();
+        while(iterator.hasNext()) {
+            int index = iterator.nextIndex();
+            Instr instr = iterator.next();
+            if (!c.contains(instr)) {
+                boolean hasRemoved = remove(instr);
+                if(!hasChanged) hasChanged = hasRemoved;
+            }
+        }
+        return hasChanged;
     }
 
     @Override
     public void clear() {
-        // TODO emit removing all instrs
-        instrs.clear();
+        retainAll(Collections.emptySet());
     }
 
     @Override
@@ -198,17 +215,19 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public Instr set(int index, Instr element) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        listener.instrChanged(instrs, null, element, index, InstructionsListener.OperationType.UPDATE);
+        return instrs.set(index, element);
     }
 
     @Override
     public void add(int index, Instr element) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        listener.instrChanged(instrs, null, element, index, InstructionsListener.OperationType.ADD);
+        instrs.add(index, element);
     }
 
     @Override
     public Instr remove(int index) {
-        // TODO emit remove event
+        listener.instrChanged(instrs, null, null, index, InstructionsListener.OperationType.REMOVE);
         return instrs.remove(index);
     }
 
@@ -230,7 +249,6 @@ public class InstructionsListenerDecorator implements List<Instr> {
     @Override
     public ListIterator<Instr> listIterator(int index) {
         InstructionsListIterator iterator = new InstructionsListIterator();
-        int i = 0;
         while (iterator.nextIndex() < index) {
             iterator.next();
         }
