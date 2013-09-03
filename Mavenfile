@@ -28,7 +28,7 @@ jar 'com.github.jnr:jffi', '1.2.5'
 jar 'com.github.jnr:jnr-ffi', '1.0.4'
 jar 'org.yaml:snakeyaml', '1.11'
 jar( 'jline:jline', '2.7' ).scope :provided
-jar 'joda-time:joda-time', '2.1'
+jar 'joda-time:joda-time', '2.3'
 jar 'com.jcraft:jzlib', '1.1.2'
 jar 'com.headius:invokebinder', '1.2'
 jar( 'org.bouncycastle:bcpkix-jdk15on', '1.47' ).scope :provided

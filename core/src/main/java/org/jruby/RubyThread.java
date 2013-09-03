@@ -1366,6 +1366,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return true;
         }
     }
+    
+    public RubyThreadGroup getThreadGroup() {
+        return threadGroup;
+    }
 
     @Override
     public boolean equals(Object obj) {

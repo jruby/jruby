@@ -80,10 +80,22 @@ public class RubyThreadGroup extends RubyObject {
         
         // synchronize on the RubyThread for threadgroup updates
         if (isFrozen()) {
-            throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
+            throw getRuntime().newTypeError("can't add to the frozen thread group");
         }
 
+        if (enclosed) {
+            throw getRuntime().newTypeError("can't move to the enclosed thread group");
+        }
+        
         RubyThread thread = (RubyThread)rubyThread;
+        
+        if (thread.getThreadGroup().isFrozen()) {
+            throw getRuntime().newTypeError("can't move from the frozen thread group");
+        }
+        
+        if (thread.getThreadGroup().enclosed_p(block).isTrue()) {
+            throw getRuntime().newTypeError("can't move from the enclosed thread group");
+        }
 
         // we only add live threads
         if (thread.alive_p().isTrue()) {
