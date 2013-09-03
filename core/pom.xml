@@ -184,7 +184,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>joda-timezones</artifactId>
-      <version>${tzdata.jar.version}</version>
+      <version>${tzdata.jar.version}-SNAPSHOT</version>
       <type>jar</type>
       <scope>${tzdata.scope}</scope>
     </dependency>
