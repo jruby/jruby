@@ -4,8 +4,8 @@ Redistributed by Hiroshi Nakamura <nahi@ruby-lang.org>.
 
 This package is redistributed under the same terms of Bouncy Castle's license; see LICENSE.html for more details.
 
-Object code and source location:
-  lib/bouncy-castle-java.rb: http://github.com/nahi/bouncy-castle-java/
+Object code and source location (:
+  lib/bouncy-castle-java.rb: http://github.com/jruby/jruby/tree/master/lib/ruby/shared/
   lib/bcmail-jdk15-146.jar:  http://www.bouncycastle.org/download/bcmail-jdk15-146.tar.gz
   lib/bcprov-jdk15-146.jar:  http://www.bouncycastle.org/download/bcprov-jdk15-146.tar.gz
 
