@@ -74,13 +74,6 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>requireTest</groupId>
-      <artifactId>requireTest</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
 
     <dependency>
       <groupId>rubygems</groupId>
