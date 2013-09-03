@@ -78,6 +78,7 @@
     <rdoc.version>4.0.1</rdoc.version>
     <json.version>1.8.0</json.version>
     <bc.version>1.47</bc.version>
+    <jffi.version>1.2.7</jffi.version>
     <base.java.version>1.6</base.java.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <main.basedir>${project.basedir}</main.basedir>

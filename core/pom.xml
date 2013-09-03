@@ -42,6 +42,11 @@
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-x86asm</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
       <version>0.3</version>
       <type>jar</type>
@@ -73,13 +78,21 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.7</version>
+      <version>${jffi.version}</version>
       <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
+      <artifactId>jffi</artifactId>
+      <version>${jffi.version}</version>
+      <type>jar</type>
+      <classifier>native</classifier>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>1.0.4</version>
+      <version>1.0.5</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -665,7 +678,7 @@
                 <artifactItem>
                   <groupId>com.github.jnr</groupId>
                   <artifactId>jffi</artifactId>
-                  <version>1.2.5</version>
+                  <version>${jffi.version}</version>
                   <type>jar</type>
                   <classifier>native</classifier>
                   <overWrite>false</overWrite>
