@@ -144,13 +144,15 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public boolean add(Instr e) {
-        // TODO emit add
+        int index = instrs.size() + 1;
+        listener.instrChanged(instrs, null, e, index, InstructionsListener.OperationType.ADD);
         return instrs.add(e);
     }
 
     @Override
     public boolean remove(Object o) {
-        // TODO emit remove event
+        int index = instrs.indexOf(o);
+        if (index != -1) listener.instrChanged(instrs, (Instr) o, null, index, InstructionsListener.OperationType.REMOVE);
         return instrs.remove(o);
     }
 
@@ -227,8 +229,12 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public ListIterator<Instr> listIterator(int index) {
-        // TODO add own implementation for ListIterator
-        return instrs.listIterator(index);
+        InstructionsListIterator iterator = new InstructionsListIterator();
+        int i = 0;
+        while (iterator.nextIndex() < index) {
+            iterator.next();
+        }
+        return iterator;
     }
 
     @Override
