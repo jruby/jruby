@@ -1,0 +1,21 @@
+#-*- mode: ruby -*-
+gemspec :include_jars => true
+
+resource do
+  directory '../../lib/ruby/shared/'
+  target_path '${basedir}/lib'
+  includes 'bouncy-castle-java.rb'
+end
+
+plugin( :clean, '2.5' ) do
+  execute_goals( :clean,
+                 :phase => :clean, 
+                 :id => 'clean-lib',
+                 :filesets => [ { :directory => '${basedir}/lib' } ],
+                 :failOnError => false )
+end
+
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readonly' => true )
+
+# vim: syntax=Ruby
