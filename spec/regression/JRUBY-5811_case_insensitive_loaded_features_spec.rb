@@ -20,7 +20,7 @@ describe 'JRUBY-5811: jruby 1.9 fails to load irb' do
         (require @file.path.capitalize).should == false
         $".size.should == org_size + 1
       else
-        lambda { File.exist?(@file.path.upcase) }.should raise_error(LoadError)
+        File.exist?(@file.path.upcase).should be_false
       end
     end
   end
