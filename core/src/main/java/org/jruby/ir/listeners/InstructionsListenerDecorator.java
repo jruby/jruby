@@ -37,6 +37,62 @@ import org.jruby.ir.instructions.Instr;
 public class InstructionsListenerDecorator implements List<Instr> {
     private final List<Instr> instrs;
     
+    private class InstructionsListIterator implements ListIterator<Instr> {
+        private final Instr currentInstr;
+        private final int currentIndex;
+        
+        public InstructionsListIterator() {
+            this.currentInstr = null;
+            this.currentIndex = -1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Instr next() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Instr previous() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public int nextIndex() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public int previousIndex() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void set(Instr e) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void add(Instr e) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    }
+    
     public InstructionsListenerDecorator(List<Instr> instrs) {
         this.instrs = instrs;
     }
@@ -58,27 +114,7 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public Iterator<Instr> iterator() {
-        return new Iterator<Instr>() {
-            private Iterator<Instr> iterator;
-            
-            { this.iterator = instrs.iterator(); }
-
-            @Override
-            public boolean hasNext() {
-              return iterator.hasNext();
-            }
-
-            @Override
-            public Instr next() {
-                return iterator.next(); 
-            }
-
-            @Override
-            public void remove() {
-                //TODO enable listening on removing
-                iterator.remove();
-            }
-        };
+        return new InstructionsListIterator();
     }
 
     @Override
@@ -171,8 +207,7 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public ListIterator<Instr> listIterator() {
-        // TODO call to ListIterator with eventing
-        return instrs.listIterator();
+        return new InstructionsListIterator();
     }
 
     @Override
