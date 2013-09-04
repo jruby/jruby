@@ -1089,6 +1089,18 @@ public class RubyTime extends RubyObject {
         }
         if (args.length == 7) {
           Ruby runtime = recv.getRuntime();
+
+          // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
+          final RubySymbol dstSymbol = RubySymbol.newSymbol(runtime, "dst");
+          boolean receivedDstSymbolAsArgument = (args[6].op_equal(context, dstSymbol)).isTrue();
+
+          final RubyBoolean isDst;
+        if (receivedDstSymbolAsArgument) {
+              isDst = RubyBoolean.newBoolean(runtime, true);
+          } else {
+              isDst = RubyBoolean.newBoolean(runtime, false);
+          }
+
           // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
           args = new IRubyObject[] { args[5],          // seconds
                                      args[4],          // minutes
@@ -1098,7 +1110,7 @@ public class RubyTime extends RubyObject {
                                      args[0],          // year
                                      runtime.getNil(), // weekday
                                      runtime.getNil(), // day of year
-                                     runtime.getNil(), // is DST?
+                                     isDst,            // is DST?
                                      args[6] };        // UTC offset
         }
         return createTime(recv, args, false);
