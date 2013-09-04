@@ -148,6 +148,7 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.util.cli.Options;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1483,17 +1484,11 @@ public final class Ruby {
             RubyEnumerator.defineEnumerator(this);
         }
         
-        if (is1_9()) {
+        if (is1_9() && Options.FIBER_NATIVE.load()) {
             if (RubyInstanceConfig.COROUTINE_FIBERS) {
                 LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary", getClassLoader(), false);
             } else {
                 LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getClassLoader(), false);
-            }
-        } else {
-            if (RubyInstanceConfig.COROUTINE_FIBERS) {
-                addLazyBuiltin("jruby/fiber.jar", "jruby/fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary");
-            } else {
-                addLazyBuiltin("jruby/fiber.jar", "jruby/fiber", "org.jruby.ext.fiber.ThreadFiberLibrary");
             }
         }
         
@@ -1684,7 +1679,6 @@ public final class Ruby {
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
-            addLazyBuiltin("fiber.rb", "fiber", "org.jruby.ext.fiber.FiberExtLibrary");
             addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
             addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
 
@@ -1696,8 +1690,10 @@ public final class Ruby {
             };
             addBuiltinIfAllowed("continuation.rb", dummy);
             addBuiltinIfAllowed("io/nonblock.rb", dummy);
-        } else {
-            addLazyBuiltin("jruby/fiber_ext.rb", "jruby/fiber_ext", "org.jruby.ext.fiber.FiberExtLibrary");
+            
+            if (Options.FIBER_NATIVE.load()) {
+                addLazyBuiltin("fiber.rb", "fiber", "org.jruby.ext.fiber.FiberExtLibrary");
+            }
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {

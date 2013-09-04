@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.cli.Options;
 
 public class JRubyConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
@@ -47,5 +48,11 @@ public class JRubyConfigLibrary implements Library {
     public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
         return context.runtime.newBoolean(
                 context.runtime.getInstanceConfig().isDisableGems());
+    }
+
+    @JRubyMethod(name = "fiber_native?")
+    public static IRubyObject fiber_native_p(ThreadContext context, IRubyObject self) {
+        return context.runtime.newBoolean(
+                Options.FIBER_NATIVE.load());
     }
 }
