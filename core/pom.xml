@@ -163,7 +163,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>jsr292-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
