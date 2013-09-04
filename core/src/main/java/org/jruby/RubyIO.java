@@ -4922,6 +4922,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
     
+    public static void processExecOptions(Ruby runtime, IRubyObject options) {
+        assert options instanceof RubyHash;
+        
+        RubyHash opts = (RubyHash) options;
+        
+        for (Object opt: opts.keySet()) {
+            if (opt instanceof RubySymbol) {
+                RubySymbol symbol = (RubySymbol) opt;
+                if ("chdir".equals(symbol.toString())) {
+                    String str = opts.fetch(runtime.getCurrentContext(), symbol, Block.NULL_BLOCK).toString();
+                    runtime.setCurrentDirectory(str);
+                }
+            }
+        }
+    }
     /**
      * Try for around 1s to destroy the child process. This is to work around
      * issues on some JVMs where if you try to destroy the process too quickly

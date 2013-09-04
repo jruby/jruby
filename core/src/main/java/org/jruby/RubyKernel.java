@@ -1815,10 +1815,10 @@ public class RubyKernel {
         
         boolean nativeFailed = false;
         boolean nativeExec = Options.NATIVE_EXEC.load();
-        System.setProperty("user.dir", runtime.getCurrentDirectory());
+        runtime.setCurrentDirectory(runtime.getCurrentDirectory());
 
         if (options instanceof RubyHash) {
-            processExecOptions(context, options);
+            RubyIO.processExecOptions(runtime, options);
         }
 
         if (nativeExec) {
@@ -2302,20 +2302,5 @@ public class RubyKernel {
     @JRubyMethod(name = "instance_variables", compat = RUBY1_9)
     public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).instance_variables19(context);
-    }
-
-    private static void processExecOptions(ThreadContext context, IRubyObject options) {
-        assert options instanceof RubyHash;
-        
-        RubyHash opts = (RubyHash) options;
-        
-        for (Object opt: opts.keySet()) {
-            if (opt instanceof RubySymbol) {
-                RubySymbol symbol = (RubySymbol) opt;
-                if ("chdir".equals(symbol.toString())) {
-                    System.setProperty("user.dir", opts.fetch(context, symbol, Block.NULL_BLOCK).toString());
-                }
-            }
-        }
     }
 }

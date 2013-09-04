@@ -1761,6 +1761,7 @@ public final class Ruby {
     }
 
     public void setCurrentDirectory(String dir) {
+        System.setProperty("user.dir", dir);
         currentDirectory = dir;
     }
 
