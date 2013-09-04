@@ -1335,26 +1335,19 @@ public class RubyTime extends RubyObject {
 
             dt = dt.withZoneRetainFields(dtz);
 
-            // we might need to perform a DST correction
-            if (isDst != null) {
-                // the instant at which we will ask dtz what the difference between DST and
-                // standard time is
-                long offsetCalculationInstant = dt.getMillis();
+            // If we're at a DST boundary, we need to choose the correct side of the boundary
+            if (isDst != null && isDst) {
+                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
+                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
 
-                // if we might be moving this time from !DST -> DST, the offset is assumed
-                // to be the same as it was just before we last moved from DST -> !DST
-                if (dtz.isStandardOffset(dt.getMillis())) {
-                    offsetCalculationInstant = dtz.previousTransition(offsetCalculationInstant);
-                }
+                final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
+                final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
 
-                int offset = dtz.getStandardOffset(offsetCalculationInstant)
-                        - dtz.getOffset(offsetCalculationInstant);
-
-                if (!isDst && !dtz.isStandardOffset(dt.getMillis())) {
-                    dt = dt.minusMillis(offset);
-                }
-                if (isDst && dtz.isStandardOffset(dt.getMillis())) {
-                    dt = dt.plusMillis(offset);
+                // If the time is during DST, we need to pick the time with the highest offset
+                if (offsetBeforeBoundary > offsetAfterBoundary) {
+                    dt = beforeDstBoundary;
+                } else {
+                    dt = afterDstBoundary;
                 }
             }
         } catch (org.joda.time.IllegalFieldValueException e) {
