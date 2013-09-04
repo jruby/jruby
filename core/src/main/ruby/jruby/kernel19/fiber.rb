@@ -76,6 +76,8 @@ class Fiber
     
     current_fiber = Fiber.__current__
     
+    val = val[0] if val.size == 1
+    
     return val if self == current_fiber
     
     raise FiberError, "fiber called across threads" unless data.parent == Fiber.__fiber_thread__(current_fiber.thread)
