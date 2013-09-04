@@ -1209,7 +1209,9 @@ public final class Ruby {
         if (config.getLoadGemfile()) {
             loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
         }
-
+        
+        setNetworkStack();
+        
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             if (is1_9) {
@@ -4493,6 +4495,14 @@ public final class Ruby {
     
     public RubyString getThreadStatus(RubyThread.Status status) {
         return threadStatuses.get(status);
+    }
+    
+    private void setNetworkStack() {
+        if (config.getIPv4Preferred()) {
+            System.setProperty("java.net.preferIPv4Stack", "true");
+        } else {
+            System.setProperty("java.net.preferIPv4Stack", "false");
+        }
     }
 
     @Deprecated
