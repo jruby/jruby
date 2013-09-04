@@ -4827,7 +4827,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             "unsetenv_others",
             "prgroup",
             "rlimit_resourcename",
-            "chdir",
             "umask",
             "in",
             "out",
@@ -4895,7 +4894,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     /**
-     * Error when using unknown option.
+     * Error when using unknown option for spawn and exec.
      *
      * @param options
      */
@@ -4906,7 +4905,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = optsHash.getRuntime();
 
         for (Object opt : optsHash.keySet()) {
-            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || valid.contains(opt.toString())) {
+            if (opt instanceof RubySymbol) {
+                IRubyObject obj = (IRubyObject) opt;
+                if (valid.contains(obj.toString()))
+                    continue;
+            }
+            
+            if (opt instanceof RubyFixnum || opt instanceof RubyIO || opt instanceof RubyArray) {
                 continue;
             }
 
