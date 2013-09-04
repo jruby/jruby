@@ -4907,8 +4907,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         for (Object opt : optsHash.keySet()) {
             if (opt instanceof RubySymbol) {
                 IRubyObject obj = (IRubyObject) opt;
-                if (valid.contains(obj.toString()))
+                if (valid.contains(obj.toString())) {
                     continue;
+                } else {
+                    throw runtime.newTypeError("wrong exec option symbol: " + opt);
+                }
             }
             
             if (opt instanceof RubyFixnum || opt instanceof RubyIO || opt instanceof RubyArray) {
