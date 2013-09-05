@@ -82,9 +82,8 @@
 	      <workingDirectory>${basedir}/../..</workingDirectory>
               <arguments>
                 <argument>archive</argument>
-		<argument>-9</argument>
 		<argument>--format</argument>
-		<argument>tar.gz</argument>
+		<argument>tar</argument>
 		<argument>${jruby.revision}</argument>
 		<argument>.</argument>
 		<argument>-o</argument>
