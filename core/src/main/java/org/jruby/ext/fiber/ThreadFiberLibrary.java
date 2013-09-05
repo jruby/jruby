@@ -46,7 +46,5 @@ public class ThreadFiberLibrary implements Library {
         });
 
         cFiber.defineAnnotatedMethods(ThreadFiber.class);
-
-        ThreadFiber.initRootFiber(runtime.getCurrentContext());
     }
 }

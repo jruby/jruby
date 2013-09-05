@@ -276,7 +276,7 @@ public class ThreadService {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference(context));
         context.setThread(thread);
-        ThreadFiber.initRootFiber(context); // may be overwritten by fiber
+        if (runtime.is1_9()) ThreadFiber.initRootFiber(context); // may be overwritten by fiber
         return context;
     }
 

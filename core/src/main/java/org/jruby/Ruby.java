@@ -142,6 +142,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.ext.fiber.ThreadFiber;
+import org.jruby.ext.fiber.ThreadFiberLibrary;
 import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
@@ -1197,6 +1199,11 @@ public final class Ruby {
         // init Ruby-based kernel
         initRubyKernel();
         
+        if (is1_9()) {
+            // everything booted, so SizedQueue should be available; set up root fiber
+            ThreadFiber.initRootFiber(tc);
+        }
+        
         if(config.isProfiling()) {
             // additional twiddling for profiled mode
             getLoadService().require("jruby/profiler/shutdown_hook");
@@ -1485,7 +1492,7 @@ public final class Ruby {
         }
         
         if (is1_9()) {
-            LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getClassLoader(), false);
+            new ThreadFiberLibrary().load(this, false);
         }
         
         if (is2_0()) {

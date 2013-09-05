@@ -26,6 +26,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
         
+        assert runtime.getClass("SizedQueue") != null : "SizedQueue has not been loaded";
         rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), null, rootFiber);
         rootFiber.thread = context.getThread();
         context.setRootFiber(rootFiber);
@@ -77,7 +78,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         try {
             data.queue.push(context, val);
-            return currentFiber.data.queue.pop(context);
+            IRubyObject result = currentFiber.data.queue.pop(context);
+            if (result == NEVER) result = context.nil;
+            return result;
         } finally {
             data.prev = null;
         }
@@ -121,7 +124,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         try {
             data.queue.push(context, val);
-            return currentFiber.data.queue.pop(context);
+            
+            IRubyObject result = currentFiber.data.queue.pop(context);
+            if (result == NEVER) result = context.nil;
+            return result;
         } finally {
             data.prev = null;
             currentFiber.data.transferred = false;
@@ -145,8 +151,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         prevFiber.data.queue.push(context, value);
         
-        
-        return currentFiber.data.queue.pop(context);
+        IRubyObject result = currentFiber.data.queue.pop(context);
+        if (result == NEVER) result = context.nil;
+        return result;
     }
     
     @JRubyMethod
