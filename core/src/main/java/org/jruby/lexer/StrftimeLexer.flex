@@ -23,7 +23,7 @@ import org.jruby.util.TimeOutputFormatter;
         if (c == 'z') {
             int colons = yylength()-1; // can only be colons except the 'z'
             return Token.zoneOffsetColons(colons);
-        } else if ((token = Token.fmt(c)) != null) {
+        } else if ((token = Token.format(c)) != null) {
             return token;
         } else {
             return Token.special(c);

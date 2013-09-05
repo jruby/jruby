@@ -171,7 +171,7 @@ public class RubyDateFormat {
             return new Token(Format.FORMAT_STRING, str);
         }
 
-        public static Token fmt(char c) {
+        public static Token format(char c) {
             return CONVERSION2TOKEN[c];
         }
 
@@ -221,7 +221,7 @@ public class RubyDateFormat {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
             if (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')) {
-                compiledPattern.add(Token.fmt(c));
+                compiledPattern.add(Token.format(c));
             } else {
                 compiledPattern.add(Token.str(Character.toString(c)));
             }
