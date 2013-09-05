@@ -32,6 +32,8 @@ package org.jruby.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParsePosition;
@@ -50,10 +52,11 @@ import org.jruby.lexer.StrftimeLexer;
 import static org.jruby.util.RubyDateFormat.FieldType.*;
 
 public class RubyDateFormat {
-    private boolean ruby_1_9;
-
     private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
     private static final Token[] CONVERSION2TOKEN = new Token[256];
+
+    private boolean ruby_1_9;
+    private StrftimeLexer lexer;
 
     static enum Format {
         /** raw string, no formatting */
@@ -215,6 +218,7 @@ public class RubyDateFormat {
     public RubyDateFormat(boolean ruby19) {
         super();
         this.ruby_1_9 = ruby19;
+        lexer = new StrftimeLexer((Reader) null);
     }
 
     private void addToPattern(List<Token> compiledPattern, String str) {
@@ -234,7 +238,8 @@ public class RubyDateFormat {
         // TODO: if encoding != UTF-8, add Token encoding
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        StrftimeLexer lexer = new StrftimeLexer(in);
+        Reader reader = new InputStreamReader(in);
+        lexer.yyreset(reader);
 
         Token token;
         try {
