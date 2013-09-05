@@ -31,106 +31,18 @@ import org.jruby.util.RubyDateFormat.FieldType;
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
 public class TimeOutputFormatter {
-    final ByteList format;
+    final String flags;
     final int width;
 
-    public final static TimeOutputFormatter DEFAULT_FORMATTER = new TimeOutputFormatter(ByteList.EMPTY_BYTELIST, 0);
+    public final static TimeOutputFormatter DEFAULT_FORMATTER = new TimeOutputFormatter("", 0);
 
-    public TimeOutputFormatter(ByteList format, int width) {
-        this.format = format;
+    public TimeOutputFormatter(String flags, int width) {
+        this.flags = flags;
         this.width = width;
     }
 
-    // Really ugly stop-gap method to eliminate using regexp for create TimeOutputFormatter.
-    // FIXME: Make all of strftime an honest to goodness parser
-    public static TimeOutputFormatter getFormatter(ByteList pattern, int start) {
-        int length = pattern.length();
-        int i = start;
-        if (length <= 1 || pattern.get(i++) != '%') {
-           return null;
-        }
-
-        int width = 0;
-        
-        boolean done = false;
-        boolean formatterFound = false;
-        
-        for (; i < length && !done; i++) {
-            int c = pattern.get(i);
-            switch(c) {
-                case '-': case '_': case '0': case '^': case '#': case ':':
-                    formatterFound = true;
-                    break;
-                case '1': case '2': case '3': case '4': case '5': 
-                case '6': case '7': case '8': case '9':
-                    width = Character.getNumericValue(c);
-                    done = true;
-                    break;
-                default:
-                    done = true;
-                    break;
-            }
-        }
-        if (width == 0 && !formatterFound) return null;
-
-        ByteList format;
-        if (i-start > 2) { // found something
-            format = new ByteList(pattern, start+1, i-(start+1)-1);
-        } else {
-            format = new ByteList();
-        }
-
-        // We found some formatting instructions but no padding values.
-        if (width == 0 && i-start > 2) {
-            return new TimeOutputFormatter(format, 0);
-        }
-        
-        done = false;
-        for (; i < length && !done; i++) {
-            int c = pattern.get(i);
-            switch(c) {
-                case '1': case '2': case '3': case '4': case '5': 
-                case '6': case '7': case '8': case '9': case '0':
-                    width = 10 * width + Character.getNumericValue(c);
-                    break;
-                case ':':
-                    format.append(':'); /* Make it part of the format */
-                    break;
-                default:
-                    done = true;
-                    break;
-            }
-        }
-        
-        if (width != 0) {
-            return new TimeOutputFormatter(format, width);
-        }
-
-        return null;
-    }
-
-    public ByteList getFormat() {
-        if (width > 0) {
-            ByteList f = new ByteList(format);
-            f.append(ByteList.create(""+width));
-            return f;
-        } else {
-            return format;
-        }
-    }
-
-    public int getNumberOfColons() {
-        int colons = 0;
-        for (int i = 0; i < format.length(); i++) {
-            if (format.get(i) == ':') {
-                colons++;
-            }
-        }
-        return colons;
-    }
-
     public int getWidth(int defaultWidth) {
-        if (format.indexOf('-') != -1) { // no padding
+        if (flags.indexOf('-') != -1) { // no padding
             return 0;
         }
         return this.width != 0 ? this.width : defaultWidth; 
@@ -138,8 +50,8 @@ public class TimeOutputFormatter {
 
     public char getPadder(char defaultPadder) {
         char padder = defaultPadder;
-        for (int i = 0; i < format.length(); i++) {
-            switch (format.get(i)) {
+        for (int i = 0; i < flags.length(); i++) {
+            switch (flags.charAt(i)) {
                 case '_':
                     padder = ' ';
                     break;
@@ -164,8 +76,8 @@ public class TimeOutputFormatter {
             sequence = padding(sequence, width, padder);
         }
 
-        for (int i = 0; i < format.length(); i++) {
-            switch (format.get(i)) {
+        for (int i = 0; i < flags.length(); i++) {
+            switch (flags.charAt(i)) {
                 case '^':
                     sequence = sequence.toUpperCase();
                     break;

@@ -30,7 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.nio.charset.Charset;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParsePosition;
@@ -44,104 +45,146 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
+import org.jruby.lexer.StrftimeLexer;
 
 import static org.jruby.util.RubyDateFormat.FieldType.*;
-import static org.jruby.util.RubyDateFormat.Format.*;
 
 public class RubyDateFormat {
     private boolean ruby_1_9;
 
-    private final DateFormatSymbols formatSymbols;
+    private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
+    private static final Token[] CONVERSION2TOKEN = new Token[256];
 
     static enum Format {
         /** raw string, no formatting */
         FORMAT_STRING,
         /** formatter */
         FORMAT_OUTPUT,
+        /** composition of other formats, or depends on library */
+        FORMAT_SPECIAL,
 
         /** %A */
-        FORMAT_WEEK_LONG,
+        FORMAT_WEEK_LONG('A'),
         /** %a */
-        FORMAT_WEEK_SHORT,
+        FORMAT_WEEK_SHORT('a'),
         /** %B */
-        FORMAT_MONTH_LONG,
+        FORMAT_MONTH_LONG('B'),
         /** %b, %h */
-        FORMAT_MONTH_SHORT,
+        FORMAT_MONTH_SHORT('b', 'h'),
         /** %C */
-        FORMAT_CENTURY,
+        FORMAT_CENTURY('C'),
         /** %d */
-        FORMAT_DAY,
+        FORMAT_DAY('d'),
         /** %e */
-        FORMAT_DAY_S,
+        FORMAT_DAY_S('e'),
         /** %G */
-        FORMAT_WEEKYEAR,
+        FORMAT_WEEKYEAR('G'),
         /** %g */
-        FORMAT_WEEKYEAR_SHORT,
+        FORMAT_WEEKYEAR_SHORT('g'),
         /** %H */
-        FORMAT_HOUR,
+        FORMAT_HOUR('H'),
         /** %I */
-        FORMAT_HOUR_M,
+        FORMAT_HOUR_M('I'),
         /** %j */
-        FORMAT_DAY_YEAR,
+        FORMAT_DAY_YEAR('j'),
         /** %k */
-        FORMAT_HOUR_BLANK,
+        FORMAT_HOUR_BLANK('k'),
         /** %L */
-        FORMAT_MILLISEC,
+        FORMAT_MILLISEC('L'),
         /** %l */
-        FORMAT_HOUR_S,
+        FORMAT_HOUR_S('l'),
         /** %M */
-        FORMAT_MINUTES,
+        FORMAT_MINUTES('M'),
         /** %m */
-        FORMAT_MONTH,
+        FORMAT_MONTH('m'),
         /** %N */
-        FORMAT_NANOSEC,
-        /** %p */
-        FORMAT_MERIDIAN,
+        FORMAT_NANOSEC('N'),
         /** %P */
-        FORMAT_MERIDIAN_LOWER_CASE,
+        FORMAT_MERIDIAN_LOWER_CASE('P'),
+        /** %p */
+        FORMAT_MERIDIAN('p'),
         /** %S */
-        FORMAT_SECONDS,
+        FORMAT_SECONDS('S'),
         /** %s */
-        FORMAT_EPOCH,
+        FORMAT_EPOCH('s'),
         /** %U */
-        FORMAT_WEEK_YEAR_S,
+        FORMAT_WEEK_YEAR_S('U'),
         /** %u */
-        FORMAT_DAY_WEEK2,
+        FORMAT_DAY_WEEK2('u'),
         /** %V */
-        FORMAT_WEEK_WEEKYEAR,
+        FORMAT_WEEK_WEEKYEAR('V'),
         /** %W */
-        FORMAT_WEEK_YEAR_M,
+        FORMAT_WEEK_YEAR_M('W'),
         /** %w */
-        FORMAT_DAY_WEEK,
+        FORMAT_DAY_WEEK('w'),
         /** %Y */
-        FORMAT_YEAR_LONG,
+        FORMAT_YEAR_LONG('Y'),
         /** %y */
-        FORMAT_YEAR_SHORT,
+        FORMAT_YEAR_SHORT('y'),
+        /** %z, %:z, %::z, %:::z */
+        FORMAT_COLON_ZONE_OFF, // must be given number of colons as data
+
+        /* Change between Time and Date */
         /** %Z */
         FORMAT_ZONE_ID,
-        /** %z, %:z, %::z, %:::z */
-        FORMAT_COLON_ZONE_OFF,
 
         /* Only for Date/DateTime from here */
         /** %Q */
-        FORMAT_MICROSEC_EPOCH,
+        FORMAT_MICROSEC_EPOCH;
+
+        Format() {}
+        Format(char conversion) {
+            CONVERSION2TOKEN[conversion] = new Token(this);
+        }
+        Format(char conversion, char alias) {
+            this(conversion);
+            CONVERSION2TOKEN[alias] = CONVERSION2TOKEN[conversion];
+        }
+    }
+    static final Format INSTANTIATE_ENUM = Format.FORMAT_WEEK_LONG;
+
+    public static void main(String[] args) {
+        // composed + special, keys of the switch below
+        StringBuilder buf = new StringBuilder("cDxFnQRrTXtvZ+z");
+        for (int i = 'A'; i <= 'z'; i++) {
+            if (CONVERSION2TOKEN[i] != null) {
+                buf.append((char) i);
+            }
+        }
+        System.out.println(buf.toString());
     }
 
     public static class Token {
         private final Format format;
         private final Object data;
         
-        public Token(Format format) {
+        protected Token(Format format) {
             this(format, null);
         }
 
-        public Token(Format formatString, Object data) {
+        protected Token(Format formatString, Object data) {
             this.format = formatString;
             this.data = data;
         }
 
         public static Token str(String str) {
-            return new Token(FORMAT_STRING, str);
+            return new Token(Format.FORMAT_STRING, str);
+        }
+
+        public static Token fmt(char c) {
+            return CONVERSION2TOKEN[c];
+        }
+
+        public static Token zoneOffsetColons(int colons) {
+            return new Token(Format.FORMAT_COLON_ZONE_OFF, colons);
+        }
+
+        public static Token special(char c) {
+            return new Token(Format.FORMAT_SPECIAL, c);
+        }
+
+        public static Token formatter(TimeOutputFormatter formatter) {
+            return new Token(Format.FORMAT_OUTPUT, formatter);
         }
 
         /**
@@ -159,6 +202,11 @@ public class RubyDateFormat {
         public Format getFormat() {
             return format;
         }
+
+        @Override
+        public String toString() {
+            return "<Token "+format+ " "+data+">";
+        }
     }
 
     /**
@@ -166,291 +214,103 @@ public class RubyDateFormat {
      */
     public RubyDateFormat(boolean ruby19) {
         super();
-        this.formatSymbols = new DateFormatSymbols(Locale.US);
         this.ruby_1_9 = ruby19;
+    }
+
+    private void addToPattern(List<Token> compiledPattern, String str) {
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')) {
+                compiledPattern.add(Token.fmt(c));
+            } else {
+                compiledPattern.add(Token.str(Character.toString(c)));
+            }
+        }
     }
 
     public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<Token>();
 
-        int len = pattern.length();
-        boolean ignoredModifier = false;
-        int next;
-        for (int i = 0; i < len;) {
-            if (pattern.get(i) == '%' || (ignoredModifier && !(ignoredModifier = false))) {
-                i++;
+        // TODO: if encoding != UTF-8, add Token encoding
 
-                if (i == len) {
-                    compiledPattern.add(Token.str("%"));
+        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
+        StrftimeLexer lexer = new StrftimeLexer(in);
+
+        Token token;
+        try {
+            while ((token = lexer.yylex()) != null) {
+                if (token.format != Format.FORMAT_SPECIAL) {
+                    compiledPattern.add(token);
                 } else {
-                    i = addOutputFormatter(compiledPattern, pattern, i);
-
-                    switch (pattern.get(i)) {
-                    case 'A' :
-                        compiledPattern.add(new Token(FORMAT_WEEK_LONG));
-                        break;
-                    case 'a' :
-                        compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
-                        break;
-                    case 'B' :
-                        compiledPattern.add(new Token(FORMAT_MONTH_LONG));
-                        break;
-                    case 'b' :
-                    case 'h' :
-                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        break;
-                    case 'C' :
-                        compiledPattern.add(new Token(FORMAT_CENTURY));
-                        break;
-                    case 'c' :
-                        compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
+                    char c = (Character) token.data;
+                    switch (c) {
+                    case 'c':
+                        addToPattern(compiledPattern, "a b e H:M:S Y");
                         break;
                     case 'D':
-                        compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(Token.str("/"));
-                        compiledPattern.add(new Token(FORMAT_DAY));
-                        compiledPattern.add(Token.str("/"));
-                        compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
-                        break;
-                    case 'd':
-                        compiledPattern.add(new Token(FORMAT_DAY));
-                        break;
-                    case 'E':
-                        next = '\0';
-                        if (i + 1 < len)
-                            next = pattern.get(i+1);
-                        switch (next) {
-                            case 'c': case 'C': case 'x': case 'X': case 'y': case 'Y':
-                                ignoredModifier = true;
-                                i--;
-                                break;
-                            default:
-                                compiledPattern.add(Token.str("%E"));
-                                break;
-                        }
-                        break;
-                    case 'e':
-                        compiledPattern.add(new Token(FORMAT_DAY_S));
+                    case 'x':
+                        addToPattern(compiledPattern, "m/d/y");
                         break;
                     case 'F':
-                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
-                        compiledPattern.add(Token.str("-"));
-                        compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(Token.str("-"));
-                        compiledPattern.add(new Token(FORMAT_DAY));
-                        break;
-                    case 'G':
-                        compiledPattern.add(new Token(FORMAT_WEEKYEAR));
-                        break;
-                    case 'g':
-                        compiledPattern.add(new Token(FORMAT_WEEKYEAR_SHORT));
-                        break;
-                    case 'H':
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        break;
-                    case 'I':
-                        compiledPattern.add(new Token(FORMAT_HOUR_M));
-                        break;
-                    case 'j':
-                        compiledPattern.add(new Token(FORMAT_DAY_YEAR));
-                        break;
-                    case 'k':
-                        compiledPattern.add(new Token(FORMAT_HOUR_BLANK));
-                        break;
-                    case 'L':
-                        compiledPattern.add(new Token(FORMAT_MILLISEC));
-                        break;
-                    case 'l':
-                        compiledPattern.add(new Token(FORMAT_HOUR_S));
-                        break;
-                    case 'M':
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        break;
-                    case 'm':
-                        compiledPattern.add(new Token(FORMAT_MONTH));
-                        break;
-                    case 'N':
-                        compiledPattern.add(new Token(FORMAT_NANOSEC));
+                        addToPattern(compiledPattern, "Y-m-d");
                         break;
                     case 'n':
                         compiledPattern.add(Token.str("\n"));
                         break;
-                    case 'O':
-                        next = '\0';
-                        if (i + 1 < len)
-                            next = pattern.get(i+1);
-                        switch (next) {
-                            case 'd': case 'e': case 'H': case 'k': case 'I': case 'l': case 'm':
-                            case 'M': case 'S': case 'u': case 'U': case 'V': case 'w': case 'W':
-                            case 'y':
-                                ignoredModifier = true;
-                                i--;
-                                break;
-                            default:
-                                compiledPattern.add(Token.str("%O"));
-                                break;
+                    case 'Q':
+                        if (dateLibrary) {
+                            compiledPattern.add(new Token(Format.FORMAT_MICROSEC_EPOCH));
+                        } else {
+                            compiledPattern.add(Token.str("%Q"));
                         }
                         break;
-                    case 'p':
-                        compiledPattern.add(new Token(FORMAT_MERIDIAN));
-                        break;
-                    case 'P':
-                        compiledPattern.add(new Token(FORMAT_MERIDIAN_LOWER_CASE));
-                        break;
-                    case 'Q':
-                        if (dateLibrary)
-                            compiledPattern.add(new Token(FORMAT_MICROSEC_EPOCH));
-                        else
-                            compiledPattern.add(Token.str("%Q"));
-                        break;
                     case 'R':
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
+                        addToPattern(compiledPattern, "H:M");
                         break;
                     case 'r':
-                        compiledPattern.add(new Token(FORMAT_HOUR_M));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_MERIDIAN));
-                        break;
-                    case 's':
-                        compiledPattern.add(new Token(FORMAT_EPOCH));
-                        break;
-                    case 'S':
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
+                        addToPattern(compiledPattern, "I:M:S p");
                         break;
                     case 'T':
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
+                    case 'X':
+                        addToPattern(compiledPattern, "H:M:S");
                         break;
                     case 't':
                         compiledPattern.add(Token.str("\t"));
                         break;
-                    case 'u':
-                        compiledPattern.add(new Token(FORMAT_DAY_WEEK2));
-                        break;
-                    case 'U':
-                        compiledPattern.add(new Token(FORMAT_WEEK_YEAR_S));
-                        break;
                     case 'v':
-                        compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(Token.str("-"));
+                        addToPattern(compiledPattern, "e-");
                         if (!dateLibrary)
-                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create("^"), 0)));
-                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(Token.str("-"));
-                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
-                        break;
-                    case 'V':
-                        compiledPattern.add(new Token(FORMAT_WEEK_WEEKYEAR));
-                        break;
-                    case 'W':
-                        compiledPattern.add(new Token(FORMAT_WEEK_YEAR_M));
-                        break;
-                    case 'w':
-                        compiledPattern.add(new Token(FORMAT_DAY_WEEK));
-                        break;
-                    case 'X':
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
-                        break;
-                    case 'x':
-                        compiledPattern.add(new Token(FORMAT_MONTH));
-                        compiledPattern.add(Token.str("/"));
-                        compiledPattern.add(new Token(FORMAT_DAY));
-                        compiledPattern.add(Token.str("/"));
-                        compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
-                        break;
-                    case 'Y':
-                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
-                        break;
-                    case 'y':
-                        compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
+                            compiledPattern.add(Token.formatter(new TimeOutputFormatter("^", 0)));
+                        addToPattern(compiledPattern, "b-Y");
                         break;
                     case 'Z':
                         if (dateLibrary) {
                             // +HH:MM in 'date', never zone name
-                            compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create(":"), 0)));
-                            compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
+                            compiledPattern.add(Token.zoneOffsetColons(1));
                         } else {
-                            compiledPattern.add(new Token(FORMAT_ZONE_ID));
+                            compiledPattern.add(new Token(Format.FORMAT_ZONE_ID));
                         }
-                        break;
-                    case 'z':
-                        compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
                         break;
                     case '+':
                         if (!dateLibrary) {
                             compiledPattern.add(Token.str("%+"));
                             break;
                         }
-                        // %a %b %e %H:%M:%S %Z %Y
-                        compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_DAY_S));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_HOUR));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_MINUTES));
-                        compiledPattern.add(Token.str(":"));
-                        compiledPattern.add(new Token(FORMAT_SECONDS));
-                        compiledPattern.add(Token.str(" "));
+                        addToPattern(compiledPattern, "a b e H:M:S ");
                         // %Z: +HH:MM in 'date', never zone name
-                        compiledPattern.add(new Token(FORMAT_OUTPUT, new TimeOutputFormatter(ByteList.create(":"), 0)));
-                        compiledPattern.add(new Token(FORMAT_COLON_ZONE_OFF));
-                        compiledPattern.add(Token.str(" "));
-                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
-                        break;
-                    case '%':
-                        compiledPattern.add(Token.str("%"));
+                        compiledPattern.add(Token.zoneOffsetColons(1));
+                        addToPattern(compiledPattern, " Y");
                         break;
                     default:
-                        compiledPattern.add(Token.str("%" + pattern.charAt(i)));
+                        throw new Error("Unknown special char: "+c);
                     }
-                    i++;
                 }
-            } else {
-                StringBuilder sb = new StringBuilder();
-                for (;i < len && pattern.get(i) != '%'; i++) {
-                    sb.append(pattern.charAt(i));
-                }
-                compiledPattern.add(Token.str(sb.toString()));
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return compiledPattern;
-    }
 
-    private int addOutputFormatter(List<Token> compiledPattern, ByteList pattern, int index) {
-        TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern, index - 1);
-        if (outputFormatter != null) {
-            index += outputFormatter.getFormat().length();
-            compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
-        }
-        return index;
+        return compiledPattern;
     }
 
     static enum FieldType {
@@ -498,7 +358,7 @@ public class RubyDateFormat {
                     if(v == 0) {
                         v++;
                     }
-                    output = formatSymbols.getWeekdays()[v];
+                    output = FORMAT_SYMBOLS.getWeekdays()[v];
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
@@ -506,13 +366,13 @@ public class RubyDateFormat {
                     if(v == 0) {
                         v++;
                     }
-                    output = formatSymbols.getShortWeekdays()[v];
+                    output = FORMAT_SYMBOLS.getShortWeekdays()[v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    output = formatSymbols.getMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SYMBOLS.getMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    output = formatSymbols.getShortMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SYMBOLS.getShortMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_DAY:
                     type = NUMERIC2;
@@ -539,7 +399,7 @@ public class RubyDateFormat {
                         value -= 12;
                     }
 
-                    type = (format == FORMAT_HOUR_M) ? NUMERIC2 : NUMERIC2BLANK;
+                    type = (format == Format.FORMAT_HOUR_M) ? NUMERIC2 : NUMERIC2BLANK;
                     break;
                 case FORMAT_DAY_YEAR:
                     type = NUMERIC3;
@@ -590,7 +450,7 @@ public class RubyDateFormat {
                 case FORMAT_COLON_ZONE_OFF:
                     // custom logic because this is so weird
                     value = dt.getZone().getOffset(dt.getMillis()) / 1000;
-                    int colons = formatter.getNumberOfColons();
+                    int colons = (Integer) token.getData();
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
@@ -614,7 +474,7 @@ public class RubyDateFormat {
                     if (ruby_1_9) value += nsec;
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
 
-                    int defaultWidth = (format == FORMAT_NANOSEC) ? 9 : 3;
+                    int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
                     if (width < 9) {
                         output = output.substring(0, width);
@@ -637,6 +497,8 @@ public class RubyDateFormat {
                     type = NUMERIC;
                     value = dt.getMillis();
                     break;
+                case FORMAT_SPECIAL:
+                    throw new Error("FORMAT_SPECIAL is a special token only for the lexer.");
             }
 
             output = formatter.format(output, value, type);
