@@ -50,7 +50,6 @@
     <profile>
       <id>dist</id>
       <modules>
-        <module>jruby-stdlib</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
