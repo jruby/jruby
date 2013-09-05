@@ -50,7 +50,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     public IRubyObject resume(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
         
-        if (data.prev != null) throw runtime.newFiberError("double resume");
+        if (data.prev != null || data.transferred) throw runtime.newFiberError("double resume");
         
         if (!alive()) throw runtime.newFiberError("dead fiber called");
         
@@ -83,6 +83,51 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
     }
     
+    @JRubyMethod(rest = true)
+    public IRubyObject __transfer__(ThreadContext context, IRubyObject[] values) {
+        Ruby runtime = context.runtime;
+        
+        if (data.prev != null) throw runtime.newFiberError("double resume");
+        
+        if (!alive()) throw runtime.newFiberError("dead fiber called");
+        
+        ThreadFiber currentFiber = context.getFiber();
+        
+        if (this == currentFiber) {
+            switch (values.length) {
+                case 0: return context.nil;
+                case 1: return values[0];
+                default: return runtime.newArrayNoCopyLight(values);
+            }
+        }
+        
+        IRubyObject val;
+        switch (values.length) {
+            case 0: val = NEVER; break;
+            case 1: val = values[0]; break;
+            default: val = runtime.newArrayNoCopyLight(values);
+        }
+        
+        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
+        
+        if (currentFiber.data.prev != null) {
+            // new fiber should answer to current prev and this fiber is marked as transferred
+            data.prev = currentFiber.data.prev;
+            currentFiber.data.prev = null;
+            currentFiber.data.transferred = true;
+        } else {
+            data.prev = currentFiber;
+        }
+        
+        try {
+            data.queue.push(context, val);
+            return currentFiber.data.queue.pop(context);
+        } finally {
+            data.prev = null;
+            currentFiber.data.transferred = false;
+        }
+    }
+    
     @JRubyMethod(meta = true)
     public static IRubyObject yield(ThreadContext context, IRubyObject recv) {
         return yield(context, recv, context.nil);
@@ -99,6 +144,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber prevFiber = currentFiber.data.prev;
         
         prevFiber.data.queue.push(context, value);
+        
         
         return currentFiber.data.queue.pop(context);
     }
@@ -157,7 +203,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         };
         thread.setDaemon(true);
-        thread.setName("FiberThread");
+        thread.setName("FiberThread#" + data.fiber.get().id());
         thread.start();
         
         while (fiberThread.get() == null) {}
@@ -183,6 +229,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         volatile ThreadFiber prev;
         final RubyThread parent;
         final WeakReference<ThreadFiber> fiber;
+        volatile boolean transferred;
     }
     
     volatile FiberData data;

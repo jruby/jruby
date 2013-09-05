@@ -1,12 +1,12 @@
+##
+# Extensions to Fiber. In JRuby, these are all still defined in the normal
+# Fiber class, so we alias them to the right names here.
+#
 class Fiber
-  def self.current
-    __current__
+  class << self
+    alias current __current__
   end
   
-  # FIXME: not quite right
-  alias transfer resume
-  
-  def alive?
-    __alive__
-  end
+  alias transfer __transfer__
+  alias alive? __alive__
 end
