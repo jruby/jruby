@@ -73,7 +73,7 @@
         <version>1.2.1</version>
         <executions>
           <execution>
-            <id>build source archive - tar.gz</id>
+            <id>build source archive - tar</id>
             <phase>package</phase>
             <goals>
               <goal>exec</goal>
@@ -88,9 +88,24 @@
 		<argument>${jruby.revision}</argument>
 		<argument>.</argument>
 		<argument>-o</argument>
-		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar.gz</argument>
+		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
               </arguments>
               <executable>git</executable>
+            </configuration>
+	  </execution>
+          <execution>
+            <id>gzip build source tar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+		<argument>-f</argument>
+              </arguments>
+              <executable>gzip</executable>
             </configuration>
 	  </execution>
           <execution>
