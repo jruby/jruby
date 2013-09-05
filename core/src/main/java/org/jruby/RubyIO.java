@@ -4923,7 +4923,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     public static void processExecOptions(Ruby runtime, IRubyObject options) {
-        assert options instanceof RubyHash;
+        if (!(options instanceof RubyHash)) {
+            return;
+        }
         
         RubyHash opts = (RubyHash) options;
         
