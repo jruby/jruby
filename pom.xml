@@ -375,6 +375,22 @@
 	<defaultGoal>install</defaultGoal>
       </build>
     </profile>
+    <profile>
+      <id>repo</id>
+      <distributionManagement>
+	<repository>
+	  <id>local releases</id>
+	  <url>file:///${jruby.basedir}/target</url>
+	</repository>
+	<snapshotRepository>
+	  <id>local snapshots</id>
+	  <url>file:///${jruby.basedir}/target</url>
+	</snapshotRepository>
+      </distributionManagement>
+      <build>
+	<defaultGoal>deploy</defaultGoal>
+      </build>
+    </profile>
   </profiles>
     <reporting>
       <plugins>
