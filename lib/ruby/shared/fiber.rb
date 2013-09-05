@@ -3,6 +3,7 @@ class Fiber
     __current__
   end
   
+  # FIXME: not quite right
   alias transfer resume
   
   def alive?

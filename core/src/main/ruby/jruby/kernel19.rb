@@ -16,6 +16,5 @@ load 'jruby/kernel19/io.rb'
 load 'jruby/kernel19/time.rb'
 load 'jruby/kernel19/gc.rb'
 load 'jruby/kernel19/encoding/converter.rb'
-load 'jruby/kernel19/fiber.rb' unless JRuby::CONFIG.fiber_native?
 
 load 'jruby/kernel19/rubygems.rb' unless JRuby::CONFIG.rubygems_disabled?

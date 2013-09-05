@@ -49,10 +49,4 @@ public class JRubyConfigLibrary implements Library {
         return context.runtime.newBoolean(
                 context.runtime.getInstanceConfig().isDisableGems());
     }
-
-    @JRubyMethod(name = "fiber_native?")
-    public static IRubyObject fiber_native_p(ThreadContext context, IRubyObject self) {
-        return context.runtime.newBoolean(
-                Options.FIBER_NATIVE.load());
-    }
 }

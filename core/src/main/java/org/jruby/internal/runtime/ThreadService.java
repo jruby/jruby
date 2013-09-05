@@ -42,6 +42,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
+import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
@@ -275,6 +276,7 @@ public class ThreadService {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference(context));
         context.setThread(thread);
+        ThreadFiber.initRootFiber(context); // may be overwritten by fiber
         return context;
     }
 

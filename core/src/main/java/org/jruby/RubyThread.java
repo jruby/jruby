@@ -882,6 +882,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         d = Math.pow(rubyPriority, 2.0)/18.0 + 1.5 * rubyPriority + 5;
         return Math.round((float) d);
     }
+    
+    /**
+     * Simplified utility method for just raising an existing exception in this
+     * thread.
+     * 
+     * @param exception the exception to raise
+     * @return this thread
+     */
+    public IRubyObject raise(RubyException exception) {
+        return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
+    }
 
     @JRubyMethod(optional = 3)
     public IRubyObject raise(IRubyObject[] args, Block block) {

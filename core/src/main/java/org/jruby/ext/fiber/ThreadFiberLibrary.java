@@ -45,11 +45,8 @@ public class ThreadFiberLibrary implements Library {
             }
         });
 
-        cFiber.defineAnnotatedMethods(Fiber.class);
-        cFiber.defineAnnotatedMethods(FiberMeta.class);
+        cFiber.defineAnnotatedMethods(ThreadFiber.class);
 
-        Fiber rootFiber = new ThreadFiber(runtime, cFiber).makeRootFiber();
-        runtime.setRootFiber(rootFiber);
-        runtime.getCurrentContext().setFiber(rootFiber);
+        ThreadFiber.initRootFiber(runtime.getCurrentContext());
     }
 }

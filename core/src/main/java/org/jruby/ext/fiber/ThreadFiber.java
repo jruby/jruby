@@ -1,169 +1,190 @@
 package org.jruby.ext.fiber;
 
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.Future;
-
+import java.lang.ref.WeakReference;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyLocalJumpError.Reason;
-import org.jruby.anno.JRubyClass;
+import org.jruby.RubyObject;
+import org.jruby.RubyThread;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.thread.SizedQueue;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name = "Fiber")
-public class ThreadFiber extends Fiber {
-    private final Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
-    private volatile ThreadFiberState state = ThreadFiberState.NOT_STARTED;
-
-    public ThreadFiber(Ruby runtime, RubyClass type) {
-        super(runtime, type);
+public class ThreadFiber extends RubyObject implements ExecutionContext {
+    public ThreadFiber(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
     
-    @Override
-    protected void initFiber(ThreadContext context) {
-        final Ruby runtime = context.runtime;
+    public static void initRootFiber(ThreadContext context) {
+        Ruby runtime = context.runtime;
         
-        Runnable runnable = new Runnable() {
+        ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
+        
+        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), null, rootFiber);
+        rootFiber.thread = context.getThread();
+        context.setRootFiber(rootFiber);
+    }
+    
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        
+        if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
+        
+        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), context.getFiberCurrentThread(), this);
+        
+        ThreadFiber currentFiber = context.getFiber();
+        
+        thread = createThread(runtime, data, currentFiber.data.queue, block);
+        
+        return context.nil;
+    }
+    
+    @JRubyMethod(rest = true)
+    public IRubyObject resume(ThreadContext context, IRubyObject[] values) {
+        Ruby runtime = context.runtime;
+        
+        if (data.prev != null) throw runtime.newFiberError("double resume");
+        
+        if (!alive()) throw runtime.newFiberError("dead fiber called");
+        
+        ThreadFiber currentFiber = context.getFiber();
+        
+        if (this == currentFiber) {
+            switch (values.length) {
+                case 0: return context.nil;
+                case 1: return values[0];
+                default: return runtime.newArrayNoCopyLight(values);
+            }
+        }
+        
+        IRubyObject val;
+        switch (values.length) {
+            case 0: val = NEVER; break;
+            case 1: val = values[0]; break;
+            default: val = runtime.newArrayNoCopyLight(values);
+        }
+        
+        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
+        
+        data.prev = currentFiber;
+        
+        try {
+            data.queue.push(context, val);
+            return currentFiber.data.queue.pop(context);
+        } finally {
+            data.prev = null;
+        }
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject yield(ThreadContext context, IRubyObject recv) {
+        return yield(context, recv, context.nil);
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject value) {
+        Ruby runtime = context.runtime;
+        
+        ThreadFiber currentFiber = context.getFiber();
+        
+        if (currentFiber.data.parent == null) throw runtime.newFiberError("can't yield from root fiber");
+        
+        ThreadFiber prevFiber = currentFiber.data.prev;
+        
+        prevFiber.data.queue.push(context, value);
+        
+        return currentFiber.data.queue.pop(context);
+    }
+    
+    @JRubyMethod
+    public IRubyObject __alive__(ThreadContext context) {
+        return context.runtime.newBoolean(thread != null && thread.isAlive());
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject __current__(ThreadContext context, IRubyObject recv) {
+        return context.getFiber();
+    }
 
-            @Override
+    @Override
+    public Map<Object, IRubyObject> getContextVariables() {
+        return thread.getContextVariables();
+    }
+    
+    boolean alive() {
+        return thread != null && thread.isAlive();
+    }
+    
+    static RubyThread createThread(final Ruby runtime, final FiberData data, final SizedQueue queue, final Block block) {
+        final AtomicReference<RubyThread> fiberThread = new AtomicReference();
+        Thread thread = new Thread() {
             public void run() {
-                // initialize and yield back to launcher
                 ThreadContext context = runtime.getCurrentContext();
-                context.setFiber(ThreadFiber.this);
+                context.setFiber(data.fiber.get());
+                context.setRootThread(data.parent);
+                fiberThread.set(context.getThread());
                 
-                // yield gets Fiber#resume argument for first resume
-                IRubyObject result = yield(context, context.nil);
-
+                IRubyObject init = data.queue.pop(context);
+                
                 try {
-                    // first resume, dive into the block
-                    if (result == NEVER) {
+                    IRubyObject result;
+                    
+                    if (init == NEVER) {
                         result = block.yieldSpecific(context);
                     } else {
-                        result = block.yieldArray(context, result, null, null);
+                        result = block.yieldArray(context, init, null, null);
                     }
-                } catch (JumpException.RetryJump rtry) {
-                    // FIXME: technically this should happen before the block is executed
-                    parent.raise(new IRubyObject[]{runtime.newSyntaxError("Invalid retry").getException()}, Block.NULL_BLOCK);
-                } catch (JumpException.BreakJump brk) {
-                    parent.raise(new IRubyObject[]{runtime.newLocalJumpError(Reason.BREAK, runtime.getNil(), "break from proc-closure").getException()}, Block.NULL_BLOCK);
-                } catch (JumpException.ReturnJump ret) {
-                    parent.raise(new IRubyObject[]{runtime.newLocalJumpError(Reason.RETURN, runtime.getNil(), "unexpected return").getException()}, Block.NULL_BLOCK);
+                    
+                    data.prev.data.queue.push(context, result);
+                } catch (JumpException.FlowControlException fce) {
+                    if (data.prev != null) {
+                        data.prev.thread.raise(fce.buildException(runtime).getException());
+                    }
                 } catch (RaiseException re) {
-                    // re-raise exception in parent thread
-                    parent.raise(new IRubyObject[]{re.getException()}, Block.NULL_BLOCK);
-                } finally {
-                    state = ThreadFiberState.FINISHED;
-                    try {
-                        // ensure we do a final exchange to release any waiters
-                        exchanger.exchange(result);
-                    } catch (InterruptedException e) {
-                        // ignore
+                    if (data.prev != null) {
+                        data.prev.thread.raise(re.getException());
                     }
+                } catch (Throwable t) {
+                    t.printStackTrace();
                 }
             }
         };
-
-        // submit job and wait to be resumed
-        context.runtime.getExecutor().submit(runnable);
-        try {
-            // kick the fiber into "YIELDED" mode, waiting for resume
-            exchanger.exchange(context.nil);
-        } catch (InterruptedException ie) {
-            throw runtime.newConcurrencyError("interrupted while waiting for fiber to start");
-        }
-    }
-
-    @Override
-    protected IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject arg, boolean transfer) {
-        try {
-            switch (state) {
-                case NOT_STARTED:
-                    if (isRoot()) {
-                        state = ThreadFiberState.RUNNING;
-                        return arg;
-                    } else if (!isSameParentThread(context)) {
-                        throw context.runtime.newFiberError("resuming fiber from different thread");
-                    }
-                    throw context.runtime.newRuntimeError("BUG: resume before fiber is started");
-                case YIELDED:
-                    if (!isSameParentThread(context)) {
-                        throw context.runtime.newFiberError("resuming fiber from different thread");
-                    }
-                    
-                    if (!transfer && transferredTo != null) {
-                        throw context.runtime.newFiberError("double resume");
-                    }
-
-                    // update transfer fibers
-                    if (transfer) {
-                        transferredFrom = (ThreadFiber)context.getFiber();
-                        transferredFrom.transferredTo = this;
-                    }
-
-                    // transfer to fiber
-                    exchanger.exchange(arg);
-                    arg = exchanger.exchange(context.nil);
-
-                    // back from fiber, poll events
-                    context.pollThreadEvents();
-
-                    // complete transfer
-                    if (transfer) {
-                        if (!transferredFrom.isRoot()) {
-                            arg = transferredFrom.yield(context, arg);
-                        }
-                        transferredFrom.transferredTo = null;
-                        transferredFrom = null;
-                    }
-
-                    // return new result
-                    return arg;
-                case RUNNING:
-                    if (transfer && context.getFiber() == this) {
-                        return arg;
-                    }
-                    throw context.runtime.newFiberError("double resume");
-                case FINISHED:
-                    throw context.runtime.newFiberError("dead fiber called");
-                default:
-                    throw context.runtime.newFiberError("fiber in an unknown state");
-            }
-        } catch (OutOfMemoryError oome) {
-            if (oome.getMessage().equals("unable to create new native thread")) {
-                throw context.runtime.newThreadError("too many threads, can't create a new Fiber");
-            }
-            throw oome;
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("interrupted waiting for fiber");
-        }
-    }
-
-    @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject res) {
-        try {
-            state = ThreadFiberState.YIELDED;
-            exchanger.exchange(res);
-            res = exchanger.exchange(context.nil);
-            
-            // back into fiber
-            context.pollThreadEvents();
-            state = ThreadFiberState.RUNNING;
-            return res;
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("interrupted while waiting for fiber to start");
-        }
+        thread.setDaemon(true);
+        thread.setName("FiberThread");
+        thread.start();
+        
+        while (fiberThread.get() == null) {}
+        
+        return fiberThread.get();
     }
     
     @Override
-    public boolean isAlive() {
-        return state != ThreadFiberState.FINISHED;
+    public void finalize() throws Throwable {
+        super.finalize();
+        data.queue.shutdown();
+        thread.kill();
     }
     
-    private boolean isSameParentThread(ThreadContext context) {
-        return context.getThread() == parent || (context.getFiber() != null && context.getFiber().getParentThread() == parent);
+    private static class FiberData {
+        FiberData(SizedQueue queue, RubyThread parent, ThreadFiber fiber) {
+            this.queue = queue;
+            this.parent = parent;
+            this.fiber = new WeakReference<ThreadFiber>(fiber);
+        }
+        
+        final SizedQueue queue;
+        volatile ThreadFiber prev;
+        final RubyThread parent;
+        final WeakReference<ThreadFiber> fiber;
     }
     
+    volatile FiberData data;
+    volatile RubyThread thread;
 }

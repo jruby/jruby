@@ -1484,12 +1484,8 @@ public final class Ruby {
             RubyEnumerator.defineEnumerator(this);
         }
         
-        if (is1_9() && Options.FIBER_NATIVE.load()) {
-            if (RubyInstanceConfig.COROUTINE_FIBERS) {
-                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary", getClassLoader(), false);
-            } else {
-                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getClassLoader(), false);
-            }
+        if (is1_9()) {
+            LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getClassLoader(), false);
         }
         
         if (is2_0()) {
@@ -1690,10 +1686,6 @@ public final class Ruby {
             };
             addBuiltinIfAllowed("continuation.rb", dummy);
             addBuiltinIfAllowed("io/nonblock.rb", dummy);
-            
-            if (Options.FIBER_NATIVE.load()) {
-                addLazyBuiltin("fiber.rb", "fiber", "org.jruby.ext.fiber.FiberExtLibrary");
-            }
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
