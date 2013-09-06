@@ -23,9 +23,16 @@ class Gem::Ext::Builder
       make_program = (/mswin/ =~ RUBY_PLATFORM) ? 'nmake' : 'make'
     end
 
-    ['', ' install'].each do |target|
-      cmd = "#{make_program}#{target}"
-      run(cmd, results, "make#{target}")
+    destdir = '"DESTDIR=%s"' % ENV['DESTDIR'] if RUBY_VERSION > '2.0'
+
+    ['', 'install'].each do |target|
+      # Pass DESTDIR via command line to override what's in MAKEFLAGS
+      cmd = [
+        make_program,
+        destdir,
+        target
+      ].join(' ').rstrip
+      run(cmd, results, "make #{target}".rstrip)
     end
   end
 

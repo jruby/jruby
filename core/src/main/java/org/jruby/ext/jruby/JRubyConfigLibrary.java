@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.cli.Options;
 
 public class JRubyConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {

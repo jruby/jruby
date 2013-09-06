@@ -17,7 +17,7 @@ public class RecordEndBlockInstr extends Instr {
 
     public RecordEndBlockInstr(IRScope declaringScope, IRClosure endBlockClosure) {
         super(Operation.RECORD_END_BLOCK);
-        
+
         this.declaringScope = declaringScope;
         this.endBlockClosure = endBlockClosure;
     }
@@ -38,10 +38,8 @@ public class RecordEndBlockInstr extends Instr {
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
     }
 
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public void interpret() {
         declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure);
-        return null;
     }
 
     @Override

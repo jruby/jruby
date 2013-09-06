@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,7 +54,7 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.ext.fiber.Fiber;
+import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
@@ -92,7 +93,9 @@ public final class ThreadContext {
     private boolean isWithinTrace;
     
     private RubyThread thread;
-    private Fiber fiber;
+    private RubyThread rootThread; // thread for fiber purposes
+    private WeakReference<ThreadFiber> fiber = new WeakReference<ThreadFiber>(null);
+    private ThreadFiber rootFiber; // hard anchor for root threads' fibers
     // Cache format string because it is expensive to create on demand
     private RubyDateFormat dateFormat;
     
@@ -155,7 +158,6 @@ public final class ThreadContext {
         }
         ThreadContext.pushBacktrace(this, "", "", 0);
         ThreadContext.pushBacktrace(this, "", "", 0);
-        fiber = (Fiber) runtime.getRootFiber();
     }
 
     @Override
@@ -294,6 +296,11 @@ public final class ThreadContext {
         return thread;
     }
     
+    public RubyThread getFiberCurrentThread() {
+        if (rootThread != null) return rootThread;
+        return thread;
+    }
+    
     public RubyDateFormat getRubyDateFormat() {
         if (dateFormat == null) dateFormat = new RubyDateFormat("-", Locale.US, runtime.is1_9());
         
@@ -302,6 +309,7 @@ public final class ThreadContext {
     
     public void setThread(RubyThread thread) {
         this.thread = thread;
+        this.rootThread = thread; // may be reset by fiber
 
         // associate the thread with this context, unless we're clearing the reference
         if (thread != null) {
@@ -309,12 +317,24 @@ public final class ThreadContext {
         }
     }
     
-    public Fiber getFiber() {
-        return fiber;
+    public ThreadFiber getFiber() {
+        ThreadFiber f = fiber.get();
+        
+        if (f == null) return rootFiber;
+        
+        return f;
     }
     
-    public void setFiber(Fiber fiber) {
-        this.fiber = fiber;
+    public void setFiber(ThreadFiber fiber) {
+        this.fiber = new WeakReference(fiber);
+    }
+    
+    public void setRootFiber(ThreadFiber rootFiber) {
+        this.rootFiber = rootFiber;
+    }
+    
+    public void setRootThread(RubyThread rootThread) {
+        this.rootThread = rootThread;
     }
     
     //////////////////// CATCH MANAGEMENT ////////////////////////

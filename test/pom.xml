@@ -75,11 +75,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>requireTest</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>requireTest</artifactId>
       <version>1.0</version>
       <type>jar</type>
-      <scope>test</scope>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/requireTest-1.0.jar</systemPath>
     </dependency>
 
     <dependency>

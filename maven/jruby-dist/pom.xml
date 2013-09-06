@@ -49,6 +49,87 @@
 	  </execution>
 	</executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.2</version>
+        <executions>
+          <execution>
+            <id>jruby-revision</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <shortRevisionLength>7</shortRevisionLength>
+              <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>  
+	<groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>build source archive - tar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+                <argument>archive</argument>
+		<argument>--format</argument>
+		<argument>tar</argument>
+		<argument>${jruby.revision}</argument>
+		<argument>.</argument>
+		<argument>-o</argument>
+		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+              </arguments>
+              <executable>git</executable>
+            </configuration>
+	  </execution>
+          <execution>
+            <id>gzip build source tar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+		<argument>-f</argument>
+              </arguments>
+              <executable>gzip</executable>
+            </configuration>
+	  </execution>
+          <execution>
+            <id>build source archive - zip</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+                <argument>archive</argument>
+		<argument>-9</argument>
+		<argument>--format</argument>
+		<argument>zip</argument>
+		<argument>${jruby.revision}</argument>
+		<argument>.</argument>
+		<argument>-o</argument>
+		<argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
+              </arguments>
+              <executable>git</executable>
+            </configuration>
+	  </execution>
+	</executions>
+      </plugin>
     </plugins>
   </build>
 </project>

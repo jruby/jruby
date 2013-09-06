@@ -28,6 +28,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         this.args = args;
     }
 
+    @Override
     public Operand[] getOperands() {
         return args;
     }

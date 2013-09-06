@@ -2,34 +2,29 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.5.dev</version>
-  </parent>
   <groupId>rubygems</groupId>
-  <artifactId>jruby-jars</artifactId>
+  <artifactId>bouncy-castle-java</artifactId>
+  <version>1.5.0149</version>
   <packaging>gem</packaging>
-  <name>JRuby Jars Gem</name>
-  <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
-It provides a way to have other gems depend on JRuby without including (and
-freezing to) a specific jruby-complete jar version.</description>
-  <url>http://github.com/jruby/jruby/tree/master/gem/jruby-jars</url>
+  <name>Gem redistribution of Bouncy Castle jars</name>
+  <description>Gem redistribution of "Legion of the Bouncy Castle Java cryptography APIs" jars at http://www.bouncycastle.org/java.html</description>
+  <url>http://github.com/jruby/jruby/tree/master/gems/bouncy-castle-java/</url>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.0-rc</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core-complete</artifactId>
-      <version>${project.parent.version}</version>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>1.49</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib-complete</artifactId>
-      <version>${project.parent.version}</version>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.49</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -46,13 +41,23 @@ freezing to) a specific jruby-complete jar version.</description>
         <version>${jruby.plugins.version}</version>
       </extension>
     </extensions>
+    <resources>
+      <resource>
+        <targetPath>${basedir}/lib</targetPath>
+        <directory>../../lib/ruby/shared/</directory>
+        <includes>
+          <include>bouncy-castle-java.rb</include>
+        </includes>
+      </resource>
+    </resources>
+    <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <configuration>
-          <gemspec>jruby-jars.gemspec</gemspec>
+          <gemspec>bouncy-castle-java.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
         </configuration>
       </plugin>
@@ -70,9 +75,6 @@ freezing to) a specific jruby-complete jar version.</description>
               <filesets>
                 <fileset>
                   <directory>${basedir}/lib</directory>
-                  <includes>
-                    <include>*.jar</include>
-                  </includes>
                 </fileset>
               </filesets>
               <failOnError>false</failOnError>
@@ -82,26 +84,4 @@ freezing to) a specific jruby-complete jar version.</description>
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>repo</id>
-      <build>
-	<plugins>
-      <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-	<executions>
-          <execution>
-            <id>default-push</id>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-	</plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

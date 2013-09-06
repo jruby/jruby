@@ -70,6 +70,13 @@ module JSON
     rescue => e
       raise GeneratorError.wrap(e)
     end
+
+    def valid_utf8?(string)
+      encoding = string.encoding
+      (encoding == Encoding::UTF_8 || encoding == Encoding::ASCII) &&
+        string.valid_encoding?
+    end
+    module_function :valid_utf8?
   else
     def utf8_to_json(string) # :nodoc:
       string.gsub(/["\\\x0-\x1f]/n) { MAP[$&] }
@@ -93,8 +100,22 @@ module JSON
     rescue => e
       raise GeneratorError.wrap(e)
     end
+
+    def valid_utf8?(string)
+      string =~
+         /\A( [\x09\x0a\x0d\x20-\x7e]         # ASCII
+         | [\xc2-\xdf][\x80-\xbf]             # non-overlong 2-byte
+         |  \xe0[\xa0-\xbf][\x80-\xbf]        # excluding overlongs
+         | [\xe1-\xec\xee\xef][\x80-\xbf]{2}  # straight 3-byte
+         |  \xed[\x80-\x9f][\x80-\xbf]        # excluding surrogates
+         |  \xf0[\x90-\xbf][\x80-\xbf]{2}     # planes 1-3
+         | [\xf1-\xf3][\x80-\xbf]{3}          # planes 4-15
+         |  \xf4[\x80-\x8f][\x80-\xbf]{2}     # plane 16
+        )*\z/nx
+    end
   end
-  module_function :utf8_to_json, :utf8_to_json_ascii
+  module_function :utf8_to_json, :utf8_to_json_ascii, :valid_utf8?
+
 
   module Pure
     module Generator
@@ -220,6 +241,13 @@ module JSON
         # Configure this State instance with the Hash _opts_, and return
         # itself.
         def configure(opts)
+          if opts.respond_to?(:to_hash)
+            opts = opts.to_hash
+          elsif opts.respond_to?(:to_h)
+            opts = opts.to_h
+          else
+            raise TypeError, "can't convert #{opts.class} into Hash"
+          end
           for key, value in opts
             instance_variable_set "@#{key}", value
           end
@@ -263,6 +291,8 @@ module JSON
         # GeneratorError exception.
         def generate(obj)
           result = obj.to_json(self)
+          JSON.valid_utf8?(result) or raise GeneratorError,
+            "source sequence #{result.inspect} is illegal/malformed utf-8"
           unless @quirks_mode
             unless result =~ /\A\s*\[/ && result =~ /\]\s*\Z/ ||
               result =~ /\A\s*\{/ && result =~ /\}\s*\Z/
@@ -338,7 +368,7 @@ module JSON
             }
             depth = state.depth -= 1
             result << state.object_nl
-            result << state.indent * depth if indent if indent
+            result << state.indent * depth if indent
             result << '}'
             result
           end

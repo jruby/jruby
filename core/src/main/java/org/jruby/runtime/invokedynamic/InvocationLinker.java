@@ -459,11 +459,10 @@ public class InvocationLinker {
         return nativeArgCount;
     }
 
-    public static DynamicMethod unwrapMethod(DynamicMethod method) throws IndirectBindingException {
-        String name;
+    public static DynamicMethod unwrapMethod(DynamicMethod method, String[] realName) throws IndirectBindingException {
         // get the "real" method in a few ways
         while (method instanceof AliasMethod) {
-            name = ((AliasMethod)method).getOldName(); // need to use original name, not aliased name
+            realName[0] = ((AliasMethod)method).getOldName(); // need to use original name, not aliased name
             method = method.getRealMethod();
         }
         while (method instanceof WrapperMethod) method = method.getRealMethod();
@@ -490,7 +489,7 @@ public class InvocationLinker {
     
     public interface HandleGenerator {
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method);
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method);
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName);
     }
     
     public static class HandleMethodGenerator implements HandleGenerator {
@@ -501,7 +500,7 @@ public class InvocationLinker {
         }
         
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             MethodHandle handle = ((HandleMethod)method).getHandle(site.arity());
             
             if (handle == null) {
@@ -541,7 +540,7 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             AttrReaderMethod attrReader = (AttrReaderMethod)method;
             String varName = attrReader.getVariableName();
 
@@ -581,7 +580,7 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             AttrWriterMethod attrReader = (AttrWriterMethod)method;
             String varName = attrReader.getVariableName();
 
@@ -636,7 +635,7 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to FFI
             return createFFIHandle(site, method);
         }
@@ -676,7 +675,7 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Java
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Java method " + logMethod(method) + ": " + method.getNativeCall());
             
@@ -708,10 +707,10 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Ruby
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createRubyHandle(site, method, site.name()), site, method, true);
+            return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true);
         }
         
     }
@@ -737,10 +736,10 @@ public class InvocationLinker {
         }
 
         @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Core
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, site.name()), site, method, true);
+            return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, realName), site, method, true);
         }
         
     }
@@ -756,11 +755,12 @@ public class InvocationLinker {
             );
 
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-        method = unwrapMethod(method);
+        String[] realName = {site.name()};
+        method = unwrapMethod(method, realName);
         
         for (HandleGenerator generator : HANDLE_GENERATORS) {
             if (generator.canGenerate(site, cls, method)) {
-                return generator.generate(site, cls, method);
+                return generator.generate(site, cls, method, realName[0]);
             }
         }
         

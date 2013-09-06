@@ -20,6 +20,7 @@ public class PushBindingInstr extends Instr {
         this.scope = scope;
     }
 
+    @Override
     public Operand[] getOperands() { 
         return EMPTY_OPERANDS;
     }

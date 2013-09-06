@@ -136,7 +136,7 @@ public class RubyInstanceConfig {
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
-
+        
         try {
             environment = System.getenv();
         } catch (SecurityException se) {
@@ -1374,6 +1374,15 @@ public class RubyInstanceConfig {
         return kernelGsubDefined;
     }
     
+    /**
+     * get whether IPv4 is preferred
+     * 
+     * @see Options.PREFER_IPV4
+     */
+    public boolean getIPv4Preferred() {
+        return preferIPv4;
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1457,6 +1466,7 @@ public class RubyInstanceConfig {
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
+    private boolean preferIPv4 = Options.PREFER_IPV4.load();
 
     private String jrubyHome;
     

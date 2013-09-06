@@ -14,14 +14,13 @@ public class NoResultCallInstr extends CallBase {
         super(op, callType, methAddr, receiver, args, closure);
     }
     
-    public NoResultCallInstr(NoResultCallInstr instr) {
-        this(instr.getOperation(), instr.getCallType(), instr.methAddr, 
-                instr.receiver, instr.arguments, instr.closure);
+    public NoResultCallInstr(Operation op, NoResultCallInstr instr) {
+        this(op, instr.getCallType(), instr.methAddr, instr.receiver, instr.arguments, instr.closure);
     }
     
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NoResultCallInstr(getOperation(), getCallType(), (MethAddr) getMethodAddr().cloneForInlining(ii), 
+        return new NoResultCallInstr(getOperation(), getCallType(), (MethAddr) getMethodAddr().cloneForInlining(ii),
                 receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 

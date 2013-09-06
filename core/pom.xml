@@ -42,6 +42,11 @@
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-x86asm</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
       <version>0.3</version>
       <type>jar</type>
@@ -73,13 +78,21 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.7</version>
+      <version>${jffi.version}</version>
       <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
+      <artifactId>jffi</artifactId>
+      <version>${jffi.version}</version>
+      <type>jar</type>
+      <classifier>native</classifier>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>1.0.4</version>
+      <version>1.0.5</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -148,9 +161,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jsr292</groupId>
+      <groupId>com.headius</groupId>
       <artifactId>jsr292-mock</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -159,27 +172,6 @@
       <artifactId>yecht</artifactId>
       <version>1.0</version>
       <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.1.3</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.livetribe</groupId>
-      <artifactId>livetribe-jsr223</artifactId>
-      <version>2.0.7</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>requireTest</groupId>
-      <artifactId>requireTest</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -208,9 +200,9 @@
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
-    <tzdata.version>2013c</tzdata.version>
+    <tzdata.version>2013d</tzdata.version>
     <!-- any version which is on maven repo will do -->
-    <tzdata.jar.version>2013c</tzdata.jar.version>
+    <tzdata.jar.version>2013d</tzdata.jar.version>
     <tzdata.scope>provided</tzdata.scope>
     <main.basedir>${project.parent.basedir}</main.basedir>
   </properties>
@@ -686,7 +678,7 @@
                 <artifactItem>
                   <groupId>com.github.jnr</groupId>
                   <artifactId>jffi</artifactId>
-                  <version>1.2.5</version>
+                  <version>${jffi.version}</version>
                   <type>jar</type>
                   <classifier>native</classifier>
                   <overWrite>false</overWrite>

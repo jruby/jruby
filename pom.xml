@@ -11,11 +11,6 @@
 
   <repositories>
     <repository>
-      <id>localrepo</id>
-      <url>file:${jruby.basedir}/localrepo</url>
-    </repository>
-  <!-- we might need to remove that repo on release -->
-    <repository>
       <id>sonatype</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
       <releases>
@@ -26,19 +21,6 @@
       </snapshots>
     </repository>
   </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-  </pluginRepositories>
 
   <modules>
     <module>ext</module>
@@ -65,7 +47,7 @@
 
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-beta-1-SNAPSHOT</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
@@ -78,6 +60,7 @@
     <rdoc.version>4.0.1</rdoc.version>
     <json.version>1.8.0</json.version>
     <bc.version>1.47</bc.version>
+    <jffi.version>1.2.7</jffi.version>
     <base.java.version>1.6</base.java.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <main.basedir>${project.basedir}</main.basedir>
@@ -390,6 +373,22 @@
       </modules>
       <build>
 	<defaultGoal>install</defaultGoal>
+      </build>
+    </profile>
+    <profile>
+      <id>repo</id>
+      <distributionManagement>
+	<repository>
+	  <id>local releases</id>
+	  <url>file:///${jruby.basedir}/target</url>
+	</repository>
+	<snapshotRepository>
+	  <id>local snapshots</id>
+	  <url>file:///${jruby.basedir}/target</url>
+	</snapshotRepository>
+      </distributionManagement>
+      <build>
+	<defaultGoal>deploy</defaultGoal>
       </build>
     </profile>
   </profiles>
