@@ -36,6 +36,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4</version>
         <configuration>
+	  <tarLongFileMode>true</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
           </descriptors>
@@ -83,7 +84,7 @@
               <arguments>
                 <argument>archive</argument>
 		<argument>--prefix</argument>
-		<argument>jruby-dist-${project.version}/</argument>
+		<argument>jruby-${project.version}/</argument>
 		<argument>--format</argument>
 		<argument>tar</argument>
 		<argument>${jruby.revision}</argument>
@@ -120,7 +121,7 @@
               <arguments>
                 <argument>archive</argument>
 		<argument>--prefix</argument>
-		<argument>jruby-dist-${project.version}/</argument>
+		<argument>jruby-${project.version}/</argument>
 		<argument>-9</argument>
 		<argument>--format</argument>
 		<argument>zip</argument>
