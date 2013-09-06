@@ -3,11 +3,19 @@
 
 class RDoc::Markup::Document
 
+  include Enumerable
+
   ##
   # The file this document was created from.  See also
   # RDoc::ClassModule#add_comment
 
-  attr_accessor :file
+  attr_reader :file
+
+  ##
+  # If a heading is below the given level it will be omitted from the
+  # table_of_contents
+
+  attr_accessor :omit_headings_below
 
   ##
   # The parts of the Document
@@ -19,9 +27,10 @@ class RDoc::Markup::Document
 
   def initialize *parts
     @parts = []
-    @parts.push(*parts)
+    @parts.concat parts
 
     @file = nil
+    @omit_headings_from_table_of_contents_below = nil
   end
 
   ##
@@ -31,7 +40,7 @@ class RDoc::Markup::Document
     case part
     when RDoc::Markup::Document then
       unless part.empty? then
-        parts.push(*part.parts)
+        parts.concat part.parts
         parts << RDoc::Markup::BlankLine.new
       end
     when String then
@@ -55,16 +64,23 @@ class RDoc::Markup::Document
   def accept visitor
     visitor.start_accepting
 
-    @parts.each do |item|
-      case item
-      when RDoc::Markup::Document then # HACK
-        visitor.accept_document item
-      else
-        item.accept visitor
-      end
-    end
+    visitor.accept_document self
 
     visitor.end_accepting
+  end
+
+  ##
+  # Concatenates the given +parts+ onto the document
+
+  def concat parts
+    self.parts.concat parts
+  end
+
+  ##
+  # Enumerator for the parts of this document
+
+  def each &block
+    @parts.each(&block)
   end
 
   ##
@@ -72,6 +88,18 @@ class RDoc::Markup::Document
 
   def empty?
     @parts.empty? or (@parts.length == 1 and merged? and @parts.first.empty?)
+  end
+
+  ##
+  # The file this Document was created from.
+
+  def file= location
+    @file = case location
+            when RDoc::TopLevel then
+              location.relative_name
+            else
+              location
+            end
   end
 
   ##
@@ -120,7 +148,16 @@ class RDoc::Markup::Document
   # Appends +parts+ to the document
 
   def push *parts
-    self.parts.push(*parts)
+    self.parts.concat parts
+  end
+
+  ##
+  # Returns an Array of headings in the document.
+  #
+  # Require 'rdoc/markup/formatter' before calling this method.
+
+  def table_of_contents
+    accept RDoc::Markup::ToTableOfContents.to_toc
   end
 
 end

@@ -12,6 +12,7 @@ require 'rdoc'
 class RDoc::RubygemsHook
 
   include Gem::UserInteraction
+  extend  Gem::UserInteraction
 
   @rdoc_version = nil
   @specs = []
@@ -45,7 +46,8 @@ class RDoc::RubygemsHook
   # +specs+
 
   def self.generation_hook installer, specs
-    types     = installer.document
+    start = Time.now
+    types = installer.document
 
     generate_rdoc = types.include? 'rdoc'
     generate_ri   = types.include? 'ri'
@@ -53,6 +55,13 @@ class RDoc::RubygemsHook
     specs.each do |spec|
       new(spec, generate_rdoc, generate_ri).generate
     end
+
+    return unless generate_rdoc or generate_ri
+
+    duration = (Time.now - start).to_i
+    names    = specs.map(&:name).join ', '
+
+    say "Done installing documentation for #{names} after #{duration} seconds"
   end
 
   ##
@@ -68,12 +77,13 @@ class RDoc::RubygemsHook
 
   ##
   # Creates a new documentation generator for +spec+.  RDoc and ri data
-  # generation can be disabled through +generate_rdoc+ and +generate_ri+
-  # respectively.
+  # generation can be enabled or disabled through +generate_rdoc+ and
+  # +generate_ri+ respectively.
+  #
+  # Only +generate_ri+ is enabled by default.
 
-  def initialize spec, generate_rdoc = true, generate_ri = true
+  def initialize spec, generate_rdoc = false, generate_ri = true
     @doc_dir   = spec.doc_dir
-    @file_info = nil
     @force     = false
     @rdoc      = nil
     @spec      = spec
@@ -104,23 +114,27 @@ class RDoc::RubygemsHook
   # Documentation will be generated into +destination+
 
   def document generator, options, destination
+    generator_name = generator
+
     options = options.dup
     options.exclude ||= [] # TODO maybe move to RDoc::Options#finish
     options.setup_generator generator
     options.op_dir = destination
     options.finish
 
-    @rdoc.options = options
-    @rdoc.generator = options.generator.new options
+    generator = options.generator.new @rdoc.store, options
 
-    say "Installing #{generator} documentation for #{@spec.full_name}"
+    @rdoc.options = options
+    @rdoc.generator = generator
+
+    say "Installing #{generator_name} documentation for #{@spec.full_name}"
 
     FileUtils.mkdir_p options.op_dir
 
     Dir.chdir options.op_dir do
       begin
         @rdoc.class.current = @rdoc
-        @rdoc.generator.generate @file_info
+        @rdoc.generator.generate
       ensure
         @rdoc.class.current = nil
       end
@@ -131,19 +145,16 @@ class RDoc::RubygemsHook
   # Generates RDoc and ri data
 
   def generate
+    return if @spec.default_gem?
     return unless @generate_ri or @generate_rdoc
 
     setup
 
-    ::RDoc::RDoc.reset
-
-    options = ::RDoc::Options.new
-    options.default_title = "#{@spec.full_name} Documentation"
-    options.files = []
-    options.files.push(*@spec.require_paths)
-    options.files.push(*@spec.extra_rdoc_files)
+    options = nil
 
     args = @spec.rdoc_options
+    args.concat @spec.require_paths
+    args.concat @spec.extra_rdoc_files
 
     case config_args = Gem.configuration[:rdoc]
     when String then
@@ -153,14 +164,30 @@ class RDoc::RubygemsHook
     end
 
     delete_legacy_args args
-    options.parse args
+
+    Dir.chdir @spec.full_gem_path do
+      options = ::RDoc::Options.new
+      options.default_title = "#{@spec.full_name} Documentation"
+      options.parse args
+    end
+
     options.quiet = !Gem.configuration.really_verbose
 
     @rdoc = new_rdoc
     @rdoc.options = options
 
+    store = RDoc::Store.new
+    store.encoding = options.encoding if options.respond_to? :encoding
+    store.dry_run  = options.dry_run
+    store.main     = options.main_page
+    store.title    = options.title
+
+    @rdoc.store = store
+
+    say "Parsing documentation for #{@spec.full_name}"
+
     Dir.chdir @spec.full_gem_path do
-      @file_info = @rdoc.parse_files options.files
+      @rdoc.parse_files options.files
     end
 
     document 'ri',       options, @ri_dir if
