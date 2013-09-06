@@ -23,8 +23,12 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Operation;
+import org.jruby.ir.OpClass;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
@@ -37,6 +41,7 @@ import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
@@ -412,66 +417,195 @@ public class Interpreter {
         }
     }
 
+    private static Integer initProfiling(IRScope scope) {
+        /* SSS: Not being used currently
+        tpCount = scopeThreadPollCounts.get(scope);
+        if (tpCount == null) {
+            tpCount = new Counter();
+            scopeThreadPollCounts.put(scope, tpCount);
+        }
+        */
+
+        Integer scopeVersion = scopeVersionMap.get(scope);
+        if (scopeVersion == null) {
+            scopeVersionMap.put(scope, versionCount);
+            scopeVersion = new Integer(versionCount);
+        }
+
+        if (callerSite.call != null) {
+            Long id = callerSite.call.callSiteId;
+            CallSiteProfile csp = callProfile.get(id);
+            if (csp == null) {
+                csp = new CallSiteProfile(callerSite);
+                callProfile.put(id, csp);
+            }
+
+            Counter csCount = csp.counters.get(scope);
+            if (csCount == null) {
+                csCount = new Counter();
+                csp.counters.put(scope, csCount);
+            }
+            csCount.count++;
+        }
+
+        return scopeVersion;
+    }
+
+    private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
+        if (resultVar instanceof TemporaryVariable) {
+            temp[((TemporaryVariable)resultVar).offset] = result;
+        } else {
+            LocalVariable lv = (LocalVariable)resultVar;
+            currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
+        }
+    }
+
+    private static void setResult(Object[] temp, DynamicScope currDynScope, Instr instr, Object result) {
+        if (instr instanceof ResultInstr) {
+            setResult(temp, currDynScope, ((ResultInstr)instr).getResult(), result);
+        }
+    }
+
+    private static void updateCallSite(Instr instr, IRScope scope, Integer scopeVersion) {
+        callerSite.s = scope;
+        callerSite.v = scopeVersion;
+        callerSite.call = (CallBase)instr;
+    }
+
+    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, int kwArgHashCount, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+        Object result = null;
+        ResultInstr instr = (ResultInstr)i;
+        switch(operation) {
+        case RECV_PRE_REQD_ARG:
+            int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
+            result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+            break;
+        case RECV_POST_REQD_ARG:
+            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, kwArgHashCount);
+            // For blocks, missing arg translates to nil
+            result = result == null ? context.nil : result;
+            break;
+        case RECV_OPT_ARG:
+            result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount);
+            break;
+        case RECV_REST_ARG:
+            result = ((ReceiveRestArgInstr)instr).receiveRestArg(context.runtime, args, kwArgHashCount);
+            break;
+        case RECV_CLOSURE:
+            result = (block == Block.NULL_BLOCK) ? context.nil : context.runtime.newProc(Block.Type.PROC, block);
+            break;
+        case RECV_KW_ARG:
+            result = ((ReceiveKeywordArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
+            break;
+        case RECV_KW_REST_ARG:
+            result = ((ReceiveKeywordRestArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
+            break;
+        case RECV_EXCEPTION: {
+            ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
+            result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
+            break;
+        }
+        }
+
+        setResult(temp, currDynScope, instr.getResult(), result);
+    }
+
+    private static int nextIPC(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, int ipc) {
+        switch(operation) {
+        case JUMP:
+            return ((JumpInstr)instr).getJumpTarget().getTargetPC();
+        case MODULE_GUARD:
+        case JUMP_INDIRECT:
+        case B_TRUE:
+        case B_FALSE:
+        case B_NIL:
+        case B_UNDEF:
+        case BEQ:
+        case BNE:
+            return instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc);
+        }
+
+        // Should not get here!
+        return -1;
+    }
+
+
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, boolean profile, IRScope scope, Integer scopeVersion, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
+        Object result = null;
+        switch(operation) {
+        case RUNTIME_HELPER: {
+            RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
+            result = rhc.callHelper(context, currDynScope, self, temp, scope, blockType);
+            setResult(temp, currDynScope, rhc.getResult(), result);
+            break;
+        }
+        case NORESULT_CALL_1O:
+        case NORESULT_CALL:
+            if (profile) updateCallSite(instr, scope, scopeVersion);
+            instr.interpret(context, currDynScope, self, temp, block);
+            break;
+        case CALL_1F: {
+            if (profile) updateCallSite(instr, scope, scopeVersion);
+            OneFixnumArgNoBlockCallInstr x = (OneFixnumArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
+            result = x.getCallSite().call(context, self, r, x.getFixnumArg());
+            setResult(temp, currDynScope, x.getResult(), result);
+            break;
+        }
+        case CALL_1O: {
+            if (profile) updateCallSite(instr, scope, scopeVersion);
+            OneOperandArgNoBlockCallInstr x = (OneOperandArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
+            IRubyObject o = (IRubyObject) x.getArg1().retrieve(context, self, currDynScope, temp);
+            result = x.getCallSite().call(context, self, r, o);
+            setResult(temp, currDynScope, x.getResult(), result);
+            break;
+        }
+        case CALL_0O: {
+            if (profile) updateCallSite(instr, scope, scopeVersion);
+            ZeroOperandArgNoBlockCallInstr x = (ZeroOperandArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
+            result = x.getCallSite().call(context, self, r);
+            setResult(temp, currDynScope, x.getResult(), result);
+            break;
+        }
+        case CALL:
+            if (profile) updateCallSite(instr, scope, scopeVersion);
+        default:
+            result = instr.interpret(context, currDynScope, self, temp, block);
+            setResult(temp, currDynScope, instr, result);
+            break;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
-        boolean debug = IRRuntimeHelpers.isDebug();
-        boolean profile = IRRuntimeHelpers.inProfileMode();
         Instr[] instrs = scope.getInstrsForInterpretation();
-        int     kwArgHashCount = (scope.receivesKeywordArgs() && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
 
         // The base IR may not have been processed yet
         if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
 
-        int temporaryVariablesSize = scope.getTemporaryVariableSize();
-        Object[] temp = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
-        int n   = instrs.length;
-        int ipc = 0;
-        Instr instr = null;
-        Object exception = null;
-        Ruby runtime = context.runtime;
+        int      numTempVars    = scope.getTemporaryVariableSize();
+        Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
+        int      n              = instrs.length;
+        int      ipc            = 0;
+        Instr    instr          = null;
+        Object   exception      = null;
+        int      kwArgHashCount = (scope.receivesKeywordArgs() && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
         DynamicScope currDynScope = context.getCurrentScope();
 
-        // Set up thread-poll counter for this scope
-        Counter tpCount = null;
-        Integer scopeVersion = 0;
-        if (profile) {
-            /* SSS: Not being used currently
-            tpCount = scopeThreadPollCounts.get(scope);
-            if (tpCount == null) {
-                tpCount = new Counter();
-                scopeThreadPollCounts.put(scope, tpCount);
-            }
-            */
+        // Counter tpCount = null;
 
-            scopeVersion = scopeVersionMap.get(scope);
-            if (scopeVersion == null) {
-                scopeVersionMap.put(scope, versionCount);
-                scopeVersion = new Integer(versionCount);
-            }
-
-            if (callerSite.call != null) {
-                Long id = callerSite.call.callSiteId;
-                CallSiteProfile csp = callProfile.get(id);
-                if (csp == null) {
-                    csp = new CallSiteProfile(callerSite);
-                    callProfile.put(id, csp);
-                }
-
-                Counter csCount = csp.counters.get(scope);
-                if (csCount == null) {
-                    csCount = new Counter();
-                    csp.counters.put(scope, csCount);
-                }
-                csCount.count++;
-            }
-        }
+        // Init profiling this scope
+        boolean debug   = IRRuntimeHelpers.isDebug();
+        boolean profile = IRRuntimeHelpers.inProfileMode();
+        Integer scopeVersion = profile ? initProfiling(scope) : 0;
 
         // Enter the looooop!
         while (ipc < n) {
             instr = instrs[ipc];
             ipc++;
             Operation operation = instr.getOperation();
-
             if (debug) {
                 LOG.info("I: {}", instr);
                interpInstrsCount++;
@@ -481,182 +615,110 @@ public class Interpreter {
             }
 
             try {
-                Variable resultVar = null;
-                Object result = null;
-                switch(operation) {
-
-                // ----------- Control-transfer instructions -------------
-                case JUMP: {
-                    ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC();
+                switch (operation.opClass) {
+                case ARG_OP: {
+                    receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
                     break;
                 }
-                case MODULE_GUARD:
-                case JUMP_INDIRECT:
-                case B_TRUE:
-                case B_FALSE:
-                case B_NIL:
-                case B_UNDEF:
-                case BEQ:
-                case BNE: {
-                    ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc);
+                case BRANCH_OP: {
+                    ipc = nextIPC(context, instr, operation, currDynScope, temp, self, ipc);
                     break;
                 }
-
-                // ------------- Arg-receive instructions ------------
-                case RECV_PRE_REQD_ARG: {
-                    ReceivePreReqdArgInstr ra = (ReceivePreReqdArgInstr)instr;
-                    int argIndex = ra.getArgIndex();
-                    result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
-                    resultVar = ra.getResult();
+                case CALL_OP: {
+                    processCall(context, instr, operation, profile, scope, scopeVersion, currDynScope, temp, self, block, blockType);
                     break;
                 }
-                case RECV_POST_REQD_ARG: {
-                    ReceivePostReqdArgInstr ra = (ReceivePostReqdArgInstr)instr;
-                    result = ra.receivePostReqdArg(args, kwArgHashCount);
-                    if (result == null) result = context.nil; // For blocks
-                    resultVar = ra.getResult();
-                    break;
-                }
-                case RECV_OPT_ARG: {
-                    ReceiveOptArgInstr ra = (ReceiveOptArgInstr)instr;
-                    result = ra.receiveOptArg(args, kwArgHashCount);
-                    resultVar = ra.getResult();
-                    break;
-                }
-                case RECV_REST_ARG: {
-                    ReceiveRestArgInstr ra = (ReceiveRestArgInstr)instr;
-                    result = ra.receiveRestArg(runtime, args, kwArgHashCount);
-                    resultVar = ra.getResult();
-                    break;
-                }
-                case RECV_CLOSURE: {
-                    result = (block == Block.NULL_BLOCK) ? context.nil : runtime.newProc(Block.Type.PROC, block);
-                    resultVar = ((ResultInstr)instr).getResult();
-                    break;
-                }
-                case RECV_EXCEPTION: {
-                    ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
-                    result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
-                    resultVar = rei.getResult();
-                    break;
-                }
-                case RECV_KW_ARG: {
-                    ReceiveKeywordArgInstr ra = (ReceiveKeywordArgInstr)instr;
-                    result = ra.receiveKWArg(context, kwArgHashCount, args);
-                    resultVar = ra.getResult();
-                    break;
-                }
-                case RECV_KW_REST_ARG: {
-                    ReceiveKeywordRestArgInstr ra = (ReceiveKeywordRestArgInstr)instr;
-                    result = ra.receiveKWArg(context, kwArgHashCount, args);
-                    resultVar = ra.getResult();
-                    break;
-                }
-
-                // --------- Return flavored instructions --------
-                case BREAK: {
-                    BreakInstr bi = (BreakInstr)instr;
-                    IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
-                    // This also handles breaks in lambdas -- by converting them to a return
-                    return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
-                }
-                case RETURN: {
-                    return (IRubyObject)((ReturnBase)instr).getReturnValue().retrieve(context, self, currDynScope, temp);
-                }
-                case NONLOCAL_RETURN: {
-                    NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
-                    IRubyObject rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
-                    ipc = n;
-                    // If not in a lambda, check if this was a non-local return
-                    if (!IRRuntimeHelpers.inLambda(blockType)) {
-                        IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
+                case BOOK_KEEPING_OP: {
+                    switch(operation) {
+                    case PUSH_FRAME: {
+                        context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+                        context.setCurrentVisibility(visibility);
+                        break;
                     }
-                    return rv;
-                }
+                    case PUSH_BINDING: {
+                        // SSS NOTE: Method scopes only!
+                        //
+                        // Blocks are a headache -- so, these instrs. are only added to IRMethods.
+                        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
+                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
+                        context.pushScope(currDynScope);
+                        break;
+                    }
+                    case CHECK_ARITY:
+                        ((CheckArityInstr)instr).checkArity(context.runtime, args.length);
+                        break;
+                    case POP_FRAME:
+                        context.popFrame();
+                        context.popRubyClass();
+                        break;
+                    case POP_BINDING:
+                        context.popScope();
+                        break;
+                    case THREAD_POLL:
+                        if (profile) {
+                            // SSS: Not being used currently
+                            // tpCount.count++;
+                            globalThreadPollCount++;
 
-                // --------- Bookkeeping instructions --------
-                case CHECK_ARITY: {
-                    ((CheckArityInstr)instr).checkArity(runtime, args.length);
-                    break;
-                }
-                case PUSH_FRAME: {
-                    context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
-                    context.setCurrentVisibility(visibility);
-                    break;
-                }
-                case PUSH_BINDING: {
-                    // SSS NOTE: Method scopes only!
-                    //
-                    // Blocks are a headache -- so, these instrs. are only added to IRMethods.
-                    // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
-                    currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
-                    context.pushScope(currDynScope);
-                    break;
-                }
-                case POP_FRAME: {
-                    context.popFrame();
-                    context.popRubyClass();
-                    break;
-                }
-                case POP_BINDING: {
-                    context.popScope();
-                    break;
-                }
-                case THREAD_POLL: {
-                    if (profile) {
-                        // SSS: Not being used currently
-                        // tpCount.count++;
-                        globalThreadPollCount++;
-
-                        // 20K is arbitrary
-                        // Every 20K profile counts, spit out profile stats
-                        if (globalThreadPollCount % 20000 == 0) {
-                            analyzeProfile();
-                            // outputProfileStats();
+                            // 20K is arbitrary
+                            // Every 20K profile counts, spit out profile stats
+                            if (globalThreadPollCount % 20000 == 0) {
+                                analyzeProfile();
+                                // outputProfileStats();
+                            }
                         }
+                        context.callThreadPoll();
+                        break;
+                    case LINE_NUM:
+                        context.setLine(((LineNumberInstr)instr).lineNumber);
+                        break;
+                    case RECORD_END_BLOCK:
+                        ((RecordEndBlockInstr)instr).interpret();
+                        break;
                     }
-                    context.callThreadPoll();
                     break;
                 }
-                case LINE_NUM: {
-                    context.setLine(((LineNumberInstr)instr).lineNumber);
-                    break;
-                }
-                case RUNTIME_HELPER: {
-                    resultVar = ((ResultInstr)instr).getResult();
-                    result = ((RuntimeHelperCall)instr).callHelper(context, currDynScope, self, temp, scope, blockType);
-                    break;
-                }
+                case OTHER_OP: {
+                    Object result = null;
+                    switch(operation) {
+                    // --------- Return flavored instructions --------
+                    case BREAK: {
+                        BreakInstr bi = (BreakInstr)instr;
+                        IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
+                        // This also handles breaks in lambdas -- by converting them to a return
+                        return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
+                    }
+                    case RETURN: {
+                        return (IRubyObject)((ReturnBase)instr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                    }
+                    case NONLOCAL_RETURN: {
+                        NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
+                        IRubyObject rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
+                        ipc = n;
+                        // If not in a lambda, check if this was a non-local return
+                        if (!IRRuntimeHelpers.inLambda(blockType)) {
+                            IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
+                        }
+                        return rv;
+                    }
 
-                // ---------- Common instruction ---------
-                case COPY: {
-                    CopyInstr c = (CopyInstr)instr;
-                    result = c.getSource().retrieve(context, self, currDynScope, temp);
-                    resultVar = ((ResultInstr)instr).getResult();
+                    // ---------- Common instruction ---------
+                    case COPY: {
+                        CopyInstr c = (CopyInstr)instr;
+                        result = c.getSource().retrieve(context, self, currDynScope, temp);
+                        setResult(temp, currDynScope, c.getResult(), result);
+                        break;
+                    }
+
+                    // ---------- All the rest ---------
+                    default:
+                        result = instr.interpret(context, currDynScope, self, temp, block);
+                        setResult(temp, currDynScope, instr, result);
+                        break;
+                    }
+
                     break;
                 }
-
-                // ---------- All the rest ---------
-                case CALL:
-                    if (profile) {
-                        callerSite.s = scope;
-                        callerSite.v = scopeVersion;
-                        callerSite.call = (CallBase)instr;
-                    }
-                default:
-                    if (instr instanceof ResultInstr) resultVar = ((ResultInstr)instr).getResult();
-                    result = instr.interpret(context, currDynScope, self, temp, block);
-                    break;
-                }
-
-                if (resultVar != null) {
-                    if (resultVar instanceof TemporaryVariable) {
-                        temp[((TemporaryVariable)resultVar).offset] = result;
-                    }
-                    else {
-                        LocalVariable lv = (LocalVariable)resultVar;
-                        currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
-                    }
                 }
             } catch (Throwable t) {
                 // Unrescuable:

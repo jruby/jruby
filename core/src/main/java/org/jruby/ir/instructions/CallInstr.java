@@ -38,8 +38,8 @@ public class CallInstr extends CallBase implements ResultInstr {
         this.result = result;
     }
     
-    public CallInstr(CallInstr ordinary) {
-        this(ordinary.getOperation(), ordinary.getCallType(), ordinary.getResult(),
+    public CallInstr(Operation op, CallInstr ordinary) {
+        this(op, ordinary.getCallType(), ordinary.getResult(),
                 ordinary.getMethodAddr(), ordinary.getReceiver(), ordinary.getCallArgs(),
                 ordinary.getClosureArg(null));
     }
@@ -69,7 +69,7 @@ public class CallInstr extends CallBase implements ResultInstr {
     }    
 
     public Instr discardResult() {
-        return new NoResultCallInstr(getOperation(), getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
+        return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
     }
 
     @Override

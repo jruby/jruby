@@ -3,23 +3,23 @@ package org.jruby.ir;
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_has_side_effect     = 0x0002;
-    final static int f_can_raise_exception = 0x0004;
-    final static int f_is_marker_op        = 0x0008;
-    final static int f_is_jump_or_branch   = 0x0010;
-    final static int f_is_return           = 0x0020;
-    final static int f_is_exception        = 0x0040;
-    final static int f_is_debug_op         = 0x0080;
-    final static int f_is_load             = 0x0100;
-    final static int f_is_store            = 0x0200;
-    final static int f_is_call             = 0x0400;
-    final static int f_is_arg_receive      = 0x0800;
-    final static int f_modifies_code       = 0x1000;
-    final static int f_inline_unfriendly   = 0x2000;
+    final static int f_has_side_effect     = 0x0001;
+    final static int f_can_raise_exception = 0x0002;
+    final static int f_is_marker_op        = 0x0004;
+    final static int f_is_jump_or_branch   = 0x0008;
+    final static int f_is_return           = 0x0010;
+    final static int f_is_exception        = 0x0020;
+    final static int f_is_debug_op         = 0x0040;
+    final static int f_is_load             = 0x0080;
+    final static int f_is_store            = 0x0100;
+    final static int f_is_call             = 0x0200;
+    final static int f_is_arg_receive      = 0x0400;
+    final static int f_modifies_code       = 0x0800;
+    final static int f_inline_unfriendly   = 0x1000;
+    final static int f_is_book_keeping_op  = 0x4000;
 }
 
 public enum Operation {
-
 /* Mark a *non-control-flow* instruction as side-effecting if its compuation is not referentially
  * transparent.  In other words, mark it side-effecting if the following is true:
  *
@@ -54,16 +54,23 @@ public enum Operation {
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
 
     /* By default, call instructions cannot be deleted even if their results
-     * aren't used by anyone unless we know more about what the call is, 
+     * aren't used by anyone unless we know more about what the call is,
      * what it does, etc.  Hence all these are marked side effecting */
 
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+
+    /* specialized calls */
+    CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
@@ -84,10 +91,9 @@ public enum Operation {
     UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
 
     /** marker instructions used to flag/mark places in the code and dont actually get executed **/
-    LABEL(OpFlags.f_is_marker_op),
-    EXC_REGION_START(OpFlags.f_is_marker_op),
-    EXC_REGION_END(OpFlags.f_is_marker_op),
-    CASE(OpFlags.f_is_marker_op), // unused currently
+    LABEL(OpFlags.f_is_book_keeping_op | OpFlags.f_is_marker_op),
+    EXC_REGION_START(OpFlags.f_is_book_keeping_op | OpFlags.f_is_marker_op),
+    EXC_REGION_END(OpFlags.f_is_book_keeping_op | OpFlags.f_is_marker_op),
 
     /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
@@ -113,13 +119,12 @@ public enum Operation {
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect), 
+    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /** debugging ops **/
-    LINE_NUM(OpFlags.f_is_debug_op),
-    FILE_NAME(OpFlags.f_is_debug_op),
-    
+    LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
+
     /** JRuby-impl instructions **/
     COPY(0),
     NOT(0), // ruby NOT operator
@@ -128,9 +133,9 @@ public enum Operation {
     GET_BACKREF(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    CHECK_ARITY(OpFlags.f_can_raise_exception),
+    CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
-    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
+    RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     TO_ARY(0),
     ENSURE_RUBY_ARRAY(0),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
@@ -142,7 +147,7 @@ public enum Operation {
     IS_TRUE(0), // checks if the operand is non-null and non-false
     EQQ(0), // (FIXME: Exceptions?) a === call used in when
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
-    THREAD_POLL(OpFlags.f_has_side_effect),
+    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     GET_ENCODING(0),
 
     /* Instructions to support defined? */
@@ -157,30 +162,42 @@ public enum Operation {
     METHOD_IS_PUBLIC(0),
     SUPER_METHOD_BOUND(0),
     GET_ERROR_INFO(0),
-    INSTANCE_OF(0), // java instanceof bytecode
 
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
-    PUSH_FRAME(OpFlags.f_has_side_effect),
-    PUSH_BINDING(OpFlags.f_has_side_effect),
-    POP_FRAME(OpFlags.f_has_side_effect),
-    POP_BINDING(OpFlags.f_has_side_effect),
+    PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     METHOD_LOOKUP(0), /* for splitting calls into method-lookup and call -- unused **/
     BOX_VALUE(0), /* primitive value boxing/unboxing -- unused */
     UNBOX_VALUE(0); /* unused */
-    
+
 /* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)
     ADD(0), SUB(0), MUL(0), DIV(OpFlags.f_can_raise_exception),
  * -----------------------------------------*/
 
+    public final OpClass opClass;
     private int flags;
 
-    Operation(int flags) { 
+    Operation(int flags) {
         this.flags = flags;
+
+        if (this.isArgReceive()) {
+            this.opClass = OpClass.ARG_OP;
+        } else if (this.isBranch()) {
+            this.opClass = OpClass.BRANCH_OP;
+        } else if (this.isBookKeepingOp()) {
+            this.opClass = OpClass.BOOK_KEEPING_OP;
+        } else if (this.isCall()) {
+            this.opClass = OpClass.CALL_OP;
+        } else {
+            this.opClass = OpClass.OTHER_OP;
+        }
     }
 
-    public boolean transfersControl() { 
+    public boolean transfersControl() {
         return (flags & (OpFlags.f_is_jump_or_branch | OpFlags.f_is_return | OpFlags.f_is_exception)) > 0;
     }
 
@@ -196,10 +213,14 @@ public enum Operation {
         return (flags & OpFlags.f_is_call) > 0;
     }
 
+    public boolean isBranch() {
+        return (flags & OpFlags.f_is_jump_or_branch) > 0;
+    }
+
     public boolean isReturn() {
         return (flags & OpFlags.f_is_return) > 0;
     }
-    
+
     public boolean isException() {
         return (flags & OpFlags.f_is_exception) > 0;
     }
@@ -224,11 +245,15 @@ public enum Operation {
         return (flags & OpFlags.f_is_debug_op) > 0;
     }
 
+    public boolean isBookKeepingOp() {
+        return (flags & OpFlags.f_is_book_keeping_op) > 0;
+    }
+
     // Conservative -- say no only if you know it for sure cannot
     public boolean canRaiseException() {
         return (flags & OpFlags.f_can_raise_exception) > 0;
     }
-    
+
     public boolean modifiesCode() {
         return (flags & OpFlags.f_modifies_code) > 0;
     }
