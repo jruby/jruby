@@ -119,6 +119,8 @@
 	      <workingDirectory>${basedir}/../..</workingDirectory>
               <arguments>
                 <argument>archive</argument>
+		<argument>--prefix</argument>
+		<argument>jruby-dist-${project.version}/</argument>
 		<argument>-9</argument>
 		<argument>--format</argument>
 		<argument>zip</argument>
