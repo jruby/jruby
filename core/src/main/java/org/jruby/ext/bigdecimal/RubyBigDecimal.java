@@ -891,22 +891,36 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "+")
+    @JRubyMethod(name = "+", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
-        return addInternal(context, b, "add", getRuntime().getClass("BigDecimal")
+        RubyBigDecimal val = getVpValue(b, false);
+        return addInternal(context, val, b, getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    @JRubyMethod(name = "add")
-    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
-        return addInternal(context, b, "add", digits);
+    @JRubyMethod(name = "+", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return addInternal(context, val, b, getRuntime().getClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    private IRubyObject addInternal(ThreadContext context, IRubyObject b, String op, IRubyObject digits) {
+    @JRubyMethod(name = "add", compat = CompatVersion.RUBY1_8)
+    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return addInternal(context, val, b, digits);
+    }
+
+    @JRubyMethod(name = "add", compat = CompatVersion.RUBY1_9)
+    public IRubyObject add219(ThreadContext context, IRubyObject b, IRubyObject digits) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return addInternal(context, val, b, digits);
+    }
+
+    private IRubyObject addInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject digits) {
         Ruby runtime = context.runtime;
         int prec = getPositiveInt(context, digits);
 
-        RubyBigDecimal val = getVpValue(b, false);
         if (val == null) {
             // TODO:
             // MRI behavior: Call "+" or "add", depending on the call.
