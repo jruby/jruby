@@ -1397,7 +1397,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         // TODO: full-precision divmod is 1000x slower than MRI!
         Ruby runtime = context.runtime;
-        RubyBigDecimal val = getVpValue(other, false);
+        RubyBigDecimal val = getVpValue19(context, other, false);
         if (val == null) {
             return callCoerced(context, "divmod", other, true);
         }
