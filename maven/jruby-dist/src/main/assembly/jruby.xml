@@ -22,7 +22,7 @@
         <include>bin/jgem</include>
         <include>bin/jirb</include>
         <include>bin/jirb_swing</include>
-        <include>bin/jruby*</include>
+        <include>bin/jruby.*</include>
         <include>bin/rake</include>
         <include>bin/ri</include>
         <include>bin/rdoc</include>
@@ -52,4 +52,11 @@
       </includes>
     </fileSet>
   </fileSets>
+  <files>
+    <file>
+      <source>${project.parent.parent.basedir}/bin/jruby.bash</source>
+      <outputDirectory>/bin</outputDirectory>
+      <destName>jruby</destName>
+    </file>
+  </files>
 </assembly>

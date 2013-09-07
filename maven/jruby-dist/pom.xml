@@ -36,7 +36,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4</version>
         <configuration>
-	  <tarLongFileMode>true</tarLongFileMode>
+	  <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
           </descriptors>
