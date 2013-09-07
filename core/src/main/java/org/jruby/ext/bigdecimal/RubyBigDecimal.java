@@ -981,22 +981,31 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
     
-    @JRubyMethod(name = "-", required = 1)
-    public IRubyObject op_minus(ThreadContext context, IRubyObject arg) {
-        RubyBigDecimal val = getVpValue(arg, false);
-        if (val == null) {
-            return callCoerced(context, "-", arg);
-        }
-        RubyBigDecimal res = handleMinusSpecialValues(val);
-        if (res != null) {
-            return res;
-        }
-        return new RubyBigDecimal(getRuntime(), value.subtract(val.value)).setResult();
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return subInternal(context, val, b);
     }
 
-    @JRubyMethod(name = "sub", required = 2)
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_minus19(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return subInternal(context, val, b);
+    }
+
+    @JRubyMethod(name = "sub", required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue(b, false);
+        return subInternal(context, val, b);
+    }
+
+    @JRubyMethod(name = "sub", required = 2, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub219(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return subInternal(context, val, b);
+    }
+
+    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b) {
         if (val == null) {
             return callCoerced(context, "-", b);
         }
@@ -1004,7 +1013,6 @@ public class RubyBigDecimal extends RubyNumeric {
         if (res != null) {
             return res;
         }
-
         return new RubyBigDecimal(getRuntime(), value.subtract(val.value)).setResult();
     }
 
