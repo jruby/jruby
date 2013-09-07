@@ -944,15 +944,16 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN) {
             return newNaN(getRuntime());
         }
-        // TODO: don't calculate the same value 3 times
-        if (infinitySign * val.infinitySign > 0) {
+
+        int sign = infinitySign * val.infinitySign;
+        if (sign > 0) {
             return isInfinity() ? this : val;
         }
-        if (infinitySign * val.infinitySign < 0) {
+        if (sign < 0) {
             return newNaN(getRuntime());
         }
-        if (infinitySign * val.infinitySign == 0) {
-            int sign = infinitySign + val.infinitySign;
+        if (sign == 0) {
+            sign = infinitySign + val.infinitySign;
             if (sign != 0) {
                 return newInfinity(getRuntime(), sign);
             }
@@ -997,22 +998,22 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN()) {
             return newNaN(getRuntime());
         }
-        
-        // TODO: 3 times calculate the same value below
-        if (infinitySign * val.infinitySign > 0) {
+
+        int sign = infinitySign * val.infinitySign;
+        if (sign > 0) {
             return newNaN(getRuntime());
         }
-        if (infinitySign * val.infinitySign < 0) {
-                return this;
+        if (sign < 0) {
+            return this;
         }
-        if (infinitySign * val.infinitySign == 0) {
+        if (sign == 0) {
             if (isInfinity()) {
                 return this;
             }
             if (val.isInfinity()) {
                 return newInfinity(getRuntime(), val.infinitySign * -1);
             }
-            int sign = infinitySign + val.infinitySign;
+            sign = infinitySign + val.infinitySign;
             if (sign != 0) {
                 return newInfinity(getRuntime(), sign);
             }
