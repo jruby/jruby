@@ -77,10 +77,20 @@ public class SSLSocket extends RubyObject implements ReadBuffered {
 
     private static final ObjectAllocator SSLSOCKET_ALLOCATOR;
     
+    /**
+     * Create an instance of SSLSocket that implements the ReadBuffered
+     * interface introduced in JRuby 1.7.5. This method should only be called
+     * when running under JRuby 1.7.5 or higher.
+     * 
+     * @see SSLSocket2
+     */
     static SSLSocket newSSLSocket2(Ruby runtime, RubyClass klass) {
         return new SSLSocket2(runtime, klass);
     }
     
+    /**
+     * Create an instance of SSLSocket without the ReadBuffered interface.
+     */
     static SSLSocket newSSLSocket(Ruby runtime, RubyClass klass) {
         return new SSLSocket(runtime, klass);
     }
