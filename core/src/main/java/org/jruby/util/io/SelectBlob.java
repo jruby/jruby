@@ -126,11 +126,13 @@ public class SelectBlob {
                 Map<Character,Integer> attachment = new HashMap<Character,Integer>(1);
                 for (int i = 0; i < readSize; i++) {
                     RubyIO ioObj = saveReadIO(i, context);
-                    saveReadBlocking(ioObj, i);
-                    saveBufferedRead(ioObj, i);                    
+                    saveReadBlocking(ioObj, i);                  
                     attachment.clear();
                     attachment.put('r', i);
-                    trySelectRead(context, attachment, ioObj);
+                    // if it's already buffered, don't bother with a select
+                    if (!saveBufferedRead(ioObj, i)) {
+                        trySelectRead(context, attachment, ioObj);
+                    }
                 }
             }
         }
@@ -150,11 +152,18 @@ public class SelectBlob {
         }
     }
 
-    private void saveBufferedRead(RubyIO ioObj, int i) throws BadDescriptorException {
+    private boolean saveBufferedRead(RubyIO ioObj, int i) throws BadDescriptorException {
         // already buffered data? don't bother selecting
         if (ioObj.getOpenFile().getMainStreamSafe().readDataBuffered()) {
-            getUnselectableReads()[i] = true;
+            return getUnselectableReads()[i] = true;
+        } else {
+            // if original object was ReadBuffered and isReadDataBuffered...
+            IRubyObject obj = readArray.eltOk(i);
+            if (obj instanceof ReadBuffered) {
+                return getUnselectableReads()[i] = ((ReadBuffered)obj).isReadDataBuffered();
+            }
         }
+        return false;
     }
 
     private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {

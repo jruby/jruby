@@ -67,17 +67,43 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ReadBuffered;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class SSLSocket extends RubyObject {
+public class SSLSocket extends RubyObject implements ReadBuffered {
     private static final long serialVersionUID = -2276327900350542644L;
 
-    private static ObjectAllocator SSLSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new SSLSocket(runtime, klass);
+    private static final ObjectAllocator SSLSOCKET_ALLOCATOR;
+    
+    static SSLSocket newSSLSocket2(Ruby runtime, RubyClass klass) {
+        return new SSLSocket2(runtime, klass);
+    }
+    
+    static SSLSocket newSSLSocket(Ruby runtime, RubyClass klass) {
+        return new SSLSocket(runtime, klass);
+    }
+    
+    static {
+        ObjectAllocator alloc = null;
+        try {
+            Class.forName("org.jruby.util.io.ReadBuffered");
+            // interface exists, use ReadBuffered subclass
+            alloc = new ObjectAllocator() {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                    return new SSLSocket2(runtime, klass);
+                }
+            };
+        } catch (ClassNotFoundException cnfe) {
+            // interface not available, use normal class
+            alloc = new ObjectAllocator() {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                    return new SSLSocket(runtime, klass);
+                }
+            };
         }
+        SSLSOCKET_ALLOCATOR = alloc;
     };
 
     private static RubyObjectAdapter api = JavaEmbedUtils.newObjectAdapter();
@@ -507,6 +533,13 @@ public class SSLSocket extends RubyObject {
         peerAppData.get(dst.array(), dst.arrayOffset(), limit);
         dst.position(dst.arrayOffset() + limit);
         return limit;
+    }
+    
+    public boolean isReadDataBuffered() {
+        // If we have app-level data available or (net data is available and we
+        // did not underflow on our last decryption), we can provide more data.
+        return peerAppData.hasRemaining() ||
+                (peerNetData.hasRemaining() && status != SSLEngineResult.Status.BUFFER_UNDERFLOW);
     }
 
     private int readAndUnwrap(boolean blocking) throws IOException {
