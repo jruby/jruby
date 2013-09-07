@@ -736,17 +736,33 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, value.remainder(val.value)).setResult();
     }
 
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
         return mult2(context, arg, getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    @JRubyMethod(name = "mult", required = 2)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mul19(ThreadContext context, IRubyObject arg) {
+        return mult219(context, arg, getRuntime().getClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
+    }
+
+    @JRubyMethod(name = "mult", required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return multInternal(context, val, b, n);
+    }
+
+    @JRubyMethod(name = "mult", required = 2, compat = CompatVersion.RUBY1_9)
+    public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return multInternal(context, val, b, n);
+    }
+
+    private IRubyObject multInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject n) {
         Ruby runtime = context.runtime;
 
-        RubyBigDecimal val = getVpValue(b, false);
         if (val == null) {
             // TODO: what about n arg?
             return callCoerced(context, "*", b);
@@ -781,7 +797,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return new RubyBigDecimal(runtime, res).setResult();
     }
-    
+
     @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_pow(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
