@@ -717,14 +717,25 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "remainder", required = 1)
+    @JRubyMethod(name = "remainder", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
-        // TODO: full-precision remainder is 1000x slower than MRI!
+        RubyBigDecimal val = getVpValue(arg, false);
+        return remainderInternal(context, val, arg);
+    }
+
+    @JRubyMethod(name = "remainder", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject remainder19(ThreadContext context, IRubyObject arg) {
+        RubyBigDecimal val = getVpValue19(context, arg, false);
+        return remainderInternal(context, val, arg);
+    }
+
+    private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
+     // TODO: full-precision remainder is 1000x slower than MRI!
         Ruby runtime = context.runtime;
         if (isInfinity() || isNaN()) {
             return newNaN(runtime);
         }
-        RubyBigDecimal val = getVpValue(arg, false);
+
         if (val == null) {
             return callCoerced(context, "remainder", arg, true);
         }
