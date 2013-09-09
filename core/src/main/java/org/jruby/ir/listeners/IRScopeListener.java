@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Operand;
 
 public interface IRScopeListener {
     
-    public void addedInstr(IRScope scope, Instr instr);
+    public void addedInstr(IRScope scope, Instr instr, int index);
     
     public void startBuildOperand(Node node, IRScope scope);
     
