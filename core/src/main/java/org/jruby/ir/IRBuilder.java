@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import org.jruby.ir.listeners.IRScopeListener;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -128,6 +129,106 @@ public class IRBuilder {
 
     public boolean is2_0() {
         return false;
+    }
+
+    private Operand buildOperand(Node node, IRScope s) throws NotCompilableException {
+        switch (node.getNodeType()) {
+            case ALIASNODE: return buildAlias((AliasNode) node, s);
+            case ANDNODE: return buildAnd((AndNode) node, s);
+            case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node, s);
+            case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node, s);
+            case ARRAYNODE: return buildArray(node, s);
+            case ATTRASSIGNNODE: return buildAttrAssign((AttrAssignNode) node, s);
+            case BACKREFNODE: return buildBackref((BackRefNode) node, s);
+            case BEGINNODE: return buildBegin((BeginNode) node, s);
+            case BIGNUMNODE: return buildBignum((BignumNode) node, s);
+            case BLOCKNODE: return buildBlock((BlockNode) node, s);
+            case BREAKNODE: return buildBreak((BreakNode) node, s);
+            case CALLNODE: return buildCall((CallNode) node, s);
+            case CASENODE: return buildCase((CaseNode) node, s);
+            case CLASSNODE: return buildClass((ClassNode) node, s);
+            case CLASSVARNODE: return buildClassVar((ClassVarNode) node, s);
+            case CLASSVARASGNNODE: return buildClassVarAsgn((ClassVarAsgnNode) node, s);
+            case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node, s);
+            case COLON2NODE: return buildColon2((Colon2Node) node, s);
+            case COLON3NODE: return buildColon3((Colon3Node) node, s);
+            case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
+            case CONSTNODE: return searchConst(s, s, ((ConstNode) node).getName());
+            case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
+            case DEFINEDNODE: return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), s);
+            case DEFNNODE: return buildDefn((MethodDefNode) node, s);
+            case DEFSNODE: return buildDefs((DefsNode) node, s);
+            case DOTNODE: return buildDot((DotNode) node, s);
+            case DREGEXPNODE: return buildDRegexp((DRegexpNode) node, s);
+            case DSTRNODE: return buildDStr((DStrNode) node, s);
+            case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node, s);
+            case DVARNODE: return buildDVar((DVarNode) node, s);
+            case DXSTRNODE: return buildDXStr((DXStrNode) node, s);
+            case ENSURENODE: return buildEnsureNode((EnsureNode) node, s);
+            case EVSTRNODE: return buildEvStr((EvStrNode) node, s);
+            case FALSENODE: return buildFalse(node, s);
+            case FCALLNODE: return buildFCall((FCallNode) node, s);
+            case FIXNUMNODE: return buildFixnum((FixnumNode) node, s);
+            case FLIPNODE: return buildFlip((FlipNode) node, s);
+            case FLOATNODE: return buildFloat((FloatNode) node, s);
+            case FORNODE: return buildFor((ForNode) node, s);
+            case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, s);
+            case GLOBALVARNODE: return buildGlobalVar((GlobalVarNode) node, s);
+            case HASHNODE: return buildHash((HashNode) node, s);
+            case IFNODE: return buildIf((IfNode) node, s);
+            case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, s);
+            case INSTVARNODE: return buildInstVar((InstVarNode) node, s);
+            case ITERNODE: return buildIter((IterNode) node, s);
+            case LITERALNODE: return buildLiteral((LiteralNode) node, s);
+            case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, s);
+            case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, s);
+            case MATCH2NODE: return buildMatch2((Match2Node) node, s);
+            case MATCH3NODE: return buildMatch3((Match3Node) node, s);
+            case MATCHNODE: return buildMatch((MatchNode) node, s);
+            case MODULENODE: return buildModule((ModuleNode) node, s);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
+            case NEWLINENODE: return buildNewline((NewlineNode) node, s);
+            case NEXTNODE: return buildNext((NextNode) node, s);
+            case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
+            case NILNODE: return buildNil(node, s);
+            case NOTNODE: return buildNot((NotNode) node, s);
+            case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, s);
+            case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, s);
+            case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, s);
+            case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node, s);
+            case ORNODE: return buildOr((OrNode) node, s);
+            case PREEXENODE: return buildPreExe((PreExeNode) node, s);
+            case POSTEXENODE: return buildPostExe((PostExeNode) node, s);
+            case REDONODE: return buildRedo(node, s);
+            case REGEXPNODE: return buildRegexp((RegexpNode) node, s);
+            case RESCUEBODYNODE:
+                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
+            case RESCUENODE: return buildRescue((RescueNode) node, s);
+            case RETRYNODE: return buildRetry(node, s);
+            case RETURNNODE: return buildReturn((ReturnNode) node, s);
+            case ROOTNODE:
+                throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
+            case SCLASSNODE: return buildSClass((SClassNode) node, s);
+            case SELFNODE: return buildSelf((SelfNode) node, s);
+            case SPLATNODE: return buildSplat((SplatNode) node, s);
+            case STRNODE: return buildStr((StrNode) node, s);
+            case SUPERNODE: return buildSuper((SuperNode) node, s);
+            case SVALUENODE: return buildSValue((SValueNode) node, s);
+            case SYMBOLNODE: return buildSymbol((SymbolNode) node, s);
+            case TOARYNODE: return buildToAry((ToAryNode) node, s);
+            case TRUENODE: return buildTrue(node, s);
+            case UNDEFNODE: return buildUndef(node, s);
+            case UNTILNODE: return buildUntil((UntilNode) node, s);
+            case VALIASNODE: return buildVAlias(node, s);
+            case VCALLNODE: return buildVCall((VCallNode) node, s);
+            case WHILENODE: return buildWhile((WhileNode) node, s);
+            case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
+            case XSTRNODE: return buildXStr((XStrNode) node, s);
+            case YIELDNODE: return buildYield((YieldNode) node, s);
+            case ZARRAYNODE: return buildZArray(node, s);
+            case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
+            default: return buildVersionSpecificNodes(node, s);
+        }
     }
 
     /* -----------------------------------------------------------------------------------
@@ -333,103 +434,16 @@ public class IRBuilder {
             System.out.println("Got a null scope!");
             throw new NotCompilableException("Unknown node encountered in builder: " + node);
         }
-        switch (node.getNodeType()) {
-            case ALIASNODE: return buildAlias((AliasNode) node, s);
-            case ANDNODE: return buildAnd((AndNode) node, s);
-            case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node, s);
-            case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node, s);
-            case ARRAYNODE: return buildArray(node, s);
-            case ATTRASSIGNNODE: return buildAttrAssign((AttrAssignNode) node, s);
-            case BACKREFNODE: return buildBackref((BackRefNode) node, s);
-            case BEGINNODE: return buildBegin((BeginNode) node, s);
-            case BIGNUMNODE: return buildBignum((BignumNode) node, s);
-            case BLOCKNODE: return buildBlock((BlockNode) node, s);
-            case BREAKNODE: return buildBreak((BreakNode) node, s);
-            case CALLNODE: return buildCall((CallNode) node, s);
-            case CASENODE: return buildCase((CaseNode) node, s);
-            case CLASSNODE: return buildClass((ClassNode) node, s);
-            case CLASSVARNODE: return buildClassVar((ClassVarNode) node, s);
-            case CLASSVARASGNNODE: return buildClassVarAsgn((ClassVarAsgnNode) node, s);
-            case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node, s);
-            case COLON2NODE: return buildColon2((Colon2Node) node, s);
-            case COLON3NODE: return buildColon3((Colon3Node) node, s);
-            case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
-            case CONSTNODE: return searchConst(s, s, ((ConstNode) node).getName());
-            case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
-            case DEFINEDNODE: return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), s);
-            case DEFNNODE: return buildDefn((MethodDefNode) node, s);
-            case DEFSNODE: return buildDefs((DefsNode) node, s);
-            case DOTNODE: return buildDot((DotNode) node, s);
-            case DREGEXPNODE: return buildDRegexp((DRegexpNode) node, s);
-            case DSTRNODE: return buildDStr((DStrNode) node, s);
-            case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node, s);
-            case DVARNODE: return buildDVar((DVarNode) node, s);
-            case DXSTRNODE: return buildDXStr((DXStrNode) node, s);
-            case ENSURENODE: return buildEnsureNode((EnsureNode) node, s);
-            case EVSTRNODE: return buildEvStr((EvStrNode) node, s);
-            case FALSENODE: return buildFalse(node, s);
-            case FCALLNODE: return buildFCall((FCallNode) node, s);
-            case FIXNUMNODE: return buildFixnum((FixnumNode) node, s);
-            case FLIPNODE: return buildFlip((FlipNode) node, s);
-            case FLOATNODE: return buildFloat((FloatNode) node, s);
-            case FORNODE: return buildFor((ForNode) node, s);
-            case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, s);
-            case GLOBALVARNODE: return buildGlobalVar((GlobalVarNode) node, s);
-            case HASHNODE: return buildHash((HashNode) node, s);
-            case IFNODE: return buildIf((IfNode) node, s);
-            case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, s);
-            case INSTVARNODE: return buildInstVar((InstVarNode) node, s);
-            case ITERNODE: return buildIter((IterNode) node, s);
-            case LITERALNODE: return buildLiteral((LiteralNode) node, s);
-            case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, s);
-            case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, s);
-            case MATCH2NODE: return buildMatch2((Match2Node) node, s);
-            case MATCH3NODE: return buildMatch3((Match3Node) node, s);
-            case MATCHNODE: return buildMatch((MatchNode) node, s);
-            case MODULENODE: return buildModule((ModuleNode) node, s);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
-            case NEWLINENODE: return buildNewline((NewlineNode) node, s);
-            case NEXTNODE: return buildNext((NextNode) node, s);
-            case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
-            case NILNODE: return buildNil(node, s);
-            case NOTNODE: return buildNot((NotNode) node, s);
-            case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, s);
-            case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, s);
-            case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, s);
-            case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node, s);
-            case ORNODE: return buildOr((OrNode) node, s);
-            case PREEXENODE: return buildPreExe((PreExeNode) node, s);
-            case POSTEXENODE: return buildPostExe((PostExeNode) node, s);
-            case REDONODE: return buildRedo(node, s);
-            case REGEXPNODE: return buildRegexp((RegexpNode) node, s);
-            case RESCUEBODYNODE:
-                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
-            case RESCUENODE: return buildRescue((RescueNode) node, s);
-            case RETRYNODE: return buildRetry(node, s);
-            case RETURNNODE: return buildReturn((ReturnNode) node, s);
-            case ROOTNODE:
-                throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
-            case SCLASSNODE: return buildSClass((SClassNode) node, s);
-            case SELFNODE: return buildSelf((SelfNode) node, s);
-            case SPLATNODE: return buildSplat((SplatNode) node, s);
-            case STRNODE: return buildStr((StrNode) node, s);
-            case SUPERNODE: return buildSuper((SuperNode) node, s);
-            case SVALUENODE: return buildSValue((SValueNode) node, s);
-            case SYMBOLNODE: return buildSymbol((SymbolNode) node, s);
-            case TOARYNODE: return buildToAry((ToAryNode) node, s);
-            case TRUENODE: return buildTrue(node, s);
-            case UNDEFNODE: return buildUndef(node, s);
-            case UNTILNODE: return buildUntil((UntilNode) node, s);
-            case VALIASNODE: return buildVAlias(node, s);
-            case VCALLNODE: return buildVCall((VCallNode) node, s);
-            case WHILENODE: return buildWhile((WhileNode) node, s);
-            case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
-            case XSTRNODE: return buildXStr((XStrNode) node, s);
-            case YIELDNODE: return buildYield((YieldNode) node, s);
-            case ZARRAYNODE: return buildZArray(node, s);
-            case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
-            default: return buildVersionSpecificNodes(node, s);
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.startBuildOperand(node, s);
         }
+        Operand operand = buildOperand(node, s);
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.endBuildOperand(node, s, operand);
+        }
+        return operand;
     }
 
     protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
