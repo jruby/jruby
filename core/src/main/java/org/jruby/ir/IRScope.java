@@ -352,7 +352,7 @@ public abstract class IRScope {
         if(manager.getIRScopeListener() == null) {
             return false;
         } else {
-            return false;
+            return true;
         }
     }
 

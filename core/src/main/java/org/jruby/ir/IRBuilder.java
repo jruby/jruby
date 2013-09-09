@@ -295,6 +295,14 @@ public class IRBuilder {
             return new IRBuilder(manager);
         }
     }
+    
+    private boolean hasListener() {
+        if(manager.getIRScopeListener() == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     public IRBuilder newIRBuilder(IRManager manager) {
         if (is2_0()) {
