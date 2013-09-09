@@ -37,7 +37,7 @@
         <directory>${jruby.basedir}/lib</directory>
         <targetPath>${jruby.complete.home}/lib</targetPath>
         <includes>
-          <include>**/bc*.jar</include>
+          <include>lib/**/bc*.jar</include>
         </includes>
       </resource>
     </resources> 
