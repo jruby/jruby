@@ -357,15 +357,10 @@ public abstract class IRScope {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final IRScope other = (IRScope) obj;
-        return this.scopeId == other.scopeId;
+    public boolean equals(Object other) {
+        if (other == null || getClass() != other.getClass()) return false;
+
+        return scopeId == ((IRScope) other).scopeId;
     }
     
     @Override

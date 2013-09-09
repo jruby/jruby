@@ -137,12 +137,12 @@ public class IRManager {
     }
     
     public void addListener(IRScopeListener listener) {
-        if(RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
             if (irScopeListener != null) {
                 throw new RuntimeException("IRScopeListener is set and other are currently not allowed");
-            } else {
-                irScopeListener = listener;
-            }
+            } 
+              
+            irScopeListener = listener;
         }
     }
     
