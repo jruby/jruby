@@ -2,10 +2,15 @@ package org.jruby.ir.representations;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.cext.JRuby;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.YieldInstr;
+import org.jruby.ir.listeners.InstructionsListener;
+import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -25,6 +30,13 @@ public class BasicBlock implements ExplicitVertexID {
         cfg           = c;
         id            = c.getNextBBID();
         instrs        = new ArrayList<Instr>();
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+            IRManager irManager = cfg.getScope().getManager();
+            InstructionsListener listener = irManager.getInstructionsListener();
+            if (listener != null) {
+                instrs = new InstructionsListenerDecorator(instrs, listener);
+            }
+        }
         instrsArray   = null;
         isRescueEntry = false;
     }
