@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Nil;
@@ -31,6 +32,7 @@ public class IRManager {
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
     
     private InstructionsListener instrsListener = null;
+    private IRScopeListener irScopeListener = null;
     
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
@@ -108,6 +110,10 @@ public class IRManager {
         return instrsListener;
     }
     
+    public IRScopeListener getIRScopeListener() {
+        return irScopeListener;
+    }
+    
     public void addListener(CompilerPassListener listener) {
         passListeners.add(listener);
     }
@@ -128,6 +134,20 @@ public class IRManager {
     
     public void removeListener(InstructionsListener listener) {
         if (instrsListener.equals(listener)) instrsListener = null;
+    }
+    
+    public void addListener(IRScopeListener listener) {
+        if(RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+            if (irScopeListener != null) {
+                throw new RuntimeException("IRScopeListener is set and other are currently not allowed");
+            } else {
+                irScopeListener = listener;
+            }
+        }
+    }
+    
+    public void removeListener(IRScopeListener listener) {
+        if (irScopeListener.equals(listener)) irScopeListener = null;
     }
     
     public IRModuleBody getClassMetaClass() {
