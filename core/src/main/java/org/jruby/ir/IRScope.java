@@ -25,6 +25,7 @@ import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -346,6 +347,14 @@ public abstract class IRScope {
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }        
     }
+    
+    private boolean hasListener() {
+        if(manager.getIRScopeListener() == null) {
+            return false;
+        } else {
+            return false;
+        }
+    }
 
     public int getScopeId() {
         return scopeId;
@@ -381,6 +390,10 @@ public abstract class IRScope {
     }
 
     public void addInstrAtBeginning(Instr i) {
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.addedInstr(this, i, 0);
+        }
         instrList.add(0, i);
     }
 
@@ -393,6 +406,10 @@ public abstract class IRScope {
         else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
         else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.addedInstr(this, i, instrList.size());
+        }
         instrList.add(i);
     }
 
