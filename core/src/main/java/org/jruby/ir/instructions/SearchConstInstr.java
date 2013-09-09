@@ -68,8 +68,9 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
-    private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime) {
-        // Lexical lookup
+    public Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        // Lexical lookup 
+        Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
         Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
@@ -94,15 +95,18 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         return constant;
     }
 
-    private boolean isCached(Ruby runtime, Object value) {
-        return value != null && generation == invalidator(runtime).getData();
+    public Object getCachedConst() {
+        return cachedConstant;
     }
-    
+
+    public boolean isCached(ThreadContext context, Object value) {
+        return value != null && generation == invalidator(context.getRuntime()).getData();
+    }
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.runtime;
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime);
+        if (!isCached(context, constant)) constant = cache(context, currDynScope, self, temp);
 
         return constant;
     }

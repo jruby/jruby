@@ -34,5 +34,5 @@ public class OneOperandArgNoBlockCallInstr extends CallInstr {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getCallArgs()[0].retrieve(context, self, dynamicScope, temp);
         return getCallSite().call(context, self, object, arg1);
-    }    
+    }
 }

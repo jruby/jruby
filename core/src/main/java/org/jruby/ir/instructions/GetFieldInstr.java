@@ -26,23 +26,23 @@ public class GetFieldInstr extends GetInstr {
                 getSource().cloneForInlining(ii), getRef());
     }
 
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.runtime;
-        IRubyObject object = (IRubyObject) getSource().retrieve(context, self, currDynScope, temp);
-
-        RubyClass cls = object.getMetaClass().getRealClass();
+    public VariableAccessor getAccessor(IRubyObject o) {
+        RubyClass cls = o.getMetaClass().getRealClass();
         VariableAccessor localAccessor = accessor;
         IRubyObject value;
         if (localAccessor.getClassId() != cls.hashCode()) {
             localAccessor = cls.getVariableAccessorForRead(getRef());
-            if (localAccessor == null) return runtime.getNil();
-            value = (IRubyObject)localAccessor.get(object);
             accessor = localAccessor;
-        } else {
-            value = (IRubyObject)localAccessor.get(object);
         }
-        return value == null ? runtime.getNil() : value;
+        return localAccessor;
+    }
+
+    @Override
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        IRubyObject object = (IRubyObject) getSource().retrieve(context, self, currDynScope, temp);
+        VariableAccessor a = getAccessor(object);
+        IRubyObject value = a == null ? context.nil : (IRubyObject)a.get(object);
+        return value == null ? context.nil : value;
     }
 
     @Override
