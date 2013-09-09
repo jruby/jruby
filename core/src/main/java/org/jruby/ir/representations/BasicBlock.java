@@ -3,7 +3,6 @@ package org.jruby.ir.representations;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.cext.JRuby;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
