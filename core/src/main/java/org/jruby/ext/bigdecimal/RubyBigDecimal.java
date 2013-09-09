@@ -402,7 +402,7 @@ public class RubyBigDecimal extends RubyNumeric {
         throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
     }
 
-    private RoundingMode getRoundingMode(Ruby runtime) {
+    private static RoundingMode getRoundingMode(Ruby runtime) {
         RubyFixnum roundingMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpRoundingMode");
         return RoundingMode.valueOf((int)roundingMode.getLongValue());
@@ -457,7 +457,15 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject v, boolean must) {
-        return getVpValueWithPrec19(context, v, -1, must);
+        long precision;
+        if (v instanceof RubyFloat) {
+            precision = 0;
+        } else if (v instanceof RubyRational) {
+            precision = 0;
+        } else {
+            precision = -1;
+        }
+        return getVpValueWithPrec19(context, v, precision, must);
     }
     
     private static IRubyObject getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational r, long precision, boolean must) {
@@ -465,7 +473,7 @@ public class RubyBigDecimal extends RubyNumeric {
         long denominator = RubyNumeric.num2long(r.denominator(context));
             
         return new RubyBigDecimal(context.runtime, 
-                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator)));
+                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), getRoundingMode(context.runtime)));
     }
     
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
@@ -477,7 +485,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 value = new RubyBigDecimal(context.runtime, BigDecimal.valueOf(f.getDoubleValue()));
                 continue;
             } else if (value instanceof RubyRational) {
-                if (precision < 0 && !context.runtime.is2_0()) return unableToCoerceWithoutPrec(context, value, must);
+                if (precision < 0) return unableToCoerceWithoutPrec(context, value, must);
                 
                 value = getVpRubyObjectWithPrec19Inner(context, (RubyRational) value, precision, must);
                 continue;
