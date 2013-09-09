@@ -185,7 +185,7 @@
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>2.3</version>
+      <version>${joda.time.version}</version>
       <type>jar</type>
     </dependency>
   </dependencies>
@@ -304,7 +304,7 @@
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
-          <target>${base.java.version}</target>
+          <target>${base.javac.version}</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
         <executions>

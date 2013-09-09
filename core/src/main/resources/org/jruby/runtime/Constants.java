@@ -52,8 +52,8 @@ public final class Constants {
 
     public static final String COMPILE_DATE = "@build.date@";
     public static final String VERSION = "@version.jruby@";
-    public static final String BUILD = "java@java.specification.version@";
-    public static final String TARGET = "java@javac.version@";
+    public static final String BUILD = "java@base.java.version@";
+    public static final String TARGET = "java@base.javac.version@";
     public static final String REVISION;
     public static final String ENGINE = "jruby";
     
