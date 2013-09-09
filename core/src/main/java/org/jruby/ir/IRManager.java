@@ -104,6 +104,10 @@ public class IRManager {
         return passListeners;
     }
     
+    public InstructionsListener getInstructionsListener() {
+        return instrsListener;
+    }
+    
     public void addListener(CompilerPassListener listener) {
         passListeners.add(listener);
     }
