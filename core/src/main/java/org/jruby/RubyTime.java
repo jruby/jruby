@@ -1084,11 +1084,17 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "new", optional = 7, meta = true, compat = RUBY1_9)
     public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) {
-            return newInstance(context, recv);
-        }
+        if (args.length == 0) return newInstance(context, recv);
+
         if (args.length == 7) {
-          Ruby runtime = recv.getRuntime();
+          Ruby runtime = context.getRuntime();
+
+          // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
+          final RubySymbol dstSymbol = RubySymbol.newSymbol(runtime, "dst");
+          boolean receivedDstSymbolAsArgument = (args[6].op_equal(context, dstSymbol)).isTrue();
+
+          final RubyBoolean isDst = RubyBoolean.newBoolean(runtime, receivedDstSymbolAsArgument);
+
           // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
           args = new IRubyObject[] { args[5],          // seconds
                                      args[4],          // minutes
@@ -1098,7 +1104,7 @@ public class RubyTime extends RubyObject {
                                      args[0],          // year
                                      runtime.getNil(), // weekday
                                      runtime.getNil(), // day of year
-                                     runtime.getNil(), // is DST?
+                                     isDst,            // is DST?
                                      args[6] };        // UTC offset
         }
         return createTime(recv, args, false);
@@ -1214,7 +1220,7 @@ public class RubyTime extends RubyObject {
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
         Ruby runtime = recv.getRuntime();
         int len = ARG_SIZE;
-        Boolean isDst = null;
+        boolean isDst = false;
         boolean setTzRelative = false; 
         long nanos = 0;
 
@@ -1232,9 +1238,8 @@ public class RubyTime extends RubyObject {
         }
  
         if (args.length == 10) {
-            if (args[8] instanceof RubyBoolean) {
-                isDst = ((RubyBoolean) args[8]).isTrue();
-            }
+            if (args[8] instanceof RubyBoolean) isDst = ((RubyBoolean) args[8]).isTrue();
+
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
@@ -1335,27 +1340,16 @@ public class RubyTime extends RubyObject {
 
             dt = dt.withZoneRetainFields(dtz);
 
-            // we might need to perform a DST correction
-            if (isDst != null) {
-                // the instant at which we will ask dtz what the difference between DST and
-                // standard time is
-                long offsetCalculationInstant = dt.getMillis();
+            // If we're at a DST boundary, we need to choose the correct side of the boundary
+            if (isDst) {
+                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
+                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
 
-                // if we might be moving this time from !DST -> DST, the offset is assumed
-                // to be the same as it was just before we last moved from DST -> !DST
-                if (dtz.isStandardOffset(dt.getMillis())) {
-                    offsetCalculationInstant = dtz.previousTransition(offsetCalculationInstant);
-                }
+                final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
+                final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
 
-                int offset = dtz.getStandardOffset(offsetCalculationInstant)
-                        - dtz.getOffset(offsetCalculationInstant);
-
-                if (!isDst && !dtz.isStandardOffset(dt.getMillis())) {
-                    dt = dt.minusMillis(offset);
-                }
-                if (isDst && dtz.isStandardOffset(dt.getMillis())) {
-                    dt = dt.plusMillis(offset);
-                }
+                // If the time is during DST, we need to pick the time with the highest offset
+                dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
             }
         } catch (org.joda.time.IllegalFieldValueException e) {
             throw runtime.newArgumentError("time out of range");

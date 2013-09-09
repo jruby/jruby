@@ -402,7 +402,7 @@ public class RubyBigDecimal extends RubyNumeric {
         throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
     }
 
-    private RoundingMode getRoundingMode(Ruby runtime) {
+    private static RoundingMode getRoundingMode(Ruby runtime) {
         RubyFixnum roundingMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpRoundingMode");
         return RoundingMode.valueOf((int)roundingMode.getLongValue());
@@ -457,7 +457,15 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject v, boolean must) {
-        return getVpValueWithPrec19(context, v, -1, must);
+        long precision;
+        if (v instanceof RubyFloat) {
+            precision = 0;
+        } else if (v instanceof RubyRational) {
+            precision = 0;
+        } else {
+            precision = -1;
+        }
+        return getVpValueWithPrec19(context, v, precision, must);
     }
     
     private static IRubyObject getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational r, long precision, boolean must) {
@@ -465,7 +473,7 @@ public class RubyBigDecimal extends RubyNumeric {
         long denominator = RubyNumeric.num2long(r.denominator(context));
             
         return new RubyBigDecimal(context.runtime, 
-                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator)));
+                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), getRoundingMode(context.runtime)));
     }
     
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
@@ -477,7 +485,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 value = new RubyBigDecimal(context.runtime, BigDecimal.valueOf(f.getDoubleValue()));
                 continue;
             } else if (value instanceof RubyRational) {
-                if (precision < 0 && !context.runtime.is2_0()) return unableToCoerceWithoutPrec(context, value, must);
+                if (precision < 0) return unableToCoerceWithoutPrec(context, value, must);
                 
                 value = getVpRubyObjectWithPrec19Inner(context, (RubyRational) value, precision, must);
                 continue;
@@ -687,7 +695,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         // TODO: full-precision divmod is 1000x slower than MRI!
         Ruby runtime = context.runtime;
-        RubyBigDecimal val = getVpValue(other, false);
+        RubyBigDecimal val = getVpValue19(context, other, false);
         if (val == null) {
             return callCoerced(context, "%", other, true);
         }
@@ -717,14 +725,25 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "remainder", required = 1)
+    @JRubyMethod(name = "remainder", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
-        // TODO: full-precision remainder is 1000x slower than MRI!
+        RubyBigDecimal val = getVpValue(arg, false);
+        return remainderInternal(context, val, arg);
+    }
+
+    @JRubyMethod(name = "remainder", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject remainder19(ThreadContext context, IRubyObject arg) {
+        RubyBigDecimal val = getVpValue19(context, arg, false);
+        return remainderInternal(context, val, arg);
+    }
+
+    private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
+     // TODO: full-precision remainder is 1000x slower than MRI!
         Ruby runtime = context.runtime;
         if (isInfinity() || isNaN()) {
             return newNaN(runtime);
         }
-        RubyBigDecimal val = getVpValue(arg, false);
+
         if (val == null) {
             return callCoerced(context, "remainder", arg, true);
         }
@@ -736,17 +755,33 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, value.remainder(val.value)).setResult();
     }
 
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
         return mult2(context, arg, getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    @JRubyMethod(name = "mult", required = 2)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mul19(ThreadContext context, IRubyObject arg) {
+        return mult219(context, arg, getRuntime().getClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
+    }
+
+    @JRubyMethod(name = "mult", required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return multInternal(context, val, b, n);
+    }
+
+    @JRubyMethod(name = "mult", required = 2, compat = CompatVersion.RUBY1_9)
+    public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return multInternal(context, val, b, n);
+    }
+
+    private IRubyObject multInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject n) {
         Ruby runtime = context.runtime;
 
-        RubyBigDecimal val = getVpValue(b, false);
         if (val == null) {
             // TODO: what about n arg?
             return callCoerced(context, "*", b);
@@ -781,7 +816,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return new RubyBigDecimal(runtime, res).setResult();
     }
-    
+
     @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_pow(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
@@ -875,22 +910,36 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "+")
+    @JRubyMethod(name = "+", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
-        return addInternal(context, b, "add", getRuntime().getClass("BigDecimal")
+        RubyBigDecimal val = getVpValue(b, false);
+        return addInternal(context, val, b, getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    @JRubyMethod(name = "add")
-    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
-        return addInternal(context, b, "add", digits);
+    @JRubyMethod(name = "+", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return addInternal(context, val, b, getRuntime().getClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    private IRubyObject addInternal(ThreadContext context, IRubyObject b, String op, IRubyObject digits) {
+    @JRubyMethod(name = "add", compat = CompatVersion.RUBY1_8)
+    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return addInternal(context, val, b, digits);
+    }
+
+    @JRubyMethod(name = "add", compat = CompatVersion.RUBY1_9)
+    public IRubyObject add219(ThreadContext context, IRubyObject b, IRubyObject digits) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return addInternal(context, val, b, digits);
+    }
+
+    private IRubyObject addInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject digits) {
         Ruby runtime = context.runtime;
         int prec = getPositiveInt(context, digits);
 
-        RubyBigDecimal val = getVpValue(b, false);
         if (val == null) {
             // TODO:
             // MRI behavior: Call "+" or "add", depending on the call.
@@ -928,15 +977,16 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN) {
             return newNaN(getRuntime());
         }
-        // TODO: don't calculate the same value 3 times
-        if (infinitySign * val.infinitySign > 0) {
+
+        int sign = infinitySign * val.infinitySign;
+        if (sign > 0) {
             return isInfinity() ? this : val;
         }
-        if (infinitySign * val.infinitySign < 0) {
+        if (sign < 0) {
             return newNaN(getRuntime());
         }
-        if (infinitySign * val.infinitySign == 0) {
-            int sign = infinitySign + val.infinitySign;
+        if (sign == 0) {
+            sign = infinitySign + val.infinitySign;
             if (sign != 0) {
                 return newInfinity(getRuntime(), sign);
             }
@@ -950,22 +1000,31 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
     
-    @JRubyMethod(name = "-", required = 1)
-    public IRubyObject op_minus(ThreadContext context, IRubyObject arg) {
-        RubyBigDecimal val = getVpValue(arg, false);
-        if (val == null) {
-            return callCoerced(context, "-", arg);
-        }
-        RubyBigDecimal res = handleMinusSpecialValues(val);
-        if (res != null) {
-            return res;
-        }
-        return new RubyBigDecimal(getRuntime(), value.subtract(val.value)).setResult();
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue(b, false);
+        return subInternal(context, val, b);
     }
 
-    @JRubyMethod(name = "sub", required = 2)
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_minus19(ThreadContext context, IRubyObject b) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return subInternal(context, val, b);
+    }
+
+    @JRubyMethod(name = "sub", required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue(b, false);
+        return subInternal(context, val, b);
+    }
+
+    @JRubyMethod(name = "sub", required = 2, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub219(ThreadContext context, IRubyObject b, IRubyObject n) {
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        return subInternal(context, val, b);
+    }
+
+    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b) {
         if (val == null) {
             return callCoerced(context, "-", b);
         }
@@ -973,7 +1032,6 @@ public class RubyBigDecimal extends RubyNumeric {
         if (res != null) {
             return res;
         }
-
         return new RubyBigDecimal(getRuntime(), value.subtract(val.value)).setResult();
     }
 
@@ -981,22 +1039,22 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN()) {
             return newNaN(getRuntime());
         }
-        
-        // TODO: 3 times calculate the same value below
-        if (infinitySign * val.infinitySign > 0) {
+
+        int sign = infinitySign * val.infinitySign;
+        if (sign > 0) {
             return newNaN(getRuntime());
         }
-        if (infinitySign * val.infinitySign < 0) {
-                return this;
+        if (sign < 0) {
+            return this;
         }
-        if (infinitySign * val.infinitySign == 0) {
+        if (sign == 0) {
             if (isInfinity()) {
                 return this;
             }
             if (val.isInfinity()) {
                 return newInfinity(getRuntime(), val.infinitySign * -1);
             }
-            int sign = infinitySign + val.infinitySign;
+            sign = infinitySign + val.infinitySign;
             if (sign != 0) {
                 return newInfinity(getRuntime(), sign);
             }
@@ -1347,7 +1405,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         // TODO: full-precision divmod is 1000x slower than MRI!
         Ruby runtime = context.runtime;
-        RubyBigDecimal val = getVpValue(other, false);
+        RubyBigDecimal val = getVpValue19(context, other, false);
         if (val == null) {
             return callCoerced(context, "divmod", other, true);
         }

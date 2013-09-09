@@ -26,9 +26,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
@@ -37,8 +34,6 @@ import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
@@ -46,9 +41,15 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
+import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -466,6 +467,23 @@ public class Interpreter {
         }
     }
 
+    private static Object retrieveOp(Operand r, ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        Object res;
+        if (r instanceof Self) {
+            return self;
+        } else if (r instanceof TemporaryVariable) {
+            res = temp[((TemporaryVariable)r).offset];
+            return res == null ? context.nil : res;
+        } else if (r instanceof LocalVariable) {
+            LocalVariable lv = (LocalVariable)r;
+            res = currDynScope.getValue(lv.getLocation(), lv.getScopeDepth());
+            return res == null ? context.nil : res;
+        } else {
+            return r.retrieve(context, self, currDynScope, temp);
+        }
+
+    }
+
     private static void updateCallSite(Instr instr, IRScope scope, Integer scopeVersion) {
         callerSite.s = scope;
         callerSite.v = scopeVersion;
@@ -514,11 +532,11 @@ public class Interpreter {
         switch(operation) {
         case JUMP:
             return ((JumpInstr)instr).getJumpTarget().getTargetPC();
-        case MODULE_GUARD:
-        case JUMP_INDIRECT:
         case B_TRUE:
         case B_FALSE:
         case B_NIL:
+        case MODULE_GUARD:
+        case JUMP_INDIRECT:
         case B_UNDEF:
         case BEQ:
         case BNE:
@@ -528,7 +546,6 @@ public class Interpreter {
         // Should not get here!
         return -1;
     }
-
 
     private static void processCall(ThreadContext context, Instr instr, Operation operation, boolean profile, IRScope scope, Integer scopeVersion, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
         Object result = null;
@@ -546,27 +563,27 @@ public class Interpreter {
             break;
         case CALL_1F: {
             if (profile) updateCallSite(instr, scope, scopeVersion);
-            OneFixnumArgNoBlockCallInstr x = (OneFixnumArgNoBlockCallInstr)instr;
-            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
-            result = x.getCallSite().call(context, self, r, x.getFixnumArg());
-            setResult(temp, currDynScope, x.getResult(), result);
+            OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
+            result = call.getCallSite().call(context, self, r, call.getFixnumArg());
+            setResult(temp, currDynScope, call.getResult(), result);
             break;
         }
         case CALL_1O: {
             if (profile) updateCallSite(instr, scope, scopeVersion);
-            OneOperandArgNoBlockCallInstr x = (OneOperandArgNoBlockCallInstr)instr;
-            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
-            IRubyObject o = (IRubyObject) x.getArg1().retrieve(context, self, currDynScope, temp);
-            result = x.getCallSite().call(context, self, r, o);
-            setResult(temp, currDynScope, x.getResult(), result);
+            OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
+            IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currDynScope, temp);
+            result = call.getCallSite().call(context, self, r, o);
+            setResult(temp, currDynScope, call.getResult(), result);
             break;
         }
         case CALL_0O: {
             if (profile) updateCallSite(instr, scope, scopeVersion);
-            ZeroOperandArgNoBlockCallInstr x = (ZeroOperandArgNoBlockCallInstr)instr;
-            IRubyObject r = (IRubyObject) x.getReceiver().retrieve(context, self, currDynScope, temp);
-            result = x.getCallSite().call(context, self, r);
-            setResult(temp, currDynScope, x.getResult(), result);
+            ZeroOperandArgNoBlockCallInstr call = (ZeroOperandArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
+            result = call.getCallSite().call(context, self, r);
+            setResult(temp, currDynScope, call.getResult(), result);
             break;
         }
         case CALL:
@@ -689,11 +706,11 @@ public class Interpreter {
                         return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
                     }
                     case RETURN: {
-                        return (IRubyObject)((ReturnBase)instr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                        return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
                     }
                     case NONLOCAL_RETURN: {
                         NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
-                        IRubyObject rv = (IRubyObject)ri.getReturnValue().retrieve(context, self, currDynScope, temp);
+                        IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, temp);
                         ipc = n;
                         // If not in a lambda, check if this was a non-local return
                         if (!IRRuntimeHelpers.inLambda(blockType)) {
@@ -705,7 +722,7 @@ public class Interpreter {
                     // ---------- Common instruction ---------
                     case COPY: {
                         CopyInstr c = (CopyInstr)instr;
-                        result = c.getSource().retrieve(context, self, currDynScope, temp);
+                        result = retrieveOp(c.getSource(), context, self, currDynScope, temp);
                         setResult(temp, currDynScope, c.getResult(), result);
                         break;
                     }
