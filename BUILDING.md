@@ -145,6 +145,14 @@ mvn -Pjruby-jars
 
 the gem will be in ./maven/jruby-jars/target
 
+### gems - excluding jruby jars gem###
+
+```
+mvn -Pgems
+```
+
+the gem will be in ./maven/gems/*/pkg
+
 ### building ALL packages ###
 
 ```
