@@ -1,7 +1,7 @@
 # -*- makefile -*-
 
 JRUBY_BASEDIR = $(shell pwd)/../../
-JRUBY_CLASSES = $(JRUBY_BASEDIR)/build/classes/jruby/
+JRUBY_CLASSES = $(JRUBY_BASEDIR)/core/target/classes
 
 GCC_VERSION := $(strip $(shell gcc --version))
 ifneq ($(strip $(findstring 4.,$(GCC_VERSION))),)
@@ -55,7 +55,7 @@ export MACOSX_DEPLOYMENT_TARGET=10.4
 CCACHE := $(strip $(realpath $(shell which ccache 2> /dev/null)))
 SRC_DIR ?= $(shell pwd)
 JNI_DIR ?= $(SRC_DIR)
-JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
+JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/jni/
 BUILD_DIR ?= $(JRUBY_BASEDIR)/build
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)/include
 RUBY_HEADERS = $(patsubst %.h, $(HDR_DIR)/ruby/%.h, $(notdir $(wildcard $(SRC_DIR)/include/ruby/*.h)))
@@ -77,7 +77,7 @@ JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing
 DBG_FLAGS = -DNDEBUG
 OFLAGS = $(DBG_FLAGS) $(JFLAGS)
 
-WFLAGS = -W -Wall -Wno-unused -Wno-parentheses -Werror
+WFLAGS = -W -Wall -Wno-unused -Wno-unused-parameter -Wno-parentheses -Werror
 # MacOS headers have some undefined macros, so don't warn on these on darwin
 ifneq ($(OS),darwin)
   WFLAGS += -Wundef
