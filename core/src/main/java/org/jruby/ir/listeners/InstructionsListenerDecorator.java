@@ -164,8 +164,8 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public boolean addAll(Collection<? extends Instr> c) {
-        // TODO emit a series of adds
-        return instrs.addAll(c);
+        int lastIndex = instrs.size() - 1;
+        return addAll(lastIndex, c);
     }
 
     @Override
