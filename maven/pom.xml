@@ -63,5 +63,11 @@
         <module>jruby-jars</module>
       </modules>
     </profile>
+    <profile>
+      <id>gems</id>
+      <modules>
+        <module>gems</module>
+      </modules>
+    </profile>
   </profiles>
 </project>

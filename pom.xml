@@ -317,7 +317,7 @@
     <profile>
       <id>gems</id>
       <modules>
-        <module>gems</module>
+        <module>maven</module>
       </modules>
     </profile>
     <profile>
