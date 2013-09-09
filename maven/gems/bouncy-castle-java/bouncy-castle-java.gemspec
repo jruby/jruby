@@ -15,7 +15,8 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.files = ['README', 'LICENSE.html', 'lib/bouncy-castle-java.rb' ] + Dir['lib/bc*.jar' ]
 
-  s.add_dependency 'ruby-maven', "=3.1.0.0.0"
+  s.add_development_dependency 'rake', "~> 10.1"
+  s.add_development_dependency 'ruby-maven', "~> 3.1.0.0.0"
 
   s.requirements << "jar org.bouncycastle:bcpkix-jdk15on, #{BouncyCastle::MAVEN_VERSION}"
   s.requirements << "jar org.bouncycastle:bcprov-jdk15on, #{BouncyCastle::MAVEN_VERSION}"
