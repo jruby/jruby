@@ -28,17 +28,14 @@ package org.jruby.embed.osgi.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
-
-import java.io.File;
 
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.osgi.OSGiScriptingContainer;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
@@ -49,18 +46,15 @@ import org.osgi.framework.FrameworkUtil;
 /**
  * @author ajuckel
  */
-@Ignore
 @RunWith(PaxExam.class)
 public class JRubyOsgiEmbedTest {
     private static final String SCRIPT_RESULT = "Foo!!!!!!!";
 
     @Configuration
     public Option[] config() {
-        File f = new File("../../lib/jruby-complete.jar");
-        return options(junitBundles(), bundle(f.toURI().toString()));
+        return options(junitBundles(), mavenBundle("org.jruby", "jruby-complete").versionAsInProject());
     }
 
-    @Ignore
     @Test
     public void testJRubyCreate() throws InterruptedException {
         Bundle b = FrameworkUtil.getBundle(JRubyOsgiEmbedTest.class);

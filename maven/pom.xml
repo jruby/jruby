@@ -39,6 +39,7 @@
       <modules>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
+        <module>jruby-osgi-test</module>
       </modules>
     </profile>
     <profile>
