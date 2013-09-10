@@ -63,3 +63,8 @@ lib/ruby/shared/readline/jline*.jar
 lib/ruby/shared/ripper.jar
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
+
+# These files are bin files for default gems
+!lib/ruby/gems/shared/gems/rake-10.1.0/bin/rake
+!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
+!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
