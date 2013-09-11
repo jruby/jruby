@@ -420,11 +420,11 @@ public class RuntimeCache {
         Invalidator invalidator = context.runtime.getConstantInvalidator(name);
         Object newGeneration = invalidator.getData();
         IRubyObject value = scope.getConstant(name);
-        constants[index] = value;
         constantInvalidators[index] = invalidator;
         if (value != null) {
             constantGenerations[index] = newGeneration;
         }
+        constants[index] = value;
         return value;
     }
 
