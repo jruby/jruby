@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
@@ -54,9 +55,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
-    private volatile transient IRubyObject cachedValue;
-    private volatile Object generation;
-    private Invalidator invalidator;
+    protected RuntimeCache.ConstantCache cache;
     
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
@@ -89,7 +88,7 @@ public class Colon3Node extends Node implements INameNode {
 
     public void setName(String name) {
         this.name = name;
-        this.invalidator = null;
+        this.cache = null;
     }
     
    /** Get parent module/class that this module represents */
@@ -126,31 +125,27 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     public IRubyObject getValue(ThreadContext context) {
-        IRubyObject value = cachedValue; // Store to temp so it does null out on us mid-stream
+        RuntimeCache.ConstantCache cache = this.cache;
 
-        return isCached(context, value) ? value : reCache(context, name);
+        return isCached(cache) ? cache.value : reCache(context, name);
     }
 
-    private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == invalidator(context).getData();
+    private boolean isCached(RuntimeCache.ConstantCache cache) {
+        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name) {
         Ruby runtime = context.runtime;
-        Object newGeneration = invalidator(context).getData();
+        Invalidator invalidator = runtime.getConstantInvalidator(name);
+        Object newGeneration = invalidator.getData();
         IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
 
-        cachedValue = value;
-
-        if (value != null) generation = newGeneration;
+        if (value != null) {
+            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator);
+        } else {
+            cache = null;
+        }
 
         return value;
-    }
-
-    protected Invalidator invalidator(ThreadContext context) {
-        if (invalidator == null) {
-            invalidator = context.runtime.getConstantInvalidator(name);
-        }
-        return invalidator;
     }
 }

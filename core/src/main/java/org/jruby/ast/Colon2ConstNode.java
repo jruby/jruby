@@ -8,12 +8,14 @@ package org.jruby.ast;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.DefinedMessage;
 
 /**
@@ -21,9 +23,7 @@ import org.jruby.util.DefinedMessage;
  * @author enebo
  */
 public class Colon2ConstNode extends Colon2Node {
-    private volatile transient IRubyObject cachedValue = null;
-    private volatile Object generation = -1;
-    private volatile int hash = -1;
+    private RuntimeCache.ConstantCache cache;
     
     public Colon2ConstNode(ISourcePosition position, Node leftNode, String name) {
         super(position, leftNode, name);
@@ -56,28 +56,29 @@ public class Colon2ConstNode extends Colon2Node {
     }
 
     public IRubyObject getValue(ThreadContext context, RubyModule target) {
-        IRubyObject value = cachedValue; // Store to temp so it does null out on us mid-stream
+        RuntimeCache.ConstantCache cache = this.cache;
 
-        return isCached(context, target, value) ? value : reCache(context, target);
+        return isCached(target, cache) ? cache.value : reCache(context, target);
     }
 
-    private boolean isCached(ThreadContext context, RubyModule target, IRubyObject value) {
+    private boolean isCached(RubyModule target, RuntimeCache.ConstantCache cache) {
         // We could probably also detect if LHS value came out of cache and avoid some of this
         return
-                value != null &&
-                generation == invalidator(context).getData() &&
-                hash == target.hashCode();
+                cache != null &&
+                cache.value != null &&
+                cache.generation == cache.invalidator.getData() &&
+                cache.targetHash == target.hashCode();
     }
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
-        Object newGeneration = invalidator(context).getData();
+        Invalidator invalidator = context.runtime.getConstantInvalidator(name);
+        Object newGeneration = invalidator.getData();
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
 
-        cachedValue = value;
-
         if (value != null) {
-            generation = newGeneration;
-            hash = target.hashCode();
+            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator, target.hashCode());
+        } else {
+            cache = null;
         }
 
         return value;

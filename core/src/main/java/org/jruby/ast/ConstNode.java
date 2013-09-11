@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -50,9 +51,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class ConstNode extends Node implements INameNode {
     private String name;
-    private volatile transient IRubyObject cachedValue = null;
-    private Object generation = -1;
-    private Invalidator invalidator;
+    private RuntimeCache.ConstantCache cache;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
@@ -85,7 +84,7 @@ public class ConstNode extends Node implements INameNode {
     
     public void setName(String name) {
         this.name = name;
-        this.invalidator = null;
+        this.cache = null;
     }
     
     @Override
@@ -103,31 +102,27 @@ public class ConstNode extends Node implements INameNode {
     }
     
     public IRubyObject getValue(ThreadContext context) {
-        IRubyObject value = cachedValue; // Store to temp so it does null out on us mid-stream
+        RuntimeCache.ConstantCache cache = this.cache;
 
-        return isCached(context, value) ? value : reCache(context, name);
+        return isCached(cache) ? cache.value : reCache(context, name);
     }
     
-    private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == invalidator(context).getData();
+    private boolean isCached(RuntimeCache.ConstantCache cache) {
+        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData();
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
-        Object newGeneration = invalidator(context).getData();
+        Invalidator invalidator = context.runtime.getConstantInvalidator(name);
+        Object newGeneration = invalidator.getData();
         IRubyObject value = context.getCurrentStaticScope().getConstant(name);
         this.name = name;
         
-        cachedValue = value;
-            
-        if (value != null) generation = newGeneration;
+        if (value != null) {
+            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator);
+        } else {
+            cache = null;
+        }
         
         return value;
-    }
-
-    private Invalidator invalidator(ThreadContext context) {
-        if (invalidator == null) {
-            invalidator = context.runtime.getConstantInvalidator(name);
-        }
-        return invalidator;
     }
 }
