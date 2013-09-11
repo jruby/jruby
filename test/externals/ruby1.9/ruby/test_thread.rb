@@ -335,10 +335,10 @@ class TestThread < Test::Unit::TestCase
       Thread.stop
       s += 1
     end
-    sleep 0.5
+    Thread.pass until t.status == "sleep"
     assert_equal(1, s)
     t.wakeup
-    sleep 0.5
+    Thread.pass until t.status == false
     assert_equal(2, s)
     assert_raise(ThreadError) { t.wakeup }
 
