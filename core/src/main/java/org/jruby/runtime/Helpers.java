@@ -2742,7 +2742,7 @@ public class Helpers {
     }
     
     private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
-        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
+        if (metaclass.index == 0 || metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
         return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (index + 1), name);
     }
     

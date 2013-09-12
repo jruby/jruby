@@ -550,7 +550,7 @@ public class EncodingUtils {
         Ruby runtime = context.runtime;
         IRubyObject replacement;
         
-        if (opthash.isNil()) {
+        if (opthash == null || opthash.isNil()) {
             replacement = context.nil;
         } else {
             if (!(opthash instanceof RubyHash) || !opthash.isFrozen()) {
