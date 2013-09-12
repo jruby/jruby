@@ -280,7 +280,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (self == null) {
             newBlock = block;
         } else {
-            newBlock = block.cloneBlock();
+            newBlock = block.cloneBlockAndFrame();
             newBlock.getBinding().setSelf(self);
         }
         
