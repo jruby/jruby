@@ -17,6 +17,12 @@
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
   </properties>
 
+  <pluginRepositories>
+    <pluginRepository>  
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </pluginRepository>
+  </pluginRepositories>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -50,7 +56,7 @@
         </includes>
       </resource>
     </resources>
-    <plugins>
+    <plugins>      
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -77,6 +83,72 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>  
+	<groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>build source archive - tar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+                <argument>-d</argument>
+		<argument>${project.build.outputDirectory}</argument>
+		<argument>-o</argument>
+		<argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+              </arguments>
+              <executable>unzip</executable>
+            </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+	<version>2.4.0</version>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>manifest</goal>
+	    </goals>
+	  </execution>
+	</executions>
+	<configuration>
+	  <classifier>osgi</classifier>
+	  <archive>
+            <manifest>
+	      <mainClass>org.jruby.Main</mainClass>
+	    </manifest>
+	  </archive>
+	  <instructions>
+            <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
+	    <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
+	    <Bundle-Name>JRuby ${project.version}</Bundle-Name>
+	    <Bundle-Description>JRuby ${project.version} OSGi bundle</Bundle-Description>
+	    <Bundle-SymbolicName>org.jruby.jruby</Bundle-SymbolicName>
+	  </instructions>
+	</configuration>
+      </plugin>
+      <plugin>
+	<artifactId>maven-jar-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <id>update manifest</id>
+	    <phase>package</phase>
+	    <goals><goal>jar</goal></goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+	    </configuration>
+	  </execution>
+	</executions>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
