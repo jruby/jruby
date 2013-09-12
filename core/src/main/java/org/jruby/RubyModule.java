@@ -3978,6 +3978,12 @@ public class RubyModule extends RubyObject {
     // superClass may be null.
     protected RubyClass superClass;
 
+    /**
+     * The index of this class in the ClassIndex. Only non-zero for native JRuby
+     * classes that have a corresponding entry in ClassIndex.
+     * 
+     * @see ClassIndex
+     */
     public int index;
 
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
