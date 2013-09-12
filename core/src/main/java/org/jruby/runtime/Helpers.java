@@ -2747,8 +2747,8 @@ public class Helpers {
     }
     
     private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
-        if (metaclass.index == 0 || metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
-        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (index + 1), name);
+        if (metaclass.getClassIndex() == ClassIndex.NO_INDEX) return metaclass.searchMethod(name);
+        return context.runtimeCache.getMethod(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
     }
     
     public static IRubyObject lastElement(IRubyObject[] ary) {

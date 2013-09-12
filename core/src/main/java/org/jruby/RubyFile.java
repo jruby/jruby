@@ -106,7 +106,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         fileClass.defineAnnotatedMethods(RubyFile.class);
 
-        fileClass.index = ClassIndex.FILE;
+        fileClass.setClassIndex(ClassIndex.FILE);
         fileClass.setReifiedClass(RubyFile.class);
 
         fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);

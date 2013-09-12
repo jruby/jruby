@@ -26,6 +26,8 @@
 
 package org.jruby.runtime.marshal;
 
+import org.jruby.runtime.ClassIndex;
+
 public interface CoreObjectType {
     /**
      * Return the ClassIndex value for the native type this object was
@@ -36,5 +38,12 @@ public interface CoreObjectType {
      *
      * @return the ClassIndex of the native type this object was constructed from
      */
+    @Deprecated
     int getNativeTypeIndex();
+    
+    /**
+     * Return the ClassIndex for the native type this object was constructed
+     * from.
+     */
+    ClassIndex getNativeClassIndex();
 }

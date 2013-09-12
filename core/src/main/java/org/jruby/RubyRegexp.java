@@ -221,7 +221,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         runtime.setRegexp(regexpClass);
 
-        regexpClass.index = ClassIndex.REGEXP;
+        regexpClass.setClassIndex(ClassIndex.REGEXP);
         regexpClass.setReifiedClass(RubyRegexp.class);
         
         regexpClass.kindOf = new RubyModule.JavaClassKindOf(RubyRegexp.class);
@@ -302,7 +302,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.REGEXP;
     }
 

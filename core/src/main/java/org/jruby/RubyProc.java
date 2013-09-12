@@ -80,7 +80,7 @@ public class RubyProc extends RubyObject implements DataType {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProc(procClass);
 
-        procClass.index = ClassIndex.PROC;
+        procClass.setClassIndex(ClassIndex.PROC);
         procClass.setReifiedClass(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);

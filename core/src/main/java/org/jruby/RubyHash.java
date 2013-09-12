@@ -117,7 +117,7 @@ public class RubyHash extends RubyObject implements Map {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
         runtime.setHash(hashc);
 
-        hashc.index = ClassIndex.HASH;
+        hashc.setClassIndex(ClassIndex.HASH);
         hashc.setReifiedClass(RubyHash.class);
         
         hashc.kindOf = new RubyModule.JavaClassKindOf(RubyHash.class);
@@ -136,7 +136,7 @@ public class RubyHash extends RubyObject implements Map {
     };
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.HASH;
     }
 

@@ -70,7 +70,7 @@ public class RubyNil extends RubyObject {
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
         runtime.setNilClass(nilClass);
-        nilClass.index = ClassIndex.NIL;
+        nilClass.setClassIndex(ClassIndex.NIL);
         nilClass.setReifiedClass(RubyNil.class);
         
         nilClass.defineAnnotatedMethods(RubyNil.class);
@@ -84,7 +84,7 @@ public class RubyNil extends RubyObject {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.NIL;
     }
 

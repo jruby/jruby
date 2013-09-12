@@ -144,7 +144,7 @@ public class RubyModule extends RubyObject {
     };
     
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
-        moduleClass.index = ClassIndex.MODULE;
+        moduleClass.setClassIndex(ClassIndex.MODULE);
         moduleClass.setReifiedClass(RubyModule.class);
         moduleClass.kindOf = new RubyModule.JavaClassKindOf(RubyModule.class);
         
@@ -164,6 +164,25 @@ public class RubyModule extends RubyObject {
         }
     }
     
+    /**
+     * Get the ClassIndex for this class. Will be NO_CLASS for non-core types.
+     */
+    public ClassIndex getClassIndex() {
+        return classIndex;
+    }
+
+    /**
+     * Set the ClassIndex for this core class. Only used at boot time for core
+     * types.
+     * 
+     * @param classIndex the ClassIndex for this type
+     */
+    @SuppressWarnings("deprecated")
+    void setClassIndex(ClassIndex classIndex) {
+        this.classIndex = classIndex;
+        this.index = classIndex.ordinal();
+    }
+    
     public static class ModuleKernelMethods {
         @JRubyMethod
         public static IRubyObject autoload(IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
@@ -177,7 +196,7 @@ public class RubyModule extends RubyObject {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.MODULE;
     }
 
@@ -4006,8 +4025,12 @@ public class RubyModule extends RubyObject {
      * classes that have a corresponding entry in ClassIndex.
      * 
      * @see ClassIndex
+     * @deprecated use RubyModule#getClassIndex()
      */
+    @Deprecated
     public int index;
+    
+    protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
 

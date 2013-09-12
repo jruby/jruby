@@ -61,7 +61,7 @@ public class RubyEncoding extends RubyObject {
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setEncoding(encodingc);
-        encodingc.index = ClassIndex.ENCODING;
+        encodingc.setClassIndex(ClassIndex.ENCODING);
         encodingc.setReifiedClass(RubyEncoding.class);
         encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
 

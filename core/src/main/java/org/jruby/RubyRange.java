@@ -84,7 +84,7 @@ public class RubyRange extends RubyObject {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
         runtime.setRange(result);
 
-        result.index = ClassIndex.RANGE;
+        result.setClassIndex(ClassIndex.RANGE);
         result.setReifiedClass(RubyRange.class);
 
         result.kindOf = new RubyModule.JavaClassKindOf(RubyRange.class);

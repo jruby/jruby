@@ -84,7 +84,7 @@ public class RubyMethod extends RubyObject implements DataType {
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setMethod(methodClass);
 
-        methodClass.index = ClassIndex.METHOD;
+        methodClass.setClassIndex(ClassIndex.METHOD);
         methodClass.setReifiedClass(RubyMethod.class);
         
         methodClass.defineAnnotatedMethods(RubyMethod.class);

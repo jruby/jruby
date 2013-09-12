@@ -66,7 +66,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setInteger(integer);
 
-        integer.index = ClassIndex.INTEGER;
+        integer.setClassIndex(ClassIndex.INTEGER);
         integer.setReifiedClass(RubyInteger.class);
         
         integer.kindOf = new RubyModule.JavaClassKindOf(RubyInteger.class);

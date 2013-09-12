@@ -56,7 +56,7 @@ public class RubyThreadGroup extends RubyObject {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
         runtime.setThreadGroup(threadGroupClass);
 
-        threadGroupClass.index = ClassIndex.THREADGROUP;
+        threadGroupClass.setClassIndex(ClassIndex.THREADGROUP);
         
         threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
         

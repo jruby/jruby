@@ -98,7 +98,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
         runtime.setArray(arrayc);
 
-        arrayc.index = ClassIndex.ARRAY;
+        arrayc.setClassIndex(ClassIndex.ARRAY);
         arrayc.setReifiedClass(RubyArray.class);
         
         arrayc.kindOf = new RubyModule.JavaClassKindOf(RubyArray.class);
@@ -116,7 +116,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     };
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.ARRAY;
     }
 
@@ -598,7 +598,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      * @return A new RubyArray sharing the original backing store.
      */
     public IRubyObject dup() {
-        if (metaClass.index != ClassIndex.ARRAY) return super.dup();
+        if (metaClass.getClassIndex() != ClassIndex.ARRAY) return super.dup();
 
         RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
         dup.isShared = isShared = true;

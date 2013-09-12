@@ -205,7 +205,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * initialization.
      */
     public static RubyClass createBasicObjectClass(Ruby runtime, RubyClass objectClass) {
-        objectClass.index = ClassIndex.OBJECT;
+        objectClass.setClassIndex(ClassIndex.OBJECT);
 
         objectClass.defineAnnotatedMethods(RubyBasicObject.class);
 
@@ -1452,7 +1452,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
-    public int getNativeTypeIndex() {
+    @Deprecated
+    public final int getNativeTypeIndex() {
+        return getNativeClassIndex().ordinal();
+    }
+    
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.BASICOBJECT;
     }
 

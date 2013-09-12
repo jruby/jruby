@@ -124,7 +124,7 @@ public class RubyObject extends RubyBasicObject {
      * initialization.
      */
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
-        objectClass.index = ClassIndex.OBJECT;
+        objectClass.setClassIndex(ClassIndex.OBJECT);
         objectClass.setReifiedClass(RubyObject.class);
 
         objectClass.defineAnnotatedMethods(RubyObject.class);
@@ -299,7 +299,7 @@ public class RubyObject extends RubyBasicObject {
      * @see org.jruby.runtime.ClassIndex
      */
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.OBJECT;
     }
 

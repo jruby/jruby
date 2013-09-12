@@ -585,13 +585,13 @@ public class Sprintf {
                         name = null;
                     }
 
-                    int type = arg.getMetaClass().index;
+                    ClassIndex type = arg.getMetaClass().getClassIndex();
                     if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
                         switch(type) {
-                        case ClassIndex.FLOAT:
+                        case FLOAT:
                             arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
                             break;
-                        case ClassIndex.STRING:
+                        case STRING:
                             arg = ((RubyString)arg).stringToInum(0, true);
                             break;
                         default:
@@ -602,7 +602,7 @@ public class Sprintf {
                             }
                             break;
                         }
-                        type = arg.getMetaClass().index;
+                        type = arg.getMetaClass().getClassIndex();
                     }
                     byte[] bytes = null;
                     int first = 0;

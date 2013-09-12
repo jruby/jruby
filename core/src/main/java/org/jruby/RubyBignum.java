@@ -58,7 +58,7 @@ public class RubyBignum extends RubyInteger {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setBignum(bignum);
 
-        bignum.index = ClassIndex.BIGNUM;
+        bignum.setClassIndex(ClassIndex.BIGNUM);
         bignum.setReifiedClass(RubyBignum.class);
 
         bignum.defineAnnotatedMethods(RubyBignum.class);
@@ -80,7 +80,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.BIGNUM;
     }
 

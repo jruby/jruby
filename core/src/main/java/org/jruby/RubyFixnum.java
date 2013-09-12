@@ -69,7 +69,7 @@ public class RubyFixnum extends RubyInteger {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFixnum(fixnum);
 
-        fixnum.index = ClassIndex.FIXNUM;
+        fixnum.setClassIndex(ClassIndex.FIXNUM);
         fixnum.setReifiedClass(RubyFixnum.class);
         
         fixnum.kindOf = new RubyModule.JavaClassKindOf(RubyFixnum.class);
@@ -127,7 +127,7 @@ public class RubyFixnum extends RubyInteger {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.FIXNUM;
     }
     

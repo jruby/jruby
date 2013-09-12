@@ -149,7 +149,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
-        stringClass.index = ClassIndex.STRING;
+        stringClass.setClassIndex(ClassIndex.STRING);
         stringClass.setReifiedClass(RubyString.class);
         stringClass.kindOf = new RubyModule.JavaClassKindOf(RubyString.class);
 
@@ -724,7 +724,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.STRING;
     }
 
@@ -760,7 +760,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Override
     public IRubyObject dup() {
         RubyClass mc = metaClass.getRealClass();
-        if (mc.index != ClassIndex.STRING) return super.dup();
+        if (mc.getClassIndex() != ClassIndex.STRING) return super.dup();
 
         return strDup(mc.getClassRuntime(), mc.getRealClass());
     }

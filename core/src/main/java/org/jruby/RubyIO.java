@@ -254,14 +254,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * We use FILE versus IO to match T_FILE in MRI.
      */
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.FILE;
     }
 
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
 
-        ioClass.index = ClassIndex.IO;
+        ioClass.setClassIndex(ClassIndex.IO);
         ioClass.setReifiedClass(RubyIO.class);
 
         ioClass.kindOf = new RubyModule.JavaClassKindOf(RubyIO.class);

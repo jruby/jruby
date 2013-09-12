@@ -72,7 +72,7 @@ public class RubyBinding extends RubyObject {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
         runtime.setBinding(bindingClass);
 
-        bindingClass.index = ClassIndex.BINDING;
+        bindingClass.setClassIndex(ClassIndex.BINDING);
         bindingClass.setReifiedClass(RubyBinding.class);
         
         bindingClass.defineAnnotatedMethods(RubyBinding.class);

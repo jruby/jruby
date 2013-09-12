@@ -91,7 +91,7 @@ public class RubyRational extends RubyNumeric {
         RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
         runtime.setRational(rationalc);
 
-        rationalc.index = ClassIndex.RATIONAL;
+        rationalc.setClassIndex(ClassIndex.RATIONAL);
         rationalc.setReifiedClass(RubyRational.class);
         
         rationalc.kindOf = new RubyModule.JavaClassKindOf(RubyRational.class);

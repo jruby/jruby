@@ -358,7 +358,7 @@ public class RubyException extends RubyObject {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
         runtime.setException(exceptionClass);
 
-        exceptionClass.index = ClassIndex.EXCEPTION;
+        exceptionClass.setClassIndex(ClassIndex.EXCEPTION);
         exceptionClass.setReifiedClass(RubyException.class);
 
         exceptionClass.setMarshal(EXCEPTION_MARSHAL);

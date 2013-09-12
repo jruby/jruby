@@ -100,7 +100,7 @@ public class RubyConverter extends RubyObject {
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
         runtime.setConverter(converterc);
-        converterc.index = ClassIndex.CONVERTER;
+        converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
         converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 

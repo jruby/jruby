@@ -103,7 +103,7 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
-        classClass.index = ClassIndex.CLASS;
+        classClass.setClassIndex(ClassIndex.CLASS);
         classClass.setReifiedClass(RubyClass.class);
         classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
         
@@ -322,7 +322,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.CLASS;
     }
     
@@ -397,7 +397,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         this.realClass = this;
         this.variableTableManager = new VariableTableManager(this);
-        index = ClassIndex.CLASS;
+        setClassIndex(ClassIndex.CLASS);
     }
     
     /** rb_class_boot (for plain Classes)

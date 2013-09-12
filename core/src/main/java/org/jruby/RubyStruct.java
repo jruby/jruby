@@ -84,7 +84,7 @@ public class RubyStruct extends RubyObject {
     public static RubyClass createStructClass(Ruby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setStructClass(structClass);
-        structClass.index = ClassIndex.STRUCT;
+        structClass.setClassIndex(ClassIndex.STRUCT);
         structClass.includeModule(runtime.getEnumerable());
         structClass.defineAnnotatedMethods(RubyStruct.class);
 
@@ -92,7 +92,7 @@ public class RubyStruct extends RubyObject {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.STRUCT;
     }
     
@@ -205,7 +205,7 @@ public class RubyStruct extends RubyObject {
 
         // set reified class to RubyStruct, for Java subclasses to use
         newStruct.setReifiedClass(RubyStruct.class);
-        newStruct.index = ClassIndex.STRUCT;
+        newStruct.setClassIndex(ClassIndex.STRUCT);
         
         newStruct.setInternalVariable("__size__", member.length());
         newStruct.setInternalVariable("__member__", member);

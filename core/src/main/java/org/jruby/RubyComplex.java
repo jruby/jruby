@@ -85,7 +85,7 @@ public class RubyComplex extends RubyNumeric {
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
         runtime.setComplex(complexc);
 
-        complexc.index = ClassIndex.COMPLEX;
+        complexc.setClassIndex(ClassIndex.COMPLEX);
         complexc.setReifiedClass(RubyComplex.class);
         
         complexc.kindOf = new RubyModule.JavaClassKindOf(RubyComplex.class);
@@ -283,11 +283,11 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static void realCheck(ThreadContext context, IRubyObject num) {
-        switch (num.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
-        case ClassIndex.RATIONAL:
+        switch (num.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
+        case RATIONAL:
             break;
         default:
              if (!(num instanceof RubyNumeric ) || !f_real_p(context, num).isTrue()) {

@@ -158,14 +158,14 @@ public class MarshalStream extends FilterOutputStream {
     private List<Variable<Object>> getVariables(IRubyObject value) throws IOException {
         List<Variable<Object>> variables = null;
         if (value instanceof CoreObjectType) {
-            int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
+            ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
             
-            if (nativeTypeIndex != ClassIndex.OBJECT && nativeTypeIndex != ClassIndex.BASICOBJECT) {
+            if (nativeClassIndex != ClassIndex.OBJECT && nativeClassIndex != ClassIndex.BASICOBJECT) {
                 if (shouldMarshalEncoding(value) || (
                         !value.isImmediate()
                         && value.hasVariables()
-                        && nativeTypeIndex != ClassIndex.CLASS
-                        && nativeTypeIndex != ClassIndex.MODULE
+                        && nativeClassIndex != ClassIndex.CLASS
+                        && nativeClassIndex != ClassIndex.MODULE
                         )) {
                     // object has instance vars and isn't a class, get a snapshot to be marshalled
                     // and output the ivar header here
@@ -176,16 +176,16 @@ public class MarshalStream extends FilterOutputStream {
                     write(TYPE_IVAR);
                 }
                 RubyClass type = value.getMetaClass();
-                switch(nativeTypeIndex) {
-                case ClassIndex.STRING:
-                case ClassIndex.REGEXP:
-                case ClassIndex.ARRAY:
-                case ClassIndex.HASH:
+                switch(nativeClassIndex) {
+                case STRING:
+                case REGEXP:
+                case ARRAY:
+                case HASH:
                     type = dumpExtended(type);
                     break;
                 }
 
-                if (nativeTypeIndex != value.getMetaClass().index && nativeTypeIndex != ClassIndex.STRUCT) {
+                if (nativeClassIndex != value.getMetaClass().getClassIndex() && nativeClassIndex != ClassIndex.STRUCT) {
                     // object is a custom class that extended one of the native types other than Object
                     writeUserClass(value, type);
                 }
@@ -236,17 +236,17 @@ public class MarshalStream extends FilterOutputStream {
             if (value instanceof DataType) {
                 throw value.getRuntime().newTypeError("no marshal_dump is defined for class " + value.getMetaClass().getName());
             }
-            int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
+            ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 
-            switch (nativeTypeIndex) {
-            case ClassIndex.ARRAY:
+            switch (nativeClassIndex) {
+            case ARRAY:
                 write('[');
                 RubyArray.marshalTo((RubyArray)value, this);
                 return;
-            case ClassIndex.FALSE:
+            case FALSE:
                 write('F');
                 return;
-            case ClassIndex.FIXNUM: {
+            case FIXNUM: {
                 RubyFixnum fixnum = (RubyFixnum)value;
 
                 if (isMarshalFixnum(fixnum)) {
@@ -259,20 +259,20 @@ public class MarshalStream extends FilterOutputStream {
 
                 // fall through
             }
-            case ClassIndex.BIGNUM:
+            case BIGNUM:
                 write('l');
                 RubyBignum.marshalTo((RubyBignum)value, this);
                 return;
-            case ClassIndex.CLASS:
+            case CLASS:
                 if (((RubyClass)value).isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
                 write('c');
                 RubyClass.marshalTo((RubyClass)value, this);
                 return;
-            case ClassIndex.FLOAT:
+            case FLOAT:
                 write('f');
                 RubyFloat.marshalTo((RubyFloat)value, this);
                 return;
-            case ClassIndex.HASH: {
+            case HASH: {
                 RubyHash hash = (RubyHash)value;
 
                 if(hash.getIfNone().isNil()){
@@ -286,34 +286,34 @@ public class MarshalStream extends FilterOutputStream {
                 RubyHash.marshalTo(hash, this);
                 return;
             }
-            case ClassIndex.MODULE:
+            case MODULE:
                 write('m');
                 RubyModule.marshalTo((RubyModule)value, this);
                 return;
-            case ClassIndex.NIL:
+            case NIL:
                 write('0');
                 return;
-            case ClassIndex.OBJECT:
-            case ClassIndex.BASICOBJECT:
+            case OBJECT:
+            case BASICOBJECT:
                 dumpDefaultObjectHeader(value.getMetaClass());
                 value.getMetaClass().getRealClass().marshal(value, this);
                 return;
-            case ClassIndex.REGEXP:
+            case REGEXP:
                 write('/');
                 RubyRegexp.marshalTo((RubyRegexp)value, this);
                 return;
-            case ClassIndex.STRING:
+            case STRING:
                 registerLinkTarget(value);
                 write('"');
                 writeString(value.convertToString().getByteList());
                 return;
-            case ClassIndex.STRUCT:
+            case STRUCT:
                 RubyStruct.marshalTo((RubyStruct)value, this);
                 return;
-            case ClassIndex.SYMBOL:
+            case SYMBOL:
                 writeAndRegisterSymbol(((RubySymbol)value).asJavaString());
                 return;
-            case ClassIndex.TRUE:
+            case TRUE:
                 write('T');
                 return;
             default:

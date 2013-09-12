@@ -121,7 +121,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setSymbol(symbolClass);
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
-        symbolClass.index = ClassIndex.SYMBOL;
+        symbolClass.setClassIndex(ClassIndex.SYMBOL);
         symbolClass.setReifiedClass(RubySymbol.class);
         symbolClass.kindOf = new RubyModule.JavaClassKindOf(RubySymbol.class);
 
@@ -132,7 +132,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.SYMBOL;
     }
 

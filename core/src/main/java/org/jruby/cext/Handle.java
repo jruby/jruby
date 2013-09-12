@@ -125,9 +125,9 @@ public final class Handle extends Cleaner {
 
 
         if (obj instanceof RubyObject) {
-            int type = ((RubyObject) obj).getNativeTypeIndex();
+            ClassIndex type = ((RubyObject) obj).getNativeClassIndex();
             switch (type) {
-                case ClassIndex.FIXNUM: {
+                case FIXNUM: {
                     final long val = ((RubyFixnum) obj).getLongValue();
                     nativeHandle = (val <= FIXNUM_MAX && val >= FIXNUM_MIN)
                             ? ((val << FIXNUM_SHIFT) | FIXNUM_FLAG)
@@ -135,26 +135,26 @@ public final class Handle extends Cleaner {
                     }
                     break;
 
-                case ClassIndex.FLOAT:
+                case FLOAT:
                     nativeHandle = Native.getInstance(runtime).newFloatHandle(obj, ((RubyNumeric) obj).getDoubleValue());
                     break;
 
-                case ClassIndex.SYMBOL:
+                case SYMBOL:
                     nativeHandle = ((long) ((RubySymbol) obj).getId() << SYMBOL_SHIFT) | SYMBOL_FLAG;
                     break;
 
-                case ClassIndex.FILE: // RubyIO uses FILE as type index, matching MRI's T_FILE
+                case FILE: // RubyIO uses FILE as type index, matching MRI's T_FILE
                     nativeHandle = Native.getInstance(runtime).newIOHandle(obj,
                             (int)((RubyIO) obj).fileno(runtime.getCurrentContext()).getLongValue(),
                             ((RubyIO) obj).getOpenFile().getMode());
                     break;
 
                 default:
-                    nativeHandle = Native.getInstance(runtime).newHandle(obj, type);
+                    nativeHandle = Native.getInstance(runtime).newHandle(obj, type.ordinal());
                     break;
             }
         } else {
-            nativeHandle = Native.getInstance(runtime).newHandle(obj, ClassIndex.OBJECT);
+            nativeHandle = Native.getInstance(runtime).newHandle(obj, ClassIndex.OBJECT.ordinal());
         }
 
         Handle handle = newHandle(runtime, obj, nativeHandle);

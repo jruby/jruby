@@ -1340,30 +1340,30 @@ public class JavaUtil {
         }
         Ruby runtime = recv.getRuntime();
         Object javaObject;
-        switch (object.getMetaClass().index) {
-        case ClassIndex.NIL:
+        switch (object.getMetaClass().getClassIndex()) {
+        case NIL:
             javaObject = null;
             break;
-        case ClassIndex.FIXNUM:
+        case FIXNUM:
             javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
             break;
-        case ClassIndex.BIGNUM:
+        case BIGNUM:
             javaObject = ((RubyBignum) object).getValue();
             break;
-        case ClassIndex.FLOAT:
+        case FLOAT:
             javaObject = new Double(((RubyFloat) object).getValue());
             break;
-        case ClassIndex.STRING:
+        case STRING:
             ByteList bytes = ((RubyString) object).getByteList();
             javaObject = RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             break;
-        case ClassIndex.TRUE:
+        case TRUE:
             javaObject = Boolean.TRUE;
             break;
-        case ClassIndex.FALSE:
+        case FALSE:
             javaObject = Boolean.FALSE;
             break;
-        case ClassIndex.TIME:
+        case TIME:
             javaObject = ((RubyTime) object).getJavaDate();
             break;
         default:

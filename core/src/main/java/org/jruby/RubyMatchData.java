@@ -70,7 +70,7 @@ public class RubyMatchData extends RubyObject {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
         runtime.setMatchData(matchDataClass);
 
-        matchDataClass.index = ClassIndex.MATCHDATA;
+        matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
         
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
@@ -108,7 +108,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.MATCHDATA;
     }
 

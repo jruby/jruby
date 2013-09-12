@@ -73,7 +73,7 @@ public class RubyUnboundMethod extends RubyMethod {
         	runtime.defineClass("UnboundMethod", runtime.getMethod(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setUnboundMethod(newClass);
 
-        newClass.index = ClassIndex.UNBOUNDMETHOD;
+        newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
         newClass.setReifiedClass(RubyUnboundMethod.class);
 
         newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
