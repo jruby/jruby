@@ -215,12 +215,12 @@ public class RubyPathname extends RubyObject {
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_8)
-    IRubyObject to_str(ThreadContext context) {
+    public IRubyObject to_str(ThreadContext context) {
         return path;
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
-    IRubyObject to_path(ThreadContext context) {
+    public IRubyObject to_path(ThreadContext context) {
         return path;
     }
 
