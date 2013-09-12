@@ -253,6 +253,14 @@ DEPS
     }
   end
 
+  def test_loading_jar_with_leading_underscore
+    assert_in_sub_runtime %{
+      require 'test/_leading_and_consecutive__underscores.jar'
+      load 'test/_leading_and_consecutive__underscores.jar'
+      true
+    }
+  end
+
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading
     assert_equal "hi", run_in_sub_runtime(%{

@@ -68,6 +68,30 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
+        <executions>
+          <execution>
+            <id>fix shebang on gem bin files</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <script>
+		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
+		  content = File.read( f )
+		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
+")
+		  File.open( f, "w" ) { |file| file.print( new_content ) }
+		end
+	      </script>
+	    </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>  
 	<groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

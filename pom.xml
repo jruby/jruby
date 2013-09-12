@@ -47,7 +47,7 @@
 
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-rc2-SNAPSHOT</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc2</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
@@ -161,6 +161,7 @@
     </site>
   </distributionManagement>
 
+<!--
   <pluginRepositories>
     <pluginRepository>
       <id>sonatype snapshots</id>
@@ -174,6 +175,7 @@
           </snapshots>
     </pluginRepository>
   </pluginRepositories>
+-->
 
   <build>
     <defaultGoal>package</defaultGoal>
