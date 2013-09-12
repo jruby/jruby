@@ -1109,7 +1109,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public void setEncoding(ThreadContext context, IRubyObject v1, IRubyObject v2, IRubyObject opt) {
         IOEncodable.ConvConfig holder = new IOEncodable.ConvConfig();
         int ecflags = this.ecflags;
-        IRubyObject[] ecopts_p = new IRubyObject[1];
+        IRubyObject[] ecopts_p = {context.nil};
         IRubyObject tmp;
         
         if (!v2.isNil()) {
@@ -5214,6 +5214,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     @Override
     public void setEcopts(IRubyObject ecopts) {
+        if (ecopts == null) {
+            System.err.println("NULL ECOPTS DETECTED");
+            Thread.dumpStack();
+        }
         this.ecopts = ecopts;
     }
     
