@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -55,7 +56,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
-    protected RuntimeCache.ConstantCache cache;
+    protected ConstantCache cache;
     
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
@@ -115,23 +116,11 @@ public class Colon3Node extends Node implements INameNode {
             
         return null;
     }
-    
-    private boolean hasConstant(RubyModule left) {
-        return left.getConstantAt(name, false) != null;
-    }
-    
-    private boolean hasMethod(IRubyObject left) {
-        return left.getMetaClass().isMethodBound(name, true);
-    }
 
     public IRubyObject getValue(ThreadContext context) {
-        RuntimeCache.ConstantCache cache = this.cache;
+        ConstantCache cache = this.cache;
 
-        return isCached(cache) ? cache.value : reCache(context, name);
-    }
-
-    private boolean isCached(RuntimeCache.ConstantCache cache) {
-        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData();
+        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
     }
 
     public IRubyObject reCache(ThreadContext context, String name) {
@@ -141,7 +130,7 @@ public class Colon3Node extends Node implements INameNode {
         IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
 
         if (value != null) {
-            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator);
+            cache = new ConstantCache(value, newGeneration, invalidator);
         } else {
             cache = null;
         }

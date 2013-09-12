@@ -8,6 +8,7 @@ package org.jruby.ast;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Helpers;
@@ -23,7 +24,7 @@ import org.jruby.util.DefinedMessage;
  * @author enebo
  */
 public class Colon2ConstNode extends Colon2Node {
-    private RuntimeCache.ConstantCache cache;
+    private ConstantCache cache;
     
     public Colon2ConstNode(ISourcePosition position, Node leftNode, String name) {
         super(position, leftNode, name);
@@ -56,18 +57,9 @@ public class Colon2ConstNode extends Colon2Node {
     }
 
     public IRubyObject getValue(ThreadContext context, RubyModule target) {
-        RuntimeCache.ConstantCache cache = this.cache;
+        ConstantCache cache = this.cache;
 
-        return isCached(target, cache) ? cache.value : reCache(context, target);
-    }
-
-    private boolean isCached(RubyModule target, RuntimeCache.ConstantCache cache) {
-        // We could probably also detect if LHS value came out of cache and avoid some of this
-        return
-                cache != null &&
-                cache.value != null &&
-                cache.generation == cache.invalidator.getData() &&
-                cache.targetHash == target.hashCode();
+        return ConstantCache.isCachedFrom(target, cache) ? cache.value : reCache(context, target);
     }
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
@@ -76,7 +68,7 @@ public class Colon2ConstNode extends Colon2Node {
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
 
         if (value != null) {
-            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator, target.hashCode());
+            cache = new ConstantCache(value, newGeneration, invalidator, target.hashCode());
         } else {
             cache = null;
         }

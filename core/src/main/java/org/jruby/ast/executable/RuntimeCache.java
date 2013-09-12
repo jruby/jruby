@@ -1,5 +1,6 @@
 package org.jruby.ast.executable;
 
+import org.jruby.runtime.opto.ConstantCache;
 import java.math.BigInteger;
 import java.util.Arrays;
 import org.jcodings.Encoding;
@@ -404,11 +405,7 @@ public class RuntimeCache {
 
     public IRubyObject getValue(ThreadContext context, StaticScope scope, String name, int index) {
         ConstantCache cache = constants[index];
-        return isCached(cache) ? cache.value : reCache(context, scope, name, index);
-    }
-
-    private boolean isCached(ConstantCache cache) {
-        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData();
+        return ConstantCache.isCached(cache) ? cache.value : reCache(context, scope, name, index);
     }
 
     public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
@@ -431,11 +428,7 @@ public class RuntimeCache {
 
     public IRubyObject getValueFrom(RubyModule target, ThreadContext context, String name, int index) {
         ConstantCache cache = constants[index];
-        return isCachedFrom(target, cache) ? cache.value : reCacheFrom(target, context, name, index);
-    }
-
-    private boolean isCachedFrom(RubyModule target, ConstantCache cache) {
-        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData() && cache.targetHash == target.hashCode();
+        return ConstantCache.isCachedFrom(target, cache) ? cache.value : reCacheFrom(target, context, name, index);
     }
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
@@ -668,26 +661,5 @@ public class RuntimeCache {
     private static final VariableAccessor[] EMPTY_VARIABLE_ACCESSORS = {};
     public VariableAccessor[] variableReaders = EMPTY_VARIABLE_ACCESSORS;
     public VariableAccessor[] variableWriters = EMPTY_VARIABLE_ACCESSORS;
-    private static final int[] EMPTY_INTS = {};
-    private static final Object[] EMPTY_OBJS = {};
-    
-    public static class ConstantCache {
-        public final IRubyObject value;
-        public final Object generation;
-        public final Invalidator invalidator;
-        public final int targetHash;
-        
-        public ConstantCache(IRubyObject value, Object generation, Invalidator invalidator, int targetHash) {
-            this.value = value;
-            this.generation = generation;
-            this.invalidator = invalidator;
-            this.targetHash = targetHash;
-        }
-        
-        public ConstantCache(IRubyObject value, Object generation, Invalidator invalidator) {
-            this(value, generation, invalidator, -1);
-        }
-    }
-    
     public ConstantCache[] constants = {};
 }

@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -51,7 +52,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class ConstNode extends Node implements INameNode {
     private String name;
-    private RuntimeCache.ConstantCache cache;
+    private ConstantCache cache;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
@@ -102,13 +103,9 @@ public class ConstNode extends Node implements INameNode {
     }
     
     public IRubyObject getValue(ThreadContext context) {
-        RuntimeCache.ConstantCache cache = this.cache;
+        ConstantCache cache = this.cache;
 
-        return isCached(cache) ? cache.value : reCache(context, name);
-    }
-    
-    private boolean isCached(RuntimeCache.ConstantCache cache) {
-        return cache != null && cache.value != null && cache.generation == cache.invalidator.getData();
+        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
@@ -118,7 +115,7 @@ public class ConstNode extends Node implements INameNode {
         this.name = name;
         
         if (value != null) {
-            cache = new RuntimeCache.ConstantCache(value, newGeneration, invalidator);
+            cache = new ConstantCache(value, newGeneration, invalidator);
         } else {
             cache = null;
         }
