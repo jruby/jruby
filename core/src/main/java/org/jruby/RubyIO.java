@@ -5214,10 +5214,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     @Override
     public void setEcopts(IRubyObject ecopts) {
-        if (ecopts == null) {
-            System.err.println("NULL ECOPTS DETECTED");
-            Thread.dumpStack();
-        }
         this.ecopts = ecopts;
     }
     
