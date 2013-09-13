@@ -349,11 +349,7 @@ public abstract class IRScope {
     }
     
     private boolean hasListener() {
-        if(manager.getIRScopeListener() == null) {
-            return false;
-        } else {
-            return false;
-        }
+        return manager.getIRScopeListener() != null;
     }
 
     public int getScopeId() {
