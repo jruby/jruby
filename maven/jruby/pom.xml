@@ -36,6 +36,27 @@
   <build>
     <plugins>
       <plugin>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+	    </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
         <version>1.5</version>
         <configuration>
