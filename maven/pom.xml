@@ -24,7 +24,6 @@
         <module>jruby-stdlib-complete</module>
         <module>jruby-jars</module>
         <module>jruby-dist</module>
-        <module>jruby-osgi-test</module>
       </modules>
     </profile>
     <profile>
