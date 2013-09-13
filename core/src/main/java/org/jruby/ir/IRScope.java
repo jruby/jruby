@@ -368,14 +368,6 @@ public abstract class IRScope {
         return scopeId == ((IRScope) other).scopeId;
     }
     
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (getClass() != obj.getClass()) return false;
-        final IRScope other = (IRScope) obj;
-        return this.scopeId == other.scopeId;
-    }
-    
     protected void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
