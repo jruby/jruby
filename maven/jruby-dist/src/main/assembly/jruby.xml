@@ -39,6 +39,7 @@
         <exclude>**/target/**/*</exclude>
         <exclude>**/style_checks.xml</exclude>
         <exclude>lib/ruby/gems/**/*</exclude>
+        <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
       </excludes>
     </fileSet>
     <fileSet>
