@@ -75,21 +75,15 @@ public class InstructionsListenerDecorator implements List<Instr> {
         @Override
         public int nextIndex() {
             int index = currentIndex + 1;
-            if (index < instrs.size()) {
-                return index;
-            } else {
-                return instrs.size();
-            }
+
+            return index < instrs.size() ? index : instrs.size();
         }
 
         @Override
         public int previousIndex() {
             int index = currentIndex - 1;
-            if (index > -1) {
-                return index;
-            } else {
-                return -1;
-            }
+
+            return index > -1 ? index : -1;
         }
 
         @Override
