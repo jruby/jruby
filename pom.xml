@@ -68,6 +68,8 @@
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
+    <bundle.name>JRuby</bundle.name>
+    <bundle.symbolic_name>org.jruby.jruby</bundle.symbolic_name>
   </properties>
 
     <mailingLists>
@@ -181,6 +183,28 @@
     <defaultGoal>package</defaultGoal>
     <pluginManagement>
       <plugins>
+	<plugin>
+	  <groupId>org.apache.felix</groupId>
+	  <artifactId>maven-bundle-plugin</artifactId>
+	  <version>2.4.0</version>
+	  <executions>
+	    <execution>
+	      <phase>prepare-package</phase>
+	      <goals>
+		<goal>manifest</goal>
+	      </goals>
+	    </execution>
+	  </executions>
+	  <configuration>
+	    <instructions>
+              <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
+	      <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
+	      <Bundle-Name>${bundle.name} ${project.version}</Bundle-Name>
+	      <Bundle-Description>${bundle.name} ${project.version} OSGi bundle</Bundle-Description>
+	      <Bundle-SymbolicName>${bundle.symbolic_name}</Bundle-SymbolicName>
+	    </instructions>
+	  </configuration>
+	</plugin>
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.3</version>

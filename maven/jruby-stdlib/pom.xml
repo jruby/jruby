@@ -44,6 +44,8 @@
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <bundle.name>JRuby Stdlib</bundle.name>
+    <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
   </properties>
 
   <build>
@@ -92,6 +94,27 @@
     </resources>
 
     <plugins>
+      <plugin>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+	    </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
