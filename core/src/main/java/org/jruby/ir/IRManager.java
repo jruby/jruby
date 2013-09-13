@@ -116,9 +116,9 @@ public class IRManager {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
             if (instrsListener != null) {
                 throw new RuntimeException("InstructionsListener is set and other are currently not allowed");
-            } else {
-                instrsListener = listener;
             }
+             
+            instrsListener = listener;
         }
     }
     
