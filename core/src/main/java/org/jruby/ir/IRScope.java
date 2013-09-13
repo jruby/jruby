@@ -25,16 +25,14 @@ import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
-import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.representations.BasicBlock;
@@ -349,6 +347,14 @@ public abstract class IRScope {
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }        
     }
+    
+    private boolean hasListener() {
+        if(manager.getIRScopeListener() == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     public int getScopeId() {
         return scopeId;
@@ -371,6 +377,14 @@ public abstract class IRScope {
         return this.scopeId == other.scopeId;
     }
     
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        final IRScope other = (IRScope) obj;
+        return this.scopeId == other.scopeId;
+    }
+    
     protected void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
@@ -388,6 +402,10 @@ public abstract class IRScope {
     }
 
     public void addInstrAtBeginning(Instr i) {
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.addedInstr(this, i, 0);
+        }
         instrList.add(0, i);
     }
 
@@ -400,6 +418,10 @@ public abstract class IRScope {
         else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
         else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
+        if (hasListener()) {
+            IRScopeListener listener = manager.getIRScopeListener();
+            listener.addedInstr(this, i, instrList.size());
+        }
         instrList.add(i);
     }
 
