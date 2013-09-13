@@ -1188,8 +1188,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return sysreadCommon(args);
     }
 
-    @JRubyMethod(name = {"readchar", "readbyte"})
-    @Override
+    @JRubyMethod(name = {"readchar", "readbyte"}, compat = RUBY1_8)
     public IRubyObject readchar() {
         IRubyObject c = getc();
 
@@ -1199,19 +1198,36 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     @JRubyMethod(name = "readchar", compat = CompatVersion.RUBY1_9)
-    @Override
     public IRubyObject readchar19(ThreadContext context) {
-        IRubyObject c = getc19(context);
+        IRubyObject c = callMethod(context, "getc");
 
         if (c.isNil()) throw getRuntime().newEOFError();
 
         return c;
     }
 
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readbyte", compat = CompatVersion.RUBY1_9)
+    public IRubyObject readbyte(ThreadContext context) {
+        IRubyObject c = callMethod(context, "getbyte");
+
+        if (c.isNil()) throw getRuntime().newEOFError();
+
+        return c;
+    }
+
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_8)
+    public IRubyObject readline18(ThreadContext context, IRubyObject[] args) {
+        IRubyObject line = gets(context, args);
+
+        if (line.isNil()) throw getRuntime().newEOFError();
+
+        return line;
+    }
+
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_9)
     @Override
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
-        IRubyObject line = gets(context, args);
+        IRubyObject line = callMethod(context, "gets", args);
 
         if (line.isNil()) throw getRuntime().newEOFError();
 
@@ -1351,12 +1367,25 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().getTrue();
     }
 
-    @JRubyMethod(name = "sysread", optional = 2)
-    @Override
-    public IRubyObject sysread(IRubyObject[] args) {
+    @JRubyMethod(name = "sysread", optional = 2, compat = RUBY1_8)
+    public IRubyObject sysread18(IRubyObject[] args) {
         return sysreadCommon(args);
     }
     
+    @JRubyMethod(name = "sysread", optional = 2, compat = RUBY1_9)
+    public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
+        IRubyObject val = callMethod(context, "read", args);
+        
+        if (val.isNil()) throw getRuntime().newEOFError();
+        
+        return val;
+    }
+    
+    // only here for the fake-out class in org.jruby
+    @Override
+    public IRubyObject sysread(IRubyObject[] args) {
+        return sysread(getRuntime().getCurrentContext(), args);
+    }
 
     private IRubyObject sysreadCommon(IRubyObject[] args) {
         IRubyObject obj = read(args);
@@ -1385,7 +1414,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return arg;
     }
 
-    @JRubyMethod(name = "ungetc", required = 1)
+    @JRubyMethod(name = "ungetc", required = 1, compat = RUBY1_8)
     @Override
     public IRubyObject ungetc(IRubyObject arg) {
         checkReadable();
@@ -1396,7 +1425,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "ungetc", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "ungetc", compat = RUBY1_9)
     @Override
     public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
         return ungetbyte(context, arg);
@@ -1589,7 +1618,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     public void checkFrozen() {
         super.checkFrozen();
         checkInitialized();
-        if (ptr.string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
     }
 
     /* rb: readable */
@@ -1606,6 +1634,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     private void checkWritable() {
         checkFrozen();
         checkInitialized();
+        if (ptr.string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
         if (ptr.closedWrite || !ptr.modes.isWritable()) {
             throw getRuntime().newIOError("not opened for writing");
         }
