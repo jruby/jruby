@@ -49,18 +49,16 @@ import org.osgi.framework.FrameworkUtil;
 /**
  * @author ajuckel
  */
-@Ignore
 @RunWith(PaxExam.class)
 public class JRubyOsgiEmbedTest {
     private static final String SCRIPT_RESULT = "Foo!!!!!!!";
 
     @Configuration
     public Option[] config() {
-        File f = new File("../../lib/jruby-complete.jar");
+        File f = new File("target/jruby-complete.jar");
         return options(junitBundles(), bundle(f.toURI().toString()));
     }
 
-    @Ignore
     @Test
     public void testJRubyCreate() throws InterruptedException {
         Bundle b = FrameworkUtil.getBundle(JRubyOsgiEmbedTest.class);

@@ -68,7 +68,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>jruby-complete</artifactId>
+            <artifactId>jruby-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -100,17 +100,37 @@
     </profiles>
 
     <build>
-        <!-- Inheriting these from the parent makes for a funky eclipse project -->
-        <sourceDirectory>src/main/java</sourceDirectory>
-        <outputDirectory>target/classes</outputDirectory>
-        <plugins>
+        <plugins>    
+	  <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+		<id>copy jruby complete jar</id>
+		<phase>process-resources</phase>
+		<goals>
+		  <goal>copy</goal>
+		</goals>
+		<configuration>
+		  <artifactItems>
+                    <artifactItem>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>jruby-complete</artifactId>
+                      <version>${project.version}</version>
+                      <type>jar</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <destFileName>jruby-complete.jar</destFileName>
+                    </artifactItem>
+		  </artifactItems>
+		</configuration>
+              </execution>
+            </executions>
+	  </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>${base.java.version}</source>
+                    <target>${base.javac.version}</target>
                 </configuration>
             </plugin>
             <plugin>
