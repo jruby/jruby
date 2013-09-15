@@ -42,6 +42,7 @@ import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 import java.util.Set;
@@ -146,13 +147,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
 
     /** Mail slot for cross-thread events */
-    private volatile ThreadService.Event mail;
+    private final AtomicReference<ThreadService.Event> mail = new AtomicReference<ThreadService.Event>();
 
     /** The current task blocking a thread, to allow interrupting it in an appropriate way */
     private volatile BlockingTask currentBlockingTask;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
-    private final List<Lock> heldLocks = new ArrayList<Lock>();
+    private final List<Lock> heldLocks = Collections.synchronizedList(new ArrayList<Lock>());
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
@@ -178,7 +179,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // if we're already aborting, we can receive no further mail
             if (status.get() == Status.ABORTING) return;
 
-            mail = event;
+            // FIXME: this was not checking null before, but maybe it should
+            mail.set(event);
             switch (event.type) {
             case KILL:
                 status.set(Status.ABORTING);
@@ -201,9 +203,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     }
 
-    public synchronized void checkMail(ThreadContext context) {
-        ThreadService.Event myEvent = mail;
-        mail = null;
+    public void checkMail(ThreadContext context) {
+        ThreadService.Event myEvent = mail.getAndSet(null);
+        
         if (myEvent != null) {
             switch (myEvent.type) {
             case RAISE:
@@ -248,8 +250,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * Dispose of the current thread by tidying up connections to other stuff
      */
-    public synchronized void dispose() {
-        if (!disposed) {
+    public void dispose() {
+        if (disposed) return;
+        
+        synchronized (this) {
+            if (disposed) return;
+            
             disposed = true;
 
             // remove from parent thread group
@@ -265,10 +271,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // mark thread as DEAD
             beDead();
-
-            // unregister from runtime's ThreadService
-            getRuntime().getThreadService().unregisterThread(this);
         }
+
+        // unregister from runtime's ThreadService
+        getRuntime().getThreadService().unregisterThread(this);
     }
    
     public static RubyClass createThreadClass(Ruby runtime) {
@@ -808,7 +814,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         synchronized (rubyThread) {
             rubyThread.status.set(Status.ABORTING);
-            rubyThread.mail = null;
+            // FIXME: This was not checking for non-null before, but maybe it should
+            rubyThread.mail.set(null);
             receiver.getRuntime().getThreadService().setCritical(false);
             throw new ThreadKill();
         }

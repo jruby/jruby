@@ -342,7 +342,7 @@ public class ThreadService {
         }
     }
 
-    public synchronized void deliverEvent(Event event) {
+    public void deliverEvent(Event event) {
         // first, check if the sender has unreceived mail
         event.sender.checkMail(getCurrentContext());
 
