@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.listeners.IRScopeListener;
+import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
@@ -25,8 +27,13 @@ public class IRManager {
     private final Nil nil = new Nil();
     private final BooleanLiteral trueObject = new BooleanLiteral(true);
     private final BooleanLiteral falseObject = new BooleanLiteral(false);
+    // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
+    
+    private InstructionsListener instrsListener = null;
+    private IRScopeListener irScopeListener = null;
+    
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
     private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
@@ -99,12 +106,48 @@ public class IRManager {
         return passListeners;
     }
     
+    public InstructionsListener getInstructionsListener() {
+        return instrsListener;
+    }
+    
+    public IRScopeListener getIRScopeListener() {
+        return irScopeListener;
+    }
+    
     public void addListener(CompilerPassListener listener) {
         passListeners.add(listener);
     }
     
     public void removeListener(CompilerPassListener listener) {
         passListeners.remove(listener);
+    }
+    
+    public void addListener(InstructionsListener listener) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+            if (instrsListener != null) {
+                throw new RuntimeException("InstructionsListener is set and other are currently not allowed");
+            }
+             
+            instrsListener = listener;
+        }
+    }
+    
+    public void removeListener(InstructionsListener listener) {
+        if (instrsListener.equals(listener)) instrsListener = null;
+    }
+    
+    public void addListener(IRScopeListener listener) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+            if (irScopeListener != null) {
+                throw new RuntimeException("IRScopeListener is set and other are currently not allowed");
+            } 
+              
+            irScopeListener = listener;
+        }
+    }
+    
+    public void removeListener(IRScopeListener listener) {
+        if (irScopeListener.equals(listener)) irScopeListener = null;
     }
     
     public IRModuleBody getClassMetaClass() {
