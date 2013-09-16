@@ -19,6 +19,7 @@ freezing to) a specific jruby-complete jar version.</description>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.0-rc</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
@@ -46,6 +47,7 @@ freezing to) a specific jruby-complete jar version.</description>
         <version>${jruby.plugins.version}</version>
       </extension>
     </extensions>
+    <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -86,21 +88,20 @@ freezing to) a specific jruby-complete jar version.</description>
     <profile>
       <id>repo</id>
       <build>
-	<plugins>
-      <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-	<executions>
-          <execution>
-            <id>default-push</id>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-	</plugins>
+        <plugins>
+          <plugin>
+            <groupId>de.saumya.mojo</groupId>
+            <artifactId>gem-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>default-push</id>
+                <configuration>
+                  <skip>true</skip>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
   </profiles>

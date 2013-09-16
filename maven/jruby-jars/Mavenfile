@@ -2,7 +2,7 @@
 
 gemspec :include_jars => true
 
-inherit "org.jruby:jruby-gems:#{model.version}"
+inherit "org.jruby:jruby-artifacts:#{model.version}"
 
 name "JRuby Jars Gem"
 
@@ -21,4 +21,9 @@ end
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true )
 
+profile :repo do
+  plugin 'de.saumya.mojo:gem-maven-plugin' do
+    execute_goals :id => 'default-push', :skip => true
+  end
+end
 # vim: syntax=Ruby
