@@ -77,20 +77,6 @@
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
-      <artifactId>jffi</artifactId>
-      <version>${jffi.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jffi</artifactId>
-      <version>${jffi.version}</version>
-      <type>jar</type>
-      <classifier>native</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
       <version>1.0.5</version>
       <type>jar</type>
