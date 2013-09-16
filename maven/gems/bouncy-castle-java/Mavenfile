@@ -3,6 +3,9 @@
 # tell maven to include the jar files
 gemspec :include_jars => true
 
+jar 'org.bouncycastle:bcpkix-jdk15on', "#{BouncyCastle::MAVEN_VERSION}"
+jar 'org.bouncycastle:bcprov-jdk15on', "#{BouncyCastle::MAVEN_VERSION}"
+
 resource do
   directory '../../../lib/ruby/shared/'
   target_path '${basedir}/lib'
