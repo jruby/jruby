@@ -1,3 +1,5 @@
+/* IMPORTANT: must compile with JFlex 1.4, JFlex 1.4.3 seems buggy with look-ahead */
+
 package org.jruby.lexer;
 
 import org.jruby.util.RubyDateFormat.Token;
