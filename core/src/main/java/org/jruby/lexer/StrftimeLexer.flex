@@ -46,12 +46,12 @@ import org.jruby.util.TimeOutputFormatter;
     }
 %}
 
-Flags = [-_0#\^]
+Flags = [-_0#\^]+
 Width = [1-9][0-9]*
 
 // See RubyDateFormat.main to generate this
 // Chars are sorted by | ruby -e 'p STDIN.each_char.sort{|a,b|a.casecmp(b).tap{|c|break a<=>b if c==0}}.join'
-Conversion = [+AaBbCcDdeFGgHhIjkLlMmNnPpQRrSsTtUuVvWwXxYyZz] | {IgnoredModifier} | {Zone}
+Conversion = [\+AaBbCcDdeFGgHhIjkLlMmNnPpQRrSsTtUuVvWwXxYyZz] | {IgnoredModifier} | {Zone}
 // From MRI strftime.c
 IgnoredModifier = E[CcXxYy] | O[deHkIlMmSUuVWwy]
 Zone = :{1,3} z
