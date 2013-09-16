@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.8" transformSequenceNumber="2">
   <directoryPresets config="." />
-  <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
+  <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="." mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
       <additionalLanguages />
@@ -36,7 +36,7 @@
       <mountPoint id="203" root="202" location="" mode="755" />
     </mountPoints>
     <entries>
-      <dirEntry mountPoint="19" file=".." overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes=".git, .gitignore, .svn, .cvsignore" dirMode="755">
+      <dirEntry mountPoint="19" file="${compiler:jruby.location}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes=".git, .gitignore, .svn, .cvsignore" dirMode="755">
         <exclude>
           <entry location=".classpath" fileType="regular" />
           <entry location=".externalToolBuilders" fileType="regular" />
@@ -59,7 +59,7 @@
           <entry location="ivy" fileType="regular" />
           <entry location="jruby.bnd.template" fileType="regular" />
           <entry location="lib/.cvsignore" fileType="regular" />
-          <entry location="lib/native" fileType="regular" />
+          <entry location="lib/jni" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
           <entry location="maven" fileType="regular" />
           <entry location="nbproject" fileType="regular" />
@@ -75,50 +75,52 @@
           <entry location="tool" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="102" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="102" file="${compiler:jruby.location}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin/jruby" fileType="regular" />
-          <entry location="lib/native" fileType="regular" />
+          <entry location="lib/jni" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="103" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="103" file="${compiler:jruby.location}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
-          <entry location="lib/native/Darwin" fileType="regular" />
-          <entry location="lib/native/i386-FreeBSD" fileType="regular" />
-          <entry location="lib/native/i386-Linux" fileType="regular" />
-          <entry location="lib/native/i386-OpenBSD" fileType="regular" />
-          <entry location="lib/native/i386-SunOS" fileType="regular" />
-          <entry location="lib/native/ppc-AIX" fileType="regular" />
-          <entry location="lib/native/ppc-Linux" fileType="regular" />
-          <entry location="lib/native/s390x-Linux" fileType="regular" />
-          <entry location="lib/native/sparc-SunOS" fileType="regular" />
-          <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
-          <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
-          <entry location="lib/native/x86_64-Linux" fileType="regular" />
-          <entry location="lib/native/x86_64-OpenBSD" fileType="regular" />
-          <entry location="lib/native/x86_64-SunOS" fileType="regular" />
+          <entry location="lib/jni/arm-Linux" fileType="regular" />
+          <entry location="lib/jni/Darwin" fileType="regular" />
+          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/i386-Linux" fileType="regular" />
+          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
+          <entry location="lib/jni/i386-SunOS" fileType="regular" />
+          <entry location="lib/jni/ppc-AIX" fileType="regular" />
+          <entry location="lib/jni/ppc-Linux" fileType="regular" />
+          <entry location="lib/jni/s390x-Linux" fileType="regular" />
+          <entry location="lib/jni/sparc-SunOS" fileType="regular" />
+          <entry location="lib/jni/sparcv9-SunOS" fileType="regular" />
+          <entry location="lib/jni/x86_64-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/x86_64-Linux" fileType="regular" />
+          <entry location="lib/jni/x86_64-OpenBSD" fileType="regular" />
+          <entry location="lib/jni/x86_64-SunOS" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="203" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="203" file="${compiler:jruby.location}" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
-          <entry location="lib/native/i386-FreeBSD" fileType="regular" />
-          <entry location="lib/native/i386-Linux" fileType="regular" />
-          <entry location="lib/native/i386-OpenBSD" fileType="regular" />
-          <entry location="lib/native/i386-SunOS" fileType="regular" />
-          <entry location="lib/native/i386-Windows" fileType="regular" />
-          <entry location="lib/native/ppc-AIX" fileType="regular" />
-          <entry location="lib/native/ppc-Linux" fileType="regular" />
-          <entry location="lib/native/s390x-Linux" fileType="regular" />
-          <entry location="lib/native/sparc-SunOS" fileType="regular" />
-          <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
-          <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
-          <entry location="lib/native/x86_64-Linux" fileType="regular" />
-          <entry location="lib/native/x86_64-OpenBSD" fileType="regular" />
-          <entry location="lib/native/x86_64-SunOS" fileType="regular" />
-          <entry location="lib/native/x86_64-Windows" fileType="regular" />
+          <entry location="lib/jni/arm-Linux" fileType="regular" />
+          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/i386-Linux" fileType="regular" />
+          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
+          <entry location="lib/jni/i386-SunOS" fileType="regular" />
+          <entry location="lib/jni/i386-Windows" fileType="regular" />
+          <entry location="lib/jni/ppc-AIX" fileType="regular" />
+          <entry location="lib/jni/ppc-Linux" fileType="regular" />
+          <entry location="lib/jni/s390x-Linux" fileType="regular" />
+          <entry location="lib/jni/sparc-SunOS" fileType="regular" />
+          <entry location="lib/jni/sparcv9-SunOS" fileType="regular" />
+          <entry location="lib/jni/x86_64-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/x86_64-Linux" fileType="regular" />
+          <entry location="lib/jni/x86_64-OpenBSD" fileType="regular" />
+          <entry location="lib/jni/x86_64-SunOS" fileType="regular" />
+          <entry location="lib/jni/x86_64-Windows" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
@@ -159,6 +161,28 @@
         </text>
       </splashScreen>
       <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--1.9 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
+        <classPath>
+          <archive location="lib/jruby.jar" failOnError="false" />
+        </classPath>
+        <nativeLibraryDirectories />
+      </java>
+      <includedFiles />
+      <unextractableFiles />
+      <customScript mode="1" file="">
+        <scriptLines />
+      </customScript>
+    </launcher>
+    <launcher name="irb (2.0.0)" id="261" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
+      <executable name="irb (2.0.0)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
+        <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
+      </executable>
+      <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
+        <text>
+          <statusLine x="20" y="20" text="Loading irb..." font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+          <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+        </text>
+      </splashScreen>
+      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--2.0 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
         <classPath>
           <archive location="lib/jruby.jar" failOnError="false" />
         </classPath>

@@ -6,6 +6,7 @@ def maven_retrieve_pom_version
   REXML::Document.new(file).elements.each("project/version"){|e| return e.text}
   raise Errno::ENOENT.new "Cannot find project pom.xml"
 end
+alias :jruby_version :maven_retrieve_pom_version
 
 namespace :maven do
   desc "Update versions in maven poms with string passed in ENV['VERSION']"
