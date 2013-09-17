@@ -11,7 +11,7 @@ describe OpenSSL::SSL::SSLContext do
     it 'has "ssl_timeout" defined' do
       # "subject.methods.include?" is arguably more preferable,
       # but then we'd have to differentiate by language versions
-      lambda { subject.ssl_timeout }.should_not raise_error(NoMethodError)
+      lambda { subject.ssl_timeout }.should_not raise_error
     end
   end
 end
