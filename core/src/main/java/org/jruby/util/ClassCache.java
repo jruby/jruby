@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.cli.Options;
 
 /**
  * A Simple cache which maintains a collection of classes that can potentially be shared among
@@ -91,6 +92,7 @@ public class ClassCache<T> {
             if (weakRef != null) contents = weakRef.get();
 
             if (weakRef == null || contents == null) {
+                if (Options.JIT_DEBUG.load()) LOG.info("JITed code for key " + key + " not found, recaching");
                 if (isFull()) return null;
 
                 contents = defineClass(classGenerator);
@@ -99,6 +101,7 @@ public class ClassCache<T> {
 
                 cache.put(key, new KeyedClassReference(key, contents, referenceQueue));
             } else {
+                if (Options.JIT_DEBUG.load()) LOG.info("JITed code for key " + key + " found as class " + contents.getName());
                 classReuseCount.incrementAndGet();
             }
         } else {
