@@ -12,6 +12,8 @@ PMDOC = 'JRuby-installer.pmdoc/01jruby.xml'
 GEMSPMDOC = 'JRuby-installer.pmdoc/02gems.xml'
 GEMSMAC = 'install/macos/rubygems/jruby_mac.rb'
 JRUBY_DEST = '/Library/Frameworks/JRuby.framework'
+DIST_DIR= ENV['DIST_DIR'] || '.'
+INSTALL4J_CONFIG_FILE = File.join(File.dirname(__FILE__), '..', 'install', 'jruby.install4j')
 
 UNINSTALLER_INDEX = 'JRuby-uninstaller.pmdoc/index.xml'
 UNINSTALLER_PMDOC = 'JRuby-uninstaller.pmdoc/01uninstaller.xml'
@@ -80,17 +82,23 @@ task :macos_installer do
   end
 end
 
-task :windows_installer => :install_installer_gems do
+task :windows_installer do
   version = jruby_version
+  unpacked_dir = unpack_binary_distribution(version)
+  
+  install_windows_gems(unpacked_dir)
 
   if File.executable?(INSTALL4J_EXECUTABLE)
-    sh "\"#{INSTALL4J_EXECUTABLE}\" -m win32 -D ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=#{VERSION_RUBY_PATCHLEVEL},ruby.buildplatform=i386-mingw32 install/jruby.install4j" do |ok, result|
-      $stderr.puts "** Something went wrong: #{result}" unless ok
-    end
-    mv Dir["#{BUILD_DIR}/installers/*.exe"], DIST_DIR
-    Dir["#{DIST_DIR}/*.exe"].each do |file|
-      md5_checksum file
-      sha1_checksum file
+    jruby_dist_dir = Dir.pwd
+    Dir.chdir(unpacked_dir) do
+      sh %Q^"#{INSTALL4J_EXECUTABLE}" -m win32 -D jruby.dist.location=#{jruby_dist_dir},jruby.location=#{unpacked_dir},ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=#{VERSION_RUBY_PATCHLEVEL},ruby.buildplatform=i386-mingw32 #{INSTALL4J_CONFIG_FILE}^ do |ok, result|
+        $stderr.puts "** Something went wrong: #{result}" unless ok
+      end
+      mv Dir["#{BUILD_DIR}/installers/*.exe"], DIST_DIR
+      Dir["#{DIST_DIR}/*.exe"].each do |file|
+        md5_checksum file
+        sha1_checksum file
+      end
     end
   else
     puts "Skipping windows installers since install4j is not available"
@@ -100,6 +108,23 @@ end
 #           #
 #  HELPERS  #
 #           #
+
+def unpack_binary_distribution(jruby_version)
+  require 'tmpdir'
+  dist_file = ENV['BINARY_DIST'] || ''
+
+  unless File.exist?(dist_file)
+    raise ArgumentError.new "No binary distribution (ENV[BINARY_DIST]) file: '#{dist_file}'."
+  end
+
+  dir = Dir.mktmpdir
+  sh "unzip -q -o #{dist_file} -d #{dir}"
+  File.join dir, "jruby-#{jruby_version}"
+end
+
+def install_windows_gems(unpacked_dir)
+  sh "#{File.join(unpacked_dir, 'bin', 'jruby')} -S gem install #{INSTALLER_GEMS}"
+end
 
 def replace_variables_in(path)
   File.open(path,"w") do |f|

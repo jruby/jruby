@@ -54,7 +54,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.1-SNAPSHOT</version>
+      <version>3.0.1</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -74,20 +74,6 @@
       <artifactId>jcodings</artifactId>
       <version>1.0.10</version>
       <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jffi</artifactId>
-      <version>${jffi.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jffi</artifactId>
-      <version>${jffi.version}</version>
-      <type>jar</type>
-      <classifier>native</classifier>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
