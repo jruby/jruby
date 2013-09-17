@@ -230,7 +230,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public ThreadContext getContext() {
-        return contextRef.get();
+        return contextRef == null ? null : contextRef.get();
     }
 
 
@@ -1111,25 +1111,37 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject backtrace(ThreadContext context) {
-        return getContext().createCallerBacktrace(0, getNativeThread().getStackTrace());
+        ThreadContext myContext = getContext();
+
+        if (myContext == null) return context.nil;
+        
+        return myContext.createCallerBacktrace(0, getNativeThread().getStackTrace());
     }
 
     @JRubyMethod(name = "backtrace", optional = 2, compat = CompatVersion.RUBY2_0)
     public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+        ThreadContext myContext = getContext();
+
+        if (myContext == null) return context.nil;
+        
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
         Integer level = ll[0], length = ll[1];
         
-        return getContext().createCallerBacktrace(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerBacktrace(level, length, getNativeThread().getStackTrace());
     }
     
     @JRubyMethod(optional = 2, compat = CompatVersion.RUBY2_0)
     public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+        ThreadContext myContext = getContext();
+
+        if (myContext == null) return context.nil;
+        
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
         Integer level = ll[0], length = ll[1];
         
-        return context.createCallerLocations(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
     }
 
     public StackTraceElement[] javaBacktrace() {

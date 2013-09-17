@@ -882,9 +882,11 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
+        BacktraceElement[] backtraceClone = backtrace.clone();
+        int backtraceIndex = this.backtraceIndex;
         BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
         for (int i = 0; i <= backtraceIndex; i++) {
-            newTrace[i] = backtrace[i].clone();
+            newTrace[i] = backtraceClone[i];
         }
         return newTrace;
     }
