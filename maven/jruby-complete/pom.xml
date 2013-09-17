@@ -52,6 +52,9 @@
       <resource>
         <directory>${jruby.basedir}/bin</directory>
         <targetPath>META-INF/jruby.home/bin</targetPath>
+        <includes>
+          <include>ast</include>
+        </includes>
       </resource>
     </resources>
     <plugins>
@@ -118,7 +121,7 @@
           <instructions>
             <Embed-Dependency>jruby-core;inline=true,jruby-stdlib;inline=true</Embed-Dependency>
             <Export-Package>org.jruby.*</Export-Package>
-            <Private-Package>org.jruby.*,jnr.*,com.kenai.*,com.martiansoftware.*,jay.*,jline.*,jni.*,org.fusesource.*,org.jcodings.*,org.joda.convert.*,org.joda.time.*,org.joni.*,org.yaml.*,org.yecht.*,tables.*,org.objectweb.*,com.headius.*,org.bouncycastle.*,com.jcraft.jzlib</Private-Package>
+            <Private-Package>org.jruby.*,jnr.*,com.kenai.*,com.martiansoftware.*,jay.*,jline.*,jni.*,org.fusesource.*,org.jcodings.*,org.joda.convert.*,org.joda.time.*,org.joni.*,org.yaml.*,org.yecht.*,tables.*,org.objectweb.*,com.headius.*,org.bouncycastle.*,com.jcraft.jzlib,.</Private-Package>
             <Import-Package>org.osgi.framework;resolution:=optional,org.osgi.framework.wiring;resolution:=optional,org.apache.bsf.*;resolution:=optional,org.apache.tools.ant;resolution:=optional,!org.joda.convert.*,!sun.misc,*</Import-Package>
             <Bundle-SymbolicName>org.jruby.jruby</Bundle-SymbolicName>
           </instructions>
