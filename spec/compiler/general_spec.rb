@@ -5,11 +5,11 @@ require 'rspec'
 is19 = RUBY_VERSION =~ /1\.9/
 
 module CompilerTestUtils
-  def compile_to_class(src)
+  def compile_to_class(src, filename = nil)
     next_src_id = next_id
-    node = JRuby.parse(src, "testCompiler#{next_src_id}", false)
+    node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false)
     filename = node.position.file
-    classname = filename.sub("/", ".").sub("\\", ".").sub(".rb", "")
+    classname = org.jruby.util.JavaNameMangler.mangleFilenameForClasspath(filename)
     inspector = ASTInspector.new
     inspector.inspect(node)
     context = StandardASMCompiler.new(classname, filename)
@@ -32,8 +32,8 @@ module CompilerTestUtils
     $VERBOSE = verb
   end
   
-  def compile_and_run(src)
-    cls = compile_to_class(src)
+  def compile_and_run(src, filename = nil)
+    cls = compile_to_class(src, filename)
   
     cls.new_instance.load(JRuby.runtime.current_context, JRuby.runtime.top_self, IRubyObject[0].new, Block::NULL_BLOCK)
   end
@@ -519,6 +519,15 @@ ary
     expect(compile_and_run("def foo; return 1; rescue; return 2; else; return 3; end; foo")).to eq 1
     expect(compile_and_run("def foo; 1; rescue; return 2; else; return 3; end; foo")).to eq 3
     expect(compile_and_run("def foo; raise; rescue; return 2; else; return 3; end; foo")).to eq 2
+  end
+  
+  it "mangles filenames internally to avoid conflicting delimiters when building descriptors (GH\#961)" do
+    expect(
+      compile_and_run(
+        "1.times { 1 }",
+        "my,0.25,file:with:many|odd|delimiters.rb"
+      )
+    ).to eq 1
   end
   
   it "does a bunch of other stuff" do

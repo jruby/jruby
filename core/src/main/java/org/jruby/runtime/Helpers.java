@@ -52,6 +52,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import org.jruby.util.JavaNameMangler;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -174,7 +175,7 @@ public class Helpers {
             String parameterList,
             ASTInspector inspector) {
         return buildBlockDescriptor(closureMethod, arity, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
-                "," + parameterList;
+                ":" + parameterList;
     }
 
     public static String buildBlockDescriptor(
@@ -186,21 +187,25 @@ public class Helpers {
             NodeType argsNodeId,
             ASTInspector inspector) {
 
-        // build descriptor string
+        // We use : to delimit since mangleMethodName mangles it (i.e. it will
+        // never appear in the resulting mangled string)
         String descriptor =
-                closureMethod + ',' +
-                arity + ',' +
-                hasMultipleArgsHead + ',' +
-                BlockBody.asArgumentType(argsNodeId) + ',' +
-                file + ',' +
-                line + ',' +
+                JavaNameMangler.mangleMethodName(closureMethod) + ':' +
+                arity + ':' +
+                hasMultipleArgsHead + ':' +
+                BlockBody.asArgumentType(argsNodeId) + ':' +
+                JavaNameMangler.mangleMethodName(file) + ':' +
+                line + ':' +
                 !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
 
         return descriptor;
     }
     
     public static String[] parseBlockDescriptor(String descriptor) {
-        return descriptor.split(",");
+        String[] mangled = descriptor.split(":");
+        mangled[0] = JavaNameMangler.demangleMethodName(mangled[0]);
+        mangled[4] = JavaNameMangler.demangleMethodName(mangled[4]);
+        return mangled;
     }
 
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, StaticScope scope, String descriptor) {
