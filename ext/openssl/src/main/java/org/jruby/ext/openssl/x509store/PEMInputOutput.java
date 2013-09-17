@@ -96,6 +96,7 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -906,8 +907,13 @@ public class PEMInputOutput {
         try {
             c.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
             encData = c.doFinal(encoding);
+        } catch (InvalidKeyException ike) {
+            if (ike.getMessage().startsWith("Invalid key length")) {
+                throw new IOException("Invalid key length. See http://wiki.jruby.org/UnlimitedStrengthCrypto");
+            }
+            throw new IOException("exception using cipher:" + ike.toString(), ike);
         } catch (GeneralSecurityException gse) {
-            throw new IOException("exception using cipher: " + gse.toString());
+            throw new IOException("exception using cipher: " + gse.toString(), gse);
         }
         out.write(BEF_G + pemHeader + AFT);
         out.newLine();
