@@ -55,7 +55,6 @@ public class RubyDateFormat {
     private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
-    private boolean ruby_1_9;
     private StrftimeLexer lexer;
 
     static enum Format {
@@ -215,9 +214,8 @@ public class RubyDateFormat {
     /**
      * Constructor for RubyDateFormat.
      */
-    public RubyDateFormat(boolean ruby19) {
+    public RubyDateFormat() {
         super();
-        this.ruby_1_9 = ruby19;
         lexer = new StrftimeLexer((Reader) null);
     }
 
@@ -475,8 +473,7 @@ public class RubyDateFormat {
                     break;
                 case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
-                    value = dt.getMillisOfSecond() * 1000000;
-                    if (ruby_1_9) value += nsec;
+                    value = dt.getMillisOfSecond() * 1000000 + nsec;
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
 
                     int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;

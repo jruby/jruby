@@ -303,7 +303,7 @@ public final class ThreadContext {
     
     public RubyDateFormat getRubyDateFormat() {
         if (dateFormat == null)
-            dateFormat = new RubyDateFormat(runtime.is1_9());
+            dateFormat = new RubyDateFormat();
         return dateFormat;
     }
     
