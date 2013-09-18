@@ -48,6 +48,8 @@ import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
 import org.jruby.lexer.StrftimeLexer;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.RubyDateFormat.FieldType.*;
 
@@ -55,6 +57,7 @@ public class RubyDateFormat {
     private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
+    private ThreadContext context;
     private StrftimeLexer lexer;
 
     static enum Format {
@@ -214,8 +217,9 @@ public class RubyDateFormat {
     /**
      * Constructor for RubyDateFormat.
      */
-    public RubyDateFormat() {
+    public RubyDateFormat(ThreadContext context) {
         super();
+        this.context = context;
         lexer = new StrftimeLexer((Reader) null);
     }
 
@@ -334,11 +338,11 @@ public class RubyDateFormat {
     }
 
     /** Convenience method when using no pattern caching */
-    public ByteList compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec) {
-        return format(compilePattern(pattern, dateLibrary), dt, nsec);
+    public ByteList compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
+        return format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
     }
 
-    public ByteList format(List<Token> compiledPattern, DateTime dt, long nsec) {
+    public ByteList format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
 
@@ -473,14 +477,27 @@ public class RubyDateFormat {
                     break;
                 case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
-                    value = dt.getMillisOfSecond() * 1000000 + nsec;
-                    output = TimeOutputFormatter.formatNumber(value, 9, '0');
-
                     int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
-                    if (width < 9) {
+
+                    output = TimeOutputFormatter.formatNumber(dt.getMillisOfSecond(), 3, '0');
+                    if (width > 3) {
+                        if (sub_millis == null || sub_millis.isNil()) { // Time
+                            output += TimeOutputFormatter.formatNumber(nsec, 6, '0');
+                        } else { // Date, DateTime
+                            int prec = width - 3;
+                            IRubyObject power = context.runtime.newFixnum(10).callMethod("**", context.runtime.newFixnum(prec));
+                            IRubyObject truncated = sub_millis.callMethod(context, "numerator").callMethod(context, "*", power);
+                            truncated = truncated.callMethod(context, "/", sub_millis.callMethod(context, "denominator"));
+                            long decimals = truncated.convertToInteger().getLongValue();
+                            output += TimeOutputFormatter.formatNumber(decimals, prec, '0');
+                        }
+                    }
+
+                    if (width < output.length()) {
                         output = output.substring(0, width);
                     } else {
+                        // Not enough precision, fill with 0
                         while(output.length() < width)
                             output += "0";
                     }

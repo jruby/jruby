@@ -135,8 +135,7 @@ class Date
   end
 
   def strftime(fmt='%F')
-    nsec = (@sub_millis * 1_000_000).to_i
-    JRuby.runtime.current_context.getRubyDateFormat.compileAndFormat(fmt, true, @dt, nsec)
+    JRuby.runtime.current_context.getRubyDateFormat.compileAndFormat(fmt, true, @dt, 0, @sub_millis.nonzero?)
   end
 
 # alias_method :format, :strftime
