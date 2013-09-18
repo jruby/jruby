@@ -25,10 +25,10 @@ public class Edge<T> {
     public Object getType() {
         return type;
     }
-    
+
     @Override
     public String toString() {
-        return "<" + source.getID() + " --> " + 
-                destination.getID() + (type == null ? "" : "> (" + type + ")");
+        return "<" + source.getID() + " --> " +
+                destination.getID() + ">" + (type == null ? "" : " (" + type + ")");
     }
 }
