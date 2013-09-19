@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-    <parent>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-parent</artifactId>
-      <version>1.7.5.dev</version>
-    </parent>
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-parent</artifactId>
+    <version>1.7.5.dev</version>
+  </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-ext</artifactId>
   <version>1.7.5.dev</version>
@@ -20,4 +20,16 @@
     <module>ripper</module>
   </modules>
 
+  <build>
+    <plugins>
+      
+      <plugin>
+	<artifactId>maven-deploy-plugin</artifactId>
+	<configuration>
+	  <skip>true</skip>
+	</configuration>
+      </plugin>
+
+    </plugins>
+  </build>
 </project>
