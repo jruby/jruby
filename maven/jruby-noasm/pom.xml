@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>1.7.5.dev</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>jruby-noasm</artifactId>
+  <!--
+       keep it as jar even with empty content but that is easier
+       to add it as dependency to a project
+  -->
+  <packaging>jar</packaging>
+  <name>JRuby Main Maven Artifact</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+      <classifier>noasm</classifier>
+      <exclusions>
+	<exclusion>
+	  <groupId>com.github.jnr</groupId>
+	  <artifactId>jnr-ffi</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-commons</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-analysis</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-util</artifactId>
+	</exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+	    </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>1.5</version>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <preBuildHookScript>setup.bsh</preBuildHookScript>
+          <postBuildHookScript>verify.bsh</postBuildHookScript>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

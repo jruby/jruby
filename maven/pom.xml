@@ -17,6 +17,7 @@
       <id>all</id>
       <modules>
         <module>jruby</module>
+        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
         <module>jruby-rake-plugin</module>
@@ -30,6 +31,7 @@
       <id>main</id>
       <modules>
         <module>jruby</module>
+        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
       </modules>
     </profile>
