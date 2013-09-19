@@ -1104,21 +1104,6 @@ class Date
     new_by_frags(elem, sg)
   end
 
-  class << self
-
-    def once(id) # :nodoc: -- restricted
-      module_eval <<-"end;"
-        alias_method :__#{id.object_id}__, :#{id.to_s}
-        private :__#{id.object_id}__
-        def #{id.to_s}(*args)
-          @__ca__[#{id.object_id}] ||= __#{id.object_id}__(*args)
-        end
-      end;
-    end # <<dummy
-    private :once
-
-  end
-
   # *NOTE* this is the documentation for the method new!().  If
   # you are reading this as the documentation for new(), that is
   # because rdoc doesn't fully support the aliasing of the
@@ -1142,13 +1127,11 @@ class Date
     if JODA::DateTime === dt_or_ajd
       @dt = dt_or_ajd
       @sub_millis = sub_millis
-      @__ca__ = {}
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
       millis, @sub_millis = ((dt_or_ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
       raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
-      @__ca__ = { :ajd.object_id => dt_or_ajd }
     end
 
     @of = of # offset
@@ -1163,7 +1146,6 @@ class Date
     # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
     Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
   end
-  once :ajd
 
   # Get the date as an Astronomical Modified Julian Day Number.
   def amjd
@@ -1180,7 +1162,6 @@ class Date
     ms = ((hour * 60 + min) * 60 + sec) * 1000 + @dt.getMillisOfSecond + @sub_millis
     Rational(ms, 86_400_000)
   end
-  once :day_fraction
 
   # Get the date as a Modified Julian Day Number.
   def mjd() jd_to_mjd(jd) end
@@ -1294,7 +1275,6 @@ class Date
                         # Oddly, much faster than chrono.getGregorianCutover.isAfter(@dt)
        chrono.is_a?(JODA.chrono::GJChronology) && chrono.getGregorianCutover.getMillis > @dt.getMillis)
   end
-  once :julian?
 
   # Is the current date new-style (Gregorian Calendar)?
   def gregorian? () !julian? end
