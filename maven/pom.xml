@@ -28,6 +28,17 @@
       </modules>
     </profile>
     <profile>
+      <id>release</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
       <id>main</id>
       <modules>
         <module>jruby</module>

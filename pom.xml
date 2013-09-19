@@ -422,6 +422,12 @@
       </build>
     </profile>
     <profile>
+      <id>release</id>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>repo</id>
       <distributionManagement>
 	<repository>
@@ -438,7 +444,7 @@
       </build>
     </profile>
   </profiles>
-    <reporting>
+  <reporting>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -535,7 +541,7 @@
             <targetJdk>${base.javac.version}</targetJdk>
           </configuration>
         </plugin>
-      <plugin>
+	<plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
           <version>2.3</version>
