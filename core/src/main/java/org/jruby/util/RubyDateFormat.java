@@ -43,6 +43,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
@@ -61,6 +63,8 @@ public class RubyDateFormat {
     private StrftimeLexer lexer;
 
     static enum Format {
+        /** encoding to give to output */
+        FORMAT_ENCODING,
         /** raw string, no formatting */
         FORMAT_STRING,
         /** formatter */
@@ -237,7 +241,13 @@ public class RubyDateFormat {
     public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<Token>();
 
-        // TODO: if encoding != UTF-8, add Token encoding
+        Encoding enc = pattern.getEncoding();
+        if (!enc.isAsciiCompatible()) {
+            throw context.runtime.newArgumentError("format should have ASCII compatible encoding");
+        }
+        if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
+            compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
+        }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
         Reader reader = new InputStreamReader(in);
@@ -353,6 +363,9 @@ public class RubyDateFormat {
             Format format = token.getFormat();
 
             switch (format) {
+                case FORMAT_ENCODING:
+                    toAppendTo.setEncoding((Encoding) token.getData());
+                    continue; // go to next token
                 case FORMAT_OUTPUT:
                     formatter = (TimeOutputFormatter) token.getData();
                     continue; // go to next token
