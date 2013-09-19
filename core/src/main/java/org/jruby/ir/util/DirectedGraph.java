@@ -41,7 +41,7 @@ public class DirectedGraph<T> {
     }
 
     public void addEdge(T source, T destination, Object type) {
-        vertexFor(source).addEdgeTo(destination, type);
+        findOrCreateVertexFor(source).addEdgeTo(destination, type);
     }
 
     public void removeEdge(Edge edge) {
@@ -50,9 +50,9 @@ public class DirectedGraph<T> {
 
     public void removeEdge(T source, T destination) {
         if (findVertexFor(source) != null) {
-            for (Edge edge: vertexFor(source).getOutgoingEdges()) {
+            for (Edge edge: findOrCreateVertexFor(source).getOutgoingEdges()) {
                 if (edge.getDestination().getData() == destination) {
-                    vertexFor(source).removeEdgeTo(edge.getDestination());
+                    findOrCreateVertexFor(source).removeEdgeTo(edge.getDestination());
                     return;
                 }
             }
@@ -66,7 +66,7 @@ public class DirectedGraph<T> {
     /**
      * @return vertex for given data. If vertex is not present it creates vertex and returns it.
      */
-    public Vertex<T> vertexFor(T data) {
+    public Vertex<T> findOrCreateVertexFor(T data) {
         Vertex vertex = vertices.get(data);
 
         if (vertex != null) return vertex;
@@ -81,7 +81,7 @@ public class DirectedGraph<T> {
 
     public void removeVertexFor(T data) {
         if (findVertexFor(data) != null) {
-            Vertex vertex = vertexFor(data);
+            Vertex vertex = findOrCreateVertexFor(data);
             vertices.remove(data);
             inOrderVerticeData.remove(data);
             vertex.removeAllEdges();

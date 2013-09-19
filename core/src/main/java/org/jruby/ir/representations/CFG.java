@@ -162,7 +162,7 @@ public class CFG {
     }
 
     public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
-        graph.vertexFor(source).addEdgeTo(destination, type);
+        graph.findOrCreateVertexFor(source).addEdgeTo(destination, type);
     }
 
     public int inDegree(BasicBlock b) {
@@ -500,7 +500,7 @@ public class CFG {
     }
 
    public void addBasicBlock(BasicBlock bb) {
-        graph.vertexFor(bb); // adds vertex to graph
+        graph.findOrCreateVertexFor(bb); // adds vertex to graph
         bbMap.put(bb.getLabel(), bb);
    }
 

@@ -36,7 +36,7 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }
 
     public void addEdgeTo(T destination, Object type) {
-        Vertex destinationVertex = graph.vertexFor(destination);
+        Vertex destinationVertex = graph.findOrCreateVertexFor(destination);
 
         addEdgeTo(destinationVertex, type);
     }
