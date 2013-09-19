@@ -299,6 +299,9 @@ class Date
       end
     end
 
+    def to_s
+      @d == 1 ? "Inf" : "-Inf"
+    end
   end
 
   # The Julian Day Number of the Day of Calendar Reform for Italy
@@ -1531,11 +1534,12 @@ class Date
 
   # Return internal object state as a programmer-readable string.
   def inspect
-    s = (hour * 60 + min) * 60 + sec
-    ns = ((@dt.getMillisOfSecond + @sub_millis) * 1_000_000).inspect
+    s = (hour * 60 + min) * 60 + sec - (@of*86_400).to_i
+    ns = ((@dt.getMillisOfSecond + @sub_millis) * 1_000_000)
+    ns = ns.to_i if Rational === ns and ns.denominator == 1
     of = "%+d" % (@of * 86_400)
-    sg = "%.0f" % @sg
-    "#<#{self.class}: #{to_s} ((#{jd}j,#{s}s,#{ns}n),#{of}s,#{sg}j)>"
+    sg = Date::Infinity === @sg ? @sg.to_s : "%.0f" % @sg
+    "#<#{self.class}: #{to_s} ((#{jd}j,#{s}s,#{ns.inspect}n),#{of}s,#{sg}j)>"
   end
 
   # Return the date as a human-readable string.
