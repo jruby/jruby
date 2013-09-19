@@ -422,8 +422,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
         final RubyDateFormat rdf = getRuntime().getCurrentContext().getRubyDateFormat();
-        ByteList result = rdf.compileAndFormat(format.convertToString().getByteList(), false, dt, nsec, null);
-        return getRuntime().newString(result);
+        return rdf.compileAndFormat(format.convertToString(), false, dt, nsec, null);
     }
 
     @JRubyMethod(name = "==", required = 1, compat= CompatVersion.RUBY1_9)

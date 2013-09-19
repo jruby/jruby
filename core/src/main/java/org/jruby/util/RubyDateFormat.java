@@ -49,6 +49,7 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
+import org.jruby.RubyString;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,6 +66,8 @@ public class RubyDateFormat {
     static enum Format {
         /** encoding to give to output */
         FORMAT_ENCODING,
+        /** taint output */
+        FORMAT_TAINT,
         /** raw string, no formatting */
         FORMAT_STRING,
         /** formatter */
@@ -238,7 +241,8 @@ public class RubyDateFormat {
         }
     }
 
-    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
+    public List<Token> compilePattern(RubyString format, boolean dateLibrary) {
+        ByteList pattern = format.getByteList();
         List<Token> compiledPattern = new LinkedList<Token>();
 
         Encoding enc = pattern.getEncoding();
@@ -247,6 +251,10 @@ public class RubyDateFormat {
         }
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
+        }
+
+        if (format.isTaint()) {
+            compiledPattern.add(new Token(Format.FORMAT_TAINT));
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
@@ -348,13 +356,14 @@ public class RubyDateFormat {
     }
 
     /** Convenience method when using no pattern caching */
-    public ByteList compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
+    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
         return format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
     }
 
-    public ByteList format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
+    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
+        boolean taint = false;
 
         for (Token token: compiledPattern) {
             String output = null;
@@ -365,6 +374,9 @@ public class RubyDateFormat {
             switch (format) {
                 case FORMAT_ENCODING:
                     toAppendTo.setEncoding((Encoding) token.getData());
+                    continue; // go to next token
+                case FORMAT_TAINT:
+                    taint = true;
                     continue; // go to next token
                 case FORMAT_OUTPUT:
                     formatter = (TimeOutputFormatter) token.getData();
@@ -542,7 +554,10 @@ public class RubyDateFormat {
             }
         }
 
-        return toAppendTo;
+        RubyString str = context.runtime.newString(toAppendTo);
+        if (taint)
+            str.taint(context);
+        return str;
     }
 
     /**
