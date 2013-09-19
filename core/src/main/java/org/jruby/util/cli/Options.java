@@ -245,66 +245,33 @@ public class Options {
         return option;
     }
     private static boolean calculateInvokedynamicDefault() {
-        boolean hotspot24 = false;
-        
         String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotSpot = !vmName.equals("") && 
-                (vmName.contains("hotspot") || vmName.toLowerCase().contains("openjdk"));
-        if (isHotSpot) {
-            String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-            if (vmVersionString.equals("")) {
-                // can't get VM version for whatever reason, assume LCD.
-                hotspot24 = false;
-            } else {
-                int version;
-                try {
-                    version = Integer.parseInt(vmVersionString.substring(0, 2));
-                } catch (NumberFormatException nfe) {
-                    version = -1;
+        
+        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+        if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+            if (!vmName.contains("ibm j9 vm")) {
+                // if not on HotSpot or J9, on if specification version supports indy
+                return true;
+            } else {        // IBM J9 VM
+                String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+                int dash = runtimeVersion.indexOf('-');
+                int dateStamp;
+                try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                    dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+                } catch (Exception e) {
+                    dateStamp = -1;
                 }
-
-                if (version < 24) {
-                    // if on HotSpot version prior to 24, off by default unless turned on
-                    // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                    hotspot24 = false;
-                } else {
-                    // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                    hotspot24 = true;
-                }
-            }
-        }
-
-        if (hotspot24) {
-            return true;
-        } else if (isHotSpot) {
-            return false;
-        } else {
-            String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-            if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-                if (!vmName.contains("ibm j9 vm")) {
-                    // if not on HotSpot or J9, on if specification version supports indy
+                // The initial release and first few service releases had a crash issue.
+                // Narrow range so unexpected will tend to default to invokedynamic on.
+                if (dateStamp > 20110731 && dateStamp < 20121101) {
+                    return false;
+                } else {        // SR4 and beyond include APAR IV34500: crash fix
                     return true;
-                } else {        // IBM J9 VM
-                    String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
-                    int dash = runtimeVersion.indexOf('-');
-                    int dateStamp;
-                    try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
-                        dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
-                    } catch (Exception e) {
-                        dateStamp = -1;
-                    }
-                    // The initial release and first few service releases had a crash issue.
-                    // Narrow range so unexpected will tend to default to invokedynamic on.
-                    if (dateStamp > 20110731 && dateStamp < 20121101) {
-                        return false;
-                    } else {        // SR4 and beyond include APAR IV34500: crash fix
-                        return true;
-                    }
                 }
-            } else {
-                // on only if forced
-                return false;
             }
+        } else {
+            // on only if forced
+            return false;
         }
     }
 }
