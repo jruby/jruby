@@ -22,9 +22,6 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true )
 
 profile :repo do
-  activation do
-    file :exists => '../../release'
-  end
   plugin 'de.saumya.mojo:gem-maven-plugin' do
     execute_goals :id => 'default-push', :skip => true
   end

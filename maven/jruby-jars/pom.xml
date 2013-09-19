@@ -87,11 +87,6 @@ freezing to) a specific jruby-complete jar version.</description>
   <profiles>
     <profile>
       <id>repo</id>
-      <activation>
-        <file>
-          <exists>../../release</exists>
-        </file>
-      </activation>
       <build>
         <plugins>
           <plugin>
