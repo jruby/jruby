@@ -1,34 +1,26 @@
-=begin
-= $RCSfile$ -- Loader for all OpenSSL C-space and Ruby-space definitions
-
-= Info
-  'OpenSSL for Ruby 2' project
-  Copyright (C) 2002  Michal Rokos <m.rokos@sh.cvut.cz>
-  All rights reserved.
-
-= Licence
-  This program is licenced under the same licence as Ruby.
-  (See the file 'LICENCE'.)
-
-= Version
-  $Id$
-=end
-
-# Attempt to load the gem first
-begin
-  require 'jruby-openssl'
-rescue LoadError
-  # Not available, use built-in
-  require 'bouncy-castle-java'
-  require 'jopenssl.jar'
-  org.jruby.ext.openssl.OSSLLibrary.new.load(JRuby.runtime, false)
-
-  require 'openssl/bn'
-  require 'openssl/cipher'
-  require 'openssl/config'
-  require 'openssl/digest'
-  require 'openssl/ssl-internal'
-  require 'openssl/x509-internal'
-  require 'openssl/pkcs12'
-  require 'krypt/ossl'
+unless defined? JRUBY_VERSION
+  warn 'Loading jruby-openssl in a non-JRuby interpreter'
 end
+
+# Load bouncy-castle gem if available
+begin
+  require 'bouncy-castle-java'
+rescue LoadError
+  # runs under restricted mode or uses builtin BC
+end
+
+# Load extension
+require 'jruby'
+require 'jopenssl.jar'
+org.jruby.ext.openssl.OSSLLibrary.new.load(JRuby.runtime, false)
+
+# Add version-appropriate library path to LOAD_PATH
+if RUBY_VERSION >= '1.9.0'
+  $LOAD_PATH.unshift(File.expand_path('../../1.9', __FILE__))
+  load(File.expand_path('../../1.9/openssl.rb', __FILE__))
+else
+  $LOAD_PATH.unshift(File.expand_path('../../1.8', __FILE__))
+  load(File.expand_path('../../1.8/openssl.rb', __FILE__))
+end
+
+require 'openssl/pkcs12'
