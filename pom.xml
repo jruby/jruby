@@ -201,6 +201,7 @@
 	    <instructions>
               <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
 	      <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
+	      <Private-Package>org.jruby.*,jnr.*,com.kenai.*,com.martiansoftware.*,jay.*,jline.*,jni.*,org.fusesource.*,org.jcodings.*,org.joda.convert.*,org.joda.time.*,org.joni.*,org.yaml.*,org.yecht.*,tables.*,org.objectweb.*,com.headius.*,org.bouncycastle.*,com.jcraft.jzlib,.</Private-Package>
 	      <Bundle-Name>${bundle.name} ${project.version}</Bundle-Name>
 	      <Bundle-Description>${bundle.name} ${project.version} OSGi bundle</Bundle-Description>
 	      <Bundle-SymbolicName>${bundle.symbolic_name}</Bundle-SymbolicName>
