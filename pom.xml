@@ -426,6 +426,16 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+        <plugins>
+	  <plugin>
+	    <artifactId>maven-release-plugin</artifactId>
+	    <configuration>
+	      <autoVersionSubmodules>true</autoVersionSubmodules>
+	    </configuration>
+	  </plugin>
+	</plugins>
+      </build>
     </profile>
     <profile>
       <id>repo</id>
