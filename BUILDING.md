@@ -175,6 +175,12 @@ first create gpg checksum files, javadocs and source attachement and tag git wit
 mvn release:perform -Prelease
 ```
 
+in case a rollback is needed
+
+```
+mvn release:rollback -Prelease
+```
+
 perform the actual release to oss.sonatype.org with:
 
 ```
