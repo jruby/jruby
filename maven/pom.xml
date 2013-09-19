@@ -35,6 +35,9 @@
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
         <module>jruby-rake-plugin</module>
+        <module>jruby-core-complete</module>
+        <module>jruby-stdlib-complete</module>
+        <module>jruby-jars</module>
         <module>jruby-dist</module>
       </modules>
     </profile>

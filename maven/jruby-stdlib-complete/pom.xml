@@ -43,6 +43,12 @@
     </resources> 
     <plugins>
       <plugin>
+	<artifactId>maven-deploy-plugin</artifactId>
+	<configuration>
+	  <skip>true</skip>
+	</configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>2.1</version>
         <executions>
