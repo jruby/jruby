@@ -1499,8 +1499,14 @@ class Date
 
   # Load from Marshal format.
   def marshal_load(a)
-    @ajd, @of, @sg, = a
-    @__ca__ = {}
+    if a.length == 3
+      # old format
+      @ajd, @of, @sg, = a
+    elsif a.length == 6
+      _, jd, _, _, @of, @sg = a
+      @ajd = jd_to_ajd(jd, 0, @of)
+    end
+     @__ca__ = {}
   end
 
 end
