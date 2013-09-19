@@ -26,6 +26,10 @@ The Java version is tightly integrated with Java to allow both to script
 any Java class and to embed the interpreter into any Java application. 
 See the [docs](docs) directory for more information.
 
+## Prerequisites
+
+JRuby 1.7.x requires Java 6 or greater.
+
 ## Run
 
     bin/jruby rubyfile.rb
