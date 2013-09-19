@@ -167,3 +167,18 @@ the gem will be in ./maven/gems/*/pkg
 mvn -Pall
 ```
 
+## release ##
+
+first create gpg checksum files, javadocs and source attachement and tag git with version with:
+
+```
+mvn release:perform -Prelease
+```
+
+perform the actual release to oss.sonatype.org with:
+
+```
+mvn release:perform -Prelease
+```
+
+
