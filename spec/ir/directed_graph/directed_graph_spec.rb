@@ -41,11 +41,11 @@ describe "Directed Graph Utility" do
 
   it "gives vertex for given data" do
     @graph.addEdge(1,2,'foo')
-    @graph.vertexFor(2).getData().should be 2
+    @graph.findOrCreateVertexFor(2).getData().should be 2
   end
 
   it "creates a new vertex if it is not present" do
-    @graph.vertexFor(100).getData().should be 100
+    @graph.findOrCreateVertexFor(100).getData().should be 100
   end
 
   it "finds already existing vertex" do
@@ -77,7 +77,7 @@ describe "Directed Graph Utility" do
 
   it "gives data in the graph in the order in which it was inserted" do
     @graph.getInorderData.to_a.size.should be 0
-    @graph.vertexFor(1)
+    @graph.findOrCreateVertexFor(1)
     @graph.getInorderData.to_a.should eq [1]
     @graph.addEdge('foo','bar','baz')
     @graph.getInorderData.to_a.should eq [1,'foo','bar']

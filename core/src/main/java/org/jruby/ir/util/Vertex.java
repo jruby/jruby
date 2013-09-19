@@ -30,17 +30,17 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         destination.getIncomingEdges().add(edge);
         graph.edges().add(edge);
     }
-    
+
     public void addEdgeTo(T destination) {
         addEdgeTo(destination, null);
-    }    
-    
+    }
+
     public void addEdgeTo(T destination, Object type) {
-        Vertex destinationVertex = graph.vertexFor(destination);
-        
+        Vertex destinationVertex = graph.findOrCreateVertexFor(destination);
+
         addEdgeTo(destinationVertex, type);
     }
-    
+
     public boolean removeEdgeTo(Vertex destination) {
         for (Edge edge: getOutgoingEdges()) {
             if (edge.getDestination() == destination) {

@@ -122,47 +122,47 @@ public class CFG {
     public BasicBlock getGlobalEnsureBB() {
         return globalEnsureBB;
     }
-    
+
     public List<ExceptionRegion> getOutermostExceptionRegions() {
         return outermostERs;
     }
-    
+
     public LinkedList<BasicBlock> postOrderList() {
         if (postOrderList == null) postOrderList = buildPostOrderList();
         return postOrderList;
     }
-    
+
     public ListIterator<BasicBlock> getPostOrderTraverser() {
         return postOrderList().listIterator();
     }
 
     public ListIterator<BasicBlock> getReversePostOrderTraverser() {
         return postOrderList().listIterator(size());
-    }    
+    }
 
     public void resetState() {
         // SSS FIXME: anything else?
         postOrderList = null;
     }
-    
+
     public IRScope getScope() {
         return scope;
-    }    
-    
+    }
+
     public int size() {
         return graph.size();
     }
-    
+
     public Collection<BasicBlock> getBasicBlocks() {
         return graph.allData();
     }
-    
+
     public Collection<BasicBlock> getSortedBasicBlocks() {
         return graph.getInorderData();
     }
-    
+
     public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
-        graph.vertexFor(source).addEdgeTo(destination, type);
+        graph.findOrCreateVertexFor(source).addEdgeTo(destination, type);
     }
 
     public int inDegree(BasicBlock b) {
@@ -500,17 +500,17 @@ public class CFG {
     }
 
    public void addBasicBlock(BasicBlock bb) {
-        graph.vertexFor(bb); // adds vertex to graph
+        graph.findOrCreateVertexFor(bb); // adds vertex to graph
         bbMap.put(bb.getLabel(), bb);
    }
-    
+
     public void removeEdge(Edge edge) {
         graph.removeEdge(edge);
-    }    
+    }
 
     public void removeAllOutgoingEdgesForBB(BasicBlock b) {
         graph.findVertexFor(b).removeAllOutgoingEdges();
-    }    
+    }
 
     private void deleteOrphanedBlocks(DirectedGraph<BasicBlock> graph) {
         // System.out.println("\nGraph:\n" + toStringGraph());
