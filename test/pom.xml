@@ -49,7 +49,7 @@
     <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
-      <version>1.8.4</version>
+      <version>${ant.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
