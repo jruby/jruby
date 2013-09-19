@@ -13,7 +13,7 @@
        to add it as dependency to a project
   -->
   <packaging>jar</packaging>
-  <name>JRuby Main Maven Artifact</name>
+  <name>JRuby Main Maven Artifact With ASM Relocated</name>
 
   <dependencies>
     <dependency>
