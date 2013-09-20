@@ -3,6 +3,8 @@
 *.zip
 *.md5
 *.sha1
+*.releaseBackup
+release.properties
 jruby-complete.jar
 bin/*
 !bin/gem
