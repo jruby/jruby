@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>de.saumya.mojo</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.6-SNAPSHOT</version>
+    <version>1.7.5.dev</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-stdlib</artifactId>
@@ -14,13 +15,13 @@
     <dependency>
       <groupId>de.saumya.mojo</groupId>
       <artifactId>readline</artifactId>
-      <version>1.7.6-SNAPSHOT</version>
+      <version>1.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>de.saumya.mojo</groupId>
       <artifactId>openssl</artifactId>
-      <version>1.7.6-SNAPSHOT</version>
+      <version>0.8.9-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
