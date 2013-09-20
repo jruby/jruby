@@ -52,7 +52,7 @@
   <build>
     <extensions>
       <extension>
-        <groupId>org.jruby</groupId>
+        <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
@@ -60,7 +60,7 @@
     <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
-        <groupId>org.jruby</groupId>
+        <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <configuration>

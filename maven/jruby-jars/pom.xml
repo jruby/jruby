@@ -42,7 +42,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <build>
     <extensions>
       <extension>
-        <groupId>org.jruby</groupId>
+        <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
@@ -50,7 +50,7 @@ freezing to) a specific jruby-complete jar version.</description>
     <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
-        <groupId>org.jruby</groupId>
+        <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <configuration>

@@ -69,7 +69,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.jruby</groupId>
+        <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <executions>
