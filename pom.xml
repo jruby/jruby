@@ -154,8 +154,8 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git://github.com/jruby/jruby.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
+    <connection>scm:git:git@jruby.org:jruby.git</connection>
+    <developerConnection>scm:git:ssh://git@jruby.org/jruby.git</developerConnection>
     <url>https://github.com/jruby/jruby</url>
   </scm>
 
