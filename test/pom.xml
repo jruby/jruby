@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   
   <parent>
-    <groupId>de.saumya.mojo</groupId>
+    <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
   </parent>
@@ -36,7 +36,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -75,7 +75,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>requireTest</artifactId>
       <version>1.0</version>
       <type>jar</type>
@@ -135,7 +135,7 @@
     <defaultGoal>test</defaultGoal>
     <plugins>
       <plugin>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <executions>

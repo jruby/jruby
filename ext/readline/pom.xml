@@ -2,7 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>de.saumya.mojo</groupId>
+    <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
     <version>1.7.5.dev</version>
   </parent>
@@ -24,7 +24,7 @@
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.parent.version}</version>
       <scope>provided</scope>

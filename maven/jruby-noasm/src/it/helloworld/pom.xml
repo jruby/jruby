@@ -1,12 +1,12 @@
 <project>
-  <groupId>de.saumya.mojo</groupId>
+  <groupId>org.jruby</groupId>
   <artifactId>it-hello</artifactId>
   <version>1</version>
   <modelVersion>4.0.0</modelVersion>
 
   <dependencies>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-noasm</artifactId>
       <version>@project.version@</version>
       <type>pom</type>

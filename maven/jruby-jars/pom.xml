@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>de.saumya.mojo</groupId>
+    <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
     <version>1.7.5.dev</version>
   </parent>
@@ -23,12 +23,12 @@ freezing to) a specific jruby-complete jar version.</description>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-core-complete</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib-complete</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
@@ -42,7 +42,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <build>
     <extensions>
       <extension>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby</groupId>
         <artifactId>gem-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
@@ -50,7 +50,7 @@ freezing to) a specific jruby-complete jar version.</description>
     <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <configuration>
@@ -90,7 +90,7 @@ freezing to) a specific jruby-complete jar version.</description>
       <build>
         <plugins>
           <plugin>
-            <groupId>de.saumya.mojo</groupId>
+            <groupId>org.jruby</groupId>
             <artifactId>gem-maven-plugin</artifactId>
             <executions>
               <execution>

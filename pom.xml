@@ -9,7 +9,7 @@
     <version>7</version>
   </parent>
 
-  <groupId>de.saumya.mojo</groupId>
+  <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
   <version>1.7.5.dev</version>
   <packaging>pom</packaging>

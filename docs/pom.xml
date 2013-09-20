@@ -7,12 +7,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>de.saumya.mojo</groupId>
+    <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
     <version>1.7.5.dev</version>
   </parent>
 
-  <groupId>de.saumya.mojo</groupId>
+  <groupId>org.jruby</groupId>
   <artifactId>docs</artifactId>
   <packaging>pom</packaging>
 

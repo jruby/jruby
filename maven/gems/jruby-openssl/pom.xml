@@ -37,7 +37,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>de.saumya.mojo</groupId>
+      <groupId>org.jruby</groupId>
       <artifactId>openssl</artifactId>
       <version>0.8.9-SNAPSHOT</version>
       <scope>provided</scope>
@@ -52,7 +52,7 @@
   <build>
     <extensions>
       <extension>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby</groupId>
         <artifactId>gem-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
@@ -60,7 +60,7 @@
     <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <configuration>
