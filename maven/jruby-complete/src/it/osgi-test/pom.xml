@@ -110,7 +110,7 @@
 		<configuration>
 		  <artifactItems>
                     <artifactItem>
-                      <groupId>${project.groupId}</groupId>
+                      <groupId>de.saumya.mojo</groupId>
                       <artifactId>jruby-complete</artifactId>
                       <version>${project.version}</version>
                       <type>jar</type>
