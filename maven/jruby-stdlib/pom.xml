@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.5</version>
+    <version>1.7.6-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-stdlib</artifactId>
@@ -14,13 +14,13 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>readline</artifactId>
-      <version>1.0</version>
+      <version>1.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>openssl</artifactId>
-      <version>0.9.0</version>
+      <version>0.9.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

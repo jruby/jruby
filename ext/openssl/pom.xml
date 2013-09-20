@@ -4,10 +4,10 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.5</version>
+    <version>1.7.6-SNAPSHOT</version>
   </parent>
   <artifactId>openssl</artifactId>
-  <version>0.9.0</version>
+  <version>0.9.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>JRuby OpenSSL</name>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>1.7.5</version>
+      <version>1.7.6-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
