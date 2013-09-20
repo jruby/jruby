@@ -700,8 +700,6 @@ class Date
       time_to_day_fraction(h, min, s)
     end
 
-    CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
-
     def chronology(sg, of=0)
       tz = if JODA::DateTimeZone === of
         of
@@ -738,6 +736,7 @@ class Date
   DEFAULT_DTZ = JODA::DateTimeZone.getDefault
   DEFAULT_OFFSET = Rational(DEFAULT_DTZ.getOffset(0), 86_400_000)
   CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
+  CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
 
   # Is a year a leap year in the Julian calendar?
   #
