@@ -82,20 +82,20 @@ task :macos_installer do
   end
 end
 
-task :windows_installer do
+task :windows_installer => :init_release do
   version = jruby_version
   unpacked_dir = unpack_binary_distribution(version)
   
   install_windows_gems(unpacked_dir)
 
   if File.executable?(INSTALL4J_EXECUTABLE)
-    jruby_dist_dir = Dir.pwd
+    root_dir = Dir.pwd
     Dir.chdir(unpacked_dir) do
-      sh %Q^"#{INSTALL4J_EXECUTABLE}" -m win32 -D jruby.dist.location=#{jruby_dist_dir},jruby.location=#{unpacked_dir},ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=#{VERSION_RUBY_PATCHLEVEL},ruby.buildplatform=i386-mingw32 #{INSTALL4J_CONFIG_FILE}^ do |ok, result|
+      sh %Q^"#{INSTALL4J_EXECUTABLE}" -m win32 -D jruby.dist.location=#{root_dir},jruby.location=#{unpacked_dir},ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=#{VERSION_RUBY_PATCHLEVEL},ruby.buildplatform=i386-mingw32 #{INSTALL4J_CONFIG_FILE}^ do |ok, result|
         $stderr.puts "** Something went wrong: #{result}" unless ok
       end
-      mv Dir["#{BUILD_DIR}/installers/*.exe"], DIST_DIR
-      Dir["#{DIST_DIR}/*.exe"].each do |file|
+      mv Dir[File.join(root_dir, 'install', '*.exe')], File.join(root_dir, RELEASE_DIR)
+      Dir[File.join(RELEASE_DIR, '*.exe')].each do |file|
         md5_checksum file
         sha1_checksum file
       end
@@ -105,20 +105,26 @@ task :windows_installer do
   end
 end
 
+task :init_release do
+  mkdir_p RELEASE_DIR
+end
+
 #           #
 #  HELPERS  #
 #           #
 
 def unpack_binary_distribution(jruby_version)
   require 'tmpdir'
-  dist_file = ENV['BINARY_DIST'] || ''
+  dist_file = Dir[File.join(DIST_FILES_DIR, "jruby-dist-*-bin.zip")][0]
 
   unless File.exist?(dist_file)
-    raise ArgumentError.new "No binary distribution (ENV[BINARY_DIST]) file: '#{dist_file}'."
+    raise ArgumentError.new "No binary distribution file: '#{dist_file}'."
   end
 
   dir = Dir.mktmpdir
   sh "unzip -q -o #{dist_file} -d #{dir}"
+  puts "unziped into #{File.join dir, "jruby-#{jruby_version}"}"
+  puts "sh ls #{File.join dir, "jruby-#{jruby_version}"}"
   File.join dir, "jruby-#{jruby_version}"
 end
 
