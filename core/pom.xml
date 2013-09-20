@@ -4,7 +4,7 @@
   <parent>
     <groupId>de.saumya.mojo</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.5</version>
+    <version>1.7.6-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
@@ -15,7 +15,7 @@
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>http://github.com/jruby/jruby</url>
-    <tag>1.7.5</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <dependencies>

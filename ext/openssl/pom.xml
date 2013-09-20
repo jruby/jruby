@@ -4,10 +4,10 @@
   <parent>
     <groupId>de.saumya.mojo</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.5</version>
+    <version>1.7.6-SNAPSHOT</version>
   </parent>
   <artifactId>openssl</artifactId>
-  <version>1.7.5</version>
+  <version>1.7.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>JRuby OpenSSL</name>
