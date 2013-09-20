@@ -703,7 +703,9 @@ class Date
     CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
 
     def chronology(sg, of=0)
-      tz = if of == 0
+      tz = if JODA::DateTimeZone === of
+        of
+      elsif of == 0
         return CHRONO_ITALY_UTC if sg == ITALY
         JODA::DateTimeZone::UTC
       else
@@ -731,6 +733,11 @@ class Date
 
   extend  t
   include t
+
+  DEFAULT_TZ = ENV['TZ']
+  DEFAULT_DTZ = JODA::DateTimeZone.getDefault
+  DEFAULT_OFFSET = Rational(DEFAULT_DTZ.getOffset(0), 86_400_000)
+  CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
 
   # Is a year a leap year in the Julian calendar?
   #
@@ -1903,7 +1910,14 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.now(sg=ITALY)
-    Time.now.to_datetime(sg, self)
+    dtz = (ENV['TZ'] == DEFAULT_TZ) ? DEFAULT_DTZ : org.jruby::RubyTime.getLocalTimeZone(JRuby.runtime)
+    of = (dtz == DEFAULT_DTZ) ? DEFAULT_OFFSET : Rational(dtz.getOffset(0), 86_400_000)
+
+    if of == DEFAULT_OFFSET and sg == ITALY
+      new!(JODA::DateTime.new(CHRONO_ITALY_DEFAULT_DTZ), of, sg)
+    else
+      new!(JODA::DateTime.new(chronology(sg, dtz)), of, sg)
+    end
   end
   private_class_method :now
 
