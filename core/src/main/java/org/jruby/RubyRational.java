@@ -57,6 +57,8 @@ import static org.jruby.util.Numeric.k_exact_p;
 import static org.jruby.util.Numeric.ldexp;
 import static org.jruby.util.Numeric.nurat_rationalize_internal;
 
+import java.io.IOException;
+
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -66,9 +68,12 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
@@ -91,6 +96,7 @@ public class RubyRational extends RubyNumeric {
         
         rationalc.kindOf = new RubyModule.JavaClassKindOf(RubyRational.class);
 
+        rationalc.setMarshal(RATIONAL_MARSHAL);
         rationalc.defineAnnotatedMethods(RubyRational.class);
 
         rationalc.getSingletonClass().undefineMethod("allocate");
@@ -1010,6 +1016,21 @@ public class RubyRational extends RubyNumeric {
         if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
+
+    private static final ObjectMarshal RATIONAL_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            throw runtime.newTypeError("marshal_dump should be used instead for Rational");
+        }
+
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            RubyRational r = (RubyRational) RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
+            r.num = r.removeInstanceVariable("@numerator");
+            r.den = r.removeInstanceVariable("@denominator");
+            return r;
+        }
+    };
 
     static RubyArray str_to_r_internal(ThreadContext context, IRubyObject recv) {
         RubyString s = recv.convertToString();
