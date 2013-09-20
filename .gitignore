@@ -70,3 +70,4 @@ dependency-reduced-pom.xml
 !lib/ruby/gems/shared/gems/rake-10.1.0/bin/rake
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
+install/updates.xml
