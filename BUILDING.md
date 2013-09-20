@@ -48,7 +48,7 @@ rvm use system
 
 *to make sure you do not use another Ruby's gems or execute another Ruby implementation.
 
-Once bootstrapped, JRuby can be run with the `build/jruby` executable. If
+Once bootstrapped, JRuby can be run with the `bin/jruby` executable. If
 the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
 `bin/jruby.bash` bash script.
