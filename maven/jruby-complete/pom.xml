@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <groupId>org.jruby</groupId>
+    <groupId>de.saumya.mojo</groupId>
     <artifactId>jruby-artifacts</artifactId>
     <version>1.7.5.dev</version>
   </parent>
@@ -25,12 +25,12 @@
   </pluginRepositories>
   <dependencies>
     <dependency>
-      <groupId>org.jruby</groupId>
+      <groupId>de.saumya.mojo</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
+      <groupId>de.saumya.mojo</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
       <exclusions>
