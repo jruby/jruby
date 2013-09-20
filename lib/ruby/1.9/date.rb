@@ -1129,7 +1129,7 @@ class Date
       @sub_millis = sub_millis
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-      millis, @sub_millis = ((dt_or_ajd - 2440587 - HALF_DAYS_IN_DAY) * 86400000).divmod(1)
+      millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
       raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
     end
