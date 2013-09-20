@@ -1,14 +1,13 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.5.dev</version>
+    <version>1.7.5</version>
   </parent>
   <artifactId>openssl</artifactId>
-  <version>0.8.9-SNAPSHOT</version>
+  <version>0.9.0</version>
   <packaging>jar</packaging>
 
   <name>JRuby OpenSSL</name>
@@ -41,7 +40,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>1.7.5</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

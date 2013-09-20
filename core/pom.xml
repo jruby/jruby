@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.5.dev</version>
+    <version>1.7.5</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
@@ -15,6 +15,7 @@
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>http://github.com/jruby/jruby</url>
+    <tag>1.7.5</tag>
   </scm>
 
   <dependencies>
@@ -540,7 +541,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -555,7 +556,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -572,7 +573,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -589,7 +590,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -606,7 +607,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
