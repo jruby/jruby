@@ -139,7 +139,7 @@
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
         <executions>
-          <!--execution>
+          <execution>
             <phase>initialize</phase>
             <goals><goal>initialize</goal></goals>
             <configuration>
@@ -150,7 +150,7 @@
               <libDirectory>${jruby.basedir}/lib</libDirectory>
               <jrubyJvmArgs>-Djruby.home=${jruby.basedir}</jrubyJvmArgs>
             </configuration>
-          </execution-->
+          </execution>
         </executions>
       </plugin>
       <plugin>
