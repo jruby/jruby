@@ -246,28 +246,24 @@ public class Options {
     }
     private static boolean calculateInvokedynamicDefault() {
         String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        
         String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-            if (!vmName.contains("ibm j9 vm")) {
-                // if not on HotSpot or J9, on if specification version supports indy
+        if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.8")) >= 0) {
+            return true;
+        } else if (vmName.contains("ibm j9 vm")) {        // IBM J9 VM
+            String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
+            int dash = runtimeVersion.indexOf('-');
+            int dateStamp;
+            try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
+                dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
+            } catch (Exception e) {
+                dateStamp = -1;
+            }
+            // The initial release and first few service releases had a crash issue.
+            // Narrow range so unexpected will tend to default to invokedynamic on.
+            if (dateStamp > 20110731 && dateStamp < 20121101) {
+                return false;
+            } else {        // SR4 and beyond include APAR IV34500: crash fix
                 return true;
-            } else {        // IBM J9 VM
-                String runtimeVersion = SafePropertyAccessor.getProperty("java.runtime.version", "");
-                int dash = runtimeVersion.indexOf('-');
-                int dateStamp;
-                try {       // There is a release datestamp, YYYYMMDD, after the first dash "-"
-                    dateStamp = Integer.parseInt(runtimeVersion.substring(dash+1, dash+9));
-                } catch (Exception e) {
-                    dateStamp = -1;
-                }
-                // The initial release and first few service releases had a crash issue.
-                // Narrow range so unexpected will tend to default to invokedynamic on.
-                if (dateStamp > 20110731 && dateStamp < 20121101) {
-                    return false;
-                } else {        // SR4 and beyond include APAR IV34500: crash fix
-                    return true;
-                }
             }
         } else {
             // on only if forced
