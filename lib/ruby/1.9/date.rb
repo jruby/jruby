@@ -830,7 +830,7 @@ class Date
       y -= 1 if y < 0 and sg > 0 # TODO
       begin
         dt = JODA::DateTime.new(y, m, d, 0, 0, 0, chronology(sg))
-      rescue JODA::IllegalFieldValueException
+      rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
         raise ArgumentError, 'invalid date'
       end
       new!(dt, 0, sg)
@@ -1702,7 +1702,7 @@ class DateTime < Date
       end
       begin
         dt = JODA::DateTime.new(y, m, d, h, min, s, ms, chronology(sg, of))
-      rescue JODA::IllegalFieldValueException
+      rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
         raise ArgumentError, 'invalid date'
       end
       new!(dt, of, sg)
