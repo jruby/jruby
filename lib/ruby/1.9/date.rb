@@ -708,7 +708,7 @@ class Date
         JODA::DateTimeZone::UTC
       else
         raise ArgumentError, "Invalid offset: #{of}" if of <= -1 or of >= 1
-        JODA::DateTimeZone.forOffsetMillis((of * 86_400_000).to_i)
+        JODA::DateTimeZone.forOffsetMillis((of * 86_400_000).round)
       end
 
       chrono = if sg == ITALY
