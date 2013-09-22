@@ -1451,7 +1451,8 @@ class Date
   # than the last day of the target month, the day-of-the-month
   # of the returned Date will be the last day of the target month.
   def >> (n)
-    self.class.new!(@dt.plusMonths(n.to_i), @of, @sg, @sub_millis)
+    n = n.to_int rescue raise(TypeError, "n must be a Fixnum")
+    self.class.new!(@dt.plusMonths(n), @of, @sg, @sub_millis)
   end
 
   # Return a new Date object that is +n+ months earlier than
