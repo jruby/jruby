@@ -972,8 +972,8 @@ class Date
       elem[:hour] ||= 0
       elem[:min]  ||= 0
       elem[:sec]  ||= 0
-      # see [ruby-core:47226] and the "fix", nonsense!
-      # elem[:sec] = [elem[:sec], 59].min
+      # see [ruby-core:47226] and the "fix"
+      elem[:sec] = 59 if elem[:sec] == 60
     end
 
     elem
