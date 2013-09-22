@@ -439,7 +439,7 @@ public class Cipher extends RubyObject {
             throw newCipherError(getRuntime(), e.getMessage());
         }
         if (keyBytes.length < keyLen) {
-            throw newCipherError(getRuntime(), "key length to short");
+            throw newCipherError(getRuntime(), "key length too short");
         }
 
         if (keyBytes.length > keyLen) {
