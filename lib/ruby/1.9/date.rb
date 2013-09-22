@@ -1532,7 +1532,7 @@ class Date
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
   # Dump to Marshal format.
-  def marshal_dump() [@dt.getMillis, @of, @sg, @sub_millis] end
+  def marshal_dump() [ajd, @of, @sg] end
 
   # Load from Marshal format.
   def marshal_load(a)
@@ -1546,10 +1546,6 @@ class Date
       sg = sg ? GREGORIAN : JULIAN unless Numeric === sg
     when 3 # 1.8.x, 1.9.2
       ajd, of, sg = a
-    when 4
-      millis, of, sg, sub_millis = a
-      dt = JODA::DateTime.new(millis, chronology(sg, of))
-      return initialize(dt, of, sg, sub_millis)
     when 6
       _, jd, df, sf, of, sg = a
       of = Rational(of, 86_400)
