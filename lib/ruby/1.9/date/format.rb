@@ -134,206 +134,8 @@ class Date
 
   end
 
-  def emit(e, f) # :nodoc:
-    case e
-    when Numeric
-      sign = %w(+ + -)[e <=> 0]
-      e = e.abs
-    end
-
-    s = e.to_s
-
-    if f[:s] && f[:p] == '0'
-      f[:w] -= 1
-    end
-
-    if f[:s] && f[:p] == "\s"
-      s[0,0] = sign
-    end
-
-    if f[:p] != '-'
-      s = s.rjust(f[:w], f[:p])
-    end
-
-    if f[:s] && f[:p] != "\s"
-      s[0,0] = sign
-    end
-
-    s = s.upcase if f[:u]
-    s = s.downcase if f[:d]
-    s
-  end
-
-  def emit_w(e, w, f) # :nodoc:
-    f[:w] = [f[:w], w].compact.max
-    emit(e, f)
-  end
-
-  def emit_n(e, w, f) # :nodoc:
-    f[:p] ||= '0'
-    emit_w(e, w, f)
-  end
-
-  def emit_sn(e, w, f) # :nodoc:
-    if e < 0
-      w += 1
-      f[:s] = true
-    end
-    emit_n(e, w, f)
-  end
-
-  def emit_z(e, w, f) # :nodoc:
-    w += 1
-    f[:s] = true
-    emit_n(e, w, f)
-  end
-
-  def emit_a(e, w, f) # :nodoc:
-    f[:p] ||= "\s"
-    emit_w(e, w, f)
-  end
-
-  def emit_ad(e, w, f) # :nodoc:
-    if f[:x]
-      f[:u] = true
-      f[:d] = false
-    end
-    emit_a(e, w, f)
-  end
-
-  def emit_au(e, w, f) # :nodoc:
-    if f[:x]
-      f[:u] = false
-      f[:d] = true
-    end
-    emit_a(e, w, f)
-  end
-
-  private :emit, :emit_w, :emit_n, :emit_sn, :emit_z,
-          :emit_a, :emit_ad, :emit_au
-
   def strftime(fmt='%F')
-    fmt.gsub(/%([-_0^#]+)?(\d+)?([EO]?(?::{1,3}z|.))/m) do
-      f = {}
-      m = $&
-      s, w, c = $1, $2, $3
-      if s
-        s.scan(/./) do |k|
-          case k
-          when '-'; f[:p] = '-'
-          when '_'; f[:p] = "\s"
-          when '0'; f[:p] = '0'
-          when '^'; f[:u] = true
-          when '#'; f[:x] = true
-          end
-        end
-      end
-      if w
-        f[:w] = w.to_i
-      end
-      case c
-      when 'A'; emit_ad(DAYNAMES[wday], 0, f)
-      when 'a'; emit_ad(ABBR_DAYNAMES[wday], 0, f)
-      when 'B'; emit_ad(MONTHNAMES[mon], 0, f)
-      when 'b'; emit_ad(ABBR_MONTHNAMES[mon], 0, f)
-      when 'C', 'EC'; emit_sn((year / 100).floor, 2, f)
-      when 'c', 'Ec'; emit_a(strftime('%a %b %e %H:%M:%S %Y'), 0, f)
-      when 'D'; emit_a(strftime('%m/%d/%y'), 0, f)
-      when 'd', 'Od'; emit_n(mday, 2, f)
-      when 'e', 'Oe'; emit_a(mday, 2, f)
-      when 'F'
-        if m == '%F'
-          format('%.4d-%02d-%02d', year, mon, mday) # 4p
-        else
-          emit_a(strftime('%Y-%m-%d'), 0, f)
-        end
-      when 'G'; emit_sn(cwyear, 4, f)
-      when 'g'; emit_n(cwyear % 100, 2, f)
-      when 'H', 'OH'; emit_n(hour, 2, f)
-      when 'h'; emit_ad(strftime('%b'), 0, f)
-      when 'I', 'OI'; emit_n((hour % 12).nonzero? || 12, 2, f)
-      when 'j'; emit_n(yday, 3, f)
-      when 'k'; emit_a(hour, 2, f)
-      when 'L'
-        f[:p] = nil
-        w = f[:w] || 3
-        u = 10**w
-        emit_n((sec_fraction * u).floor, w, f)
-      when 'l'; emit_a((hour % 12).nonzero? || 12, 2, f)
-      when 'M', 'OM'; emit_n(min, 2, f)
-      when 'm', 'Om'; emit_n(mon, 2, f)
-      when 'N'
-        f[:p] = nil
-        w = f[:w] || 9
-        u = 10**w
-        emit_n((sec_fraction * u).floor, w, f)
-      when 'n'; emit_a("\n", 0, f)
-      when 'P'; emit_ad(strftime('%p').downcase, 0, f)
-      when 'p'; emit_au(if hour < 12 then 'AM' else 'PM' end, 0, f)
-      when 'Q'
-        s = ((ajd - UNIX_EPOCH_IN_AJD) / MILLISECONDS_IN_DAY).round
-        emit_sn(s, 1, f)
-      when 'R'; emit_a(strftime('%H:%M'), 0, f)
-      when 'r'; emit_a(strftime('%I:%M:%S %p'), 0, f)
-      when 'S', 'OS'; emit_n(sec, 2, f)
-      when 's'
-        s = ((ajd - UNIX_EPOCH_IN_AJD) / SECONDS_IN_DAY).round
-        emit_sn(s, 1, f)
-      when 'T'
-        if m == '%T'
-          format('%02d:%02d:%02d', hour, min, sec) # 4p
-        else
-          emit_a(strftime('%H:%M:%S'), 0, f)
-        end
-      when 't'; emit_a("\t", 0, f)
-      when 'U', 'W', 'OU', 'OW'
-        emit_n(if c[-1,1] == 'U' then wnum0 else wnum1 end, 2, f)
-      when 'u', 'Ou'; emit_n(cwday, 1, f)
-      when 'V', 'OV'; emit_n(cweek, 2, f)
-      when 'v'; emit_a(strftime('%e-%b-%Y'), 0, f)
-      when 'w', 'Ow'; emit_n(wday, 1, f)
-      when 'X', 'EX'; emit_a(strftime('%H:%M:%S'), 0, f)
-      when 'x', 'Ex'; emit_a(strftime('%m/%d/%y'), 0, f)
-      when 'Y', 'EY'; emit_sn(year, 4, f)
-      when 'y', 'Ey', 'Oy'; emit_n(year % 100, 2, f)
-      when 'Z'; emit_au(strftime('%:z'), 0, f)
-      when /\A(:{0,3})z/
-        t = $1.size
-        sign = if offset < 0 then -1 else +1 end
-        fr = offset.abs
-        ss = fr.div(SECONDS_IN_DAY) # 4p
-        hh, ss = ss.divmod(3600)
-        mm, ss = ss.divmod(60)
-        if t == 3
-          if    ss.nonzero? then t =  2
-          elsif mm.nonzero? then t =  1
-          else                   t = -1
-          end
-        end
-        case t
-        when -1
-          tail = []
-          sep = ''
-        when 0
-          f[:w] -= 2 if f[:w]
-          tail = ['%02d' % mm]
-          sep = ''
-        when 1
-          f[:w] -= 3 if f[:w]
-          tail = ['%02d' % mm]
-          sep = ':'
-        when 2
-          f[:w] -= 6 if f[:w]
-          tail = ['%02d' % mm, '%02d' % ss]
-          sep = ':'
-        end
-        ([emit_z(sign * hh, 2, f)] + tail).join(sep)
-      when '%'; emit_a('%', 0, f)
-      when '+'; emit_a(strftime('%a %b %e %H:%M:%S %Z %Y'), 0, f)
-      else
-        m
-      end
-    end
+    JRuby.runtime.current_context.getRubyDateFormat.compileAndFormat(fmt, true, @dt, 0, @sub_millis.nonzero?)
   end
 
 # alias_method :format, :strftime
@@ -344,7 +146,7 @@ class Date
 
   def iso8601() strftime('%F') end
 
-  def rfc3339() iso8601 end
+  def rfc3339() strftime('%FT%T%:z') end
 
   def xmlschema() iso8601 end # :nodoc:
 
@@ -356,7 +158,7 @@ class Date
 
   def jisx0301
     if jd < 2405160
-      iso8601
+      strftime('%F')
     else
       case jd
       when 2405160...2419614
@@ -1094,28 +896,116 @@ class Date
   end
 
   def self._iso8601(str) # :nodoc:
-    if /\A\s*(([-+]?\d{2,}|-)-\d{2}-\d{2}|
-              ([-+]?\d{2,})?-\d{3}|
-              (\d{2}|\d{4})?-w\d{2}-\d|
-              -w-\d)
-        (t
-        \d{2}:\d{2}(:\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(([-+]?(\d{2}|\d{4})|--)\d{2}\d{2}|
-              ([-+]?(\d{2}|\d{4}))?\d{3}|-\d{3}|
-              (\d{2}|\d{4})?w\d{2}\d)
-        (t?
-        \d{2}\d{2}(\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(\d{2}:\d{2}(:\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
-    elsif /\A\s*(\d{2}\d{2}(\d{2}([,.]\d+)?)?
-        (z|[-+]\d{2}(\d{2})?)?)?\s*\z/ix =~ str
-      _parse(str)
+    h = {}
+    if /\A\s*
+      (?:
+          (?<year>[-+]?\d{2,} | -) - (?<mon>\d{2})? - (?<mday>\d{2})
+        | (?<year>[-+]?\d{2,})? - (?<yday>\d{3})
+        | (?<cwyear>\d{4}|\d{2})? - w(?<cweek>\d{2}) - (?<cwday>\d)
+        | -w- (?<cwday2>\d)
+      )
+      (?:
+        t
+        (?<hour>\d{2}) : (?<min>\d{2}) (?: :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
+        (?<zone>z | [-+]\d{2}(?::?\d{2})?)?
+      )?
+      \s*\z/ix =~ str
+
+      if mday
+        h[:mday] = i mday
+        h[:year] = comp_year69(year) if year != "-"
+
+        if mon
+          h[:mon] = i mon
+        else
+          return {} if year != "-"
+        end
+      elsif yday
+        h[:yday] = i yday
+        h[:year] = comp_year69(year) if year
+      elsif cwday
+        h[:cweek] = i cweek
+        h[:cwday] = i cwday
+        h[:cwyear] = comp_year69(cwyear) if cwyear
+      elsif cwday2
+        h[:cwday] = i cwday2
+      end
+
+      if hour
+        h[:hour] = i hour
+        h[:min] = i min
+        h[:sec] = i sec if sec
+      end
+
+      h[:sec_fraction] = sec_fraction if sec_fraction
+      set_zone(h, zone)
+
+    elsif /\A\s*
+      (?:
+          (?<year>[-+]?(?:\d{4}|\d{2})|--) (?<mon>\d{2}|-) (?<mday>\d{2})
+        | (?<year>[-+]?(?:\d{4}|\d{2})) (?<yday>\d{3})
+        | -(?<yday2>\d{3})
+        | (?<cwyear>\d{4}|\d{2}|-) w(?<cweek>\d{2}|-) (?<cwday>\d)
+      )
+      (?:
+        t?
+        (?<hour>\d{2}) (?<min>\d{2}) (?:(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
+        (?<zone>z | [-+]\d{2}(?:\d{2})?)?
+      )?
+      \s*\z/ix =~ str
+
+      if mday
+        h[:mday] = i mday
+        h[:year] = comp_year69(year) if year != "--"
+        if mon != "-"
+          h[:mon] = i mon
+        else
+          return {} if year != "--"
+        end
+      elsif yday
+        h[:yday] = i yday
+        h[:year] = comp_year69(year)
+      elsif yday2
+        h[:yday] = i yday2
+      elsif cwday
+        h[:cweek] = i cweek if cweek != "-"
+        h[:cwday] = i cwday
+        h[:cwyear] = comp_year69(cwyear) if cwyear != "-"
+      end
+
+      if hour
+        h[:hour] = i hour
+        h[:min] = i min
+        h[:sec] = i sec if sec
+      end
+
+      h[:sec_fraction] = sec_fraction if sec_fraction
+      set_zone(h, zone)
+
+    elsif /\A\s*
+      (?<hour>\d{2})
+      (?:
+        : (?<min>\d{2})
+        (?:
+          :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?
+          (?<zone>z | [-+]\d{2}(?: :?\d{2})?)?
+        )?
+      |
+        (?<min>\d{2})
+        (?:
+          (?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?
+          (?<zone>z | [-+]\d{2}(?:\d{2})?)?
+        )?
+      )
+      \s*\z/ix =~ str
+
+      h[:hour] = i hour
+      h[:min] = i min
+      h[:sec] = i sec if sec
+      h[:sec_fraction] = i sec_fraction if sec_fraction
+      set_zone(h, zone)
     end
+    h
   end
 
   def self._rfc3339(str) # :nodoc:
@@ -1124,6 +1014,8 @@ class Date
         \d{2}:\d{2}:\d{2}(\.\d+)?
         (z|[-+]\d{2}:\d{2})\s*\z/ix =~ str
       _parse(str)
+    else
+      {}
     end
   end
 
@@ -1168,6 +1060,8 @@ class Date
         e.offset = zone_to_diff($4)
       end
       e.to_hash
+    else
+      {}
     end
   end
 
@@ -1187,6 +1081,8 @@ class Date
         end
       end
       e
+    else
+      {}
     end
   end
 
@@ -1213,6 +1109,8 @@ class Date
         \d{2}:\d{2}:\d{2}\s+
         \d{4}\s*\z/iox =~ str
       _parse(str)
+    else
+      {}
     end
   end
 
@@ -1274,6 +1172,32 @@ class Date
   extend  t
   include t
 
+  extend Module.new {
+    private
+    def set_zone(h, zone)
+      if zone
+        h[:zone] = zone
+        h[:offset] = zone_to_diff(zone)
+      end
+    end
+
+    def comp_year69(year)
+      y = i year
+      if year.length < 4
+        if y >= 69
+          y + 1900
+        else
+          y + 2000
+        end
+      else
+        y
+      end
+    end
+
+    def i(str)
+      Integer(str, 10)
+    end
+  }
 end
 
 class DateTime < Date
@@ -1287,11 +1211,12 @@ class DateTime < Date
   end
 
   def iso8601_timediv(n) # :nodoc:
+    n = n.to_i
     strftime('T%T' +
              if n < 1
                ''
              else
-               '.%0*d' % [n, (sec_fraction / Rational(1, 10**n)).round]
+               '.%0*d' % [n, (sec_fraction * 10**n).round]
              end +
              '%:z')
   end

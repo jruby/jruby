@@ -1,5 +1,1 @@
-exclude :test__different_format, "needs investigation"
-exclude :test_strftime, "needs investigation"
-exclude :test_strftime__3_2, "needs investigation"
-exclude :test_strftime__offset, "needs investigation"
-
+exclude :test_strftime__gnuext_complex, "need important implem changes and almost useless feature"
