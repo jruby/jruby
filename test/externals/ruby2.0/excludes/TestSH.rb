@@ -1,5 +1,0 @@
-exclude :test_marshal14, "needs investigation"
-exclude :test_marshal16, "needs investigation"
-exclude :test_marshal18, "needs investigation"
-exclude :test_period2, "needs investigation"
-exclude :test_strftime, "needs investigation"

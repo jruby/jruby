@@ -54,6 +54,13 @@ class TestDateArith < Test::Unit::TestCase
     d = DateTime.new(2000,3,1) - 1.to_r/2
     assert_equal([2000, 2, 29, 12, 0, 0],
 		 [d.year, d.mon, d.mday, d.hour, d.min, d.sec])
+
+    # EREGON: additional test
+    d1 = DateTime.new(2000, 1, 1, 0, 0, 1)
+    d2 = DateTime.new(2000, 1, 1, 0, 0, Rational(123_456_789, 1_000_000_000))
+    d = d1 - d2
+    assert_equal Rational(876_543_211, 1_000_000_000), d * 86_400
+    assert_equal d1, d2 + d
   end
 
   def test__minus__ex
