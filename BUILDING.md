@@ -169,22 +169,17 @@ mvn -Pall
 
 ## release ##
 
-first create gpg checksum files, javadocs and source attachement and tag git with version with:
+first set the new version:
 
 ```
-mvn release:perform -Prelease
+mvn versions:setVersion=9000
 ```
 
-in case a rollback is needed
+manually rollback the poms in ./ext/
+and now deploy the maven artifact to sonatype oss
 
 ```
-mvn release:rollback -Prelease
+mvn clean deploy -Psonatype-oss-release -Prelease
 ```
 
-perform the actual release to oss.sonatype.org with:
-
-```
-mvn release:perform -Prelease
-```
-
-
+go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place then commit and tag averything respectively and . . .
