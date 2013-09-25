@@ -176,10 +176,11 @@ mvn versions:setVersion=9000
 ```
 
 manually rollback the poms in ./ext/
+then commit and tag averything respectively and . . .
 and now deploy the maven artifact to sonatype oss
 
 ```
 mvn clean deploy -Psonatype-oss-release -Prelease
 ```
 
-go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place then commit and tag averything respectively and . . .
+go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
