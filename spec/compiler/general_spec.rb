@@ -540,7 +540,7 @@ ary
     EOS
 
     $~ = nil
-    obj.blank?#.should == true
+    obj.blank?.should == true
     $~.should be_nil
   end if is19
   
