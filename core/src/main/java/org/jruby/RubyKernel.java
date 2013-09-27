@@ -2255,17 +2255,17 @@ public class RubyKernel {
         return ((RubyBasicObject)self).nil_p(context);
     }
 
-    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_8)
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_8, writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject)self).op_match(context, arg);
     }
 
-    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_9, writes = FrameField.BACKREF)
     public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject)self).op_match19(context, arg);
     }
 
-    @JRubyMethod(name = "!~", required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "!~", required = 1, compat = RUBY1_9, writes = FrameField.BACKREF)
     public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject)self).op_not_match(context, arg);
     }

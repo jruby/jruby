@@ -529,6 +529,20 @@ ary
       )
     ).to eq 1
   end
+
+  it "keeps backref local to the caller scope when calling !~" do
+    obj = compile_and_run(<<-EOS)
+      Class.new do
+        def blank?
+          "a" !~ /[^[:space:]]/
+        end
+      end.new
+    EOS
+
+    $~ = nil
+    obj.blank?#.should == true
+    $~.should be_nil
+  end if is19
   
   it "does a bunch of other stuff" do
     silence_warnings {
