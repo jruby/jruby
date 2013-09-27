@@ -21,7 +21,7 @@ public class CopyInstr extends Instr implements ResultInstr {
 
         assert result != null: "CopyInstr result is null";
         assert s != null;
-        
+
         this.arg = s;
         this.result = result;
     }
@@ -29,7 +29,7 @@ public class CopyInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{arg};
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -37,7 +37,7 @@ public class CopyInstr extends Instr implements ResultInstr {
     public void updateResult(Variable v) {
         this.result = v;
     }
-    
+
     public Operand getSource() {
         return arg;
     }
@@ -50,7 +50,7 @@ public class CopyInstr extends Instr implements ResultInstr {
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        
+
         return arg;
     }
 
@@ -60,7 +60,7 @@ public class CopyInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
     }
 

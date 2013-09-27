@@ -11,10 +11,10 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     final public Label firstRescueBlockLabel;
     final public Label ensureBlockLabel;
 
-    public ExceptionRegionStartMarkerInstr(Label begin, Label end, 
+    public ExceptionRegionStartMarkerInstr(Label begin, Label end,
             Label ensureBlockLabel, Label firstRescueBlockLabel) {
         super(Operation.EXC_REGION_START);
-        
+
         this.begin = begin;
         this.end = end;
         this.firstRescueBlockLabel = firstRescueBlockLabel;
@@ -24,11 +24,11 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(super.toString());
-        
+
         buf.append("(").append(begin).append(", ").append(end).append(", rescue[").append(firstRescueBlockLabel).append("]");
         if (ensureBlockLabel != null) buf.append(", ensure[").append(ensureBlockLabel).append("]");
         buf.append(")");
-        
+
         return buf.toString();
     }
 

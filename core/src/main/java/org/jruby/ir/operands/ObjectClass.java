@@ -22,7 +22,7 @@ public class ObjectClass extends Operand {
     }
 
     @Override
-    public void addUsedVariables(List<Variable> l) { 
+    public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */
     }
 

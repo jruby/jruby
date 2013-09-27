@@ -16,12 +16,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class BlockGivenInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand blockArg;
-    
+
     public BlockGivenInstr(Variable result, Operand block) {
         super(Operation.BLOCK_GIVEN);
-        
+
         assert result != null: "BlockGivenInstr result is null";
-        
+
         this.result = result;
         this.blockArg = block;
     }
@@ -29,11 +29,11 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{blockArg};
     }
-    
+
     public Variable getResult() {
         return result;
     }
-    
+
     public Operand getBlockArg() {
         return blockArg;
     }

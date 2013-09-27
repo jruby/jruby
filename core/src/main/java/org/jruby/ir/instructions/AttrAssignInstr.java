@@ -19,14 +19,14 @@ public class AttrAssignInstr extends NoResultCallInstr {
     public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args) {
         super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
     }
-    
+
     public AttrAssignInstr(AttrAssignInstr instr) {
         this(instr.getReceiver(), instr.getMethodAddr(), instr.getCallArgs());
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new AttrAssignInstr(receiver.cloneForInlining(ii), 
+        return new AttrAssignInstr(receiver.cloneForInlining(ii),
                 (MethAddr)getMethodAddr().cloneForInlining(ii), cloneCallArgs(ii));
     }
 
@@ -34,7 +34,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
         if (containsSplat(callArgs)) return this;
-        
+
         switch (callArgs.length) {
             case 1:
                 return new OneArgOperandAttrAssignInstr(this);
@@ -46,7 +46,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, getCallArgs(), dynamicScope, temp);
-        
+
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
         Helpers.invoke(context, object, getMethodAddr().getName(), values, callType, Block.NULL_BLOCK);
         return null;

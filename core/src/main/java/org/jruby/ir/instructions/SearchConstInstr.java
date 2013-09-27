@@ -26,23 +26,23 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     private boolean  noPrivateConsts;
     private Variable result;
 
-    // Constant caching 
+    // Constant caching
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
     private Invalidator invalidator;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST);
-        
+
         assert result != null: "SearchConstInstr result is null";
-        
+
         this.result          = result;
         this.constName       = constName;
         this.startingScope   = startingScope;
         this.noPrivateConsts = noPrivateConsts;
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return new Operand[] { startingScope };
     }
 
@@ -50,7 +50,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         startingScope = startingScope.getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -64,18 +64,18 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
     public Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        // Lexical lookup 
+        // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
         Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
-        // Inheritance lookup 
+        // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?

@@ -17,12 +17,12 @@ import java.util.Map;
 public class ProcessModuleBodyInstr extends Instr implements ResultInstr {
     private Operand  moduleBody;
     private Variable result;
-    
+
     public ProcessModuleBodyInstr(Variable result, Operand moduleBody) {
         super(Operation.PROCESS_MODULE_BODY);
-        
+
         assert result != null: "ProcessModuleBodyInstr result is null";
-        
+
         this.result = result;
 		  this.moduleBody = moduleBody;
     }
@@ -30,7 +30,7 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{moduleBody};
     }
-    
+
     public Variable getResult() {
         return result;
     }

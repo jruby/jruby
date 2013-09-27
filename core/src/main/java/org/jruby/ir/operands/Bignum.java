@@ -8,11 +8,11 @@ import java.math.BigInteger;
 
 /**
  * Represents a literal Bignum.
- * 
- * We cache the value so that when the same Bignum Operand is copy-propagated 
+ *
+ * We cache the value so that when the same Bignum Operand is copy-propagated
  * across multiple instructions, the same RubyBignum object is created.  In a
  * ddition, the same constant across loops should be the same object.
- * 
+ *
  * So, in this example, the output should be false, true, true
  * <pre>
  *   n = 0
@@ -24,7 +24,7 @@ import java.math.BigInteger;
  *     n += 1
  *   end
  * </pre>
- * 
+ *
  */
 public class Bignum extends ImmutableLiteral {
     final public BigInteger value;
@@ -32,14 +32,14 @@ public class Bignum extends ImmutableLiteral {
     public Bignum(BigInteger value) {
         this.value = value;
     }
-    
+
     @Override
     public Object createCacheObject(ThreadContext context) {
         return RubyBignum.newBignum(context.runtime, value);
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return "Bignum:" + value;
     }
 

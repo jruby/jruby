@@ -48,7 +48,7 @@ import org.jruby.util.log.LoggerFactory;
  * Method, Closure, Module, Class, MetaClass
  * Top-level Script, and Eval Script
  *
- * In the compiler-land, IR versions of these scopes encapsulate only as much 
+ * In the compiler-land, IR versions of these scopes encapsulate only as much
  * information as is required to convert Ruby code into equivalent Java code.
  *
  * But, in the non-compiler land, there will be a corresponding java object for
@@ -65,7 +65,7 @@ import org.jruby.util.log.LoggerFactory;
  *   has closures that need access to the method's local variables), it might
  *   have version information, it might have references to other methods that
  *   were optimized with the current version number, etc.
- * - the runtime closure object will have a slot for a heap frame (for when it 
+ * - the runtime closure object will have a slot for a heap frame (for when it
  *   has closures within) and might get reified as a method in the java land
  *   (but inaccessible in ruby land).  So, passing closures in Java land might
  *   be equivalent to passing around the method handles.
@@ -94,12 +94,12 @@ public abstract class IRScope {
 
     /** Parser static-scope that this IR scope corresponds to */
     private StaticScope staticScope;
-    
+
     /** Live version of module within whose context this method executes */
-    private RubyModule containerModule; 
-    
+    private RubyModule containerModule;
+
     /** List of IR instructions for this method */
-    private List<Instr> instrList; 
+    private List<Instr> instrList;
 
     /** Control flow graph representation of this method's instructions */
     private CFG cfg;
@@ -122,7 +122,7 @@ public abstract class IRScope {
 
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
-    
+
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
     protected int temporaryVariableIndex;
@@ -132,10 +132,10 @@ public abstract class IRScope {
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex;
-    
+
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    List<IRScope> lexicalChildren; 
+    List<IRScope> lexicalChildren;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -165,11 +165,11 @@ public abstract class IRScope {
     /* *****************************************************************************************************
      * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
      * all of the caller's local variables need to be materialized into a heap binding?
-     * Ex: 
+     * Ex:
      *    def foo(&b)
      *      eval 'puts a', b
      *    end
-     *  
+     *
      *    def bar
      *      a = 1
      *      foo {} # prints out '1'
@@ -179,7 +179,7 @@ public abstract class IRScope {
      *
      * There are 2 scenarios when this can happen (even this is conservative -- but, good enough for now)
      * 1. This method receives an explicit block argument (in this case, the block can be stored, passed around,
-     *    eval'ed against, called, etc.).  
+     *    eval'ed against, called, etc.).
      *    CAVEAT: This is conservative ... it may not actually be stored & passed around, evaled, called, ...
      * 2. This method has a 'super' call (ZSuper AST node -- ZSuperInstr IR instruction)
      *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality,
@@ -252,7 +252,7 @@ public abstract class IRScope {
 
     /** Should we re-run compiler passes -- yes after we've inlined, for example */
     private boolean relinearizeCFG;
-    
+
     private IRManager manager;
 
     // Used by cloning code
@@ -292,14 +292,14 @@ public abstract class IRScope {
         this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
         this.localVars.nextSlot = s.localVars.nextSlot;
         this.relinearizeCFG = false;
-        
+
         setupLexicalContainment();
     }
-    
-    public IRScope(IRManager manager, IRScope lexicalParent, String name, 
+
+    public IRScope(IRManager manager, IRScope lexicalParent, String name,
             String fileName, int lineNumber, StaticScope staticScope) {
         this.manager = manager;
-        this.lexicalParent = lexicalParent;        
+        this.lexicalParent = lexicalParent;
         this.name = name;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
@@ -337,17 +337,17 @@ public abstract class IRScope {
         this.localVars = new LocalVariableAllocator();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.relinearizeCFG = false;
-        
+
         setupLexicalContainment();
     }
-    
+
     private final void setupLexicalContainment() {
         if (manager.isDryRun()) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
-        }        
+        }
     }
-    
+
     private boolean hasListener() {
         return manager.getIRScopeListener() != null;
     }
@@ -367,11 +367,11 @@ public abstract class IRScope {
 
         return scopeId == ((IRScope) other).scopeId;
     }
-    
+
     protected void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
-    
+
     public List<IRScope> getLexicalScopes() {
         return lexicalChildren;
     }
@@ -420,34 +420,34 @@ public abstract class IRScope {
     public boolean isForLoopBody() {
         return false;
     }
-    
+
     public Label getNewLabel(String prefix) {
         return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }
 
     public Label getNewLabel() {
         return getNewLabel("LBL");
-    }    
+    }
 
     public List<IRClosure> getClosures() {
         return nestedClosures;
     }
-    
+
     public IRManager getManager() {
         return manager;
     }
-    
+
     /**
      *  Returns the lexical scope that contains this scope definition
      */
     public IRScope getLexicalParent() {
         return lexicalParent;
     }
-    
+
     public StaticScope getStaticScope() {
         return staticScope;
-    }    
-    
+    }
+
     public IRMethod getNearestMethod() {
         IRScope current = this;
 
@@ -464,7 +464,7 @@ public abstract class IRScope {
         while (current != null && !current.isFlipScope()) {
             current = current.getLexicalParent();
         }
-        
+
         return current;
     }
 
@@ -474,10 +474,10 @@ public abstract class IRScope {
         while (current != null && !current.isTopLocalVariableScope()) {
             current = current.getLexicalParent();
         }
-        
+
         return current;
     }
-    
+
     /**
      * Returns the nearest scope which we can extract a live module from.  If
      * this returns null (like for evals), then it means it cannot be statically
@@ -489,15 +489,15 @@ public abstract class IRScope {
         while (!(current instanceof IRModuleBody)) {
             // When eval'ing, we dont have a lexical view of what module we are nested in
             // because binding_eval, class_eval, module_eval, instance_eval can switch
-            // around the lexical scope for evaluation to be something else.            
+            // around the lexical scope for evaluation to be something else.
             if (current == null || current instanceof IREvalScript) return null;
-            
+
             current = current.getLexicalParent();
         }
 
         return current;
     }
-    
+
     public String getName() {
         return name;
     }
@@ -519,9 +519,9 @@ public abstract class IRScope {
      */
     public IRScope getTopLevelScope() {
         IRScope current = this;
-        
+
         for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
-        
+
         return current;
     }
 
@@ -529,7 +529,7 @@ public abstract class IRScope {
         for (IRScope s = this; s != null && !s.isTopLocalVariableScope(); s = s.getLexicalParent()) {
             if (s == closure) return true;
         }
-        
+
         return false;
     }
 
@@ -549,7 +549,7 @@ public abstract class IRScope {
         this.hasExplicitCallProtocol = flag;
     }
 
-    public void setCodeModificationFlag(boolean f) { 
+    public void setCodeModificationFlag(boolean f) {
         canModifyCode = f;
     }
 
@@ -557,7 +557,7 @@ public abstract class IRScope {
         return this.receivesKeywordArgs;
     }
 
-    public boolean modifiesCode() { 
+    public boolean modifiesCode() {
         return canModifyCode;
     }
 
@@ -599,14 +599,14 @@ public abstract class IRScope {
         cfg = new CFG(this);
         cfg.build(instrList);
         // Clear out instruction list after CFG has been built.
-        this.instrList = null;  
+        this.instrList = null;
         return cfg;
     }
 
     protected void setCFG(CFG cfg) {
        this.cfg = cfg;
     }
-    
+
     public CFG getCFG() {
         return cfg;
     }
@@ -617,7 +617,7 @@ public abstract class IRScope {
             l.setTargetPC(labelIPCMap.get(l));
         }
     }
-    
+
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
@@ -644,12 +644,12 @@ public abstract class IRScope {
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
-                
+
                 if (instr instanceof Specializeable) {
                     instr = ((Specializeable) instr).specializeForInterpretation();
                     bbInstrs.set(i, instr);
                 }
-                
+
                 if (!(instr instanceof ReceiveSelfInstr)) {
                     newInstrs.add(instr);
                     ipc++;
@@ -670,7 +670,7 @@ public abstract class IRScope {
     private void runCompilerPasses() {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
-        initEvalScopeVariableAllocator(true); 
+        initEvalScopeVariableAllocator(true);
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the
@@ -778,7 +778,7 @@ public abstract class IRScope {
         // does that already, do we need to bother with it?
         return etEntries;
     }
-    
+
     private static Label[] catLabels(Label[] labels, Label cat) {
         if (labels == null) return new Label[] {cat};
         Label[] newLabels = new Label[labels.length + 1];
@@ -813,7 +813,7 @@ public abstract class IRScope {
             } else if (op == Operation.GET_GLOBAL_VAR) {
                 GlobalVariable gv = (GlobalVariable)((GetGlobalVariableInstr)i).getSource();
                 String gvName = gv.getName();
-                if (gvName.equals("$_") || 
+                if (gvName.equals("$_") ||
                     gvName.equals("$~") ||
                     gvName.equals("$`") ||
                     gvName.equals("$'") ||
@@ -906,7 +906,7 @@ public abstract class IRScope {
     @Override
     public String toString() {
         return getScopeName() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
-    }    
+    }
 
     public String toStringInstrs() {
         StringBuilder b = new StringBuilder();
@@ -914,9 +914,9 @@ public abstract class IRScope {
         int i = 0;
         for (Instr instr : instrList) {
             if (i > 0) b.append("\n");
-            
+
             b.append("  ").append(i).append('\t').append(instr);
-            
+
             i++;
         }
 
@@ -929,7 +929,7 @@ public abstract class IRScope {
 
         return b.toString();
     }
-    
+
     public String toPersistableString() {
         StringBuilder b = new StringBuilder();
 
@@ -940,7 +940,7 @@ public abstract class IRScope {
             b.append("\n");
             b.append(instr);
         }
-        
+
         return b.toString();
     }
 
@@ -948,7 +948,7 @@ public abstract class IRScope {
         Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
         Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
         SortedSet<Variable> variables = new TreeSet<Variable>();
-        
+
         for (int i = instrList.size() - 1; i >= 0; i--) {
             Instr instr = instrList.get(i);
 
@@ -1042,25 +1042,25 @@ public abstract class IRScope {
     protected void initEvalScopeVariableAllocator(boolean reset) {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
     }
-    
+
     public TemporaryVariable getNewTemporaryVariable() {
         temporaryVariableIndex++;
         return new TemporaryVariable(temporaryVariableIndex);
-    }    
+    }
 
     public TemporaryVariable getNewTemporaryVariable(String name) {
         temporaryVariableIndex++;
         return new TemporaryVariable(name, temporaryVariableIndex);
-    }    
+    }
 
     public void resetTemporaryVariables() {
         temporaryVariableIndex = -1;
     }
-    
+
     public int getTemporaryVariableSize() {
         return temporaryVariableIndex + 1;
     }
-    
+
     // Generate a new variable for inlined code
     public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
@@ -1074,7 +1074,7 @@ public abstract class IRScope {
     public int getThreadPollInstrsCount() {
         return threadPollInstrsCount;
     }
-    
+
     public int getLocalVariablesCount() {
         return localVars.nextSlot;
     }
@@ -1083,7 +1083,7 @@ public abstract class IRScope {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
         // # local vars, # flip vars
         //
-        // SSS FIXME: When we are opting local var access, 
+        // SSS FIXME: When we are opting local var access,
         // no need to allocate local var space except when we have been asked to!
         return getLocalVariablesCount() + getPrefixCountSize("%flip");
     }
@@ -1096,10 +1096,10 @@ public abstract class IRScope {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof LocalVariable) usedLocalVars.add(v);
                 }
-                
+
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
-                    
+
                     if (v instanceof LocalVariable) definedLocalVars.add(v);
                 }
             }
@@ -1130,8 +1130,8 @@ public abstract class IRScope {
         }
 
         return false;
-    }    
-    
+    }
+
     public void setDataFlowSolution(String name, DataFlowProblem p) {
         dfProbs.put(name, p);
     }
@@ -1139,7 +1139,7 @@ public abstract class IRScope {
     public DataFlowProblem getDataFlowSolution(String name) {
         return dfProbs.get(name);
     }
-    
+
     // This should only be used to do pre-cfg opts and to build the CFG.
     // Everyone else should use the CFG.
     public List<Instr> getInstrs() {
@@ -1150,30 +1150,30 @@ public abstract class IRScope {
     public Instr[] getInstrsForInterpretation() {
         return linearizedInstrArray;
     }
-    
+
     public void resetLinearizationData() {
         linearizedBBList = null;
-        relinearizeCFG = false;        
+        relinearizeCFG = false;
     }
-    
+
     public void checkRelinearization() {
         if (relinearizeCFG) resetLinearizationData();
     }
-    
+
     public List<BasicBlock> buildLinearization() {
         checkRelinearization();
 
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
-        
+
         linearizedBBList = CFGLinearizer.linearize(cfg);
-        
+
         return linearizedBBList;
     }
-    
+
     // SSS FIXME: Extremely inefficient
     public int getRescuerPC(Instr excInstr) {
         depends(cfg());
-        
+
         for (BasicBlock b : linearizedBBList) {
             for (Instr i : b.getInstrs()) {
                 if (i == excInstr) {
@@ -1191,7 +1191,7 @@ public abstract class IRScope {
     // SSS FIXME: Extremely inefficient
     public int getEnsurerPC(Instr excInstr) {
         depends(cfg());
-        
+
         for (BasicBlock b : linearizedBBList) {
             for (Instr i : b.getInstrs()) {
                 if (i == excInstr) {
@@ -1205,24 +1205,24 @@ public abstract class IRScope {
         LOG.error("Fell through looking for ensurer ipc for " + excInstr);
         return -1;
     }
-    
+
     public List<BasicBlock> linearization() {
         depends(cfg());
-        
+
         assert linearizedBBList != null: "You have not run linearization";
-        
+
         return linearizedBBList;
     }
-    
+
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";
     }
-    
+
     public CFG cfg() {
         assert cfg != null: "Trying to access build before build started";
         return cfg;
-    }     
+    }
 
     public void splitCalls() {
         // FIXME: (Enebo) We are going to make a SplitCallInstr so this logic can be separate
@@ -1295,18 +1295,18 @@ public abstract class IRScope {
             pass.run(this);
         }
     }
-    
-    
+
+
     public void buildCFG(List<Instr> instrList) {
         CFG newBuild = new CFG(this);
         newBuild.build(instrList);
         cfg = newBuild;
     }
-    
+
     public void resetCFG() {
         cfg = null;
     }
-    
+
     /* Record a begin block -- not all scope implementations can handle them */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
@@ -1315,14 +1315,14 @@ public abstract class IRScope {
     /* Record an end block -- not all scope implementations can handle them */
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
-    } 
-    
+    }
+
     // Enebo: We should just make n primitive int and not take the hash hit
     protected int allocateNextPrefixedName(String prefix) {
         int index = getPrefixCountSize(prefix);
-        
+
         nextVarIndex.put(prefix, index + 1);
-        
+
         return index;
     }
 
@@ -1337,7 +1337,7 @@ public abstract class IRScope {
 
         return index.intValue();
     }
-    
+
     public RubyModule getContainerModule() {
 //        System.out.println("GET: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
         return containerModule;
@@ -1348,7 +1348,7 @@ public abstract class IRScope {
 
         return nextClosureIndex;
     }
-    
+
     /**
      * Does this scope represent a module body?  (SSS FIXME: what about script or eval script bodies?)
      */
@@ -1366,11 +1366,11 @@ public abstract class IRScope {
     public boolean isFlipScope() {
         return true;
     }
-    
+
     public boolean isTopLocalVariableScope() {
         return true;
     }
-    
+
     /**
      * Is this an eval script or a regular file script?
      */

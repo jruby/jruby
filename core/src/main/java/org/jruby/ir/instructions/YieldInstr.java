@@ -25,9 +25,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
         super(Operation.YIELD);
-        
+
         assert result != null: "YieldInstr result is null";
-        
+
         this.blockArg = block;
         this.yieldArg = arg == null ? UndefinedValue.UNDEFINED : arg;
         this.unwrapArray = unwrapArray;
@@ -48,7 +48,7 @@ public class YieldInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
     }
 
@@ -56,10 +56,10 @@ public class YieldInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[] {blockArg, yieldArg};
     }
-    
+
     public Variable getResult() {
         return result;
-    }    
+    }
 
     public void updateResult(Variable v) {
         this.result = v;

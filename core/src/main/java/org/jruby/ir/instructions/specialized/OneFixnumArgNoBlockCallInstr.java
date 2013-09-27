@@ -14,15 +14,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     private final long fixNum;
-    
+
     public OneFixnumArgNoBlockCallInstr(CallInstr call) {
         super(Operation.CALL_1F, call);
-        
+
         assert getCallArgs().length == 1;
-        
+
         this.fixNum = ((Fixnum) getCallArgs()[0]).value;
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "{1F}";

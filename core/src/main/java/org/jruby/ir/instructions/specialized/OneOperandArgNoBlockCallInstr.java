@@ -15,11 +15,11 @@ public class OneOperandArgNoBlockCallInstr extends CallInstr {
     public OneOperandArgNoBlockCallInstr(CallInstr call) {
         super(Operation.CALL_1O, call);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "{1O}";
-    }    
+    }
 
     public Operand getReceiver() {
         return receiver;

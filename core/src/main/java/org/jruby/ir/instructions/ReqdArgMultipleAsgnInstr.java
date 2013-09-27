@@ -25,7 +25,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
     public ReqdArgMultipleAsgnInstr(Variable result, Operand array, int index) {
         this(result, array, -1, -1, index);
     }
-    
+
     public int getPreArgsCount() { return preArgsCount; }
     public int getPostArgsCount() { return postArgsCount; }
 
@@ -43,7 +43,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
-        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);        
+        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
     }
 
     @Override

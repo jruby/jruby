@@ -29,7 +29,7 @@ public class ClassVarIsDefinedInstr extends DefinedObjectNameInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new ClassVarIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new ClassVarIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
@@ -38,15 +38,15 @@ public class ClassVarIsDefinedInstr extends DefinedObjectNameInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
         RubyModule cm = (RubyModule) getObject().retrieve(context, self, currDynScope, temp);
-        String name = getName().string;        
+        String name = getName().string;
         boolean defined = cm.isClassVarDefined(name);
-        
+
         if (!defined && cm.isSingleton()) { // Not found look for cvar on singleton
             IRubyObject attached = ((MetaClass)cm).getAttached();
             if (attached instanceof RubyModule) defined = ((RubyModule)attached).isClassVarDefined(name);
         }
-        
-        return runtime.newBoolean(defined);        
+
+        return runtime.newBoolean(defined);
     }
 
     @Override

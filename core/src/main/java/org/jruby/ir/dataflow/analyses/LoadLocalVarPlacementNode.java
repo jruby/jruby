@@ -177,7 +177,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
-                    // Only those variables that are defined in the closure, and are in the required loads set 
+                    // Only those variables that are defined in the closure, and are in the required loads set
                     // will need to be loaded from the binding after the call!  Rest can wait ..
                     //
                     // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
@@ -192,7 +192,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                     }
                     it.previous();
                     reqdLoads = newReqdLoads;
-                } 
+                }
 
                 // In this case, we are going to blindly load everything
                 if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
@@ -282,5 +282,5 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
     // On entry to flow graph node:  Variables that need to be loaded from the heap binding
     Set<LocalVariable> inRequiredLoads;
     // On exit from flow graph node: Variables that need to be loaded from the heap binding
-    Set<LocalVariable> outRequiredLoads;    
+    Set<LocalVariable> outRequiredLoads;
 }

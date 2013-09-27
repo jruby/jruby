@@ -26,7 +26,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
 
     public BuildLambdaInstr(Variable lambda, IRClosure lambdaBody, ISourcePosition position) {
         super(Operation.LAMBDA);
-     
+
         this.result = lambda;
         this.operands = new Operand[] { new WrappedIRClosure(lambdaBody) };
         this.position = position;
@@ -36,7 +36,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return operands;
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -44,18 +44,18 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     public void updateResult(Variable v) {
         this.result = v;
     }
-    
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
     }
-    
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         for (int i = 0; i < operands.length; i++) {
             operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
-        }        
-    }    
+        }
+    }
 
     private IRClosure getLambdaBody() {
         return ((WrappedIRClosure) operands[0]).getClosure();

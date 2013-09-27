@@ -23,7 +23,7 @@ public class Splat extends Operand {
 
     @Override
     public boolean hasKnownValue() {
-        return false; /*_array.isConstant();*/ 
+        return false; /*_array.isConstant();*/
     }
 
     @Override
@@ -37,7 +37,7 @@ public class Splat extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        Operand newArray = array.getSimplifiedOperand(valueMap, force); 
+        Operand newArray = array.getSimplifiedOperand(valueMap, force);
         /*
          * SSS FIXME:  Cannot convert this to an Array operand!
          *

@@ -15,10 +15,10 @@ public class RaiseArgumentErrorInstr extends Instr {
     private final int opt;
     private final int rest;
     private final int numArgs;
-    
+
     public RaiseArgumentErrorInstr(int required, int opt, int rest, int numArgs) {
         super(Operation.RAISE_ARGUMENT_ERROR);
-        
+
         this.required = required;
         this.opt = opt;
         this.rest = rest;
@@ -50,5 +50,5 @@ public class RaiseArgumentErrorInstr extends Instr {
     public void visit(IRVisitor visitor) {
         visitor.RaiseArgumentErrorInstr(this);
     }
-    
+
 }

@@ -10,7 +10,7 @@ public class LabelInstr extends Instr {
 
     public LabelInstr(Label label) {
         super(Operation.LABEL);
-        
+
         this.label = label;
     }
 

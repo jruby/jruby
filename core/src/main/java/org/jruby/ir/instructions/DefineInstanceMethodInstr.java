@@ -34,7 +34,7 @@ public class DefineInstanceMethodInstr extends Instr {
     public String toString() {
         return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
     }
-    
+
     public IRMethod getMethod() {
         return method;
     }
@@ -65,7 +65,7 @@ public class DefineInstanceMethodInstr extends Instr {
         }
 
         if ("__id__".equals(name) || "__send__".equals(name)) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem"); 
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem");
         }
 
         Visibility visibility = context.getCurrentVisibility();
@@ -81,7 +81,7 @@ public class DefineInstanceMethodInstr extends Instr {
             clazz.getSingletonClass().addMethod(name, new WrapperMethod(clazz.getSingletonClass(), newMethod, Visibility.PUBLIC));
             clazz.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         }
-   
+
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (clazz.isSingleton()) {
             ((MetaClass) clazz).getAttached().callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
@@ -94,7 +94,7 @@ public class DefineInstanceMethodInstr extends Instr {
     public Operand[] getOperands() {
         return new Operand[]{container};
     }
-    
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);

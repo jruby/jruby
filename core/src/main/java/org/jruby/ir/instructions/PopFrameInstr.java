@@ -17,7 +17,7 @@ public class PopFrameInstr extends Instr {
         super(Operation.POP_FRAME);
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 

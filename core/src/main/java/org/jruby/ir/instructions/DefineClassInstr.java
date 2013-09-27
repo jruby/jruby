@@ -23,12 +23,12 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     private Operand container;
     private Operand superClass;
     private Variable result;
-    
+
     public DefineClassInstr(Variable result, IRClassBody newIRClassBody, Operand container, Operand superClass) {
         super(Operation.DEF_CLASS);
-        
+
         assert result != null: "DefineClassInstr result is null";
-        
+
         this.container = container;
         this.superClass = superClass == null ? newIRClassBody.getManager().getNil() : superClass;
         this.newIRClassBody = newIRClassBody;
@@ -38,7 +38,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{container, superClass};
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -63,7 +63,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         // SSS FIXME: So, do we clone the class body scope or not?
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClassBody, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
-    
+
     private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, DynamicScope currDynScope, Object[] temp) {
         if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
@@ -76,7 +76,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
             if (!(o instanceof RubyClass)) {
                 throw context.runtime.newTypeError("superclass must be Class (" + o + " given)");
             }
-            
+
             sc = (RubyClass) o;
         }
 
@@ -86,7 +86,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
-        
+
         if (!(rubyContainer instanceof RubyModule)) {
             throw context.runtime.newTypeError("no outer class/module");
         }

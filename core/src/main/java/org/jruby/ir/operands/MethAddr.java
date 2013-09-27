@@ -34,7 +34,7 @@ public class MethAddr extends Reference {
     public void visit(IRVisitor visitor) {
         visitor.MethAddr(this);
     }
-    
+
     @Override
     public String toString() {
         return "'" + getName() + "'";

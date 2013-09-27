@@ -18,11 +18,11 @@ public class WrappedIRClosure extends Operand {
     public WrappedIRClosure(IRClosure scope) {
         this.closure = scope;
     }
-    
+
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Nothing to o */
-    }    
+    }
 
     public IRClosure getClosure() {
         return closure;

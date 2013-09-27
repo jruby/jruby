@@ -14,20 +14,20 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
     public ZeroOperandArgNoBlockCallInstr(CallInstr call) {
         super(Operation.CALL_0O, call);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "{0O}";
-    }    
+    }
 
     public Operand getReceiver() {
         return receiver;
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
-        
+
         return getCallSite().call(context, self, object);
-    }     
+    }
 }

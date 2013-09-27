@@ -14,21 +14,21 @@ import org.jruby.ir.representations.CFG.EdgeType;
  * This produces a linear list of BasicBlocks so that the linearized instruction
  * list is in executable form.  In generating this list, we will also add jumps
  * where required and remove as many jumps as possible.
- * 
- * Ordinary BasicBlocks will follow FollowThrough edges and just concatenate 
- * together eliminating the need for executing a jump instruction during 
+ *
+ * Ordinary BasicBlocks will follow FollowThrough edges and just concatenate
+ * together eliminating the need for executing a jump instruction during
  * execution.
- * 
+ *
  * Notes:
  * 1. Basic blocks ending in branches have two edges (FollowTrough/NotTaken and Taken)
- * 2. All BasicBlocks can possibly have two additional edges related to exceptions: 
+ * 2. All BasicBlocks can possibly have two additional edges related to exceptions:
  *    - one that transfers control to a rescue block (if one exists that protects
  *      the excepting instruction) which is also responsible for running ensures
  *    - one that transfers control to an ensure block (if one exists) for
  *      situations where we bypass the rescue block (breaks and thread-kill).
  * 3. Branch, Jump, Return, and Exceptions are all boundaries for BasicBlocks
  * 4. Dummy Entry and Exit BasicBlocks exist in all CFGs
- * 
+ *
  * NOTE: When the IR builder first builds its list, and the CFG builder builds the CFG,
  * the order in which BBs are created should already be a linearized list.  Need to verify
  * this and we might be able to skip linearization if the CFG has not been transformed
@@ -40,15 +40,15 @@ public class CFGLinearizer {
     public static List<BasicBlock> linearize(CFG cfg) {
         List<BasicBlock> list = new ArrayList<BasicBlock>();
         BitSet processed = new BitSet(cfg.size()); // Assumes all id's are used
-        
+
         linearizeInner(cfg, list, processed, cfg.getEntryBB());
         verifyAllBasicBlocksProcessed(cfg, processed);
         fixupList(cfg, list);
-        
+
         return list;
     }
-    
-    private static void linearizeInner(CFG cfg, List<BasicBlock> list, 
+
+    private static void linearizeInner(CFG cfg, List<BasicBlock> list,
             BitSet processed, BasicBlock current) {
         if (processed.get(current.getID())) return;
 
@@ -58,16 +58,16 @@ public class CFGLinearizer {
 
         list.add(current);
         processed.set(current.getID());
-        
+
         // First, fall-through BB
         BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, EdgeType.FALL_THROUGH);
         if (fallThrough != null) linearizeInner(cfg, list, processed, fallThrough);
-        
+
         // Next, regular edges
         for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.REGULAR)) {
             linearizeInner(cfg, list, processed, destination);
         }
-        
+
         // Next, exception edges
         for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.EXCEPTION)) {
             linearizeInner(cfg, list, processed, destination);
@@ -78,7 +78,7 @@ public class CFGLinearizer {
             linearizeInner(cfg, list, processed, destination);
         }
     }
-    
+
     /**
      * Process (fixup) list of instruction and add or remove jumps.
      */
@@ -92,7 +92,7 @@ public class CFGLinearizer {
                 current.addInstr(new ReturnInstr(cfg.getScope().getManager().getNil()));
                 continue;
             }
-                  
+
             Instr lastInstr = current.getLastInstr();
             if (lastInstr instanceof JumpInstr) { // if jumping to next BB then remove it
                 tryAndRemoveUnneededJump(list.get(i + 1), cfg, lastInstr, current);
@@ -114,7 +114,7 @@ public class CFGLinearizer {
                 // the exit BB post-dominates all BBs in the CFG even when exception
                 // edges are removed.
                 //
-                // Verify that we have exactly one non-exception target 
+                // Verify that we have exactly one non-exception target
                 // SSS FIXME: Is this assertion any different from the BranchInstr assertion above?
                 Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
                 BasicBlock target = iter.next();
@@ -134,7 +134,7 @@ public class CFGLinearizer {
     private static void addJumpIfNextNotDestination(CFG cfg, BasicBlock next, Instr lastInstr, BasicBlock current) {
         Iterator<BasicBlock> outs = cfg.getOutgoingDestinations(current).iterator();
         BasicBlock target = outs.hasNext() ? outs.next() : null;
-        
+
         if (target != null && !outs.hasNext()) {
             if ((target != next) && ((lastInstr == null) || !lastInstr.getOperation().transfersControl())) {
                 current.addInstr(new JumpInstr(target.getLabel()));

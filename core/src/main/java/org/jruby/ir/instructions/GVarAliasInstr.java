@@ -17,7 +17,7 @@ public class GVarAliasInstr extends Instr {
 
     public GVarAliasInstr(Operand newName, Operand oldName) {
         super(Operation.GVAR_ALIAS);
-        
+
         this.newName = newName;
         this.oldName = oldName;
     }

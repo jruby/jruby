@@ -19,9 +19,9 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
 
     public MethodLookupInstr(Variable result, MethodHandle mh) {
         super(Operation.METHOD_LOOKUP);
-        
+
         assert result != null: "MethodLookupInstr result is null";
-        
+
         this.methodHandle = mh;
         this.result = result;
     }
@@ -37,11 +37,11 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{methodHandle};
     }
-    
+
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }

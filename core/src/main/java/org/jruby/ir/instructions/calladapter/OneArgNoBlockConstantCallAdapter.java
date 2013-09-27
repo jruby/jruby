@@ -12,12 +12,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneArgNoBlockConstantCallAdapter extends CallAdapter {
     private final Operand arg1;
     private IRubyObject constant1 = null;
-    
+
     public OneArgNoBlockConstantCallAdapter(CallSite callSite, Operand[] args) {
         super(callSite);
-        
+
         assert args.length == 1;
-        
+
         this.arg1 = args[0];
     }
 

@@ -16,12 +16,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class OneArgNoBlockOperandCallAdapter extends CallAdapter {
     private final Operand arg1;
-    
+
     public OneArgNoBlockOperandCallAdapter(CallSite callSite, Operand[] args) {
         super(callSite);
-        
+
         assert args.length == 1;
-                
+
         this.arg1 = args[0];
     }
 

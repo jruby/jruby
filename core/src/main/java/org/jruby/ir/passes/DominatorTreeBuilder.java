@@ -15,16 +15,16 @@ import org.jruby.util.log.LoggerFactory;
 public class DominatorTreeBuilder extends CompilerPass {
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-    
+
     @Override
     public String getLabel() {
         return "Build Dominator Tree";
     }
-    
+
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
-    }    
+    }
 
     @Override
     public Object execute(IRScope scope, Object... data) {
@@ -35,15 +35,15 @@ public class DominatorTreeBuilder extends CompilerPass {
         } catch (Exception e) {
             LOG.debug("Caught exception building dom tree for {}", scope.cfg());
         }
-        
+
         return null;
     }
-    
+
     @Override
     public void invalidate(IRScope scope) {
         // FIXME: We never store our dominator tree anywhere right?
     }
-    
+
     public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) {
         Integer[] bbToPoNumbers = new Integer[maxNodeId + 1]; // Set up a map of bbid -> post order numbering
         BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId + 1];
@@ -86,7 +86,7 @@ public class DominatorTreeBuilder extends CompilerPass {
                 // newBIdom is initialized to be some (first-encountered, for ex.) processed predecessor of 'b'.
                 for (BasicBlock src : cfg.getIncomingSources(b)) {
                     Integer srcPoNumber = bbToPoNumbers[src.getID()];
-                    
+
                     if (idoms[srcPoNumber] != null) {
 //                        System.out.println("Initialized idom(" + bPoNumber + ")=" + srcPoNumber);
                         newBIdom = srcPoNumber;
@@ -97,7 +97,7 @@ public class DominatorTreeBuilder extends CompilerPass {
                 // newBIdom should not be null
                 assert newBIdom != null;
 
-                // Now, intersect dom sets of all of b's predecessors 
+                // Now, intersect dom sets of all of b's predecessors
                 Integer processedPred = newBIdom;
                 for (BasicBlock src: cfg.getIncomingSources(b)) {
                     // Process b's predecessors except the initialized bidom value
@@ -126,7 +126,7 @@ public class DominatorTreeBuilder extends CompilerPass {
 //            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
         }
     }
-    
+
     private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2) {
         while (nb1 != nb2) {
             while (nb1 < nb2) {

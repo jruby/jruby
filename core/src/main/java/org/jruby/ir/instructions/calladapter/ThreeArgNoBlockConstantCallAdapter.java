@@ -21,12 +21,12 @@ public class ThreeArgNoBlockConstantCallAdapter extends CallAdapter {
     private IRubyObject constant2 = null;
     private final Operand arg3;
     private IRubyObject constant3 = null;
-    
+
     public ThreeArgNoBlockConstantCallAdapter(CallSite callSite, Operand[] args) {
         super(callSite);
 
         assert args.length == 3;
-        
+
         this.arg1 = args[0];
         this.arg2 = args[1];
         this.arg3 = args[2];

@@ -29,7 +29,7 @@ public class MethodDefinedInstr extends DefinedObjectNameInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new MethodDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new MethodDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
@@ -39,7 +39,7 @@ public class MethodDefinedInstr extends DefinedObjectNameInstr {
         Ruby runtime = context.runtime;
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
         RubyString boundValue = Helpers.getDefinedCall(context, self, receiver, getName().string);
-        
+
         return boundValue == null ? context.nil : boundValue;
     }
 

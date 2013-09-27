@@ -27,7 +27,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     private Variable result;
     private boolean  noPrivateConsts;
 
-    // Constant caching 
+    // Constant caching
     private volatile transient Object cachedConstant = null;
     private volatile int hash = -1;
     private volatile Object generation = -1;
@@ -35,9 +35,9 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST);
-        
+
         assert result != null: "InheritanceSearchConstInstr result is null";
-        
+
         this.currentModule = currentModule;
         this.constName = constName;
         this.result = result;
@@ -45,7 +45,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return new Operand[] { currentModule };
     }
 
@@ -53,7 +53,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         currentModule = currentModule.getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -68,7 +68,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + currentModule + ", " + constName  + ")";
     }
 

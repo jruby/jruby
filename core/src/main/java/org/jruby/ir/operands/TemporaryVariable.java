@@ -44,7 +44,7 @@ public class TemporaryVariable extends Variable {
 
     public int compareTo(Object other) {
         if (!(other instanceof TemporaryVariable)) return 0;
-        
+
         return name.compareTo(((TemporaryVariable) other).name);
     }
 
@@ -66,7 +66,7 @@ public class TemporaryVariable extends Variable {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
 		  // SSS FIXME: When AddLocalVarLoadStoreInstructions pass is not enabled, we don't need this check.
 		  // We only need these because Ruby code can have local vars used before being defined.
-		  // 
+		  //
 		  //    a = 1 if always-false
 		  //    p a   # should print nil since a is not defined on the else path
 		  //

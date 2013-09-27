@@ -13,11 +13,11 @@ public class NoResultCallInstr extends CallBase {
             Operand receiver, Operand[] args, Operand closure) {
         super(op, callType, methAddr, receiver, args, closure);
     }
-    
+
     public NoResultCallInstr(Operation op, NoResultCallInstr instr) {
         this(op, instr.getCallType(), instr.methAddr, instr.receiver, instr.arguments, instr.closure);
     }
-    
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new NoResultCallInstr(getOperation(), getCallType(), (MethAddr) getMethodAddr().cloneForInlining(ii),
@@ -28,7 +28,7 @@ public class NoResultCallInstr extends CallBase {
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
         if (hasClosure() || containsSplat(callArgs)) return this;
-        
+
         switch (callArgs.length) {
 //            case 0:
 //                return new ZeroOperandArgNoBlockNoResultCallInstr(this);

@@ -16,20 +16,20 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     public OneArgOperandAttrAssignInstr(AttrAssignInstr instr) {
         super(instr);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "{1O}";
-    }    
-    
+    }
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
         Operand[] args = getCallArgs();
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject value = (IRubyObject) args[0].retrieve(context, self, dynamicScope, temp);
-        
+
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
         Helpers.invoke(context, object, getMethodAddr().getName(), value, callType, Block.NULL_BLOCK);
         return null;
-    }    
+    }
 }

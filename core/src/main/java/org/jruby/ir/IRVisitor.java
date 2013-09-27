@@ -61,7 +61,7 @@ public abstract class IRVisitor {
     public void visit(Instr instr) {
         instr.visit(this);
     }
-    
+
     public void visit(Operand operand) {
         operand.visit(this);
     }

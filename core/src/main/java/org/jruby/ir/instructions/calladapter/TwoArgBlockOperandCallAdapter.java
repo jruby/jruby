@@ -13,12 +13,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class TwoArgBlockOperandCallAdapter extends ClosureCallAdapter {
     private Operand arg1;
     private Operand arg2;
-    
+
     public TwoArgBlockOperandCallAdapter(CallSite callSite, Operand[] args, Operand closure) {
         super(callSite, closure);
-        
+
         assert args.length == 2;
-        
+
         arg1 = args[0];
         arg2 = args[1];
     }
@@ -29,5 +29,5 @@ public class TwoArgBlockOperandCallAdapter extends ClosureCallAdapter {
         IRubyObject value2 = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
         Block block = prepareBlock(context, self, currDynScope, temp);
         return callSite.call(context, self, receiver, value1, value2, block);
-    }    
+    }
 }

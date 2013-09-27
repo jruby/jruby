@@ -22,10 +22,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GetErrorInfoInstr extends Instr implements ResultInstr {
     private Variable result;
-    
+
     public GetErrorInfoInstr(Variable result) {
         super(Operation.GET_ERROR_INFO);
-        
+
         this.result = result;
     }
 
@@ -33,7 +33,7 @@ public class GetErrorInfoInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
         return result;
     }

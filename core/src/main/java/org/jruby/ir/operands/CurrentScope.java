@@ -15,11 +15,11 @@ public class CurrentScope extends Operand {
     public CurrentScope(IRScope scope) {
         this.scope = scope;
     }
-    
+
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */
-    }    
+    }
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {

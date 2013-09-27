@@ -24,13 +24,13 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
 
         this.missingConst = missingConst;
     }
-    
+
     public String getMissingConst() {
         return missingConst;
     }
 
     @Override
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return new Operand[] { receiver };
     }
 
@@ -38,7 +38,7 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         receiver = receiver.getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -46,14 +46,14 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
     public void updateResult(Variable v) {
         this.result = v;
     }
-    
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ConstMissingInstr(ii.getRenamedVariable(result), receiver.cloneForInlining(ii), missingConst);
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + receiver + "," + missingConst  + ")";
     }
 

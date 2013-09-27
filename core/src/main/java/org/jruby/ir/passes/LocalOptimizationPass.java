@@ -21,7 +21,7 @@ public class LocalOptimizationPass extends CompilerPass {
     boolean locallyOptimized = false;
 
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-    
+
     @Override
     public String getLabel() {
         return "Local Optimizations";
@@ -31,7 +31,7 @@ public class LocalOptimizationPass extends CompilerPass {
     public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
     }
-    
+
     @Override
     public Object execute(IRScope s, Object... data) {
         // This let us compute execute scope flags for a method based on what all nested closures do
@@ -48,15 +48,15 @@ public class LocalOptimizationPass extends CompilerPass {
 
         // Mark done
         locallyOptimized = true;
-        
+
         return null;
     }
-    
+
     @Override
     public Object previouslyRun(IRScope scope) {
         return locallyOptimized ? new Object() : null;
     }
-    
+
     @Override
     public void invalidate(IRScope scope) {
         locallyOptimized = false;
@@ -67,7 +67,7 @@ public class LocalOptimizationPass extends CompilerPass {
 
         // For all variables used by val, record a reverse mapping to let us track
         // Read-After-Write scenarios when any of these variables are modified.
-        List<Variable> valVars = new ArrayList<Variable>(); 
+        List<Variable> valVars = new ArrayList<Variable>();
         val.addUsedVariables(valVars);
         for (Variable v: valVars) {
            List<Variable> x = simplificationMap.get(v);
@@ -113,7 +113,7 @@ public class LocalOptimizationPass extends CompilerPass {
             // System.out.println("AFTER: " + i);
 
             if (res != null && val != null) {
-                if (!res.equals(val)) { 
+                if (!res.equals(val)) {
                     recordSimplification(res, val, valueMap, simplificationMap);
                 } else if (!i.hasSideEffects()) {
                     if (i instanceof CopyInstr) {

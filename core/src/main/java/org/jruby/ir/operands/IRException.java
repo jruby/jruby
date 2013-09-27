@@ -10,7 +10,7 @@ import java.util.List;
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
     private String exceptionType;
-    
+
     protected IRException(String exceptionType) {
         this.exceptionType = exceptionType;
     }
@@ -47,7 +47,7 @@ public class IRException extends Operand {
         return result.toString();
     }
 
-    public RuntimeException getException(Ruby runtime) { 
+    public RuntimeException getException(Ruby runtime) {
         if (this == NEXT_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, null, "unexpected next");
         else if (this == BREAK_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, null, "unexpected break");
         else if (this == RETURN_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, null, "unexpected return");

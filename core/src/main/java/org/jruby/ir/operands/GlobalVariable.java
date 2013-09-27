@@ -17,7 +17,7 @@ public class GlobalVariable extends Reference {
 
         return getName().compareTo(((GlobalVariable) arg0).getName());
     }
-    
+
     @Interp
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {

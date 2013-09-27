@@ -7,7 +7,7 @@ import org.jruby.runtime.ThreadContext;
 
 /**
  * Represents nil.
- * 
+ *
  * Note: We used to protect the constructor, but since manager is the new
  * way I got lazy and removed protected.
  */
@@ -16,9 +16,9 @@ public class Nil extends ImmutableLiteral {
     public Object createCacheObject(ThreadContext context) {
         return context.nil;
     }
-    
+
     @Override
-    public String toString() { 
+    public String toString() {
         return "nil";
     }
 

@@ -44,7 +44,7 @@ public abstract class Variable extends Operand implements Comparable {
     public abstract Variable cloneForCloningClosure(InlinerInfo ii);
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         return ii.getRenamedVariable(this);
     }
 }

@@ -28,7 +28,7 @@ import org.jruby.ir.util.Edge;
 
 public class CFGInliner {
     private CFG cfg;
-    
+
     public CFGInliner(CFG build) {
         this.cfg = build;
     }
@@ -170,7 +170,7 @@ public class CFGInliner {
                     if (rescuerOfSplitBB != null) {
                         cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
                     } else {
-                        cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);                        
+                        cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);
                     }
                 } else {
                     cfg.addEdge(clonedSource, splitBB, e.getType());
@@ -214,8 +214,8 @@ public class CFGInliner {
             }
         }
 
-        // 7. Add inline guard that verifies that the method inlined is the same 
-        // that gets called in future invocations.  In addition to the guard, add 
+        // 7. Add inline guard that verifies that the method inlined is the same
+        // that gets called in future invocations.  In addition to the guard, add
         // a failure path code.
         Label failurePathLabel = hostScope.getNewLabel();
         callBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
@@ -288,7 +288,7 @@ public class CFGInliner {
                 }
             }
         }
-        
+
         // Hook up entry edges
         for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cEntry)) {
             BasicBlock destination = e.getDestination().getData();
@@ -296,8 +296,8 @@ public class CFGInliner {
                 cfg.addEdge(yieldBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
             }
         }
-        
-        // Hook up exit edges 
+
+        // Hook up exit edges
         for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != cEntry) {

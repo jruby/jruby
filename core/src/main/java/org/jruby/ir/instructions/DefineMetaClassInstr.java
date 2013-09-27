@@ -22,12 +22,12 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     private IRModuleBody metaClassBody;
     private Operand object;
     private Variable result;
-    
+
     public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody metaClassBody) {
         super(Operation.DEF_META_CLASS);
-        
+
         assert result != null: "DefineMetaClassInstr result is null";
-        
+
         this.metaClassBody = metaClassBody;
         this.object = object;
         this.result = result;
@@ -36,7 +36,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{object};
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -65,7 +65,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
-        
+
         RubyClass singletonClass = Helpers.getSingletonClass(runtime, obj);
         metaClassBody.getStaticScope().setModule(singletonClass);
 		  return new InterpretedIRMethod(metaClassBody, Visibility.PUBLIC, singletonClass);

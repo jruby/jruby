@@ -14,9 +14,9 @@ public abstract class GetInstr extends Instr implements ResultInstr {
 
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
         super(op);
-        
+
         assert result != null: "" + getClass().getSimpleName() + " result is null";
-        
+
         this.source = source;
         this.ref = ref;
         this.result = result;
@@ -25,7 +25,7 @@ public abstract class GetInstr extends Instr implements ResultInstr {
     public String getRef() {
         return ref;
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -34,7 +34,7 @@ public abstract class GetInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return new Operand[] { source };
     }
 
@@ -43,7 +43,7 @@ public abstract class GetInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + source + (ref == null ? "" : ", " + ref) + ")";
     }
 

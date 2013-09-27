@@ -16,7 +16,7 @@ public class DataIterable<T> implements Iterable<T> {
     private Object type;
     private boolean negate;
     private boolean source;
-    
+
     public DataIterable(Set<Edge<T>> edges, Object type, boolean source, boolean negate) {
         this.edges = edges;
         this.type = type;

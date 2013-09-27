@@ -19,9 +19,9 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
 
     public MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
         super(op);
-        
+
         assert result != null : "MultipleAsgnBase result is null";
-        
+
         this.result = result;
         this.array = array;
         this.index = index;
@@ -30,15 +30,15 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{array};
     }
-    
+
     public Operand getArrayArg() {
         return array;
     }
-    
+
     public Variable getResult() {
         return result;
     }
-    
+
     public int getIndex() {
         return index;
     }

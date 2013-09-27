@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AsString extends Operand {
-    final private Operand source; 
+    final private Operand source;
 
     public AsString(Operand source) {
         if (source == null) source = new StringLiteral("");

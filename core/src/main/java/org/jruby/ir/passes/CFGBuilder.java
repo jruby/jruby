@@ -12,12 +12,12 @@ public class CFGBuilder extends CompilerPass {
     public Object previouslyRun(IRScope scope) {
         return scope.getCFG();
     }
-    
+
     @Override
     public Object execute(IRScope scope, Object... data) {
         return scope.buildCFG();
     }
-    
+
     @Override
     public void invalidate(IRScope scope) {
         scope.resetCFG();

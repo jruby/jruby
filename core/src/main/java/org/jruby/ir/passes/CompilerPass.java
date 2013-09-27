@@ -9,10 +9,10 @@ import org.jruby.ir.IRScope;
 
 /**
  * A mechanism for executing code against an IRScope or transforming the
- * IRScopes dependent data.  A Compiler pass may or may not affect the state 
+ * IRScopes dependent data.  A Compiler pass may or may not affect the state
  * of an IRScope (possibly including any child IRScopes) and it may
  * or may not depend on other compiler passes to execute first.
- * 
+ *
  * For dependencies between compiler passes, getDependencies will return
  * a list of all dependent passes.  Those passes in turn will end up having
  * their own dependencies.  The order of execution is depth-first, but if the
@@ -22,14 +22,14 @@ import org.jruby.ir.IRScope;
  */
 public abstract class CompilerPass {
     public static List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
-    
+
     private List<CompilerPassListener> listeners = new ArrayList<CompilerPassListener>();
-    
+
     /**
      * What is the user-friendly name of this compiler pass
      */
     public abstract String getLabel();
-    
+
     /**
      * Meat of an individual pass. run will call this after dependency
      * resolution.
@@ -37,7 +37,7 @@ public abstract class CompilerPass {
      * @param dependencyData is the data supplied to this pass to use to execute the pass
      */
     public abstract Object execute(IRScope scope, Object... dependencyData);
-    
+
     /**
      * The data that this pass is responsible for will get invalidated so that
      * if this pass is then execute()d it will generate new pass data.  Note
@@ -45,11 +45,11 @@ public abstract class CompilerPass {
      * data.  In that case, the pass may wipe more than just it's data.  In
      * that case an execute() should still rebuild everything fine because all
      * compiler passes list their dependencies.
-     * 
+     *
      * @param scope is where the pass stores its data.
      */
     public abstract void invalidate(IRScope scope);
-    
+
     public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;
     }
@@ -61,12 +61,12 @@ public abstract class CompilerPass {
     public Object previouslyRun(IRScope scope) {
         return null;
     }
-    
+
     // Run the pass on the passed in scope!
     protected Object run(IRScope scope, boolean childScope) {
         List<Class<? extends CompilerPass>> dependencies = getDependencies();
         Object data[] = new Object[dependencies.size()];
-           
+
         for (int i = 0; i < data.length; i++) {
             data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope, childScope);
         }
@@ -74,24 +74,24 @@ public abstract class CompilerPass {
         for (CompilerPassListener listener: scope.getManager().getListeners()) {
             listener.startExecute(this, scope, childScope);
         }
-        
+
         Object passData = execute(scope, data);
-        
+
         for (CompilerPassListener listener: scope.getManager().getListeners()) {
             listener.endExecute(this, scope, passData, childScope);
         }
-        
+
         return passData;
     }
-    
+
     public Object run(IRScope scope) {
         return run(scope, false);
     }
-    
+
     private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope, boolean childScope) {
         CompilerPass pass = createPassInstance(passClass);
         Object data = pass.previouslyRun(scope);
-        
+
         if (data == null) {
             data = pass.run(scope, childScope);
         } else {
@@ -118,14 +118,14 @@ public abstract class CompilerPass {
         } catch (SecurityException ex) {
             Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         return null;
     }
-    
+
     public static CompilerPass createPassInstance(String passClassName) {
         try {
             String clazzName = "org.jruby.ir.passes." + passClassName;
-            Class<? extends CompilerPass> clazz = 
+            Class<? extends CompilerPass> clazz =
                     (Class<? extends CompilerPass>) Class.forName(clazzName);
             return createPassInstance(clazz);
         } catch (ClassNotFoundException ex) {
@@ -133,19 +133,19 @@ public abstract class CompilerPass {
             System.out.println("No such pass: " + ex);
             System.exit(-1);
         }
-        
+
         return null;
     }
-    
+
     public static List<CompilerPass> getPassesFromString(String passList, String defaultPassList) {
         if (passList == null) passList = defaultPassList;
-        
+
         List<CompilerPass> passes = new ArrayList<CompilerPass>();
-        
+
         for (String passClassName :  passList.split(",")) {
             passes.add(createPassInstance(passClassName));
         }
-        
+
         return passes;
     }
 }

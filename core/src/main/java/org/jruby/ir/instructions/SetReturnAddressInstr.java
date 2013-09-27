@@ -22,9 +22,9 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
 
     public SetReturnAddressInstr(Variable result, Label l) {
         super(Operation.SET_RETADDR);
-        
+
         assert result != null: "SetReturnAddressInstr result is null";
-        
+
         this.returnAddr = l;
         this.result = result;
     }
@@ -32,7 +32,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }

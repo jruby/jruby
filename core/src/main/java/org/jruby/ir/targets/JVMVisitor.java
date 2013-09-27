@@ -428,7 +428,7 @@ public class JVMVisitor extends IRVisitor {
         String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
-        SkinnyMethodAdapter a = m.adapter; 
+        SkinnyMethodAdapter a = m.adapter;
 
         // new CompiledIRMethod
         a.newobj(p(CompiledIRMethod.class));
@@ -501,7 +501,7 @@ public class JVMVisitor extends IRVisitor {
         String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
-        SkinnyMethodAdapter a = m.adapter; 
+        SkinnyMethodAdapter a = m.adapter;
 
         // preamble for addMethod below
         a.aload(0);
@@ -548,7 +548,7 @@ public class JVMVisitor extends IRVisitor {
         String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
-        SkinnyMethodAdapter a = m.adapter; 
+        SkinnyMethodAdapter a = m.adapter;
 
         // new CompiledIRMethod
         a.newobj(p(CompiledIRMethod.class));
@@ -598,7 +598,7 @@ public class JVMVisitor extends IRVisitor {
         String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvm.method();
-        SkinnyMethodAdapter a = m.adapter; 
+        SkinnyMethodAdapter a = m.adapter;
 
         // new CompiledIRMethod
         a.newobj(p(CompiledIRMethod.class));
@@ -994,7 +994,7 @@ public class JVMVisitor extends IRVisitor {
             a.aload(1); // 2. current scope
             // 3. ref. to returnInstr.methodToReturnFrom
             visit(returninstr.getReturnValue()); // 4. return value
-            // boolean about whether we are in a closure or not 
+            // boolean about whether we are in a closure or not
             // call to handle non-local return
         } else if (returninstr.methodToReturnFrom != null) {
             // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies

@@ -11,7 +11,7 @@ public class StandardError extends Operand {
     public String toString() { return "StandardError"; }
 
     @Override
-    public void addUsedVariables(List<Variable> l) { 
+    public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */
     }
 

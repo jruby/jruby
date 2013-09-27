@@ -28,7 +28,7 @@ public class PutFieldInstr extends PutInstr {
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
-        clazz.getVariableAccessorForWrite(getRef()).set(object, 
+        clazz.getVariableAccessorForWrite(getRef()).set(object,
                 getValue().retrieve(context, self, currDynScope, temp));
         return null;
     }

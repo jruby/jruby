@@ -21,12 +21,12 @@ public class Match2Instr extends Instr implements ResultInstr {
     private Variable result;
     private Operand receiver;
     private Operand arg;
-    
+
     public Match2Instr(Variable result, Operand receiver, Operand arg) {
         super(Operation.MATCH2);
-        
+
         assert result != null: "Match2Instr result is null";
-        
+
         this.result = result;
         this.receiver = receiver;
         this.arg = arg;
@@ -51,7 +51,7 @@ public class Match2Instr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }

@@ -7,11 +7,11 @@ import java.math.BigInteger;
 
 /*
  * Represents a literal fixnum.
- * 
+ *
  * Cache value so that when the same Fixnum Operand is copy-propagated across
  * multiple instructions, the same RubyFixnum object is created.  In addition,
  * the same constant across loops should be the same object.
- * 
+ *
  * So, in this example, the output should be false, true, true
  *
  * <pre>
@@ -24,7 +24,7 @@ import java.math.BigInteger;
  *     n += 1
  *   end
  * </pre>
- */      
+ */
 public class Fixnum extends ImmutableLiteral {
     final public long value;
 
@@ -32,21 +32,21 @@ public class Fixnum extends ImmutableLiteral {
         value = val;
     }
 
-    public Fixnum(BigInteger val) { 
+    public Fixnum(BigInteger val) {
         this(val.longValue());
     }
-    
+
     @Override
     public Object createCacheObject(ThreadContext context) {
         return context.runtime.newFixnum(value);
-    }    
+    }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return "Fixnum:" + value;
     }
 
-// ---------- These methods below are used during compile-time optimizations ------- 
+// ---------- These methods below are used during compile-time optimizations -------
 
     public Operand computeValue(String methodName, Operand arg) {
         if (arg instanceof Fixnum) {

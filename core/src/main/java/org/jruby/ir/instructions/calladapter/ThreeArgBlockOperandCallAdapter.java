@@ -14,12 +14,12 @@ public class ThreeArgBlockOperandCallAdapter extends ClosureCallAdapter {
     private Operand arg1;
     private Operand arg2;
     private Operand arg3;
-    
+
     public ThreeArgBlockOperandCallAdapter(CallSite callSite, Operand[] args, Operand closure) {
         super(callSite, closure);
-        
+
         assert args.length == 3;
-        
+
         arg1 = args[0];
         arg2 = args[1];
         arg3 = args[2];

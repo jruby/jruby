@@ -24,7 +24,7 @@ public abstract class ReceiveArgBase extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
         return result;
     }

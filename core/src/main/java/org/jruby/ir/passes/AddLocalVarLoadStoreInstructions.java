@@ -47,12 +47,12 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
         slvp.addStores(varRenameMap);
 
-        // Once stores have been added, figure out required loads 
+        // Once stores have been added, figure out required loads
         LoadLocalVarPlacementProblem llvp = new LoadLocalVarPlacementProblem();
         llvp.setup(s);
         llvp.compute_MOP_Solution();
 
-        // Add loads, 
+        // Add loads,
         llvp.addLoads(varRenameMap);
 
         // Rename all local var uses with their tmp-var stand-ins
@@ -73,7 +73,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     public Object previouslyRun(IRScope scope) {
         return scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
     }
-    
+
     @Override
     public void invalidate(IRScope scope) {
         scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);

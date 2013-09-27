@@ -30,7 +30,7 @@ public class AliasInstr extends Instr {
 
     public AliasInstr(Variable receiver, Operand newName, Operand oldName) {
         super(Operation.ALIAS);
-        
+
         this.receiver = receiver;
         this.newName = newName;
         this.oldName = oldName;
@@ -61,7 +61,7 @@ public class AliasInstr extends Instr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currDynScope, temp);
-                
+
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
             throw context.runtime.newTypeError("no class to make alias");
         }
@@ -71,7 +71,7 @@ public class AliasInstr extends Instr {
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);
-        
+
         return null;
     }
 

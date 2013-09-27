@@ -22,9 +22,9 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
 
     public EnsureRubyArrayInstr(Variable result, Operand s) {
         super(Operation.ENSURE_RUBY_ARRAY);
-        
+
         assert result != null : "EnsureRubyArray result is null";
-        
+
         this.object = s;
         this.result = result;
     }
@@ -34,7 +34,7 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
         simplifyOperands(valueMap, false);
         return (object instanceof Array) ? object : null;
     }
-    
+
     public Operand getObject() {
         return object;
     }
@@ -42,11 +42,11 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{object};
     }
-    
+
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }

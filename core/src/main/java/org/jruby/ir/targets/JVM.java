@@ -25,13 +25,13 @@ import static org.objectweb.asm.Opcodes.*;
 // and outputs bytecode
 public class JVM {
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
-    
+
     Stack<ClassData> clsStack = new Stack();
     ClassWriter writer;
 
     public JVM() {
     }
-    
+
     public static final int CMP_EQ = 0;
 
     public byte[] code() {
@@ -95,7 +95,7 @@ public class JVM {
     public void popmethod() {
         clsData().popmethod();
     }
-    
+
     public static String scriptToClass(String name) {
         if (name.equals("-e")) {
             return "DashE";

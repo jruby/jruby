@@ -64,7 +64,7 @@ public class BacktickString extends Operand {
         for (Operand p : pieces) {
             newPieces.add(p.cloneForInlining(ii));
         }
-        
+
         return new BacktickString(newPieces);
     }
 
@@ -76,7 +76,7 @@ public class BacktickString extends Operand {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currDynScope, temp);
             newString.append((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }
-        
+
         return self.callMethod(context, "`", newString);
     }
 
@@ -84,7 +84,7 @@ public class BacktickString extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.BacktickString(this);
     }
-    
+
     @Override
     public String toString() {
         return "`" + (pieces == null ? "[]" : pieces) + "`";

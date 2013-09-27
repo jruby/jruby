@@ -29,7 +29,7 @@ public class MethodIsPublicInstr extends DefinedObjectNameInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new MethodIsPublicInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new MethodIsPublicInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
@@ -38,16 +38,16 @@ public class MethodIsPublicInstr extends DefinedObjectNameInstr {
     private boolean isPublic(IRubyObject object, String name) {
         RubyClass metaClass = object.getMetaClass();
         Visibility  visibility   = metaClass.searchMethod(name).getVisibility();
-        
-        return visibility != null && !visibility.isPrivate() && 
+
+        return visibility != null && !visibility.isPrivate() &&
                 !(visibility.isProtected() && metaClass.getRealClass().isInstance(object));
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
-        
-        return context.runtime.newBoolean(isPublic(receiver, getName().string));        
+
+        return context.runtime.newBoolean(isPublic(receiver, getName().string));
     }
 
     @Override

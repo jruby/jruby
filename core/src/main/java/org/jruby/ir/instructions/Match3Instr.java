@@ -22,12 +22,12 @@ public class Match3Instr extends Instr implements ResultInstr {
     private Variable result;
     private Operand receiver;
     private Operand arg;
-    
+
     public Match3Instr(Variable result, Operand receiver, Operand arg) {
         super(Operation.MATCH3);
-        
+
         assert result != null: "Match3Instr result is null";
-        
+
         this.result = result;
         this.receiver = receiver;
         this.arg = arg;
@@ -52,7 +52,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -67,7 +67,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
-        
+
         if (argValue instanceof RubyString) {
             return context.runtime.is1_9() ?
                     regexp.op_match19(context, argValue) :

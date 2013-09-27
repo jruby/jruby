@@ -19,12 +19,12 @@ public class Label extends Operand {
     public Label(String l) { label = l; }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return label;
     }
 
     @Override
-    public void addUsedVariables(List<Variable> l) { 
+    public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */
     }
 
@@ -34,12 +34,12 @@ public class Label extends Operand {
     }
 
     @Override
-    public int hashCode() { 
+    public int hashCode() {
         return label.hashCode();
     }
 
     @Override
-    public boolean equals(Object o) { 
+    public boolean equals(Object o) {
         return (o instanceof Label) && label.equals(((Label)o).label);
     }
 
@@ -48,7 +48,7 @@ public class Label extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         return ii.getRenamedLabel(this);
     }
 

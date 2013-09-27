@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class DynamicSymbol extends Operand {
     // SSS FIXME: Should this be Operand or CompoundString?
-    // Can it happen that symbols are built out of other than compound strings?  
+    // Can it happen that symbols are built out of other than compound strings?
     // Or can it happen during optimizations that this becomes a generic operand?
     final private CompoundString symbolName;
 

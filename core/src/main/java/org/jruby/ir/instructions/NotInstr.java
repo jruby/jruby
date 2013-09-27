@@ -20,9 +20,9 @@ public class NotInstr extends Instr implements ResultInstr {
 
     public NotInstr(Variable result, Operand arg) {
         super(Operation.NOT);
-        
+
         assert result != null: "NotInstr result is null";
-        
+
         this.arg = arg;
         this.result = result;
     }
@@ -34,7 +34,7 @@ public class NotInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -53,7 +53,7 @@ public class NotInstr extends Instr implements ResultInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return new NotInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
-    
+
     private Operand flipLogical(IRScope scope, BooleanLiteral value) {
         return value.isTrue() ? scope.getManager().getFalse() : scope.getManager().getTrue();
     }

@@ -24,15 +24,15 @@ import java.util.List;
  * this so instrs can reason about non-existent arguments.
  *
  * Since this value can be temporarily stored in a binding, we need it to be an IRubyObject as well.
- * But since it can never really participate in any operation, all calls throw a runtime exception. 
+ * But since it can never really participate in any operation, all calls throw a runtime exception.
  */
 public class UndefinedValue extends Operand implements IRubyObject {
     public static final UndefinedValue UNDEFINED = new UndefinedValue();
-    
+
     private UndefinedValue() {}
 
     @Override
-    public void addUsedVariables(List<org.jruby.ir.operands.Variable> l) { 
+    public void addUsedVariables(List<org.jruby.ir.operands.Variable> l) {
         /* Nothing to do */
     }
 
@@ -51,7 +51,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
         return this;
     }
 
-    private RuntimeException undefinedOperation() { 
+    private RuntimeException undefinedOperation() {
         return new RuntimeException("IR compiler/interpreter bug: org.jruby.ir.operands.UndefinedValue should not be used as a valid value during execution.");
     }
 
@@ -71,38 +71,38 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public IRubyObject checkCallMethod(ThreadContext context, String name) { throw undefinedOperation(); }
 
     public boolean isNil() { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
      */
     public boolean isTrue() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod isTaint.
      * @return boolean
      */
     public boolean isTaint() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod setTaint.
      * @param b
      */
     public void setTaint(boolean b) { throw undefinedOperation(); }
-    
+
     /**
      * Infect this object using the taint of another object
      * @param obj
      * @return
      */
     public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod isFrozen.
      * @return boolean
      */
     public boolean isFrozen() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod setFrozen.
      * @param b
@@ -120,31 +120,31 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @param b
      */
     public void setUntrusted(boolean b) { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
      */
     public boolean isImmediate() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod getRubyClass.
      * @return
      */
     public RubyClass getMetaClass() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod getSingletonClass.
      * @return RubyClass
      */
     public RubyClass getSingletonClass() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod getType.
      * @return RubyClass
      */
     public RubyClass getType() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod respondsTo.
      * @param string
@@ -165,31 +165,31 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return boolean
      */
     public boolean respondsToMissing(String string, boolean priv) { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod getRuntime.
      * @return
      */
     public Ruby getRuntime() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod getJavaClass.
      * @return Class
      */
     public Class getJavaClass() { throw undefinedOperation(); }
-    
+
     /**
      * Convert the object into a symbol name if possible.
      *
      * @return String the symbol name
      */
     public String asJavaString() { throw undefinedOperation(); }
-    
+
     /** rb_obj_as_string
      * @return
      */
     public RubyString asString() { throw undefinedOperation(); }
-    
+
     /**
      * Methods which perform to_xxx if the object has such a method
      * @return
@@ -199,11 +199,11 @@ public class UndefinedValue extends Operand implements IRubyObject {
      *
      * @return
      */
-    public RubyHash convertToHash() { throw undefinedOperation(); }    
+    public RubyHash convertToHash() { throw undefinedOperation(); }
     /**
     *
     * @return
-    */    
+    */
     public RubyFloat convertToFloat() { throw undefinedOperation(); }
     /**
      *
@@ -226,13 +226,13 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return
      */
     public RubyString convertToString() { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
      */
     public IRubyObject anyToString() { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
@@ -244,7 +244,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return
      */
     public IRubyObject checkStringType19() { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
@@ -263,13 +263,13 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return
      */
     public IRubyObject dup() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod inspect.
      * @return String
      */
     public IRubyObject inspect() { throw undefinedOperation(); }
-    
+
     /**
      * RubyMethod rbClone.
      * @return IRubyObject
@@ -280,14 +280,14 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return true if an object is Ruby Module instance (note that it will return false for Ruby Classes).
      * If is_a? semantics is required, use <code>(someObject instanceof RubyModule)</code> instead.
      */
-    public boolean isModule() { throw undefinedOperation(); }    
-    
+    public boolean isModule() { throw undefinedOperation(); }
+
     /**
-     * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes). 
+     * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes).
      * If is_a? semantics is required, use <code>(someObject instanceof RubyClass/MetaClass)</code> instead.
      */
     public boolean isClass() { throw undefinedOperation(); }
-    
+
     /**
      * Our version of Data_Wrap_Struct.
      *
@@ -297,7 +297,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @param obj the object to wrap
      */
     public void dataWrapStruct(Object obj) { throw undefinedOperation(); }
-    
+
     /**
      * Our version of Data_Get_Struct.
      *
@@ -307,14 +307,14 @@ public class UndefinedValue extends Operand implements IRubyObject {
      */
     public Object dataGetStruct() { throw undefinedOperation(); }
     public Object dataGetStructChecked() { throw undefinedOperation(); }
-    
+
     /**
      *
      * @return
      */
     public IRubyObject id() { throw undefinedOperation(); }
-    
-    
+
+
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }
     public boolean eql(IRubyObject other) { throw undefinedOperation(); }
@@ -343,13 +343,13 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return the count of all variables (ivar/cvar/constant/internal)
      */
     public int getVariableCount() { throw undefinedOperation(); }
-    
+
     /**
      * Sets object's variables to those in the supplied list,
      * removing/replacing any previously defined variables.  Applies
      * to all variable types (ivar/cvar/constant/internal).
-     * 
-     * @param variables the variables to be set for object 
+     *
+     * @param variables the variables to be set for object
      */
     @Deprecated
     public void syncVariables(List<Variable<Object>> variables) { throw undefinedOperation(); }
@@ -362,7 +362,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @param source the source object containing the variables to sync
      */
     public void syncVariables(IRubyObject source) { throw undefinedOperation(); }
-    
+
     /**
      * @return a list of all variables (ivar/cvar/constant/internal)
      */
@@ -371,7 +371,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     //
     // INSTANCE VARIABLE METHODS
     //
-    
+
     public InstanceVariables getInstanceVariables() { throw undefinedOperation(); }
 
     //

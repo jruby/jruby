@@ -16,11 +16,11 @@ public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
     public OneOperandArgNoBlockNoResultCallInstr(NoResultCallInstr call) {
         super(Operation.NORESULT_CALL_1O, call);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "{1O}";
-    }    
+    }
 
     public Operand getReceiver() {
         return receiver;

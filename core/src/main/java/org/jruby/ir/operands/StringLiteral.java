@@ -13,8 +13,8 @@ import org.jruby.runtime.Helpers;
 
 /**
  * Represents a literal string value.
- * 
- * This is not an immutable literal because I can gsub!, 
+ *
+ * This is not an immutable literal because I can gsub!,
  * for example, and modify the contents of the string.
  * This is not like a Java string.
  */
@@ -28,7 +28,7 @@ public class StringLiteral extends Operand {
         bytelist = val;
         string = Helpers.byteListToString(bytelist);
     }
-    
+
     public StringLiteral(String s) {
         bytelist = ByteList.create(s); string = s;
     }

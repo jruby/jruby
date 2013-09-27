@@ -11,10 +11,10 @@ public class CheckArityInstr extends Instr {
     public final int required;
     public final int opt;
     public final int rest;
-    
+
     public CheckArityInstr(int required, int opt, int rest) {
         super(Operation.CHECK_ARITY);
-        
+
         this.required = required;
         this.opt = opt;
         this.rest = rest;

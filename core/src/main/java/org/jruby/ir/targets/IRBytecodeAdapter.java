@@ -57,7 +57,7 @@ public class IRBytecodeAdapter {
         adapter.aload(0);
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
-    
+
     public void pushFloat(Double d) {
         adapter.aload(0);
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
@@ -202,7 +202,7 @@ public class IRBytecodeAdapter {
     public void pushUndefined() {
         adapter.getstatic(p(UndefinedValue.class), "UNDEFINED", ci(UndefinedValue.class));
     }
-    
+
     public void pushHandle(String className, String methodName, int arity) {
         adapter.getMethodVisitor().visitLdcInsn(new Handle(Opcodes.H_INVOKESTATIC, className, methodName, ClassData.SIGS[arity]));
     }

@@ -104,11 +104,11 @@ public abstract class DataFlowProblem {
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("----").append(getName()).append("----\n");
-  
+
         buf.append("---- Data Flow Vars: ----\n");
         buf.append(getDataFlowVarsForOutput());
         buf.append("-------------------------\n");
-  
+
         for (FlowGraphNode n: flowGraphNodes) {
             buf.append("DF State for BB ").append(n.basicBlock.getID()).append(":\n").append(n.toString());
         }

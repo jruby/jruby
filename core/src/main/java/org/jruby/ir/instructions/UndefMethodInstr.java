@@ -16,10 +16,10 @@ import java.util.Map;
 public class UndefMethodInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand methodName;
-    
+
     public UndefMethodInstr(Variable result, Operand methodName) {
         super(Operation.UNDEF_METHOD);
-        
+
         this.result = result;
         this.methodName = methodName;
     }
@@ -38,7 +38,7 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         methodName = methodName.getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Variable getResult() {
         return result;
     }

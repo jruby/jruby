@@ -11,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls
 public class Backref extends Reference {
-    final public char type; 
+    final public char type;
 
     public Backref(char t) {
         super("$" + t);
@@ -20,7 +20,7 @@ public class Backref extends Reference {
 
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject backref = context.getBackRef();
-        
+
         switch (type) {
         case '&':
             return RubyRegexp.last_match(backref);
@@ -33,14 +33,14 @@ public class Backref extends Reference {
         default:
             assert false: "backref with invalid type";
             return null;
-        } 
+        }
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Backref(this);
     }
-    
+
     @Override
     public String toString() {
         return "$" + "'" + type + "'";

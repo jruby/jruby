@@ -21,7 +21,7 @@ public class PushBindingInstr extends Instr {
     }
 
     @Override
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 

@@ -23,9 +23,9 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {
         super(Operation.DEF_MODULE);
-        
+
         assert result != null : "DefineModuleInstr result is null";
-        
+
         this.newIRModuleBody = newIRModuleBody;
         this.container = container;
         this.result = result;
@@ -34,7 +34,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{container};
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -62,7 +62,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
-        
+
         if (!(rubyContainer instanceof RubyModule)) {
             throw context.runtime.newTypeError("no outer class/module");
         }

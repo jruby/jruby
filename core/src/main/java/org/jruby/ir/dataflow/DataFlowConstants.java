@@ -19,10 +19,10 @@ public class DataFlowConstants {
     public static final Operand TOP    = new LatticeTop();
     public static final Operand BOTTOM = new LatticeBottom();
     public static final Operand ANY    = new Anything();
-  
+
     private static class LatticeBottom extends Operand {
         @Override
-        public void addUsedVariables(List<Variable> l) { 
+        public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
         }
 
@@ -36,10 +36,10 @@ public class DataFlowConstants {
             return "bottom";
         }
     }
-  
+
     private static class LatticeTop extends Operand {
         @Override
-        public void addUsedVariables(List<Variable> l) { 
+        public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
         }
 
@@ -52,10 +52,10 @@ public class DataFlowConstants {
             return "top";
         }
     }
-  
+
     private static class Anything extends Operand {
         @Override
-        public void addUsedVariables(List<Variable> l) { 
+        public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
         }
 

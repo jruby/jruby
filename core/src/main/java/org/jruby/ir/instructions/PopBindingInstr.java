@@ -17,7 +17,7 @@ public class PopBindingInstr extends Instr {
         super(Operation.POP_BINDING);
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 

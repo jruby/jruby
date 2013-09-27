@@ -15,16 +15,16 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * AttrAssign is weird.  self[i] = 1 is treated as a functional call and 
- * it also returns no result. 
+ * AttrAssign is weird.  self[i] = 1 is treated as a functional call and
+ * it also returns no result.
  */
 public class AttrAssignCallAdapter extends CallAdapter {
     private String name;
     private Operand[] args;
-    
+
     public AttrAssignCallAdapter(CallSite callSite, String name, Operand[] args) {
         super(callSite);
-        
+
         this.args = args;
         this.name = name;
     }
@@ -32,17 +32,17 @@ public class AttrAssignCallAdapter extends CallAdapter {
     @Override
     public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] values = prepareArguments(context, self, args, currDynScope, temp);
-        
+
         if (callSite == null) {
             CallType callType = self == receiver ? CallType.FUNCTIONAL : CallType.NORMAL;
             Helpers.invoke(context, receiver, name, values, callType, Block.NULL_BLOCK);
         } else {
             callSite.call(context, self, receiver, values);
         }
-        
+
         return null;
     }
-    
+
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
@@ -55,5 +55,5 @@ public class AttrAssignCallAdapter extends CallAdapter {
         }
 
         return argList.toArray(new IRubyObject[argList.size()]);
-    } 
+    }
 }

@@ -83,11 +83,11 @@ public abstract class CallBase extends Instr implements Specializeable {
     public Operand[] getCallArgs() {
         return arguments;
     }
-    
+
     public CallSite getCallSite() {
         return callSite;
     }
-    
+
     public CallType getCallType() {
         return callType;
     }
@@ -99,12 +99,12 @@ public abstract class CallBase extends Instr implements Specializeable {
     public boolean inliningBlocked() {
         return dontInline;
     }
-    
+
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";
-        
+
         String name = methAddr.getName();
-        
+
         switch (callType) {
             case NORMAL: return MethodIndex.getCallSite(name);
             case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
@@ -112,34 +112,34 @@ public abstract class CallBase extends Instr implements Specializeable {
             case SUPER: return MethodIndex.getSuperCallSite();
             case UNKNOWN:
         }
-        
+
         return null; // fallthrough for unknown
     }
-    
+
     public boolean hasClosure() {
         return closure != null;
     }
-    
+
     public boolean isAllConstants() {
         for (int i = 0; i < arguments.length; i++) {
             if (!(arguments[i] instanceof ImmutableLiteral)) return false;
         }
-        
+
         return true;
     }
-    
+
     public boolean isAllFixnums() {
         for (int i = 0; i < arguments.length; i++) {
             if (!(arguments[i] instanceof Fixnum)) return false;
         }
-        
+
         return true;
-    }    
-    
+    }
+
     /**
      * Interpreter can ask the instruction if it knows how to make a more
      * efficient instruction for direct interpretation.
-     * 
+     *
      * @return itself or more efficient but semantically equivalent instr
      */
     public CallBase specializeForInterpretation() {
@@ -185,7 +185,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     // SSS: Unused method
-    // Can this call lead to ruby code getting modified?  
+    // Can this call lead to ruby code getting modified?
     // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
     public boolean canModifyCode() {
         return true;
@@ -207,12 +207,12 @@ public abstract class CallBase extends Instr implements Specializeable {
                 if (!(meth instanceof StringLiteral)) return true; // We don't know
 
                 String name = ((StringLiteral) meth).string;
-                if (   name.equals("call") 
-                    || name.equals("eval") 
-                    || mname.equals("module_eval") 
-                    || mname.equals("class_eval") 
-                    || mname.equals("instance_eval") 
-                    || name.equals("send") 
+                if (   name.equals("call")
+                    || name.equals("eval")
+                    || mname.equals("module_eval")
+                    || mname.equals("class_eval")
+                    || mname.equals("instance_eval")
+                    || name.equals("send")
                     || name.equals("__send__")) return true;
             }
         }
@@ -282,7 +282,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         return targetRequiresCallersBinding;
     }
 
-    // Regexp and IO calls can do this -- and since we do not know at IR-build time 
+    // Regexp and IO calls can do this -- and since we do not know at IR-build time
     // what the call target is, we have to conservatively assume yes
     public boolean canSetDollarVars() {
         return true;
@@ -328,12 +328,12 @@ public abstract class CallBase extends Instr implements Specializeable {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, arguments, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, dynamicScope, temp);
-        
+
         return callSite.call(context, self, object, values, preparedBlock);
     }
 
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
-        return containsSplat ? 
+        return containsSplat ?
                 prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
     }
@@ -365,12 +365,12 @@ public abstract class CallBase extends Instr implements Specializeable {
 
         return argList.toArray(new IRubyObject[argList.size()]);
     }
-   
+
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
-        
+
         Object value = closure.retrieve(context, self, currDynScope, temp);
-        
+
         Block block;
         if (value instanceof Block) {
             block = (Block) value;
@@ -389,7 +389,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         // ENEBO: This came from duplicated logic from SuperInstr....
         // Blocks passed in through calls are always normal blocks, no matter where they came from
         block.type = Block.Type.NORMAL;
-        
+
         return block;
     }
 }

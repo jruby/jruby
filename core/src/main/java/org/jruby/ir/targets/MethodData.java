@@ -21,7 +21,7 @@ public class MethodData {
     public MethodData(SkinnyMethodAdapter method, int arity) {
         this.method = new IRBytecodeAdapter(method, arity);
     }
-    
+
     public int local(Variable variable) {
         String newName = variable.getName().replace('%', '$');
         return local(newName, JVM.OBJECT_TYPE);
@@ -48,9 +48,9 @@ public class MethodData {
         }
         return asmLabel;
     }
-    
+
     public IRBytecodeAdapter method;
     public Map<String, Integer> varMap = new HashMap<String, Integer>();
     public Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
-    
+
 }

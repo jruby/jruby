@@ -22,9 +22,9 @@ public class EQQInstr extends Instr implements ResultInstr {
 
     public EQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.EQQ);
-        
+
         assert result != null: "EQQInstr result is null";
-        
+
         this.arg1 = v1;
         this.arg2 = v2;
         this.result = result;
@@ -33,11 +33,11 @@ public class EQQInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[]{arg1, arg2};
     }
-    
+
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -55,7 +55,7 @@ public class EQQInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new EQQInstr(ii.getRenamedVariable(result), 
+        return new EQQInstr(ii.getRenamedVariable(result),
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 

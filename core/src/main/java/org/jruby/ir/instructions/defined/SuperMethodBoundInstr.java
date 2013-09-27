@@ -32,14 +32,14 @@ public class SuperMethodBoundInstr extends DefinedInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
          operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Operand getObject() {
         return operands[0];
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new SuperMethodBoundInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new SuperMethodBoundInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo));
     }
 
@@ -59,7 +59,7 @@ public class SuperMethodBoundInstr extends DefinedInstr {
                 flag = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
             }
         }
-        return context.runtime.newBoolean(flag);        
+        return context.runtime.newBoolean(flag);
     }
 
     @Override

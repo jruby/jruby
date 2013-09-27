@@ -17,7 +17,7 @@ public class PushFrameInstr extends Instr {
         super(Operation.PUSH_FRAME);
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 

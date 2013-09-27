@@ -29,7 +29,7 @@ public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GetDefinedConstantOrMethodInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new GetDefinedConstantOrMethodInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
@@ -39,7 +39,7 @@ public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
         IRubyObject value = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
         String name = getName().string;
         RubyString definedType = Helpers.getDefinedConstantOrBoundMethod(value, name);
-        
+
         return definedType == null ? context.nil : new StringLiteral(definedType.getByteList()).retrieve(context, self, currDynScope, temp);
     }
 

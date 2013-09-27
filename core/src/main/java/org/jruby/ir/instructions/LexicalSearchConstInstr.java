@@ -27,23 +27,23 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     String constName;
     private Variable result;
 
-    // Constant caching 
+    // Constant caching
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
     private Invalidator invalidator;
 
     public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
         super(Operation.LEXICAL_SEARCH_CONST);
-        
+
         assert result != null: "LexicalSearchConstInstr result is null";
-        
+
         this.definingScope = definingScope;
         this.constName = constName;
         this.result = result;
     }
 
     @Override
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return new Operand[] { definingScope };
     }
 
@@ -51,7 +51,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         definingScope = definingScope.getSimplifiedOperand(valueMap, force);
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -66,7 +66,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + definingScope + ", " + constName  + ")";
     }
 
@@ -89,7 +89,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     private boolean isCached(Ruby runtime, Object value) {
         return value != null && generation == invalidator(runtime).getData();
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;

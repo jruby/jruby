@@ -172,7 +172,7 @@ public class BasicBlock implements ExplicitVertexID {
         for (Instr instr : getInstrs()) {
             buf.append('\t').append(instr).append('\n');
         }
-        
+
         return buf.toString();
     }
 }

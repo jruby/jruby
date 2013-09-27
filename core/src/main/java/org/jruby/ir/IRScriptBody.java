@@ -16,7 +16,7 @@ public class IRScriptBody extends IRScope {
     public IRScriptBody(IRManager manager, String className, String sourceName,
             StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
-        
+
         if (!getManager().isDryRun()) {
             if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
         }
@@ -26,18 +26,18 @@ public class IRScriptBody extends IRScope {
     public IRScope getNearestModuleReferencingScope() {
         return this;
     }
-    
+
     @Override
     public LocalVariable getImplicitBlockArg() {
         assert false: "A Script body never accepts block args";
-        
+
         return null;
     }
-    
+
     public String getScopeName() {
         return "ScriptBody";
     }
-    
+
     @Override
     public String toString() {
         return "Script: file: " + getFileName() + super.toString();
@@ -64,7 +64,7 @@ public class IRScriptBody extends IRScope {
     public List<IRClosure> getEndBlocks() {
         return endBlocks;
     }
-    
+
     @Override
     public boolean isScriptScope() {
         return true;

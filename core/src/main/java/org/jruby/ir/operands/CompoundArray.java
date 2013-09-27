@@ -22,11 +22,11 @@ public class CompoundArray extends Operand {
     final private Operand a2;
     private boolean isArgsPush;
 
-    public CompoundArray(Operand a1, Operand a2) { 
+    public CompoundArray(Operand a1, Operand a2) {
         this(a1, a2, false);
     }
 
-    public CompoundArray(Operand a1, Operand a2, boolean isArgsPush) { 
+    public CompoundArray(Operand a1, Operand a2, boolean isArgsPush) {
         this.a1 = a1;
         this.a2 = a2;
         this.isArgsPush = isArgsPush;
@@ -35,15 +35,15 @@ public class CompoundArray extends Operand {
     public boolean hasKnownValue() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 
     public String toString() { return (isArgsPush ? "ArgsPush:[" : "ArgsCat:[") + a1 + ", " + a2 + "]"; }
-    
+
     public Operand getAppendingArg() { return a1; }
 
     public Operand getAppendedArg() { return a2; }
-    
+
     public boolean isArgsPush() { return isArgsPush; }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        Operand newA1 = a1.getSimplifiedOperand(valueMap, force); 
+        Operand newA1 = a1.getSimplifiedOperand(valueMap, force);
         Operand newA2 = a2.getSimplifiedOperand(valueMap, force);
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
@@ -83,7 +83,7 @@ public class CompoundArray extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         return hasKnownValue() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
     }
 

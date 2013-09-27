@@ -7,7 +7,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Adapter for: foo(), recv.foo() 
+ * Adapter for: foo(), recv.foo()
  */
 public class NoArgNoBlockOperandCallAdapter extends CallAdapter {
     public NoArgNoBlockOperandCallAdapter(CallSite callSite, Operand[] args) {

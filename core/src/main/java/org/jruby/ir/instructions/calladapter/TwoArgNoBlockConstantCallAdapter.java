@@ -19,12 +19,12 @@ public class TwoArgNoBlockConstantCallAdapter extends CallAdapter {
     private IRubyObject constant1 = null;
     private final Operand arg2;
     private IRubyObject constant2 = null;
-    
+
     public TwoArgNoBlockConstantCallAdapter(CallSite callSite, Operand[] args) {
         super(callSite);
 
         assert args.length == 2;
-        
+
         this.arg1 = args[0];
         this.arg2 = args[1];
     }
@@ -37,6 +37,6 @@ public class TwoArgNoBlockConstantCallAdapter extends CallAdapter {
 
     private void generateConstants(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         constant1 = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
-        constant2 = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);        
+        constant2 = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
     }
 }

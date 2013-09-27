@@ -23,12 +23,12 @@ public class FourArgNoBlockConstantCallAdapter extends CallAdapter {
     private IRubyObject constant3 = null;
     private final Operand arg4;
     private IRubyObject constant4 = null;
-    
+
     public FourArgNoBlockConstantCallAdapter(CallSite callSite, Operand[] args) {
         super(callSite);
 
         assert args.length == 4;
-        
+
         this.arg1 = args[0];
         this.arg2 = args[1];
         this.arg3 = args[2];

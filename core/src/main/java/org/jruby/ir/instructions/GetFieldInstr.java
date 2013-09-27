@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class GetFieldInstr extends GetInstr {
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
-    
+
     public GetFieldInstr(Variable dest, Operand obj, String fieldName) {
         super(Operation.GET_FIELD, dest, obj, fieldName);
     }

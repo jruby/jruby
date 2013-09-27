@@ -12,19 +12,19 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class OneArgBlockOperandCallAdapter extends ClosureCallAdapter {
     private Operand arg1;
-    
+
     public OneArgBlockOperandCallAdapter(CallSite callSite, Operand[] args, Operand closure) {
         super(callSite, closure);
-        
+
         assert args.length == 1;
-        
+
         arg1 = args[0];
     }
 
     @Override
     public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);        
+        IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
         Block block = prepareBlock(context, self, currDynScope, temp);
         return callSite.call(context, self, receiver, value1, block);
-    }    
+    }
 }

@@ -50,7 +50,7 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public void addUsedVariables(List<Variable> l) { 
+    public void addUsedVariables(List<Variable> l) {
         methodName.addUsedVariables(l);
         receiver.addUsedVariables(l);
     }
@@ -73,7 +73,7 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         return new MethodHandle(methodName.cloneForInlining(ii), receiver.cloneForInlining(ii));
     }
 

@@ -13,7 +13,7 @@ public class ReturnInstr extends ReturnBase {
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return getOperation() + "(" + returnValue + ")";
     }
 

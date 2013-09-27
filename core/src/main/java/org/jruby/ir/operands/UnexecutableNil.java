@@ -7,7 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // This operand is used to represent the result of an explicit return instruction.
 // So, "return <blah>" will return this operand so ruby expressions like
-//    "foo || return false" 
+//    "foo || return false"
 // have something in the second slot of the || instruction.  But since control flow
 // can never go beyond the return, this value itself can never be interpreted or executed.
 // It exists only to fulfil the needs of IR to not have null operands.
@@ -17,7 +17,7 @@ public class UnexecutableNil extends Nil {
     private UnexecutableNil() { }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return "nil(unexecutable)";
     }
 

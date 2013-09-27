@@ -20,18 +20,18 @@ import org.jruby.util.TypeConverter;
  */
 public abstract class ClosureCallAdapter extends CallAdapter {
     private Operand closure;
-    
+
     public ClosureCallAdapter(CallSite callSite, Operand closure) {
         super(callSite);
-        
+
         this.closure = closure;
     }
-    
+
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
- 
+
         Object value = closure.retrieve(context, self, currDynScope, temp);
-        
+
         Block block;
         if (value instanceof Block) {
             block = (Block) value;
@@ -48,5 +48,5 @@ public abstract class ClosureCallAdapter extends CallAdapter {
         }
 
         return block;
-    }    
+    }
 }

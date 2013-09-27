@@ -1,4 +1,4 @@
-package org.jruby.ir; 
+package org.jruby.ir;
 
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
@@ -91,7 +91,7 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case MULTIPLEASGN19NODE: {
                 ListNode sourceArray = ((MultipleAsgn19Node) node).getPre();
-                int i = 0; 
+                int i = 0;
                 for (Node an: sourceArray.childNodes()) {
                     // Use 1.8 mode version for this
                     buildBlockArgsAssignment(an, s, null, i, false, false, false);
@@ -99,7 +99,7 @@ public class IRBuilder19 extends IRBuilder {
                 }
                 break;
             }
-            default: 
+            default:
                 throw new NotCompilableException("Can't build assignment node: " + node);
         }
     }
@@ -308,7 +308,7 @@ public class IRBuilder19 extends IRBuilder {
         final ListNode masgnPre = multipleAsgnNode.getPre();
 
         // Build assignments for specific named arguments
-        int i = 0; 
+        int i = 0;
         if (masgnPre != null) {
             for (Node an: masgnPre.childNodes()) {
                 if (values == null) {
@@ -363,7 +363,7 @@ public class IRBuilder19 extends IRBuilder {
             buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, v);
             break;
         }
-        default: 
+        default:
             throw new NotCompilableException("Can't build assignment node: " + node);
         }
     }
@@ -462,7 +462,7 @@ public class IRBuilder19 extends IRBuilder {
         return ret;
     }
 
-    // 1.9 specific defined? logic  
+    // 1.9 specific defined? logic
     @Override
     public Operand buildVersionSpecificGetDefinitionIR(Node node, IRScope s) {
         switch (node.getNodeType()) {
@@ -519,7 +519,7 @@ public class IRBuilder19 extends IRBuilder {
                 Variable tmpVar = s.getNewTemporaryVariable();
                 s.addInstr(new BackrefIsMatchDataInstr(tmpVar));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                // SSS FIXME: 
+                // SSS FIXME:
                 // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?

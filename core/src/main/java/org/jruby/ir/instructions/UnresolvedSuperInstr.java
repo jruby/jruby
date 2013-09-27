@@ -43,7 +43,7 @@ public class UnresolvedSuperInstr extends CallInstr {
     public CallBase specializeForInterpretation() {
         return this;
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);

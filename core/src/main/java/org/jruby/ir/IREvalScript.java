@@ -29,7 +29,7 @@ public class IREvalScript extends IRClosure {
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
-        
+
         int n = 0;
         IRScope s = lexicalParent;
         while (s instanceof IREvalScript) {
@@ -53,7 +53,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public Operand[] getBlockArgs() { 
+    public Operand[] getBlockArgs() {
         return new Operand[0];
     }
 
@@ -129,16 +129,16 @@ public class IREvalScript extends IRClosure {
     public int getUsedVariablesCount() {
         return 1 + nearestNonEvalScope.evalScopeVars.nextSlot + getPrefixCountSize("%flip");
     }
-    
+
     @Override
     public boolean isScriptScope() {
         return true;
     }
-    
+
     @Override
     public boolean isTopLocalVariableScope() {
         return false;
-    }    
+    }
 
     @Override
     public boolean isFlipScope() {

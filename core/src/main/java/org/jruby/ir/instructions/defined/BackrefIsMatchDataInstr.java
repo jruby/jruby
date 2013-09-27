@@ -29,8 +29,8 @@ public class BackrefIsMatchDataInstr extends DefinedInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
         IRubyObject backref = Helpers.getBackref(context.runtime, context);
-        
-        return context.runtime.newBoolean(RubyMatchData.class.isInstance(backref));        
+
+        return context.runtime.newBoolean(RubyMatchData.class.isInstance(backref));
     }
 
     @Override

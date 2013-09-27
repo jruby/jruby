@@ -28,9 +28,9 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
     public GetClassVarContainerModuleInstr(Variable result, Operand startingScope, Operand object) {
         super(Operation.CLASS_VAR_MODULE);
-        
+
         assert result != null;
-        
+
         this.startingScope = startingScope;
         this.object = object;
         this.result = result;
@@ -42,7 +42,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + startingScope + ", " + object + ")";
     }
 
@@ -76,7 +76,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
                 runtime.getWarnings().warn(ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
-            }            
+            }
         }
 
         if ((scope == null) && (object != null)) {

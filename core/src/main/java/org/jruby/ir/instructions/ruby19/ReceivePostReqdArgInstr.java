@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This represents a required arg that shows up after optional/rest args
  * in a method/block parameter list. This instruction gets to pick an argument
  * based on how many arguments have already been accounted for by parameters
- * present earlier in the list. 
+ * present earlier in the list.
  */
 public class ReceivePostReqdArgInstr extends ReceiveArgBase {
     /** The method/block parameter list has these many required parameters before opt+rest args*/

@@ -40,10 +40,10 @@ public class OptimizeTempVarsPass extends CompilerPass {
         optimizeTmpVars(s);
 
         optimizedTempVars = true;
-        
+
         return null;
     }
-    
+
     @Override
     public Object previouslyRun(IRScope scope) {
         return optimizedTempVars ? new Object() : null;
@@ -53,7 +53,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
     public void invalidate(IRScope s) {
         // FIXME: How do we un-optmize?
     }
-    
+
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
         // If we dont have a var mapping, get a new var -- try the free list first
         // and if none available, allocate a fresh one
@@ -64,7 +64,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
     private static void freeVar(TemporaryVariable newVar, List<TemporaryVariable> freeVarsList) {
         // Put the new var onto the free list (but only if it is not already there).
-        if (!freeVarsList.contains(newVar)) freeVarsList.add(0, newVar); 
+        if (!freeVarsList.contains(newVar)) freeVarsList.add(0, newVar);
     }
 
     private static void optimizeTmpVars(IRScope s) {
@@ -180,16 +180,16 @@ public class OptimizeTempVarsPass extends CompilerPass {
         //
         // In parallel, compute last use of temporary variables -- this effectively is the
         // end of the live range that started with its first definition.  This implicitly
-        // encodes the live range of the temporary variable.  
+        // encodes the live range of the temporary variable.
         //
         // These live ranges are valid because these instructions are generated from an AST
         // and they haven't been rearranged yet.  In addition, since temporaries are used to
         // communicate results from lower levels to higher levels in the tree, a temporary
         // defined outside a loop cannot be used within the loop.  So, the first definition
-        // of a temporary and the last use of the temporary delimit its live range.  
+        // of a temporary and the last use of the temporary delimit its live range.
         //
         // %current-scope and %current-module are the two "temporary" variables that violate
-        // this contract right now since they are used everywhere in the scope.  
+        // this contract right now since they are used everywhere in the scope.
         // So, in the presence of loops, we:
         // - either assume that the live range of these  variables extends to
         //   the end of the outermost loop in which they are used
@@ -257,5 +257,5 @@ public class OptimizeTempVarsPass extends CompilerPass {
             // Rename
             i.renameVars(newVarMap);
         }
-    }  
+    }
 }

@@ -16,11 +16,11 @@ import org.jruby.runtime.CallType;
  */
 public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
-    
+
     public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         return new CallInstr(CallType.NORMAL, result, methAddr, receiver, args, closure);
     }
-    
+
     public static CallInstr create(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         return new CallInstr(callType, result, methAddr, receiver, args, closure);
     }
@@ -34,10 +34,10 @@ public class CallInstr extends CallBase implements ResultInstr {
         super(op, callType, methAddr, receiver, args, closure);
 
         assert result != null;
-        
+
         this.result = result;
     }
-    
+
     public CallInstr(Operation op, CallInstr ordinary) {
         this(op, ordinary.getCallType(), ordinary.getResult(),
                 ordinary.getMethodAddr(), ordinary.getReceiver(), ordinary.getCallArgs(),
@@ -51,12 +51,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     public void updateResult(Variable v) {
         this.result = v;
     }
-    
+
     @Override
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
         if (hasClosure() || containsSplat(callArgs)) return this;
-        
+
         switch (callArgs.length) {
             case 0:
                 return new ZeroOperandArgNoBlockCallInstr(this);
@@ -66,7 +66,7 @@ public class CallInstr extends CallBase implements ResultInstr {
                 return new OneOperandArgNoBlockCallInstr(this);
         }
         return this;
-    }    
+    }
 
     public Instr discardResult() {
         return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
@@ -74,9 +74,9 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), 
-                (MethAddr) getMethodAddr().cloneForInlining(ii), 
-                receiver.cloneForInlining(ii), cloneCallArgs(ii), 
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result),
+                (MethAddr) getMethodAddr().cloneForInlining(ii),
+                receiver.cloneForInlining(ii), cloneCallArgs(ii),
                 closure == null ? null : closure.cloneForInlining(ii));
     }
 
@@ -89,11 +89,11 @@ public class CallInstr extends CallBase implements ResultInstr {
     public void visit(IRVisitor visitor) {
         visitor.CallInstr(this);
     }
-    
+
 /* FIXME: Dead code which I think should be a special instr (enebo)
         Object ma = methAddr.retrieve(interp, context, self);
         if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
-         */    
+         */
 
     /** ENEBO: Dead code for now...
     public Label interpret_with_inline(InterpreterContext interp) {
@@ -141,8 +141,8 @@ public class CallInstr extends CallBase implements ResultInstr {
         getResult().store(interp, resultValue);
         return null;
     }
-     
-    private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
+
+    private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context,
             IRubyObject self, MethodHandle mh, IRubyObject[] args) {
         assert mh.getMethodNameOperand() == getReceiver();
 
@@ -152,13 +152,13 @@ public class CallInstr extends CallBase implements ResultInstr {
         IRubyObject ro = mh.getReceiverObj();
         if (m.isUndefined()) {
             resultValue = Helpers.callMethodMissing(context, ro,
-                    m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
+                    m.getVisibility(), mn, CallType.FUNCTIONAL, args,
                     prepareBlock(interp, context, self));
         } else {
             resultValue = m.call(context, ro, ro.getMetaClass(), mn, args, prepareBlock(interp, context, self));
         }
-        
+
         getResult().store(interp, context, self, resultValue);
-        return null;        
+        return null;
     }*/
 }

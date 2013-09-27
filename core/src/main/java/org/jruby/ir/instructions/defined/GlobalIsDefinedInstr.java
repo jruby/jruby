@@ -32,14 +32,14 @@ public class GlobalIsDefinedInstr extends DefinedInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
          operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
     }
-    
+
     public StringLiteral getName() {
         return (StringLiteral) operands[0];
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GlobalIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new GlobalIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 (StringLiteral) getOperands()[0].cloneForInlining(inlinerInfo));
     }
 
@@ -51,7 +51,7 @@ public class GlobalIsDefinedInstr extends DefinedInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
-        
+
         return runtime.newBoolean(runtime.getGlobalVariables().isDefined(getName().string));
     }
 

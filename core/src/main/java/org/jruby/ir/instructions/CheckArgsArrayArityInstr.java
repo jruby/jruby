@@ -22,13 +22,13 @@ public class CheckArgsArrayArityInstr extends Instr {
 
     public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, int rest) {
         super(Operation.CHECK_ARGS_ARRAY_ARITY);
-        
+
         this.required = required;
         this.opt = opt;
         this.rest = rest;
         this.argsArray = argsArray;
     }
-    
+
     public Operand getArgsArray() {
         return argsArray;
     }

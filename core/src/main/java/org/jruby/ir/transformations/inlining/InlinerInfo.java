@@ -76,8 +76,8 @@ public class InlinerInfo {
         this.inClosureInlineMode = false;
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
-        synchronized(globalInlineCount) { 
-            this.inlineVarPrefix = "%in" + globalInlineCount + "_"; 
+        synchronized(globalInlineCount) {
+            this.inlineVarPrefix = "%in" + globalInlineCount + "_";
             globalInlineCount++;
         }
     }
@@ -148,7 +148,7 @@ public class InlinerInfo {
 
             IRScope callerScope   = getInlineHostScope();
             boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
-            Variable yieldArgArray = callerScope.getNewTemporaryVariable(); 
+            Variable yieldArgArray = callerScope.getNewTemporaryVariable();
             yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg, callerScope.getManager().getTrue()));
             this.yieldArg = yieldArgArray;
         }
@@ -163,7 +163,7 @@ public class InlinerInfo {
                 // when cloning a closure, local vars and temps are not renamed
                 newVar = v.cloneForCloningClosure(this);
             } else if (inClosureInlineMode) {
-                // when inlining a closure, 
+                // when inlining a closure,
                 // - local var depths are reduced by 1 (to move them to the host scope)
                 // - tmp vars are reallocated in the host scope
                 if (v instanceof LocalVariable) {

@@ -1,4 +1,4 @@
 package org.jruby.ir.passes;
 
-public interface CompilerPassScheduler extends Iterable<CompilerPass> { 
+public interface CompilerPassScheduler extends Iterable<CompilerPass> {
 }

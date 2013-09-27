@@ -26,7 +26,7 @@ public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
-    
+
     @Override
     public void init() {
         setSize = problem.getDFVarsCount();
@@ -48,9 +48,9 @@ public class LiveVariableNode extends FlowGraphNode {
 
     public void initSolnForNode() {
         LiveVariablesProblem p = (LiveVariablesProblem) problem;
-        
+
         in = new BitSet(setSize);
-        
+
         if (basicBlock == p.getScope().cfg().getExitBB()) {
             Collection<LocalVariable> lv = p.getVarsLiveOnScopeExit();
             if (lv != null && !lv.isEmpty()) {
@@ -67,7 +67,7 @@ public class LiveVariableNode extends FlowGraphNode {
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);
     }
-    
+
     private void markAllVariablesLive(LiveVariablesProblem lvp, BitSet living, Collection<? extends Variable> variableList) {
         for (Variable variable: variableList) {
             markVariableLive(lvp, living, variable);
@@ -128,9 +128,9 @@ public class LiveVariableNode extends FlowGraphNode {
                     // Collect variables live on entry of the closure -- they could all be live on exit as well (conservative, but safe).
                     //
                     //   def foo
-                    //     i = 0; 
+                    //     i = 0;
                     //     loop { i += 1; break if i > n }
-                    //   end 
+                    //   end
                     //
                     // Here, i is not live outside the closure, but it is clearly live on exit of the closure because
                     // it is reused on the next iteration.  In the absence of information about the call accepting the closure,
@@ -139,7 +139,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     List<Variable> liveOnEntryBefore = cl_lvp.getVarsLiveOnScopeEntry();
                     for (Variable y: liveOnEntryBefore) {
                         if (y instanceof LocalVariable) liveVars.add((LocalVariable)y);
-                    } 
+                    }
 
                     // Collect variables live out of the exception target node.  Since this call can directly jump to
                     // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
@@ -167,7 +167,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // But, this conservativeness guarantees forward progress of the analysis.
                     boolean changed;
                     List<Variable> liveOnEntryAfter;
-                    do { 
+                    do {
                         changed = false;
                         liveOnEntryAfter = cl_lvp.getVarsLiveOnScopeEntry();
                         for (Variable y: liveOnEntryAfter) {
@@ -217,7 +217,7 @@ public class LiveVariableNode extends FlowGraphNode {
             return true;
         }
     }
-    
+
     /**
      * Collect variables live out of the exception target node.  Since this instr. can directly jump to
      * the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
@@ -227,9 +227,9 @@ public class LiveVariableNode extends FlowGraphNode {
      */
     private void makeOutExceptionVariablesLiving(BitSet living) {
         BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-        
+
         for (int i = 0; i < etOut.size(); i++) {
-            if (etOut.get(i)) living.set(i); 
+            if (etOut.get(i)) living.set(i);
         }
     }
 
@@ -284,7 +284,7 @@ public class LiveVariableNode extends FlowGraphNode {
         BitSet living = (BitSet) in.clone();
 
         // Traverse the instructions in this basic block in reverse order!
-        // Mark as dead all instructions whose results are not used! 
+        // Mark as dead all instructions whose results are not used!
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
@@ -338,7 +338,7 @@ public class LiveVariableNode extends FlowGraphNode {
             if (!i.isDead()) markAllVariablesLive(lvp, living, i.getUsedVariables());
         }
     }
-    
+
     BitSet getLiveInBitSet() {
         return in;
     }
@@ -349,5 +349,5 @@ public class LiveVariableNode extends FlowGraphNode {
 
     private BitSet in;         // Variables live at entry of this node
     private BitSet out;        // Variables live at exit of node
-    private int setSize;    // Size of the "this.in" and "this.out" bit sets 
+    private int setSize;    // Size of the "this.in" and "this.out" bit sets
 }

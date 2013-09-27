@@ -20,7 +20,7 @@ import org.jruby.ir.representations.BasicBlock;
 public class LiveVariablesProblem extends DataFlowProblem {
     public static final String NAME = "Live Variables Analysis";
     private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
-    
+
     public LiveVariablesProblem(IRScope scope) {
         this(scope, EMPTY_SET);
     }
@@ -30,11 +30,11 @@ public class LiveVariablesProblem extends DataFlowProblem {
 
         setup(scope, nonSelfLocalVars);
     }
-    
+
     public DataFlowVar getDFVar(Variable v) {
         return dfVarMap.get(v);
     }
-    
+
     public boolean dfVarExists(Variable v) {
         return getDFVar(v) != null;
     }
@@ -89,14 +89,14 @@ public class LiveVariablesProblem extends DataFlowProblem {
                 // System.out.println("variable " + v + " is live on entry!");
             }
         }
-        
+
         return liveVars;
     }
 
     /**
      * Initialize the problem with all vars from the surrounding scope variables.
      * In closures, vars defined in the closure (or accessed from the surrounding scope)
-     * can be used outside the closure. 
+     * can be used outside the closure.
      *
      *      sum = 0; a.each { |i| sum += i }; return sum
      *
@@ -113,7 +113,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
         this.varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
 
         for (Variable v : allVars) {
-            if (getDFVar(v) == null) addDFVar(v); 
+            if (getDFVar(v) == null) addDFVar(v);
         }
     }
 
@@ -148,10 +148,10 @@ public class LiveVariablesProblem extends DataFlowProblem {
     public Set<LocalVariable> getNonSelfLocalVars() {
         return localVars;
     }
-    
+
     public String getName() {
         return NAME;
-    }    
+    }
 
     /* ----------- Private Interface ------------ */
     private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();

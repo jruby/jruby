@@ -9,8 +9,8 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     private Variable result;
 
-    /** If true, the implementation (compiler/interpreter) may have to check the type 
-     *  of the received value and unwrap it to yield a Ruby-level exception. 
+    /** If true, the implementation (compiler/interpreter) may have to check the type
+     *  of the received value and unwrap it to yield a Ruby-level exception.
      *  RaiseException values would have to be unwrapped, but other Throwables are
      *  passed right through. This flag is just an optimization to let the compiler
      *  not emit type-check and unwrapping code where it wont be necessary. */
@@ -18,7 +18,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
 
     public ReceiveExceptionInstr(Variable result, boolean checkType) {
         super(Operation.RECV_EXCEPTION);
-        
+
         assert result != null : "ResultExceptionInstr result is null";
 
         this.result = result;

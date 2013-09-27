@@ -16,12 +16,12 @@ import java.util.Map;
 public class MatchInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand receiver;
-    
+
     public MatchInstr(Variable result, Operand receiver) {
         super(Operation.MATCH);
-        
+
         assert result != null: "MatchInstr result is null";
-        
+
         this.result = result;
         this.receiver = receiver;
     }
@@ -44,7 +44,7 @@ public class MatchInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }

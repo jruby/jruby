@@ -23,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GetBackrefInstr extends Instr implements ResultInstr {
     private Variable result;
-    
+
     public GetBackrefInstr(Variable result) {
         super(Operation.GET_BACKREF);
     }
@@ -32,7 +32,7 @@ public class GetBackrefInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
         return result;
     }

@@ -82,7 +82,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     boolean spillAllVars = scopeBindingHasEscaped || call.targetRequiresCallersBinding();
 
                     // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
-                    // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site -- 
+                    // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site --
                     //   but we dont have this info!), it has to be spilt. So, these variables are no longer dirty after the call site.
                     // - If a variable is (re)defined in the closure, it will always be loaded after the call. So, we have to always
                     //   spill it before the call in the scenario that the closure never gets executed! So, it won't be dirty after
@@ -330,7 +330,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     // Make sure there is a replacement tmp-var allocated for lv
                     getLocalVarReplacement(lv, scope, varRenameMap);
                 }
-            }             
+            }
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty

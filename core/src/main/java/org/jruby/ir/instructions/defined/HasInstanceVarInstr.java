@@ -27,7 +27,7 @@ public class HasInstanceVarInstr extends DefinedObjectNameInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new HasInstanceVarInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
+        return new HasInstanceVarInstr((Variable) getResult().cloneForInlining(inlinerInfo),
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
@@ -35,7 +35,7 @@ public class HasInstanceVarInstr extends DefinedObjectNameInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
-        
+
         return context.runtime.newBoolean(receiver.getInstanceVariables().hasInstanceVariable(getName().string));
     }
 

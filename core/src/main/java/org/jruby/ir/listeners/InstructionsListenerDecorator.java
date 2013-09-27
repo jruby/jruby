@@ -38,12 +38,12 @@ import org.jruby.ir.instructions.Instr;
 public class InstructionsListenerDecorator implements List<Instr> {
     private final List<Instr> instrs;
     private final InstructionsListener listener;
-    
+
     private class InstructionsListIterator implements ListIterator<Instr> {
         private Instr currentInstr;
         private int currentIndex;
         private final ListIterator<Instr> listIterator;
-        
+
         public InstructionsListIterator() {
             this.currentInstr = null;
             this.currentIndex = -1;
@@ -105,9 +105,9 @@ public class InstructionsListenerDecorator implements List<Instr> {
             listener.instrChanged(instrs, instrs.get(currentIndex +1), e, currentIndex +1 , InstructionsListener.OperationType.ADD);
             listIterator.add(e);
         }
-        
+
     }
-    
+
     public InstructionsListenerDecorator(List<Instr> instrs, InstructionsListener listener) {
         this.instrs = instrs;
         this.listener = listener;
@@ -259,5 +259,5 @@ public class InstructionsListenerDecorator implements List<Instr> {
     public List<Instr> subList(int fromIndex, int toIndex) {
         return instrs.subList(fromIndex, toIndex);
     }
-    
+
 }

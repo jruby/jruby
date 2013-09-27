@@ -10,22 +10,22 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReceiveClosureInstr extends Instr implements ResultInstr {
     private Variable result;
-    
+
     public ReceiveClosureInstr(Variable result) {
         super(Operation.RECV_CLOSURE);
-        
+
         assert result != null: "ReceiveClosureInstr result is null";
-        
+
         this.result = result;
     }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
         return result;
-    }    
+    }
 
     public void updateResult(Variable v) {
         this.result = v;

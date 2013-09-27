@@ -35,7 +35,7 @@ public class DefineClassMethodInstr extends Instr {
     public String toString() {
         return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
     }
-    
+
     public IRMethod getMethod() {
         return method;
     }

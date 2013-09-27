@@ -31,9 +31,9 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
 
     public RescueEQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.RESCUE_EQQ);
-        
+
         assert result != null: "RescueEQQInstr result is null";
-        
+
         this.arg1 = v1;
         this.arg2 = v2;
         this.result = result;
@@ -46,7 +46,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -64,7 +64,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RescueEQQInstr(ii.getRenamedVariable(result), 
+        return new RescueEQQInstr(ii.getRenamedVariable(result),
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
@@ -79,7 +79,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
             // convert java obj to a ruby object and try again
             return excType.callMethod(context, "===", JavaUtil.convertJavaToUsableRubyObject(runtime, excObj)).isTrue();
         } else if (excType instanceof RubyClass && excType.getInstanceVariables().hasInstanceVariable("@java_class")) {
-            // java exception where the rescue clause has an embedded java class that could catch it 
+            // java exception where the rescue clause has an embedded java class that could catch it
             RubyClass rubyClass = (RubyClass)excType;
             JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
             if (javaClass != null) {

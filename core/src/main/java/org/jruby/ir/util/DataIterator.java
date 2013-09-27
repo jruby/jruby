@@ -17,7 +17,7 @@ public class DataIterator<T> implements Iterator<T> {
     private Edge nextEdge = null;
     private boolean source;
     private boolean negate;
-    
+
     public DataIterator(Set<Edge<T>> edges, Object type, boolean source, boolean negate) {
         this.internalIterator = edges.iterator();
         this.type = type;
@@ -29,7 +29,7 @@ public class DataIterator<T> implements Iterator<T> {
     public boolean hasNext() {
         // Multiple hasNext calls with no next...hasNext still true
         if (nextEdge != null) return true;
-        
+
         while (internalIterator.hasNext()) {
             Edge edge = internalIterator.next();
 
@@ -61,6 +61,6 @@ public class DataIterator<T> implements Iterator<T> {
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Not supported");
-    }    
+    }
 }
 

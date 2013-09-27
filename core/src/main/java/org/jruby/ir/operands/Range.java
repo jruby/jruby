@@ -25,15 +25,15 @@ public class Range extends Operand {
         this.end = end;
         this.exclusive = exclusive;
     }
-    
+
     public Operand getBegin() {
         return begin;
     }
-    
+
     public Operand getEnd() {
         return end;
     }
-    
+
     public boolean isExclusive() {
         return exclusive;
     }
@@ -43,7 +43,7 @@ public class Range extends Operand {
         return begin + (exclusive ? ".." : "...") + end;
     }
 
-// ---------- These methods below are used during compile-time optimizations ------- 
+// ---------- These methods below are used during compile-time optimizations -------
     @Override
     public boolean hasKnownValue() {
         return begin.hasKnownValue() && end.hasKnownValue();
@@ -80,7 +80,7 @@ public class Range extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return RubyRange.newRange(context.runtime, context,
-                (IRubyObject) begin.retrieve(context, self, currDynScope, temp), 
+                (IRubyObject) begin.retrieve(context, self, currDynScope, temp),
                 (IRubyObject) end.retrieve(context, self, currDynScope, temp), exclusive);
     }
 

@@ -32,7 +32,7 @@ import java.util.Map;
 //     v = HAS_TYPE(Fixnum)
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
-    
+
     private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
@@ -62,12 +62,12 @@ public abstract class Instr {
     }
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
-    public boolean canRaiseException() { 
+    public boolean canRaiseException() {
         return operation.canRaiseException();
     }
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
-    public boolean transfersControl() { 
+    public boolean transfersControl() {
         return operation.transfersControl();
     }
 
@@ -142,7 +142,7 @@ public abstract class Instr {
 
     /**
      * Clone the instruction for use in an inlining context (either when a scope is inlined into
-     * another scope, or when a block has to be cloned because its associated call belongs to 
+     * another scope, or when a block has to be cloned because its associated call belongs to
      * an inlined scope).  This requires renaming variables and labels to eliminate naming
      * conflicts.
      *
@@ -167,7 +167,7 @@ public abstract class Instr {
     }
 
     /**
-     * Clone the instruction (present in a closure) so it can be inlined into another scope. 
+     * Clone the instruction (present in a closure) so it can be inlined into another scope.
      * This requires renaming variables and labels to eliminate naming conflicts.
      *
      * @param inlinerInfo This object manages renaming of variables and labels, handles

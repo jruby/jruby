@@ -5,7 +5,7 @@ import org.jruby.runtime.ThreadContext;
 
 public class BooleanLiteral extends ImmutableLiteral {
     private final boolean truthy;
-    
+
     public BooleanLiteral(boolean truthy) {
         this.truthy = truthy;
     }
@@ -14,7 +14,7 @@ public class BooleanLiteral extends ImmutableLiteral {
     public Object createCacheObject(ThreadContext context) {
         return context.runtime.newBoolean(isTrue());
     }
-    
+
     public boolean isTrue()  {
         return truthy;
     }
@@ -22,7 +22,7 @@ public class BooleanLiteral extends ImmutableLiteral {
     public boolean isFalse() {
         return !truthy;
     }
-    
+
     @Override
     public String toString() {
         return isTrue() ? "true" : "false";

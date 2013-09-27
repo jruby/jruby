@@ -89,7 +89,7 @@ public class IRClosure extends IRScope {
     // Used by IREvalScript
     protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
-        
+
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
@@ -135,7 +135,7 @@ public class IRClosure extends IRScope {
     public TemporaryVariable getNewTemporaryVariable(String name) {
         temporaryVariableIndex++;
         return new TemporaryClosureVariable(name, temporaryVariableIndex);
-    }    
+    }
 
     @Override
     public Label getNewLabel() {
@@ -225,7 +225,7 @@ public class IRClosure extends IRScope {
 
         return lvar;
     }
-    
+
     public int getNestingDepth() {
         return nestingDepth;
     }
@@ -235,7 +235,7 @@ public class IRClosure extends IRScope {
         // of scenario 3. below.  Can we clean up this code?
         //
         // 1. If the variable has previously been defined, return a copy usable at the closure's nesting depth.
-        // 2. If not, and if the closure is ultimately nested within a method, build a local variable that will 
+        // 2. If not, and if the closure is ultimately nested within a method, build a local variable that will
         //    be defined in that method.
         // 3. If not, and if the closure is not nested within a method, the closure can never receive a block.
         //    So, we could return 'null', but it creates problems for IR generation.  So, for this scenario,

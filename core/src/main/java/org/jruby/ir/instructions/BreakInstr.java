@@ -66,7 +66,7 @@ public class BreakInstr extends Instr {
             // If the break got inlined into the scope we had to break to, replace the break
             // with a COPY of the break-value into the call's result var.
             // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
-            // The CFG for the closure will be such that after break, control goes to the 
+            // The CFG for the closure will be such that after break, control goes to the
             // scope exit block.  So, we know that after the copy, we'll continue with the
             // instruction after the call.
             Variable v = ii.getCallResultVariable();

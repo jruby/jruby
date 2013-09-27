@@ -21,7 +21,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
     /** This is the variable that is being loaded from the scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
-    private LocalVariable lvar; 
+    private LocalVariable lvar;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryVariable result, LocalVariable lvar) {
         super(Operation.BINDING_LOAD);
@@ -33,14 +33,14 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
         this.scope = scope;
     }
 
-    public Operand[] getOperands() { 
+    public Operand[] getOperands() {
         return Instr.EMPTY_OPERANDS;
     }
 
     public Variable getResult() {
         return result;
     }
-    
+
     public void updateResult(Variable v) {
         this.result = (TemporaryVariable)v;
     }

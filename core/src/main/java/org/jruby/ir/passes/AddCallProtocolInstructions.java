@@ -54,7 +54,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             scopeHasUnrescuedExceptions = slvpp.scopeHasUnrescuedExceptions();
         } else {
             // We dont require local-var load/stores to have been run.
-            // If it is not run, we go conservative and add push/pop binding instrs. everywhere 
+            // If it is not run, we go conservative and add push/pop binding instrs. everywhere
             scopeHasLocalVarStores      = true;
             scopeHasUnrescuedExceptions = false;
             for (BasicBlock bb: cfg.getBasicBlocks()) {
@@ -133,7 +133,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         return null;
     }
-    
+
     @Override
     public Object previouslyRun(IRScope scope) {
         return addedInstrs ? new Object() : null;

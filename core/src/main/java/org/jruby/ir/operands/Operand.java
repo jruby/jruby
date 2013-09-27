@@ -15,10 +15,10 @@ public abstract class Operand {
 
     /**
      * Do we know the value of this operand at compile-time?
-     * 
+     *
      * If we do then it may be possible to constant propagate (one case:
-     * We also know it is also an ImmutableLiteral).  
-     * 
+     * We also know it is also an ImmutableLiteral).
+     *
      * @return true if a known compile-time value.
      */
     public boolean hasKnownValue() {
@@ -35,7 +35,7 @@ public abstract class Operand {
      * In this case, we cannot replace the occurences of 'v' because we would then get
      * x = [1,2,3]; y = [1,2,3] which would then result in two different array objects
      * being constructed instead of a single one.
-     * 
+     *
      * @return true if it is safe to copy-propagate the operand.
      */
     public boolean canCopyPropagate() {

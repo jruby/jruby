@@ -22,10 +22,10 @@ import java.util.Map;
  */
 public class RestoreErrorInfoInstr extends Instr {
     private Operand arg;
-    
+
     public RestoreErrorInfoInstr(Operand arg) {
         super(Operation.RESTORE_ERROR_INFO);
-        
+
         this.arg = arg;
     }
 
@@ -52,7 +52,7 @@ public class RestoreErrorInfoInstr extends Instr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         context.setErrorInfo((IRubyObject) arg.retrieve(context, self, currDynScope, temp));
-        
+
         return null;
     }
 

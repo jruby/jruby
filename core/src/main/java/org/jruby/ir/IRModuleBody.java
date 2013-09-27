@@ -10,7 +10,7 @@ public class IRModuleBody extends IRScope {
     public IRModuleBody(IRManager manager, IRScope lexicalParent, String name, int lineNumber, StaticScope scope) {
         this(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, scope);
     }
-    
+
     public IRModuleBody(IRManager manager, IRScope lexicalParent, String name,
             String fileName, int lineNumber, StaticScope scope) {
         super(manager, lexicalParent, name, fileName, lineNumber, scope);
@@ -41,10 +41,10 @@ public class IRModuleBody extends IRScope {
     @Override
     public LocalVariable getImplicitBlockArg() {
         assert false: "A module/class/metaclass body never accepts block args";
-        
+
         return null;
     }
-    
+
     @Override
     public boolean isModuleBody() {
         return true;

@@ -22,11 +22,11 @@ public class IRMethod extends IRScope {
 
     // Argument description of the form [:req, "a"], [:opt, "b"] ..
     private List<String[]> argDesc;
-    
+
     public IRMethod(IRManager manager, IRScope lexicalParent, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
-        
+
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<Operand>();
         this.argDesc = new ArrayList<String[]>();

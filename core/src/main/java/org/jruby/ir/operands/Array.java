@@ -47,7 +47,7 @@ public class Array extends Operand {
         return "Array:" + (isBlank() ? "[]" : java.util.Arrays.toString(elts));
     }
 
-// ---------- These methods below are used during compile-time optimizations ------- 
+// ---------- These methods below are used during compile-time optimizations -------
     @Override
     public boolean hasKnownValue() {
         for (Operand o : elts) {
@@ -81,7 +81,7 @@ public class Array extends Operand {
         }
 
         return new Array();
-        * 
+        *
         */
         return null;
     }
@@ -99,7 +99,7 @@ public class Array extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         if (hasKnownValue()) return this;
 
         Operand[] newElts = new Operand[elts.length];

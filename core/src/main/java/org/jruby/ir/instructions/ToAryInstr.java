@@ -21,17 +21,17 @@ public class ToAryInstr extends Instr implements ResultInstr {
     private Variable result;
     private final BooleanLiteral dontToAryArrays;
     private Operand array;
-    
+
     public ToAryInstr(Variable result, Operand array, BooleanLiteral dontToAryArrays) {
         super(Operation.TO_ARY);
-        
+
         assert result != null: "ToArtInstr result is null";
-        
+
         this.result = result;
         this.array = array;
         this.dontToAryArrays = dontToAryArrays;
     }
-    
+
     public Operand getArrayArg() {
         return array;
     }
@@ -39,7 +39,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
     public boolean dontToAryArrays() {
         return dontToAryArrays.isTrue();
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { array };
@@ -55,7 +55,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
         simplifyOperands(valueMap, false);
         return dontToAryArrays.isTrue() && (array.getValue(valueMap) instanceof Array) ? array : null;
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -66,12 +66,12 @@ public class ToAryInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ToAryInstr((Variable) result.cloneForInlining(ii), array.cloneForInlining(ii), 
+        return new ToAryInstr((Variable) result.cloneForInlining(ii), array.cloneForInlining(ii),
                 (BooleanLiteral) dontToAryArrays.cloneForInlining(ii));
     }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return super.toString() + "(" + array + ", dont_to_ary_arrays: " + dontToAryArrays + ")";
     }
 

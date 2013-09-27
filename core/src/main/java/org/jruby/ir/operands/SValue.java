@@ -53,9 +53,9 @@ public class SValue extends Operand {
     public void addUsedVariables(List<Variable> l) {
         array.addUsedVariables(l);
     }
- 
+
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
+    public Operand cloneForInlining(InlinerInfo ii) {
         return hasKnownValue() ? this : new SValue(array.cloneForInlining(ii));
     }
 
@@ -68,10 +68,10 @@ public class SValue extends Operand {
         } else {
             if (val instanceof RubyArray) {
                 int n = ((RubyArray) val).getLength();
-                
+
                 if (n == 0) return context.nil;
                 if (n == 1) return ((RubyArray) val).entry(0);
-                
+
                 return val;
             }
 

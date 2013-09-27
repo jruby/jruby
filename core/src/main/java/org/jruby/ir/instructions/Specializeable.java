@@ -14,7 +14,7 @@ public interface Specializeable {
     /**
      * Interpreter can ask the instruction if it knows how to make a more
      * efficient instruction for direct interpretation.
-     * 
+     *
      * @return itself or more efficient but semantically equivalent instr
      */
     public CallBase specializeForInterpretation();

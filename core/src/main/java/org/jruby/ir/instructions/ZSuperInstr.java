@@ -33,7 +33,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
         // Unlike calls, zsuper args are known only at interpret time, not at constructor time.
         // So, we cannot use the cached containsSplat field from CallBase
-        return containsSplat(arguments) ? 
+        return containsSplat(arguments) ?
                 prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
     }
@@ -44,7 +44,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
 
         // Find args that need to be passed into super
         while (!argsDynScope.getStaticScope().isArgumentScope()) argsDynScope = argsDynScope.getNextCapturedScope();
-        IRScope argsIRScope = ((IRStaticScope)argsDynScope.getStaticScope()).getIRScope(); 
+        IRScope argsIRScope = ((IRStaticScope)argsDynScope.getStaticScope()).getIRScope();
         Operand[] superArgs = (argsIRScope instanceof IRMethod) ? ((IRMethod)argsIRScope).getCallArgs() : ((IRClosure)argsIRScope).getBlockArgs();
 
         // Prepare args -- but look up in 'argsDynScope', not 'currDynScope'
