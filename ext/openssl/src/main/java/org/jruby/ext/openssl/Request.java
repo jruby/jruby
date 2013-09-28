@@ -106,7 +106,7 @@ public class Request extends RubyObject {
         req = new PKCS10Request((X500Name) null, (PublicKey) null, null);
     }
 
-    @JRubyMethod(name="initialize", frame=true, rest=true)
+    @JRubyMethod(name="initialize", rest=true)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,1) == 0) {
             return this;

@@ -109,7 +109,7 @@ public class X509CRL extends RubyObject {
         super(runtime,type);
     }
 
-    @JRubyMethod(name="initialize", rest=true, frame=true)
+    @JRubyMethod(name="initialize", rest=true)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         extensions = new ArrayList<IRubyObject>();
         if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,1) == 0) {

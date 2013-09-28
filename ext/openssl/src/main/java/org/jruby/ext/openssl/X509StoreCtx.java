@@ -85,7 +85,7 @@ public class X509StoreCtx extends RubyObject {
         cX509Cert = Utils.getClassFromPath(runtime, "OpenSSL::X509::Certificate");
     }
 
-    @JRubyMethod(name="initialize", rest=true, frame=true)
+    @JRubyMethod(name="initialize", rest=true)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         IRubyObject store;
         IRubyObject cert = getRuntime().getNil();

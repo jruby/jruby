@@ -60,6 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jruby.anno.AnnotationBinder;
+import org.jruby.anno.FrameField;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
@@ -758,12 +759,12 @@ public class RubyModule extends RubyObject {
     public boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
         JavaMethodDescriptor desc = methods.get(0);
         if (methods.size() == 1) {
-            return defineAnnotatedMethod(desc, methodFactory);
+            return defineAnnotatedMethod(name, desc, methodFactory);
         } else {
             CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
             if (shouldBindMethod(compatVersion, desc.anno.compat())) {
                 DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
-                define(this, desc, dynamicMethod);
+                define(this, desc, name, dynamicMethod);
             
                 return true;
             }
@@ -781,14 +782,14 @@ public class RubyModule extends RubyObject {
         if (shouldBindMethod(compatVersion, jrubyMethod.compat())) {
             JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            define(this, desc, dynamicMethod);
+            define(this, desc, method.getName(), dynamicMethod);
 
             return true;
         }
         return false;
     }
     
-    public boolean defineAnnotatedMethod(JavaMethodDescriptor desc, MethodFactory methodFactory) { 
+    public boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) { 
         JRubyMethod jrubyMethod = desc.anno;
 
         if (jrubyMethod == null) return false;
@@ -796,7 +797,7 @@ public class RubyModule extends RubyObject {
         CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
         if (shouldBindMethod(compatVersion, jrubyMethod.compat())) {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            define(this, desc, dynamicMethod);
+            define(this, desc, name, dynamicMethod);
 
             return true;
         }
@@ -1832,7 +1833,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_initialize
      *
      */
-    @JRubyMethod(name = "initialize", frame = true, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         if (block.isGiven()) {
             module_exec(context, new IRubyObject[] {this}, block);
@@ -2087,7 +2088,7 @@ public class RubyModule extends RubyObject {
         return context.runtime.getNil();
     }
 
-    @JRubyMethod(name = "extended", required = 1, frame = true, visibility = PRIVATE)
+    @JRubyMethod(name = "extended", required = 1, visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
         return context.runtime.getNil();
     }
@@ -2356,7 +2357,7 @@ public class RubyModule extends RubyObject {
     /** 
      * Return an array of nested modules or classes.
      */
-    @JRubyMethod(name = "nesting", frame = true, meta = true)
+    @JRubyMethod(name = "nesting", reads = FrameField.SCOPE, meta = true)
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyModule object = runtime.getObject();
@@ -2669,7 +2670,7 @@ public class RubyModule extends RubyObject {
      * @param rubyName The constant name which was found to be missing
      * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
      */
-    @JRubyMethod(name = "const_missing", required = 1, frame = true)
+    @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
         String name;
@@ -3603,12 +3604,34 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
+    private static void define(RubyModule module, JavaMethodDescriptor desc, String simpleName, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
+        // check for frame field reads or writes
+        boolean frame = false;
+        boolean scope = false;
         if (jrubyMethod.frame()) {
-            for (String name : jrubyMethod.name()) {
-                ASTInspector.FRAME_AWARE_METHODS.add(name);
-            }
+            frame = true;
+        }
+        if (jrubyMethod.scope()) {
+            scope = true;
+        }
+        for (FrameField field : jrubyMethod.reads()) {
+            frame |= field.needsFrame();
+            scope |= field.needsScope();
+        }
+        for (FrameField field : jrubyMethod.writes()) {
+            frame |= field.needsFrame();
+            scope |= field.needsScope();
+        }
+        if (frame) {
+            Set<String> frameAwareMethods = new HashSet<String>();
+            AnnotationBinder.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
+            ASTInspector.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
+        }
+        if (scope) {
+            Set<String> scopeAwareMethods = new HashSet<String>();
+            AnnotationBinder.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
+            ASTInspector.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
         
         RubyModule singletonClass;

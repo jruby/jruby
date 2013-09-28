@@ -1135,7 +1135,7 @@ public class Java implements Library {
 
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
-    @JRubyMethod(required = 2, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper, IRubyObject ifcs, Block block) {
         IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();
 

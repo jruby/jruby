@@ -150,8 +150,8 @@ public class AnnotationBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods2_0 = new HashMap<CharSequence, List<ExecutableElement>>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods2_0 = new HashMap<CharSequence, List<ExecutableElement>>();
 
-            Set<CharSequence> frameAwareMethods = new HashSet<CharSequence>();
-            Set<CharSequence> scopeAwareMethods = new HashSet<CharSequence>();
+            Set<String> frameAwareMethods = new HashSet<String>();
+            Set<String> scopeAwareMethods = new HashSet<String>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -212,22 +212,25 @@ public class AnnotationBinder extends AbstractProcessor {
                 boolean scope = false;
                 if (anno.frame()) {
                     if (DEBUG)
-                        LOG.finest("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
+                        System.out.println("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
                     frame = true;
                 }
-                if (anno.reads() != null) {
-                        if (DEBUG)
-                            LOG.finest("Method reads frame fields " + anno.reads() + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                        ;
-                        frame = true;
+                if (anno.scope()) {
+                    if (DEBUG)
+                        System.out.println("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
+                    scope = true;
                 }
-                if (anno.writes() != null) {
-                        if (DEBUG)
-                            LOG.finest("Method writes frame fields " + anno.writes() + ": " +  methodDescs.get(0).getEnclosingElement() + ": " + methodDescs);
-                        frame = true;
+                for (FrameField field : anno.reads()) {
+                    frame |= field.needsFrame();
+                    scope |= field.needsScope();
                 }
-                if (frame) frameAwareMethods.addAll(Arrays.asList(anno.name()));
-                if (scope) scopeAwareMethods.addAll(Arrays.asList(anno.name()));
+                for (FrameField field : anno.writes()) {
+                    frame |= field.needsFrame();
+                    scope |= field.needsScope();
+                }
+                
+                if (frame) addMethodNamesToSet(frameAwareMethods, anno, method.getSimpleName().toString());
+                if (scope) addMethodNamesToSet(scopeAwareMethods, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -333,7 +336,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 }
                 out.println("        ASTInspector.addScopeAwareMethods(" + scopeMethodsString + ");");
             }
-            out.println("     }");
+            out.println("    }");
 
             out.println("}");
             out.close();
@@ -553,6 +556,18 @@ public class AnnotationBinder extends AbstractProcessor {
             for (String alias : jrubyMethod.alias()) {
                 out.println("        " + classVar + ".defineAlias(\"" + alias + "\", \"" + baseName + "\");");
             }
+        }
+    }
+    
+    public static void addMethodNamesToSet(Set<String> set, JRubyMethod jrubyMethod, String simpleName) {
+        if (jrubyMethod.name().length == 0) {
+            set.add(simpleName);
+        } else {
+            set.addAll(Arrays.asList(jrubyMethod.name()));
+        }
+
+        if (jrubyMethod.alias().length > 0) {
+            set.addAll(Arrays.asList(jrubyMethod.alias()));
         }
     }
 

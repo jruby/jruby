@@ -17,7 +17,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class KernelJavaAddons {
-    @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE, omit = true)
+    @JRubyMethod(name = "raise", optional = 3, module = true, visibility = Visibility.PRIVATE, omit = true)
     public static IRubyObject rbRaise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 

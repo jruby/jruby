@@ -64,7 +64,7 @@ public class X509Revoked extends RubyObject {
         super(runtime,type);
     }
 
-    @JRubyMethod(name="initialize",rest=true,frame=true)
+    @JRubyMethod(name="initialize",rest=true)
     public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) {
         serial = getRuntime().getNil();
         time = getRuntime().getNil();

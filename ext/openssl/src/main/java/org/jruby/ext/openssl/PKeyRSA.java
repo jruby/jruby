@@ -178,7 +178,7 @@ public class PKeyRSA extends PKey {
         }
     }
 
-    @JRubyMethod(frame = true, rest = true)
+    @JRubyMethod(rest = true)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         IRubyObject arg;
         IRubyObject pass = null;

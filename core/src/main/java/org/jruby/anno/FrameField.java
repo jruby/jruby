@@ -29,5 +29,25 @@
 package org.jruby.anno;
 
 public enum FrameField {
-    LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME;
+    LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE;
+    
+    public boolean needsFrame() {
+        switch (this) {
+            case LASTLINE:
+            case BACKREF:
+            case VISIBILITY:
+            case BLOCK:
+            case SELF:
+            case METHODNAME:
+            case JUMPTARGET:
+            case CLASS:
+                return true;
+            default:
+                return false;
+        }
+    }
+    
+    public boolean needsScope() {
+        return this == SCOPE;
+    }
 }

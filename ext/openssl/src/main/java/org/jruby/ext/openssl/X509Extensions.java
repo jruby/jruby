@@ -96,7 +96,7 @@ public class X509Extensions {
             super(runtime,type);
         }
 
-        @JRubyMethod(rest=true,frame=true)
+        @JRubyMethod(rest=true)
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,4);
             if(args.length > 0 && !args[0].isNil()) {

@@ -138,7 +138,7 @@ public class X509Cert extends RubyObject {
         return cr.callMethod(runtime.getCurrentContext(), "new", RubyString.newString(runtime, c.getEncoded()));
     }
 
-    @JRubyMethod(name="initialize", optional = 1, frame=true)
+    @JRubyMethod(name="initialize", optional = 1)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         extensions = new ArrayList<IRubyObject>();

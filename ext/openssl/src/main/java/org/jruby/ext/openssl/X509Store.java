@@ -90,7 +90,7 @@ public class X509Store extends RubyObject {
         throw new RaiseException(getRuntime(),cStoreError, msg, true);
     }
 
-    @JRubyMethod(name="initialize", rest=true, frame=true)
+    @JRubyMethod(name="initialize", rest=true)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         store.setVerifyCallbackFunction(ossl_verify_cb);
         this.set_verify_callback(getRuntime().getNil());
@@ -182,7 +182,7 @@ public class X509Store extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(rest=true, frame=true)
+    @JRubyMethod(rest=true)
     public IRubyObject verify(IRubyObject[] args, Block block) {
         IRubyObject cert, chain;
         if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,1,2) == 2) {

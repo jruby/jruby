@@ -939,7 +939,7 @@ public class ASN1 {
             return null;
         }
 
-        @JRubyMethod(frame=true)
+        @JRubyMethod
         public IRubyObject each(Block block) {
             RubyArray arr = (RubyArray) callMethod(getRuntime().getCurrentContext(), "value");
             for (IRubyObject obj : arr.toJavaArray()) {
