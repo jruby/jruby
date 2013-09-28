@@ -29,6 +29,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1, 1) * Rational(3, 1))
     assert_equal(Rational(1, 3),
                  Rational(1, 1) / Rational(3, 1))
+  end
+
+  def test_kumi2
     assert_equal(Rational(1073741790, 1),
                  Rational(1, 1) + Rational(1073741789, 1))
     assert_equal(Rational(-1073741788, 1),
@@ -45,6 +48,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1, 1) * Rational(1073741827, 1))
     assert_equal(Rational(1, 1073741827),
                  Rational(1, 1) / Rational(1073741827, 1))
+  end
+
+  def test_kumi3
     assert_equal(Rational(5, 3),
                  Rational(1, 1) + Rational(2, 3))
     assert_equal(Rational(1, 3),
@@ -61,6 +67,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1, 1) * Rational(3, 2))
     assert_equal(Rational(2, 3),
                  Rational(1, 1) / Rational(3, 2))
+  end
+
+  def test_kumi4
     assert_equal(Rational(1073741792, 1073741789),
                  Rational(1, 1) + Rational(3, 1073741789))
     assert_equal(Rational(1073741786, 1073741789),
@@ -93,6 +102,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1, 1) * Rational(1073741827, 3))
     assert_equal(Rational(3, 1073741827),
                  Rational(1, 1) / Rational(1073741827, 3))
+  end
+
+  def test_kumi5
     assert_equal(Rational(2147483616, 1073741827),
                  Rational(1, 1) + Rational(1073741789, 1073741827))
     assert_equal(Rational(38, 1073741827),
@@ -109,6 +121,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1, 1) * Rational(1073741827, 1073741789))
     assert_equal(Rational(1073741789, 1073741827),
                  Rational(1, 1) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi6
     assert_equal(Rational(2, 1), +Rational(2, 1))
     assert_equal(Rational(-2, 1), -Rational(2, 1))
     assert_equal(Rational(3, 1),
@@ -135,6 +150,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 1) * Rational(3, 1))
     assert_equal(Rational(2, 3),
                  Rational(2, 1) / Rational(3, 1))
+  end
+
+  def test_kumi7
     assert_equal(Rational(1073741791, 1),
                  Rational(2, 1) + Rational(1073741789, 1))
     assert_equal(Rational(-1073741787, 1),
@@ -151,6 +169,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 1) * Rational(1073741827, 1))
     assert_equal(Rational(2, 1073741827),
                  Rational(2, 1) / Rational(1073741827, 1))
+  end
+
+  def test_kumi8
     assert_equal(Rational(8, 3),
                  Rational(2, 1) + Rational(2, 3))
     assert_equal(Rational(4, 3),
@@ -167,6 +188,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 1) * Rational(3, 2))
     assert_equal(Rational(4, 3),
                  Rational(2, 1) / Rational(3, 2))
+  end
+
+  def test_kumi9
     assert_equal(Rational(2147483581, 1073741789),
                  Rational(2, 1) + Rational(3, 1073741789))
     assert_equal(Rational(2147483575, 1073741789),
@@ -199,6 +223,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 1) * Rational(1073741827, 3))
     assert_equal(Rational(6, 1073741827),
                  Rational(2, 1) / Rational(1073741827, 3))
+  end
+
+  def test_kumi10
     assert_equal(Rational(3221225443, 1073741827),
                  Rational(2, 1) + Rational(1073741789, 1073741827))
     assert_equal(Rational(1073741865, 1073741827),
@@ -215,6 +242,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 1) * Rational(1073741827, 1073741789))
     assert_equal(Rational(2147483578, 1073741827),
                  Rational(2, 1) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi11
     assert_equal(Rational(3, 1), +Rational(3, 1))
     assert_equal(Rational(-3, 1), -Rational(3, 1))
     assert_equal(Rational(4, 1),
@@ -241,6 +271,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1) * Rational(3, 1))
     assert_equal(Rational(1, 1),
                  Rational(3, 1) / Rational(3, 1))
+  end
+
+  def test_kumi12
     assert_equal(Rational(1073741792, 1),
                  Rational(3, 1) + Rational(1073741789, 1))
     assert_equal(Rational(-1073741786, 1),
@@ -257,6 +290,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1) * Rational(1073741827, 1))
     assert_equal(Rational(3, 1073741827),
                  Rational(3, 1) / Rational(1073741827, 1))
+  end
+
+  def test_kumi13
     assert_equal(Rational(11, 3),
                  Rational(3, 1) + Rational(2, 3))
     assert_equal(Rational(7, 3),
@@ -273,6 +309,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1) * Rational(3, 2))
     assert_equal(Rational(2, 1),
                  Rational(3, 1) / Rational(3, 2))
+  end
+
+  def test_kumi14
     assert_equal(Rational(3221225370, 1073741789),
                  Rational(3, 1) + Rational(3, 1073741789))
     assert_equal(Rational(3221225364, 1073741789),
@@ -305,6 +344,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1) * Rational(1073741827, 3))
     assert_equal(Rational(9, 1073741827),
                  Rational(3, 1) / Rational(1073741827, 3))
+  end
+
+  def test_kumi15
     assert_equal(Rational(4294967270, 1073741827),
                  Rational(3, 1) + Rational(1073741789, 1073741827))
     assert_equal(Rational(2147483692, 1073741827),
@@ -321,6 +363,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1) * Rational(1073741827, 1073741789))
     assert_equal(Rational(3221225367, 1073741827),
                  Rational(3, 1) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi16
     assert_equal(Rational(1073741789, 1), +Rational(1073741789, 1))
     assert_equal(Rational(-1073741789, 1), -Rational(1073741789, 1))
     assert_equal(Rational(1073741790, 1),
@@ -347,6 +392,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1) * Rational(3, 1))
     assert_equal(Rational(1073741789, 3),
                  Rational(1073741789, 1) / Rational(3, 1))
+  end
+
+  def test_kumi17
     assert_equal(Rational(2147483578, 1),
                  Rational(1073741789, 1) + Rational(1073741789, 1))
     assert_equal(Rational(0, 1),
@@ -363,6 +411,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1) * Rational(1073741827, 1))
     assert_equal(Rational(1073741789, 1073741827),
                  Rational(1073741789, 1) / Rational(1073741827, 1))
+  end
+
+  def test_kumi18
     assert_equal(Rational(3221225369, 3),
                  Rational(1073741789, 1) + Rational(2, 3))
     assert_equal(Rational(3221225365, 3),
@@ -379,6 +430,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1) * Rational(3, 2))
     assert_equal(Rational(2147483578, 3),
                  Rational(1073741789, 1) / Rational(3, 2))
+  end
+
+  def test_kumi19
     assert_equal(Rational(1152921429444920524, 1073741789),
                  Rational(1073741789, 1) + Rational(3, 1073741789))
     assert_equal(Rational(1152921429444920518, 1073741789),
@@ -411,6 +465,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1) * Rational(1073741827, 3))
     assert_equal(Rational(3221225367, 1073741827),
                  Rational(1073741789, 1) / Rational(1073741827, 3))
+  end
+
+  def test_kumi20
     assert_equal(Rational(1152921471320850292, 1073741827),
                  Rational(1073741789, 1) + Rational(1073741789, 1073741827))
     assert_equal(Rational(1152921469173366714, 1073741827),
@@ -429,6 +486,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1) / Rational(1073741827, 1073741789))
     assert_equal(Rational(1073741827, 1), +Rational(1073741827, 1))
     assert_equal(Rational(-1073741827, 1), -Rational(1073741827, 1))
+  end
+
+  def test_kumi21
     assert_equal(Rational(1073741828, 1),
                  Rational(1073741827, 1) + Rational(1, 1))
     assert_equal(Rational(1073741826, 1),
@@ -453,6 +513,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1) * Rational(3, 1))
     assert_equal(Rational(1073741827, 3),
                  Rational(1073741827, 1) / Rational(3, 1))
+  end
+
+  def test_kumi22
     assert_equal(Rational(2147483616, 1),
                  Rational(1073741827, 1) + Rational(1073741789, 1))
     assert_equal(Rational(38, 1),
@@ -469,6 +532,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1) * Rational(1073741827, 1))
     assert_equal(Rational(1, 1),
                  Rational(1073741827, 1) / Rational(1073741827, 1))
+  end
+
+  def test_kumi23
     assert_equal(Rational(3221225483, 3),
                  Rational(1073741827, 1) + Rational(2, 3))
     assert_equal(Rational(3221225479, 3),
@@ -485,6 +551,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1) * Rational(3, 2))
     assert_equal(Rational(2147483654, 3),
                  Rational(1073741827, 1) / Rational(3, 2))
+  end
+
+  def test_kumi24
     assert_equal(Rational(1152921470247108506, 1073741789),
                  Rational(1073741827, 1) + Rational(3, 1073741789))
     assert_equal(Rational(1152921470247108500, 1073741789),
@@ -517,6 +586,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1) * Rational(1073741827, 3))
     assert_equal(Rational(3, 1),
                  Rational(1073741827, 1) / Rational(1073741827, 3))
+  end
+
+  def test_kumi25
     assert_equal(Rational(1152921512123039718, 1073741827),
                  Rational(1073741827, 1) + Rational(1073741789, 1073741827))
     assert_equal(Rational(1152921509975556140, 1073741827),
@@ -533,6 +605,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1) * Rational(1073741827, 1073741789))
     assert_equal(Rational(1073741789, 1),
                  Rational(1073741827, 1) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi26
     assert_equal(Rational(2, 3), +Rational(2, 3))
     assert_equal(Rational(-2, 3), -Rational(2, 3))
     assert_equal(Rational(5, 3),
@@ -559,6 +634,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 3) * Rational(3, 1))
     assert_equal(Rational(2, 9),
                  Rational(2, 3) / Rational(3, 1))
+  end
+
+  def test_kumi27
     assert_equal(Rational(3221225369, 3),
                  Rational(2, 3) + Rational(1073741789, 1))
     assert_equal(Rational(-3221225365, 3),
@@ -591,6 +669,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 3) * Rational(3, 2))
     assert_equal(Rational(4, 9),
                  Rational(2, 3) / Rational(3, 2))
+  end
+
+  def test_kumi28
     assert_equal(Rational(2147483587, 3221225367),
                  Rational(2, 3) + Rational(3, 1073741789))
     assert_equal(Rational(2147483569, 3221225367),
@@ -623,6 +704,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(2, 3) * Rational(1073741827, 3))
     assert_equal(Rational(2, 1073741827),
                  Rational(2, 3) / Rational(1073741827, 3))
+  end
+
+  def test_kumi29
     assert_equal(Rational(5368709021, 3221225481),
                  Rational(2, 3) + Rational(1073741789, 1073741827))
     assert_equal(Rational(-1073741713, 3221225481),
@@ -665,6 +749,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 2) * Rational(3, 1))
     assert_equal(Rational(1, 2),
                  Rational(3, 2) / Rational(3, 1))
+  end
+
+  def test_kumi30
     assert_equal(Rational(2147483581, 2),
                  Rational(3, 2) + Rational(1073741789, 1))
     assert_equal(Rational(-2147483575, 2),
@@ -697,6 +784,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 2) * Rational(3, 2))
     assert_equal(Rational(1, 1),
                  Rational(3, 2) / Rational(3, 2))
+  end
+
+  def test_kumi31
     assert_equal(Rational(3221225373, 2147483578),
                  Rational(3, 2) + Rational(3, 1073741789))
     assert_equal(Rational(3221225361, 2147483578),
@@ -747,6 +837,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 2) / Rational(1073741827, 1073741789))
     assert_equal(Rational(3, 1073741789), +Rational(3, 1073741789))
     assert_equal(Rational(-3, 1073741789), -Rational(3, 1073741789))
+  end
+
+  def test_kumi32
     assert_equal(Rational(1073741792, 1073741789),
                  Rational(3, 1073741789) + Rational(1, 1))
     assert_equal(Rational(-1073741786, 1073741789),
@@ -787,6 +880,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1073741789) * Rational(1073741827, 1))
     assert_equal(Rational(3, 1152921470247108503),
                  Rational(3, 1073741789) / Rational(1073741827, 1))
+  end
+
+  def test_kumi34
     assert_equal(Rational(2147483587, 3221225367),
                  Rational(3, 1073741789) + Rational(2, 3))
     assert_equal(Rational(-2147483569, 3221225367),
@@ -835,6 +931,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1073741789) * Rational(1073741827, 3))
     assert_equal(Rational(9, 1152921470247108503),
                  Rational(3, 1073741789) / Rational(1073741827, 3))
+  end
+
+  def test_kumi35
     assert_equal(Rational(1152921432666146002, 1152921470247108503),
                  Rational(3, 1073741789) + Rational(1073741789, 1073741827))
     assert_equal(Rational(-1152921426223695040, 1152921470247108503),
@@ -893,6 +992,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 3) * Rational(1073741827, 1))
     assert_equal(Rational(1073741789, 3221225481),
                  Rational(1073741789, 3) / Rational(1073741827, 1))
+  end
+
+  def test_kumi36
     assert_equal(Rational(1073741791, 3),
                  Rational(1073741789, 3) + Rational(2, 3))
     assert_equal(Rational(357913929, 1),
@@ -957,6 +1059,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 3) * Rational(1073741827, 1073741789))
     assert_equal(Rational(1152921429444920521, 3221225481),
                  Rational(1073741789, 3) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi37
     assert_equal(Rational(3, 1073741827), +Rational(3, 1073741827))
     assert_equal(Rational(-3, 1073741827), -Rational(3, 1073741827))
     assert_equal(Rational(1073741830, 1073741827),
@@ -1015,6 +1120,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1073741827) * Rational(3, 2))
     assert_equal(Rational(2, 1073741827),
                  Rational(3, 1073741827) / Rational(3, 2))
+  end
+
+  def test_kumi38
     assert_equal(Rational(6442450848, 1152921470247108503),
                  Rational(3, 1073741827) + Rational(3, 1073741789))
     assert_equal(Rational(-114, 1152921470247108503),
@@ -1065,6 +1173,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(3, 1073741827) / Rational(1073741827, 1073741789))
     assert_equal(Rational(1073741827, 3), +Rational(1073741827, 3))
     assert_equal(Rational(-1073741827, 3), -Rational(1073741827, 3))
+  end
+
+  def test_kumi39
     assert_equal(Rational(1073741830, 3),
                  Rational(1073741827, 3) + Rational(1, 1))
     assert_equal(Rational(1073741824, 3),
@@ -1121,6 +1232,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 3) * Rational(3, 2))
     assert_equal(Rational(2147483654, 9),
                  Rational(1073741827, 3) / Rational(3, 2))
+  end
+
+  def test_kumi40
     assert_equal(Rational(1152921470247108512, 3221225367),
                  Rational(1073741827, 3) + Rational(3, 1073741789))
     assert_equal(Rational(1152921470247108494, 3221225367),
@@ -1169,6 +1283,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 3) * Rational(1073741827, 1073741789))
     assert_equal(Rational(1073741789, 3),
                  Rational(1073741827, 3) / Rational(1073741827, 1073741789))
+  end
+
+  def test_kumi41
     assert_equal(Rational(1073741789, 1073741827), +Rational(1073741789, 1073741827))
     assert_equal(Rational(-1073741789, 1073741827), -Rational(1073741789, 1073741827))
     assert_equal(Rational(2147483616, 1073741827),
@@ -1211,6 +1328,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1073741827) * Rational(1073741827, 1))
     assert_equal(Rational(1073741789, 1152921511049297929),
                  Rational(1073741789, 1073741827) / Rational(1073741827, 1))
+  end
+
+  def test_kumi42
     assert_equal(Rational(5368709021, 3221225481),
                  Rational(1073741789, 1073741827) + Rational(2, 3))
     assert_equal(Rational(1073741713, 3221225481),
@@ -1259,6 +1379,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741789, 1073741827) * Rational(1073741827, 3))
     assert_equal(Rational(3221225367, 1152921511049297929),
                  Rational(1073741789, 1073741827) / Rational(1073741827, 3))
+  end
+
+  def test_kumi43
     assert_equal(Rational(2147483578, 1073741827),
                  Rational(1073741789, 1073741827) + Rational(1073741789, 1073741827))
     assert_equal(Rational(0, 1),
@@ -1301,6 +1424,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1073741789) * Rational(3, 1))
     assert_equal(Rational(1073741827, 3221225367),
                  Rational(1073741827, 1073741789) / Rational(3, 1))
+  end
+
+  def test_kumi44
     assert_equal(Rational(1152921430518662348, 1073741789),
                  Rational(1073741827, 1073741789) + Rational(1073741789, 1))
     assert_equal(Rational(-1152921428371178694, 1073741789),
@@ -1365,6 +1491,9 @@ class Rational_Test2 < Test::Unit::TestCase
                  Rational(1073741827, 1073741789) * Rational(1073741827, 3))
     assert_equal(Rational(3, 1073741789),
                  Rational(1073741827, 1073741789) / Rational(1073741827, 3))
+  end
+
+  def test_kumi45
     assert_equal(Rational(2305842940494218450, 1152921470247108503),
                  Rational(1073741827, 1073741789) + Rational(1073741789, 1073741827))
     assert_equal(Rational(81604377408, 1152921470247108503),
