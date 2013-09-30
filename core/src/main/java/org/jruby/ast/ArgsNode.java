@@ -485,7 +485,7 @@ public class ArgsNode extends Node {
                         String name = ((INameNode) kasgn).getName();
                         RubySymbol sym = runtime.newSymbol(name);
 
-                        if (keyValues.op_aref(context, sym).isNil()) {
+                        if (keyValues.has_key_p(sym).isFalse()) {
                             kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
                         } else {
                             IRubyObject value = keyValues.delete(context, sym, Block.NULL_BLOCK);
