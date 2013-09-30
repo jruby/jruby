@@ -462,10 +462,6 @@ public class ParserSupport {
 
         while (node != null) {
             switch (node.getNodeType()) {
-            case DEFNNODE: case DEFSNODE:
-                warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(),
-                        "void value expression");
-                return false;
             case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
             case RETRYNODE:
                 if (!conditional) {

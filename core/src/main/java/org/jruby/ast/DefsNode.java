@@ -120,6 +120,6 @@ public class DefsNode extends MethodDefNode implements INameNode {
         rubyClass.addMethod(name, newMethod);
         receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
    
-        return runtime.getNil();
+        return runtime.newSymbol(name);
     }
 }

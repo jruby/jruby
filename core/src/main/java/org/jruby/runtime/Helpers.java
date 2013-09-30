@@ -308,7 +308,7 @@ public class Helpers {
         
         addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
         
-        return runtime.getNil();
+        return runtime.newSymbol(rubyName);
     }
     
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -328,7 +328,7 @@ public class Helpers {
         
         callSingletonMethodHook(receiver,context, runtime.fastNewSymbol(rubyName));
         
-        return runtime.getNil();
+        return runtime.newSymbol(rubyName);
     }
 
     public static byte[] defOffline(String rubyName, String javaName, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {

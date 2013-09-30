@@ -128,6 +128,6 @@ public class DefnNode extends MethodDefNode implements INameNode {
             containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
    
-        return runtime.getNil();        
+        return runtime.newSymbol(name);
     }
 }
