@@ -734,7 +734,6 @@ class Date
 
   DEFAULT_TZ = ENV['TZ']
   DEFAULT_DTZ = JODA::DateTimeZone.getDefault
-  DEFAULT_OFFSET = Rational(DEFAULT_DTZ.getOffset(0), 86_400_000)
   CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
   CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
 
@@ -1133,6 +1132,7 @@ class Date
     if JODA::DateTime === dt_or_ajd
       @dt = dt_or_ajd
       @sub_millis = sub_millis
+      of ||= Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
       millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
@@ -1907,12 +1907,11 @@ class Date
   # +sg+ specifies the Day of Calendar Reform.
   def self.now(sg=ITALY)
     dtz = (ENV['TZ'] == DEFAULT_TZ) ? DEFAULT_DTZ : org.jruby::RubyTime.getLocalTimeZone(JRuby.runtime)
-    of = (dtz == DEFAULT_DTZ) ? DEFAULT_OFFSET : Rational(dtz.getOffset(0), 86_400_000)
 
-    if of == DEFAULT_OFFSET and sg == ITALY
-      new!(JODA::DateTime.new(CHRONO_ITALY_DEFAULT_DTZ), of, sg)
+    if dtz == DEFAULT_DTZ and sg == ITALY
+      new!(JODA::DateTime.new(CHRONO_ITALY_DEFAULT_DTZ), nil, sg)
     else
-      new!(JODA::DateTime.new(chronology(sg, dtz)), of, sg)
+      new!(JODA::DateTime.new(chronology(sg, dtz)), nil, sg)
     end
   end
   private_class_method :now
