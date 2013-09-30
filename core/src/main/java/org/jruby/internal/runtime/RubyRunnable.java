@@ -44,10 +44,10 @@ public class RubyRunnable implements ThreadedRunnable {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyRunnable");
 
-    private Ruby runtime;
-    private RubyProc proc;
-    private IRubyObject[] arguments;
-    private RubyThread rubyThread;
+    private final Ruby runtime;
+    private final RubyProc proc;
+    private final IRubyObject[] arguments;
+    private final RubyThread rubyThread;
     
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
@@ -82,6 +82,7 @@ public class RubyRunnable implements ThreadedRunnable {
         } catch (SecurityException se) {
             // can't set TC classloader
             if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                warnedAboutTC = true;
                 LOG.info("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
             }
         }
@@ -117,6 +118,7 @@ public class RubyRunnable implements ThreadedRunnable {
                 } catch (SecurityException se) {
                     // can't set TC classloader
                     if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                        warnedAboutTC = true;
                         LOG.info("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
                     }
                 }
