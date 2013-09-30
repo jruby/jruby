@@ -244,8 +244,8 @@ public class Options {
         _loadedOptions.add(option);
         return option;
     }
+
     private static boolean calculateInvokedynamicDefault() {
-        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
         String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
         if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.8")) >= 0) {
             return true;
