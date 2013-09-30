@@ -265,6 +265,7 @@ public class ArgsNode extends Node {
 
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
         DynamicScope scope = context.getCurrentScope();
+        RubyHash kwvals = getKeywordValues(args);
 
         // Bind 'normal' parameter values to the local scope for this method.
         if (!hasMasgnArgs) {
@@ -276,9 +277,25 @@ public class ArgsNode extends Node {
         }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
-        if (hasOptArgs || restArg != -1) prepareOptOrRestArgs(context, runtime, scope, self, args);
-        if (hasKwargs) assignKwargs(args, runtime, context, scope, self);
+        if (hasOptArgs || restArg != -1) prepareOptOrRestArgs(context, runtime, scope, self, args, kwvals);
+        if (hasKwargs) {
+            // We couldn't check this in Arity, because we didn't know at that point whether the call
+            // site actually provided us with keyword values.
+            if (kwvals == null && maxArgsCount > -1 && args.length == maxArgsCount + 1) {
+              throw runtime.newArgumentError(args.length, requiredArgsCount);
+            }
+            assignKwargs(kwvals, runtime, context, scope, self);
+        }
         if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+
+    private RubyHash getKeywordValues(IRubyObject[] args) {
+        if (hasKwargs
+            && (args.length > requiredArgsCount)
+            && (args[args.length - 1] instanceof RubyHash)) {
+            return (RubyHash) args[args.length - 1];
+        }
+        return null;
     }
 
     private void masgnAwareArgAssign(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block, DynamicScope scope) {
@@ -436,18 +453,21 @@ public class ArgsNode extends Node {
     }
 
     protected void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, DynamicScope scope,
-            IRubyObject self, IRubyObject[] args) {
-        prepareRestArg(context, runtime, scope, args, prepareOptionalArguments(context, runtime, self, args));
+            IRubyObject self, IRubyObject[] args, RubyHash kwvals) {
+        int arglen = (kwvals == null) ? args.length : args.length - 1;
+        int givenArgsCount = prepareOptionalArguments(context, runtime, self, args, arglen);
+        prepareRestArg(context, runtime, scope, args, arglen, givenArgsCount);
     }
 
-    protected int prepareOptionalArguments(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
-        return hasOptArgs ? assignOptArgs(args, runtime, context, self, preCount) : preCount;
+    protected int prepareOptionalArguments(ThreadContext context, Ruby runtime, IRubyObject self, 
+            IRubyObject[] args, int arglen) {
+        return hasOptArgs ? assignOptArgs(args, runtime, context, self, preCount, arglen) : preCount;
     }
 
     protected void prepareRestArg(ThreadContext context, Ruby runtime, DynamicScope scope,
-            IRubyObject[] args, int givenArgsCount) {
+            IRubyObject[] args, int arglen, int givenArgsCount) {
         if (restArg >= 0) {
-            int sizeOfRestArg = args.length - postCount - givenArgsCount - (postCount == 0 && keywords == null && keyRest != null ? 1 : 0);
+            int sizeOfRestArg = arglen - postCount - givenArgsCount - (postCount == 0 && keywords == null && keyRest != null ? 1 : 0);
             if (sizeOfRestArg <= 0) { // no more values to stick in rest arg
                 scope.setValue(restArg, RubyArray.newArray(runtime), 0);
             } else {
@@ -456,10 +476,10 @@ public class ArgsNode extends Node {
         }
     }
 
-    protected int assignOptArgs(IRubyObject[] args, Ruby runtime, ThreadContext context, IRubyObject self, int givenArgsCount) {
+    protected int assignOptArgs(IRubyObject[] args, Ruby runtime, ThreadContext context, IRubyObject self, int givenArgsCount, int arglen) {
         // assign given optional arguments to their variables
         int j = 0;
-        for (int i = preCount; i < args.length - postCount && j < optArgs.size(); i++, j++) {
+        for (int i = preCount; i < arglen - postCount && j < optArgs.size(); i++, j++) {
             // in-frame EvalState should already have receiver set as self, continue to use it
             optArgs.get(j).assign(runtime, context, self, args[i], Block.NULL_BLOCK, true);
             givenArgsCount++;
@@ -473,31 +493,26 @@ public class ArgsNode extends Node {
         return givenArgsCount;
     }
 
-    protected void assignKwargs(IRubyObject[] args, Ruby runtime, ThreadContext context, DynamicScope scope, IRubyObject self) {
-        if (args.length > 0) {
-            if (args[args.length - 1] instanceof RubyHash) {
-                RubyHash keyValues = (RubyHash)args[args.length - 1];
+    protected void assignKwargs(RubyHash keyValues, Ruby runtime, ThreadContext context, DynamicScope scope, IRubyObject self) {
+        if (keyValues != null) {
+            if (keywords != null) {
+                for (Node knode : keywords.childNodes()) {
+                    KeywordArgNode kwarg = (KeywordArgNode) knode;
+                    AssignableNode kasgn = (AssignableNode) kwarg.getAssignable();
+                    String name = ((INameNode) kasgn).getName();
+                    RubySymbol sym = runtime.newSymbol(name);
 
-                if (keywords != null) {
-                    for (Node knode : keywords.childNodes()) {
-                        KeywordArgNode kwarg = (KeywordArgNode) knode;
-                        AssignableNode kasgn = (AssignableNode) kwarg.getAssignable();
-                        String name = ((INameNode) kasgn).getName();
-                        RubySymbol sym = runtime.newSymbol(name);
-
-                        if (keyValues.has_key_p(sym).isFalse()) {
-                            kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+                    if (keyValues.has_key_p(sym).isFalse()) {
+                        kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+                    } else {
+                        IRubyObject value = keyValues.delete(context, sym, Block.NULL_BLOCK);
+                        // Enebo: This casting is gruesome but IR solution will replace it in 9k.
+                        if (kasgn instanceof LocalAsgnNode) {
+                            scope.setValue(((LocalAsgnNode) kasgn).getIndex(), value, ((LocalAsgnNode) kasgn).getDepth());    
+                        } else if (kasgn instanceof DAsgnNode) {
+                            scope.setValue(((DAsgnNode) kasgn).getIndex(), value, ((DAsgnNode) kasgn).getDepth());
                         } else {
-                            IRubyObject value = keyValues.delete(context, sym, Block.NULL_BLOCK);
-                            // Enebo: This casting is gruesome but IR solution will replace it in 9k.
-                            if (kasgn instanceof LocalAsgnNode) {
-                                scope.setValue(((LocalAsgnNode) kasgn).getIndex(), value, ((LocalAsgnNode) kasgn).getDepth());    
-                            } else if (kasgn instanceof DAsgnNode) {
-                                scope.setValue(((DAsgnNode) kasgn).getIndex(), value, ((DAsgnNode) kasgn).getDepth());
-                            } else {
-                                assert false: "Should never happen";
-                            }
-                            
+                            assert false: "Should never happen";
                         }
                     }
                 }
