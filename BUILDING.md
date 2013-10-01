@@ -172,12 +172,12 @@ mvn -Pall
 first set the new version:
 
 ```
-mvn versions:setVersion=9000
+mvn versions:set -DnewVersion=1.7.5 -Pall
 ```
 
-manually rollback the poms in ./ext/
-then commit and tag averything respectively and . . .
-and now deploy the maven artifact to sonatype oss
+manually rollback the poms in ./ext/ if their main versions have been changed
+and then commit and tag averything respectively.  Now deploy the maven 
+artifact to sonatype oss.
 
 ```
 mvn clean deploy -Psonatype-oss-release -Prelease
