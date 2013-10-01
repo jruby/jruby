@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.5.dev</version>
+    <version>9000.dev</version>
   </parent>
   <artifactId>readline</artifactId>
   <version>1.0-SNAPSHOT</version>
