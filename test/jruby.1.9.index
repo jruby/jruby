@@ -16,6 +16,7 @@ test_comparable
 test_core_arities
 test_custom_enumerable
 test_cvars_in_odd_scopes
+test_date_joda_time
 test_defined
 test_default_constants
 test_delegated_array_equals
