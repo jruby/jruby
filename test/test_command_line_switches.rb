@@ -133,7 +133,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
-    assert_match /ruby \d+\.\d+\.\d+/, lines[0]
+    assert_match /jruby \d+(\.\d+\.\d+)?/, lines[0]
     assert_match /true$/, lines[1]
     assert_equal "0", lines[2]
     assert_equal "true", lines[3]
@@ -159,7 +159,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
-    assert_match /ruby \d+\.\d+\.\d+/, lines[0]
+    assert_match /jruby \d+(\.\d+\.\d+)?/, lines[0]
     assert_match /true$/, lines[1]
     assert_equal "0", lines[2]
     assert_equal "true", lines[3]
@@ -238,8 +238,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_dash_version_shows_version
     version_string = `#{RUBY} --version`
     assert_equal 0, $?.exitstatus
-    assert_match /ruby \d+\.\d+\.\d+/, version_string
-    assert_match /jruby \d+\.\d+\.\d+/, version_string
+    assert_match /\(\d+\.\d+\.\d+/, version_string
+    assert_match /jruby \d+(\.\d+\.\d+)?/, version_string
   end
 
   # Only HotSpot has "client" and "server" so pointless to test others
