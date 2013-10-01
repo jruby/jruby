@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.text.DateFormat;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
@@ -38,7 +37,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
-import org.joda.time.DateTime;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -53,7 +51,6 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
