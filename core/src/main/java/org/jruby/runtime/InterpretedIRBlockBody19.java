@@ -23,8 +23,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         int blockArity = arity().getValue();
         switch (blockArity) {
             case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
-            case 0  : return new IRubyObject[] { value };
-            case 1  : {
+            case  0 : return new IRubyObject[] { value };
+            case  1 : {
                if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
                    if (valArray.size() == 0) {
@@ -42,13 +42,27 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                     value = Helpers.aryToAry(value);
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
-                    value = Helpers.aryToAry(value);
-                    if (!(value instanceof RubyArray)) {
+                    IRubyObject val0 = Helpers.aryToAry(value);
+                    if (!(val0 instanceof RubyArray)) {
                         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
                     }
-                    return ((RubyArray)value).toJavaArray();
+                    return ((RubyArray)val0).toJavaArray();
                 }
         }
+    }
+
+    private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        if (type == Block.Type.LAMBDA) {
+            arity().checkArity(context.runtime, args);
+        } else {
+            int blockArity = arity().getValue();
+            if (blockArity == 0) {
+                args = IRubyObject.NULL_ARRAY; // discard args
+            } else if (blockArity == 1) {
+                args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
+            }
+        }
+        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
@@ -62,51 +76,47 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        IRubyObject[] args;
-        if (type == Block.Type.LAMBDA) {
-            args = arg0 instanceof RubyArray ? ((RubyArray)arg0).toJavaArray() : new IRubyObject[] { arg0 };
-            arity().checkArity(context.runtime, args);
-        } else if (arg0 instanceof RubyArray) {
-            args = convertValueIntoArgArray(context, arg0, true, true);
-        } else if (arity().getValue() <= 1) {
-            args = new IRubyObject[] { arg0 };
-        } else {
-            IRubyObject value = Helpers.aryToAry(arg0);
-            if (!(value instanceof RubyArray)) {
-                throw context.runtime.newTypeError(arg0.getType().getName() + "#to_ary should return Array");
+        if (arg0 instanceof RubyArray) {
+		    // Unwrap the array arg
+            IRubyObject[] args;
+            if (type == Block.Type.LAMBDA) {
+                args = ((RubyArray)arg0).toJavaArray();
+                arity().checkArity(context.runtime, args);
+            } else {
+                args = convertValueIntoArgArray(context, arg0, true, true);
             }
-            args = ((RubyArray)value).toJavaArray();
+            return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        } else {
+            return yield(context, arg0, binding, type);
         }
-        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] { arg0, arg1 };
-        if (type == Block.Type.LAMBDA) {
-            arity().checkArity(context.runtime, args);
-        } else {
-            int arity = arity().getValue();
-            if (arity == 0) {
-                args = IRubyObject.NULL_ARRAY; // discard args
-            } else if (arity == 1) {
-                args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
-            }
-        }
-        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1 }, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] { arg0, arg1, arg2 };
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1, arg2 }, binding, type);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        IRubyObject[] args;
         if (type == Block.Type.LAMBDA) {
+            args = new IRubyObject[] { value };
             arity().checkArity(context.runtime, args);
         } else {
-            int arity = arity().getValue();
-            if (arity == 0) {
-                args = IRubyObject.NULL_ARRAY; // discard args
-            } else if (arity == 1) {
-                args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
+            int blockArity = arity().getValue();
+            if (blockArity >= -1 && blockArity <= 1) {
+                args = new IRubyObject[] { value };
+            } else {
+                IRubyObject val0 = Helpers.aryToAry(value);
+                if (!(val0 instanceof RubyArray)) {
+                    throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+                }
+                args = ((RubyArray)val0).toJavaArray();
             }
         }
         return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
