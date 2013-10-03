@@ -1,8 +1,12 @@
 require 'rake'
+require 'rexml/document'
+require 'rexml/xpath'
+
+doc = REXML::Document.new File.new(File.join('..', '..', 'pom.xml'))
 
 Gem::Specification.new do |s|
   s.name = 'jruby-jars'
-  s.version = '1.7.5.dev'
+  s.version = REXML::XPath.first(doc, "//project/version").text
   s.authors = ['Charles Oliver Nutter']
   s.email = "headius@headius.com"
   s.summary = "The core JRuby code and the JRuby stdlib as jar files."
