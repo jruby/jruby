@@ -35,6 +35,10 @@ describe "A Ruby class generating a Java stub" do
     /public *(.*) *void bar\(int \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
   DOUBLE_ARY_VOID_BAR_PATTERN =
     /public *(.*) *double\[\] bar_double_ary\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_double_ary"\);\s+return \(double\[\]\)ruby_result\.toJava\(double\[\]\.class\);/
+  BAZ_ARY_VOID_BAR_PATTERN =
+    /public *(.*) *baz\[\] bar_baz_ary\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_baz_ary"\);\s+return \(baz\[\]\)ruby_result\.toJava\(baz\[\]\.class\);/
+  BAZ_GENERIC_VOID_BAR_PATTERN =
+    /public *(.*) *Baz\<Generic\> bar_generic_baz\(\) {\s+.*IRubyObject ruby_result = Helpers\.invoke\(.*, this, "bar_generic_baz"\);\s+return \(Baz\)ruby_result\.toJava\(Baz\.class\);/  
 
   describe "with a method" do
     describe "with no java_signature" do
@@ -260,6 +264,43 @@ describe "A Ruby class generating a Java stub" do
             java.should match DOUBLE_ARY_VOID_BAR_PATTERN
           end
         end
+        
+        describe "and a baz[] return type" do
+          it "generates a baz[]-returning method" do
+            cls = generate("
+          class Foo
+            java_signature 'baz[] bar_baz_ary()'; def bar_baz_ary; end
+          end").classes[0]
+          
+            method = cls.methods[0]
+            method.should_not be nil
+            method.name.should == "bar_baz_ary"
+            method.constructor?.should == false
+            method.java_signature.to_s.should == "baz[] bar_baz_ary()"
+            method.args.length.should == 0
+            java = method.to_s
+            java.should match BAZ_ARY_VOID_BAR_PATTERN
+          end
+        end
+        
+        describe "and a Baz<Generic> return type" do
+          it "generates a Baz<Generic>-returning method" do
+            cls = generate("
+          class Foo
+            java_signature 'Baz<Generic> bar_generic_baz()'; def bar_generic_baz; end
+          end").classes[0]
+            
+            method = cls.methods[0]
+            method.should_not be nil
+            method.name.should == "bar_generic_baz"
+            method.constructor?.should == false
+            method.java_signature.to_s.should == "Baz<Generic> bar_generic_baz()"
+            method.args.length.should == 0
+            java = method.to_s
+            java.should match BAZ_GENERIC_VOID_BAR_PATTERN
+          end
+        end
+      
       end
 
       describe "with a void return and String arg" do
