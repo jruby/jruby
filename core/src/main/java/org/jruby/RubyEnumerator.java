@@ -468,11 +468,15 @@ public class RubyEnumerator extends RubyObject {
         }
     }
     
-    public void finalize() {
-        Nexter nexter = this.nexter;
-        if (nexter != null) {
-            nexter.shutdown();
-            nexter = null;
+    protected void finalize() throws Throwable {
+        try {
+            Nexter nexter = this.nexter;
+            if (nexter != null) {
+                nexter.shutdown();
+                nexter = null;
+            }
+        } finally {
+            super.finalize();
         }
     }
     
