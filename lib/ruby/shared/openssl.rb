@@ -14,13 +14,10 @@ require 'jruby'
 require 'jopenssl.jar'
 org.jruby.ext.openssl.OSSLLibrary.new.load(JRuby.runtime, false)
 
-# Add version-appropriate library path to LOAD_PATH
 if RUBY_VERSION >= '1.9.0'
-  $LOAD_PATH.unshift(File.expand_path('../../1.9', __FILE__))
-  load(File.expand_path('../../1.9/openssl.rb', __FILE__))
+  load('jopenssl19/openssl.rb')
 else
-  $LOAD_PATH.unshift(File.expand_path('../../1.8', __FILE__))
-  load(File.expand_path('../../1.8/openssl.rb', __FILE__))
+  load('jopenssl18/openssl.rb')
 end
 
 require 'openssl/pkcs12'
