@@ -1,0 +1,50 @@
+<project>
+  <groupId>org.jruby</groupId>
+  <artifactId>it-hello</artifactId>
+  <version>1</version>
+  <modelVersion>4.0.0</modelVersion>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-complete</artifactId>
+      <version>@project.version@</version>
+      <type>jar</type>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>  
+	<directory>../../local-repo/org/jruby/jruby-complete/@project.version@</directory>
+        <includes>
+          <include>jruby-complete-*.jar</include>
+        </includes>
+        <targetPath>${project.basedir}</targetPath>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2</version>
+        <configuration>
+          <executable>java</executable> 
+          <arguments>
+            <argument>-jar</argument>
+            <argument>jruby-complete-@project.version@.jar</argument>
+            <argument>-e</argument>
+            <!-- make sure openssl loads -->
+            <argument>
+              puts 'hello world'
+              puts 'openssl loaded' if require 'openssl'
+	      p OpenSSL::VERSION
+              puts 'readline loaded' if require 'readline'
+	      p Java::jline.console.ConsoleReader
+            </argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

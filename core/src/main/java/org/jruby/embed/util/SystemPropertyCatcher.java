@@ -225,6 +225,9 @@ public class SystemPropertyCatcher {
                 // for remote-sourced classpath resources, just use classpath:
                 location = "classpath:/META-INF/jruby.home";
             }
+            if (location.startsWith("file:") && location.contains(" ")) {
+                location = location.replaceAll( " ", "%20" );
+            }
         } else {
             location = "classpath:/META-INF/jruby.home";
         }
