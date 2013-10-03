@@ -21,7 +21,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>openssl</artifactId>
-      <version>0.8.9-SNAPSHOT</version>
+      <version>0.9.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
