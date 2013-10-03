@@ -479,6 +479,16 @@ public class RubyEncoding extends RubyObject {
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
     }
+    
+    @Deprecated
+    public static IRubyObject getDefaultInternal(IRubyObject recv) {
+        return getDefaultExternal(recv.getRuntime().getCurrentContext(), recv);
+    }
+    
+    @Deprecated
+    public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
+        return setDefaultExternal(recv.getRuntime().getCurrentContext(), recv, encoding);
+    }
 
     @Deprecated
     public static IRubyObject getDefaultExternal(Ruby runtime) {

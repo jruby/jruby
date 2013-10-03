@@ -10,6 +10,7 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
@@ -40,9 +41,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), context.getFiberCurrentThread(), this);
         
-        ThreadFiber currentFiber = context.getFiber();
+        FiberData currentFiberData = context.getFiber().data;
         
-        thread = createThread(runtime, data, currentFiber.data.queue, block);
+        thread = createThread(runtime, data, currentFiberData.queue, block);
         
         return context.nil;
     }
@@ -55,9 +56,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (!alive()) throw runtime.newFiberError("dead fiber called");
         
-        ThreadFiber currentFiber = context.getFiber();
+        FiberData currentFiberData = context.getFiber().data;
         
-        if (this == currentFiber) {
+        if (this.data == currentFiberData) {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
@@ -74,11 +75,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
         
-        data.prev = currentFiber;
+        data.prev = context.getFiber();
         
         try {
             data.queue.push(context, val);
-            IRubyObject result = currentFiber.data.queue.pop(context);
+            IRubyObject result = currentFiberData.queue.pop(context);
             if (result == NEVER) result = context.nil;
             return result;
         } finally {
@@ -94,9 +95,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (!alive()) throw runtime.newFiberError("dead fiber called");
         
-        ThreadFiber currentFiber = context.getFiber();
+        FiberData currentFiberData = context.getFiber().data;
         
-        if (this == currentFiber) {
+        if (this.data == currentFiberData) {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
@@ -113,24 +114,24 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
         
-        if (currentFiber.data.prev != null) {
+        if (currentFiberData.prev != null) {
             // new fiber should answer to current prev and this fiber is marked as transferred
-            data.prev = currentFiber.data.prev;
-            currentFiber.data.prev = null;
-            currentFiber.data.transferred = true;
+            data.prev = currentFiberData.prev;
+            currentFiberData.prev = null;
+            currentFiberData.transferred = true;
         } else {
-            data.prev = currentFiber;
+            data.prev = context.getFiber();
         }
         
         try {
             data.queue.push(context, val);
             
-            IRubyObject result = currentFiber.data.queue.pop(context);
+            IRubyObject result = currentFiberData.queue.pop(context);
             if (result == NEVER) result = context.nil;
             return result;
         } finally {
             data.prev = null;
-            currentFiber.data.transferred = false;
+            currentFiberData.transferred = false;
         }
     }
     
@@ -143,15 +144,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject value) {
         Ruby runtime = context.runtime;
         
-        ThreadFiber currentFiber = context.getFiber();
+        FiberData currentFiberData = context.getFiber().data;
         
-        if (currentFiber.data.parent == null) throw runtime.newFiberError("can't yield from root fiber");
+        if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
         
-        ThreadFiber prevFiber = currentFiber.data.prev;
+        FiberData prevFiberData = currentFiberData.prev.data;
         
-        prevFiber.data.queue.push(context, value);
+        prevFiberData.queue.push(context, value);
         
-        IRubyObject result = currentFiber.data.queue.pop(context);
+        IRubyObject result = currentFiberData.queue.pop(context);
         if (result == NEVER) result = context.nil;
         return result;
     }
@@ -204,8 +205,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(re.getException());
                     }
-                } catch (Throwable t) {
-                    t.printStackTrace();
+                } catch (ThreadKill t) {
+                    // ignore
                 }
             }
         };
@@ -218,11 +219,31 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return fiberThread.get();
     }
     
-    @Override
-    public void finalize() throws Throwable {
-        super.finalize();
-        data.queue.shutdown();
-        thread.kill();
+    protected void finalize() throws Throwable {
+        try {
+            FiberData data = this.data;
+            if (data != null) {
+                data.queue.shutdown();
+            }
+
+            RubyThread thread = this.thread;
+            if (thread != null) {
+                thread.dieFromFinalizer();
+
+                // interrupt Ruby thread to break out of queue sleep, blocking IO
+                thread.interrupt();
+
+                // interrupt native thread to break out of normally unbreakable calls
+                Thread nativeThread = thread.getNativeThread();
+                if (nativeThread != null) nativeThread.interrupt();
+
+                // null out references to aid GC
+                data = null;
+                thread = null;
+            }
+        } finally {
+            super.finalize();
+        }
     }
     
     private static class FiberData {

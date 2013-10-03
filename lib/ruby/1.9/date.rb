@@ -1360,7 +1360,7 @@ class Date
         sub_millis -= 1
         ms += 1
       end
-      self.class.new!(@dt.plusMillis(ms), @of, @sg, sub_millis)
+      self.class.new!(@dt.plus(ms), @of, @sg, sub_millis)
     else
       raise TypeError, 'expected numeric'
     end
