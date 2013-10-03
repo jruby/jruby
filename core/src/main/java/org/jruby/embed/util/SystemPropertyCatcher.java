@@ -210,7 +210,6 @@ public class SystemPropertyCatcher {
 
     public static String findFromJar(Object instance) {
         URL resource = instance.getClass().getResource("/META-INF/jruby.home");
-        System.err.println( resource );
         if (resource == null) {
             // on IBM WebSphere getResource for a dir returns null but an actual
             // file if it's there returns e.g. wsjar:file:/opt/IBM/WebSphere/...
@@ -238,7 +237,6 @@ public class SystemPropertyCatcher {
             location = location.substring(0, location.length() - 1);
         }
 
-        System.err.println( location );
         return location;
     }
 
