@@ -223,6 +223,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         try {
             FiberData data = this.data;
             if (data != null) {
+                // we never interrupt or shutdown root fibers
+                if (data.parent == null) return;
+                
                 data.queue.shutdown();
             }
 
@@ -232,10 +235,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
                 // interrupt Ruby thread to break out of queue sleep, blocking IO
                 thread.interrupt();
-
-                // interrupt native thread to break out of normally unbreakable calls
-                Thread nativeThread = thread.getNativeThread();
-                if (nativeThread != null) nativeThread.interrupt();
 
                 // null out references to aid GC
                 data = null;
