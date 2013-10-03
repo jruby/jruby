@@ -1087,12 +1087,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         debug(this, "trying to kill");
 
         currentThread.pollThreadEvents();
-
+        
         getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
 
         debug(this, "succeeded with kill");
         
         return this;
+    }
+    
+    /**
+     * Used for finalizers that need to kill a Ruby thread. Finalizers run in
+     * a VM thread to which we do not want to attach a ThreadContext and within
+     * which we do not want to check for Ruby thread events. This mechanism goes
+     * directly to mail delivery, bypassing all Ruby Thread-related steps.
+     */
+    public void dieFromFinalizer() {
+        receiveMail(new ThreadService.Event(null, this, ThreadService.Event.Type.KILL));
     }
 
     private static void debug(RubyThread thread, String message) {
