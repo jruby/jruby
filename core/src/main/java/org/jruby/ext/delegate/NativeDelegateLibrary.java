@@ -67,7 +67,7 @@ public class NativeDelegateLibrary implements Library{
         if (method.isUndefined()) {
             // catch respond_to? and respond_to_missing? cases
             if (object.callMethod(context, "respond_to?", arg0).isTrue()) {
-                return object.callMethod(methodName);
+                return object.callMethod(context, methodName, IRubyObject.NULL_ARRAY, block);
             }
             RubyKernel.methodMissing(context, self, methodName, Visibility.PUBLIC, CallType.FUNCTIONAL, IRubyObject.NULL_ARRAY, block);
         } else if (method.getVisibility().isPrivate()) {
@@ -87,7 +87,7 @@ public class NativeDelegateLibrary implements Library{
         if (method.isUndefined()) {
             // catch respond_to? and respond_to_missing? cases
             if (object.callMethod(context, "respond_to?", arg0).isTrue()) {
-                return object.callMethod(methodName, arg1);
+                return object.callMethod(context, methodName, new IRubyObject[] {arg1}, block);
             }
             RubyKernel.methodMissing(context, self, methodName, Visibility.PUBLIC, CallType.FUNCTIONAL, new IRubyObject[] {arg1}, block);
         } else if (method.getVisibility().isPrivate()) {
@@ -107,7 +107,7 @@ public class NativeDelegateLibrary implements Library{
         if (method.isUndefined()) {
             // catch respond_to? and respond_to_missing? cases
             if (object.callMethod(context, "respond_to?", arg0).isTrue()) {
-                return object.callMethod(methodName, arg1, arg2);
+                return object.callMethod(context, methodName, new IRubyObject[] {arg1, arg2}, block);
             }
             RubyKernel.methodMissing(context, self, methodName, Visibility.PUBLIC, CallType.FUNCTIONAL, new IRubyObject[] {arg1, arg2}, block);
         } else if (method.getVisibility().isPrivate()) {
@@ -129,7 +129,7 @@ public class NativeDelegateLibrary implements Library{
         if (method.isUndefined()) {
             // catch respond_to? and respond_to_missing? cases
             if (object.callMethod(context, "respond_to?", args[0]).isTrue()) {
-                return object.callMethod(methodName, newArgs);
+                return object.callMethod(context, methodName, newArgs, block);
             }
             RubyKernel.methodMissing(context, self, methodName, Visibility.PUBLIC, CallType.FUNCTIONAL, newArgs, block);
         } else if (method.getVisibility().isPrivate()) {
