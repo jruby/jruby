@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'ruby-maven', "~> 3.1.0.0.0"
 
   # s.changes = File.read('History.txt').split(/\n{2,}/)[0..1].join("\n\n")
-  s.require_paths = ['lib/shared']
+  s.require_paths = ['lib']
 end
 
 # vim: syntax=Ruby
