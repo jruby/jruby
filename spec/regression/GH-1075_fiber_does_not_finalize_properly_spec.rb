@@ -39,4 +39,4 @@ describe "A Fiber that has been abandoned" do
     # JVM GC, finalizer, reference queue, etc threads to have spun up).
     (thread_bean.thread_count - thread_count).should < 10
   end
-end
+end if RUBY_VERSION >= "1.9"
