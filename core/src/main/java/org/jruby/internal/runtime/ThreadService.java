@@ -208,6 +208,16 @@ public class ThreadService {
         return context;
     }
 
+    /**
+     * The getCurrentContext() method always returns a context, but sometimes
+     * we need to know if a context already exists without creating one.
+     *
+     * @return true if a context is set for the current thread, false otherwise
+     */
+    public boolean hasCurrentContext() {
+        return localContext.get() != null;
+    }
+
     /*
      * Used only for Fiber context management
      */
@@ -290,8 +300,10 @@ public class ThreadService {
     
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
-        getCurrentContext().setThread(null);
-        localContext.set(null);
+        if (hasCurrentContext()) {
+            getCurrentContext().setThread(null);
+            localContext.set(null);
+        }
     }
     
     public void setCritical(boolean critical) {

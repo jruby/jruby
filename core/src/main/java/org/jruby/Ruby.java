@@ -2605,6 +2605,10 @@ public final class Ruby {
         return threadService;
     }
 
+    public boolean hasCurrentContext() {
+        return threadService.hasCurrentContext();
+    }
+
     public ThreadContext getCurrentContext() {
         return threadService.getCurrentContext();
     }

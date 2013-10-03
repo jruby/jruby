@@ -1078,20 +1078,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
-        // need to reexamine this
-        RubyThread currentThread = getRuntime().getCurrentContext().getThread();
+        if (getRuntime().hasCurrentContext()) {
+            // need to reexamine this
+            RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         
-        // If the killee thread is the same as the killer thread, just die
-        if (currentThread == this) throwThreadKill();
+            // If the killee thread is the same as the killer thread, just die
+            if (currentThread == this) throwThreadKill();
 
-        debug(this, "trying to kill");
+            debug(this, "trying to kill");
 
-        currentThread.pollThreadEvents();
+            currentThread.pollThreadEvents();
 
-        getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
+            getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
 
-        debug(this, "succeeded with kill");
-        
+            debug(this, "succeeded with kill");        
+        }
         return this;
     }
 
