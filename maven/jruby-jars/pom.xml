@@ -84,25 +84,4 @@ freezing to) a specific jruby-complete jar version.</description>
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>repo</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jruby</groupId>
-            <artifactId>gem-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-push</id>
-                <configuration>
-                  <skip>true</skip>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
