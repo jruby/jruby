@@ -64,7 +64,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.ProfileData;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.RubyDateFormat;
+import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -97,7 +97,7 @@ public final class ThreadContext {
     private WeakReference<ThreadFiber> fiber = new WeakReference<ThreadFiber>(null);
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
     // Cache format string because it is expensive to create on demand
-    private RubyDateFormat dateFormat;
+    private RubyDateFormatter dateFormatter;
     
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
@@ -301,10 +301,10 @@ public final class ThreadContext {
         return thread;
     }
     
-    public RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null)
-            dateFormat = new RubyDateFormat(this);
-        return dateFormat;
+    public RubyDateFormatter getRubyDateFormatter() {
+        if (dateFormatter == null)
+            dateFormatter = new RubyDateFormatter(this);
+        return dateFormatter;
     }
     
     public void setThread(RubyThread thread) {
@@ -1425,5 +1425,15 @@ public final class ThreadContext {
     }
     
     private Set<RecursiveComparator.Pair> recursiveSet;
+    
+    @Deprecated
+    private org.jruby.util.RubyDateFormat dateFormat;
+    
+    @Deprecated
+    public org.jruby.util.RubyDateFormat getRubyDateFormat() {
+        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, runtime.is1_9());
+        
+        return dateFormat;
+    }
     
 }

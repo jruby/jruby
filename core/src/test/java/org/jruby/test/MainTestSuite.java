@@ -43,7 +43,7 @@ import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.ShellLauncherTest;
-import org.jruby.util.TimeOutputFormatterTest;
+import org.jruby.util.RubyTimeOutputFormatterTest;
 import org.jruby.util.log.ParameterizedWriterTest;
 import org.jruby.util.log.StandardErrorLoggerTest;
 
@@ -85,7 +85,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestJavaReentrantExceptions.class);
         suite.addTestSuite(EventHookTest.class);
         suite.addTestSuite(TestMethodFactories.class);
-        suite.addTestSuite(TimeOutputFormatterTest.class);
+        suite.addTestSuite(RubyTimeOutputFormatterTest.class);
         suite.addTestSuite(org.jruby.lexer.yacc.ByteArrayLexerSourceTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
         suite.addTestSuite(TestRubyString.class);

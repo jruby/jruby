@@ -1,5 +1,5 @@
 if RUBY_VERSION >= '1.9.0'
-  load('jopenssl19/openssl/pkcs7.rb')
+  raise LoadError, "no such library in 1.9 mode: openssl/pkcs7"
 else
-  raise LoadError, "no such library in 1.8 mode: openssl/pkcs7"
+  load('jopenssl18/openssl/pkcs7.rb')
 end

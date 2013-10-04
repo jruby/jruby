@@ -30,67 +30,67 @@
  */
 package org.jruby.util;
 
-import org.jruby.util.RubyDateFormat.FieldType;
+import org.jruby.util.RubyDateFormatter.FieldType;
 
 import junit.framework.TestCase;
 
-public class TimeOutputFormatterTest extends TestCase {
-    private TimeOutputFormatter getFormatter(String flags, int width) {
-        return new TimeOutputFormatter(flags, width);
+public class RubyTimeOutputFormatterTest extends TestCase {
+    private RubyTimeOutputFormatter getFormatter(String flags, int width) {
+        return new RubyTimeOutputFormatter(flags, width);
     }
 
     public void testFormatUpperCase() {
-        TimeOutputFormatter formatter = getFormatter("^", 0);
+        RubyTimeOutputFormatter formatter = getFormatter("^", 0);
         assertEquals("UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingBlank() {
-        TimeOutputFormatter formatter = getFormatter("_", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("_", 5);
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingZeros() {
-        TimeOutputFormatter formatter = getFormatter("0", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("0", 5);
         assertEquals("000up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatNoPadding() {
-        TimeOutputFormatter formatter = getFormatter("-", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("-", 5);
         assertEquals("up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatPaddingBlankAndUpperCase() {
-        TimeOutputFormatter formatter = getFormatter("^_", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("^_", 5);
         assertEquals("   UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingWithoutFormat() {
-        TimeOutputFormatter formatter = getFormatter("", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("", 5);
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingZeroFirstOption() {
-        TimeOutputFormatter formatter = getFormatter("0_", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("0_", 5);
         assertEquals("   up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingBlankFirstOption() {
-        TimeOutputFormatter formatter = getFormatter("_0", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("_0", 5);
         assertEquals("000up", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testPaddingWithUpperCase() {
-        TimeOutputFormatter formatter = getFormatter("^", 5);
+        RubyTimeOutputFormatter formatter = getFormatter("^", 5);
         assertEquals("   UP", formatter.format("up", 0, FieldType.TEXT));
     }
 
     public void testFormatNoPaddingForBlankPaddedNumericValues() {
-        TimeOutputFormatter formatter = getFormatter("-", 3);
+        RubyTimeOutputFormatter formatter = getFormatter("-", 3);
         assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 
     public void testFormatNoPaddingForZeroPaddedNumericValues() {
-        TimeOutputFormatter formatter = getFormatter("-0", 3);
+        RubyTimeOutputFormatter formatter = getFormatter("-0", 3);
         assertEquals("42", formatter.format(null, 42, FieldType.NUMERIC3));
     }
 }
