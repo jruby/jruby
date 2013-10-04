@@ -61,8 +61,8 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.RubyDateFormat;
-import org.jruby.util.RubyDateFormat.Token;
+import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.RubyDateFormatter.Token;
 
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.Helpers;
@@ -421,7 +421,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
-        final RubyDateFormat rdf = getRuntime().getCurrentContext().getRubyDateFormat();
+        final RubyDateFormatter rdf = getRuntime().getCurrentContext().getRubyDateFormatter();
         return rdf.compileAndFormat(format.convertToString(), false, dt, nsec, null);
     }
 

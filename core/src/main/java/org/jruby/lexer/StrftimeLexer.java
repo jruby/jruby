@@ -4,8 +4,8 @@
 
 package org.jruby.lexer;
 
-import org.jruby.util.RubyDateFormat.Token;
-import org.jruby.util.TimeOutputFormatter;
+import org.jruby.util.RubyDateFormatter.Token;
+import org.jruby.util.RubyTimeOutputFormatter;
 
 
 /**
@@ -261,7 +261,7 @@ public class StrftimeLexer {
             width = 10 * width + (str.charAt(i) - '0');
             i++;
         }
-        return Token.formatter(new TimeOutputFormatter(flags, width));
+        return Token.formatter(new RubyTimeOutputFormatter(flags, width));
     }
 
 
@@ -482,7 +482,7 @@ public class StrftimeLexer {
    * @return      the next token
    * @exception   java.io.IOException  if any I/O-Error occurs
    */
-  public org.jruby.util.RubyDateFormat.Token yylex() throws java.io.IOException {
+  public org.jruby.util.RubyDateFormatter.Token yylex() throws java.io.IOException {
     int zzInput;
     int zzAction;
 

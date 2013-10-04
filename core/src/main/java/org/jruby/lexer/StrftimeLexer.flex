@@ -2,15 +2,15 @@
 
 package org.jruby.lexer;
 
-import org.jruby.util.RubyDateFormat.Token;
-import org.jruby.util.TimeOutputFormatter;
+import org.jruby.util.RubyDateFormatter.Token;
+import org.jruby.util.RubyTimeOutputFormatter;
 
 %%
 %public
 %class StrftimeLexer
 //%debug
 %unicode
-%type org.jruby.util.RubyDateFormat.Token
+%type org.jruby.util.RubyDateFormatter.Token
 %{
     StringBuilder stringBuf = new StringBuilder();
 
@@ -44,14 +44,14 @@ import org.jruby.util.TimeOutputFormatter;
             width = 10 * width + (str.charAt(i) - '0');
             i++;
         }
-        return Token.formatter(new TimeOutputFormatter(flags, width));
+        return Token.formatter(new RubyTimeOutputFormatter(flags, width));
     }
 %}
 
 Flags = [-_0#\^]+
 Width = [1-9][0-9]*
 
-// See RubyDateFormat.main to generate this
+// See RubyDateFormatter.main to generate this
 // Chars are sorted by | ruby -e 'p STDIN.each_char.sort{|a,b|a.casecmp(b).tap{|c|break a<=>b if c==0}}.join'
 Conversion = [\+AaBbCcDdeFGgHhIjkLlMmNnPpQRrSsTtUuVvWwXxYyZz] | {IgnoredModifier} | {Zone}
 // From MRI strftime.c
