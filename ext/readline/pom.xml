@@ -7,7 +7,7 @@
     <version>9000.dev</version>
   </parent>
   <artifactId>readline</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <name>JRuby Readline</name>
