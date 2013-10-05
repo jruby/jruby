@@ -74,8 +74,6 @@ public class RubyFixnum extends RubyInteger {
         
         fixnum.kindOf = new RubyModule.JavaClassKindOf(RubyFixnum.class);
 
-        fixnum.includeModule(runtime.getPrecision());
-
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
