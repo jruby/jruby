@@ -1,5 +1,0 @@
-fails(JRUBY-5656):String#unpack ignores directives text from '#' to the first newline
-fails(JRUBY-5656):String#unpack ignores directives text from '#' to the end if no newline is present
-fails(JRUBY-5656):String#unpack ignores comments at the start of the directives string
-fails(JRUBY-5656):String#unpack ignores the entire directive string if it is a comment
-fails(JRUBY-5656):String#unpack ignores multiple comments

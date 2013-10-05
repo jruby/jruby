@@ -1,4 +1,0 @@
-fails:String#intern special cases +(binary) and -(binary)
-fails:String#intern special cases !@ and ~@
-fails:String#intern special cases !(unary) and ~(unary)
-fails:String#intern special cases +(unary) and -(unary)

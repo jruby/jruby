@@ -1,1 +1,0 @@
-fails:Readline.vi_editing_mode returns nil

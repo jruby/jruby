@@ -1,2 +1,0 @@
-fails(redmine:2525):URI#== ignores capitalization of scheme
-fails:URI#== ignores capitalization of scheme

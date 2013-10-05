@@ -1,1 +1,0 @@
-fails(JRUBY-3336):Kernel#instance_eval shares a scope across sibling evals

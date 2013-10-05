@@ -135,27 +135,6 @@ import org.jruby.util.cli.Options;
  * library loaded</li>
  * </ol>
  *
- * <h2>How to make a class that can get required by JRuby</h2>
- *
- * <p>First, decide on what name should be used to require the extension. In
- * this purely hypothetical example, this name will be
- * 'active_record/connection_adapters/jdbc_adapter'. Then create the class
- * name for this require-name, by looking at the guidelines above. Our class
- * should be named active_record.connection_adapters.JdbcAdapterService, and
- * implement one of the library-interfaces. The easiest one is
- * BasicLibraryService, where you define the basicLoad-method, which will
- * get called when your library should be loaded.</p>
- *
- * <p>The next step is to either put your compiled class on JRuby's
- * classpath, or package the class/es inside a jar-file. To package into a
- * jar-file, we first create the file, then rename it to jdbc_adapter.jar.
- * Then we put this jar-file in the directory
- * active_record/connection_adapters somewhere in JRuby's load path. For
- * example, copying jdbc_adapter.jar into
- * JRUBY_HOME/lib/ruby/site_ruby/1.8/active_record/connection_adapters will
- * make everything work. If you've packaged your extension inside a RubyGem,
- * write a setub.rb-script that copies the jar-file to this place.</p>
- *
  * @author jpetersen
  */
 public class LoadService {

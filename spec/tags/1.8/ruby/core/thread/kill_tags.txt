@@ -1,1 +1,0 @@
-fails(JRUBY-3473):Thread#kill killing dying running does nothing

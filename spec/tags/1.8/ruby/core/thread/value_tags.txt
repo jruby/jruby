@@ -1,2 +1,0 @@
-fails(JRUBY-3459):Thread#value is false for a killed thread
-fails(JRUBY-3459):Thread#value is false for an uncaught exception thrown from a dying thread

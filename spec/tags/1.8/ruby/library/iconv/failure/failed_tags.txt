@@ -1,2 +1,0 @@
-fails(JRUBY-2543):Iconv::Failure#failed returns a substring of the original string passed to Iconv that starts at the character which caused the exception
-fails(JRUBY-2543):Iconv::Failure#failed for Iconv.iconv and Iconv.conv returns an array containing a single element when instantiated

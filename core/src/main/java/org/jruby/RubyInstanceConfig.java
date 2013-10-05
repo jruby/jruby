@@ -83,12 +83,7 @@ public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
-        String compatString = Options.COMPAT_VERSION.load();
-        compatVersion = CompatVersion.getVersionFromString(compatString);
-        if (compatVersion == null) {
-            error.println("Compatibility version `" + compatString + "' invalid; use 1.8, 1.9, or 2.0. Using 1.8.");
-            compatVersion = CompatVersion.RUBY1_8;
-        }
+        compatVersion = CompatVersion.RUBY1_9;
 
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;

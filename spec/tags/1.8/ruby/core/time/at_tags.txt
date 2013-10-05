@@ -1,2 +1,0 @@
-fails:Time.at passed non-Time, non-Numeric with an argument that responds to #to_int raises a TypeError
-fails:Time.at passed non-Time, non-Numeric with an argument that responds to #to_r raises a TypeError

@@ -1,2 +1,0 @@
-windows(JRUBY-4523):File.dirname returns all the components of filename except the last one (edge cases on windows)
-windows(JRUBY-4523):File.dirname returns the return all the components of filename except the last one (windows unc)

@@ -28,7 +28,7 @@ namespace :spec do
     :all => [:int, :jit, :aot]
   }
 
-  {"" => "--1.8", "19" => "--1.9"}.each do |version_suffix, version_arg|
+  {"" => "--1.9"}.each do |version_suffix, version_arg|
     permute_specs "ji#{version_suffix}", compile_flags, "test:compile" do |t|
       t.ruby_opts = ["-I#{rake_location}", version_arg]
       t.rspec_opts ||= []

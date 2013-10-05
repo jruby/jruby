@@ -1,1 +1,0 @@
-windows(JRUBY-4520):ARGF.binmode puts alls subsequent stream reading through ARGF into binmode

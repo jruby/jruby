@@ -1,1 +1,0 @@
-fails(spec-ci):File.ftype returns 'socket' when the file is a socket

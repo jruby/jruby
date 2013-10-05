@@ -1,1 +1,0 @@
-fails(JRUBY-3459):Thread#join returns the dead thread even if an uncaught exception is thrown from ensure block

@@ -1,2 +1,0 @@
-fails:Process.wait2 returns the pid and status of child process
-windows(JRUBY-4354):Process.wait2 raises a StandardError if no child processes exist

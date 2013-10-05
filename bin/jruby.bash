@@ -263,7 +263,7 @@ do
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
         fi 
-        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
+        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;

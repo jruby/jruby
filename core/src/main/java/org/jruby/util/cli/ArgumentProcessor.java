@@ -415,13 +415,13 @@ public class ArgumentProcessor {
                         
                         break FOR;
                     } else if (argument.equals("--1.9")) {
-                        config.setCompatVersion(CompatVersion.RUBY1_9);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--2.0")) {
-                        config.setCompatVersion(CompatVersion.RUBY2_0);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--1.8")) {
-                        config.setCompatVersion(CompatVersion.RUBY1_8);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);

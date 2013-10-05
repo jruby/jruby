@@ -1,2 +1,0 @@
-fails(JRUBY-2334):REXML::Document#add overwrites existing DocType
-fails(JRUBY-2334):REXML::Document#<< overwrites existing DocType

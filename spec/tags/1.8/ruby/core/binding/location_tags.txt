@@ -1,3 +1,0 @@
-fails(compiler, JRUBY-6814):Binding#eval inherits __LINE__ from the enclosing scope
-fails(compiler, JRUBY-6814):Binding#eval increments __LINE__ on each line of a multiline eval
-fails(compiler, JRUBY-6814):Binding#eval inherits __FILE__ from the enclosing scope

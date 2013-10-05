@@ -1,1 +1,0 @@
-fails:Rational#inspect returns a reconstructable string representation of self

@@ -1,1 +1,0 @@
-fails(redmine:2428):URI#eql? returns false for when compared to non-uri objects
