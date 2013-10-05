@@ -1177,8 +1177,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         } else if (abortOnException(runtime)) {
             runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
             return;
-        } else {
-            // mri-6647: log something for raised exceptions when not aborting
+        } else if (runtime.getDebug().isTrue()) {
             runtime.printError(exception.getException());
         }
         exitingException = exception;

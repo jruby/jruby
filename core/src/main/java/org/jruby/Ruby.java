@@ -2674,7 +2674,6 @@ public final class Ruby {
         }
 
         PrintStream errorStream = getErrorStream();
-        errorStream.println("Unhandled exception in thread " + Thread.currentThread().getName() + ":");
         errorStream.print(config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err)));
     }
     
