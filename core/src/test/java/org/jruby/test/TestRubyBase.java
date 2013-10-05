@@ -59,9 +59,7 @@ public class TestRubyBase extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         if (runtime == null) {
-            RubyInstanceConfig config = new RubyInstanceConfig();
-            config.setCompatVersion(CompatVersion.RUBY1_8);
-        	runtime = Ruby.newInstance(config);
+            runtime = Ruby.newInstance();
         }
     }
 

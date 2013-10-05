@@ -631,10 +631,8 @@ public class RubyInstanceConfig {
     /**
      * @see Options.COMPAT_VERSION
      */
+    @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
-        if (compatVersion == null) compatVersion = CompatVersion.RUBY1_8;
-
-        this.compatVersion = compatVersion;
     }
 
     public void setOutput(PrintStream newOutput) {

@@ -504,8 +504,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param version a Ruby version
      */
+    @Deprecated
     public void setCompatVersion(CompatVersion version) {
-        provider.getRubyInstanceConfig().setCompatVersion(version);
     }
 
     /**

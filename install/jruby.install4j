@@ -160,7 +160,7 @@
           <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
         </text>
       </splashScreen>
-      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--1.9 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
+      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="&quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
         <classPath>
           <archive location="lib/jruby.jar" failOnError="false" />
         </classPath>

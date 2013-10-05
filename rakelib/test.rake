@@ -161,8 +161,6 @@ namespace :test do
     desc "Run the main JUnit test suite"
     task :main => 'test:compile' do
       junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '512M' do
-        env :key => "JRUBY_OPTS", :value => "--1.9"
-        sysproperty :key => 'jruby.compat.version', :value => '1.9'
         jvmarg :line => '-ea'
       end
     end

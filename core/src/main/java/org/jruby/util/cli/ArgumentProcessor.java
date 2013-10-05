@@ -352,7 +352,8 @@ public class ArgumentProcessor {
                         break;
                     } else if (argument.equals("--compat")) {
                         characterIndex = argument.length();
-                        config.setCompatVersion(CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9"))));
+                        grabValue(getArgumentError("--compat takes an argument, but will be ignored"));
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--copyright")) {
                         config.setShowCopyright(true);

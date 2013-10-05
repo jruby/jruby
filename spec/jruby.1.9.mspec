@@ -12,9 +12,6 @@ WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
-# update env to force children into proper mode
-ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + " --1.9"
-
 class MSpecScript
   # Language features specs
   set :language, [

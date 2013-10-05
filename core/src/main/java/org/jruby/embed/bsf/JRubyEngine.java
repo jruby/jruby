@@ -152,9 +152,6 @@ public class JRubyEngine extends BSFEngineImpl {
         container = new ScriptingContainer(scope, behavior);
         SystemPropertyCatcher.setConfiguration(container);
         //container.getProvider().setLoadPaths(getClassPath(manager));
-        if (!SystemPropertyCatcher.isRuby19(language)) {
-            container.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_8);
-        }
         Ruby runtime = container.getProvider().getRuntime();
 
         if (someDeclaredBeans != null && someDeclaredBeans.size() > 0) {
