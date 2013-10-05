@@ -56,7 +56,7 @@
         </includes>
       </resource>
     </resources>
-    <plugins>      
+    <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -89,7 +89,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>build source archive - tar</id>
+            <id>unzip jruby-core.jar</id>
             <phase>package</phase>
             <goals>
               <goal>exec</goal>
@@ -148,7 +148,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <version>1.5</version>
         <configuration>
           <projectsDirectory>src/it</projectsDirectory>
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
@@ -171,4 +170,54 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>sonatype-oss-release</id>
+      <build>
+	<resources>
+	  <resource>
+	    <targetPath>${project.build.directory}</targetPath>
+	    <directory>${jruby.basedir}/core/target</directory>
+	    <includes>
+	      <include>*-sources.jar</include>
+	      <include>*-javadoc.jar</include>
+	    </includes>
+	  </resource>
+	</resources>
+	<plugins>      
+	  <plugin>
+	    <artifactId>maven-source-plugin</artifactId>
+	    <configuration>
+	      <skipSource>true</skipSource>
+	    </configuration>
+	  </plugin>
+	  <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>build-helper-maven-plugin</artifactId>
+	    <executions>
+	      <execution>
+		<id>attach-artifacts</id>
+		<phase>package</phase>
+		<goals>
+		  <goal>attach-artifact</goal>
+		</goals>
+		<configuration>
+		  <artifacts>
+		    <artifact>
+		      <file>${project.build.directory}/jruby-core-${project.version}-sources.jar</file>
+		      <classifier>sources</classifier>
+		    </artifact>
+		    <artifact>
+		      <file>${project.build.directory}/jruby-core-${project.version}-javadoc.jar</file>
+		      <classifier>javadoc</classifier>
+		    </artifact>
+		  </artifacts>
+		</configuration>
+	      </execution>
+	    </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

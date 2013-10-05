@@ -36,6 +36,37 @@
   <build>
     <plugins>
       <plugin>
+	<artifactId>maven-source-plugin</artifactId>
+	<configuration>
+	  <skipSource>true</skipSource>
+	</configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${basedir}/src/empty.jar</file>
+                  <classifier>sources</classifier>
+                </artifact>
+                <artifact>
+                  <file>${basedir}/src/empty.jar</file>
+                  <classifier>javadoc</classifier>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
 	<groupId>org.apache.felix</groupId>
 	<artifactId>maven-bundle-plugin</artifactId>
       </plugin>
@@ -58,7 +89,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <version>1.5</version>
         <configuration>
           <projectsDirectory>src/it</projectsDirectory>
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
