@@ -92,7 +92,6 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
     env :key => "JRUBY_OPTS", :value => ""
     # launch in the same mode we're testing, since config is loaded by top process
-    arg :line => "--#{ms[:compat]}"
 
     # if 1.9 mode, add . to load path so mspec config is found
     arg :line => "-I ." if ms[:compat] == '1.9'
@@ -106,7 +105,6 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Djruby.objectspace.enabled=#{ms[:objectspace_enabled]}"
     arg :line => "-T -J-Djruby.thread.pool.enabled=#{ms[:thread_pooling]}"
     arg :line => "-T -J-Djruby.reflection=#{ms[:reflection]}"
-    arg :line => "-T --#{ms[:compat]}"
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
