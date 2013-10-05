@@ -233,14 +233,8 @@ public class RubyMatchData extends RubyObject {
         if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
     }
     
-    // FIXME: We should have a better way of using the proper method based
-    // on version as a general solution...
     private RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
-        if (runtime.is1_9()) {
-            return str.makeShared19(runtime, begin, length);
-        } else {
-            return str.makeShared(runtime, begin, length);
-        }
+        return str.makeShared19(runtime, begin, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -330,7 +324,7 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat("nil".getBytes());
             } else {
-                result.append(runtime.is1_9() ? ((RubyString)v).inspect19() : ((RubyString)v).inspect());
+                result.append(((RubyString)v).inspect19());
             }
         }
 

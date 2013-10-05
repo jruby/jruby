@@ -228,9 +228,7 @@ public class RubyDir extends RubyObject {
     }
 
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
-        if (context.runtime.is1_9()) return RubyFile.get_path(context, arg).getByteList();
-
-        return arg.convertToString().getByteList();
+        return RubyFile.get_path(context, arg).getByteList();
     }
 
     private static String convertGlobToRegEx(String line) {

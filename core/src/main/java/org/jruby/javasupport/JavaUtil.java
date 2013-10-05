@@ -1445,11 +1445,7 @@ public class JavaUtil {
 
             // 1.9 support for encodings
             // TODO: Fix charset use for JRUBY-4553
-            if (string.getRuntime().is1_9()) {
-                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
-            }
-
-            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
         } catch (UnsupportedEncodingException uee) {
             return string.toString();
         }

@@ -2027,19 +2027,17 @@ public class Pack {
                 }
             }
 
-            if (runtime.is1_9()) {
-                switch (type) {
-                    case 'U':
-                        if (enc_info == 1) enc_info = 2;
-                        break;
-                    case 'm':
-                    case 'M':
-                    case 'u':
-                        break;
-                    default:
-                        enc_info = 0;
-                        break;
-                }
+            switch (type) {
+                case 'U':
+                    if (enc_info == 1) enc_info = 2;
+                    break;
+                case 'm':
+                case 'M':
+                case 'u':
+                    break;
+                default:
+                    enc_info = 0;
+                    break;
             }
 
             Converter converter = converters[type];
@@ -2272,7 +2270,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        if (runtime.is1_9() && occurrences == 0 && type == 'm' && !ignoreStar) {
+                        if (occurrences == 0 && type == 'm' && !ignoreStar) {
                             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
                                     lCurElemString.getBegin(), lCurElemString.length(),
                                     lCurElemString.length(), (byte)type, false);
@@ -2377,19 +2375,17 @@ public class Pack {
         RubyString output = runtime.newString(result);
         if (taintOutput) output.taint(runtime.getCurrentContext());
 
-        if (runtime.is1_9()) {
-            switch (enc_info)
-            {
-                case 1:
-                    output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
-                    break;
-                case 2:
-                    output.force_encoding(runtime.getCurrentContext(),
-                            runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
-                    break;
-                default:
-                    /* do nothing, keep ASCII-8BIT */
-            }
+        switch (enc_info)
+        {
+            case 1:
+                output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
+                break;
+            case 2:
+                output.force_encoding(runtime.getCurrentContext(),
+                        runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
+                break;
+            default:
+                /* do nothing, keep ASCII-8BIT */
         }
 
         return output;

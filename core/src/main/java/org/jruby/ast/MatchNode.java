@@ -79,8 +79,6 @@ public class MatchNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
        RubyRegexp pattern = ((RubyRegexp) regexpNode.interpret(runtime, context, self, aBlock));
-        return runtime.is1_9() ?
-                pattern.op_match2_19(context) :
-                pattern.op_match2(context);
+        return pattern.op_match2_19(context);
     }
 }

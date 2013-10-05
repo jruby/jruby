@@ -479,8 +479,8 @@ public class RubyTime extends RubyObject {
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
         // ignore < usec on 1.8
-        long nanosec = runtime.is1_9() ? this.nsec : (this.nsec / 1000 * 1000);
-        long nsec_other = runtime.is1_9() ? other.nsec : (other.nsec / 1000 * 1000);
+        long nanosec = this.nsec;
+        long nsec_other = other.nsec;
 
 		if (millis > millis_other || (millis == millis_other && nanosec > nsec_other)) {
 		    return 1;
@@ -909,32 +909,31 @@ public class RubyTime extends RubyObject {
         RubyString string = RubyString.newString(obj.getRuntime(), new ByteList(dumpValue));
 
         // 1.9 includes more nsecs
-        if (runtime.is1_9()) {
-            copyInstanceVariablesInto(string);
+        copyInstanceVariablesInto(string);
 
-            // nanos in numerator/denominator form
-            if (nanosec != 0) {
-                string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
-                string.setInternalVariable("nano_den", runtime.newFixnum(1));
-            }
-
-            // submicro for 1.9.1 compat
-            byte[] submicro = new byte[2];
-            int len = 2;
-            submicro[1] = (byte)((nanosec % 10) << 4);
-            nanosec /= 10;
-            submicro[0] = (byte)(nanosec % 10);
-            nanosec /= 10;
-            submicro[0] |= (byte)((nanosec % 10) << 4);
-            if (submicro[1] == 0) len = 1;
-            string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
-
-            // time zone
-            if (dt.getZone() != DateTimeZone.UTC) {
-                long offset = dt.getZone().getOffset(dt.getMillis());
-                string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
-            }
+        // nanos in numerator/denominator form
+        if (nanosec != 0) {
+            string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
+            string.setInternalVariable("nano_den", runtime.newFixnum(1));
         }
+
+        // submicro for 1.9.1 compat
+        byte[] submicro = new byte[2];
+        int len = 2;
+        submicro[1] = (byte)((nanosec % 10) << 4);
+        nanosec /= 10;
+        submicro[0] = (byte)(nanosec % 10);
+        nanosec /= 10;
+        submicro[0] |= (byte)((nanosec % 10) << 4);
+        if (submicro[1] == 0) len = 1;
+        string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+
+        // time zone
+        if (dt.getZone() != DateTimeZone.UTC) {
+            long offset = dt.getZone().getOffset(dt.getMillis());
+            string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
+        }
+
         return string;
     }
 
@@ -1016,12 +1015,7 @@ public class RubyTime extends RubyObject {
                 double dbl = RubyNumeric.num2dbl(arg);
                 long nano;
 
-                if (runtime.is1_9()) {
-                    nano = Math.round((dbl - seconds) * 1000000000);
-                } else {
-                    long micro = Math.round((dbl - seconds) * 1000000);
-                    nano = micro * 1000;
-                }
+                nano = Math.round((dbl - seconds) * 1000000000);
 
                 if (dbl < 0 && nano != 0) {
                     nano += 1000000000;
@@ -1182,22 +1176,21 @@ public class RubyTime extends RubyObject {
 
         from.getInstanceVariables().copyInstanceVariablesInto(time);
 
-        if (runtime.is1_9()) {
-            // pull out nanos, offset
-            IRubyObject nano_num = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_num");
-            IRubyObject nano_den = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_den");
-            IRubyObject offset = (IRubyObject) from.getInternalVariables().getInternalVariable("offset");
+        // pull out nanos, offset
+        IRubyObject nano_num = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_num");
+        IRubyObject nano_den = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_den");
+        IRubyObject offset = (IRubyObject) from.getInternalVariables().getInternalVariable("offset");
 
-            if (nano_num != null && nano_den != null) {
-                long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
-                time.nsec += nanos;
-            }
-
-            if (offset != null) {
-                long tz = offset.convertToInteger().getLongValue();
-                time.dt = dt.withZone(DateTimeZone.forOffsetMillis((int)(tz * 1000)));
-            }
+        if (nano_num != null && nano_den != null) {
+            long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
+            time.nsec += nanos;
         }
+
+        if (offset != null) {
+            long tz = offset.convertToInteger().getLongValue();
+            time.dt = dt.withZone(DateTimeZone.forOffsetMillis((int)(tz * 1000)));
+        }
+
         return time;
     }
 
@@ -1309,14 +1302,6 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        if (!runtime.is1_9()) {
-            if (0 <= year && year < 39) {
-                year += 2000;
-            } else if (69 <= year && year < 139) {
-                year += 1900;
-            }
-        }
-
         DateTime dt;
         // set up with min values and then add to allow rolling over
         try {
@@ -1329,7 +1314,7 @@ public class RubyTime extends RubyObject {
                     .plusSeconds(int_args[3]);
 
             // 1.9 will observe fractional seconds *if* not given usec
-            if (runtime.is1_9() && !args[5].isNil()
+            if (!args[5].isNil()
                     && args[6].isNil()) {
                 double secs = RubyFloat.num2dbl(args[5]);
                 int int_millis = (int) (secs * 1000) % 1000;
@@ -1359,7 +1344,7 @@ public class RubyTime extends RubyObject {
         if (args.length != 8 && !args[6].isNil()) {
             boolean fractionalUSecGiven = args[6] instanceof RubyFloat || args[6] instanceof RubyRational;
 
-            if (runtime.is1_9() && fractionalUSecGiven) {
+            if (fractionalUSecGiven) {
                 double micros = RubyNumeric.num2dbl(args[6]);
                 time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = ((long) (micros * 1000) % 1000000);

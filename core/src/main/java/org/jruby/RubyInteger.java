@@ -73,10 +73,6 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integer.getSingletonClass().undefineMethod("new");
 
-        if (!runtime.is1_9()) {
-            integer.includeModule(runtime.getPrecision());
-        }
-
         integer.defineAnnotatedMethods(RubyInteger.class);
         
         return integer;

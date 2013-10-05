@@ -94,9 +94,7 @@ public class RubyZlib {
 
         cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
         RubyClass cGzError = cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        if (runtime.is1_9()) {
-            cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
-        }
+        cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
         cGzError.defineAnnotatedMethods(RubyGzipFile.Error.class);
         cGzFile.defineClassUnder("CRCError", cGzError, cGzError.getAllocator());
         cGzFile.defineClassUnder("NoFooter", cGzError, cGzError.getAllocator());
@@ -339,10 +337,8 @@ public class RubyZlib {
     static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
         RubyException excn = RubyException.newException(runtime, errorClass, message);
-        if (runtime.is1_9()) {
-            // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
-            excn.setInstanceVariable("@input", runtime.getNil());
-        }
+        // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
+        excn.setInstanceVariable("@input", runtime.getNil());
         return new RaiseException(excn, true);
     }
 }

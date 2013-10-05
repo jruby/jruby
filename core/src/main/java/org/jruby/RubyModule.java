@@ -3510,9 +3510,7 @@ public class RubyModule extends RubyObject {
     }
    
     protected final String validateConstant(String name) {
-        if (getRuntime().is1_9() ?
-                IdUtil.isValidConstantName19(name) :
-                IdUtil.isValidConstantName(name)) {
+        if (IdUtil.isValidConstantName19(name)) {
             return name;
         }
         throw getRuntime().newNameError("wrong constant name " + name, name);

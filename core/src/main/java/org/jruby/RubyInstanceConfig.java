@@ -1503,10 +1503,7 @@ public class RubyInstanceConfig {
 
         LoadServiceCreator DEFAULT = new LoadServiceCreator() {
                 public LoadService create(Ruby runtime) {
-                    if (runtime.is1_9()) {
-                        return new LoadService19(runtime);
-                    }
-                    return new LoadService(runtime);
+                    return new LoadService19(runtime);
                 }
             };
     }

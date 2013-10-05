@@ -233,12 +233,8 @@ public class RubyRational extends RubyNumeric {
         if (num instanceof RubyFixnum || num instanceof RubyBignum) return;
         if (!(num instanceof RubyNumeric) || !num.callMethod(context, "integer?").isTrue()) {
             Ruby runtime = num.getRuntime();
-            if (runtime.is1_9()) {
-                throw runtime.newTypeError("can't convert "
-                        + num.getMetaClass().getName() + " into Rational");
-            } else {
-                throw runtime.newArgumentError("not an integer");
-            }
+            throw runtime.newTypeError("can't convert "
+                    + num.getMetaClass().getName() + " into Rational");
         }
     }
 

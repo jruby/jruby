@@ -52,6 +52,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "Pathname")
 public class RubyPathname extends RubyObject {
     private RubyString path;
+    
+    private static final String TO_PATH_METHOD = "to_path";
 
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
@@ -193,7 +195,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        String toPath = toPathMethod(context.runtime);
+        String toPath = TO_PATH_METHOD;
         if (path.respondsTo(toPath)) {
             path = path.callMethod(context, toPath);
         }
@@ -208,10 +210,6 @@ public class RubyPathname extends RubyObject {
         // TODO: remove (either direct bridge to field or all native)
         setInstanceVariable("@path", path);
         return this;
-    }
-
-    private static String toPathMethod(Ruby runtime) {
-        return runtime.is1_8() ? "to_str" : "to_path";
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_8)

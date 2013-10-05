@@ -61,14 +61,9 @@ public class Regexp extends Operand {
         if ((!regexp.hasKnownValue() && !options.isOnce()) || (rubyRegexp == null) || context.runtime.getKCode() != rubyRegexp.getKCode()) {
             RubyRegexp re;
             if (regexp instanceof CompoundString) {
-                if (context.runtime.is1_9()) {
-                    RubyString[] pieces  = ((CompoundString)regexp).retrievePieces(context, self, currDynScope, temp);
-                    RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
-                    re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
-                } else {
-                    RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
-                    re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
-                }
+                RubyString[] pieces  = ((CompoundString)regexp).retrievePieces(context, self, currDynScope, temp);
+                RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+                re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             } else {
                 RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
                 re = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);

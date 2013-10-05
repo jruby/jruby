@@ -1176,18 +1176,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
-            RubyException systemExit;
-
-            if (!runtime.is1_9()) {
-                runtime.printError(rubyException);
-                String message =  rubyException.message.convertToString().toString();
-                systemExit = RubySystemExit.newInstance(runtime, 1, message);
-                systemExit.set_backtrace(rubyException.backtrace());
-            } else {
-                systemExit = rubyException;
-            }
-
-            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
+            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
             return;
         } else {
             // mri-6647: log something for raised exceptions when not aborting

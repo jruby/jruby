@@ -116,7 +116,7 @@ public class BackRefNode extends Node {
         IRubyObject backref = context.getBackRef();
 
         if (backref instanceof RubyMatchData) {
-            return runtime.getDefinedMessage(runtime.is1_9() ? DefinedMessage.GLOBAL_VARIABLE : definedMessage);
+            return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
         }
         return null;
     }

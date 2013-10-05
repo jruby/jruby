@@ -257,11 +257,6 @@ public class LoadService {
             }
 
         } catch(SecurityException ignore) {}
-
-        // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
-        if (!runtime.is1_9()) {
-            addPath(".");
-        }
     }
 
     /**
@@ -415,7 +410,7 @@ public class LoadService {
         }
 
         if (!requireLocks.lock(requireName)) {
-            if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
+            if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(requireName);
             }
             return RequireState.CIRCULAR;
@@ -1118,8 +1113,6 @@ public class LoadService {
      * passing it to tryResourceAsIs to have the ./ replaced by CWD.
      */
     protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
-        if (!runtime.is1_9()) return tryResourceFromCWD(state, baseName, suffixType);
-        
         LoadServiceResource foundResource = null;
 
         for (String suffix : suffixType.getSuffixes()) {
@@ -1447,7 +1440,7 @@ public class LoadService {
                 
                 debugLogTry(debugName, actualPath.toString());
                 
-                if (reportedPath.contains("..") && runtime.is1_9()) {
+                if (reportedPath.contains("..")) {
                     // try to canonicalize if path contains ..
                     try {
                         actualPath = actualPath.getCanonicalFile();

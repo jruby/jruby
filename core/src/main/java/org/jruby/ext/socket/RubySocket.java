@@ -463,11 +463,7 @@ public class RubySocket extends RubyBasicSocket {
                 }
 
                 if(!result) {
-                    if (runtime.is1_9()) {
-                        throw runtime.newErrnoEINPROGRESSWritableError();
-                    } else {
-                        throw runtime.newErrnoEINPROGRESSError();
-                    }
+                    throw runtime.newErrnoEINPROGRESSWritableError();
                 }
 
             } else if (channel instanceof UnixSocketChannel) {
@@ -485,11 +481,7 @@ public class RubySocket extends RubyBasicSocket {
             throw runtime.newErrnoEISCONNError();
 
         } catch(ConnectionPendingException e) {
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEINPROGRESSWritableError();
-            } else {
-                throw runtime.newErrnoEINPROGRESSError();
-            }
+            throw runtime.newErrnoEINPROGRESSWritableError();
 
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");

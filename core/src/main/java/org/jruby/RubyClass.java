@@ -217,7 +217,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "allocate")
     public IRubyObject allocate() {
         if (superClass == null) {
-            if(!(runtime.is1_9() && this == runtime.getBasicObject())) {
+            if(this != runtime.getBasicObject()) {
                 throw runtime.newTypeError("can't instantiate uninitialized class");
             }
         }
@@ -1050,7 +1050,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
         
         if (superClazz == null) {
-            if (runtime.is1_9() && metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1060,7 +1060,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void checkNotInitialized() {
-        if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {
+        if (superClass != null || this == runtime.getBasicObject()) {
             throw runtime.newTypeError("already initialized class");
         }
     }

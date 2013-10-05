@@ -1142,11 +1142,7 @@ public class RubyHash extends RubyObject implements Map {
             if (block.isGiven()) return block.yield(context, args[0]);
             
             if (args.length == 1) {
-                if (runtime.is1_9()) {
-                    throw runtime.newKeyError("key not found: " + args[0]);
-                } else {
-                    throw runtime.newIndexError("key not found");
-                }
+                throw runtime.newKeyError("key not found: " + args[0]);
             }
             return args[1];
         }
@@ -1346,7 +1342,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block, context.runtime.is1_9()) : enumeratorize(context.runtime, this, "each_pair");
+        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorize(context.runtime, this, "each_pair");
     }
 
     /** rb_hash_each_value

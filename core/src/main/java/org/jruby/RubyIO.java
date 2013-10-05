@@ -280,10 +280,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ioClass.setConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
         ioClass.setConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
 
-        if (runtime.is1_9()) {
-            ioClass.defineModuleUnder("WaitReadable");
-            ioClass.defineModuleUnder("WaitWritable");
-        }
+        ioClass.defineModuleUnder("WaitReadable");
+        ioClass.defineModuleUnder("WaitWritable");
 
         return ioClass;
     }
@@ -320,11 +318,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected void reopenPath(Ruby runtime, IRubyObject[] args) {
         IRubyObject pathString;
         
-        if (runtime.is1_9()) {
-            pathString = RubyFile.get_path(runtime.getCurrentContext(), args[0]);
-        } else {
-            pathString = args[0].convertToString();
-        }
+        pathString = RubyFile.get_path(runtime.getCurrentContext(), args[0]);
 
         // TODO: check safe, taint on incoming string
 
@@ -537,11 +531,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (separator != null) {
             if (separator.getRealSize() == 0) return Stream.PARAGRAPH_DELIMETER;
 
-            if (runtime.is1_9()) {
-                if (separator.getEncoding() != getEnc()) {
-                    separator = Transcoder.strConvEncOpts(runtime.getCurrentContext(), separator,
-                            getEnc2(), getEnc(), 0, runtime.getNil());
-                }
+            if (separator.getEncoding() != getEnc()) {
+                separator = Transcoder.strConvEncOpts(runtime.getCurrentContext(), separator,
+                        getEnc2(), getEnc(), 0, runtime.getNil());
             }
         }
 
@@ -582,9 +574,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     private IRubyObject getlineEmptyString(Ruby runtime) {
-        if (runtime.is1_9()) return RubyString.newEmptyString(runtime, getReadEncoding());
-
-        return RubyString.newEmptyString(runtime);
+        return RubyString.newEmptyString(runtime, getReadEncoding());
     }
     
     private IRubyObject getlineAll(ThreadContext context, OpenFile myOpenFile) throws IOException, BadDescriptorException {
@@ -605,8 +595,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         
         try {
-            boolean is19 = runtime.is1_9();
-            
             OpenFile myOpenFile = getOpenFileChecked();
 
             myOpenFile.checkReadable(runtime);
@@ -622,7 +610,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else if (limit == 0) {
                 return getlineEmptyString(runtime);
             } else if (separator != null && separator.length() == 1 && limit < 0 && 
-                    (!is19 || (!needsReadConversion() && getReadEncoding().isAsciiCompatible()))) {
+                    (!needsReadConversion() && getReadEncoding().isAsciiCompatible())) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
                 Stream readStream = myOpenFile.getMainStreamSafe();
@@ -636,7 +624,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 // logic we need to do one additional transcode of the sep to
                 // match the pre-transcoded encoding.  This is gross and we should
                 // mimick MRI.
-                if (is19 && separator != null && separator.getEncoding() != getInputEncoding()) {
+                if (separator != null && separator.getEncoding() != getInputEncoding()) {
                     separator = Transcoder.strConvEncOpts(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(), 0, context.nil);
                     newline = separator.get(separator.length() - 1) & 0xFF;
                 }
@@ -646,7 +634,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     boolean update = false;
                     boolean limitReached = false;
                     
-                    if (is19) makeReadConversion(context);
+                    makeReadConversion(context);
                     
                     while (true) {
                         do {
@@ -705,7 +693,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                     }
                     
-                    if (is19 && readconv != null) buf = readconv.transcode(context, buf);
+                    if (readconv != null) buf = readconv.transcode(context, buf);
                     
                     if (isParagraph && c != -1) swallow('\n');
                     if (!update) return runtime.getNil();
@@ -753,7 +741,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
         ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
-        if (runtime.is1_9()) newBuf.setEncoding(getReadEncoding());
+        newBuf.setEncoding(getReadEncoding());
 
         RubyString str = RubyString.newString(runtime, newBuf);
         str.setTaint(true);
@@ -1367,11 +1355,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             int written = stream.writenonblock(str.getByteList());
             if (written == 0) {
                 if (useException) {
-                    if (runtime.is1_9()) {
-                        throw runtime.newErrnoEAGAINWritableError("");
-                    } else {
-                        throw runtime.newErrnoEWOULDBLOCKError();
-                    }
+                    throw runtime.newErrnoEAGAINWritableError("");
                 } else {
                     return runtime.fastNewSymbol("wait_writable");
                 }
@@ -1457,9 +1441,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean eagain = false;
         Stream writeStream = openFile.getWriteStream();
         
-        if (getRuntime().is1_9()) {
-            buffer = (RubyString)doWriteConversion(getRuntime().getCurrentContext(), buffer);
-        }
+        buffer = (RubyString)doWriteConversion(getRuntime().getCurrentContext(), buffer);
 
         int len = buffer.size();
         
@@ -2468,7 +2450,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
         
-        if (!runtime.is1_9()) return super.inspect();
         if (openFile == null) return super.inspect();
         
         Stream stream = openFile.getMainStream();
@@ -2623,7 +2604,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // io_enc_str
     private IRubyObject ioEncStr(IRubyObject str) {
         str.setTaint(true);
-        if (getRuntime().is1_9()) ((EncodingCapable)str).setEncoding(getReadEncoding());
+        ((EncodingCapable)str).setEncoding(getReadEncoding());
         return str;
     }
     
@@ -2834,11 +2815,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 Ruby ruby = context.runtime;
 
                 if (useException) {
-                    if (ruby.is1_9()) {
-                        throw ruby.newErrnoEAGAINReadableError("");
-                    } else {
-                        throw ruby.newErrnoEAGAINError("");
-                    }
+                    throw ruby.newErrnoEAGAINReadableError("");
                 } else {
                     return ruby.fastNewSymbol("wait_readable");
                 }
@@ -3205,7 +3182,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected IRubyObject readAll(ThreadContext context) throws BadDescriptorException, EOFException, IOException {
         Ruby runtime = getRuntime();
         
-        if (runtime.is1_9() && needsReadConversion()) {
+        if (needsReadConversion()) {
             openFile.setBinmode();
             
             makeReadConversion(context);
@@ -3410,7 +3387,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
-            if (runtime.is1_9()) str.setEncoding(getReadEncoding());
+            str.setEncoding(getReadEncoding());
             str.setTaint(true);
             str.cat(c);
 
@@ -4686,7 +4663,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static ByteList getNilByteList(Ruby runtime) {
-        return runtime.is1_9() ? ByteList.EMPTY_BYTELIST : NIL_BYTELIST;
+        return ByteList.EMPTY_BYTELIST;
     }
     
     /**

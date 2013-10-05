@@ -92,15 +92,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
-        if (!runtime.is1_9()) {
-            int length = symbolBytes.getBegin() + symbolBytes.getRealSize();
-            for (int i = symbolBytes.getBegin(); i < length; i++) {
-                if (symbolBytes.getUnsafeBytes()[i] == 0) {
-                    throw runtime.newSyntaxError("symbol cannot contain '\\0'");
-                }
-            }
-        }
-
         this.symbol = internedSymbol;
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
@@ -667,11 +658,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     }
 
     private static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
-        if (runtime.is1_9()) {
-            return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
-        } else {
-            return ByteList.create(internedSymbol);
-        }
+        return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
     }
 
     public static final class SymbolTable {

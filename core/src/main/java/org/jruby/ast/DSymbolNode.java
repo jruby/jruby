@@ -71,8 +71,6 @@ public class DSymbolNode extends DNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyString str = (RubyString)super.interpret(runtime, context, self, aBlock);
-        return runtime.is1_9() ?
-                str.intern19() :
-                str.intern();
+        return str.intern19();
     }
 }

@@ -133,11 +133,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
             } catch (IOException ioe) {
                 if (ioe.getMessage().equals("accept failed: Resource temporarily unavailable")) {
-                    if (runtime.is1_9()) {
-                        throw runtime.newErrnoEAGAINReadableError("accept");
-                    } else {
-                        throw runtime.newErrnoEAGAINError("accept");
-                    }
+                    throw runtime.newErrnoEAGAINReadableError("accept");
                 }
 
                 throw context.runtime.newIOErrorFromException(ioe);

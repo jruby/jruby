@@ -135,7 +135,7 @@ public class UnmarshalStream extends InputStream {
         IRubyObject result = null;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
-            if (callProc && runtime.is1_9()) return doCallProcForLink(result, type);
+            if (callProc) return doCallProcForLink(result, type);
         } else {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
@@ -269,13 +269,8 @@ public class UnmarshalStream extends InputStream {
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
 
-        if (runtime.is1_9()) {
-            if (callProc) {
-                return doCallProcForObj(rubyObj);
-            }
-        } else if (type != ':') {
-            // call the proc, but not for symbols
-            doCallProcForObj(rubyObj);
+        if (callProc) {
+            return doCallProcForObj(rubyObj);
         }
         
         return rubyObj;
@@ -377,7 +372,7 @@ public class UnmarshalStream extends InputStream {
             
             if (i == 0) { // first ivar provides encoding
                 
-                if (runtime.is1_9() && object instanceof EncodingCapable) {
+                if (object instanceof EncodingCapable) {
                     
                     EncodingCapable strObj = (EncodingCapable)object;
 
