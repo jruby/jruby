@@ -53,9 +53,6 @@ import org.jruby.runtime.marshal.DataType;
 
 import java.util.Arrays;
 
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
-
 /**
  * @author  jpetersen
  */
@@ -138,7 +135,7 @@ public class RubyProc extends RubyObject implements DataType {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
         
-        if (isLambda() && procBlock == null) {
+        if (isLambda()) {
             // TODO: warn "tried to create Proc object without a block"
         }
 
@@ -196,15 +193,12 @@ public class RubyProc extends RubyObject implements DataType {
                 (this == other || this.block.equals(((RubyProc)other).block)));
     }
     
-    @JRubyMethod(name = "to_s", compat = RUBY1_8)
     @Override
     public IRubyObject to_s() {
-        return RubyString.newString(
-                getRuntime(),"#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1) + ">");
+        return to_s19();
     }
 
-    @JRubyMethod(name = "to_s", compat = RUBY1_9)
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
@@ -219,9 +213,8 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, compat = RUBY1_8)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return call(context, args, null, block);
+        return call19(context, args, block);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -261,7 +254,7 @@ public class RubyProc extends RubyObject implements DataType {
         return args;
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         if (isLambda()) {
             block.arity().checkArity(context.runtime, args.length);
@@ -348,7 +341,7 @@ public class RubyProc extends RubyObject implements DataType {
     	return this;
     }
 
-    @JRubyMethod(name = "source_location", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (sourcePosition != null) {
@@ -363,7 +356,7 @@ public class RubyProc extends RubyObject implements DataType {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "parameters", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
         BlockBody body = this.getBlock().getBody();
 
@@ -373,7 +366,7 @@ public class RubyProc extends RubyObject implements DataType {
                 body.getParameterList(), isLambda());
     }
 
-    @JRubyMethod(name = "lambda?", compat = RUBY1_9)
+    @JRubyMethod(name = "lambda?")
     public IRubyObject lambda_p(ThreadContext context) {
         return context.runtime.newBoolean(isLambda());
     }
