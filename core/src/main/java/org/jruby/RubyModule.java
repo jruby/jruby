@@ -2803,6 +2803,12 @@ public class RubyModule extends RubyObject {
         }
         return this;
     }
+    
+    @JRubyMethod(rest = true)
+    public IRubyObject prepend(ThreadContext context, IRubyObject[] args) {
+        // TODO
+        return context.nil;
+    }
 
     private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
         ConstantEntry entry = getConstantMap().get(name);

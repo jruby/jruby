@@ -83,7 +83,7 @@ public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
-        compatVersion = CompatVersion.RUBY1_9;
+        compatVersion = CompatVersion.RUBY2_0;
 
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;

@@ -68,11 +68,11 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
-    ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
+    ENV['EXCLUDE_DIR'] = 'test/mri/excludes'
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-I test/externals/ruby1.9'
-    t.ruby_opts << '-I test/externals/ruby1.9/ruby'
-    t.ruby_opts << '-r ./test/ruby19_env.rb'
+    t.ruby_opts << '-I test/mri'
+    t.ruby_opts << '-I test/mri/ruby'
+    t.ruby_opts << '-r ./test/mri_test_env.rb'
     t.ruby_opts << '-r minitest/excludes'
   end
 
