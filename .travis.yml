@@ -26,3 +26,10 @@ notifications:
     on_failure: always
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+
+  # update jruby-head installed on Travis CI
+  webhooks:
+    urls:
+      - "https://rubies.travis-ci.org/rebuild/jruby-head"
+    on_success: always
+    on_failure: never
