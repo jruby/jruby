@@ -1219,8 +1219,9 @@ public class RubyKernel {
             length = RubyNumeric.fix2int(args[1]);
         } else if (args.length > 0 && args[0] instanceof RubyRange) {
             RubyRange range = (RubyRange) args[0];
-            level = RubyNumeric.fix2int(range.first());
-            length = RubyNumeric.fix2int(range.last()) - level;
+            ThreadContext context = runtime.getCurrentContext();
+            level = RubyNumeric.fix2int(range.first(context));
+            length = RubyNumeric.fix2int(range.last(context)) - level;
             if (!range.exclude_end_p().isTrue()){
                 length++;
             }

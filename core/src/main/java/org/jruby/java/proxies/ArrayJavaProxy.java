@@ -12,7 +12,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -147,7 +146,7 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         Class componentClass = getObject().getClass().getComponentType();
         
         buffer.append(componentClass.getName());
@@ -200,9 +199,9 @@ public class ArrayJavaProxy extends JavaProxy {
         
         if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange)arg0;
-            if (range.first() instanceof RubyFixnum && range.last() instanceof RubyFixnum) {
-                int first = (int)((RubyFixnum)range.first()).getLongValue();
-                int last = (int)((RubyFixnum)range.last()).getLongValue();
+            if (range.first(context) instanceof RubyFixnum && range.last(context) instanceof RubyFixnum) {
+                int first = (int)((RubyFixnum)range.first(context)).getLongValue();
+                int last = (int)((RubyFixnum)range.last(context)).getLongValue();
                 
                 first = first >= 0 ? first : length + first;
                 last = last >= 0 ? last : length + last;

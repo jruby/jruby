@@ -555,8 +555,8 @@ public class RubyRandom extends RubyObject {
         RangeLike like = new RangeLike();
         if (range instanceof RubyRange) {
             RubyRange vrange = (RubyRange) range;
-            like.begin = vrange.first();
-            like.end = vrange.last();
+            like.begin = vrange.first(context);
+            like.end = vrange.last(context);
             like.excl = vrange.exclude_end_p().isTrue();
         } else {
             if (!range.respondsTo("begin") || !range.respondsTo("end")

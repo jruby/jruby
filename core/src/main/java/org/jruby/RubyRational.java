@@ -974,11 +974,13 @@ public class RubyRational extends RubyNumeric {
     }
 
     private static final ObjectMarshal RATIONAL_MARSHAL = new ObjectMarshal() {
+        @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             throw runtime.newTypeError("marshal_dump should be used instead for Rational");
         }
 
+        @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             RubyRational r = (RubyRational) RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
