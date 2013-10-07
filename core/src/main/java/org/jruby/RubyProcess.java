@@ -47,7 +47,6 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
-import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -557,6 +556,7 @@ public class RubyProcess {
     }
 
     private static final NonNativeErrno ECHILD = new NonNativeErrno() {
+        @Override
         public int handle(Ruby runtime, int result) {
             throw runtime.newErrnoECHILDError();
         }
@@ -1003,6 +1003,7 @@ public class RubyProcess {
         Ruby runtime = context.runtime;
         
         BlockCallback callback = new BlockCallback() {
+            @Override
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                 int[] status = new int[1];
                 Ruby runtime = context.runtime;
@@ -1168,12 +1169,11 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpid());
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_9, notImplemented = true)
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
     public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
@@ -1200,6 +1200,7 @@ public class RubyProcess {
     }
     
     private static final NonNativeErrno IGNORE = new NonNativeErrno() {
+        @Override
         public int handle(Ruby runtime, int result) {return result;}
     };
 
