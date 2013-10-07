@@ -33,7 +33,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Random;
@@ -218,6 +217,7 @@ public class RubyRandom extends RubyObject {
     }
 
     private static ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRandom(runtime, klass);
         }
@@ -229,13 +229,13 @@ public class RubyRandom extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    @JRubyMethod(visibility = PRIVATE, optional = 1, compat = RUBY1_9)
+    @JRubyMethod(visibility = PRIVATE, optional = 1)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         random = new RandomType((args.length == 0) ? randomSeed(context.runtime) : args[0]);
         return this;
     }
 
-    @JRubyMethod(name = "seed", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject seed(ThreadContext context) {
         return random.getSeed();
     }
@@ -252,7 +252,7 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "rand", meta = true, optional = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "rand", meta = true, optional = 1)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return randCommon19(context, recv, args);
     }
@@ -304,7 +304,7 @@ public class RubyRandom extends RubyObject {
         return r;
     }
 
-    @JRubyMethod(name = "rand", optional = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "rand", optional = 1)
     public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) {
             return randFloat(context, random);
@@ -425,7 +425,7 @@ public class RubyRandom extends RubyObject {
 
     // c: random_rand
     private static IRubyObject randomRand(ThreadContext context, IRubyObject vmax, RandomType random) {
-        IRubyObject v = null;
+        IRubyObject v;
         RangeLike range = null;
         if (vmax.isNil()) {
             v = context.nil;
@@ -468,7 +468,7 @@ public class RubyRandom extends RubyObject {
                 int scale = 1;
                 double max = ((RubyFloat) v).getDoubleValue();
                 double mid = 0.5;
-                double r = 0.0;
+                double r;
                 if (Double.isInfinite(max)) {
                     double min = floatValue(range.begin) / 2.0;
                     max = floatValue(range.end) / 2.0;
@@ -571,12 +571,12 @@ public class RubyRandom extends RubyObject {
         return like;
     }
 
-    @JRubyMethod(meta = true, compat = RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject srand(ThreadContext context, IRubyObject recv) {
         return srandCommon(context, recv);
     }
 
-    @JRubyMethod(meta = true, compat = RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject srand(ThreadContext context, IRubyObject recv, IRubyObject seed) {
         return srandCommon(context, recv, seed);
     }
@@ -600,7 +600,7 @@ public class RubyRandom extends RubyObject {
 
     // c: random_equal
     @Override
-    @JRubyMethod(name = "==", required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
         if (!getType().equals(obj.getType())) {
             return context.runtime.getFalse();
@@ -609,31 +609,31 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: random_state
-    @JRubyMethod(name = "state", visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "state", visibility = PRIVATE)
     public IRubyObject stateObj(ThreadContext context) {
         return random.getState();
     }
 
     // c: random_left
-    @JRubyMethod(name = "left", visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "left", visibility = PRIVATE)
     public IRubyObject leftObj(ThreadContext context) {
         return RubyNumeric.int2fix(context.runtime, random.getLeft());
     }
 
     // c: random_s_state
-    @JRubyMethod(name = "state", meta = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "state", meta = true, visibility = PRIVATE)
     public static IRubyObject state(ThreadContext context, IRubyObject recv) {
         return getDefaultRand(context).getState();
     }
 
     // c: random_s_left
-    @JRubyMethod(name = "left", meta = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "left", meta = true, visibility = PRIVATE)
     public static IRubyObject left(ThreadContext context, IRubyObject recv) {
         return RubyNumeric.int2fix(context.runtime, getDefaultRand(context).getLeft());
     }
 
     // c: random_dump
-    @JRubyMethod(name = "marshal_dump", compat = RUBY1_9)
+    @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
         RubyInteger left = (RubyInteger) RubyNumeric.int2fix(context.runtime, random.getLeft());
@@ -645,7 +645,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: marshal_load
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
         if (load.size() != 3) {
@@ -665,7 +665,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: rb_random_bytes
-    @JRubyMethod(name = "bytes", compat = RUBY1_9)
+    @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
         int n = RubyNumeric.num2int(arg);
         byte[] bytes = new byte[n];
@@ -706,7 +706,7 @@ public class RubyRandom extends RubyObject {
         return d;
     }
     
-    @JRubyMethod(name = "new_seed", meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "new_seed", meta = true)
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         return randomSeed(context.runtime);
     }
