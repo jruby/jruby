@@ -97,6 +97,7 @@ public class RubyRange extends RubyObject {
     }
 
     private static final ObjectAllocator RANGE_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRange(runtime, klass);
         }
@@ -305,6 +306,7 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(name = "==", required = 1)
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
@@ -345,11 +347,13 @@ public class RubyRange extends RubyObject {
             this.step = step;
         }
 
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
             call(context, args[0]);
             return context.runtime.getNil();
         }
 
+        @Override
         void call(ThreadContext context, IRubyObject arg) {
             if (iter instanceof RubyFixnum) {
                 iter = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum)iter).getLongValue() - 1);
@@ -418,26 +422,8 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject each(ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "each");
-
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            fixnumEach(context, runtime, block);
-        } else if (begin instanceof RubyString) {
-            ((RubyString) begin).uptoCommon18(context, end, isExclusive, block);
-        } else {
-            if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
-                    "can't iterate from " + begin.getMetaClass().getName());
-            rangeEach(context, new RangeCallBack() {
-                @Override
-                void call(ThreadContext context, IRubyObject arg) {
-                    block.yield(context, arg);
-                }
-            });
-        }
-        return this;
+        return each19(context, block);
     }
 
     private void fixnumEach(ThreadContext context, Ruby runtime, Block block) {
@@ -494,43 +480,12 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject step, Block block) {
-        return block.isGiven() ? stepCommon(context, step, block) : enumeratorize(context.runtime, this, "step", step);
+        return step19(context, step, block);
     }
 
-    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject step(ThreadContext context, Block block) {
-        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block)  : enumeratorize(context.runtime, this, "step");
-    }
-
-    private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
-        final Ruby runtime = context.runtime;
-        long unit = RubyNumeric.num2long(step);
-        if (unit < 0) throw runtime.newArgumentError("step can't be negative");
-
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            if (unit == 0) throw runtime.newArgumentError("step can't be 0");
-            fixnumStep(context, runtime, unit, block);
-        } else {
-            IRubyObject tmp = begin.checkStringType();
-            if (!tmp.isNil()) {
-                if (unit == 0) throw runtime.newArgumentError("step can't be 0");
-                // rb_iterate((VALUE(*)_((VALUE)))str_step, (VALUE)args, step_i, (VALUE)iter);
-                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
-                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
-                ((RubyString)tmp).uptoCommon18(context, end, isExclusive, blockCallback);
-            } else if (begin instanceof RubyNumeric) {
-                if (equalInternal(context, step, RubyFixnum.zero(runtime))) throw runtime.newArgumentError("step can't be 0");
-                numericStep(context, runtime, step, block);
-            } else {
-                if (unit == 0) throw runtime.newArgumentError("step can't be 0");
-                if (!begin.respondsTo("succ")) throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
-                // range_each_func(range, step_i, b, e, args);
-                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
-            }
-        }
-        return this;
+        return step19(context, block);
     }
 
     private void fixnumStep(ThreadContext context, Ruby runtime, long step, Block block) {
@@ -549,15 +504,6 @@ public class RubyRange extends RubyObject {
         }
         if (i <= to) {
             block.yield(context, RubyFixnum.newFixnum(runtime, i));
-        }
-    }
-
-    private void numericStep(ThreadContext context, Ruby runtime, IRubyObject step, Block block) {
-        final String method = isExclusive ? "<" : "<=";
-        IRubyObject beg = begin;
-        while (beg.callMethod(context, method, end).isTrue()) {
-            block.yield(context, beg);
-            beg = beg.callMethod(context, "+", step);
         }
     }
 
@@ -614,20 +560,8 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = {"include?", "member?", "==="}, required = 1, compat = RUBY1_8)
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
-        if (rangeLe(context, begin, obj) != null) {
-            if (isExclusive) {
-                if (rangeLt(context, obj, end) != null) {
-                    return context.runtime.getTrue();
-                }
-            } else {
-                if (rangeLe(context, obj, end) != null) {
-                    return context.runtime.getTrue();
-                }
-            }
-        }
-        return context.runtime.getFalse();
+        return (RubyBoolean) include_p19(context, obj);
     }
 
     // framed for invokeSuper
@@ -725,6 +659,7 @@ public class RubyRange extends RubyObject {
         try {
             RubyEnumerable.callEach(runtime, context, this, Arity.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
+                @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     if (n-- <= 0) throw JumpException.SPECIAL_JUMP;
                     result.append(largs[0]);
@@ -746,6 +681,7 @@ public class RubyRange extends RubyObject {
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
+        @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
@@ -760,6 +696,7 @@ public class RubyRange extends RubyObject {
             marshalStream.dumpVariables(attrs);
         }
 
+        @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             RubyRange range = (RubyRange)type.allocate();
