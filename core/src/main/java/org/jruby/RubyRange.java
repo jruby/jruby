@@ -571,14 +571,7 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyNumeric || end instanceof RubyNumeric ||
                 !TypeConverter.convertToTypeWithCheck(begin, runtime.getInteger(), "to_int").isNil() ||
                 !TypeConverter.convertToTypeWithCheck(end, runtime.getInteger(), "to_int").isNil()) {
-            if (rangeLe(context, begin, obj) != null) {
-                if (isExclusive) {
-                    if (rangeLt(context, obj, end) != null) return runtime.getTrue();
-                } else {
-                    if (rangeLe(context, obj, end) != null) return runtime.getTrue();
-                }
-            }
-            return runtime.getFalse();
+            return cover_p(context, obj);
         } else if (begin instanceof RubyString && end instanceof RubyString &&
                 ((RubyString) begin).getByteList().getRealSize() == 1 &&
                 ((RubyString) end).getByteList().getRealSize() == 1) {
