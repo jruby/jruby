@@ -29,12 +29,6 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged']
 
-  desc "Run optional C API rubyspecs"
-  task :ci_cext => ['spec:fast_forward_to_rubyspec_head'] do
-    mspec :spec_config => CEXT_MSPEC_FILE
-    fail "One or more Ruby spec runs have failed" if spec_run_error
-  end
-
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
 
@@ -50,26 +44,26 @@ namespace :spec do
 
   desc "Tagged specs in interpreted mode only"
   task :interpreted do
-    mspec :compile_mode => "OFF", :spec_config => RUBYSPEC_MSPEC_FILE, 
+    mspec :compile_mode => "OFF",
        :format => 'd'
   end
 
   desc "Tagged specs in interpreted (IR) mode only"
   task :interpreted_ir do
-    mspec :compile_mode => "OFFIR", :spec_config => RUBYSPEC_MSPEC_FILE, 
+    mspec :compile_mode => "OFFIR",
        :format => 'd'
   end
 
   desc "Tagged specs in JIT mode only (threshold=0)"
   task :compiled do
-    mspec :compile_mode => "JIT", :spec_config => RUBYSPEC_MSPEC_FILE, 
+    mspec :compile_mode => "JIT",
        :jit_threshold => 0, 
        :format => 'd'
   end
 
   desc "Tagged specs in AOT mode only"
   task :precompiled do
-    mspec :compile_mode => "FORCE", :spec_config => RUBY_MSPEC_FILE, 
+    mspec :compile_mode => "FORCE",
        :jit_threshold => 0, 
        :format => 'd'
   end
@@ -102,7 +96,7 @@ namespace :spec do
   desc "Run RubySpec in interpreted mode under the language compat version ENV['RUBYSPEC_LANG_VER']"
   task :ci_interpreted_via_env do
     mspec :compile_mode => 'OFF',
-      :spec_config => RUBYSPEC_MSPEC_FILE, :format => 's'
+     :format => 's'
   end
   
   # Complimentary tasks for running specs

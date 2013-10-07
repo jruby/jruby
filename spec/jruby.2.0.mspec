@@ -95,10 +95,10 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
-                        [%r(^.*/language/),     TAGS_DIR + '/1.9/ruby/language/'],
-                        [%r(^.*/core/),         TAGS_DIR + '/1.9/ruby/core/'],
-                        [%r(^.*/command_line/), TAGS_DIR + '/1.9/ruby/command_line/'],
-                        [%r(^.*/library/),      TAGS_DIR + '/1.9/ruby/library/'],
+                        [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
+                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
+                        [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
+                        [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 
