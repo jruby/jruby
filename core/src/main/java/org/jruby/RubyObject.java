@@ -46,14 +46,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
@@ -140,66 +137,77 @@ public class RubyObject extends RubyBasicObject {
      * @see org.jruby.runtime.ObjectAllocator
      */
     public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObject(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR0_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar0(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR1_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar1(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR2_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar2(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR3_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar3(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR4_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar4(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR5_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar5(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR6_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar6(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR7_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar7(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR8_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar8(runtime, klass);
         }
     };
     
     public static final ObjectAllocator OBJECT_VAR9_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar9(runtime, klass);
         }
@@ -240,6 +248,7 @@ public class RubyObject extends RubyBasicObject {
      * always holding them in an array.
      */
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             Set<String> foundVariables = klass.discoverInstanceVariables();
 
@@ -264,6 +273,7 @@ public class RubyObject extends RubyBasicObject {
     };
 
     public static final ObjectAllocator REIFYING_OBJECT_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             klass.reifyWithAncestors();
             return klass.allocate();
@@ -271,13 +281,13 @@ public class RubyObject extends RubyBasicObject {
     };
 
     @Deprecated
+    @Override
     public IRubyObject initialize() {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context) {
-        return context.nil;
+        return initialize19(context);
     }
 
     /**
