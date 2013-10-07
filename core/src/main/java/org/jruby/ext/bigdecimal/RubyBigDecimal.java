@@ -136,13 +136,11 @@ public class RubyBigDecimal extends RubyNumeric {
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
 
-        if (runtime.is1_9()) {
-            RubyModule bigMath = runtime.defineModule("BigMath");
-            // TODO: BigMath.exp and BigMath.pow in native code
+        RubyModule bigMath = runtime.defineModule("BigMath");
+        // TODO: BigMath.exp and BigMath.pow in native code
 
-            bigDecimal.defineConstant("NAN", newNaN(runtime));
-            bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
-        }
+        bigDecimal.defineConstant("NAN", newNaN(runtime));
+        bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
 
         return bigDecimal;
     }
@@ -539,38 +537,36 @@ public class RubyBigDecimal extends RubyNumeric {
                 context = new MathContext(digits);
             }
 
-            if (runtime.is1_9()) {
-                if (args[0] instanceof RubyBigDecimal) {
-                    return new RubyBigDecimal(runtime, (RubyClass)recv, ((RubyBigDecimal)args[0]));
-                } else if (args[0] instanceof RubyFloat || args[0] instanceof RubyRational) {
-                    if (args.length != 2) {
-                        // float input must be accompanied by precision
-                        throw runtime.newArgumentError("can't omit precision for a rational");
-                    }
-
-                    if (args[0] instanceof RubyFloat) {
-                        // precision can be no more than float digits
-                        if (context.getPrecision() > RubyFloat.DIG + 1) {
-                            throw runtime.newArgumentError("precision too large");
-                        }
-                        return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFloat)args[0]).getDoubleValue(), context));
-                    } else {
-                        RubyRational rat = (RubyRational)args[0];
-
-                        BigDecimal num = new BigDecimal(rat.numerator(ctx).convertToInteger().getLongValue());
-                        BigDecimal den = new BigDecimal(rat.denominator(ctx).convertToInteger().getLongValue());
-
-                        BigDecimal value = num.divide(den, context);
-
-                        return new RubyBigDecimal(runtime, value);
-                    }
-                } else if (args[0] instanceof RubyFixnum) {
-                    return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFixnum)args[0]).getLongValue(), context));
-                } else if (args[0] instanceof RubyBignum) {
-                    return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyBignum)args[0]).getBigIntegerValue(), context));
+            if (args[0] instanceof RubyBigDecimal) {
+                return new RubyBigDecimal(runtime, (RubyClass)recv, ((RubyBigDecimal)args[0]));
+            } else if (args[0] instanceof RubyFloat || args[0] instanceof RubyRational) {
+                if (args.length != 2) {
+                    // float input must be accompanied by precision
+                    throw runtime.newArgumentError("can't omit precision for a rational");
                 }
-                // fall through to String coercion below
+
+                if (args[0] instanceof RubyFloat) {
+                    // precision can be no more than float digits
+                    if (context.getPrecision() > RubyFloat.DIG + 1) {
+                        throw runtime.newArgumentError("precision too large");
+                    }
+                    return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFloat)args[0]).getDoubleValue(), context));
+                } else {
+                    RubyRational rat = (RubyRational)args[0];
+
+                    BigDecimal num = new BigDecimal(rat.numerator(ctx).convertToInteger().getLongValue());
+                    BigDecimal den = new BigDecimal(rat.denominator(ctx).convertToInteger().getLongValue());
+
+                    BigDecimal value = num.divide(den, context);
+
+                    return new RubyBigDecimal(runtime, value);
+                }
+            } else if (args[0] instanceof RubyFixnum) {
+                return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFixnum)args[0]).getLongValue(), context));
+            } else if (args[0] instanceof RubyBignum) {
+                return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyBignum)args[0]).getBigIntegerValue(), context));
             }
+            // fall through to String coercion below
 
             String strValue = args[0].convertToString().toString();
             strValue = strValue.trim();

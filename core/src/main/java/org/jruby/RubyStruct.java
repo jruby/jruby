@@ -540,7 +540,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = __member__();
         ByteList buffer = new ByteList("#<struct ".getBytes());
 
-        if (is1_8() || getMetaClass().getRealClass().getBaseName() != null) {
+        if (getMetaClass().getRealClass().getBaseName() != null) {
             buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
             buffer.append(' ');
         }
@@ -555,10 +555,6 @@ public class RubyStruct extends RubyObject {
 
         buffer.append('>');
         return getRuntime().newString(buffer); // OBJ_INFECT
-    }
-
-    private boolean is1_8() {
-        return !(getRuntime().is1_9() || getRuntime().is2_0());
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -732,12 +728,8 @@ public class RubyStruct extends RubyObject {
 
         // FIXME: This could all be more efficient, but it's how struct works
         RubyStruct result;
-        if (runtime.is1_9()) {
-            // 1.9 does not appear to call initialize (JRUBY-5875)
-            result = new RubyStruct(runtime, rbClass);
-        } else {
-            result = newStruct(rbClass, values, Block.NULL_BLOCK);
-        }
+        // 1.9 does not appear to call initialize (JRUBY-5875)
+        result = new RubyStruct(runtime, rbClass);
         input.registerLinkTarget(result);
 
         for (int i = 0; i < len; i++) {

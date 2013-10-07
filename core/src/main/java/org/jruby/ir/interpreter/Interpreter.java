@@ -142,8 +142,7 @@ public class Interpreter {
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
         // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
-        boolean is_1_9 = runtime.is1_9();
-        if (is_1_9) IRBuilder.setRubyVersion("1.9");
+        IRBuilder.setRubyVersion("1.9");
 
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
@@ -177,7 +176,7 @@ public class Interpreter {
     }
 
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
-        if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
+        IRBuilder.setRubyVersion("1.9");
 
         IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
 

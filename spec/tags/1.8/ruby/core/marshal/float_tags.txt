@@ -1,2 +1,0 @@
-fails:Marshal.dump with Float represents a Float less than 1
-fails:Marshal.dump with Float represents a Float greater than 1

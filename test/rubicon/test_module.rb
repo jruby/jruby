@@ -4,8 +4,6 @@ $m0 = Module.nesting
 
 
 class TestModule < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   #
   # Check that two arrays contain the same "bag" of elements.
   # A mathematical bag differs from a "set" by counting the
@@ -221,23 +219,16 @@ class TestModule < Test::Unit::TestCase
     else
       subtract = []
     end
-    assert_equal(IS19 ? [Object, Kernel, BasicObject] : [Object, Kernel],   ancestors_obj - subtract)
-    if IS19
-      assert_equal([String,
-                    Comparable,
-                    Object, Kernel, BasicObject],  ancestors_str - subtract)
-    else
-      assert_equal([String,
-                    Enumerable,
-                    Comparable,
-                    Object, Kernel],  ancestors_str - subtract)
-    end
+    assert_equal([Object, Kernel, BasicObject],   ancestors_obj - subtract)
+    assert_equal([String,
+                  Comparable,
+                  Object, Kernel, BasicObject],  ancestors_str - subtract)
   end
 
   def test_class_eval
     Other.class_eval("CLASS_EVAL = 1")
     assert_equal(1, Other::CLASS_EVAL)
-    assert(Other.constants.include?(IS19 ? :CLASS_EVAL : "CLASS_EVAL"))
+    assert(Other.constants.include?(:CLASS_EVAL))
   end
 
   def test_const_defined?
@@ -262,8 +253,8 @@ class TestModule < Test::Unit::TestCase
   end
 
   def test_constants
-    assert_equal(IS19 ? [:MIXIN] : ["MIXIN"], Mixin.constants)
-    assert_equal(IS19 ? [:MIXIN, :USER] : ["MIXIN", "USER"], User.constants.sort)
+    assert_equal([:MIXIN], Mixin.constants)
+    assert_equal([:MIXIN, :USER], User.constants.sort)
   end
 
   def test_included_modules
@@ -281,27 +272,27 @@ class TestModule < Test::Unit::TestCase
       subtract = []
     end
     assert_equal([Kernel], incmod_obj - subtract)
-    assert_equal(IS19 ? [Comparable, Kernel] : [Enumerable, Comparable, Kernel], incmod_str - subtract)
+    assert_equal([Comparable, Kernel], incmod_str - subtract)
   end
 
   def test_instance_methods
       # default value is true
       ary_user = User.instance_methods
-      assert_equal(true, ary_user.include?(IS19 ? :user : "user"))
+      assert_equal(true, ary_user.include?(:user))
       # we expect more than our 'user' method to be returned.
       assert_equal(true, ary_user.size > 1) 
       
       # we expect ONLY than our 'mixin' method to be returned.
       ary_mixin = Mixin.instance_methods
-      assert_equal(IS19 ? [:mixin] : ["mixin"], ary_mixin)
+      assert_equal([:mixin], ary_mixin)
       
       ary_class = AClass.instance_methods
-      assert_equal(true, ary_class.include?(IS19 ? :aClass : "aClass"))
+      assert_equal(true, ary_class.include?(:aClass))
       # we expect more than our 'aClass' method to be returned.
       assert_equal(true, ary_class.size > 1) 
-    assert_equal(IS19 ? [:mixin, :user] : ["mixin", "user"], User.instance_methods(true).sort)
-    assert_equal(IS19 ? [:mixin] : ["mixin"], Mixin.instance_methods(true))
-      assert_bag_equal(IS19 ? [:aClass, :aClass2] : ["aClass", "aClass2"],
+    assert_equal([:mixin, :user], User.instance_methods(true).sort)
+    assert_equal([:mixin], Mixin.instance_methods(true))
+      assert_bag_equal([:aClass, :aClass2],
                        AClass.instance_methods(true) - 
                        Object.instance_methods(true)
                        )
@@ -319,7 +310,7 @@ class TestModule < Test::Unit::TestCase
   def test_module_eval
     User.module_eval("MODULE_EVAL = 1")
     assert_equal(1, User::MODULE_EVAL)
-    assert(User.constants.include?(IS19 ? :MODULE_EVAL : "MODULE_EVAL"))
+    assert(User.constants.include?(:MODULE_EVAL))
     User.instance_eval("remove_const(:MODULE_EVAL)")
     assert(!User.constants.include?("MODULE_EVAL"))
   end
@@ -339,15 +330,15 @@ class TestModule < Test::Unit::TestCase
   def test_private_instance_methods
       # default value is true
       a = AClass.private_instance_methods
-      assert_equal(true, a.include?(IS19 ? :aClass1 : "aClass1"))
+      assert_equal(true, a.include?(:aClass1))
       # we expect more than our 'aClass1' method to be returned.
       assert_equal(true, a.size > 1) 
       
       b = BClass.private_instance_methods
-      assert_equal(true, b.include?(IS19 ? :bClass2 : "bClass2"))
+      assert_equal(true, b.include?(:bClass2))
       # we expect more than our 'bClass2' method to be returned.
       assert_equal(true, b.size > 1) 
-    assert_bag_equal(IS19 ? [:bClass2, :aClass1] : ["bClass2", "aClass1"],
+    assert_bag_equal([:bClass2, :aClass1],
                      BClass.private_instance_methods(true) -
                      Object.private_instance_methods(true))
   end
@@ -355,15 +346,15 @@ class TestModule < Test::Unit::TestCase
   def test_protected_instance_methods
       # default value is true
       a = AClass.protected_instance_methods
-      assert_equal(true, a.include?(IS19 ? :aClass2 : "aClass2"))
+      assert_equal(true, a.include?(:aClass2))
       # we expect more than our 'aClass2' method to be returned.
       assert_equal(true, a.size == 1) 
       
       b = BClass.protected_instance_methods
-      assert_equal(true, b.include?(IS19 ? :bClass3 : "bClass3"))
+      assert_equal(true, b.include?(:bClass3))
       # we expect more than our 'bClass3' method to be returned.
       assert_equal(true, b.size > 1) 
-    assert_bag_equal(IS19 ? [:bClass3, :aClass2] : ["bClass3", "aClass2"],
+    assert_bag_equal([:bClass3, :aClass2],
                      BClass.protected_instance_methods(true) -
                      Object.protected_instance_methods(true))
   end
@@ -377,12 +368,12 @@ class TestModule < Test::Unit::TestCase
   def test_public_instance_methods
       # default value is true
       a = AClass.public_instance_methods
-      assert_equal(true, a.include?(IS19 ? :aClass : "aClass"))
+      assert_equal(true, a.include?(:aClass))
       # we expect more than our 'aClass' method to be returned.
       assert_equal(true, a.size > 1) 
       
       b = BClass.public_instance_methods
-      assert_equal(true, b.include?(IS19 ? :bClass1 : "bClass1"))
+      assert_equal(true, b.include?(:bClass1))
       # we expect more than our 'bClass1' method to be returned.
       assert_equal(true, b.size > 1) 
   end
@@ -391,7 +382,7 @@ class TestModule < Test::Unit::TestCase
     c1 = Module.constants
     Object.module_eval "WALTER = 99"
     c2 = Module.constants
-    assert_equal([IS19 ? :WALTER : "WALTER"], c2 - c1)
+    assert_equal([:WALTER], c2 - c1)
   end
 
   module M1

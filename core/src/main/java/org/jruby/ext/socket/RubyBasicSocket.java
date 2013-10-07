@@ -102,7 +102,7 @@ public class RubyBasicSocket extends RubyIO {
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        doNotReverseLookup = runtime.is1_9();
+        doNotReverseLookup = true;
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup", compat = CompatVersion.RUBY1_9)
@@ -177,11 +177,7 @@ public class RubyBasicSocket extends RubyIO {
         ByteList bytes = doReceiveNonblock(context, RubyNumeric.fix2int(_length));
 
         if (bytes == null) {
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEAGAINReadableError("recvfrom(2)");
-            } else {
-                throw runtime.newErrnoEAGAINError("recvfrom(2)");
-            }
+            throw runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
         return RubyString.newString(runtime, bytes);
@@ -218,11 +214,7 @@ public class RubyBasicSocket extends RubyIO {
 
                 value = SocketType.forChannel(channel).getSocketOption(channel, opt);
                 
-                if (runtime.is1_9()) {
-                    return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
-                } else {
-                    return number(runtime, SocketType.forChannel(channel).getSocketOption(channel, opt));
-                }
+                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
 
             default:
                 throw runtime.newErrnoENOPROTOOPTError();
@@ -483,11 +475,7 @@ public class RubyBasicSocket extends RubyIO {
         Channel channel = getChannel();
 
         if (!(channel instanceof SelectableChannel)) {
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEAGAINReadableError(channel.getClass().getName() + " does not support nonblocking");
-            } else {
-                throw runtime.newErrnoEAGAINError(channel.getClass().getName() + " does not support nonblocking");
-            }
+            throw runtime.newErrnoEAGAINReadableError(channel.getClass().getName() + " does not support nonblocking");
         }
 
         SelectableChannel selectable = (SelectableChannel)channel;

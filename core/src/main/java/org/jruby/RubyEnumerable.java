@@ -1489,18 +1489,12 @@ public class RubyEnumerable {
         ThreadContext context = runtime.getCurrentContext();
         
         // 1.9 tries to convert, and failing that tries to "each" elements into a new array
-        if (runtime.is1_9()) {
-            for (int i = 0; i < args.length; i++) {
-                IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], array, method);
-                if (result.isNil()) {
-                    result = takeItems(context, args[i]);
-                }
-                args[i] = result;
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], array, method);
+            if (result.isNil()) {
+                result = takeItems(context, args[i]);
             }
-        } else {
-            for (int i = 0; i < args.length; i++) {
-                args[i] = TypeConverter.convertToType(args[i], array, method);
-            }
+            args[i] = result;
         }
 
         return args;

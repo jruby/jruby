@@ -1,4 +1,0 @@
-fails:Kernel.__method__ returns nil when not called from a method
-fails:Kernel.__method__ returns the caller from blocks too
-fails:Kernel.__method__ returns the original name when aliased method
-fails:Kernel.__method__ returns the current method, even when aliased

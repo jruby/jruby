@@ -99,10 +99,6 @@ public class AndNode extends Node implements BinaryOperatorNode {
 
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (!context.runtime.is1_9()) {
-            return super.definition(runtime, context, self, aBlock);
-        } else {
-            return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
-        }
+        return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
     }
 }

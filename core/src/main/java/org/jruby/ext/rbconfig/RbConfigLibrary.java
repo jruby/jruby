@@ -109,10 +109,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRuntimeVerStr(Ruby runtime) {
-        if (runtime.is1_9()) {
-            return "1.9";
-        }
-        return "1.8";
+        return "1.9";
     }
 
     public static String getNormalizedHome(Ruby runtime) {
@@ -212,13 +209,8 @@ public class RbConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         RubyModule configModule;
 
-        if (runtime.is1_9()) {
-            configModule = runtime.defineModule("RbConfig");
-            RubyKernel.autoload(runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
-        } else {
-            configModule = runtime.defineModule("Config");
-            runtime.getObject().defineConstant("RbConfig", configModule);
-        }
+        configModule = runtime.defineModule("RbConfig");
+        RubyKernel.autoload(runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
         
         configModule.defineAnnotatedMethods(RbConfigLibrary.class);
         
@@ -226,11 +218,7 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts;
-        if (runtime.is1_9()) {
-            versionParts = Constants.RUBY1_9_VERSION.split("\\.");
-        } else {
-            versionParts = Constants.RUBY_VERSION.split("\\.");
-        }
+        versionParts = Constants.RUBY1_9_VERSION.split("\\.");
         
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);
@@ -299,7 +287,7 @@ public class RbConfigLibrary implements Library {
         String sysConfDir = getSysConfDir(runtime);
 
         setConfig(configHash, "libdir", vendorDirGeneral);
-        if (runtime.is1_9()) setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
+        setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
         setConfig(configHash, "rubylibdir",     rubyLibDir);
         setConfig(configHash, "rubysharedlibdir", rubySharedLibDir);
         if (!isSiteVendorSame(runtime)) {
@@ -330,9 +318,7 @@ public class RbConfigLibrary implements Library {
             setConfig(configHash, "EXEEXT", "");
         }
 
-        if (runtime.is1_9()) {
-            setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
-        }
+        setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
 
         // These will be used as jruby defaults for rubygems if found
         String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");

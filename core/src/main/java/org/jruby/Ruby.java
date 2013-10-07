@@ -1199,10 +1199,8 @@ public final class Ruby {
         // init Ruby-based kernel
         initRubyKernel();
         
-        if (is1_9()) {
-            // everything booted, so SizedQueue should be available; set up root fiber
-            ThreadFiber.initRootFiber(tc);
-        }
+        // everything booted, so SizedQueue should be available; set up root fiber
+        ThreadFiber.initRootFiber(tc);
         
         if(config.isProfiling()) {
             // additional twiddling for profiled mode
@@ -1222,11 +1220,7 @@ public final class Ruby {
         
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
-            if (is1_9) {
-                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
-            } else {
-                loadService.require(scriptName);
-            }
+            topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
         }
     }
 
@@ -1252,35 +1246,30 @@ public final class Ruby {
     }
 
     private void initRoot() {
-        boolean oneNine = is1_9();
         // Bootstrap the top of the hierarchy
-        if (oneNine) {
-            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.BASICOBJECT_ALLOCATOR);
-            objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
-        } else {
-            objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
-        }
+        basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.BASICOBJECT_ALLOCATOR);
+        objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
 
-        if (oneNine) basicObjectClass.setMetaClass(classClass);
+        basicObjectClass.setMetaClass(classClass);
         objectClass.setMetaClass(classClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
 
         RubyClass metaClass;
-        if (oneNine) metaClass = basicObjectClass.makeMetaClass(classClass);
+        metaClass = basicObjectClass.makeMetaClass(classClass);
         metaClass = objectClass.makeMetaClass(classClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
-        if (oneNine) RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
+        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
         
         // set constants now that they're initialized
-        if (oneNine) basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        basicObjectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
@@ -1290,7 +1279,7 @@ public final class Ruby {
         objectClass.includeModule(kernelModule);
         
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
-        if (oneNine && config.getKernelGsubDefined()) {
+        if (config.getKernelGsubDefined()) {
             kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
 
                 @Override
@@ -1348,12 +1337,6 @@ public final class Ruby {
             RubyException.createExceptionClass(this);
         }
 
-        if (!is1_9()) {
-            if (profile.allowModule("Precision")) {
-                RubyPrecision.createPrecisionModule(this);
-            }
-        }
-
         if (profile.allowClass("Numeric")) {
             RubyNumeric.createNumericClass(this);
         }
@@ -1364,38 +1347,36 @@ public final class Ruby {
             RubyFixnum.createFixnumClass(this);
         }
 
-        if (is1_9()) {
-            RubyEncoding.createEncodingClass(this);
-            RubyConverter.createConverterClass(this);
-            
-            encodingService.defineEncodings();
-            encodingService.defineAliases();
+        RubyEncoding.createEncodingClass(this);
+        RubyConverter.createConverterClass(this);
 
-            // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-            String encoding = config.getExternalEncoding();
-            if (encoding != null && !encoding.equals("")) {
-                Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-                setDefaultExternalEncoding(loadedEncoding);
-            } else {
-                Encoding consoleEncoding = encodingService.getConsoleEncoding();
-                Encoding availableEncoding = consoleEncoding == null ? encodingService.getLocaleEncoding() : consoleEncoding;
-                setDefaultExternalEncoding(availableEncoding);
-            }
+        encodingService.defineEncodings();
+        encodingService.defineAliases();
 
-            encoding = config.getInternalEncoding();
-            if (encoding != null && !encoding.equals("")) {
-                Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-                setDefaultInternalEncoding(loadedEncoding);
-            }
-            
-            if (profile.allowClass("Complex")) {
-                RubyComplex.createComplexClass(this);
-            }
-            if (profile.allowClass("Rational")) {
-                RubyRational.createRationalClass(this);
-            }
+        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
+        String encoding = config.getExternalEncoding();
+        if (encoding != null && !encoding.equals("")) {
+            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultExternalEncoding(loadedEncoding);
+        } else {
+            Encoding consoleEncoding = encodingService.getConsoleEncoding();
+            Encoding availableEncoding = consoleEncoding == null ? encodingService.getLocaleEncoding() : consoleEncoding;
+            setDefaultExternalEncoding(availableEncoding);
+        }
+
+        encoding = config.getInternalEncoding();
+        if (encoding != null && !encoding.equals("")) {
+            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultInternalEncoding(loadedEncoding);
+        }
+
+        if (profile.allowClass("Complex")) {
+            RubyComplex.createComplexClass(this);
+        }
+        if (profile.allowClass("Rational")) {
+            RubyRational.createRationalClass(this);
         }
 
         if (profile.allowClass("Hash")) {
@@ -1412,11 +1393,7 @@ public final class Ruby {
         if (profile.allowClass("Bignum")) {
             RubyBignum.createBignumClass(this);
             // RubyRandom depends on Bignum existence.
-            if (is1_9()) {
-                RubyRandom.createRandomClass(this);
-            } else {
-                setDefaultRand(new RubyRandom.RandomType(this));
-            }
+            RubyRandom.createRandomClass(this);
         }
         ioClass = RubyIO.createIOClass(this);
 
@@ -1491,13 +1468,9 @@ public final class Ruby {
             RubyEnumerator.defineEnumerator(this);
         }
         
-        if (is1_9()) {
-            new ThreadFiberLibrary().load(this, false);
-        }
+        new ThreadFiberLibrary().load(this, false);
         
-        if (is2_0()) {
-            TracePoint.createTracePointClass(this);
-        }
+        TracePoint.createTracePointClass(this);
         
         // Load the JRuby::Config module for accessing configuration settings from Ruby
         new JRubyConfigLibrary().load(this, false);
@@ -1553,27 +1526,25 @@ public final class Ruby {
         eofError = defineClassIfAllowed("EOFError", ioError);
         threadError = defineClassIfAllowed("ThreadError", standardError);
         concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-        systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? exceptionClass : standardError);
+        systemStackError = defineClassIfAllowed("SystemStackError", exceptionClass);
         zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", standardError);
         floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
 
-        if (is1_9()) {
-            if (profile.allowClass("EncodingError")) {
-                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator());
-                encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
-                invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
-                invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
-                undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
-                undefinedConversionError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
-                converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
-                fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
-            }
-            concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-            keyError = defineClassIfAllowed("KeyError", indexError);
-
-            mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
-            inRecursiveListOperation.set(false);
+        if (profile.allowClass("EncodingError")) {
+            encodingError = defineClass("EncodingError", standardError, standardError.getAllocator());
+            encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
+            invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
+            invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
+            undefinedConversionError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
+            fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
         }
+        concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
+        keyError = defineClassIfAllowed("KeyError", indexError);
+
+        mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
+        inRecursiveListOperation.set(false);
 
         initErrno();
     }
@@ -1679,21 +1650,19 @@ public final class Ruby {
         addLazyBuiltin("io/try_nonblock.jar", "io/try_nonblock", "org.jruby.ext.io.try_nonblock.IOTryNonblockLibrary");
         addLazyBuiltin("pathname_ext.jar", "pathname_ext", "org.jruby.ext.pathname.PathnameLibrary");
 
-        if (is1_9()) {
-            addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
-            addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
-            addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
-            addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
+        addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
+        addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
+        addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
+        addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
 
-            // TODO: implement something for these?
-            Library dummy = new Library() {
-                public void load(Ruby runtime, boolean wrap) throws IOException {
-                    // dummy library that does nothing right now
-                }
-            };
-            addBuiltinIfAllowed("continuation.rb", dummy);
-            addBuiltinIfAllowed("io/nonblock.rb", dummy);
-        }
+        // TODO: implement something for these?
+        Library dummy = new Library() {
+            public void load(Ruby runtime, boolean wrap) throws IOException {
+                // dummy library that does nothing right now
+            }
+        };
+        addBuiltinIfAllowed("continuation.rb", dummy);
+        addBuiltinIfAllowed("io/nonblock.rb", dummy);
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
@@ -1714,9 +1683,6 @@ public final class Ruby {
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
         
         switch (config.getCompatVersion()) {
-            case RUBY1_8:
-                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel18.rb", false);
-                break;
             case RUBY1_9:
                 loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel19.rb", false);
                 break;
@@ -2570,7 +2536,7 @@ public final class Ruby {
         if (parserStats != null) parserStats.addEvalParse();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        if (is1_9) parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
         return parser.parse(file, in, scope, parserConfig);
     }
 
@@ -2857,14 +2823,10 @@ public final class Ruby {
     public JavaProxyClassFactory getJavaProxyClassFactory() {
         return javaProxyClassFactory;
     }
-            
-    private static final EnumSet<RubyEvent> EVENTS2_0 = EnumSet.of(RubyEvent.B_CALL, RubyEvent.B_RETURN, RubyEvent.THREAD_BEGIN, RubyEvent.THREAD_END);
+    
     public class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        // filter out 2.0 events on non 2.0
         private EnumSet<RubyEvent> interest =
-                is2_0() ?
-                EnumSet.complementOf(EVENTS2_0) :
                 EnumSet.allOf(RubyEvent.class);
         
         public void setTraceFunc(RubyProc traceFunc) {
@@ -3625,7 +3587,7 @@ public final class Ruby {
 
     public RaiseException newLoadError(String message, String path) {
         RaiseException loadError = newRaiseException(getLoadError(), message);
-        if (is2_0()) loadError.getException().setInstanceVariable("@path", newString(path));
+        loadError.getException().setInstanceVariable("@path", newString(path));
         return loadError;
     }
 
@@ -3635,7 +3597,7 @@ public final class Ruby {
 
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(is1_9() || runtimeError ? getRuntimeError() : getTypeError(), "can't modify frozen " + objectType);
+        return newRaiseException(getRuntimeError(), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -4160,10 +4122,12 @@ public final class Ruby {
         return config;
     }
 
+    @Deprecated
     public boolean is1_8() {
-        return !(is1_9() || is2_0());
+        return false;
     }
 
+    @Deprecated
     public boolean is1_9() {
         return is1_9;
     }

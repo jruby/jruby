@@ -593,10 +593,8 @@ public class RubyRandom extends RubyObject {
         IRubyObject previousSeed = defaultRand.getSeed();
         defaultRand = new RandomType(newSeed);
         context.runtime.setDefaultRand(defaultRand);
-        if (context.runtime.is1_9()) {
-            ((RubyRandom) (context.runtime.getRandomClass())
-                    .getConstant("DEFAULT")).setRandomType(defaultRand);
-        }
+        ((RubyRandom) (context.runtime.getRandomClass())
+                .getConstant("DEFAULT")).setRandomType(defaultRand);
         return previousSeed;
     }
 

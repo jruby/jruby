@@ -412,7 +412,7 @@ public class RubyBignum extends RubyInteger {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
             double otherFloatValue = ((RubyFloat) other).getDoubleValue();
-            if (runtime.is1_9() && !slash) {
+            if (!slash) {
                 if (otherFloatValue == 0.0) throw runtime.newZeroDivisionError();
             }
             double div = big2dbl(this) / otherFloatValue;

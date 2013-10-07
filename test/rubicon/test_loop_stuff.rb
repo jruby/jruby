@@ -1,8 +1,6 @@
 require 'test/unit'
 
 class TestLoopStuff < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   FILE = "while_tmp"
 
   def setup
@@ -47,24 +45,6 @@ class TestLoopStuff < Test::Unit::TestCase
       end
       assert(tmp.eof?)
       assert(/vt100/ !~ line)
-    end
-  end
-
-  unless IS19
-    def testRedoWithWhile
-      File.open(FILE) do |tmp|
-        while tmp.gets()
-          line = $_
-          $_ = gsub(/vt100/, 'VT100')
-          if $_ != line
-            gsub!('VT100', 'Vt100')
-            redo;
-          end
-          assert(/vt100/ !~ $_)
-          assert(/VT100/ !~ $_)
-        end
-        assert(tmp.eof?)
-      end
     end
   end
 

@@ -1,1 +1,0 @@
-fails:Thread.new calls #initialize and raises an error if super not used

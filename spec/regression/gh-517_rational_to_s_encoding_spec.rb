@@ -1,7 +1,5 @@
 require 'rspec'
 
-return unless RUBY_VERSION.to_f >= 1.9
-
 describe 'Rational' do
 
   let(:subject) { "1".to_r }

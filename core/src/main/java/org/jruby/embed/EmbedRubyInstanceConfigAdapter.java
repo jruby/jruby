@@ -182,6 +182,7 @@ public interface EmbedRubyInstanceConfigAdapter {
      * 
      * @param version a Ruby version
      */
+    @Deprecated
     public void setCompatVersion(CompatVersion version);
 
     /**

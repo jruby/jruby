@@ -77,11 +77,7 @@ public class RubyYielder extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
         checkInit();
-        if (context.runtime.is1_9()) {
-            return proc.call19(context, args, Block.NULL_BLOCK);
-        } else {
-            return proc.call(context, args);
-        }
+        return proc.call19(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "<<", rest = true)

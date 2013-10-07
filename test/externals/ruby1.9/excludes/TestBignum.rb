@@ -1,6 +1,0 @@
-exclude :test_big_fdiv, "needs investigation"
-exclude :test_eq, "needs investigation"
-exclude :test_fix_fdiv, "needs investigation"
-exclude :test_float_fdiv, "needs investigation"
-exclude :test_interrupt, "needs investigation"
-exclude :test_pow, "needs investigation"

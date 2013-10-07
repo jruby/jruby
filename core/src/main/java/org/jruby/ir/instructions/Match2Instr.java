@@ -66,9 +66,7 @@ public class Match2Instr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
-        return context.runtime.is1_9() ?
-                regexp.op_match19(context, argValue) :
-                regexp.op_match(context, argValue);
+        return regexp.op_match19(context, argValue);
     }
 
     @Override

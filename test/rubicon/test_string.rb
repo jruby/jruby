@@ -20,8 +20,6 @@ require 'test/unit'
 #
 
 class TestString < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   def initialize(*args)
     @cls = String
 
@@ -59,8 +57,8 @@ class TestString < Test::Unit::TestCase
   end
     
   def test_AREF # '[]'
-    assert_equal(IS19 ? "A" : 65,  S("AooBar")[0])
-    assert_equal(IS19 ? "B" : 66,  S("FooBaB")[-1])
+    assert_equal("A",  S("AooBar")[0])
+    assert_equal("B",  S("FooBaB")[-1])
     assert_equal(nil, S("FooBar")[6])
     assert_equal(nil, S("FooBar")[-7])
 
@@ -204,7 +202,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(["ccc",  nil],  "ccc" =~ MatchDefiner.new(nil))
 
     # default Object#=~ method.
-    assert_equal(IS19 ? nil : false,  "a string" =~ Object.new)
+    assert_equal(nil,  "a string" =~ Object.new)
   end
 
   def test_MOD # '%'
@@ -225,11 +223,7 @@ class TestString < Test::Unit::TestCase
       171,
       171]
 
-    if IS19
-      assert_equal(S(' hi 123 %foo   456 0A3.1 1011 ab AB 0b1011 0xab 0XAB'), x)
-    else
-      assert_equal(S(' hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB'), x)
-    end
+    assert_equal(S(' hi 123 %foo   456 0A3.1 1011 ab AB 0b1011 0xab 0XAB'), x)
   end
 
   def test_MUL # '*'
@@ -493,7 +487,7 @@ class TestString < Test::Unit::TestCase
 
   def test_dump
     a= S("Test") << 1 << 2 << 3 << 9 << 13 << 10
-    assert_equal(S(IS19 ? '"Test\\x01\\x02\\x03\\t\\r\\n"' : '"Test\\001\\002\\003\\t\\r\\n"'), a.dump)
+    assert_equal(S('"Test\\x01\\x02\\x03\\t\\r\\n"'), a.dump)
   end
 
   def test_dup
@@ -510,29 +504,6 @@ class TestString < Test::Unit::TestCase
         assert_equal(a.tainted?, b.tainted?)
       end
     end     
-  end
-
-  unless IS19
-    def test_each
-      $/ = "\n"
-      res=[]
-      S("hello\nworld").each {|x| res << x}
-      assert_equal(S("hello\n"), res[0])
-      assert_equal(S("world"),   res[1])
-
-      res=[]
-      S("hello\n\n\nworld").each(S('')) {|x| res << x}
-      assert_equal(S("hello\n\n\n"), res[0])
-      assert_equal(S("world"),       res[1])
-
-      $/ = "!"
-      res=[]
-      S("hello!world").each {|x| res << x}
-      assert_equal(S("hello!"), res[0])
-      assert_equal(S("world"),  res[1])
-
-      $/ = "\n"
-    end
   end
 
   def test_each_byte
@@ -578,7 +549,7 @@ class TestString < Test::Unit::TestCase
   def test_gsub
     assert_equal(S("h*ll*"),     S("hello").gsub(/[aeiou]/, S('*')))
     assert_equal(S("h<e>ll<o>"), S("hello").gsub(/([aeiou])/, S('<\1>')))
-    assert_equal(S(IS19 ? "h e l l o " : "104 101 108 108 111 "),
+    assert_equal(S("h e l l o "),
                  S("hello").gsub(/./) { |s| s[0].to_s + S(' ')})
     assert_equal(S("HELL-o"), 
                  S("hello").gsub(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 })
@@ -601,7 +572,7 @@ class TestString < Test::Unit::TestCase
 
     a = S("hello")
     a.gsub!(/./) { |s| s[0].to_s + S(' ')}
-    assert_equal(S(IS19 ? "h e l l o " : "104 101 108 108 111 "), a)
+    assert_equal(S("h e l l o "), a)
 
     a = S("hello")
     a.gsub!(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 }
@@ -679,12 +650,6 @@ class TestString < Test::Unit::TestCase
       sym = S(str).send(method)
       assert_instance_of(Symbol, sym)
       assert_equal(str, sym.to_s)
-    end
-
-    # error cases
-    unless IS19
-      assert_raise(ArgumentError) { S("").send(method) }
-      assert_raise(ArgumentError) { S("with\0null\0inside").send(method) }
     end
   end
 
@@ -911,8 +876,8 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_slice
-    assert_equal(IS19 ? "A" : 65, S("AooBar").slice(0))
-    assert_equal(IS19 ? "B" : 66, S("FooBaB").slice(-1))
+    assert_equal("A", S("AooBar").slice(0))
+    assert_equal("B", S("FooBaB").slice(-1))
     assert_nil(S("FooBar").slice(6))
     assert_nil(S("FooBar").slice(-7))
 
@@ -940,7 +905,7 @@ class TestString < Test::Unit::TestCase
   def test_slice!
     a = S("AooBar")
     b = a.dup
-    assert_equal(IS19 ? "A" : 65, a.slice!(0))
+    assert_equal("A", a.slice!(0))
     assert_equal(S("ooBar"), a)
     assert_equal(S("AooBar"), b)
 
@@ -1115,7 +1080,7 @@ class TestString < Test::Unit::TestCase
   def test_sub
     assert_equal(S("h*llo"),    S("hello").sub(/[aeiou]/, S('*')))
     assert_equal(S("h<e>llo"),  S("hello").sub(/([aeiou])/, S('<\1>')))
-    assert_equal(S(IS19 ? "h ello" : "104 ello"), S("hello").sub(/./) {
+    assert_equal(S("h ello"), S("hello").sub(/./) {
                    |s| s[0].to_s + S(' ')})
     assert_equal(S("HELL-o"),   S("hello").sub(/(hell)(.)/) {
                    |s| $1.upcase + S('-') + $2
@@ -1169,7 +1134,7 @@ class TestString < Test::Unit::TestCase
 
     a = S("hello")
     a.sub!(/./) { |s| s[0].to_s + S(' ')}
-    assert_equal(S(IS19 ? "h ello" : "104 ello"), a)
+    assert_equal(S("h ello"), a)
 
     a = S("hello")
     a.sub!(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 }
@@ -1240,11 +1205,7 @@ class TestString < Test::Unit::TestCase
     n += S("\001")
     assert_equal(16, n.sum(17))
     assert_equal(16, n.sum(32))
-    if IS19
-      n.setbyte(0, 2)
-    else
-      n[0] = 2
-    end
+    n.setbyte(0, 2)
     assert(15 != n.sum)
 
     # basic test of all reasonable "bit sizes"

@@ -1,2 +1,0 @@
-windows(JRUBY-4440):Dir.mkdir creates the named directory with the given permissions
-fails:Dir.mkdir creates the named directory with the given permissions

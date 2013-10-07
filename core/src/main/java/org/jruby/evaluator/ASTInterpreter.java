@@ -133,11 +133,11 @@ public class ASTInterpreter {
     }
 
     private static void blockPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.B_CALL, name, implClass);
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_CALL, name, implClass);
     }
 
     private static void blockPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.B_RETURN, name, implClass);
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_RETURN, name, implClass);
     }
 
     @Deprecated
@@ -158,13 +158,8 @@ public class ASTInterpreter {
         Ruby runtime = src.getRuntime();
         DynamicScope evalScope;
 
-        if (runtime.is1_9()) {
-            // in 1.9, eval scopes are local to the binding
-            evalScope = binding.getEvalScope(runtime);
-        } else {
-            // in 1.8, eval scopes are local to the parent scope
-            evalScope = binding.getDynamicScope().getEvalScope(runtime);
-        }
+        // in 1.9, eval scopes are local to the binding
+        evalScope = binding.getEvalScope(runtime);
 
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();

@@ -1,2 +1,0 @@
-fails(http://redmine.ruby-lang.org/issues/show/229):CGI::Cookie#value= automatically converts the passed Object to an Array using #Array
-fails(http://redmine.ruby-lang.org/issues/show/229):CGI::Cookie#value= does keep self and the values in sync

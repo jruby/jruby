@@ -51,8 +51,6 @@ import org.jruby.runtime.load.Library;
  */
 public class NativeDelegateLibrary implements Library{
     public void load(Ruby runtime, boolean wrap) {
-        assert !runtime.is1_8() : "the native delegator extension is not compatible with 1.8";
-        
         RubyClass delegateClass = runtime.getClass("Delegator");
         delegateClass.defineAnnotatedMethods(NativeDelegateLibrary.class);
     }

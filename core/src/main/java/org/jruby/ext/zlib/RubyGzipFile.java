@@ -153,20 +153,16 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
-        if (runtime.is1_9()) {
-            if (enc2 == null) {
-                return RubyString.newString(runtime, value, getReadEncoding());
-            }
-            
-            if (ec != null && enc2.isDummy()) {
-                value = ec.convert(runtime.getCurrentContext(), value, false);
-                return RubyString.newString(runtime, value, getEnc());
-            }
-            
-            value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
-            return RubyString.newString(runtime, value);
-        } 
+        if (enc2 == null) {
+            return RubyString.newString(runtime, value, getReadEncoding());
+        }
 
+        if (ec != null && enc2.isDummy()) {
+            value = ec.convert(runtime.getCurrentContext(), value, false);
+            return RubyString.newString(runtime, value, getEnc());
+        }
+
+        value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
         return RubyString.newString(runtime, value);
     }
 

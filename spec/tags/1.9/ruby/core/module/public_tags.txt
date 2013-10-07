@@ -1,1 +1,0 @@
-fails(JRUBY-3917):Module#public on a superclass method calls the redefined method

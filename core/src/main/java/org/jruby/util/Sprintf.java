@@ -114,7 +114,7 @@ public class Sprintf {
                 this.rubyArray = (RubyArray)rubyObject;
                 this.rubyHash = null;
                 this.length = rubyArray.size();
-            } else if (rubyObject instanceof RubyHash && rubyObject.getRuntime().is1_9()) {
+            } else if (rubyObject instanceof RubyHash) {
                 // allow a hash for args if in 1.9 mode
                 this.rubyHash = (RubyHash)rubyObject;
                 this.rubyArray = null;
@@ -155,16 +155,14 @@ public class Sprintf {
         
         IRubyObject next(ByteList name) {
             // for 1.9 hash args
-            if (runtime.is1_9()) {
-                if (name != null) {
-                    if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
+            if (name != null) {
+                if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
 
-                    IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
-                    if (object == null) raiseKeyError("key<" + name + "> not found");
-                    return object;
-                } else if (rubyHash != null) {
-                    raiseArgumentError("positional args mixed with named args");
-                }
+                IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
+                if (object == null) raiseKeyError("key<" + name + "> not found");
+                return object;
+            } else if (rubyHash != null) {
+                raiseArgumentError("positional args mixed with named args");
             }
 
             // this is the order in which MRI does these two tests

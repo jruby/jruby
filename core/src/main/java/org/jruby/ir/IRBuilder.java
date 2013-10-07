@@ -386,15 +386,7 @@ public class IRBuilder {
     }
 
     public static IRBuilder createIRBuilder(Ruby runtime, IRManager manager) {
-        boolean is19 = runtime.is1_9();
-        boolean is20 = runtime.is2_0();
-        if (is20) {
-            return new IRBuilder20(manager);
-        } else if (is19) {
-            return new IRBuilder19(manager);
-        } else {
-            return new IRBuilder(manager);
-        }
+        return new IRBuilder20(manager);
     }
 
     private boolean hasListener() {

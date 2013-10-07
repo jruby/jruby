@@ -92,13 +92,11 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             io.readHeader();
         } catch (IOException e) {
             RaiseException re = RubyZlib.newGzipFileError(runtime, "not in gzip format");
-            if (getRuntime().is1_9()) {
-                byte[] input = io.getAvailIn();
-                if (input != null && input.length > 0) {
-                    RubyException rubye = re.getException();
-                    rubye.setInstanceVariable("@input", 
-                            RubyString.newString(runtime, new ByteList(input, 0, input.length)));
-                }
+            byte[] input = io.getAvailIn();
+            if (input != null && input.length > 0) {
+                RubyException rubye = re.getException();
+                rubye.setInstanceVariable("@input", 
+                        RubyString.newString(runtime, new ByteList(input, 0, input.length)));
             }
             throw re;
         }
@@ -243,7 +241,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
-        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(result);
+        fixBrokenTrailingCharacter(result);
 
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
@@ -361,7 +359,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (limit != -1) rest -= read;
         }
         
-        if (getRuntime().is1_9()) fixBrokenTrailingCharacter(val);
+        fixBrokenTrailingCharacter(val);
         
         this.position += val.length();
         return newStr(getRuntime(), val);

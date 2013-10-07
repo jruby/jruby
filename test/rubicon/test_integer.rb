@@ -2,11 +2,9 @@ require 'test/unit'
 
 
 class TestInteger < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   def test_chr
     a = " " * 256
-    0.upto(255) { |i| a[i] = IS19 ? i.chr : i }
+    0.upto(255) { |i| a[i] = i.chr }
 
     0.upto(255) { |i| assert_equal(a[i,1], i.chr) }
   end
@@ -110,12 +108,4 @@ class TestInteger < Test::Unit::TestCase
     (-9).upto(0) { |i| count += i }
     assert_equal(-45, count)
   end
-
-  unless IS19
-    def test_s_induced_from
-      assert_equal(1, Integer.induced_from(1))
-      assert_equal(1, Integer.induced_from(1.0))
-    end
-  end
-
 end

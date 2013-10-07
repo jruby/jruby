@@ -217,9 +217,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     static void recacheBuiltinMethods(Ruby runtime) {
         RubyModule objectClass = runtime.getBasicObject();
 
-        if (runtime.is1_9()) { // method_missing is in Kernel in 1.9
-            runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"));
-        }
+        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"));
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
@@ -815,7 +813,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (isTaint()) dup.setTaint(true);
         if (isUntrusted()) dup.setUntrusted(true);
 
-        initCopy(dup, this, runtime.is1_9() ? "initialize_dup" : "initialize_copy");
+        initCopy(dup, this, "initialize_dup");
 
         return dup;
     }
@@ -869,7 +867,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         clone.setMetaClass(getSingletonClassClone());
         if (isTaint()) clone.setTaint(true);
 
-        initCopy(clone, this, runtime.is1_9() ? "initialize_clone" : "initialize_copy");
+        initCopy(clone, this, "initialize_clone");
 
         if (isFrozen()) clone.setFrozen(true);
         if (isUntrusted()) clone.setUntrusted(true);
@@ -2077,7 +2075,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject freeze(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if ((flags & FROZEN_F) == 0 && (runtime.is1_9() || !isImmediate())) {
+        if ((flags & FROZEN_F) == 0) {
             flags |= FROZEN_F;
         }
         return this;

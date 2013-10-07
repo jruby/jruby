@@ -1,4 +1,4 @@
-#! /usr/bin/env jruby --1.9
+#!/usr/bin/env jruby
 require 'rspec'
 
 describe "JRUBY-6307: Powering operation of Integer sometimes gets a wrong calculation when 1.9 mode." do

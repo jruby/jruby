@@ -195,7 +195,6 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private boolean shouldMarshalEncoding(IRubyObject value) {
-        if (!runtime.is1_9()) return false;
         if (!(value instanceof MarshalEncoding)) return false;
         return ((MarshalEncoding) value).shouldMarshalEncoding();
     }
@@ -204,11 +203,7 @@ public class MarshalStream extends FilterOutputStream {
         List<Variable<Object>> variables = getVariables(value);
         writeObjectData(value);
         if (variables != null) {
-            if (runtime.is1_9()) {
-                dumpVariablesWithEncoding(variables, value);
-            } else {
-                dumpVariables(variables);
-            }
+            dumpVariablesWithEncoding(variables, value);
         }
     }
 

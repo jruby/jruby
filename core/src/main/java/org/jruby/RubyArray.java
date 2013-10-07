@@ -635,14 +635,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
-        if (getRuntime().is1_9()) {
-            // 1.9 seems to just do inspect for to_s now
-            return inspect();
-        }
-        
-        if (realLength == 0) return RubyString.newEmptyString(getRuntime());
-
-        return join(getRuntime().getCurrentContext(), getRuntime().getGlobalVariables().get("$,"));
+        return inspect();
     }
 
     
@@ -1332,10 +1325,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = {"[]", "slice"}, compat = RUBY1_8)
     public IRubyObject aref(IRubyObject arg0) {
-        assert !arg0.getRuntime().is1_9();
-        if (arg0 instanceof RubyFixnum) return entry(((RubyFixnum)arg0).getLongValue());
-        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
-        return arefCommon(arg0);
+        return aref19(arg0);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = RUBY1_9)
@@ -1353,9 +1343,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = {"[]", "slice"}, compat = RUBY1_8)
     public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
-        assert !arg0.getRuntime().is1_9();
-        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
-        return arefCommon(arg0, arg1);
+        return aref19(arg0, arg1);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = RUBY1_9)
@@ -1386,19 +1374,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = "[]=", compat = RUBY1_8)
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
-        assert !getRuntime().is1_9();
-        if (arg0 instanceof RubyFixnum) {
-            store(((RubyFixnum)arg0).getLongValue(), arg1);
-        } else if (arg0 instanceof RubyRange) {
-            RubyRange range = (RubyRange)arg0;
-            long beg = range.begLen0(realLength);
-            splice(beg, range.begLen1(realLength, beg), arg1, false);
-        } else if(arg0 instanceof RubySymbol) {
-            throw getRuntime().newTypeError("Symbol as array index");
-        } else {
-            store(RubyNumeric.num2long(arg0), arg1);
-        }
-        return arg1;
+        return aset19(arg0, arg1);
     }
 
     @JRubyMethod(name = "[]=", compat = RUBY1_9)
@@ -1421,11 +1397,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     */
     @JRubyMethod(name = "[]=", compat = RUBY1_8)
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        assert !getRuntime().is1_9();
-        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
-        if (arg1 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as subarray length");
-        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2, false);
-        return arg2;
+        return aset19(arg0, arg1, arg2);
     }
 
     @JRubyMethod(name = "[]=", compat = RUBY1_9)
@@ -1472,7 +1444,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         str.cat((byte)'[');
         boolean tainted = isTaint();
         boolean untrust = isUntrusted();
-        boolean is19 = context.runtime.is1_9();
 
         for (int i = 0; i < realLength; i++) {
             if (i > 0) str.cat((byte)',').cat((byte)' ');
@@ -1482,11 +1453,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (str2.isTaint()) tainted = true;
             if (str2.isUntrusted()) untrust = true;
             
-            if (is19) {
-                str.cat19(str2);
-            } else {
-                str.cat(str2);
-            }
+            str.cat19(str2);
         }
         str.cat((byte)']');
 

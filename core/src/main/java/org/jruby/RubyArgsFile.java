@@ -307,7 +307,7 @@ public class RubyArgsFile {
         Ruby runtime = context.runtime;
         
         if (!data.next_argv(context)) {
-            return runtime.is1_9() ? runtime.newEmptyArray() : runtime.getNil();
+            return runtime.newEmptyArray();
         }
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "readlines", args);
@@ -327,7 +327,7 @@ public class RubyArgsFile {
         Ruby runtime = context.runtime;
         
         if (!data.next_argv(context)) {
-            return runtime.is1_9() ? runtime.newEmptyArray() : runtime.getNil();
+            return runtime.newEmptyArray();
         }
 
         if (!(data.currentFile instanceof RubyIO)) {

@@ -80,9 +80,7 @@
         <directory>${jruby.basedir}</directory>
         <targetPath>${jruby.complete.home}</targetPath>
         <includes>
-          <include>lib/ruby/1.8/**</include>
           <include>lib/ruby/1.9/**</include>
-          <include>lib/ruby/2.0/**</include>
           <include>lib/ruby/shared/**</include>
         </includes>
 	<!--

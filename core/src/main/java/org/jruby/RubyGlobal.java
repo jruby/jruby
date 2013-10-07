@@ -144,25 +144,14 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
-        if (runtime.is2_0()) {
-            // needs to be a fixnum, but our revision is a sha1 hash from git
-            runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY2_0_REVISION));
-        } else if (runtime.is1_9()) {
-            // needs to be a fixnum, but our revision is a sha1 hash from git
-            runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY1_9_REVISION));
-        }
+        // needs to be a fixnum, but our revision is a sha1 hash from git
+        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY2_0_REVISION));
         
-        if (runtime.is1_9()) {
-            RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
-            runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
-        }
+        RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
+        runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
 
         final GlobalVariable kcodeGV; 
-        if (runtime.is1_9()) {
-            kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
-        } else {
-            kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
-        }
+        kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
 
         runtime.defineVariable(kcodeGV, GLOBAL);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
@@ -216,10 +205,8 @@ public class RubyGlobal {
 
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
         globals.alias("$>", "$stdout");
-        if (!runtime.is1_9()) globals.alias("$defout", "$stdout");
 
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
-        if (!runtime.is1_9()) globals.alias("$deferr", "$stderr");
 
         runtime.defineGlobalConstant("STDIN", stdin);
         runtime.defineGlobalConstant("STDOUT", stdout);

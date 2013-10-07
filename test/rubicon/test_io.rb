@@ -4,7 +4,6 @@ require 'rbconfig'
 
 # FIXME: This needs platform-specific stuff changed
 class TestIO < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
   WIN32 = RbConfig::CONFIG['host_os'] =~ /mswin/
 
   SAMPLE = "08: This is a line\n"
@@ -477,7 +476,7 @@ class TestIO < Test::Unit::TestCase
 
     File.open(@file) do |file|
       file.each_byte do |b|
-        assert_equal(IS19 ? data.getbyte(count) : data[count], b)
+        assert_equal(data.getbyte(count), b)
         count += 1
       end
     end
@@ -762,7 +761,7 @@ class TestIO < Test::Unit::TestCase
 
     File.open(@file, "rb") do |file|
       assert_equal(?A, file.getc)
-      0.upto(255) { |ch| assert_equal(IS19 ? ch.chr : ch, file.getc) }
+      0.upto(255) { |ch| assert_equal(ch.chr, file.getc) }
     end
   end
 

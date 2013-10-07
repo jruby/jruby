@@ -1,1 +1,0 @@
-fails(gh-631):String#concat with Integer raises a TypeError when the argument is not between 0 and 255

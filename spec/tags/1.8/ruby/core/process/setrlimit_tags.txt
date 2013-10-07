@@ -1,4 +1,0 @@
-fails:Process.setrlimit when passed an Object calls #to_int to convert resource to an Integer
-fails:Process.setrlimit when passed an Object raises a TypeError if #to_int for resource does not return an Integer
-fails:Process.setrlimit when passed an Object calls #to_int to convert the soft limit to an Integer
-fails:Process.setrlimit when passed an Object calls #to_int to convert the hard limit to an Integer

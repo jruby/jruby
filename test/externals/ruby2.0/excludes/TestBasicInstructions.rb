@@ -1,1 +1,0 @@
-exclude :test_array_splat, "needs investigation"

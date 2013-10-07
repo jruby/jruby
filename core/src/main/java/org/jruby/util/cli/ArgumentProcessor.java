@@ -352,7 +352,8 @@ public class ArgumentProcessor {
                         break;
                     } else if (argument.equals("--compat")) {
                         characterIndex = argument.length();
-                        config.setCompatVersion(CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9"))));
+                        grabValue(getArgumentError("--compat takes an argument, but will be ignored"));
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--copyright")) {
                         config.setShowCopyright(true);
@@ -415,13 +416,13 @@ public class ArgumentProcessor {
                         
                         break FOR;
                     } else if (argument.equals("--1.9")) {
-                        config.setCompatVersion(CompatVersion.RUBY1_9);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--2.0")) {
-                        config.setCompatVersion(CompatVersion.RUBY2_0);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--1.8")) {
-                        config.setCompatVersion(CompatVersion.RUBY1_8);
+                        config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);

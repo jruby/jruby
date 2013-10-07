@@ -1,1 +1,0 @@
-fails(JRUBY-4007):Struct#hash returns the same hash for recursive structs

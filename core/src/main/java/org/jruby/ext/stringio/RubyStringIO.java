@@ -156,7 +156,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         switch (args.length) {
             case 0:
-                str = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(runtime);
+                str = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
                 flags = initializeModes("r+");
                 break;
             case 1:
@@ -371,7 +371,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         ByteList bytes = ptr.string.getByteList();
         int len = bytes.getRealSize();
         int end = bytes.getBegin() + len;
-        Encoding enc = runtime.is1_9() ? bytes.getEncoding() : runtime.getKCode().getEncoding();        
+        Encoding enc = bytes.getEncoding();
         while (ptr.pos < len) {
             int pos = (int) ptr.pos;
             int n = StringSupport.length(enc, bytes.getUnsafeBytes(), pos, end);
@@ -405,7 +405,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     }
 
     private boolean isEOF() {
-        return isEndOfString() || (getRuntime().is1_8() && ptr.eof);
+        return isEndOfString();
     }
     
     private boolean isEndOfString() {
@@ -576,12 +576,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
             case 2:
                 if (!args[0].isNil()) str = args[0].convertToString();
-                // 2.0 ignores double nil, 1.9 raises
-                if (runtime.is2_0()) {
-                    if (!args[1].isNil()) {
-                        limit = RubyNumeric.num2int(args[1]);
-                    }
-                } else {
+                if (!args[1].isNil()) {
                     limit = RubyNumeric.num2int(args[1]);
                 }
                 break;
@@ -850,8 +845,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         
         if (ptr.pos < 0) throw getRuntime().newErrnoEINVALError("Invalid argument");
 
-        if (getRuntime().is1_8() && !isEndOfString()) ptr.eof = false;
-
         return getRuntime().getNil();
     }
 
@@ -939,9 +932,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
             RubyString line = getRuntime().newString();
 
             if (args[i].isNil()) {
-                if (!getRuntime().is1_9()) {
-                    line = getRuntime().newString("nil");
-                }
             } else {
                 IRubyObject tmp = args[i].checkArrayType();
                 if (!tmp.isNil()) {
@@ -984,7 +974,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     // uniform method for makeing strings (we have a slightly different variant
     // of this in RubyIO.
     private RubyString makeString(Ruby runtime, ByteList buf, boolean setEncoding) {
-        if (runtime.is1_9() && setEncoding) buf.setEncoding(ptr.string.getEncoding());
+        if (setEncoding) buf.setEncoding(ptr.string.getEncoding());
 
         RubyString str = RubyString.newString(runtime, buf);
         str.setTaint(true);
@@ -1672,9 +1662,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
     @Override
     @Deprecated
     public IRubyObject read(IRubyObject[] args) {
-        if (getRuntime().is1_9()) {
-            return read19(args);
-        }
-        return read18(args);
+        return read19(args);
     }
 }

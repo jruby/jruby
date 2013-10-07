@@ -5,11 +5,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       Time.now - ()
     rescue TypeError=>x
       assert x
-      if RUBY_VERSION =~ /1\.9/
-        assert_equal "no implicit conversion to rational from nil", x.message
-      else
-        assert_equal "no implicit conversion to float from nil", x.message
-      end
+      assert_equal "no implicit conversion to rational from nil", x.message
     end
   end
   def test_plus
@@ -17,11 +13,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       Time.now + ()
     rescue TypeError=>x
       assert x
-      if RUBY_VERSION =~ /1\.9/
-        assert_equal "no implicit conversion to rational from nil", x.message
-      else
-        assert_equal "no implicit conversion to float from nil", x.message
-      end
+      assert_equal "no implicit conversion to rational from nil", x.message
     end
   end
   def test_times

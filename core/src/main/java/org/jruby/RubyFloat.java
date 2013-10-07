@@ -102,10 +102,6 @@ public class RubyFloat extends RubyNumeric {
 
         floatc.getSingletonClass().undefineMethod("new");
 
-        if (!runtime.is1_9()) {
-            floatc.includeModule(runtime.getPrecision());
-        }
-
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, ROUNDS));
         floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));
@@ -121,10 +117,8 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, EPSILON));
 
-        if (runtime.is1_9()) {
-            floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
-            floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
-        }
+        floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
+        floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
 
         floatc.defineAnnotatedMethods(RubyFloat.class);
 
@@ -224,11 +218,7 @@ public class RubyFloat extends RubyNumeric {
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
         // Double-precision can represent around 16 decimal digits;
         // we use 20 to ensure full representation.
-        if (runtime.is1_9()) {
-            Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
-        } else {
-            Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
-        }
+        Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
         int e = buf.indexOf('e');
         if (e == -1) e = buf.getRealSize();
         ASCIIEncoding ascii = ASCIIEncoding.INSTANCE; 
@@ -245,7 +235,7 @@ public class RubyFloat extends RubyNumeric {
         System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
         buf.setRealSize(p + buf.getRealSize() - e);
 
-        if (getRuntime().is1_9()) buf.setEncoding(USASCIIEncoding.INSTANCE);
+        buf.setEncoding(USASCIIEncoding.INSTANCE);
 
         return runtime.newString(buf);
     }

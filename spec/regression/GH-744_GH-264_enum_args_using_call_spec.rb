@@ -226,22 +226,22 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
 
   describe "Enumerable#any?" do
     subject { :any? }
-    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 
   describe "Enumerable#none?" do
     subject { :none? }
-    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 
   describe "Enumerable#one?" do
     subject { :one? }
-    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 
   describe "Enumerable#all?" do
     subject { :all? }
-    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 
   describe "Enumerable#inject" do
@@ -286,7 +286,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
 
   describe "Enumerable#find_index" do
     subject { :find_index }
-    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 
   describe "Enumerable#detect" do
@@ -312,22 +312,19 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     end
   end
 
-  if RUBY_VERSION >= '1.9'
-
-    describe "Enumerable#each_with_object" do
-      it "passes all each args to its block" do
-        @test_enum.each_with_object([]) { |obj, memo| obj.should == [1, 2, 3] }
-      end
+  describe "Enumerable#each_with_object" do
+    it "passes all each args to its block" do
+      @test_enum.each_with_object([]) { |obj, memo| obj.should == [1, 2, 3] }
     end
+  end
 
-    describe "Enumerable#each_entry" do
-      subject { :each_entry }
-      it_behaves_like "an Enumerable method which takes a block", :array
-    end
+  describe "Enumerable#each_entry" do
+    subject { :each_entry }
+    it_behaves_like "an Enumerable method which takes a block", :array
+  end
 
-    describe "Enumerable#flat_map" do
-      subject { :flat_map }
-      it_behaves_like "an Enumerable method which takes a block", :first_arg
-    end
+  describe "Enumerable#flat_map" do
+    subject { :flat_map }
+    it_behaves_like "an Enumerable method which takes a block", :first_arg
   end
 end

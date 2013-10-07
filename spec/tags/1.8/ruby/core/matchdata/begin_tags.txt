@@ -1,1 +1,0 @@
-fails:MatchData#begin returns the offset for multi byte strings

@@ -340,7 +340,7 @@ public class Helpers {
     
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError(runtime.is1_9() ? "can't define singleton" : ("no virtual class for " + receiver.getMetaClass().getBaseName()));
+            throw runtime.newTypeError("can't define singleton");
         } else {
             return receiver.getSingletonClass();
         }
@@ -630,11 +630,7 @@ public class Helpers {
 
     public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {
         if (!(value instanceof RubyArray)) {
-            if (runtime.is1_9()) {
-                value = ArgsUtil.convertToRubyArray19(runtime, value, masgnHasHead);
-            } else {
-                value = ArgsUtil.convertToRubyArray(runtime, value, masgnHasHead);                
-            }
+            value = ArgsUtil.convertToRubyArray19(runtime, value, masgnHasHead);
         }
         return (RubyArray) value;
     }
@@ -1788,7 +1784,7 @@ public class Helpers {
             if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
                 IRubyObject avalue = value.callMethod(context, "to_a");
                 if (!(avalue instanceof RubyArray)) {
-                    if (runtime.is1_9() && avalue.isNil()) {
+                    if (avalue.isNil()) {
                         return runtime.newArray(value);
                     } else {
                         throw runtime.newTypeError("`to_a' did not return Array");
@@ -1911,7 +1907,7 @@ public class Helpers {
 
         IRubyObject avalue = method.call(runtime.getCurrentContext(), value, metaClass, "to_a");
         if (!(avalue instanceof RubyArray)) {
-            if (runtime.is1_9() && avalue.isNil()) {
+            if (avalue.isNil()) {
                 return new IRubyObject[] {value};
             } else {
                 throw runtime.newTypeError("`to_a' did not return Array");
@@ -2587,11 +2583,7 @@ public class Helpers {
     public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
         Ruby runtime = first.getRuntime();
         IRubyObject secondArgs;
-        if (runtime.is1_9()) {
-            secondArgs = Helpers.splatValue19(second);
-        } else {
-            secondArgs = Helpers.splatValue(second);
-        }
+        secondArgs = Helpers.splatValue19(second);
 
         return ((RubyArray) Helpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
     }
@@ -2719,7 +2711,7 @@ public class Helpers {
             return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
 
-        if (context.runtime.is1_9() && receiver.callMethod(context, "respond_to_missing?",
+        if (receiver.callMethod(context, "respond_to_missing?",
             new IRubyObject[]{context.runtime.newSymbol(name), context.runtime.getFalse()}).isTrue()) {
             return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
@@ -2727,7 +2719,7 @@ public class Helpers {
     }
 
     public static RubyString getDefinedNot(Ruby runtime, RubyString definition) {
-        if (definition != null && runtime.is1_9()) {
+        if (definition != null) {
             definition = runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
 
@@ -2997,28 +2989,23 @@ public class Helpers {
         int begin = value.getBegin();
         int length = value.length();
         
-        if (runtime.is1_9()) {
-            Encoding encoding = value.getEncoding();
-            
-            if (encoding == UTF8Encoding.INSTANCE) {
-                return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
-            }
-            
-            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
-            
-            if (charset == null) {
-                try {
-                    return new String(unsafeBytes, begin, length, encoding.toString());
-                } catch (UnsupportedEncodingException uee) {
-                    return value.toString();
-                }
-            }
-            
-            return RubyEncoding.decode(unsafeBytes, begin, length, charset);
-            
-        } else {
+        Encoding encoding = value.getEncoding();
+
+        if (encoding == UTF8Encoding.INSTANCE) {
             return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
         }
+
+        Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+        if (charset == null) {
+            try {
+                return new String(unsafeBytes, begin, length, encoding.toString());
+            } catch (UnsupportedEncodingException uee) {
+                return value.toString();
+            }
+        }
+
+        return RubyEncoding.decode(unsafeBytes, begin, length, charset);
     }
     
     /**

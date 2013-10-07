@@ -165,9 +165,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
         // NULL device
-        if (runtime.is1_9() || runtime.is2_0()) {
-            constants.setConstant("NULL", runtime.newString(getNullDevice()));
-        }
+        constants.setConstant("NULL", runtime.newString(getNullDevice()));
 
         // File::Constants module is included in IO.
         runtime.getIO().includeModule(constants);
@@ -1273,7 +1271,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (getRuntime().is1_9() && modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }
@@ -1355,13 +1353,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (path instanceof RubyString) {
             return (RubyString)path;
         }
-        if (context.runtime.is1_9()) {
-            if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
-            
-            return filePathConvert(context, path.convertToString());
-        } 
-          
-        return path.convertToString();
+
+        if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
+
+        return filePathConvert(context, path.convertToString());
     }
     
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.

@@ -168,10 +168,6 @@ public class RubyKernel {
         RubyModule module = runtime.getKernel();
 
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
-
-        if (!runtime.is1_9()) { // method_missing is in BasicObject in 1.9
-            runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
-        }
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -198,14 +194,7 @@ public class RubyKernel {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        final RubyString fileString;
-        if (runtime.is1_9()) {
-            fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
-        } else if (!(file instanceof RubyString)) {
-            throw runtime.newTypeError(file, runtime.getString());
-        } else {
-            fileString = (RubyString) file;
-        }
+        final RubyString fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
         
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
         
@@ -234,11 +223,7 @@ public class RubyKernel {
         RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
         if (module == runtime.getKernel()) {
             // special behavior if calling Kernel.autoload directly
-            if (runtime.is1_9()) {
-                module = runtime.getObject().getSingletonClass();
-            } else {
-                module = runtime.getObject();
-            }
+            module = runtime.getObject().getSingletonClass();
         }
         return module;
     }
@@ -541,12 +526,10 @@ public class RubyKernel {
         }
 
         IRubyObject result = runtime.getNil();
-        if (runtime.is1_9()) {
-            if (args.length == 1) {
-                result = args[0];
-            } else if (args.length > 1) {
-                result = runtime.newArray(args);
-            }
+        if (args.length == 1) {
+            result = args[0];
+        } else if (args.length > 1) {
+            result = runtime.newArray(args);
         }
 
         if (defout instanceof RubyFile) {
@@ -985,7 +968,7 @@ public class RubyKernel {
         RubyString str = RubyString.stringValue(args[0]);
 
         IRubyObject arg;
-        if (context.runtime.is1_9() && args.length == 2 && args[1] instanceof RubyHash) {
+        if (args.length == 2 && args[1] instanceof RubyHash) {
             arg = args[1];
         } else {
             RubyArray newArgs = context.runtime.newArrayNoCopy(args);
@@ -1057,7 +1040,7 @@ public class RubyKernel {
         String msg = String.format("Exception `%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),
-                runtime.is1_9() ? TypeConverter.convertToType(rEx, runtime.getString(), "to_s") : rEx.convertToString().toString());
+                TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
 
         runtime.getErrorStream().print(msg);
     }
@@ -1341,14 +1324,10 @@ public class RubyKernel {
 
         // No catch active for this throw
         String message;
-        if (runtime.is1_9()) {
-            if (tag instanceof RubyString) {
-                message = "uncaught throw `" + tag + "'";
-            } else {
-                message = "uncaught throw " + tag.inspect();
-            }
-        } else {
+        if (tag instanceof RubyString) {
             message = "uncaught throw `" + tag + "'";
+        } else {
+            message = "uncaught throw " + tag.inspect();
         }
         RubyThread currentThread = context.getThread();
 
@@ -1356,11 +1335,7 @@ public class RubyKernel {
             throw uncaught.uncaughtThrow(runtime, message, tag);
         } else {
             message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
-            if (runtime.is1_9()) {
-                throw runtime.newArgumentError(message);
-            } else {
-                throw runtime.newThreadError(message);
-            }
+            throw runtime.newArgumentError(message);
         }
     }
 
@@ -1507,7 +1482,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
-        if (context.runtime.is1_9() && !block.isGiven()) {
+        if (!block.isGiven()) {
             return RubyEnumerator.enumeratorize(context.runtime, recv, "loop");
         }
         IRubyObject nil = context.runtime.getNil();
@@ -1675,8 +1650,7 @@ public class RubyKernel {
             // trim the length
             length = newPos;
         }
-        ByteList buf = runtime.is1_9() ? new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false) :
-                new ByteList(out, 0, length, false);
+        ByteList buf = new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false);
         RubyString newString = RubyString.newString(runtime, buf);
         
         return newString;

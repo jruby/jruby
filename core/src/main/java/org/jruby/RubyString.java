@@ -154,7 +154,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         stringClass.kindOf = new RubyModule.JavaClassKindOf(RubyString.class);
 
         stringClass.includeModule(runtime.getComparable());
-        if (!runtime.is1_9()) stringClass.includeModule(runtime.getEnumerable());
         stringClass.defineAnnotatedMethods(RubyString.class);
 
         return stringClass;
@@ -384,7 +383,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyClass metaclass = getMetaClass();
         Ruby runtime = metaclass.getClassRuntime();
         if (metaclass != runtime.getString() || metaclass != other.getMetaClass()) return super.eql(other);
-        return runtime.is1_9() ? eql19(runtime, other) : eql18(runtime, other);
+        return eql19(runtime, other);
     }
 
     private boolean eql18(Ruby runtime, IRubyObject other) {
@@ -631,7 +630,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
-        RubyString empty = new RubyString(runtime, metaClass, runtime.is1_9() ? EMPTY_USASCII_BYTELIST : EMPTY_ASCII8BIT_BYTELIST);
+        RubyString empty = new RubyString(runtime, metaClass, EMPTY_USASCII_BYTELIST);
         empty.shareLevel = SHARE_LEVEL_BYTELIST;
         return empty;
     }
@@ -793,9 +792,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     
     /* rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
-        return runtime.is1_9()
-                ? makeShared19(runtime, runtime.getString(), index, len)
-                : makeShared(runtime, runtime.getString(), index, len);
+        return makeShared19(runtime, runtime.getString(), index, len);
     }
     
     public RubyString makeSharedString19(Ruby runtime, int index, int len) {
@@ -803,9 +800,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final RubyString makeShared(Ruby runtime, int index, int len) {
-        return runtime.is1_9()
-                ? makeShared19(runtime, getType(), index, len)
-                : makeShared(runtime, getType(), index, len);
+        return makeShared19(runtime, getType(), index, len);
     }
 
     public final RubyString makeShared(Ruby runtime, RubyClass meta, int index, int len) {
@@ -1044,7 +1039,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = getRuntime();
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            return runtime.is1_9() ? op_cmp19(otherString) : op_cmp(otherString);
+            return op_cmp19(otherString);
         }
         return (int)op_cmpCommon(runtime.getCurrentContext(), other).convertToInteger().getLongValue();
     }
@@ -1184,7 +1179,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject opFormatCommon(ThreadContext context, IRubyObject arg, CompatVersion compat) {
         IRubyObject tmp;
-        if (context.runtime.is1_9() && arg instanceof RubyHash) {
+        if (arg instanceof RubyHash) {
             tmp = arg;
         } else {
             tmp = arg.checkArrayType();
@@ -1198,17 +1193,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
-        switch (compat) {
-        case RUBY1_8:
-            tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
-            break;
-        case RUBY1_9:
-        case RUBY2_0:
-            tainted = Sprintf.sprintf1_9(out, Locale.US, value, tmp);
-            break;
-        default:
-            throw new RuntimeException("invalid compat version for sprintf: " + compat);
-        }
+        tainted = Sprintf.sprintf1_9(out, Locale.US, value, tmp);
+        
         RubyString str = newString(context.runtime, out);
 
         str.setTaint(tainted || isTaint());
@@ -1238,10 +1224,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
                 value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
                 value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
-        if (runtime.is1_9()) {
-            hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                    : value.getEncoding().getIndex());
-        }
+        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
+                : value.getEncoding().getIndex());
         return (int) hash;
     }
 
@@ -1255,10 +1239,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(0, 0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize()) : PerlHash.hash(0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize());
-        if (runtime.is1_9()) {
-            hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                    : value.getEncoding().getIndex());
-        }
+        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
+                : value.getEncoding().getIndex());
         return (int) hash;
     }
 
@@ -2310,13 +2292,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "insert", compat = RUBY1_8)
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
-        assert !context.runtime.is1_9();
-        RubyString str = stringArg.convertToString();
-        int index = RubyNumeric.num2int(indexArg);
-        if (index == -1) return append(stringArg);
-        if (index < 0) index++;
-        replaceInternal(checkIndex(index, value.getRealSize()), 0, str);
-        return this;
+        return insert19(context, indexArg, stringArg);
     }
 
     @JRubyMethod(name = "insert", compat = RUBY1_9)
@@ -3516,9 +3492,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         int end = Math.min(length, beg + len);
-        return runtime.is1_9()
-                ? makeShared19(runtime, beg, end - beg)
-                : makeShared(runtime, beg, end - beg);
+        return makeShared19(runtime, beg, end - beg);
     }
 
     /* str_byte_substr */
@@ -5366,10 +5340,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
-             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) {
                  result.infectBy(this);
-             }
+        }
         return result;
     }
 
@@ -5457,8 +5430,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         res.setRealSize(p);
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
-             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) {
                  result.infectBy(this);
              }
         result.associateEncoding(enc);
@@ -7413,7 +7385,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
     
     private RubySymbol checkSpecialCasesIntern(ByteList value) {
-        String[][] opTable = getRuntime().is1_8() ? opTable18 : opTable19;
+        String[][] opTable = opTable19;
         
         for (int i = 0; i < opTable.length; i++) {
             String op = opTable[i][1];

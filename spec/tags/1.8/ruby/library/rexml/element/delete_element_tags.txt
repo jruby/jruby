@@ -1,1 +1,0 @@
-fails(JRUBY-2334):REXML::Element#delete_element deletes Element and returns it

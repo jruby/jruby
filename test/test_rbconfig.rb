@@ -3,10 +3,8 @@ require 'test/unit'
 
 class TestRbconfig < Test::Unit::TestCase
   def test_constants
-    assert Config
     assert RbConfig::CONFIG
     assert RbConfig
-    assert_equal Config, RbConfig
   end
 
   def test_windows_os_names

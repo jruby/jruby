@@ -124,9 +124,6 @@ public class DVarNode extends Node implements INameNode {
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyString definition = runtime.getDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
-        if (!context.runtime.is1_9()) {
-            definition = runtime.getDefinedMessage(DefinedMessage.LOCAL_VARIABLE_IN_BLOCK);
-        }
         return definition;
     }
 }

@@ -1,1 +1,0 @@
-fails(gh-631):Socket::BasicSocket#ioctl passes data from and to a String correctly

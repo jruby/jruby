@@ -299,15 +299,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
-        if (runtime.is2_0()) {
-            // set up Thread::Backtrace::Location class
-            RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            
-            location.defineAnnotatedMethods(Location.class);
-            
-            runtime.setLocation(location);
-        }
+        // set up Thread::Backtrace::Location class
+        RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
+        location.defineAnnotatedMethods(Location.class);
+
+        runtime.setLocation(location);
         
         return threadClass;
     }
@@ -1175,18 +1173,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
-            RubyException systemExit;
-
-            if (!runtime.is1_9()) {
-                runtime.printError(rubyException);
-                String message =  rubyException.message.convertToString().toString();
-                systemExit = RubySystemExit.newInstance(runtime, 1, message);
-                systemExit.set_backtrace(rubyException.backtrace());
-            } else {
-                systemExit = rubyException;
-            }
-
-            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
+            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
             runtime.printError(exception.getException());
