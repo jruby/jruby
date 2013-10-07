@@ -50,59 +50,59 @@ namespace :spec do
 
   desc "Tagged specs in interpreted mode only"
   task :interpreted do
-    mspec :compile_mode => "OFF", :spec_config => RUBY19_MSPEC_FILE, 
-       :compat => "1.9", :format => 'd'
+    mspec :compile_mode => "OFF", :spec_config => RUBYSPEC_MSPEC_FILE, 
+       :format => 'd'
   end
 
   desc "Tagged specs in interpreted (IR) mode only"
   task :interpreted_ir do
-    mspec :compile_mode => "OFFIR", :spec_config => RUBY19_MSPEC_FILE, 
-       :compat => "1.9", :format => 'd'
+    mspec :compile_mode => "OFFIR", :spec_config => RUBYSPEC_MSPEC_FILE, 
+       :format => 'd'
   end
 
   desc "Tagged specs in JIT mode only (threshold=0)"
   task :compiled do
-    mspec :compile_mode => "JIT", :spec_config => RUBY19_MSPEC_FILE, 
+    mspec :compile_mode => "JIT", :spec_config => RUBYSPEC_MSPEC_FILE, 
        :jit_threshold => 0, 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   desc "Tagged specs in AOT mode only"
   task :precompiled do
     mspec :compile_mode => "FORCE", :spec_config => RUBY_MSPEC_FILE, 
        :jit_threshold => 0, 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   desc "All specs in interpreted mode only"
   task :all_interpreted do
     mspec :compile_mode => "OFF", 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   desc "All specs in interpreted IR mode only"
   task :all_interpreted_ir do
     mspec :compile_mode => "OFFIR", 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   desc "All specs in JIT mode only (threshold=0)"
   task :all_compiled_18 do
     mspec :compile_mode => "JIT", :jit_threshold => 0, 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   desc "All specs in AOT mode only"
   task :all_precompiled do
     mspec :compile_mode => "FORCE", :jit_threshold => 0, 
-       :compat => "1.9", :format => 'd'
+       :format => 'd'
   end
 
   # Parameterized rubyspec runs for e.g. TravisCI
   desc "Run RubySpec in interpreted mode under the language compat version ENV['RUBYSPEC_LANG_VER']"
   task :ci_interpreted_via_env do
-    mspec :compile_mode => 'OFF', :compat => '1.9',
-      :spec_config => RUBY19_MSPEC_FILE, :format => 's'
+    mspec :compile_mode => 'OFF',
+      :spec_config => RUBYSPEC_MSPEC_FILE, :format => 's'
   end
   
   # Complimentary tasks for running specs

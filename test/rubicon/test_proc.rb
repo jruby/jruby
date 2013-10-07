@@ -2,8 +2,6 @@ require 'test/unit'
 
 
 class TestProc < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   def procFrom
     Proc.new
   end
@@ -30,11 +28,7 @@ class TestProc < Test::Unit::TestCase
     actual = tests.map do |proc, exp_arity|
       proc.arity
     end
-    if IS19
-      assert_equal([0, 2, 3, -1, -2, -3, 0, 1], actual)
-    else
-      assert_equal([-1, 2, 3, -1, -2, -3, 0, 1], actual)
-    end
+    assert_equal([0, 2, 3, -1, -2, -3, 0, 1], actual)
   end
 
   def test_call
@@ -47,11 +41,6 @@ class TestProc < Test::Unit::TestCase
     assert_equal("hello", a.call)
     a = Proc.new { "there" }
     assert_equal("there", a.call)
-  end
-  
-  def test_to_s
-    a = Proc.new {}
-    assert(a.to_s[__FILE__ + ":53"])
   end
 
 end

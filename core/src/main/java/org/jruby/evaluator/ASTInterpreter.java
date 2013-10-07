@@ -133,11 +133,11 @@ public class ASTInterpreter {
     }
 
     private static void blockPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.B_CALL, name, implClass);
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_CALL, name, implClass);
     }
 
     private static void blockPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.B_RETURN, name, implClass);
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_RETURN, name, implClass);
     }
 
     @Deprecated

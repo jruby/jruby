@@ -84,11 +84,7 @@ describe Ant do
   end
 
   it "should define methods corresponding to ant tasks" do
-    if RUBY_VERSION =~ /\A1\.8/
-      @ant.methods.should include("java", "antcall", "property", "import", "path", "patternset")
-    else
-      @ant.methods.should include(:java, :antcall, :property, :import, :path, :patternset)
-    end
+    @ant.methods.should include(:java, :antcall, :property, :import, :path, :patternset)
   end
 
   it "should execute the default target" do

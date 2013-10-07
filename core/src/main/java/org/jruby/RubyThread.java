@@ -299,15 +299,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
-        if (runtime.is2_0()) {
-            // set up Thread::Backtrace::Location class
-            RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            
-            location.defineAnnotatedMethods(Location.class);
-            
-            runtime.setLocation(location);
-        }
+        // set up Thread::Backtrace::Location class
+        RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
+        location.defineAnnotatedMethods(Location.class);
+
+        runtime.setLocation(location);
         
         return threadClass;
     }

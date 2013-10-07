@@ -2,8 +2,6 @@ require 'jruby'
 require 'java'
 require 'rspec'
 
-is19 = RUBY_VERSION =~ /1\.9/
-
 module CompilerTestUtils
   def compile_to_class(src, filename = nil)
     next_src_id = next_id
@@ -52,7 +50,7 @@ describe "JRuby's compiler" do
           [57, 58, 59, 60, 61, 62, 63, 64]]}
 
   StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = is19 ? org.jruby.compiler.ASTCompiler19 : org.jruby.compiler.ASTCompiler
+  ASTCompiler = org.jruby.compiler.ASTCompiler19
   ASTInspector = org.jruby.compiler.ASTInspector
   Block = org.jruby.runtime.Block
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -113,7 +111,7 @@ describe "JRuby's compiler" do
   it "compiles regexp matches" do
     expect(compile_and_run("/foo/ =~ 'foo'")).to eq 0
     expect(compile_and_run("'foo' =~ /foo/")).to eq 0
-    expect(compile_and_run(":aaa =~ /foo/")).to (is19 ? be_nil : be_false)
+    expect(compile_and_run(":aaa =~ /foo/")).to be_nil
   end
 
   it "compiles method definitions" do
@@ -128,13 +126,11 @@ describe "JRuby's compiler" do
     expect(compile_and_run("def self.foo2(a); a + yield.to_s; end; self.foo2('baz') {}")).to eq 'baz'
   end
   
-  if is19
-    it "compiles strings with encoding" do
-      str8bit = '"\300"'
-      str8bit_result = compile_and_run(str8bit)
-      expect(str8bit_result).to eq "\300"
-      expect(str8bit_result.encoding).to eq Encoding::ASCII_8BIT
-    end
+  it "compiles strings with encoding" do
+    str8bit = '"\300"'
+    str8bit_result = compile_and_run(str8bit)
+    expect(str8bit_result).to eq "\300"
+    expect(str8bit_result.encoding).to eq Encoding::UTF_8
   end
   
   it "compiles backrefs" do
@@ -224,15 +220,8 @@ describe "JRuby's compiler" do
   end
   
   it "compiles closure arguments" do
-    expect(compile_and_run("a = 0; [1].each {|a|}; a")).to  is19 ? eq(0) : eq(1)
+    expect(compile_and_run("a = 0; [1].each {|a|}; a")).to eq(0)
     expect(compile_and_run("a = 0; [1].each {|x| a = x}; a")).to  eq 1
-    if !is19
-      expect(compile_and_run("[1].each {|@a|}; @a")).to eq 1
-      expect(compile_and_run("[[1]].each {|@a|}; @a")).to match_array([1])
-      expect(compile_and_run("1.times {|@@a|}; @@a")).to eq 0
-      expect(compile_and_run("a = []; 1.times {|a[0]|}; a[0]")).to eq 0
-      expect(compile_and_run("a = Class.new do; attr_accessor :foo; end.new; 1.times {|a.foo|}; a.foo")).to  eq 0
-    end
     expect(compile_and_run("[[1,2,3]].each {|x,*y| break y}")).to  match_array([2,3])
     expect(compile_and_run("1.times {|x,*y| break y}")).to  match_array([])
     expect(compile_and_run("1.times {|x,*|; break x}")).to eq 0
@@ -281,11 +270,9 @@ describe "JRuby's compiler" do
     expect{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
   end
   
-  if is19
-    it "compiles grouped and intra-list rest args" do
-      result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
-      expect(result).to match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
-    end
+  it "compiles grouped and intra-list rest args" do
+    result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
+    expect(result).to match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
   end
   
   it "compiles splatted values" do
@@ -299,10 +286,8 @@ describe "JRuby's compiler" do
     expect(compile_and_run("a, (b, c) = 1, 2; [a, b, c]")).to  match_array([1,2,nil])
     expect(compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]")).to match_array([1,2,3])
     expect(compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]")).to  match_array([1,2,3])
-    if is19
-      result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
-      expect(result).to  match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
-    end
+    result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
+    expect(result).to  match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
   end
   
   it "compiles dynamic regexp" do
@@ -439,18 +424,16 @@ describe "JRuby's compiler" do
     expect(result).to  match_array([1,2,3])
   end
 
-  if is19
-    it "prepares a proper caller scope for partition/rpartition (JRUBY-6827)" do
-      result = compile_and_run %q[
-        def foo
-          Object
-          "/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb:4:in `(root)'".rpartition(/:\d+(?:$|:in )/).first
-        end
+  it "prepares a proper caller scope for partition/rpartition (JRUBY-6827)" do
+    result = compile_and_run %q[
+      def foo
+        Object
+        "/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb:4:in `(root)'".rpartition(/:\d+(?:$|:in )/).first
+      end
 
-        foo]
+      foo]
 
-      expect(result).to  eq '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
-    end
+    expect(result).to  eq '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
   end
 
   it "handles attr accessors for unassigned vars properly" do
@@ -469,19 +452,17 @@ ary
     expect(result).to  match_array([nil, 1])
   end
 
-  if is19
-    it "does not break String#to_r and to_c" do
-      # This is structured to cause a "dummy" scope because of the String constant
-      # This caused to_r and to_c to fail since that scope always returns nil
-      result = compile_and_run <<-EOC
-      def foo
-        [String.new("0.1".to_c.to_s), String.new("0.1".to_r.to_s)]
-      end
-      foo
-      EOC
-
-      expect(result).to  match_array(["0.1+0i", "1/10"])
+  it "does not break String#to_r and to_c" do
+    # This is structured to cause a "dummy" scope because of the String constant
+    # This caused to_r and to_c to fail since that scope always returns nil
+    result = compile_and_run <<-EOC
+    def foo
+      [String.new("0.1".to_c.to_s), String.new("0.1".to_r.to_s)]
     end
+    foo
+    EOC
+
+    expect(result).to  match_array(["0.1+0i", "1/10"])
   end
   
   it "handles 0-4 arg and splatted whens in a caseless case/when" do
@@ -542,7 +523,7 @@ ary
     $~ = nil
     obj.blank?.should == false
     $~.should be_nil
-  end if is19
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
@@ -680,52 +661,36 @@ ary
     large_hash.gsub!('[', '{')
     large_hash.gsub!(']', '}')
     expect(compile_and_run(large_array)).to  eq(eval(large_array))
-    expect(compile_and_run(large_hash)).to  eq(eval(large_hash)) unless is19 # invalid syntax in 1.9
 
-    if is19 # block arg spreading cases
-      expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to match_array([1])
-      expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  match_array([1])
-      expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  match_array([1,2])
-    end
+    # block arg spreading cases
+    expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to match_array([1])
+    expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  match_array([1])
+    expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  match_array([1,2])
 
     # non-expr case statement with return with if modified with call
     # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
     expect(compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo")).to eq 3
 
-    if is19 # named groups with capture
-      expect(
-      compile_and_run("
-      def foo
-        ary = []
-        a = nil
-        b = nil
-        1.times {
-          /(?<b>ell)(?<c>o)/ =~ 'hello'
-          ary << a
-          ary << b
-          ary << c
-        }
+    # named groups with capture
+    expect(
+    compile_and_run("
+    def foo
+      ary = []
+      a = nil
+      b = nil
+      1.times {
+        /(?<b>ell)(?<c>o)/ =~ 'hello'
+        ary << a
         ary << b
-        ary
-      end
-      foo")).to  match_array([nil,'ell', 'o', 'ell'])
+        ary << c
+      }
+      ary << b
+      ary
     end
+    foo")).to  match_array([nil,'ell', 'o', 'ell'])
 
-    if is19 # chained argscat and argspush
-      expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  match_array([1,2,3,1,2,4,5])
-    end
-
-    # JRUBY-5840
-    if !is19
-      test = '
-      nonascii = (0x80..0xff).collect{|c| c.chr }.join
-      /([#{Regexp.escape(nonascii)}])/n
-      '
-      old_kcode = $KCODE
-      $KCODE = 'UTF-8'
-      expect(compile_and_run(test)).to  eq(eval(test))
-      $KCODE = old_kcode
-    end
+    # chained argscat and argspush
+    expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  match_array([1,2,3,1,2,4,5])
 
     # JRUBY-5871: test that "special" args dispatch along specific-arity path
     test = '
@@ -736,7 +701,7 @@ ary
     # These two cases triggered ArgumentError when Enumerator was fixed to enforce
     # 3 required along its varargs path. Testing both here to ensure super/zsuper
     # also dispatch along arity-specific paths as appropriate
-    enumerable = is19 ? "Enumerator" : "Enumerable::Enumerator"
+    enumerable = "Enumerator"
     compile_and_run "
     class JRuby5871A < #{enumerable}
       def initialize(x, y, *z)

@@ -108,11 +108,7 @@ public class ParserConfiguration {
 
     public Encoding getDefaultEncoding() {
         if (defaultEncoding == null) {
-            if (runtime.is2_0()) {
-                defaultEncoding = UTF8Encoding.INSTANCE;
-            } else {
-                defaultEncoding = getEncodingService().loadEncoding(USASCII);
-            }
+            defaultEncoding = UTF8Encoding.INSTANCE;
         }
         
         return defaultEncoding;

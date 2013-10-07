@@ -576,12 +576,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
 
             case 2:
                 if (!args[0].isNil()) str = args[0].convertToString();
-                // 2.0 ignores double nil, 1.9 raises
-                if (runtime.is2_0()) {
-                    if (!args[1].isNil()) {
-                        limit = RubyNumeric.num2int(args[1]);
-                    }
-                } else {
+                if (!args[1].isNil()) {
                     limit = RubyNumeric.num2int(args[1]);
                 }
                 break;

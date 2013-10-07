@@ -43,8 +43,10 @@ class TestTraceFunc < Test::Unit::TestCase
     line = __LINE__ - 7
     expected = ["line #{__FILE__}:#{line} test_block_and_vars TestTraceFunc",
       "c-call #{__FILE__}:#{line} times Fixnum",
+      "b-call #{__FILE__}:#{line} test_block_and_vars TestTraceFunc",
       "line #{__FILE__}:#{line + 1} test_block_and_vars TestTraceFunc",
       "line #{__FILE__}:#{line + 2} test_block_and_vars TestTraceFunc",
+      "b-return #{__FILE__}:#{line + 2} test_block_and_vars TestTraceFunc",
       "c-return #{__FILE__}:#{line} times Fixnum",
       "line #{__FILE__}:#{line + 5} test_block_and_vars TestTraceFunc",
       "c-call #{__FILE__}:#{line + 5} set_trace_func Kernel"]

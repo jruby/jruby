@@ -93,8 +93,8 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     env :key => "JRUBY_OPTS", :value => ""
     # launch in the same mode we're testing, since config is loaded by top process
 
-    # if 1.9 mode, add . to load path so mspec config is found
-    arg :line => "-I ." if ms[:compat] == '1.9'
+    # add . to load path so mspec config is found
+    arg :line => "-I ."
 
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"

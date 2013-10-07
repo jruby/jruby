@@ -14,15 +14,9 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_initialize_on_frozen_array
-    if RUBY_VERSION =~ /1\.9/
-      assert_raises(RuntimeError) {
-        [1, 2, 3].freeze.instance_eval { initialize }
-      }
-    else
-      assert_raises(TypeError) {
-        [1, 2, 3].freeze.instance_eval { initialize }
-      }
-    end
+    assert_raises(RuntimeError) {
+      [1, 2, 3].freeze.instance_eval { initialize }
+    }
   end
 
   # JRUBY-4157

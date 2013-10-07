@@ -2,8 +2,6 @@ require 'test/unit'
 
 
 class TestMarshal < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   #
   # Check that two arrays contain the same "bag" of elements.
   # A mathematical bag differs from a "set" by counting the
@@ -88,22 +86,6 @@ class TestMarshal < Test::Unit::TestCase
       
     ensure
       File.delete("_dl")
-    end
-  end
-
-  unless IS19
-    def test_s_dump_load3
-      b = B.new(10, "wombat")
-      s = Marshal.dump(b)
-
-      res = []
-      newb = Marshal.load(s, proc { |obj| res << obj unless obj.kind_of?(Fixnum)})
-
-      assert_equal(10,       newb.b1.a1)
-      assert_equal(20,       newb.b1.a2)
-      assert_equal("wombat", newb.b2)
-
-      assert_bag_equal([newb, newb.b1, newb.b2], res)
     end
   end
 

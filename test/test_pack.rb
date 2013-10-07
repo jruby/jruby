@@ -17,11 +17,6 @@ class TestPack < Test::Unit::TestCase
 
   def test_pack_w
     assert_equal( "\005", [5].pack('w'))
-    assert_equal( "\203t", [500].pack('w'))
-    assert_equal( "\203\206P", [50000].pack('w'))
-    assert_equal( "\222\320\227\344\000", [5000000000].pack('w'))
-    assert_equal( "\222\320\227\344\001", [5000000001].pack('w'))
-    assert_equal( "\272\357\232\025", [123456789].pack('w'))
   end
   
   def test_pack_M
@@ -39,33 +34,11 @@ class TestPack < Test::Unit::TestCase
   def test_pack_q
     assert_equal(endian("\000\000\000\000\000\000\000\000", 8), [0].pack("q"))
     assert_equal(endian("\001\000\000\000\000\000\000\000", 8), [1].pack("q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), [-1].pack("q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @int_array.pack("q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @float_array.pack("q"))
-    assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("q"))
-  end
-
-  unless RUBY_VERSION =~ /1\.9/
-    def test_pack_q_expected_errors
-      assert_raises(TypeError){ @char_array.pack("q") }
-      assert_raises(RangeError){ [(2**128)].pack("q") }
-    end
   end
 
   def test_pack_Q
     assert_equal(endian("\000\000\000\000\000\000\000\000", 8), [0].pack("Q"))
     assert_equal(endian("\001\000\000\000\000\000\000\000", 8), [1].pack("Q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), [-1].pack("Q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @int_array.pack("Q"))
-    assert_equal(endian("\377\377\377\377\377\377\377\377", 8), @float_array.pack("Q"))
-    assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("Q"))
-  end
-
-  unless RUBY_VERSION =~ /1\.9/
-    def test_pack_Q_expected_errors
-      assert_raises(TypeError){ @char_array.pack("Q") }
-      assert_raises(RangeError){ [(2**128)].pack("Q") }
-    end
   end
 
   # JRUBY-2502
@@ -108,12 +81,5 @@ class TestPack < Test::Unit::TestCase
   # JRUBY-4967
   def test_pack_CC
     assert_raises(ArgumentError) { [0].pack('CC') }
-  end
-
-  unless RUBY_VERSION =~ /1\.9/
-    def test_unpack_at_on_substring
-      assert_equal([?c], 'abcdef'[1..-1].unpack('@1c'))
-      assert_equal([?f], 'abcdef'[1..-1].unpack('x1@*c'))
-    end
   end
 end

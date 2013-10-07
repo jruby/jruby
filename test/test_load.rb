@@ -103,7 +103,7 @@ class TestLoad < Test::Unit::TestCase
     `#{cmd}`
   end
 
-  unless WINDOWS || RUBY_VERSION =~ /1\.9/ # FIXME for Windows and 1.9
+  unless WINDOWS || true # FIXME for Windows and 1.9+
     def test_load_relative_with_classpath
       assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar')), 'OK'
     end
@@ -227,7 +227,7 @@ DEPS
   end
 
   # JRUBY-6172
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_load_from_jar_with_symlink_in_path
       if !WINDOWS
         begin

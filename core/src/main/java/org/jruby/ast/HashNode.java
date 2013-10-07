@@ -87,9 +87,7 @@ public class HashNode extends Node {
             int size = list.size();
 
             // Enebo: Innefficient impl here should not matter since this interp will not be used in 9k
-            hash = size <= 10 && !runtime.is2_0() ?
-                    RubyHash.newSmallHash(runtime) :
-                    RubyHash.newHash(runtime);
+            hash = RubyHash.newHash(runtime);
 
             for (int i = 0; i < size;) {
                 // insert all nodes in sequence, hash them in the final instruction

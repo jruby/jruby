@@ -249,10 +249,8 @@ public class LoadService {
                     addPath(rubygemsDir);
                 }
                 addPath(RbConfigLibrary.getRubySharedLibDir(runtime));
-                // if 2.0, we append 1.9 libs; our copy of 2.0 only has diffs right now
-                if (runtime.is2_0()) {
-                    addPath(RbConfigLibrary.getRubyLibDirFor(runtime, "2.0"));
-                }
+                // TODO: merge
+                addPath(RbConfigLibrary.getRubyLibDirFor(runtime, "2.0"));
                 addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 

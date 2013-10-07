@@ -144,13 +144,8 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
-        if (runtime.is2_0()) {
-            // needs to be a fixnum, but our revision is a sha1 hash from git
-            runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY2_0_REVISION));
-        } else  {
-            // needs to be a fixnum, but our revision is a sha1 hash from git
-            runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY1_9_REVISION));
-        }
+        // needs to be a fixnum, but our revision is a sha1 hash from git
+        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY2_0_REVISION));
         
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
