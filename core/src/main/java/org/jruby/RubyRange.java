@@ -604,10 +604,13 @@ public class RubyRange extends RubyObject {
     public IRubyObject eqq_p19(ThreadContext context, IRubyObject obj) {
         return callMethod(context, "include?", obj);
     }
-
-    @JRubyMethod(name = "cover?", compat = RUBY1_9)
+    
+    @JRubyMethod(name = "cover?")
     public IRubyObject cover_p(ThreadContext context, IRubyObject obj) {
-        return include_p(context, obj); // 1.8 "include?"
+        if (rangeLe(context, begin, obj) == null) return context.runtime.getFalse(); // obj < start...end
+        
+        return context.runtime.newBoolean(isExclusive ?  // begin <= obj < end || begin <= obj <= end
+                rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
     }
 
     @JRubyMethod(compat = RUBY1_9, frame = true)
