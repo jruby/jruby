@@ -22,7 +22,7 @@
         <include>bin/jgem</include>
         <include>bin/jirb</include>
         <include>bin/jirb_swing</include>
-        <include>bin/jruby.*</include>
+        <include>bin/jruby*</include>
         <include>bin/rake</include>
         <include>bin/ri</include>
         <include>bin/rdoc</include>
