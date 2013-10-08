@@ -1488,7 +1488,7 @@ public class RubyModule extends RubyObject {
         // populates this name into our symbol table so it will exist later if needed.  The
         // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
         // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
-        RubySymbol.newSymbol(runtime, arg0);
+        RubySymbol nameSym = RubySymbol.newSymbol(runtime, arg0);
         
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
@@ -1504,7 +1504,7 @@ public class RubyModule extends RubyObject {
         
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return proc;
+        return nameSym;
     }
     
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
@@ -1519,7 +1519,7 @@ public class RubyModule extends RubyObject {
         // populates this name into our symbol table so it will exist later if needed.  The
         // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
         // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
-        RubySymbol.newSymbol(runtime, arg0);
+        RubySymbol nameSym = RubySymbol.newSymbol(runtime, arg0);
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -1541,7 +1541,7 @@ public class RubyModule extends RubyObject {
         
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return body;
+        return nameSym;
     }
     @Deprecated
     public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
