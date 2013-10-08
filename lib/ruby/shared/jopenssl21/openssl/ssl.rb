@@ -94,6 +94,34 @@ module OpenSSL
       end
     end
 
+    # FIXME: Using the old non-ASN1 logic here because our ASN1 appears to
+    # return the wrong types for some decoded objects. See #1102
+    def verify_certificate_identity(cert, hostname)
+      should_verify_common_name = true
+      cert.extensions.each{|ext|
+        next if ext.oid != "subjectAltName"
+        ext.value.split(/,\s+/).each{|general_name|
+          if /\ADNS:(.*)/ =~ general_name
+            should_verify_common_name = false
+            reg = Regexp.escape($1).gsub(/\\\*/, "[^.]+")
+            return true if /\A#{reg}\z/i =~ hostname
+          elsif /\AIP Address:(.*)/ =~ general_name
+            should_verify_common_name = false
+            return true if $1 == hostname
+          end
+        }
+      }
+      if should_verify_common_name
+        cert.subject.to_a.each{|oid, value|
+          if oid == "CN"
+            reg = Regexp.escape(value).gsub(/\\\*/, "[^.]+")
+            return true if /\A#{reg}\z/i =~ hostname
+          end
+        }
+      end
+      return false
+    end
+=begin
     def verify_certificate_identity(cert, hostname)
       should_verify_common_name = true
       cert.extensions.each{|ext|
@@ -127,6 +155,7 @@ module OpenSSL
       end
       return false
     end
+=end
     module_function :verify_certificate_identity
 
     class SSLSocket
