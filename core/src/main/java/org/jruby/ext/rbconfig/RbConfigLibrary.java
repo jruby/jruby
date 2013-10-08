@@ -109,7 +109,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRuntimeVerStr(Ruby runtime) {
-        return "1.9";
+        return "2.1";
     }
 
     public static String getNormalizedHome(Ruby runtime) {

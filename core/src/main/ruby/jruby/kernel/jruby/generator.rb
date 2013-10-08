@@ -258,15 +258,6 @@ module JRuby
       end
     end
 
-    IS_RUBY_20 = RUBY_VERSION =~ /^2\.0/
-    IS_RUBY_19 = RUBY_VERSION =~ /^1\.9/ || IS_RUBY_20
-
-    if IS_RUBY_19
-      Enumerator = ::Enumerator
-    else
-      Enumerator = Enumerable::Enumerator
-    end
-
     module Iterators
       module ClassMethods
         def indexed_iter(method, &block)

@@ -143,8 +143,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<CharSequence, List<ExecutableElement>>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<CharSequence, List<ExecutableElement>>();
-            Map<CharSequence, List<ExecutableElement>> annotatedMethods1_8 = new HashMap<CharSequence, List<ExecutableElement>>();
-            Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods1_8 = new HashMap<CharSequence, List<ExecutableElement>>();
             Map<CharSequence, List<ExecutableElement>> annotatedMethods1_9 = new HashMap<CharSequence, List<ExecutableElement>>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods1_9 = new HashMap<CharSequence, List<ExecutableElement>>();
             Map<CharSequence, List<ExecutableElement>> annotatedMethods2_0 = new HashMap<CharSequence, List<ExecutableElement>>();
@@ -179,7 +177,8 @@ public class AnnotationBinder extends AbstractProcessor {
                 Map<CharSequence, List<ExecutableElement>> methodsHash = null;
                 if (method.getModifiers().contains(Modifier.STATIC)) {
                     if (anno.compat() == CompatVersion.RUBY1_8) {
-                        methodsHash = staticAnnotatedMethods1_8;
+                        // skip 1.8 methods
+                        continue;
                     } else if (anno.compat() == CompatVersion.RUBY1_9) {
                         methodsHash = staticAnnotatedMethods1_9;
                     } else if (anno.compat() == CompatVersion.RUBY2_0) {
@@ -189,7 +188,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     }
                 } else {
                     if (anno.compat() == CompatVersion.RUBY1_8) {
-                        methodsHash = annotatedMethods1_8;
+                        // skip 1.8 methods
+                        continue;
                     } else if (anno.compat() == CompatVersion.RUBY1_9) {
                         methodsHash = annotatedMethods1_9;
                     } else if (anno.compat() == CompatVersion.RUBY2_0) {
@@ -246,16 +246,6 @@ public class AnnotationBinder extends AbstractProcessor {
                 if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
             }
 
-            if (!staticAnnotatedMethods1_8.isEmpty()) {
-                out.println("        if (compatVersion == CompatVersion.RUBY1_8 || compatVersion == CompatVersion.BOTH) {");
-                processMethodDeclarations(staticAnnotatedMethods1_8);
-                for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods1_8.entrySet()) {
-                    ExecutableElement decl = entry.getValue().get(0);
-                    if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
-                }
-                out.println("        }");
-            }
-
             if (!staticAnnotatedMethods1_9.isEmpty()) {
                 out.println("        if (compatVersion.is1_9() || compatVersion == CompatVersion.BOTH) {");
                 processMethodDeclarations(staticAnnotatedMethods1_9);
@@ -280,16 +270,6 @@ public class AnnotationBinder extends AbstractProcessor {
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
                 if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
-            }
-
-            if (!annotatedMethods1_8.isEmpty()) {
-                out.println("        if (compatVersion == CompatVersion.RUBY1_8 || compatVersion == CompatVersion.BOTH) {");
-                processMethodDeclarations(annotatedMethods1_8);
-                for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods1_8.entrySet()) {
-                    ExecutableElement decl = entry.getValue().get(0);
-                    if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
-                }
-                out.println("        }");
             }
 
             if (!annotatedMethods1_9.isEmpty()) {

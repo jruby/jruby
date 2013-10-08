@@ -109,21 +109,8 @@ public class RubyGlobal {
         IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze(context);
         IRubyObject engine = runtime.newString(Constants.ENGINE).freeze(context);
 
-        switch (runtime.getInstanceConfig().getCompatVersion()) {
-        case RUBY1_8:
-            version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
-            patchlevel = runtime.newFixnum(Constants.RUBY_PATCHLEVEL);
-            runtime.defineGlobalConstant("VERSION", version);
-            break;
-        case RUBY1_9:
-            version = runtime.newString(Constants.RUBY1_9_VERSION).freeze(context);
-            patchlevel = runtime.newFixnum(Constants.RUBY1_9_PATCHLEVEL);
-            break;
-        case RUBY2_0:
-            version = runtime.newString(Constants.RUBY2_0_VERSION).freeze(context);
-            patchlevel = runtime.newFixnum(Constants.RUBY2_0_PATCHLEVEL);
-            break;
-        }
+        version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
+        patchlevel = runtime.newFixnum(Constants.RUBY_PATCHLEVEL);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
@@ -145,7 +132,7 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
         // needs to be a fixnum, but our revision is a sha1 hash from git
-        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY2_0_REVISION));
+        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY_REVISION));
         
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);

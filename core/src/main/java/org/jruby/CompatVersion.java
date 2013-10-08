@@ -2,14 +2,14 @@ package org.jruby;
 
 public enum CompatVersion {
 
-    RUBY1_8, RUBY1_9, RUBY2_0, BOTH;
+    RUBY1_8, RUBY1_9, RUBY2_0, RUBY2_1, BOTH;
 
     public boolean is1_9() {
-        return this == RUBY1_9 || this == RUBY2_0;
+        return this == RUBY1_9 || this == RUBY2_0 || this == RUBY2_1;
     }
 
     public boolean is2_0() {
-        return this == RUBY2_0;
+        return this == RUBY2_0 || this == RUBY2_1;
     }
 
     public static CompatVersion getVersionFromString(String compatString) {
@@ -34,6 +34,7 @@ public enum CompatVersion {
         if (runtimeVersion == RUBY1_8) return methodVersion == RUBY1_8 || methodVersion == BOTH;
         if (runtimeVersion == RUBY1_9) return methodVersion == RUBY1_9 || methodVersion == BOTH;
         if (runtimeVersion == RUBY2_0) return methodVersion == RUBY1_9 || methodVersion == RUBY2_0 || methodVersion == BOTH;
+        if (runtimeVersion == RUBY2_1) return methodVersion == RUBY1_9 || methodVersion == RUBY2_0 || methodVersion == RUBY2_1 || methodVersion == BOTH;
         return false;
     }
 }

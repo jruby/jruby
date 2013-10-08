@@ -250,7 +250,6 @@ public class LoadService {
                 }
                 addPath(RbConfigLibrary.getRubySharedLibDir(runtime));
                 // TODO: merge
-                addPath(RbConfigLibrary.getRubyLibDirFor(runtime, "2.0"));
                 addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 

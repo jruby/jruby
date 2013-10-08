@@ -108,23 +108,11 @@ public class OutputStrings {
         String patchDelimeter = "p";
         int patchlevel;
         String versionString = "";
-        switch (compatVersion) {
-        case RUBY1_8:
-            ver = Constants.RUBY_VERSION;
-            patchlevel = Constants.RUBY_PATCHLEVEL;
-            versionString = String.format("ruby-%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        case RUBY1_9:
-            ver = Constants.RUBY1_9_VERSION;
-            patchlevel = Constants.RUBY1_9_PATCHLEVEL;
-            versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        case RUBY2_0:
-            ver = Constants.RUBY2_0_VERSION;
-            patchlevel = Constants.RUBY2_0_PATCHLEVEL;
-            versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        }
+        ver = Constants.RUBY_VERSION;
+        patchlevel = Constants.RUBY_PATCHLEVEL;
+        // TODO: add patchlevel once 2.1 is released
+//        versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
+        versionString = String.format("%s", ver);
 
         String fullVersion = String.format(
                 "jruby %s (%s) %s %s on %s %s%s [%s-%s]",

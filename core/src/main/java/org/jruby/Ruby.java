@@ -1681,15 +1681,7 @@ public final class Ruby {
         
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
-        
-        switch (config.getCompatVersion()) {
-            case RUBY1_9:
-                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel19.rb", false);
-                break;
-            case RUBY2_0:
-                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel20.rb", false);
-                break;
-        }
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel21.rb", false);
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
