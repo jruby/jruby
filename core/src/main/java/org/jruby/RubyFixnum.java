@@ -43,7 +43,6 @@ import java.util.Map;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
@@ -55,7 +54,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.Arity;
 
 /** 
@@ -328,7 +326,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_to_sym
      * 
      */
-    @JRubyMethod(compat = RUBY1_8)
+    @Deprecated
     public IRubyObject to_sym() {
         RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
@@ -559,7 +557,7 @@ public class RubyFixnum extends RubyInteger {
         return idiv(context, other, "/");
     }
 
-    @JRubyMethod(name = {"odd?"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"odd?"})
     public RubyBoolean odd_p(ThreadContext context) {
         if(value%2 != 0) {
             return context.runtime.getTrue();
@@ -567,7 +565,7 @@ public class RubyFixnum extends RubyInteger {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(name = {"even?"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"even?"})
     public RubyBoolean even_p(ThreadContext context) {
         if(value%2 == 0) {
             return context.runtime.getTrue();
@@ -575,7 +573,7 @@ public class RubyFixnum extends RubyInteger {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject pred(ThreadContext context) {
         return context.runtime.newFixnum(value-1);
     }
@@ -700,7 +698,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_quo
      * 
      */
-    @JRubyMethod(name = "quo", compat = RUBY1_8)
+    @Deprecated
     @Override
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -833,7 +831,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     @Override
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
@@ -1256,23 +1254,9 @@ public class RubyFixnum extends RubyInteger {
     /** rb_fix_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, compat = RUBY1_8)
+    @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
-    }
-    
-    private static Object coerceToJavaType(Ruby ruby, RubyFixnum self, Class javaClass) {
-        if (!Number.class.isAssignableFrom(javaClass)) {
-            throw ruby.newTypeError(javaClass.getCanonicalName() + " is not a numeric type");
-        }
-        
-        TypeCoercer coercer = JAVA_COERCERS.get(javaClass);
-        
-        if (coercer == null) {
-            throw ruby.newTypeError("Cannot coerce Fixnum to " + javaClass.getCanonicalName());
-        }
-        
-        return coercer.coerce(self);
     }
     
     private static final Map<Class, TypeCoercer> JAVA_COERCERS = new HashMap<Class, TypeCoercer>();
