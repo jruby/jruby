@@ -63,7 +63,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -108,6 +107,7 @@ public class RubyComplex extends RubyNumeric {
     }
 
     private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFixnum zero = RubyFixnum.zero(runtime);
             return new RubyComplex(runtime, klass, zero, zero);
@@ -155,7 +155,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     static IRubyObject newComplexPolar(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return polar(context, context.runtime.getComplex(), x, y);
+        return f_complex_polar(context, context.runtime.getComplex(), x, y);
     }
 
     /** f_complex_new1
@@ -619,7 +619,7 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject ntheta = f_add(context,
                                         f_mul(context, theta, otherComplex.real),
                                         f_mul(context, otherComplex.image, RubyMath.log(this, r)));
-            return polar(context, getMetaClass(), nr, ntheta);
+            return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyInteger) {
             IRubyObject one = RubyFixnum.one(context.runtime);
             if (f_gt_p(context, other, RubyFixnum.zero(context.runtime)).isTrue()) {
