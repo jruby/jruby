@@ -378,15 +378,14 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_s_polar
      * 
      */
-    @JRubyMethod(name = "polar", meta = true)
     public static IRubyObject polar(ThreadContext context, IRubyObject clazz, IRubyObject abs, IRubyObject arg) {
-        return f_complex_polar(context, clazz, abs, arg);
+        return polar19(context, clazz, new IRubyObject[]{abs, arg});
     }
 
     /** nucomp_s_polar
      *
      */
-    @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1)
     public static IRubyObject polar19(ThreadContext context, IRubyObject clazz, IRubyObject[] args) {
         IRubyObject abs = args[0];
         IRubyObject arg;
@@ -947,7 +946,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "rationalize", optional = 1)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         if (k_inexact_p(image) || !f_zero_p(context, image)) {
             throw context.runtime.newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Rational");
