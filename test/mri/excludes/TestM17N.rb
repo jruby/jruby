@@ -1,5 +1,4 @@
 exclude :test_chr, "needs investigation"
-exclude :test_compatible, "needs investigation"
 exclude :test_delete, "needs investigation"
 exclude :test_dynamic_ascii_regexp, "needs investigation"
 exclude :test_dynamic_eucjp_regexp, "needs investigation"
