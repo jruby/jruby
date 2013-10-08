@@ -412,7 +412,7 @@ public class RubyFileTest {
         }
     }
 
-    @JRubyMethod(name = "world_readable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "world_readable?", required = 1, module = true)
     public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getFileStat(context, filename);
         if (stat == null) {
@@ -422,7 +422,7 @@ public class RubyFileTest {
         return stat.worldReadable(context);
     }
 
-    @JRubyMethod(name = "world_writable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "world_writable?", required = 1, module = true)
     public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getFileStat(context, filename);
         if (stat == null) {
@@ -547,12 +547,12 @@ public class RubyFileTest {
             return RubyFileTest.zero_p(context, recv, filename);
         }
 
-        @JRubyMethod(name = "world_readable?", required = 1, compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "world_readable?", required = 1)
         public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.worldReadable(context, recv, filename);
         }
 
-        @JRubyMethod(name = "world_writable?", required = 1, compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "world_writable?", required = 1)
         public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.worldWritable(context, recv, filename);
         }
