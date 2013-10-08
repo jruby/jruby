@@ -571,7 +571,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -794,7 +794,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -904,7 +904,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -2334,40 +2334,6 @@ public class ScriptingContainerTest {
         KCode expResult = KCode.NONE;
         KCode result = instance.getKCode();
         assertEquals(expResult, result);
-
-        instance = null;
-    }
-
-    /**
-     * Test of setKCode method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetKCode() {
-        logger1.info("setKCode");
-        KCode kcode = null;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        instance.setCompatVersion(CompatVersion.RUBY1_8);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setKCode(kcode);
-
-        instance = null;
-
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        instance.setCompatVersion(CompatVersion.RUBY1_8);
-        //instance.setError(pstream);
-        //instance.setOutput(pstream);
-        //instance.setWriter(writer);
-        //instance.setErrorWriter(writer);
-        kcode = KCode.UTF8;
-        instance.setKCode(kcode);
-        StringWriter sw = new StringWriter();
-        instance.setWriter(sw);
-        instance.runScriptlet("p \"Résumé\"");
-        String expResult = "\"Résumé\"";
-        assertEquals(expResult, sw.toString().trim());
 
         instance = null;
     }

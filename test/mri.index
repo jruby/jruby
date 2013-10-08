@@ -229,7 +229,6 @@ mri/openssl/test_ns_spki
 #mri/openssl/test_ocsp
 mri/openssl/test_parse_certificate
 mri/openssl/test_pair
-# OpenSSL::PKCS12 not implemented
 mri/openssl/test_pkcs12
 mri/openssl/test_pkcs7
 mri/openssl/test_pkey_dh
@@ -238,7 +237,7 @@ mri/openssl/test_pkey_dsa
 #mri/openssl/test_pkey_ec
 mri/openssl/test_pkey_rsa
 # Does not parse
-#mri/openssl/test_ssl
+mri/openssl/test_ssl
 # OpenSSL::SSL::Session not defined
 #mri/openssl/test_ssl_session
 mri/openssl/test_x509cert

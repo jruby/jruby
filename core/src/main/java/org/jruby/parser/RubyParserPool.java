@@ -51,13 +51,7 @@ public class RubyParserPool {
     }
 
     public RubyParser borrowParser(CompatVersion version) {
-        if (version == CompatVersion.RUBY1_8) {
-            return new DefaultRubyParser();
-        } else if (version == CompatVersion.RUBY1_9) {
-            return new Ruby19Parser();
-        } else {
-            return new Ruby20Parser();
-        }
+        return new Ruby20Parser();
     }
 
     public void returnParser(RubyParser parser) {
