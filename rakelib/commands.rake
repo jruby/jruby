@@ -74,7 +74,6 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:objectspace_enabled] ||= true
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
-  mspec_options[:compat] ||= "1.8"
   mspec_options[:format] ||= "m"
   ms = mspec_options
 
