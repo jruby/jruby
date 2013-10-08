@@ -7609,6 +7609,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         return scanForCodeRange() == CR_7BIT ? runtime.getTrue() : runtime.getFalse();
     }
+    
+    @JRubyMethod
+    public IRubyObject b(ThreadContext context) {
+        Encoding encoding = ASCIIEncoding.INSTANCE;
+        RubyString dup = (RubyString)dup();
+        dup.associateEncoding(encoding);
+        dup.clearCodeRange();
+        return dup;
+    }
 
     /**
      * Mutator for internal string representation.
