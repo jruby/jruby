@@ -98,12 +98,11 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      * 
      */
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return callCmpMethod(context, recv, other, context.runtime.getNil());
+        return op_equal19(context, recv, other);
     }
 
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return callCmpMethod(context, recv, other, context.runtime.getFalse());
     }
