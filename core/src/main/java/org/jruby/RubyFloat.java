@@ -190,7 +190,7 @@ public class RubyFloat extends RubyNumeric {
     /** rb_flo_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
+    @Deprecated
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, "to_f");
@@ -338,7 +338,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_quo
     *
     */
-    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "quo")
         public IRubyObject magnitude(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
@@ -346,7 +346,6 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case FIXNUM:
@@ -374,7 +373,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
@@ -386,7 +385,6 @@ public class RubyFloat extends RubyNumeric {
     /** flo_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -418,7 +416,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
@@ -430,7 +428,6 @@ public class RubyFloat extends RubyNumeric {
     /** flo_pow
      * 
      */
-    @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case FIXNUM:
@@ -447,7 +444,7 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), Math.pow(value, other));
     }
     
-    @JRubyMethod(name = "**", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
         double d_other = ((RubyNumeric) other).getDoubleValue();
         if (value < 0 && (d_other != Math.round(d_other))) {
@@ -685,7 +682,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     @Override
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
@@ -715,7 +712,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_numerator
      * 
      */
-    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "numerator")
     @Override
     public IRubyObject numerator(ThreadContext context) {
         if (Double.isInfinite(value) || Double.isNaN(value)) return this;
@@ -725,7 +722,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_denominator
      * 
      */
-    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
@@ -739,7 +736,7 @@ public class RubyFloat extends RubyNumeric {
      */
     static final int DBL_MANT_DIG = 53;
     static final int FLT_RADIX = 2;
-    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[]exp = new long[1]; 
         double f = frexp(value, exp);
@@ -756,7 +753,7 @@ public class RubyFloat extends RubyNumeric {
     /** float_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "rationalize", optional = 1)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         if (f_negative_p(context, this))
             return f_negate(context, ((RubyFloat) f_abs(context, this)).rationalize(context, args));
@@ -823,13 +820,12 @@ public class RubyFloat extends RubyNumeric {
     /** flo_round
      * 
      */
-    @JRubyMethod(name = "round")
     @Override
     public IRubyObject round() {
         return dbl2num(getRuntime(), val2dbl());
     }
     
-    @JRubyMethod(name = "round", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "round", optional = 1)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) return round();
         // truncate floats.
