@@ -116,57 +116,52 @@ public class RubyEncoding extends RubyObject {
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
         return encoding;
     }
+    
+    private static Encoding extractEncodingFromObject(IRubyObject obj) {
+        if (obj instanceof RubyEncoding) return ((RubyEncoding) obj).getEncoding();
+        if (obj instanceof RubySymbol) return ((RubySymbol) obj).asString().getEncoding();
+        if (obj instanceof EncodingCapable) return ((EncodingCapable) obj).getEncoding();
+        
+        return null;
+    }
 
     public static Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
-        Encoding enc1 = null;
-        Encoding enc2 = null;
+        Encoding enc1 = extractEncodingFromObject(obj1);
+        Encoding enc2 = extractEncodingFromObject(obj2);
+        
+        if (enc1 == null || enc2 == null) return null;
+        if (enc1 == enc2) return enc1;
 
-        if (obj1 instanceof RubyEncoding) {
-            enc1 = ((RubyEncoding)obj1).getEncoding();
-        } else if (obj1 instanceof RubySymbol) {
-            enc1 = ((RubySymbol)obj1).asString().getEncoding();
-        } else if (obj1 instanceof EncodingCapable) {
-            enc1 = ((EncodingCapable)obj1).getEncoding();
+        if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
+        if (obj1 instanceof RubyString && ((RubyString) obj1).getByteList().getRealSize() == 0) {
+            return enc1.isAsciiCompatible() && obj2 instanceof RubyString && 
+                    ((RubyString) obj2).isAsciiOnly() ? enc1 : enc2;
+        }
+        
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        if (!(obj2 instanceof RubyString) && enc2 instanceof USASCIIEncoding) return enc1;
+        if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
+
+        if (!(obj1 instanceof RubyString)) {
+            IRubyObject objTmp = obj1; // swap1 obj1 & obj2
+            obj1 = obj2;
+            obj2 = objTmp;
+
+            Encoding encTmp = enc1;  // swap their encodings
+            enc1 = enc2;
+            enc2 = encTmp;
         }
 
-        if (obj2 instanceof RubyEncoding) {
-            enc2 = ((RubyEncoding)obj2).getEncoding();
-        } else if (obj2 instanceof RubySymbol) {
-            enc2 = ((RubySymbol)obj2).asString().getEncoding();
-        } else if (obj2 instanceof EncodingCapable) {
-            enc2 = ((EncodingCapable)obj2).getEncoding();
-        }
-
-        if (enc1 != null && enc2 != null) {
-            if (enc1 == enc2) return enc1;
-
-            if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
-            if (obj1 instanceof RubyString && ((RubyString) obj1).getByteList().getRealSize() == 0) return enc2;
-
-            if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-            if (!(obj2 instanceof RubyString) && enc2 instanceof USASCIIEncoding) return enc1;
-            if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
-
-            if (!(obj1 instanceof RubyString)) {
-                IRubyObject objTmp = obj1;
-                obj1 = obj2;
-                obj1 = objTmp;
-
-                Encoding encTmp = enc1;
-                enc1 = enc2;
-                enc2 = encTmp;
+        if (obj1 instanceof RubyString) {
+            int cr1 = ((RubyString)obj1).scanForCodeRange();
+            if (obj2 instanceof RubyString) {
+                int cr2 = ((RubyString)obj2).scanForCodeRange();
+                return areCompatible(enc1, cr1, enc2, cr2);
             }
-
-            if (obj1 instanceof RubyString) {
-                int cr1 = ((RubyString)obj1).scanForCodeRange();
-                if (obj2 instanceof RubyString) {
-                    int cr2 = ((RubyString)obj2).scanForCodeRange();
-                    return areCompatible(enc1, cr1, enc2, cr2);
-                }
-                if (cr1 == StringSupport.CR_7BIT) return enc2;
-            }
+            if (cr1 == StringSupport.CR_7BIT) return enc2;
         }
+
         return null;
     }
 
