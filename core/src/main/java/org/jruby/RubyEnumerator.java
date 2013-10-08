@@ -190,7 +190,6 @@ public class RubyEnumerator extends RubyObject {
         return initialize20(context, args, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         return initialize20(context, args, block);
     }
