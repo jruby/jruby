@@ -1,6 +1,6 @@
 # JRuby -  A Java implementation of the Ruby language
 
-[![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby)
+[![Build Status](https://travis-ci.org/jruby/jruby.png?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
 
 Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
  Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
