@@ -1415,8 +1415,8 @@ public class Pack {
                         } else if((ul & ulmask) == 0) {
                             RubyBignum big = RubyBignum.newBignum(runtime, ul);
                             while(occurrences > 0 && pos < encode.limit()) {
-                                big = (RubyBignum)big.op_mul(runtime.getCurrentContext(), big128);
-                                IRubyObject v = big.op_plus(runtime.getCurrentContext(),
+                                IRubyObject mulResult = big.op_mul(runtime.getCurrentContext(), big128);
+                                IRubyObject v = mulResult.callMethod(runtime.getCurrentContext(), "+",
                                         RubyBignum.newBignum(runtime, encode.get(pos) & 0x7f));
                                 if(v instanceof RubyFixnum) {
                                     big = RubyBignum.newBignum(runtime, RubyNumeric.fix2long(v));
