@@ -61,6 +61,7 @@ public class RubyBinding extends RubyObject {
     }
     
     private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyBinding instance = new RubyBinding(runtime, klass);
             
@@ -102,6 +103,7 @@ public class RubyBinding extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @Override
     public IRubyObject initialize(ThreadContext context) {
         binding = context.currentBinding();
         
