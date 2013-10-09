@@ -708,6 +708,15 @@ public class ASTCompiler {
 
         String name = callNode.getName();
         CallType callType = CallType.NORMAL;
+        
+        // "string".freeze optimization
+        if (argsCallback == null || argsCallback.getArity() == 0) {
+            Node receiver = callNode.getReceiverNode();
+            if (receiver instanceof StrNode && callNode.getName().equals("freeze")) {
+                compileFastFrozenString((StrNode)receiver, context, expr);
+                return;
+            }
+        }
 
         if (argsCallback != null && argsCallback.getArity() == 1) {
             Node argument = callNode.getArgsNode().childNodes().get(0);
@@ -747,6 +756,12 @@ public class ASTCompiler {
         
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+    
+    private void compileFastFrozenString(StrNode receiver, BodyCompiler context, boolean expr) {
+        if (expr) {
+            context.cacheFrozenString(receiver.getValue(), receiver.getCodeRange());
+        }
     }
 
     private static final Map<Class, Map<Class, Map<String, String>>> Intrinsics;

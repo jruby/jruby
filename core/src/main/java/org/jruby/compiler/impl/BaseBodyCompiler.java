@@ -501,6 +501,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             appendObject(encoding != null);
         }
     }
+    
+    public void cacheFrozenString(ByteList string, int codeRange) {
+        script.getCacheCompiler().cacheFrozenString(this, string, codeRange);
+    }
 
     public void buildNewString(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();

@@ -81,6 +81,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<Double, Integer> floatIndices = new HashMap<Double, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedStringCount = 0;
+    int inheritedFrozenStringCount = 0;
     int inheritedEncodingCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedBigIntegerCount = 0;
@@ -387,6 +388,33 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
+    public void cacheFrozenString(BaseBodyCompiler method, ByteList contents, int codeRange) {
+        String asString = Helpers.rawBytesToString(contents.bytes());
+        String key = asString + contents.getEncoding();
+        
+        Integer index = stringIndices.get(key);
+        if (index == null) {
+            index = Integer.valueOf(inheritedStringCount++);
+            stringEncToString.put(key, asString);
+            stringIndices.put(key, index);
+            stringEncodings.put(key, cacheEncodingInternal(contents.getEncoding()));
+        }
+        int frozenStringIndex = inheritedFrozenStringCount++;
+
+        method.loadThis();
+        method.loadThreadContext();
+        if (index < AbstractScript.NUMBERED_STRING_COUNT) {
+            method.method.pushInt(frozenStringIndex);
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFrozenString" + index, sig(RubyString.class, ThreadContext.class, int.class, int.class));
+        } else {
+            method.method.pushInt(index.intValue());
+            method.method.pushInt(frozenStringIndex);
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFrozenString", sig(RubyString.class, ThreadContext.class, int.class, int.class, int.class));
+        }
+    }
+
     public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
         String asString = Helpers.rawBytesToString(contents.bytes());
         String key = asString + contents.getEncoding();
@@ -651,7 +679,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 + inheritedBlockCallbackCount
                 + inheritedMethodCount
                 + inheritedStringCount
-                + inheritedEncodingCount;
+                + inheritedEncodingCount
+                + inheritedFrozenStringCount;
         if (callSiteListSize + otherCount != 0) {
             ensureRuntimeCacheInited(initMethod);
 
@@ -690,6 +719,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
             descriptor.append((char)inheritedMethodCount);
             descriptor.append((char)inheritedStringCount);
             descriptor.append((char)inheritedEncodingCount);
+            descriptor.append((char)inheritedFrozenStringCount);
 
             // init from descriptor
             initMethod.aload(0);

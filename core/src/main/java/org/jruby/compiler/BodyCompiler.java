@@ -768,4 +768,9 @@ public interface BodyCompiler {
      * using IRubyObject.isTrue();
      */
     public void isTrue();
+    
+    /**
+     * Cache a frozen string in the frozen string table.
+     */
+    public void cacheFrozenString(ByteList string, int codeRange);
 }
