@@ -2110,21 +2110,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * 
      */
     public IRubyObject gets(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject result = getline(context, separator(runtime, runtime.getRecordSeparatorVar().get()));
-
-        if (!result.isNil()) context.setLastLine(result);
-
-        return result;
+        return gets19(context);
     }
 
     public IRubyObject gets(ThreadContext context, IRubyObject separatorArg) {
-        Ruby runtime = context.runtime;
-        IRubyObject result = getline(context, separator(runtime, separatorArg));
-
-        if (!result.isNil()) context.setLastLine(result);
-
-        return result;
+        return gets19(context, separatorArg);
     }
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
