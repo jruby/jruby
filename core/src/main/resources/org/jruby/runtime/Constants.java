@@ -90,7 +90,12 @@ public final class Constants {
 
     static {
         // This is populated here to avoid javac propagating the value to consumers
-        REVISION = jruby_revision;
+        if (jruby_revision.equals("@jruby.revision@")) {
+            // use a bogus revision
+            REVISION = "fffffff";
+        } else {
+            REVISION = jruby_revision;
+        }
         String defaultRubyVersion = jruby_default_ruby_version;
         if (defaultRubyVersion.equals("1.8")) {
             DEFAULT_RUBY_VERSION = "1.8";
