@@ -506,7 +506,7 @@ public class Main {
                 return 0;
             }
         } else {
-            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+            runtime.getErrorStream().print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
             return 1;
         }
     }
