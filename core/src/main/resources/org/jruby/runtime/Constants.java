@@ -90,7 +90,8 @@ public final class Constants {
 
     static {
         // This is populated here to avoid javac propagating the value to consumers
-        if (jruby_revision.equals("@jruby.revision@")) {
+        // Broken apart like this to prevent substitution
+        if (jruby_revision.equals("@" + "jruby.revision" + "@")) {
             // use a bogus revision
             REVISION = "fffffff";
         } else {
