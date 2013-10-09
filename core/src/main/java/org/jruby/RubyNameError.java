@@ -62,6 +62,7 @@ public class RubyNameError extends RubyException {
     public static final class RubyNameErrorMessage extends RubyObject {
 
         static ObjectAllocator NAMEERRORMESSAGE_ALLOCATOR = new ObjectAllocator() {
+            @Override
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 IRubyObject dummy = new RubyObject(runtime, runtime.getObject());
                 return new RubyNameErrorMessage(runtime, dummy, dummy, Visibility.PRIVATE, CallType.VARIABLE);
@@ -91,7 +92,7 @@ public class RubyNameError extends RubyException {
             return to_str(context);
         }
 
-        @JRubyMethod(name = "to_str")
+        @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
             String format = null;
 
@@ -127,7 +128,7 @@ public class RubyNameError extends RubyException {
                 description = description + ":" + object.getMetaClass().getRealClass().getName();            
             }
 
-            Ruby runtime = getRuntime();
+            Ruby runtime = context.runtime;
             RubyArray arr = runtime.newArray(method, runtime.newString(description));
             ByteList msgBytes = new ByteList(format.length() + description.length() + method.toString().length());
             Sprintf.sprintf(msgBytes, format, arr);
@@ -136,6 +137,7 @@ public class RubyNameError extends RubyException {
     }
 
     private static ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNameError(runtime, klass);
         }
@@ -182,7 +184,7 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
-    @JRubyMethod(name = "initialize", optional = 2)
+    @JRubyMethod(optional = 2)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 1) {
@@ -200,7 +202,7 @@ public class RubyNameError extends RubyException {
         return this;
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod
     @Override
     public IRubyObject to_s() {
         if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
@@ -210,7 +212,7 @@ public class RubyNameError extends RubyException {
         return message;
     }
 
-    @JRubyMethod(name = "name")
+    @JRubyMethod
     public IRubyObject name() {
         return name;
     }
