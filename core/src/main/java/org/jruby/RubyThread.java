@@ -77,6 +77,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.CompatVersion.*;
 import org.jruby.internal.runtime.ThreadedRunnable;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.util.ByteList;
@@ -897,7 +898,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param exception the exception to raise
      * @return this thread
      */
-    public IRubyObject raise(RubyException exception) {
+    public IRubyObject raise(IRubyObject exception) {
         return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
     }
 
@@ -950,9 +951,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if(args.length == 1) {
             if(args[0] instanceof RubyString) {
                 return runtime.getRuntimeError().newInstance(context, args, block);
-            }
-            
-            if(!args[0].respondsTo("exception")) {
+            } else if (args[0] instanceof ConcreteJavaProxy) {
+                return args[0];
+            } else if(!args[0].respondsTo("exception")) {
                 return runtime.newTypeError("exception class/object expected").getException();
             }
             exception = args[0].callMethod(context, "exception");

@@ -12,6 +12,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.ext.thread.SizedQueue;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
@@ -205,8 +206,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(re.getException());
                     }
-                } catch (ThreadKill t) {
-                    // ignore
+                } catch (Throwable t) {
+                    data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
+                } finally {
+                    data.queue.shutdown();
                 }
             }
         };
