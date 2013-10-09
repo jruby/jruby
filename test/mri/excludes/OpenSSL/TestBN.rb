@@ -1,0 +1,1 @@
+exclude :test_integer_to_bn, "does not support integer argument"
