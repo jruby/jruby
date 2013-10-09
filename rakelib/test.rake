@@ -13,9 +13,9 @@ namespace :test do
   end
 
   short_tests = ['jruby', 'mri', 'rubicon']
-  slow_tests = ['test:slow', 'test:objectspace', 'test:tracing']
+  slow_tests = ['test:slow', 'test:objectspace']
   specs = ['spec:ji', 'spec:compiler', 'spec:ffi', 'spec:regression'];
-  long_tests = short_tests + slow_tests + specs
+  long_tests = ["test:tracing"] + short_tests + slow_tests + specs
   all_tests = long_tests.map {|test| test + ':all'}
 
   desc "Run the short suite: #{short_tests.inspect}"
