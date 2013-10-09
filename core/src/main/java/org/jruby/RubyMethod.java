@@ -31,21 +31,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Arrays;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.CompiledBlock19;
 import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.CompiledBlockLight19;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
@@ -144,7 +139,7 @@ public class RubyMethod extends RubyObject implements DataType {
      * 
      * @return the number of arguments of a method.
      */
-    @JRubyMethod(name = "arity")
+    @JRubyMethod
     public RubyFixnum arity() {
         return getRuntime().newFixnum(method.getArity().getValue());
     }
@@ -164,7 +159,7 @@ public class RubyMethod extends RubyObject implements DataType {
                 method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
     }
 
-    @JRubyMethod(name = "eql?", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
@@ -247,12 +242,11 @@ public class RubyMethod extends RubyObject implements DataType {
         return str;
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_8)
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newString(methodName);
+        return name19(context);
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "name")
     public IRubyObject name19(ThreadContext context) {
         return context.runtime.newSymbol(methodName);
     }
@@ -261,17 +255,17 @@ public class RubyMethod extends RubyObject implements DataType {
         return methodName;
     }
 
-    @JRubyMethod(name = "receiver")
+    @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
     }
 
-    @JRubyMethod(name = "owner")
+    @JRubyMethod
     public IRubyObject owner(ThreadContext context) {
         return implementationModule;
     }
 
-    @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
 
@@ -301,7 +295,7 @@ public class RubyMethod extends RubyObject implements DataType {
         return -1;
     }
 
-    @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
         return JRubyLibrary.MethodExtensions.methodArgs(this);
     }
