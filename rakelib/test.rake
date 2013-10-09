@@ -25,8 +25,8 @@ namespace :test do
   long_tests_18 = short_tests_18 + ['spec:ji', 'spec:compiler', 'spec:ffi', 'spec:regression']
   long_tests_19 = long_tests_18.map {|test| test + "19"}
   long_tests_20 = long_tests_18.map {|test| test + "20"}
-  slow_tests = ['test:slow', 'test:objectspace', 'test:tracing']
-  long_tests = long_tests_18 + long_tests_19 + slow_tests
+  slow_tests = ['test:slow', 'test:objectspace']
+  long_tests = ['test:tracing'] + long_tests_18 + long_tests_19 + slow_tests
   all_tests_18 = long_tests_18.map {|test| test + ':all'}
   all_tests_19 = long_tests_19.map {|test| test + ':all'}
   all_tests_20 = long_tests_20.map {|test| test + ':all'}
