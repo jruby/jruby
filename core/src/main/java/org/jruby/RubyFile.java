@@ -319,7 +319,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         return initialize19(null, args, block);
     }
@@ -724,9 +723,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args 
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expandPathInternal(context, recv, args, true);
+        return expand_path19(context, recv, args);
     }
 
     @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
@@ -762,12 +760,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return expandPathInternal(context, recv, args, false);
     }
 
-    @JRubyMethod(name = {"realdirpath"}, required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, recv, args, false);
     }
 
-    @JRubyMethod(name = {"realpath"}, required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject file = expandPathInternal(context, recv, args, false);
         if (!RubyFileTest.exist_p(recv, file).isTrue()) {
@@ -895,7 +893,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(ret);
     }
 
-    @JRubyMethod(name = "mtime", required = 1, meta = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         return context.runtime.newFileStat(get_path(context, filename).getUnicodeValue(), false).mtime();
     }
