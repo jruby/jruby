@@ -204,22 +204,22 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_cos(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x).isTrue()) return RubyMath.cos(x, x);
+        if (f_real_p(context, x).isTrue()) return RubyMath.cos(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
-                          f_mul(context, RubyMath.cos(x, complex.real), RubyMath.cosh(x, complex.image)),
-                          f_mul(context, f_negate(context, RubyMath.sin(x, complex.real)), RubyMath.sinh(x, complex.image)));
+                          f_mul(context, RubyMath.cos(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
+                          f_mul(context, f_negate(context, RubyMath.sin(context, x, complex.real)), RubyMath.sinh(context, x, complex.image)));
     }
 
     /** m_sin
      * 
      */
     private static IRubyObject m_sin(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x).isTrue()) return RubyMath.sin(x, x);
+        if (f_real_p(context, x).isTrue()) return RubyMath.sin(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
-                          f_mul(context, RubyMath.sin(x, complex.real), RubyMath.cosh(x, complex.image)),
-                          f_mul(context, RubyMath.cos(x, complex.real), RubyMath.sinh(x, complex.image)));
+                          f_mul(context, RubyMath.sin(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
+                          f_mul(context, RubyMath.cos(context, x, complex.real), RubyMath.sinh(context, x, complex.image)));
     }    
     
     /** m_sqrt
@@ -227,10 +227,10 @@ public class RubyComplex extends RubyNumeric {
      */
     private static IRubyObject m_sqrt(ThreadContext context, IRubyObject x) {
         if (f_real_p(context, x).isTrue()) {
-            if (!f_negative_p(context, x)) return RubyMath.sqrt(x, x);
+            if (!f_negative_p(context, x)) return RubyMath.sqrt(context, x, x);
             return newComplex(context, context.runtime.getComplex(),
                               RubyFixnum.zero(context.runtime),
-                              RubyMath.sqrt(x, f_negate(context, x)));
+                              RubyMath.sqrt(context, x, f_negate(context, x)));
         } else {
             RubyComplex complex = (RubyComplex)x;
             if (f_negative_p(context, complex.image)) {
@@ -239,8 +239,8 @@ public class RubyComplex extends RubyNumeric {
                 IRubyObject a = f_abs(context, x);
                 IRubyObject two = RubyFixnum.two(context.runtime);
                 return newComplex(context, context.runtime.getComplex(),
-                                  RubyMath.sqrt(x, f_div(context, f_add(context, a, complex.real), two)),
-                                  RubyMath.sqrt(x, f_div(context, f_sub(context, a, complex.real), two)));
+                                  RubyMath.sqrt(context, x, f_div(context, f_add(context, a, complex.real), two)),
+                                  RubyMath.sqrt(context, x, f_div(context, f_sub(context, a, complex.real), two)));
             }
         }
     }
@@ -564,7 +564,7 @@ public class RubyComplex extends RubyNumeric {
             RubyComplex otherComplex = (RubyComplex)other;
             if (real instanceof RubyFloat || image instanceof RubyFloat ||
                 otherComplex.real instanceof RubyFloat || otherComplex.image instanceof RubyFloat) {
-                IRubyObject magn = RubyMath.hypot(this, otherComplex.real, otherComplex.image);
+                IRubyObject magn = RubyMath.hypot(context, this, otherComplex.real, otherComplex.image);
                 IRubyObject tmp = newComplexBang(context, getMetaClass(),
                                                  f_quo(context, otherComplex.real, magn),
                                                  f_quo(context, otherComplex.image, magn));
@@ -613,12 +613,12 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject r = a.eltInternal(0);
             IRubyObject theta = a.eltInternal(1);
             RubyComplex otherComplex = (RubyComplex)other;
-            IRubyObject nr = RubyMath.exp(this, f_sub(context, 
-                                                      f_mul(context, otherComplex.real, RubyMath.log(this, r)),
-                                                      f_mul(context, otherComplex.image, theta)));
+            IRubyObject nr = RubyMath.exp(context, this, f_sub(context, 
+                    f_mul(context, otherComplex.real, RubyMath.log_19(context, this, new IRubyObject[] {r})),
+                    f_mul(context, otherComplex.image, theta)));
             IRubyObject ntheta = f_add(context,
-                                        f_mul(context, theta, otherComplex.real),
-                                        f_mul(context, otherComplex.image, RubyMath.log(this, r)));
+                    f_mul(context, theta, otherComplex.real),
+                    f_mul(context, otherComplex.image, RubyMath.log_19(context, this, new IRubyObject[] {r})));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyInteger) {
             IRubyObject one = RubyFixnum.one(context.runtime);
@@ -701,7 +701,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = {"abs", "magnitude"})
     @Override
     public IRubyObject abs(ThreadContext context) {
-        return RubyMath.hypot(this, real, image);
+        return RubyMath.hypot(context, this, real, image);
     }
 
     /** nucomp_abs2 
@@ -721,7 +721,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = {"arg", "angle", "phase"})
     @Override
     public IRubyObject arg(ThreadContext context) {
-        return RubyMath.atan2(this, image, real);
+        return RubyMath.atan2(context, this, image, real);
     }
 
     /** nucomp_rect
