@@ -333,6 +333,9 @@ public class VariableTableManager {
      */
     public final void setNativeHandle(RubyBasicObject self, Object value) {
         int index = getNativeHandleAccessorForRead().getIndex();
+        if(index == -1) {
+            return;
+        }
         setVariableInternal(realClass, self, index, value);
     }
 
