@@ -87,10 +87,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     public IRubyObject initialize(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         
-        level = processLevel(args, runtime);
+        level = processLevel(args.length, args, runtime);
         
         // unused; could not figure out how to get JZlib to take this right
-        /*int strategy = */processStrategy(args);
+        /*int strategy = */processStrategy(args.length, args);
         
         return initializeCommon(args[0], level);
     }
@@ -106,35 +106,41 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             if (!opt.isNil()) argc--;
         }
         
-        level = processLevel(args, runtime);
+        level = processLevel(argc, args, runtime);
         
         // unused; could not figure out how to get JZlib to take this right
-        /*int strategy = */processStrategy(args);
+        /*int strategy = */processStrategy(argc, args);
         
         initializeCommon(args[0], level);
         
         ecopts(context, opt);
         
-        // FIXME: don't singletonize!
-        if (realIo.respondsTo("path")) {
-            getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(this.getSingletonClass(), Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    return ((JZlibRubyGzipWriter) self).realIo.callMethod(context, "path");
-                }
-            });
-        }
-        
         return this;
     }
-
-    private int processStrategy(IRubyObject[] args) {
-        return args.length < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+    
+    @JRubyMethod
+    public IRubyObject path(ThreadContext context) {
+        return this.realIo.callMethod(context, "path");
+    }
+    
+    @JRubyMethod(name = "respond_to?", frame = true)
+    public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
+        if (name.asJavaString().equals("path")) {
+            return this.realIo.callMethod(context, "respond_to?", name);
+        }
+        
+        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
     }
 
-    private int processLevel(IRubyObject[] args, Ruby runtime) {
-        int level = args.length < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+    private int processStrategy(int argc, IRubyObject[] args) {
+        return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+    }
+
+    private int processLevel(int argc, IRubyObject[] args, Ruby runtime) {
+        int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+
         checkLevel(runtime, level);
+
         return level;
     }
 
