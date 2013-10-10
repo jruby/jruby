@@ -1043,7 +1043,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             return hashyInspect();
         }
 
-        if (isNil()) return RubyNil.inspect(this);
+        if (isNil()) return RubyNil.inspect(runtime.getCurrentContext(), this);
         return Helpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 

@@ -62,6 +62,7 @@ public class RubyNil extends RubyObject {
     }
     
     public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return runtime.getNil();
         }
@@ -108,7 +109,7 @@ public class RubyNil extends RubyObject {
     /** nil_to_i
      *
      */
-    @JRubyMethod(name = "to_i")
+    @JRubyMethod
     public static RubyFixnum to_i(ThreadContext context, IRubyObject recv) {
         return RubyFixnum.zero(recv.getRuntime());
     }
@@ -117,7 +118,7 @@ public class RubyNil extends RubyObject {
      * nil_to_f
      *
      */
-    @JRubyMethod(name = "to_f")
+    @JRubyMethod
     public static RubyFloat to_f(ThreadContext context, IRubyObject recv) {
         return RubyFloat.newFloat(context.runtime, 0.0D);
     }
@@ -125,7 +126,7 @@ public class RubyNil extends RubyObject {
     /** nil_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod
     public static RubyString to_s(ThreadContext context, IRubyObject recv) {
         return RubyString.newEmptyString(context.runtime);
     }
@@ -133,12 +134,12 @@ public class RubyNil extends RubyObject {
     /** nil_to_a
      *
      */
-    @JRubyMethod(name = "to_a")
+    @JRubyMethod
     public static RubyArray to_a(ThreadContext context, IRubyObject recv) {
         return context.runtime.newEmptyArray();
     }
     
-    @JRubyMethod(name = "to_h")
+    @JRubyMethod
     public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
         return RubyHash.newSmallHash(context.runtime);
     }
@@ -146,42 +147,33 @@ public class RubyNil extends RubyObject {
     /** nil_inspect
      *
      */
-    @JRubyMethod(name = "inspect")
-    public static RubyString inspect(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-        return RubyString.newUSASCIIString(runtime, "nil");
-    }
-    
-    /** nil_type
-     *
-     */
-    @JRubyMethod(name = "type", compat = CompatVersion.RUBY1_8)
-    public static RubyClass type(IRubyObject recv) {
-        return recv.getRuntime().getNilClass();
+    @JRubyMethod
+    public static RubyString inspect(ThreadContext context, IRubyObject recv) {
+        return RubyString.newUSASCIIString(context.runtime, "nil");
     }
     
     /** nil_and
      *
      */
     @JRubyMethod(name = "&", required = 1)
-    public static RubyBoolean op_and(IRubyObject recv, IRubyObject obj) {
-        return recv.getRuntime().getFalse();
+    public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return context.runtime.getFalse();
     }
     
     /** nil_or
      *
      */
     @JRubyMethod(name = "|", required = 1)
-    public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
-        return recv.getRuntime().newBoolean(obj.isTrue());
+    public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return context.runtime.newBoolean(obj.isTrue());
     }
     
     /** nil_xor
      *
      */
     @JRubyMethod(name = "^", required = 1)
-    public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
-        return recv.getRuntime().newBoolean(obj.isTrue());
+    public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return context.runtime.newBoolean(obj.isTrue());
     }
 
     @JRubyMethod(name = "nil?")
@@ -189,7 +181,7 @@ public class RubyNil extends RubyObject {
         return getRuntime().getTrue();
     }
 
-    @JRubyMethod(name = "hash")
+    @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
         return context.runtime.newFixnum(hashCode());
     }
@@ -212,7 +204,7 @@ public class RubyNil extends RubyObject {
     /** nilclass_to_c
      * 
      */
-    @JRubyMethod(name = "to_c", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public static IRubyObject to_c(ThreadContext context, IRubyObject recv) {
         return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(context.runtime));
     }
@@ -220,7 +212,7 @@ public class RubyNil extends RubyObject {
     /** nilclass_to_r
      * 
      */
-    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public static IRubyObject to_r(ThreadContext context, IRubyObject recv) {
         return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.runtime));
     }
@@ -228,7 +220,7 @@ public class RubyNil extends RubyObject {
     /** nilclass_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(optional = 1)
     public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return to_r(context, recv);
     }
