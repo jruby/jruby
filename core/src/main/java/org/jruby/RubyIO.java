@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -4612,13 +4613,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
 
             ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
-            ChannelDescriptor d2 = io2.openFile.getMainStreamSafe().getDescriptor();
+            ChannelDescriptor d2 = io2.openFile.getWriteStreamSafe().getDescriptor();
 
             try {
                 long size = 0;
                 if (!d1.isSeekable()) {
                     if (!d2.isSeekable()) {
-                        throw context.runtime.newTypeError("only supports to file or from file copy");
+                        ReadableByteChannel from = (ReadableByteChannel) d1.getChannel();
+                        WritableByteChannel to = (WritableByteChannel) d2.getChannel();
+
+                        size = transfer(context, from, to);
                     } else {
                         ReadableByteChannel from = (ReadableByteChannel) d1.getChannel();
                         FileChannel to = (FileChannel) d2.getChannel();
@@ -4670,6 +4674,27 @@ public class RubyIO extends RubyObject implements IOEncodable {
             
             position += n;
             remaining -= n;
+            transferred += n;
+        }
+
+        return transferred;
+    }
+
+    private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(8 * 1024);
+        long transferred = 0;
+
+        while (from.isOpen()) {
+            context.pollThreadEvents();
+
+            long n = from.read(buffer);
+
+            if (n == -1) break;
+
+            buffer.flip();
+            to.write(buffer);
+            buffer.clear();
+
             transferred += n;
         }
 
