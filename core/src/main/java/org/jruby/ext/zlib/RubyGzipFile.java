@@ -54,18 +54,6 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return instance;
     }
 
-    static IRubyObject[] argsWithIo(IRubyObject io, IRubyObject[] args) {
-        List<IRubyObject> newArgs = new ArrayList<IRubyObject>();
-        newArgs.add(io);
-        for (IRubyObject arg : args) {
-            if (arg == null) {
-                break;
-            }
-            newArgs.add(arg);
-        }
-        return newArgs.toArray(new IRubyObject[0]);
-    }
-
     @JRubyMethod(meta = true, name = "wrap", compat = CompatVersion.RUBY1_8)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
         Ruby runtime = recv.getRuntime();

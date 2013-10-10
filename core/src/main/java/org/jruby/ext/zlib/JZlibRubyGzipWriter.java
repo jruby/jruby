@@ -2,6 +2,8 @@
  */
 package org.jruby.ext.zlib;
 
+import com.jcraft.jzlib.Deflater;
+import com.jcraft.jzlib.JZlib;
 import java.io.IOException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.DateTime;
@@ -29,6 +31,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -54,8 +57,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 2, meta = true, compat = RUBY1_8)
     public static IRubyObject open18(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject io = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
-        JZlibRubyGzipWriter gzio = newInstance(recv, argsWithIo(io, args), block);
+        args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
+        JZlibRubyGzipWriter gzio = newInstance(recv, args, block);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -63,8 +66,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 3, meta = true, compat = RUBY1_9)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject io = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
-        JZlibRubyGzipWriter gzio = newInstance(recv, argsWithIo(io, args), block);
+        args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
+        JZlibRubyGzipWriter gzio = newInstance(recv, args, block);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -76,17 +79,21 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(IRubyObject[] args) {
-        // args: recv, path, opts = {}
-        if (args.length > 2) {
-            checkLevel(getRuntime(), RubyNumeric.fix2int(args[2]));
-        }
-        return initializeCommon(args[0]);
+        Ruby runtime = getRuntime();
+        
+        level = args.length < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+        checkLevel(runtime, level);
+        // unused; could not figure out how to get JZlib to take these right
+        int strategy = args.length < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+        return initializeCommon(args[0], level);
     }
 
-    private IRubyObject initializeCommon(IRubyObject stream) {
+    private IRubyObject initializeCommon(IRubyObject stream, int level) {
         realIo = (RubyObject) stream;
         try {
-            io = new com.jcraft.jzlib.GZIPOutputStream(new IOOutputStream(realIo, false, false), 512, false);
+            // the 15+16 here is copied from a Deflater default constructor
+            Deflater deflater = new Deflater(level, 15+16, false);
+            io = new com.jcraft.jzlib.GZIPOutputStream(new IOOutputStream(realIo, false, false), deflater, 512, false);
             return this;
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
@@ -95,35 +102,42 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block unused) {
-        // args: recv, path, level = nil, strategy = nil, opts = {}
-        IRubyObject obj = initializeCommon(args[0]);
+        Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
-        if (args.length > 3) {
-            opt = args[args.length - 1];
+        
+        int argc = args.length;
+        if (argc > 1) {
+            opt = TypeConverter.checkHashType(runtime, opt);
+            if (!opt.isNil()) argc--;
         }
+        
+        level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+        checkLevel(runtime, level);
+        // unused; could not figure out how to get JZlib to take these right
+        int strategy = argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+        
+        IRubyObject obj = initializeCommon(args[0], level);
         
         ecopts(context, opt);
         
-        if (args.length > 2) {
-            checkLevel(getRuntime(), RubyNumeric.fix2int(args[2]));
-        }
-        
+        // FIXME: don't singletonize!
         if (realIo.respondsTo("path")) {
-            obj.getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(obj.getSingletonClass(), Visibility.PUBLIC) {
+            getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(this.getSingletonClass(), Visibility.PUBLIC) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                     return ((JZlibRubyGzipWriter) self).realIo.callMethod(context, "path");
                 }
             });
         }
-        return obj;
+        return this;
     }
-
+    
     private static void checkLevel(Ruby runtime, int level) {
-        if (level < 0 || level > 9) {
+        if (level != JZlib.Z_DEFAULT_COMPRESSION && (level < JZlib.Z_NO_COMPRESSION || level > JZlib.Z_BEST_COMPRESSION)) {
             throw RubyZlib.newStreamError(runtime, "stream error: invalid level");
         }
     }
+
 
     @Override
     @JRubyMethod(name = "close")

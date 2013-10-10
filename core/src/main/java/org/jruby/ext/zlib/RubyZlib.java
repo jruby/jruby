@@ -341,4 +341,10 @@ public class RubyZlib {
         excn.setInstanceVariable("@input", runtime.getNil());
         return new RaiseException(excn, true);
     }
+    
+    static int FIXNUMARG(IRubyObject obj, int ifnil) {
+        if (obj.isNil()) return ifnil;
+        
+        return RubyNumeric.fix2int(obj);
+    }
 }
