@@ -5762,7 +5762,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "bytes");
+        return block.isGiven() ? each_byte(context, block) : bytesInArray(context);
+    }
+    
+    private RubyArray bytesInArray(ThreadContext context) {
+        RubyArray array = RubyArray.newArray(context.runtime, value.getRealSize());
+        
+        for (int i = 0; i < value.getRealSize(); i++) {
+            array.store(i, context.runtime.newFixnum(value.get(i) & 0xff));
+        }
+        
+        return array;
     }
 
     @JRubyMethod(name = "each_char")
