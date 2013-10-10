@@ -712,13 +712,6 @@ public class RubyStruct extends RubyObject {
         RubyArray mem = members(rbClass, Block.NULL_BLOCK);
 
         int len = input.unmarshalInt();
-        IRubyObject[] values;
-        if (len == 0) {
-            values = IRubyObject.NULL_ARRAY;
-        } else {
-            values = new IRubyObject[len];
-            Helpers.fillNil(values, runtime);
-        }
 
         // FIXME: This could all be more efficient, but it's how struct works
         RubyStruct result;
