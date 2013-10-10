@@ -40,6 +40,10 @@ public class CRLFStreamWrapper implements Stream {
     public ModeFlags getModes() {
         return stream.getModes();
     }
+    
+    public void setModes(ModeFlags modes) {
+        stream.setModes(modes);
+    }
 
     public boolean isSync() {
         return stream.isSync();
