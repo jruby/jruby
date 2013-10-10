@@ -289,13 +289,8 @@ public class RubyStruct extends RubyObject {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
 
-        @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_8)
+        @JRubyMethod
         public static IRubyObject members(IRubyObject recv, Block block) {
-            return RubyStruct.members(recv, block);
-        }
-
-        @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_9)
-        public static IRubyObject members19(IRubyObject recv, Block block) {
             return RubyStruct.members19(recv, block);
         }
     }
@@ -439,12 +434,11 @@ public class RubyStruct extends RubyObject {
         return __member__(classOf());
     }
 
-    @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_8)
     public RubyArray members() {
-        return members(classOf(), Block.NULL_BLOCK);
+        return members19();
     }
 
-    @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "members")
     public RubyArray members19() {
         return members19(classOf(), Block.NULL_BLOCK);
     }
