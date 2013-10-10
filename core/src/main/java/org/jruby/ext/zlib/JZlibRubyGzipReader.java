@@ -170,12 +170,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     // These methods are here to avoid defining a singleton #path on every instance, as in MRI
 
-    @JRubyMethod
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject path(ThreadContext context) {
         return this.realIo.callMethod(context, "path");
     }
 
-    @JRubyMethod(name = "respond_to?", frame = true)
+    @JRubyMethod(name = "respond_to?", frame = true, compat = RUBY1_9)
     public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
         if (name.asJavaString().equals("path")) {
             return this.realIo.callMethod(context, "respond_to?", name);
