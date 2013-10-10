@@ -3272,6 +3272,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject indexCommon19(Ruby runtime, ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
+            if (pos > strLength()) return context.nil;
             RubyRegexp regSub = (RubyRegexp) sub;
             pos = singleByteOptimizable() ? pos : 
                     StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
