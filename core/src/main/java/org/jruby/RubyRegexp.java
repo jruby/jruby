@@ -42,8 +42,6 @@ import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -61,10 +59,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -888,7 +884,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
-    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
         return TypeConverter.convertToTypeWithCheck(args, context.runtime.getRegexp(), "to_regexp");
     }
@@ -896,23 +892,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
-    public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        final KCode code;
-        if (args.length == 1 || args[1].isNil()) {
-            code = runtime.getKCode();
-        } else {
-            code = KCode.create(runtime, args[1].toString());
-        }
-
-        RubyString src = args[0].convertToString();
-        RubyString dst = RubyString.newStringShared(runtime, quote(src.getByteList(), code.getEncoding()));
-        dst.infectBy(src);
-        return dst;
-    }
-
-    @JRubyMethod(name = {"quote", "escape"}, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static IRubyObject quote19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
         RubyString str = operandCheck(runtime, arg);
@@ -1087,22 +1067,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         result.setRealSize(op);
         return result;
     }
-    
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * @deprecated Use the versions with zero, one, or two args.
-     */
-    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return last_match_s(context, recv);
-        case 1:
-            return last_match_s(context, recv, args[0]);
-        default:
-            Arity.raiseArgumentError(context.runtime, args.length, 0, 1);
-            return null; // not reached
-        }
-    }
 
     /** rb_reg_s_last_match / match_getter
     *
@@ -1127,71 +1091,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_s_union
     *
     */
-    @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        if (args.length == 0) return newRegexp(runtime, ByteList.create("(?!)"));
-
-        IRubyObject[] realArgs = args;        
-        if (args.length == 1) {
-            // The power of the union of one!
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
-            if (!v.isNil()) return v;
-            
-            IRubyObject a = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
-            if (a.isNil()) return newRegexp(runtime, quote(context, recv, args).getByteList());
-
-            RubyArray aa = (RubyArray)a;
-            int len = aa.getLength();
-            realArgs = new IRubyObject[len];
-            for(int i = 0; i<len; i++) {
-                realArgs[i] = aa.entry(i);
-            }
-        }
-
-        KCode kcode = null;
-        IRubyObject kcode_re = runtime.getNil();
-        RubyString source = runtime.newString();
-
-        for (int i = 0; i < realArgs.length; i++) {
-            if (0 < i) source.cat((byte)'|');
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(realArgs[i], runtime.getRegexp(), "to_regexp");
-            if (!v.isNil()) {
-                if (!((RubyRegexp)v).isKCodeDefault()) {
-                    if (kcode == null) { // First regexp of union sets kcode.
-                        kcode_re = v;
-                        kcode = ((RubyRegexp)v).options.getKCode();
-                    } else if (((RubyRegexp)v).options.getKCode() != kcode) { // n kcode doesn't match first one
-                        IRubyObject str1 = kcode_re.inspect();
-                        IRubyObject str2 = v.inspect();
-                        throw runtime.newArgumentError("mixed kcode " + str1 + " and " + str2);
-                    }
-                }
-                v = ((RubyRegexp)v).to_s();
-            } else {
-                v = quote(context, recv, new IRubyObject[]{realArgs[i]});
-            }
-            source.append(v);
-        }
-
-        IRubyObject[] _args = new IRubyObject[3];        
-        _args[0] = source;
-        _args[1] = runtime.getNil();
-        if (kcode == null) { // No elements in the array.
-            _args[2] = runtime.getNil();
-        } else if (kcode == KCode.NONE) {
-            _args[2] = runtime.newString("n");
-        } else if (kcode == KCode.EUC) {
-            _args[2] = runtime.newString("e");
-        } else if (kcode == KCode.SJIS) {
-            _args[2] = runtime.newString("s");
-        } else if (kcode == KCode.UTF8) {
-            _args[2] = runtime.newString("u");
-        }
-        return recv.callMethod(context, "new", _args);
+        return union19(context, recv, args);
     }
 
-    @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject obj;
         if (args.length == 1 && !(obj = args[0].checkArrayType()).isNil()) {
@@ -1283,24 +1187,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    // rb_reg_raise
-    private static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
-        throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, enc, options));
-    }
-
-    // rb_reg_desc
-    private static ByteList regexpDescription(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
-        return regexpDescription(runtime, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), enc, options);
-    }
-    private static ByteList regexpDescription(Ruby runtime, byte[] bytes, int start, int len, Encoding enc, RegexpOptions options) {
-        ByteList description = new ByteList();
-        description.append((byte)'/');
-        appendRegexpString(runtime, description, bytes, start, len, enc);
-        description.append((byte)'/');
-        appendOptions(description, options);
-        return description;
-    }
-
     // rb_enc_reg_raise
     private static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         // TODO: we loose encoding information here, fix it
@@ -1327,7 +1213,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** rb_reg_init_copy
      */
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(required = 1)
     @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if (this == re) return this;
@@ -1350,72 +1236,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return 0;
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg) {
-        if (arg instanceof RubyRegexp) return initializeByRegexp((RubyRegexp)arg);
-        return initializeCommon(arg.convertToString().getByteList(), new RegexpOptions());
+        return initialize_m19(arg);
     }
     
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
-        if (arg0 instanceof RubyRegexp) {
-            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
-            return initializeByRegexp((RubyRegexp)arg0);
-        }
-        
-        options = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
-        return initializeCommon(arg0.convertToString().getByteList(), options);
+        return initialize_m19(arg0, arg1);
     }
     
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        if (arg0 instanceof RubyRegexp) {
-            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags and encoding ignored");            
-            return initializeByRegexp((RubyRegexp)arg0);
-        }
-        
-        int optionsInt = objectAsJoniOptions(arg1);
-        options = RegexpOptions.fromJoniOptions(optionsInt);
-        
-        if (!arg2.isNil()) {
-            ByteList kcodeBytes = arg2.convertToString().getByteList();
-            char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
-            switch (first) {
-            case 'n': case 'N':
-                options.setExplicitKCode(KCode.NONE);
-                break;
-            case 'e': case 'E':
-                options.setExplicitKCode(KCode.EUC);
-                break;
-            case 's': case 'S':
-                options.setExplicitKCode(KCode.SJIS);
-                break;
-            case 'u': case 'U':
-                options.setExplicitKCode(KCode.UTF8);
-                break;
-            default:
-                break;
-            }
-        }
-        return initializeCommon(arg0.convertToString().getByteList(), options);
-    }
-
-    private IRubyObject initializeByRegexp(RubyRegexp regexp) {
-        regexp.check();
-
-        return initializeCommon(regexp.str, regexp.options);
-    }
-
-    private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions newOptions) {
-        Ruby runtime = getRuntime();
-        // Options needs a little more set up.
-        checkFrozen();
-        if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
-        options = newOptions;
-        pattern = getRegexpFromCache(runtime, bytes, options.getKCode().getEncoding(), options);
-        bytes.getClass();
-        str = bytes;
-        return this;
+        return initialize_m19(arg0, arg1, arg2);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
@@ -1518,15 +1348,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return this;
     }
 
-    @JRubyMethod(name = "kcode", compat = CompatVersion.RUBY1_8)
-    public IRubyObject kcode(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        String kcodeName = options.getKCodeName();
-        
-        return kcodeName == null ? runtime.getNil() : runtime.newString(kcodeName);
-    }
-
-    @JRubyMethod(name = "hash")
+    @JRubyMethod
     @Override
     public RubyFixnum hash() {
         check();
@@ -1558,23 +1380,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 getOptions().equals(otherRegex.options));
     }
 
-    // FIXME: is this actually used in 1.8? It was 1.9-only before, but called the wrong search
-    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_match2(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject line = context.getLastLine();
-        if (line instanceof RubyString) {
-            IRubyObject[] holder = {context.nil};
-            int start = search(context, (RubyString)line, 0, false, holder);
-            context.setBackRef(holder[0]);
-            if (start < 0) return runtime.getNil();
-            return runtime.newFixnum(start);
-        }
-        context.setBackRef(runtime.getNil());
-        return runtime.getNil();
+        return op_match2_19(context);
     }
 
-    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
     public IRubyObject op_match2_19(ThreadContext context) {
         Ruby runtime = context.runtime;
         IRubyObject line = context.getLastLine();
@@ -1592,28 +1402,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_eqq
      * 
      */
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_8)
-    public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        final RubyString str;
-        if (arg instanceof RubyString) {
-            str = (RubyString)arg;
-        } else {
-            IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) {
-                context.setBackRef(tmp);
-                return runtime.getFalse();
-            }
-            str = (RubyString)tmp;
-        }
 
-        IRubyObject[] holder = {context.nil};
-        int start = search(context, str, 0, false, holder);
-        context.setBackRef(holder[0]);
-        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
+    public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
+        return eqq19(context, arg);
     }
 
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
     public IRubyObject eqq19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         arg = operandNoCheck(arg);
@@ -1630,22 +1424,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_match
      * 
      */
-    @JRubyMethod(name = "=~", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.runtime;
-        if (str.isNil()) {
-            context.setBackRef(context.nil);
-            return str;
-        }
-        IRubyObject[] holder = {context.nil};
-        int start = search(context, str.convertToString(), 0, false, holder);
-        context.setBackRef(holder[0]);
-        if (start < 0) return runtime.getNil();
-        return RubyFixnum.newFixnum(runtime, start);
+        return op_match19(context, str);
     }
     
-    @JRubyMethod(name = "=~", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "=~", required = 1, writes = BACKREF)
+    @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg.isNil()) {
@@ -1663,19 +1448,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_match_m
      * 
      */
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
-        if (str.isNil()) {
-            context.setBackRef(context.nil);
-            return str;
-        }
-        IRubyObject[] holder = {context.nil};
-        int start = search(context, str.convertToString(), 0, false, holder);
-        context.setBackRef(holder[0]);
-        return holder[0];
+        return match_m19(context, str, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, Block block) {
         return match19Common(context, str, 0, true, block);
     }
@@ -1684,7 +1461,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match19Common(context, str, 0, useBackref, block);
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, IRubyObject pos, Block block) {
         return match19Common(context, str, RubyNumeric.num2int(pos), true, block);
     }
@@ -1695,10 +1472,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return arg;
         }
         Ruby runtime = context.runtime;
-        RubyString str = operandCheck(runtime, arg);
+        RubyString _str = operandCheck(runtime, arg);
         
         IRubyObject[] holder = {context.nil};
-        if (matchPos(context, str, pos, holder) < 0) {
+        if (matchPos(context, _str, pos, holder) < 0) {
             if (setBackref) context.setBackRef(runtime.getNil());
             return runtime.getNil();
         }
@@ -1798,7 +1575,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match;
     }
 
-    @JRubyMethod(name = "options")
+    @JRubyMethod
     public IRubyObject options() {
         return getRuntime().newFixnum(getOptions().toOptions());
     }
@@ -1812,12 +1589,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_source
      * 
      */
-    @JRubyMethod(name = "source")
+    @JRubyMethod
     public IRubyObject source() {
         check();
-        RubyString str = RubyString.newStringShared(getRuntime(), this.str);
-        if (isTaint()) str.setTaint(true);
-        return str;
+        RubyString _str = RubyString.newStringShared(getRuntime(), this.str);
+        if (isTaint()) _str.setTaint(true);
+        return _str;
     }
 
     final int length() {
@@ -1827,13 +1604,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_inspect
      *
      */
-    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject inspect() {
         return inspect19();
     }
 
-    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect19() {
         if (pattern == null) return anyToString();
         return RubyString.newString(getRuntime(), regexpDescription19(getRuntime(), str, options, str.getEncoding()));
@@ -1841,7 +1617,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod
     @Override
     public IRubyObject to_s() {
         check();
@@ -2075,7 +1851,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_names
      * 
      */
-    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject names(ThreadContext context) {
         check();
         if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
@@ -2091,7 +1867,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_named_captures
      * 
      */
-    @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject named_captures(ThreadContext context) {
         check();
         RubyHash hash = RubyHash.newHash(getRuntime());
@@ -2108,13 +1884,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return hash;
     }
 
-    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
         Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
         return context.runtime.getEncodingService().getEncoding(enc);
     }
 
-    @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "fixed_encoding?")
     public IRubyObject fixed_encoding_p(ThreadContext context) {
         return context.runtime.newBoolean(options.isFixed());
     }
@@ -2482,14 +2258,5 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (regexp.getOptions().isFixed()) options |= ARG_ENCODING_FIXED;
         
         output.writeByte(options);
-    }
-
-    @Deprecated
-    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyClass klass = (RubyClass)recv;
-        RubyRegexp re = (RubyRegexp) klass.allocate();
-
-        re.callInit(args, Block.NULL_BLOCK);
-        return re;
     }
 }
