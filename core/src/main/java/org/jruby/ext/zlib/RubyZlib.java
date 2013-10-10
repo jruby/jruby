@@ -345,4 +345,10 @@ public class RubyZlib {
         }
         return new RaiseException(excn, true);
     }
+    
+    static int FIXNUMARG(IRubyObject obj, int ifnil) {
+        if (obj.isNil()) return ifnil;
+        
+        return RubyNumeric.fix2int(obj);
+    }
 }
