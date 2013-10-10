@@ -349,11 +349,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(IRubyObject p1) {
         Ruby runtime = getRuntime();
-        
+        ByteList bytes = p1.asString().getByteList();
+
         if (enc2 != null
                 && enc2 != ASCIIEncoding.INSTANCE) {
             bytes = Transcoder.strConvEncOpts(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
                     enc2, 0, runtime.getNil());
+        
         }
         
         try {
