@@ -207,7 +207,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         data.prev.thread.raise(re.getException());
                     }
                 } catch (Throwable t) {
-                    data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
+                    if (data.prev != null) {
+                        data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
+                    }
                 } finally {
                     data.queue.shutdown();
                 }
