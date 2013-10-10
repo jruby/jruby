@@ -52,6 +52,8 @@ public interface Stream {
     void clearerr();
 
     ModeFlags getModes();
+    
+    void setModes(ModeFlags modeFlags);
 
     boolean isSync();
 
