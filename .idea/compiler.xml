@@ -22,11 +22,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="jruby" />
+        <module name="jruby-core" />
+        <module name="jruby-tests" />
+        <module name="openssl" />
+        <module name="readline" />
+        <module name="ripper" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="jruby" target="1.6" />
+      <module name="jruby-core" target="1.6" />
+      <module name="openssl" target="1.6" />
+      <module name="readline" target="1.6" />
+      <module name="ripper" target="1.6" />
     </bytecodeTargetLevel>
   </component>
 </project>
