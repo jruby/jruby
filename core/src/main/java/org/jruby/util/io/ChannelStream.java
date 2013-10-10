@@ -145,6 +145,10 @@ public class ChannelStream implements Stream, Finalizable {
     public ModeFlags getModes() {
     	return modes;
     }
+    
+    public void setModes(ModeFlags modes) {
+        this.modes = modes;
+    }
 
     public boolean isSync() {
         return sync;

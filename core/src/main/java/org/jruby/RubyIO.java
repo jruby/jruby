@@ -384,12 +384,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
             OpenFile selfFile = getOpenFileChecked();
 
             long pos = 0;
+            
             Stream origStream = origFile.getMainStreamSafe();
             ChannelDescriptor origDescriptor = origStream.getDescriptor();
             boolean origIsSeekable = origDescriptor.isSeekable();
 
             if (origFile.isReadable() && origIsSeekable) {
-                pos = origFile.getMainStreamSafe().fgetpos();
+                pos = origStream.fgetpos();
             }
 
             if (origFile.getPipeStream() != null) {
@@ -409,56 +410,52 @@ public class RubyIO extends RubyObject implements IOEncodable {
             selfFile.setFinalizer(origFile.getFinalizer());
 
             Stream selfStream = selfFile.getMainStreamSafe();
-            ChannelDescriptor selfDescriptor = selfFile.getMainStreamSafe().getDescriptor();
+            ChannelDescriptor selfDescriptor = selfStream.getDescriptor();
             boolean selfIsSeekable = selfDescriptor.isSeekable();
 
-            // confirm we're not reopening self's channel
-            if (selfDescriptor.getChannel() != origDescriptor.getChannel()) {
-                // check if we're a stdio IO, and ensure we're not badly mutilated
-                if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
-                    selfFile.getMainStreamSafe().clearerr();
+            // check if we're a stdio IO, and ensure we're not badly mutilated
+            if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
+                selfStream.clearerr();
 
-                    // dup2 new fd into self to preserve fileno and references to it
-                    origDescriptor.dup2Into(selfDescriptor);
+                // dup2 new fd into self to preserve fileno and references to it
+                origDescriptor.dup2Into(selfDescriptor);
+                selfStream.setModes(origStream.getModes());
+            } else {
+                Stream pipeFile = selfFile.getPipeStream();
+                selfStream.fclose();
+                selfFile.setPipeStream(null);
+
+                // TODO: turn off readable? am I reading this right?
+                // This only seems to be used while duping below, since modes gets
+                // reset to actual modes afterward
+                //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
+
+                if (pipeFile != null) {
+                    selfFile.setMainStream(ChannelStream.fdopen(runtime, origDescriptor, origDescriptor.getOriginalModes()));
+                    selfFile.setPipeStream(pipeFile);
                 } else {
-                    Stream pipeFile = selfFile.getPipeStream();
-                    int mode = selfFile.getMode();
-                    selfFile.getMainStreamSafe().fclose();
-                    selfFile.setPipeStream(null);
+                    // only use internal fileno here, stdio is handled above
+                    selfFile.setMainStream(
+                            ChannelStream.open(
+                            runtime,
+                            origDescriptor.dup2(selfDescriptor.getFileno())));
 
-                    // TODO: turn off readable? am I reading this right?
-                    // This only seems to be used while duping below, since modes gets
-                    // reset to actual modes afterward
-                    //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
+                    // since we're not actually duping the incoming channel into our handler, we need to
+                    // copy the original sync behavior from the other handler
+                    selfFile.getMainStreamSafe().setSync(selfFile.getMainStreamSafe().isSync());
+                }
+            }
 
-                    if (pipeFile != null) {
-                        selfFile.setMainStream(ChannelStream.fdopen(runtime, origDescriptor, origDescriptor.getOriginalModes()));
-                        selfFile.setPipeStream(pipeFile);
-                    } else {
-                        // only use internal fileno here, stdio is handled above
-                        selfFile.setMainStream(
-                                ChannelStream.open(
-                                runtime,
-                                origDescriptor.dup2(selfDescriptor.getFileno())));
+            // TODO: anything threads attached to original fd are notified of the close...
+            // see rb_thread_fd_close
 
-                        // since we're not actually duping the incoming channel into our handler, we need to
-                        // copy the original sync behavior from the other handler
-                        selfFile.getMainStreamSafe().setSync(selfFile.getMainStreamSafe().isSync());
-                    }
-                    selfFile.setMode(mode);
+            if (origFile.isReadable() && pos >= 0) {
+                if (selfIsSeekable) {
+                    selfFile.seek(pos, Stream.SEEK_SET);
                 }
 
-                // TODO: anything threads attached to original fd are notified of the close...
-                // see rb_thread_fd_close
-
-                if (origFile.isReadable() && pos >= 0) {
-                    if (selfIsSeekable) {
-                        selfFile.seek(pos, Stream.SEEK_SET);
-                    }
-
-                    if (origIsSeekable) {
-                        origFile.seek(pos, Stream.SEEK_SET);
-                    }
+                if (origIsSeekable) {
+                    origFile.seek(pos, Stream.SEEK_SET);
                 }
             }
 
@@ -476,10 +473,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
 
-            // TODO: restore binary mode
-            //            if (fptr->mode & FMODE_BINMODE) {
-            //                rb_io_binmode(io);
-            //            }
+            if ((selfFile.getMode() & OpenFile.BINMODE) != 0) {
+                selfFile.setBinmode();
+            }
 
             // TODO: set our metaclass to target's class (i.e. scary!)
 

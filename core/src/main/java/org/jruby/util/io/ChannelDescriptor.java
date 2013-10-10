@@ -484,6 +484,9 @@ public class ChannelDescriptor {
             other.fileDescriptor = fileDescriptor;
             other.refCounter = refCounter;
             other.canBeSeekable = canBeSeekable;
+            other.readableChannel = readableChannel;
+            other.writableChannel = writableChannel;
+            other.seekableChannel = seekableChannel;
         }
     }
 
