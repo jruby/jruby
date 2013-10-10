@@ -257,7 +257,7 @@ public class RubyDigest {
 
         @JRubyMethod()
         public static IRubyObject digest_length(ThreadContext ctx, IRubyObject self) {
-            return digest(ctx, self, null).convertToString().length();
+            return digest(ctx, self, null).convertToString().bytesize();
         }
 
         @JRubyMethod()
@@ -277,7 +277,7 @@ public class RubyDigest {
                 str1 = to_s(ctx, self).convertToString();
                 str2 = oth.convertToString();
             }
-            boolean ret = str1.length().eql(str2.length()) && (str1.eql(str2));
+            boolean ret = str1.bytesize().eql(str2.bytesize()) && (str1.eql(str2));
             return ret ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
 
