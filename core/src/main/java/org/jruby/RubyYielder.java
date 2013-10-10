@@ -49,6 +49,7 @@ public class RubyYielder extends RubyObject {
     }
 
     private static ObjectAllocator YIELDER_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyYielder(runtime, klass);
         }

@@ -36,7 +36,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.CompatVersion.*;
 
 /**
  * 
@@ -120,17 +119,19 @@ public class RubyUnboundMethod extends RubyMethod {
         return super.to_proc(context, unusedBlock);
     }
 
-    @JRubyMethod(compat = RUBY1_8)
+    @Override
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newString(methodName);
+        return name19(context);
     }
 
-    @JRubyMethod(name = "name", compat = RUBY1_9)
+    @JRubyMethod(name = "name")
+    @Override
     public IRubyObject name19(ThreadContext context) {
         return context.runtime.newSymbol(methodName);
     }
 
-    @JRubyMethod(name = "owner")
+    @JRubyMethod
+    @Override
     public IRubyObject owner(ThreadContext context) {
         return implementationModule;
     }
