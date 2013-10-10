@@ -415,38 +415,28 @@ public class RubyEnumerable {
         return result;
     }
 
-    public static IRubyObject sort_byCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject sort_byCommon(final ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final ThreadContext localContext = context; // MUST NOT be used across threads
+        IRubyObject[][] valuesAndCriteria;
 
         if (self instanceof RubyArray) {
             RubyArray selfArray = (RubyArray) self;
-            final IRubyObject[][] valuesAndCriteria = new IRubyObject[selfArray.size()][2];
+            final IRubyObject[][] valuesAndCriteriaArray = new IRubyObject[selfArray.size()][2];
 
             each(context, self, new JavaInternalBlockBody(runtime, Arity.OPTIONAL) {
                 AtomicInteger i = new AtomicInteger(0);
                 public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    IRubyObject[] myVandC = valuesAndCriteria[i.getAndIncrement()];
+                    IRubyObject[] myVandC = valuesAndCriteriaArray[i.getAndIncrement()];
                     myVandC[0] = arg;
                     myVandC[1] = block.yield(context, arg);
                     return runtime.getNil();
                 }
             });
-            
-            Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
-                public int compare(IRubyObject[] o1, IRubyObject[] o2) {
-                    return RubyFixnum.fix2int(invokedynamic(localContext, o1[1], OP_CMP, o2[1]));
-                }
-            });
-            
-            IRubyObject dstArray[] = new IRubyObject[selfArray.size()];
-            for (int i = 0; i < dstArray.length; i++) {
-                dstArray[i] = valuesAndCriteria[i][0];
-            }
 
-            return runtime.newArrayNoCopy(dstArray);
+            valuesAndCriteria = valuesAndCriteriaArray;
         } else {
-            final List<IRubyObject[]> valuesAndCriteria = new ArrayList<IRubyObject[]>();
+            final List<IRubyObject[]> valuesAndCriteriaList = new ArrayList<IRubyObject[]>();
 
             callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -454,24 +444,27 @@ public class RubyEnumerable {
                     IRubyObject[] myVandC = new IRubyObject[2];
                     myVandC[0] = larg;
                     myVandC[1] = block.yield(ctx, larg);
-                    valuesAndCriteria.add(myVandC);
+                    valuesAndCriteriaList.add(myVandC);
                     return runtime.getNil();
                 }
             });
-            
-            Collections.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
-                public int compare(IRubyObject[] o1, IRubyObject[] o2) {
-                    return RubyFixnum.fix2int(invokedynamic(localContext, o1[1], OP_CMP, o2[1]));
-                }
-            });
 
-            IRubyObject dstArray[] = new IRubyObject[valuesAndCriteria.size()];
-            for (int i = 0; i < dstArray.length; i++) {
-                dstArray[i] = valuesAndCriteria.get(i)[0];
-            }
-
-            return runtime.newArrayNoCopy(dstArray);
+            valuesAndCriteria = valuesAndCriteriaList.toArray(new IRubyObject[valuesAndCriteriaList.size()][]);
         }
+
+        Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
+            public int compare(IRubyObject[] o1, IRubyObject[] o2) {
+                return RubyComparable.cmpint(context, invokedynamic(localContext, o1[1], OP_CMP, o2[1]), o1[1], o2[1]);
+            }
+        });
+
+
+        IRubyObject dstArray[] = new IRubyObject[valuesAndCriteria.length];
+        for (int i = 0; i < dstArray.length; i++) {
+            dstArray[i] = valuesAndCriteria[i][0];
+        }
+
+        return runtime.newArrayNoCopy(dstArray);
     }
 
     @JRubyMethod
