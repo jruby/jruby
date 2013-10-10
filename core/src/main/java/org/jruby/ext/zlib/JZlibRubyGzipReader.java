@@ -164,17 +164,24 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
         
         ecopts(context, opt);
-        
-        if (realIo.respondsTo("path")) {
-            obj.getSingletonClass().addMethod("path", new JavaMethod.JavaMethodZero(obj.getSingletonClass(), Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    return ((JZlibRubyGzipReader) self).realIo.callMethod(context, "path");
-                }
-            });
-        }
 
         return obj;
+    }
+
+    // These methods are here to avoid defining a singleton #path on every instance, as in MRI
+
+    @JRubyMethod
+    public IRubyObject path(ThreadContext context) {
+        return this.realIo.callMethod(context, "path");
+    }
+
+    @JRubyMethod(name = "respond_to?", frame = true)
+    public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
+        if (name.asJavaString().equals("path")) {
+            return this.realIo.callMethod(context, "respond_to?", name);
+        }
+
+        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
     }
 
     /**
