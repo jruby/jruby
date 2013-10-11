@@ -42,7 +42,7 @@
         <!-- First, run up through integration phases -->
         <exec executable="mvn">
             <arg line="-q"/>
-            <arg line="-Pdefault"/>
+            <arg line="-Ptest"/>
             <arg line="package"/>
         </exec>
         
