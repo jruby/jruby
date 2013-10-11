@@ -85,46 +85,12 @@
 
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>${rake.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec</artifactId>
-      <version>${rspec.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>jruby-launcher</artifactId>
       <version>${jruby-launcher.version}</version>
       <type>gem</type>
     </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest</artifactId>
-      <version>${minitest.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest-excludes</artifactId>
-      <version>${minitest-excludes.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>json</artifactId>
-      <version>${json.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
-      <type>gem</type>
-    </dependency>
+<!--
+-->
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
@@ -243,4 +209,47 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>test</id>
+      <dependencies>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>rake</artifactId>
+	  <version>${rake.version}</version>
+	  <type>gem</type>
+	</dependency>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>rspec</artifactId>
+	  <version>${rspec.version}</version>
+	  <type>gem</type>
+	</dependency>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>minitest</artifactId>
+	  <version>${minitest.version}</version>
+	  <type>gem</type>
+	</dependency>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>minitest-excludes</artifactId>
+	  <version>${minitest-excludes.version}</version>
+	  <type>gem</type>
+	</dependency>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>json</artifactId>
+	  <version>${json.version}</version>
+	  <type>gem</type>
+	</dependency>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>rdoc</artifactId>
+	  <version>${rdoc.version}</version>
+	  <type>gem</type>
+	</dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>
