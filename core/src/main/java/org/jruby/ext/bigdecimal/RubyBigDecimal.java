@@ -1835,34 +1835,28 @@ public class RubyBigDecimal extends RubyNumeric {
     private String unscaledValue() {
         return value.abs().unscaledValue().toString();
     }
-
+    
+    private String sign(String arg, int signum) {
+        return signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : "");
+    }
+    
     private IRubyObject engineeringValue(String arg) {
-        int exponent = getExponent();
-        int signum = value.signum();
-        StringBuilder build = new StringBuilder();
-        build.append(signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : ""));
-        build.append("0.");
-        if (0 == groups(arg)) {
-            String s = removeTrailingZeroes(unscaledValue());
-            if ("".equals(s)) {
-                build.append("0");
-            } else {
-                build.append(s);
-            }
+        StringBuilder build = new StringBuilder().append(sign(arg, value.signum())).append("0.");
+        String s = removeTrailingZeroes(unscaledValue());
+        
+        if (groups(arg) == 0) {
+            build.append("".equals(s) ? "0" : s);
         } else {
-            int index = 0;
+            int length = s.length();
             String sep = "";
-            while (index < unscaledValue().length()) {
+
+            for (int index = 0; index < length; index += groups(arg)) {
                 int next = index + groups(arg);
-                if (next > unscaledValue().length()) {
-                    next = unscaledValue().length();
-                }
-                build.append(sep).append(unscaledValue().substring(index, next));
+                build.append(sep).append(s.substring(index, next > length ? length : next));
                 sep = " ";
-                index += groups(arg);
             }
         }
-        build.append("E").append(exponent);
+        build.append("E").append(getExponent());
         return getRuntime().newString(build.toString());
     }
 
