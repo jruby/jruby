@@ -1664,10 +1664,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // it doesn't handle special cases
     private int getExponent() {
-        // TODO: no need to calculate every time.
-        if (isZero()) {
-            return 0;
-        }
+        if (isZero() || isNaN() || isInfinity()) return 0;
+
         BigDecimal val = value.abs().stripTrailingZeros();
         return val.precision() - val.scale();
     }
