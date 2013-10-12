@@ -61,7 +61,7 @@ describe "JRuby's compiler" do
     expect(compile_and_run("a = 'hello'; a")).to eq 'hello'
     expect(compile_and_run("a = :hello; a")).to eq :hello
     expect(compile_and_run("a = 1111111111111111111111111111; a")).to eq 1111111111111111111111111111
-    expect(compile_and_run("a = [1, ['foo', :hello]]; a")).to match_array([1, ['foo', :hello]])
+    expect(compile_and_run("a = [1, ['foo', :hello]]; a")).to eq([1, ['foo', :hello]])
     expect(compile_and_run("{}")).to eq({})
     expect(compile_and_run("a = {:foo => {:bar => 5.5}}; a")).to eq({:foo => {:bar => 5.5}})
     expect(compile_and_run("a = /foo/; a")).to eq(/foo/)
@@ -180,7 +180,7 @@ describe "JRuby's compiler" do
       arr << x
       arr
       EOS
-    expect(compile_and_run(blocks_code)).to match_array([1,2,3,4,5,6])
+    expect(compile_and_run(blocks_code)).to eq([1,2,3,4,5,6])
   end
   
   it "compiles yield" do
@@ -210,9 +210,9 @@ describe "JRuby's compiler" do
   it "compiles attribute assignment" do
     expect(compile_and_run("def a=(x); 2; end; self.a = 1")).to eq 1
     expect(compile_and_run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2")).to eq 1
-    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]")).to match_array([1,1])
+    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]")).to eq([1,1])
     expect(compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2")).to  be_nil
-    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]")).to match_array([1,1])
+    expect(compile_and_run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]")).to eq([1,1])
   end
   
   it "compiles lastline" do
@@ -222,8 +222,8 @@ describe "JRuby's compiler" do
   it "compiles closure arguments" do
     expect(compile_and_run("a = 0; [1].each {|a|}; a")).to eq(0)
     expect(compile_and_run("a = 0; [1].each {|x| a = x}; a")).to  eq 1
-    expect(compile_and_run("[[1,2,3]].each {|x,*y| break y}")).to  match_array([2,3])
-    expect(compile_and_run("1.times {|x,*y| break y}")).to  match_array([])
+    expect(compile_and_run("[[1,2,3]].each {|x,*y| break y}")).to  eq([2,3])
+    expect(compile_and_run("1.times {|x,*y| break y}")).to  eq([])
     expect(compile_and_run("1.times {|x,*|; break x}")).to eq 0
   end
   
@@ -259,40 +259,40 @@ describe "JRuby's compiler" do
   end
   
   it "compiles optional method arguments" do
-    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1)")).to  match_array([1,1])
-    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2)")).to match_array([1,2])
+    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1)")).to  eq([1,1])
+    expect(compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2)")).to eq([1,2])
     expect{compile_and_run("def foo(a,b=1);[a,b];end;foo")}.to raise_error(ArgumentError)
     expect{compile_and_run("def foo(a,b=1);[a,b];end;foo(1,2,3)")}.to raise_error(ArgumentError)
-    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo")).to  match_array([1,1])
-    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo(2)")).to  match_array([2,nil])
-    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1)")).to match_array([1,1,1])
-    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2)")).to match_array([1,2,nil])
+    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo")).to  eq([1,1])
+    expect(compile_and_run("def foo(a=(b=1));[a,b];end;foo(2)")).to  eq([2,nil])
+    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1)")).to eq([1,1,1])
+    expect(compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2)")).to eq([1,2,nil])
     expect{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
   end
   
   it "compiles grouped and intra-list rest args" do
     result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
-    expect(result).to match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+    expect(result).to eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
   end
   
   it "compiles splatted values" do
-    expect(compile_and_run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])")).to  match_array([1,2,3])
-    expect(compile_and_run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]")).to  match_array([1,2,3])
+    expect(compile_and_run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])")).to  eq([1,2,3])
+    expect(compile_and_run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]")).to  eq([1,2,3])
   end
   
   it "compiles multiple assignment" do
-    expect(compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a")).to  match_array([1,2,3])
-    expect(compile_and_run("a, (b, c) = 1; [a, b, c]")).to  match_array([1,nil,nil])
-    expect(compile_and_run("a, (b, c) = 1, 2; [a, b, c]")).to  match_array([1,2,nil])
-    expect(compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]")).to match_array([1,2,3])
-    expect(compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]")).to  match_array([1,2,3])
+    expect(compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a")).to  eq([1,2,3])
+    expect(compile_and_run("a, (b, c) = 1; [a, b, c]")).to  eq([1,nil,nil])
+    expect(compile_and_run("a, (b, c) = 1, 2; [a, b, c]")).to  eq([1,2,nil])
+    expect(compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]")).to eq([1,2,3])
+    expect(compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]")).to  eq([1,2,3])
     result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
-    expect(result).to  match_array([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+    expect(result).to  eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
   end
   
   it "compiles dynamic regexp" do
     expect(compile_and_run('"foo" =~ /#{"foo"}/')).to  eq 0
-    expect(compile_and_run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary')).to  match_array([0, 0])
+    expect(compile_and_run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary')).to  eq([0, 0])
   end
   
   it "compiles implicit and explicit return" do
@@ -354,8 +354,8 @@ describe "JRuby's compiler" do
   
   it "compiles block passing" do
     # block pass node compilation
-    expect(compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil),foo(&p)]")).to  match_array([false, true])
-    expect(compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil),self.foo(&p)]")).to match_array([false, true])
+    expect(compile_and_run("def foo; block_given?; end; p = proc {}; [foo(&nil),foo(&p)]")).to  eq([false, true])
+    expect(compile_and_run("public; def foo; block_given?; end; p = proc {}; [self.foo(&nil),self.foo(&p)]")).to eq([false, true])
   end
   
   it "compiles splatted element assignment" do
@@ -366,17 +366,17 @@ describe "JRuby's compiler" do
     const_code = <<-EOS
       A = 'a'; module X; B = 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
     EOS
-    expect(compile_and_run(const_code)).to  match_array(["a", "b", "a"])
+    expect(compile_and_run(const_code)).to  eq(["a", "b", "a"])
   end
   
   it "compiles flip-flop" do
     # flip (taken from http://redhanded.hobix.com/inspect/hopscotchingArraysWithFlipFlops.html)
-    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s) }")).to match_array([1, 3, 5, 7, 9])
-    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s = !s) }")).to match_array([1, 4, 7, 10])
+    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s) }")).to eq([1, 3, 5, 7, 9])
+    expect(compile_and_run("s = true; (1..10).reject { true if (s = !s) .. (s = !s) }")).to eq([1, 4, 7, 10])
     big_flip = <<-EOS
     s = true; (1..10).inject([]) do |ary, v|; ary << [] unless (s = !s) .. (s = !s); ary.last << v; ary; end
     EOS
-    expect(compile_and_run(big_flip)).to  match_array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]])
+    expect(compile_and_run(big_flip)).to  eq([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]])
     big_triple_flip = <<-EOS
     s = true
     (1..64).inject([]) do |ary, v|
@@ -387,7 +387,7 @@ describe "JRuby's compiler" do
         ary
     end
     EOS
-    expect(compile_and_run(big_triple_flip)).to  match_array(expected)
+    expect(compile_and_run(big_triple_flip)).to  eq(expected)
   end
 
   it "gracefully handles named captures when there's no match" do
@@ -421,7 +421,7 @@ describe "JRuby's compiler" do
 
       main'
 
-    expect(result).to  match_array([1,2,3])
+    expect(result).to  eq([1,2,3])
   end
 
   it "prepares a proper caller scope for partition/rpartition (JRUBY-6827)" do
@@ -449,7 +449,7 @@ ary = []
 ary
     EOC
 
-    expect(result).to  match_array([nil, 1])
+    expect(result).to  eq([nil, 1])
   end
 
   it "does not break String#to_r and to_c" do
@@ -462,7 +462,7 @@ ary
     foo
     EOC
 
-    expect(result).to  match_array(["0.1+0i", "1/10"])
+    expect(result).to  eq(["0.1+0i", "1/10"])
   end
   
   it "handles 0-4 arg and splatted whens in a caseless case/when" do
@@ -539,21 +539,21 @@ ary
 
     # attr assignment in multiple assign
     expect(compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz','bar'; a.b")).to eq "bar"
-    expect(compile_and_run("a = []; a[0], a[1] = 'foo','bar'; a")).to match_array(["foo", "bar"])
+    expect(compile_and_run("a = []; a[0], a[1] = 'foo','bar'; a")).to eq(["foo", "bar"])
 
     # for loops
-    expect(compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a")).to  match_array([2, 4, 6])
-    expect(compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")).to  match_array([1, 2, 3])
+    expect(compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a")).to  eq([2, 4, 6])
+    expect(compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")).to  eq([1, 2, 3])
 
     # ensure blocks
     expect(compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a")).to eq 1
     expect(compile_and_run("$a = 2; def foo; return; ensure; $a = 1; end; foo; $a")).to eq 1
 
     # op element assign
-    expect(compile_and_run("a = []; [a[0] ||= 4, a[0]]")).to  match_array([4, 4])
-    expect(compile_and_run("a = [4]; [a[0] ||= 5, a[0]]")).to  match_array([4, 4])
-    expect(compile_and_run("a = [1]; [a[0] += 3, a[0]]")).to  match_array([4, 4])
-    expect(compile_and_run("a = {}; a[0] ||= [1]; a[0]")).to  match_array([1])
+    expect(compile_and_run("a = []; [a[0] ||= 4, a[0]]")).to  eq([4, 4])
+    expect(compile_and_run("a = [4]; [a[0] ||= 5, a[0]]")).to  eq([4, 4])
+    expect(compile_and_run("a = [1]; [a[0] += 3, a[0]]")).to  eq([4, 4])
+    expect(compile_and_run("a = {}; a[0] ||= [1]; a[0]")).to  eq([1])
     expect(compile_and_run("a = [1]; a[0] &&= 2; a[0]")).to eq 2
 
     # non-local return
@@ -636,7 +636,7 @@ ary
     # 100 first instances of a symbol
     expect(compile_and_run(syms.inspect)).to eq syms
     # 100 first instances and 100 second instances (caching)
-    expect(compile_and_run("[#{syms.inspect},#{syms.inspect}]")).to match_array([syms,syms])
+    expect(compile_and_run("[#{syms.inspect},#{syms.inspect}]")).to eq([syms,syms])
 
     # class created using local var as superclass
     expect(compile_and_run(<<-EOS)).to eq 'AFromLocal'
@@ -663,9 +663,9 @@ ary
     expect(compile_and_run(large_array)).to  eq(eval(large_array))
 
     # block arg spreading cases
-    expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to match_array([1])
-    expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  match_array([1])
-    expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  match_array([1,2])
+    expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to eq([1])
+    expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  eq([1])
+    expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  eq([1,2])
 
     # non-expr case statement with return with if modified with call
     # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
@@ -687,16 +687,16 @@ ary
       ary << b
       ary
     end
-    foo")).to  match_array([nil,'ell', 'o', 'ell'])
+    foo")).to  eq([nil,'ell', 'o', 'ell'])
 
     # chained argscat and argspush
-    expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  match_array([1,2,3,1,2,4,5])
+    expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  eq([1,2,3,1,2,4,5])
 
     # JRUBY-5871: test that "special" args dispatch along specific-arity path
     test = '
     %w[foo bar].__send__ :to_enum, *[], &nil
     '
-    expect(compile_and_run(test).map {|line| line + 'yum'}).to  match_array(["fooyum", "baryum"])
+    expect(compile_and_run(test).map {|line| line + 'yum'}).to  eq(["fooyum", "baryum"])
 
     # These two cases triggered ArgumentError when Enumerator was fixed to enforce
     # 3 required along its varargs path. Testing both here to ensure super/zsuper
