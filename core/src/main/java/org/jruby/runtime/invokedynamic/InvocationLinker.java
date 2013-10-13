@@ -598,50 +598,7 @@ public class InvocationLinker {
             return createAttrWriterHandle(site, cls, accessor);
         }
     }
-    
-    public static class FFIGenerator implements HandleGenerator {
 
-        @Override
-        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-            if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
-                // if frame/scope required, can't dispatch direct
-                if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
-                    throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
-                }
-
-                if (!method.getArity().isFixed()) {
-                    throw new IndirectBindingException("fixed arity required: " + method.getArity());
-                }
-
-                // Arity must match, otherwise let the indirect method process errors
-                if (method.getArity().getValue() != site.arity()) {
-                    throw new IndirectBindingException("arity mismatch");
-                }
-
-                // Only support 0..6 parameters
-                if (method.getArity().getValue() > 6) {
-                    throw new IndirectBindingException("target args > 6");
-                }
-
-                if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
-                    // Called with a block to substitute for a callback param - cannot bind directly
-                    throw new IndirectBindingException("callback block supplied");
-                }
-                
-                return true;
-            }
-            
-            return false;
-        }
-
-        @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
-            // Ruby to FFI
-            return createFFIHandle(site, method);
-        }
-        
-    }
-    
     public static class JavaCallGenerator implements HandleGenerator {
 
         @Override
@@ -748,7 +705,6 @@ public class InvocationLinker {
             new HandleMethodGenerator(),
             new AttrReaderGenerator(),
             new AttrWriterGenerator(),
-            new FFIGenerator(),
             new JavaCallGenerator(),
             new RubyCallGenerator(),
             new CoreCallGenerator()
@@ -1538,29 +1494,7 @@ public class InvocationLinker {
         return nativeTarget;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Dispatch via direct handle to FFI native method
-    ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createFFIHandle(JRubyCallSite site, DynamicMethod method) {
-        if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
-            // Called with a block to substitute for a callback param - cannot cache or use a cached handle
-            return null;
-        }
-
-        MethodHandle nativeTarget = (MethodHandle) method.getHandle();
-        if (nativeTarget != null) return nativeTarget;
-
-        nativeTarget = org.jruby.ext.ffi.jffi.InvokeDynamic.getMethodHandle(site, method);
-        if (nativeTarget != null) {
-            method.setHandle(nativeTarget);
-            return nativeTarget;
-        }
-
-        // can't build native handle for it
-        return null;
-    }
-    
     ////////////////////////////////////////////////////////////////////////////
     // Dispatch to attribute accessors
     ////////////////////////////////////////////////////////////////////////////
