@@ -66,7 +66,6 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.jruby.JRubyConfigLibrary;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
@@ -4432,14 +4431,6 @@ public final class Ruby {
         return staticScopeFactory;
     }
 
-    public FFI getFFI() {
-        return ffi;
-    }
-
-    public void setFFI(FFI ffi) {
-        this.ffi = ffi;
-    }
-
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
         return definedMessages.get(definedMessage);
     }
@@ -4728,8 +4719,6 @@ public final class Ruby {
     private RubySymbol recursiveKey;
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
-    private FFI ffi;
-    
     private JavaProxyClassFactory javaProxyClassFactory;
 
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
