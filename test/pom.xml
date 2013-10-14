@@ -140,8 +140,6 @@
         <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
-            <phase>initialize</phase>
-            <goals><goal>initialize</goal></goals>
             <configuration>
               <gemPath>${gem.home}</gemPath>
               <gemHome>${gem.home}</gemHome>
