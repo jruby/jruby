@@ -63,6 +63,22 @@ Li8JsX5yIiuVYaBg/6ha3tOg4TCa5K/3r3tVliRZ2Es=
       assert_nil pkcs12.ca_certs
     end
 
+    def test_load
+      temp = OpenSSL::PKCS12.create(
+          "omg",
+          "hello",
+          TEST_KEY_RSA1024,
+          @mycert
+      )
+
+      Tempfile.open('test_cert.pk12') do |f|
+        f << temp.to_der
+        f.rewind
+        OpenSSL::PKCS12.new(f, 'omg')
+      end
+
+    end
+
     def test_create_no_pass
       pkcs12 = OpenSSL::PKCS12.create(
         nil,
