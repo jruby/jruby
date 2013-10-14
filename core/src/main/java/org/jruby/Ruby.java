@@ -130,6 +130,7 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
+import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -4439,10 +4440,18 @@ public final class Ruby {
     }
     
     private void setNetworkStack() {
-        if (config.getIPv4Preferred()) {
-            System.setProperty("java.net.preferIPv4Stack", "true");
-        } else {
-            System.setProperty("java.net.preferIPv4Stack", "false");
+        try {
+            if (config.getIPv4Preferred()) {
+                System.setProperty("java.net.preferIPv4Stack", "true");
+            } else {
+                System.setProperty("java.net.preferIPv4Stack", "false");
+            }
+        } catch (AccessControlException ace) {
+            if (isVerbose()) {
+                LOG.warn("warning: unable to set network stack system property due "
+                        + "to security restrictions, please set it manually as JVM "
+                        + "parameter (-Djava.net.preferIPv4Stack=true|false)");
+            }
         }
     }
 
