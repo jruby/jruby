@@ -5,26 +5,68 @@ import java.io.File;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.persistence.util.FileIO;
+import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.ir.persistence.util.IRFilePathManager;
 
+// This class currently contains code that will be decoupled later on 
 public class IRPersistenceFacade {
-
+    
+    public static boolean isPersistedIrExecution(Ruby runtime) {
+        RubyInstanceConfig config = runtime.getInstanceConfig();
+        String fileName = config.displayedFileName();
+        boolean isIrFileName = IRFileExpert.INSTANCE.isIrFileName(fileName);
+        return isIrFileName || IRFileExpert.INSTANCE.isIrFileForRbFileFound(config);
+    }
+ 
     public static void persist(IRScope irScopeToPersist, Ruby runtime) throws IRPersistenceException {
-        try {
-            RubyInstanceConfig config = runtime.getInstanceConfig();
-            
-            // Place ir files inside ir folder under current directory
-            File currentDir = new File(config.getCurrentDirectory());
-            String rbFileName = config.displayedFileName();            
-            File irFile = IRFilePathManager.INSTANCE.getIRFile(currentDir, rbFileName);                      
+         try {
+             RubyInstanceConfig config = runtime.getInstanceConfig();
+             File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config);
 
-            String instructionsString = irScopeToPersist.toStringInstrs();
-            FileIO.INSTANCE.writeToFile(irFile, instructionsString);
+             String instructionsString = irScopeToPersist.toStringInstrs();
+             FileIO.INSTANCE.writeToFile(irFile, instructionsString);
         } catch (Exception e) {
             throw new IRPersistenceException(e);
         }
 
     }
+
+
+    public static IRScope read(Ruby runtime) throws IRPersistenceException {
+        try {
+            RubyInstanceConfig config = runtime.getInstanceConfig();
+            File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config);
+            
+            // FIXME: It is copy/paste from IRBuilder#buildRoot, 
+            // maybe we will need to read IR that was not produced by IRBuilder#buildRoot? 
+            IRScriptBody script = new IRScriptBody(runtime.getIRManager(), "__file__", irFile.getAbsolutePath(), null);
+            script.addInstr(new ReceiveSelfInstr(script.getSelf()));
+            // Set %current_scope = <current-scope>
+            // Set %current_module = <current-module>
+            script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
+            script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
+            // end of copy/paste
+            
+            // read line by line and transform every line with instruction into instruction
+            String[] fileLines = FileIO.INSTANCE.readFile(irFile);
+            for (String line : fileLines) {
+                
+            }
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 } 
 

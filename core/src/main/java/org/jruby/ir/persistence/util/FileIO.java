@@ -13,13 +13,18 @@ import java.nio.charset.Charset;
 public enum FileIO {
     INSTANCE;
 
-    public String readFile(String fileName) throws FileNotFoundException, IOException {
+    private static final String LINE_DELIMITER = "\n";
+    private static final Charset CHARSET = Charset.defaultCharset();
+    
+    public String[] readFile(File file) throws FileNotFoundException, IOException {
+
         FileInputStream fis = null;
         try {
-            fis = new FileInputStream(fileName);
+            fis = new FileInputStream(file);
             FileChannel fc = fis.getChannel();
             MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-            return Charset.defaultCharset().decode(bb).toString();
+            String wholeFile = CHARSET.decode(bb).toString();
+            return wholeFile.split(LINE_DELIMITER);
         } finally {
             if (fis != null) {
                 fis.close();
