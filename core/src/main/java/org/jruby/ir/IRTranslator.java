@@ -5,6 +5,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ir.persistence.IRPeristenceFacade;
+import org.jruby.ir.persistence.IRPersistenceException;
+import org.jruby.ir.persistence.IRPersistenceFacade;
 
 /**
  * Abstract class that contains general logic for both IR Compiler and IR Interpreter
@@ -16,7 +18,15 @@ public abstract class IRTranslator<R, S> {
     public R performTranslation(Ruby runtime, Node node, S specificObject) {        
         IRScope producedIRScope = produceIrScope(runtime, node);
         
-        if (isIRPersistenceRequired()) IRPeristenceFacade.persist(producedIRScope);
+        if (isIRPersistenceRequired()) {
+            try {
+                IRPersistenceFacade.persist(producedIRScope, runtime);
+            } catch (IRPersistenceException e) {
+                // FIXME: Log error, but do not interrupt translation 
+                // Or should we throw runtime exception?
+                e.printStackTrace();
+            } 
+        }
         
         return translationSpecificLogic(runtime, producedIRScope, specificObject);
     }
