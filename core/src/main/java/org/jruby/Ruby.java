@@ -49,7 +49,6 @@ import org.joda.time.DateTimeZone;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.IRubyWarnings.ID;
@@ -71,11 +70,9 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.IRBuilder;
+import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.*;
 import org.jruby.runtime.Helpers;
@@ -127,7 +124,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
@@ -150,7 +146,6 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.util.cli.Options;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -723,36 +718,7 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            final IRScope scope = IRBuilder.createIRBuilder(this, getIRManager()).buildRoot((RootNode) node);
-            final Class compiled = JVMVisitor.compile(this, scope, classLoader);
-            final StaticScope staticScope = scope.getStaticScope();
-            staticScope.setModule(getTopSelf().getMetaClass());
-            return new AbstractScript() {
-                @Override
-                public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-                    try {
-                        return (IRubyObject)compiled.getMethod("__script__0", ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf(), block);
-                    } catch (InvocationTargetException ite) {
-                        if (ite.getCause() instanceof JumpException) {
-                            throw (JumpException)ite.getCause();
-                        } else {
-                            throw new RuntimeException(ite);
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                    try {
-                        Helpers.preLoadCommon(context, staticScope, false);
-                        return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                    } finally {
-                        Helpers.postLoad(context);
-                    }
-                }
-            };
+            Compiler.getInstance().performTranslation(this, node, classLoader); 
         }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
@@ -836,7 +802,8 @@ public final class Ruby {
 
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
-                return Interpreter.interpret(this, rootNode, self);
+                // FIXME: retrieve from IRManager unless lifus does it later
+                return Interpreter.getInstance().performTranslation(this, rootNode, self);
             } else {
                 return ASTInterpreter.INTERPRET_ROOT(this, context, rootNode, getTopSelf(), Block.NULL_BLOCK);
             }

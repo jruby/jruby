@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -16,7 +15,6 @@ import org.jruby.ast.RootNode;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -24,8 +22,8 @@ import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.IRTranslator;
 import org.jruby.ir.Operation;
-import org.jruby.ir.OpClass;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -58,7 +56,6 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.parser.IRStaticScope;
@@ -78,7 +75,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class Interpreter {
+public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static class IRCallSite {
         IRScope  s;
         int      v; // scope version
@@ -125,6 +122,20 @@ public class Interpreter {
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
     private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();
+    
+    // we do not need instances of Interpreter
+    // FIXME: Should we make it real singleton and get rid of static methods?
+    private Interpreter() {
+    }
+
+    private static class InterpreterHolder {
+        // FIXME: REmove static reference unless lifus does later
+        public static final Interpreter instance = new Interpreter();
+    }
+
+    public static Interpreter getInstance() {
+        return InterpreterHolder.instance;
+    }
 
     private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
@@ -174,11 +185,15 @@ public class Interpreter {
             blk.yield(context, null);
         }
     }
-
-    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
+    
+    @Override
+    protected IRubyObject translationSpecificLogic(Ruby runtime, IRScope irScope,
+            IRubyObject self) {
+        IRScriptBody root = (IRScriptBody) irScope;    
         IRBuilder.setRubyVersion("1.9");
 
-        IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
+        // FIXME: Removed as part of merge...likely broken at this point in merge.
+    //    IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.
