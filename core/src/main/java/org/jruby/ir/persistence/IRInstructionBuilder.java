@@ -29,12 +29,12 @@ public class IRInstructionBuilder {
     protected static final Operand[] NO_ARGS = new Operand[]{};
     private final IRManager manager;
     private IRBuilder irBuilder;
-    private IROperandBuilder irOperandBuilder;
+    private IROperandFactory irOperandBuilder;
 
     public IRInstructionBuilder(IRManager manager) {
         this.manager = manager;
         this.irBuilder = IRBuilder.createIRBuilder(manager);
-        irOperandBuilder = new IROperandBuilder();
+        irOperandBuilder = new IROperandFactory();
     }
 
     public Operand buildAssignment(String instrString, String rvalue, IRScope scope) {
