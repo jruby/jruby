@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -37,7 +36,8 @@ public enum FileIO {
     }
 
     public void writeToFile(String fileName, String containment) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(fileName, true);
+        File file = new File(fileName);
+        FileOutputStream fileOutputStream = new FileOutputStream(file, true);
         writeToFileCommon(containment, fileOutputStream);
     }
 

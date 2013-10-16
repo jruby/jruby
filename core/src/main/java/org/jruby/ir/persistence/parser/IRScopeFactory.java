@@ -1,5 +1,7 @@
 package org.jruby.ir.persistence.parser;
 
+import java.util.List;
+
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
@@ -45,7 +47,7 @@ public enum IRScopeFactory {
         default:
             throw new UnsupportedOperationException();
         }
-        
+        IRParsingContext.INSTANCE.addToPreviousScopes(scope);
         IRParsingContext.INSTANCE.setCurrentScope(scope);
         
         return scope;
@@ -62,11 +64,10 @@ public enum IRScopeFactory {
         return parent;
     }
 
-    public IRScope addToScope(IRScope scope, Instr[] instrs) {
+    public IRScope addToScope(IRScope scope, List<Instr> instrs) {
         for (Instr instr : instrs) {
             scope.addInstr(instr);
         }
-        IRParsingContext.INSTANCE.addToPreviousScopes(scope);
         return scope;
     }
 

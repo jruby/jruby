@@ -45,13 +45,14 @@
 
 %typeof STRING_LITERAL, STRING, ID, SYMBOL_LITERAL, FIXNUM, FLOAT, BLOCK, regexp_opt_option = "String";
 %typeof range_type = "Boolean";
-%typeof instructions = "Instr[]";
-%typeof array = "Operand[]";
+%typeof param_list = "ArrayList<Object>";
+%typeof instructions = "ArrayList<Instr>";
+%typeof array = "ArrayList<Operand>";
 %typeof rvalue_operand, operand = "Operand";
 %typeof variable = "Variable";
 %typeof compound_string  = "CompoundString";
 %typeof regexp_options = "RegexpOptions";
-%typeof instruction = "Object";
+%typeof instruction = "Instr";
 %typeof key_value_pair = "KeyValuePair";
 %typeof label = "Label";
 %typeof param = "Object";
@@ -112,8 +113,17 @@ variables
 
 /* Instructions */
 instructions
-    =    instruction EOLN
-    |    instructions instruction EOLN
+    =    instruction.i EOLN             {: 
+                                           ArrayList<Object> lst = new ArrayList<Object>();
+                                           lst.add(i);
+                                           return new Symbol(lst);
+                                        :}
+    |    instructions.lst instruction.i EOLN
+                                        {: 
+                                           lst.add(i);
+                                           return _symbol_lst;
+                                        :}
+                                        
     ;
     
 instruction
@@ -160,13 +170,21 @@ single_param_instr
     
 multi_param_instr
     =    ID.id LPAREN param_list.list RPAREN
-                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createSingleParamInstr(id, list) ); :}
+                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createMultipleParamInstr(id, list) ); :}
     ;
 
 /* Parameters of instruction */ 
 param_list
-    =    param COMMA param
-    |    param_list COMMA param
+    =    param.p1 COMMA param.p2        {: 
+                                           ArrayList<Object> lst = new ArrayList<Object>();
+                                           lst.add(p1);
+                                           lst.add(p2);
+                                           return new Symbol(lst);
+                                        :}
+    |    param_list.list COMMA param.p  {:  
+                                            list.add(p);
+                                            return _symbol_list;
+                                        :}
     ;
     
 param

@@ -1,5 +1,7 @@
 package org.jruby.ir;
 
+import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
@@ -27,13 +29,10 @@ public abstract class IRTranslator<R, S> {
                 producedIRScope = produceIrScope(runtime, node, true);
                 IRPersistenceFacade.persist(producedIRScope, runtime);
             } else if (isIRReadingRequired()) {
-                IRScope[] scopes;
 
-                scopes = IRPersistenceFacade.read(runtime);
-
+                List<IRScope> scopes = IRPersistenceFacade.read(runtime);
                 for (IRScope irScope : scopes) {
-                    IRPersistenceFacade.persist(irScope, "result");
-                    result = translationSpecificLogic(runtime, irScope, specificObject);
+                    System.out.println(irScope.toPersistableString()+"\n");
                 }
                 return result;
             } else {

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Array;
@@ -23,7 +22,6 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.KeyValuePair;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -46,14 +44,13 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 public enum IROperandFactory {
     INSTANCE;
 
     /** Array:[$operands] */
-    public Array createArray(Operand[] operands) {
+    public Array createArray(List<Operand> operands) {
         return new Array(operands);
     }
 
@@ -69,8 +66,8 @@ public enum IROperandFactory {
     }
 
     /** `$pieces` */
-    public BacktickString createBacktickString(Operand[] pieces) {
-        return new BacktickString(Arrays.asList(pieces));
+    public BacktickString createBacktickString(List<Operand> pieces) {
+        return new BacktickString(pieces);
     }
 
     /** Bignum:$bignumString */
@@ -112,14 +109,13 @@ public enum IROperandFactory {
     }
 
     /** CompoundString:$pieces */
-    public CompoundString createCompoundString(Encoding encoding, Operand[] pieces) {
-        return new CompoundString(Arrays.asList(pieces), encoding);
+    public CompoundString createCompoundString(Encoding encoding, List<Operand> pieces) {
+        return new CompoundString(pieces, encoding);
     }
 
     /** scope<$name> */
     public CurrentScope createCurrentScope(String name) {
-        // FIXME: its stubbed by current scope right now
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        IRScope currentScope = IRParsingContext.INSTANCE.getScopeByName(name);
         return new CurrentScope(currentScope);
     }
 
@@ -217,56 +213,9 @@ public enum IROperandFactory {
         return new Regexp(regexp, options);
     }
 
-    /**
-     * RegexpOptions(kcode:$kcode(, encodingNone)?(, extended)?(, fixed)?(,
-     * ignorecase)?(, java)?(, kcodeDefault)?(, literal)?(, multiline)?(,
-     * once)?)
-     */
-    public RegexpOptions createRegexpOptions(String kcodeString, String[] options) {
-        KCode kCode = KCode.valueOf(kcodeString);
-
-        if (options != null) {
-            List<String> optionList = Arrays.asList(options);
-
-            boolean isKCodeDefault = false;
-            if (optionList.contains("kcodeDefault")) {
-                isKCodeDefault = true;
-                // already used
-                optionList.remove("kcodeDefault");
-            }
-            RegexpOptions result = new RegexpOptions(kCode, isKCodeDefault);
-
-            for (String option : optionList) {
-                if ("encodingNone".equals(option)) {
-                    result.setEncodingNone(true);
-                } else if ("extended".equals(option)) {
-                    result.setExtended(true);
-                } else if ("fixed".equals(option)) {
-                    result.setFixed(true);
-                } else if ("ignorecase".equals(option)) {
-                    result.setIgnorecase(true);
-                } else if ("java".equals(option)) {
-                    result.setJava(true);
-                } else if ("literal".equals(option)) {
-                    result.setLiteral(true);
-                } else if ("multiline".equals(option)) {
-                    result.setMultiline(true);
-                } else if ("once".equals(option)) {
-                    result.setOnce(true);
-                }
-            }
-
-            return result;
-        } else {
-            return new RegexpOptions(kCode, false);
-        }
-
-    }
-
     /** module<$name> */
     public ScopeModule createScopeModule(String name) {
-        // FIXME: its stubbed by current scope right now
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        IRScope currentScope = IRParsingContext.INSTANCE.getScopeByName(name);
         return new ScopeModule(currentScope);
     }
 

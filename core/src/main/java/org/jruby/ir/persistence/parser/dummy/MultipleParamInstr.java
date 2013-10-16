@@ -1,12 +1,14 @@
 package org.jruby.ir.persistence.parser.dummy;
 
+import java.util.List;
+
 import org.jruby.ir.Operation;
 
 public class MultipleParamInstr {
     private Operation operation;
-    private Object[] parameters;
+    private List<Object> parameters;
     
-    public MultipleParamInstr(Operation operation, Object[] parameters) {
+    public MultipleParamInstr(Operation operation, List<Object> parameters) {
         this.operation = operation;
         this.parameters = parameters;        
     }
@@ -15,7 +17,7 @@ public class MultipleParamInstr {
         return operation;
     }
 
-    public Object[] getParameters() {
+    public List<Object> getParameters() {
         return parameters;
     }
-} 
+}

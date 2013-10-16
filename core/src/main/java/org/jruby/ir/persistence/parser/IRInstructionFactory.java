@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence.parser;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
@@ -23,6 +24,7 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.PutInstr;
+import org.jruby.ir.instructions.ReceiveClosureInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ReturnInstr;
@@ -84,7 +86,7 @@ public enum IRInstructionFactory {
     
     public Instr createInstrWithMultipleParams(MultipleParamInstr instr) {
         Operation operation = instr.getOperation();
-        Object[] params = instr.getParameters();
+        List<Object> params = instr.getParameters();
         switch (operation) {
         case CHECK_ARITY:
             return createCheckArity(params);
@@ -104,23 +106,23 @@ public enum IRInstructionFactory {
             return createBNE(params);
 
         default:
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(operation.toString());
         }
     }
     
-    private CheckArityInstr createCheckArity(Object[] params) {
-        int required = (Integer) params[0];
-        int opt = (Integer) params[1];
-        int rest = (Integer) params[2];
+    private CheckArityInstr createCheckArity(List<Object> params) {
+        int required = (Integer) params.get(0);
+        int opt = (Integer) params.get(1);
+        int rest = (Integer) params.get(2);
         
         return new CheckArityInstr(required, opt, rest);
     }
 
-    private DefineInstanceMethodInstr createDefInstMeth(Object[] params) {
-        Operand container = (Operand) params[0];
-        Label nameLable = (Label) params[1];
-        BooleanLiteral isInstanceMethodLiteral = (BooleanLiteral) params[2];
-        Integer lineNumber = (Integer) params[3];
+    private DefineInstanceMethodInstr createDefInstMeth(List<Object> params) {
+        Operand container = (Operand) params.get(0);
+        Label nameLable = (Label) params.get(1);
+        BooleanLiteral isInstanceMethodLiteral = (BooleanLiteral) params.get(2);
+        Integer lineNumber = (Integer) params.get(3);
         
         IRManager manager = IRParsingContext.INSTANCE.getIRManager();
         // FIXME: Or there may be other scopes rather than current?
@@ -131,50 +133,50 @@ public enum IRInstructionFactory {
         return new DefineInstanceMethodInstr(container, method);
     }
     
-    private BranchInstr createBEQ(Object[] params) {
-        Operand arg1 = (Operand) params[0];
-        Operand arg2 = (Operand) params[1];
-        Label target = (Label) params[2];
+    private BranchInstr createBEQ(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
+        Operand arg2 = (Operand) params.get(1);
+        Label target = (Label) params.get(2);
         
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBFalse(Object[] params) {
-        Operand arg1 = (Operand) params[0];
+    private BranchInstr createBFalse(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
         Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getFalse();
-        Label target = (Label) params[1];
+        Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBTrue(Object[] params) {
-        Operand arg1 = (Operand) params[0];
+    private BranchInstr createBTrue(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
         Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getTrue();
-        Label target = (Label) params[1];
+        Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
     }
     
-    private BranchInstr createBNil(Object[] params) {
-        Operand arg1 = (Operand) params[0];
+    private BranchInstr createBNil(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
         Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getNil();
-        Label target = (Label) params[1];
+        Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBUndef(Object[] params) {
-        Operand arg1 = (Operand) params[0];
+    private BranchInstr createBUndef(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
         Operand arg2 = UndefinedValue.UNDEFINED;
-        Label target = (Label) params[1];
+        Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
     }
     
-    private BranchInstr createBNE(Object[] params) {
-        Operand arg1 = (Operand) params[0];
-        Operand arg2 = (Operand) params[1];
-        Label target = (Label) params[2];
+    private BranchInstr createBNE(List<Object> params) {
+        Operand arg1 = (Operand) params.get(0);
+        Operand arg2 = (Operand) params.get(1);
+        Label target = (Label) params.get(2);
         
         return BNEInstr.create(arg1, arg2, target);
     }
@@ -208,8 +210,8 @@ public enum IRInstructionFactory {
         return new ReceiveSelfInstr(result);
     }
     
-    private ReceiveSelfInstr createReceiveClosure(Variable result) {
-        return new ReceiveSelfInstr(result);
+    private ReceiveClosureInstr createReceiveClosure(Variable result) {
+        return new ReceiveClosureInstr(result);
     }
     
     public Instr createReturnInstrWithSingleParam(Variable result, SingleParamInstr instr) {
@@ -237,7 +239,7 @@ public enum IRInstructionFactory {
 
     public Instr createReturnInstrWithMultipleParams(Variable result, MultipleParamInstr instr) {
         Operation operation = instr.getOperation();
-        Object[] params = instr.getParameters();
+        List<Object> params = instr.getParameters();
         switch (operation) {
         case ALIAS:
             return createAlias(result, params);
@@ -255,48 +257,54 @@ public enum IRInstructionFactory {
         }
     }
 
-    private AliasInstr createAlias(Variable receiver, Object[] params) {
-        Operand newName = (Operand) params[0];
-        Operand oldName = (Operand) params[1];
+    private AliasInstr createAlias(Variable receiver, List<Object> params) {
+        Operand newName = (Operand) params.get(0);
+        Operand oldName = (Operand) params.get(1);
         
         return new AliasInstr(receiver, newName, oldName);
     }
     
     @SuppressWarnings("unchecked")
-    private CallInstr createCall(Variable result, Object[] params) {
+    private CallInstr createCall(Variable result, List<Object> params) {
         // FIXME: Persisted as label so far
-        Label callTypeLabel = (Label) params[0];
+        Label callTypeLabel = (Label) params.get(0);
         CallType callType = CallType.valueOf(callTypeLabel.label);
         
-        MethAddr methAddr = (MethAddr) params[1];
-        Operand receiver = (Operand) params[2];
+        MethAddr methAddr = (MethAddr) params.get(1);
+        Operand receiver = (Operand) params.get(2);
+        
         @SuppressWarnings("rawtypes")
-        ArrayList argsList = (ArrayList) params[3];
-        Operand args[] = new Operand[argsList.size()];
-        argsList.toArray(args);
+        ArrayList argsList = (ArrayList) params.get(3);
+        Operand[] args = null;
+        if(argsList != null) {
+            args = new Operand[argsList.size()];
+            argsList.toArray(args);
+        } else {
+            args = Operand.EMPTY_ARRAY;
+        }
         // FIXME: No closure support so far(WrappedIRClosure)
         return CallInstr.create(callType, result, methAddr, receiver, args, null);
     }
     
-    private ConstMissingInstr createConstMissing(Variable result, Object[] params) {
-        Operand currentModule = (Operand) params[0];
-        Label missingConstLabel = (Label) params[1];
+    private ConstMissingInstr createConstMissing(Variable result, List<Object> params) {
+        Operand currentModule = (Operand) params.get(0);
+        Label missingConstLabel = (Label) params.get(1);
         
         return new ConstMissingInstr(result, currentModule, missingConstLabel.label);
     }
     
-    public InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result, Object[] params) {
-        Operand currentModule = (Operand) params[0];
-        Label constNameLabel = (Label) params[1];
-        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params[2];
+    public InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result, List<Object> params) {
+        Operand currentModule = (Operand) params.get(0);
+        Label constNameLabel = (Label) params.get(1);
+        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
         
         return new InheritanceSearchConstInstr(result, currentModule, constNameLabel.label, noPrivateConstsLiteral.isTrue());
     }
     
-    private SearchConstInstr createSearchConst(Variable result, Object[] params) {
-        Label constNameLabel = (Label) params[0];
-        Operand startingScope = (Operand) params[1];
-        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params[2];
+    private SearchConstInstr createSearchConst(Variable result, List<Object> params) {
+        Label constNameLabel = (Label) params.get(0);
+        Operand startingScope = (Operand) params.get(1);
+        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
         
         return new SearchConstInstr(result, constNameLabel.label, startingScope, noPrivateConstsLiteral.isTrue());
     }
