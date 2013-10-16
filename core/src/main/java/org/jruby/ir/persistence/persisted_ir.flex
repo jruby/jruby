@@ -79,6 +79,12 @@ SymbolCharacter = [^\r\n\'\\]
   
   {LineTerminator}               { return token(Terminals.EOLN); }
 
+  /* instruction names */
+  "alias"                        { return token(Terminals.ALIAS); }
+  "block_given"                  { return token(Terminals.BLOCK_GIVEN); }
+  
+  "="                            { return token(Terminals.EQ); } 
+
   /* operand markers */
   "Array:"                       { return token(Terminals.ARRAY_MARKER); }
   ":bignum"                      { return token(Terminals.BIGNUM_MARKER); }
