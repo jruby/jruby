@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -12,19 +13,17 @@ import java.nio.charset.Charset;
 
 public enum FileIO {
     INSTANCE;
-
-    private static final String LINE_DELIMITER = "\n";
-    private static final Charset CHARSET = Charset.defaultCharset();
     
-    public String[] readFile(File file) throws FileNotFoundException, IOException {
-
+    public static final Charset CHARSET = Charset.forName("UTF-8");
+    
+    
+    public String readFile(File file) throws FileNotFoundException, IOException {
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(file);
             FileChannel fc = fis.getChannel();
             MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-            String wholeFile = CHARSET.decode(bb).toString();
-            return wholeFile.split(LINE_DELIMITER);
+            return CHARSET.decode(bb).toString();
         } finally {
             if (fis != null) {
                 fis.close();

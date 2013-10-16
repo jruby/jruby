@@ -4,13 +4,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-
 import org.jruby.ir.persistence.IRPersistenceException;
 import org.jruby.ir.persistence.IRPersistenceFacade;
 
 /**
- * Abstract class that contains general logic for both IR Compiler and IR Interpreter
- *
  * Abstract class that contains general logic for both IR Compiler and IR
  * Interpreter
  * 
@@ -22,22 +19,33 @@ import org.jruby.ir.persistence.IRPersistenceFacade;
 public abstract class IRTranslator<R, S> {
 
     public R performTranslation(Ruby runtime, Node node, S specificObject) {
+        R result = null;
+        try {
 
-        IRScope producedIRScope = null;
-        if (isIRPersistenceRequired()) {
-            producedIRScope = produceIrScope(runtime, node, true);
-            try {
+            IRScope producedIRScope = null;
+            if (isIRPersistenceRequired()) {
+                producedIRScope = produceIrScope(runtime, node, true);
                 IRPersistenceFacade.persist(producedIRScope, runtime);
-            } catch (IRPersistenceException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } else if (isIRReadingRequired()) {
+                IRScope[] scopes;
+
+                scopes = IRPersistenceFacade.read(runtime);
+
+                for (IRScope irScope : scopes) {
+                    IRPersistenceFacade.persist(irScope, "result");
+                    result = translationSpecificLogic(runtime, irScope, specificObject);
+                }
+                return result;
+            } else {
+                producedIRScope = produceIrScope(runtime, node, false);
+                result = translationSpecificLogic(runtime, producedIRScope, specificObject);
             }
-            return null;
-        } else {
-            producedIRScope = produceIrScope(runtime, node, false);
+
+        } catch (IRPersistenceException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        
-        return translationSpecificLogic(runtime, producedIRScope, specificObject);
+        return result;
     }
 
     protected abstract R translationSpecificLogic(Ruby runtime, IRScope producedIrScope,
@@ -46,11 +54,18 @@ public abstract class IRTranslator<R, S> {
     private static boolean isIRPersistenceRequired() {
         return RubyInstanceConfig.IR_PERSISTENCE;
     }
-    
+
+    private static boolean isIRReadingRequired() {
+        return RubyInstanceConfig.IR_READING;
+    }
+
     private IRScope produceIrScope(Ruby runtime, Node node, boolean isDryRun) {
         IRManager irManager = runtime.getIRManager();
         irManager.setDryRun(isDryRun);
-        return IRBuilder.createIRBuilder(runtime.getIRManager()).buildRoot((RootNode) node);
-    }    
+        IRBuilder irBuilder = IRBuilder.createIRBuilder(irManager);
+
+        final IRScope irScope = irBuilder.buildRoot((RootNode) node);
+        return irScope;
+    }
 
 }
