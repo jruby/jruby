@@ -40,7 +40,7 @@ public class Range extends Operand {
 
     @Override
     public String toString() {
-        return begin + (exclusive ? ".." : "...") + end;
+        return "(" + begin + (exclusive ? ".." : "...") + end + ")"; 
     }
 
 // ---------- These methods below are used during compile-time optimizations -------
