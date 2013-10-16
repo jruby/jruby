@@ -44,7 +44,7 @@ public class Array extends Operand {
 
     @Override
     public String toString() {
-        return "Array:" + (isBlank() ? "[]" : java.util.Arrays.toString(elts));
+        return "Array:" + java.util.Arrays.toString(elts); 
     }
 
 // ---------- These methods below are used during compile-time optimizations -------

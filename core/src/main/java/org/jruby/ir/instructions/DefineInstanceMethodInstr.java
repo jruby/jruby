@@ -32,7 +32,7 @@ public class DefineInstanceMethodInstr extends Instr {
 
     @Override
     public String toString() {
-        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
+        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.isInstanceMethod + ", " + method.getLineNumber() + ")"; 
     }
 
     public IRMethod getMethod() {
