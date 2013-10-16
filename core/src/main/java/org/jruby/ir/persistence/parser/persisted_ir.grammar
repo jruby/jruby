@@ -820,3 +820,388 @@ temporary_variable
 //temporary_closure_variable
 //    :   PERCENT ID.id
 //    ;
+%package "org.jruby.ir.persistence.parser";
+
+%import "org.jcodings.Encoding";
+
+%import "org.jruby.ir.IRScope";
+%import "org.jruby.ir.IRScopeType";
+%import "org.jruby.ir.Operation";
+
+%import "org.jruby.ir.instructions.Instr";
+%import "org.jruby.ir.operands.CompoundString";
+%import "org.jruby.ir.operands.Label";
+%import "org.jruby.ir.operands.Operand";
+%import "org.jruby.ir.operands.Variable";
+%import "org.jruby.ir.operands.KeyValuePair";
+
+%import "org.jruby.parser.IRStaticScope";
+%import "org.jruby.parser.IRStaticScopeType";
+
+%import "org.jruby.util.KCode";
+%import "org.jruby.util.RegexpOptions";
+
+%class "PersistedIRParser";
+
+%terminals STRING_LITERAL, SYMBOL_LITERAL, ID, STRING, FIXNUM, FLOAT;
+%terminals EOLN;
+%terminals EQ;
+%terminals DOT, COMMA, LBRACE, RBRACE, LPAREN, RPAREN, GT, LT, LBRACK, RBRACK;
+%terminals ARRAY_MARKER, ARGS_PUSH_MARKER, ARGS_CAT_MARKER, BIGNUM_MARKER, COMPOUND_STRING_MARKER, FIXNUM_MARKER, FLOAT_MARKER, IREXCEPTION_MARKER, SVALUE_MARKER, RANGE_MARKER;
+%terminals SCOPE, LEXICAL_PARENT_MARKER, STATIC_SCOPE;
+%terminals SCOPE_MARKER, MODULE_MARKER;
+%terminals ASTERISK, GTE, BACKTICK, COLON, DOLLAR, HASH, PERCENT;
+
+// Regexp terminals
+%terminals REGEXP_MARKER, BAR, REGEXP_OPTIONS_MARKER, KCODE_MARKER;
+
+// Range markers
+%terminals EXCLUSIVE, INCLUSIVE;
+
+// Special types of operands
+%terminals UNKNOWN_SUPER_TARGET, OBJECT_CLASS, SELF, BLOCK, STANDARD_ERROR, UNDEFINED_VALUE, UNEXECUTABLE_NIL;
+%terminals NIL, TRUE, FALSE;
+
+%typeof STRING_LITERAL, STRING, ID, SYMBOL_LITERAL, FIXNUM, FLOAT, BLOCK, regexp_opt_option = "String";
+%typeof instructions = "Instr[]";
+%typeof array = "Operand[]";
+%typeof rvalue, operand = "Operand";
+%typeof variable = "Variable";
+%typeof compound_string  = "CompoundString";
+%typeof regexp_options = "RegexpOptions";
+%typeof instruction = "Object";
+%typeof key_value_pair = "KeyValuePair";
+%typeof label = "Label";
+%typeof param = "Object";
+%typeof operation = "Operation";
+%typeof encoding = "Encoding";
+
+%typeof scope, scope_info, lexical_parent = "IRScope";
+%typeof scope_type = "IRScopeType";
+
+%typeof static_scope = "IRStaticScope";
+%typeof static_scope_type = "IRStaticScopeType";
+
+%goal scopes;
+
+scopes
+    =    scope
+         scopes scope
+    ;
+
+scope
+    =    scope_info.scope EOLN
+         instructions.instrs EOLN
+                                        {: return new Symbol( IRScopeFactory.INSTANCE.addToScope(scope, instrs) ); :}
+    ;
+    
+scope_info
+    =    SCOPE LPAREN scope_type.type COMMA FIXNUM.line RPAREN COLON LT STRING.name GT EOLN
+         lexical_parent.parent?
+         static_scope.ss
+                                        {: return new Symbol( IRScopeFactory.INSTANCE.createScope(type, parent, name, line, ss) ); :}
+    ;
+    
+scope_type
+    =    ID.type                        {: return new Symbol( IRScopeFactory.INSTANCE.createScopeType(type) ); :}
+    ;
+
+lexical_parent
+    =    LEXICAL_PARENT_MARKER LT STRING.name GT EOLN
+                                        {: return new Symbol( IRScopeFactory.INSTANCE.findLexicalParent(name) ); :}
+    ;
+
+static_scope   
+    =    STATIC_SCOPE LPAREN static_scope_type.type RPAREN COLON LBRACK variables.vars? RBRACK
+                                        {: return new Symbol( IRScopeFactory.INSTANCE.buildStaticScope(type, vars) ); :}
+    ;
+    
+static_scope_type
+    =    ID.type                        {: return new Symbol( IRScopeFactory.INSTANCE.createStaticScopeType(type) ); :}
+    ;
+    
+variables
+    =    ID
+    |    variables COMMA ID
+    ;
+
+instructions
+    =    instruction EOLN
+    |    instructions instruction EOLN
+    ;
+    
+instruction
+    =    label_instr   
+    |    simple_instr
+    |    result_instr
+    ;
+    
+label_instr
+    =    ID.label COLON                 {: return new Symbol( IRInstructionFactory.INSTANCE.createLabel(label) ); :}
+    ;
+
+simple_instr
+    // only tread poll so far
+    =    operation.id                   {: return new Symbol( IRInstructionFactory.INSTANCE.createTreadPoll() ); :}
+    // only jump so far
+    |    operation.id label.target      {: return new Symbol( IRInstructionFactory.INSTANCE.createJump(target) ); :}
+    |    operation.id LPAREN param_list.list RPAREN
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithParams(id, list) ); :}
+    ;
+    
+operation
+    =    ID.name                        {: return new Symbol( IRInstructionFactory.INSTANCE.createOperation(name) ); :}
+    ;
+    
+param_list
+    =    param
+    |    param_list COMMA param
+    ;
+    
+param
+    =    operand
+    |    FIXNUM.val                     {: return new Symbol( Integer.valueOf(val) ); :}
+    |    array
+    ;
+     
+result_instr
+    =    variable.var EQ rvalue.rv      {: return new Symbol( IRInstructionFactory.INSTANCE.createCopy(var, rv) ); :}
+    |    variable.var EQ operation.instr
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithNoParams(var, instr) ); :}
+    |    variable.var EQ operation.instr LPAREN param_list.list RPAREN 
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithParams(var, instr, list) ); :}
+    // only PutGlobalVarInstr so far
+    |    operation.instr LPAREN operand.o1 RPAREN EQ operand.o2
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createPutGlobalVar(o1, o2) ); :}
+    ;
+
+rvalue
+    =   array_operand
+    |   as_string
+    |   backtick_string
+    |   compound_array
+    |   compound_string
+    |   current_scope
+    |   dynamic_symbol
+    |   hash
+    |   immutable_literal
+    |   ir_exception
+    |   method_handle
+    |   object_class
+    |   range
+    |   reference
+    |   regexp
+    |   scope_module
+    |   splat
+    |   standard_error
+    |   string_literal
+    |   svalue
+    |   undefined_value
+    |   variable
+//   |   wrapped_ir_closure
+    ;
+
+operand
+    =   rvalue
+    |   label
+    ;
+    
+array_operand
+    =   ARRAY_MARKER array.a            {: return new Symbol( IROperandFactory.INSTANCE.createArray(a) ); :}
+    ;
+    
+array
+    =   LBRACK array_elements.els? RBRACK
+    ;
+    
+array_elements
+    =   operand
+    |   array_elements COMMA operand
+    ;
+    
+as_string
+    =   HASH LBRACE operand.o RBRACE  {: return new Symbol( IROperandFactory.INSTANCE.createAsString(o) ); :}
+    ;
+    
+backtick_string
+    =   BACKTICK array.a BACKTICK       {: return new Symbol( IROperandFactory.INSTANCE.createBacktickString(a) ); :}
+    ;
+    
+compound_array
+    =   ARGS_PUSH_MARKER LBRACK operand.a1 COMMA operand.a2 RBRACK
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createArgsPush(a1, a2) ); :}
+    |   ARGS_CAT_MARKER LBRACK operand.a1 COMMA operand.a2 RBRACK
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createArgsCat(a1, a2) ); :}
+    ;
+    
+compound_string
+    =   COMPOUND_STRING_MARKER encoding.encoding array.pieces
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createCompoundString(encoding, pieces) ); :}
+    ;
+    
+encoding
+    =   ID.encoding                     {: return new Symbol( IROperandFactory.INSTANCE.createEncoding(encoding) ); :}
+    ;
+      
+current_scope
+    =   SCOPE_MARKER LT STRING.name GT
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createCurrentScope(name) ); :}
+    ;
+    
+dynamic_symbol
+    =    COLON compound_string.symbol_name
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createDynamicSymbol(symbol_name) ); :} 
+    ;
+    
+hash
+    =    LBRACE key_value_pairs.pairs? RBRACE
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createHash(pairs) ); :}    
+    ;
+    
+key_value_pairs
+    =    key_value_pair
+    |    key_value_pairs COMMA key_value_pair
+    ;
+    
+key_value_pair
+    =    operand.key GTE operand.value    
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createKeyValuePair(key, value) ); :} 
+    ;
+
+immutable_literal
+    =   BIGNUM_MARKER FIXNUM.b          {: return new Symbol( IROperandFactory.INSTANCE.createBignum(b) ); :}
+    |   FIXNUM_MARKER FIXNUM.n          {: return new Symbol( IROperandFactory.INSTANCE.createFixnum(n) ); :}
+	|	FLOAT_MARKER FLOAT.f            {: return new Symbol( IROperandFactory.INSTANCE.createFloat(f) ); :}
+	|	NIL                             {: return new Symbol( IROperandFactory.INSTANCE.createNil() ); :}
+	|	UNEXECUTABLE_NIL                {: return new Symbol( IROperandFactory.INSTANCE.createUnexecutableNil() ); :}
+	|   TRUE                            {: return new Symbol( IROperandFactory.INSTANCE.createTrueLiteral() ); :}
+	|   FALSE                           {: return new Symbol( IROperandFactory.INSTANCE.createFalseLiteral() ); :}
+	;
+
+ir_exception
+    =   IREXCEPTION_MARKER ID.reason    {: return new Symbol( IROperandFactory.INSTANCE.createIRException(reason) ); :}
+    ;
+       
+label
+    =   ID.label                        {: return new Symbol( IROperandFactory.INSTANCE.createLabel(label) ); :}
+    ;
+
+method_handle
+    =   LT operand.receiver DOT operand.methodName GT
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createMethodHandle(methodName, receiver) ); :}
+    ;
+
+object_class
+    =   OBJECT_CLASS                    {: return new Symbol( IROperandFactory.INSTANCE.createObjectClass() ); :}
+    ;
+ 
+range
+    =   exclusive_range
+    |   inclusive_range
+    ;
+   
+exclusive_range
+    =   operand.b EXCLUSIVE operand.e   {: return new Symbol( IROperandFactory.INSTANCE.createExclusiveRange(b, e) ); :}
+    ;
+   
+inclusive_range
+    =   operand.b INCLUSIVE operand.e   {: return new Symbol( IROperandFactory.INSTANCE.createInclusiveRange(b, e) ); :}
+    ;
+    
+reference
+    =   backref
+    |   global_variable
+    |   meth_addr
+    |   nth_ref
+    |   symbol
+    ;
+    
+backref
+    =   DOLLAR SYMBOL_LITERAL.ch        {: return new Symbol( IROperandFactory.INSTANCE.createBackref(ch) ); :}
+    ;
+    
+global_variable
+    =   DOLLAR ID.name                  {: return new Symbol( IROperandFactory.INSTANCE.createGlobalVariable(name) ); :}
+    ;
+    
+meth_addr
+    =   SYMBOL_LITERAL.name             {: return new Symbol( IROperandFactory.INSTANCE.createMethAddr(name) ); :}
+    |   UNKNOWN_SUPER_TARGET            {: return new Symbol( IROperandFactory.INSTANCE.createUnknownSuperTarget() ); :}
+    ;
+    
+nth_ref
+    =   DOLLAR FIXNUM.num               {: return new Symbol( IROperandFactory.INSTANCE.createNthRef(num) ); :}
+    ;
+    
+symbol
+    =   COLON SYMBOL_LITERAL.s          {: return new Symbol( IROperandFactory.INSTANCE.createSymbol(s) ); :}	
+    ;
+    
+regexp
+    =   REGEXP_MARKER BAR operand.operand BAR regexp_options.options
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createRegexp(operand, options) ); :}	
+    ;
+    
+scope_module
+    =   MODULE_MARKER LT STRING.name GT {: return new Symbol( IROperandFactory.INSTANCE.createScopeModule(name) ); :}
+    ;
+
+regexp_options
+    =   REGEXP_OPTIONS_MARKER LPAREN KCODE_MARKER ID.kcode regexp_opt_options.opt? RPAREN
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createRegexpOptions(kcode, opt) ); :}
+    ;
+    
+regexp_opt_options
+    =  regexp_opt_option
+    |  regexp_opt_options regexp_opt_option
+    ;
+    
+regexp_opt_option
+    =  COMMA ID.opt
+    ;
+
+splat
+    =   ASTERISK operand.array          {: return new Symbol( IROperandFactory.INSTANCE.createSplat(array) ); :}
+    ;
+    
+standard_error
+    =   STANDARD_ERROR                  {: return new Symbol( IROperandFactory.INSTANCE.createStandardError() ); :}
+    ;
+    
+string_literal
+    =   STRING_LITERAL.s                {: return new Symbol( IROperandFactory.INSTANCE.createStringLiteral(s) ); :}
+    ;
+    
+svalue
+    =   SVALUE_MARKER operand.array
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createSValue(array) ); :}
+    ;
+    
+undefined_value
+    =   UNDEFINED_VALUE                 {: return new Symbol( IROperandFactory.INSTANCE.createUndefininedValue() ); :}
+	;
+	
+variable
+    =   local_variable
+    |   temporary_variable
+    ;
+    
+local_variable
+    =   SELF                            {: return new Symbol( IROperandFactory.INSTANCE.createSelf() ); :}
+    |   BLOCK.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location  RPAREN
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createLocalVariable(id, scopeDepth, location) ); :}
+    |   LT ID.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location  RPAREN GT // not implemented!    
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createClosureLocalVariable(id, scopeDepth, location) ); :}
+    |   ID.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location RPAREN 
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createLocalVariable(id, scopeDepth, location) ); :}
+    ;
+
+temporary_variable
+    =   PERCENT ID.id
+                                        {: return new Symbol( IROperandFactory.INSTANCE.createTemporaryVariable(id) ); :}
+//    |    temporary_closure_variable
+    ;
+
+//temporary_closure_variable
+//    :   PERCENT ID.id
+//    ;
