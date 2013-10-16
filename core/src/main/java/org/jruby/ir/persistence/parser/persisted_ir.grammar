@@ -4,7 +4,6 @@
 
 %import "org.jruby.ir.IRScope";
 %import "org.jruby.ir.IRScopeType";
-%import "org.jruby.ir.Operation";
 
 %import "org.jruby.ir.instructions.Instr";
 %import "org.jruby.ir.operands.CompoundString";
@@ -12,6 +11,10 @@
 %import "org.jruby.ir.operands.Operand";
 %import "org.jruby.ir.operands.Variable";
 %import "org.jruby.ir.operands.KeyValuePair";
+
+%import "org.jruby.ir.persistence.parser.dummy.DummyInstrFactory";
+%import "org.jruby.ir.persistence.parser.dummy.MultipleParamInstr";
+%import "org.jruby.ir.persistence.parser.dummy.SingleParamInstr";
 
 %import "org.jruby.parser.IRStaticScope";
 %import "org.jruby.parser.IRStaticScopeType";
@@ -41,10 +44,10 @@
 %terminals NIL, TRUE, FALSE;
 
 %typeof STRING_LITERAL, STRING, ID, SYMBOL_LITERAL, FIXNUM, FLOAT, BLOCK, regexp_opt_option = "String";
-%typeof range_type = "boolean";
+%typeof range_type = "Boolean";
 %typeof instructions = "Instr[]";
 %typeof array = "Operand[]";
-%typeof rvalue, operand = "Operand";
+%typeof rvalue_operand, operand = "Operand";
 %typeof variable = "Variable";
 %typeof compound_string  = "CompoundString";
 %typeof regexp_options = "RegexpOptions";
@@ -52,7 +55,6 @@
 %typeof key_value_pair = "KeyValuePair";
 %typeof label = "Label";
 %typeof param = "Object";
-%typeof operation = "Operation";
 %typeof encoding = "Encoding";
 
 %typeof scope, scope_info, lexical_parent = "IRScope";
@@ -61,11 +63,14 @@
 %typeof static_scope = "IRStaticScope";
 %typeof static_scope_type = "IRStaticScopeType";
 
+%typeof single_param_instr = "SingleParamInstr";
+%typeof multi_param_instr = "MultipleParamInstr";
+
 %goal scopes;
 
 scopes
     =    scope
-         scopes scope
+    |    scopes scope
     ;
 
 scope
@@ -74,6 +79,7 @@ scope
                                         {: return new Symbol( IRScopeFactory.INSTANCE.addToScope(scope, instrs) ); :}
     ;
     
+/* Info that is needed to recreate a scope itself, do not contain instructions */    
 scope_info
     =    SCOPE LPAREN scope_type.type COMMA FIXNUM.line RPAREN COLON LT STRING.name GT EOLN
          lexical_parent.parent?
@@ -82,7 +88,7 @@ scope_info
     ;
     
 scope_type
-    =    ID.type                        {: return new Symbol( IRScopeFactory.INSTANCE.createScopeType(type) ); :}
+    =    ID.type                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createScopeType(type) ); :}
     ;
 
 lexical_parent
@@ -96,7 +102,7 @@ static_scope
     ;
     
 static_scope_type
-    =    ID.type                        {: return new Symbol( IRScopeFactory.INSTANCE.createStaticScopeType(type) ); :}
+    =    ID.type                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createStaticScopeType(type) ); :}
     ;
     
 variables
@@ -104,6 +110,7 @@ variables
     |    variables COMMA ID
     ;
 
+/* Instructions */
 instructions
     =    instruction EOLN
     |    instructions instruction EOLN
@@ -113,6 +120,7 @@ instruction
     =    label_instr   
     |    simple_instr
     |    result_instr
+    |    put_instr
     ;
     
 label_instr
@@ -121,19 +129,43 @@ label_instr
 
 simple_instr
     // only tread poll so far
-    =    operation.id                   {: return new Symbol( IRInstructionFactory.INSTANCE.createTreadPoll() ); :}
+    =    ID.id                          {: return new Symbol( IRInstructionFactory.INSTANCE.createTreadPoll() ); :}
     // only jump so far
-    |    operation.id label.target      {: return new Symbol( IRInstructionFactory.INSTANCE.createJump(target) ); :}
-    |    operation.id LPAREN param_list.list RPAREN
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithParams(id, list) ); :}
+    |    ID.id label.target             {: return new Symbol( IRInstructionFactory.INSTANCE.createJump(target) ); :}
+    |    single_param_instr.instr       {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithSingleParam(instr) ); :}
+    |    multi_param_instr.instr        {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithMultipleParams(instr) ); :}
+    ;
+     
+result_instr
+    =    variable.var EQ rvalue_operand.rv
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createCopy(var, rv) ); :}
+    |    variable.var EQ ID.id
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithNoParams(var, id) ); :}
+    |    variable.var EQ single_param_instr.instr 
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithSingleParam(var, instr) ); :}
+    |    variable.var EQ multi_param_instr.instr 
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithMultipleParams(var, instr) ); :}
+    ;
+
+put_instr
+    =    single_param_instr.instr EQ operand.o
+                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createPutInstr(instr, o) ); :}
     ;
     
-operation
-    =    ID.name                        {: return new Symbol( IRInstructionFactory.INSTANCE.createOperation(name) ); :}
+/* Dummy instructions */    
+single_param_instr
+    =    ID.id LPAREN param.param RPAREN
+                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createSingleParamInstr(id, param) ); :}
     ;
     
+multi_param_instr
+    =    ID.id LPAREN param_list.list RPAREN
+                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createSingleParamInstr(id, list) ); :}
+    ;
+
+/* Parameters of instruction */ 
 param_list
-    =    param
+    =    param COMMA param
     |    param_list COMMA param
     ;
     
@@ -142,19 +174,14 @@ param
     |    FIXNUM.val                     {: return new Symbol( Integer.valueOf(val) ); :}
     |    array
     ;
-     
-result_instr
-    =    variable.var EQ rvalue.rv      {: return new Symbol( IRInstructionFactory.INSTANCE.createCopy(var, rv) ); :}
-    |    variable.var EQ operation.instr
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithNoParams(var, instr) ); :}
-    |    variable.var EQ operation.instr LPAREN param_list.list RPAREN 
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithParams(var, instr, list) ); :}
-    // only PutGlobalVarInstr so far
-    |    operation.instr LPAREN operand.o1 RPAREN EQ operand.o2
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createPutGlobalVar(o1, o2) ); :}
+
+/* Operands */
+operand
+    =   rvalue_operand
+    |   label
     ;
 
-rvalue
+rvalue_operand
     =   array_operand
     |   as_string
     |   backtick_string
@@ -179,11 +206,6 @@ rvalue
     |   variable
 //   |   wrapped_ir_closure
     ;
-
-operand
-    =   rvalue
-    |   label
-    ;
     
 array_operand
     =   ARRAY_MARKER array.a            {: return new Symbol( IROperandFactory.INSTANCE.createArray(a) ); :}
@@ -199,7 +221,7 @@ array_elements
     ;
     
 as_string
-    =   HASH LBRACE operand.o RBRACE  {: return new Symbol( IROperandFactory.INSTANCE.createAsString(o) ); :}
+    =   HASH LBRACE operand.o RBRACE    {: return new Symbol( IROperandFactory.INSTANCE.createAsString(o) ); :}
     ;
     
 backtick_string
@@ -219,7 +241,7 @@ compound_string
     ;
     
 encoding
-    =   ID.encoding                     {: return new Symbol( IROperandFactory.INSTANCE.createEncoding(encoding) ); :}
+    =   ID.encoding                     {: return new Symbol( NonIRObjectFactory.INSTANCE.createEncoding(encoding) ); :}
     ;
       
 current_scope
@@ -258,7 +280,7 @@ immutable_literal
 	;
 
 ir_exception
-    =   IREXCEPTION_MARKER ID.reason    {: return new Symbol( IROperandFactory.INSTANCE.createIRException(reason) ); :}
+    =   IREXCEPTION_MARKER ID.reason    {: return new Symbol( NonIRObjectFactory.INSTANCE.createIRException(reason) ); :}
     ;
        
 label
@@ -324,7 +346,7 @@ scope_module
 
 regexp_options
     =   REGEXP_OPTIONS_MARKER LPAREN KCODE_MARKER ID.kcode regexp_opt_options.opt? RPAREN
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createRegexpOptions(kcode, opt) ); :}
+                                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createRegexpOptions(kcode, opt) ); :}
     ;
     
 regexp_opt_options

@@ -1,5 +1,7 @@
 package org.jruby.ir.persistence.parser;
 
+import java.util.ArrayList;
+
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
@@ -20,6 +22,7 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
+import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ReturnInstr;
@@ -31,17 +34,14 @@ import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.parser.dummy.MultipleParamInstr;
+import org.jruby.ir.persistence.parser.dummy.SingleParamInstr;
 import org.jruby.runtime.CallType;
 
 public enum IRInstructionFactory {
-    INSTANCE;
-    
-    public Operation createOperation(String name) {
-        return Operation.valueOf(name.toUpperCase());
-    }
-    
-    
+    INSTANCE;    
     
     public LabelInstr createLabel(String l) {
         Label label = new Label(l);
@@ -51,45 +51,64 @@ public enum IRInstructionFactory {
     public JumpInstr createJump(Label target) {
         return new JumpInstr(target);
     }
+
+    public ThreadPollInstr createTreadPoll() {
+        return new ThreadPollInstr();
+    }
     
-    public Instr createInstrWithNoParam(Operation operation) {
+    public Instr createInstrWithSingleParam(SingleParamInstr instr) {
+        Operation operation = instr.getOperation();
+        Object param = instr.getParameter();
         switch (operation) {
-        case THREAD_POLL:
-            return createTreadPoll();
+        case LINE_NUM:
+            return createLineNum(param);
+        case RETURN:
+            return createReturn(param);
 
         default:
             throw new UnsupportedOperationException();
         }
     }
-
-    public Instr createTreadPoll() {
-        return new ThreadPollInstr();
+    
+    private LineNumberInstr createLineNum(Object param) {
+        Integer number = (Integer) param;
+        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        return new LineNumberInstr(currentScope, number);
     }
     
-    public Instr createInstrWithParams(Operation operation, Object[] params) {
+    private ReturnInstr createReturn(Object param) {
+        Operand returnValue = (Operand) param;
+        // FIXME: May have method to return as well 
+        return new ReturnInstr(returnValue);
+    }
+    
+    public Instr createInstrWithMultipleParams(MultipleParamInstr instr) {
+        Operation operation = instr.getOperation();
+        Object[] params = instr.getParameters();
         switch (operation) {
         case CHECK_ARITY:
             return createCheckArity(params);
         case DEF_INST_METH:
             return createDefInstMeth(params);
-        case LINE_NUM:
-            return createLineNum(params);
-        case RETURN:
-            return createReturn(params);
         case BEQ:
+            return createBEQ(params);
         case B_FALSE:
+            return createBFalse(params);
         case B_TRUE:
+            return createBTrue(params);
         case B_NIL:
+            return createBNil(params);
         case B_UNDEF:
+            return createBUndef(params);
         case BNE:
-            return createBranch(operation, params);
+            return createBNE(params);
 
         default:
             throw new UnsupportedOperationException();
         }
     }
     
-    private Instr createCheckArity(Object[] params) {
+    private CheckArityInstr createCheckArity(Object[] params) {
         int required = (Integer) params[0];
         int opt = (Integer) params[1];
         int rest = (Integer) params[2];
@@ -97,7 +116,7 @@ public enum IRInstructionFactory {
         return new CheckArityInstr(required, opt, rest);
     }
 
-    private Instr createDefInstMeth(Object[] params) {
+    private DefineInstanceMethodInstr createDefInstMeth(Object[] params) {
         Operand container = (Operand) params[0];
         Label nameLable = (Label) params[1];
         BooleanLiteral isInstanceMethodLiteral = (BooleanLiteral) params[2];
@@ -111,33 +130,62 @@ public enum IRInstructionFactory {
         
         return new DefineInstanceMethodInstr(container, method);
     }
+    
+    private BranchInstr createBEQ(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = (Operand) params[1];
+        Label target = (Label) params[2];
+        
+        return BEQInstr.create(arg1, arg2, target);
+    }
 
+    private BranchInstr createBFalse(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getFalse();
+        Label target = (Label) params[1];
+        
+        return BEQInstr.create(arg1, arg2, target);
+    }
 
-
-    private Instr createLineNum(Object[] params) {
-        Integer number = (Integer) params[0];
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
-        return new LineNumberInstr(currentScope, number);
+    private BranchInstr createBTrue(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getTrue();
+        Label target = (Label) params[1];
+        
+        return BEQInstr.create(arg1, arg2, target);
     }
     
-    private Instr createReturn(Object[] params) {
-        Operand returnValue = (Operand) params[0];
-        // FIXME: May have method to return as well 
-        return new ReturnInstr(returnValue);
+    private BranchInstr createBNil(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getNil();
+        Label target = (Label) params[1];
+        
+        return BEQInstr.create(arg1, arg2, target);
+    }
+
+    private BranchInstr createBUndef(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = UndefinedValue.UNDEFINED;
+        Label target = (Label) params[1];
+        
+        return BEQInstr.create(arg1, arg2, target);
     }
     
-    public Instr createReturnInstrWithOperand(Variable result, Operation operation, Operand operand) {
+    private BranchInstr createBNE(Object[] params) {
+        Operand arg1 = (Operand) params[0];
+        Operand arg2 = (Operand) params[1];
+        Label target = (Label) params[2];
+        
+        return BNEInstr.create(arg1, arg2, target);
+    }
+    
+    public Instr createReturnInstrWithNoParams(Variable result, String operationName) {
+        Operation operation = NonIRObjectFactory.INSTANCE.createOperation(operationName);
         switch (operation) {
-        case COPY:
-            return new CopyInstr(result, operand);
-
-        default:
-            throw new UnsupportedOperationException();
-        }
-    }
-    
-    public Instr createReturnInstrWithNoParams(Variable result, Operation operation) {
-        switch (operation) {
+        case BLOCK_GIVEN:
+            return createBlockGiven(result);
+        case BACKREF_IS_MATCH_DATA:
+            return createBackrefIsMatchData(result);
         case RECV_SELF:
             return createReceiveSelf(result);
         case RECV_CLOSURE:
@@ -148,6 +196,14 @@ public enum IRInstructionFactory {
         }
     }
     
+    private BlockGivenInstr createBlockGiven(Variable result) {
+        return new BlockGivenInstr(result);
+    }
+
+    private BackrefIsMatchDataInstr createBackrefIsMatchData(Variable result) {
+        return new BackrefIsMatchDataInstr(result);
+    }
+    
     private ReceiveSelfInstr createReceiveSelf(Variable result) {
         return new ReceiveSelfInstr(result);
     }
@@ -155,20 +211,42 @@ public enum IRInstructionFactory {
     private ReceiveSelfInstr createReceiveClosure(Variable result) {
         return new ReceiveSelfInstr(result);
     }
-
-    public Instr createReturnInstrWithParams(Variable result, Operation operation, Object[] params) {
+    
+    public Instr createReturnInstrWithSingleParam(Variable result, SingleParamInstr instr) {
+        Operation operation = instr.getOperation();
+        Object param = instr.getParameter();
         switch (operation) {
+        case COPY:
+            return createCopy(result, param);
+        case RECV_PRE_REQD_ARG:
+            return createRecvPreReqdArg(result, param);
+
+        default:
+            throw new UnsupportedOperationException();
+        }
+    }
+    
+    public CopyInstr createCopy(Variable result, Object param) {
+        return new CopyInstr(result, (Operand) param);
+    }
+    
+    private ReceivePreReqdArgInstr createRecvPreReqdArg(Variable result, Object param) {
+        Integer argIndex = (Integer) param;
+        return new ReceivePreReqdArgInstr(result, argIndex);
+    }
+
+    public Instr createReturnInstrWithMultipleParams(Variable result, MultipleParamInstr instr) {
+        Operation operation = instr.getOperation();
+        Object[] params = instr.getParameters();
+        switch (operation) {
+        case ALIAS:
+            return createAlias(result, params);
         case CALL:
             return createCall(result, params);
         case CONST_MISSING:
             return createConstMissing(result, params);
-        case COPY:
-            return createCopy(result, params);
         case INHERITANCE_SEARCH_CONST:
             return createInheritanceSearchConstInstr(result, params);
-        case RECV_PRE_REQD_ARG:
-            Integer argIndex = (Integer) params[0];
-            return new ReceivePreReqdArgInstr(result, argIndex);
         case SEARCH_CONST:
             return createSearchConst(result, params);
 
@@ -177,27 +255,34 @@ public enum IRInstructionFactory {
         }
     }
 
-    private Instr createCall(Variable result, Object[] params) {
+    private AliasInstr createAlias(Variable receiver, Object[] params) {
+        Operand newName = (Operand) params[0];
+        Operand oldName = (Operand) params[1];
+        
+        return new AliasInstr(receiver, newName, oldName);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private CallInstr createCall(Variable result, Object[] params) {
         // FIXME: Persisted as label so far
         Label callTypeLabel = (Label) params[0];
         CallType callType = CallType.valueOf(callTypeLabel.label);
         
         MethAddr methAddr = (MethAddr) params[1];
         Operand receiver = (Operand) params[2];
-        Operand[] args = (Operand[]) params[3];
+        @SuppressWarnings("rawtypes")
+        ArrayList argsList = (ArrayList) params[3];
+        Operand args[] = new Operand[argsList.size()];
+        argsList.toArray(args);
         // FIXME: No closure support so far(WrappedIRClosure)
         return CallInstr.create(callType, result, methAddr, receiver, args, null);
     }
     
-    private Instr createConstMissing(Variable result, Object[] params) {
+    private ConstMissingInstr createConstMissing(Variable result, Object[] params) {
         Operand currentModule = (Operand) params[0];
         Label missingConstLabel = (Label) params[1];
         
         return new ConstMissingInstr(result, currentModule, missingConstLabel.label);
-    }
-
-    public Instr createCopy(Variable result, Object param) {
-        return new CopyInstr(result, (Operand) param);
     }
     
     public InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result, Object[] params) {
@@ -208,50 +293,29 @@ public enum IRInstructionFactory {
         return new InheritanceSearchConstInstr(result, currentModule, constNameLabel.label, noPrivateConstsLiteral.isTrue());
     }
     
-    public PutGlobalVarInstr createPutGlobalVar(Operand varOperand, Operand value) {
-        GlobalVariable var = (GlobalVariable) varOperand;
-        return new PutGlobalVarInstr(var.getName(), value);
-    }
-    
-    private Instr createSearchConst(Variable result, Object[] params) {
-        Operand startingScope = (Operand) params[0];
-        Label constNameLabel = (Label) params[1];
+    private SearchConstInstr createSearchConst(Variable result, Object[] params) {
+        Label constNameLabel = (Label) params[0];
+        Operand startingScope = (Operand) params[1];
         BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params[2];
         
         return new SearchConstInstr(result, constNameLabel.label, startingScope, noPrivateConstsLiteral.isTrue());
-    }   
+    }
     
-    public AliasInstr createAlias(Variable receiver, Operand newName, Operand oldName) {
-        return new AliasInstr(receiver, newName, oldName);
-    }
-
-    public BlockGivenInstr createBlockGiven(Variable result) {
-        return new BlockGivenInstr(result);
-    }
-
-    public BackrefIsMatchDataInstr createBackrefIsMatchData(Variable result) {
-        return new BackrefIsMatchDataInstr(result);
-    }
-
-    public BranchInstr createBranch(Operation operation, Object[] params) {   
+    public PutInstr createPutInstr(SingleParamInstr instr, Operand value) {
+        Operation operation = instr.getOperation();
+        Operand varOperand = (Operand) instr.getParameter();
         
-        Operand arg1 = (Operand) params[0];
-        Operand arg2 = (Operand) params[1];
-        Label target = (Label) params[2];
-        
-        switch (operation) {
-        case BEQ:
-        case B_FALSE:
-        case B_TRUE:
-        case B_NIL:
-        case B_UNDEF:
-            return BEQInstr.create(arg1, arg2, target);
-        case BNE:
-            return BNEInstr.create(arg1, arg2, target);
+        switch (operation) {        
+        case PUT_GLOBAL_VAR:
+            return createPutGlobalVar(varOperand, value);
 
         default:
             throw new UnsupportedOperationException();
         }
     }
-
+    
+    private PutGlobalVarInstr createPutGlobalVar(Operand varOperand, Operand value) {
+        GlobalVariable var = (GlobalVariable) varOperand;
+        return new PutGlobalVarInstr(var.getName(), value);
+    }
 }

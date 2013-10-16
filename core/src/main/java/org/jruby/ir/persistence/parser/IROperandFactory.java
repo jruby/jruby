@@ -1,9 +1,10 @@
-package org.jruby.ir.persistence;
+package org.jruby.ir.persistence.parser;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -41,6 +42,7 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -66,11 +68,12 @@ public enum IROperandFactory {
         return new Backref(t);
     }
 
+    /** `$pieces` */
     public BacktickString createBacktickString(Operand[] pieces) {
         return new BacktickString(Arrays.asList(pieces));
     }
 
-    /** $bignumString:bignum */
+    /** Bignum:$bignumString */
     public Bignum createBignum(String bignumString) {
         BigInteger value = new BigInteger(bignumString);
         return new Bignum(value);
@@ -109,13 +112,15 @@ public enum IROperandFactory {
     }
 
     /** CompoundString:$pieces */
-    public CompoundString createCompoundString(List<Operand> pieces) {
-        return new CompoundString(pieces);
+    public CompoundString createCompoundString(Encoding encoding, Operand[] pieces) {
+        return new CompoundString(Arrays.asList(pieces), encoding);
     }
 
     /** scope<$name> */
-    public CurrentScope createCurrentScope(IRScope scope, String name) {
-        return new CurrentScope(scope);
+    public CurrentScope createCurrentScope(String name) {
+        // FIXME: its stubbed by current scope right now
+        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        return new CurrentScope(currentScope);
     }
 
     /** :CompoundString$pieces */
@@ -139,6 +144,7 @@ public enum IROperandFactory {
         return new GlobalVariable(name);
     }
 
+    /** { $pairs } */
     public Hash createHash(KeyValuePair[] pairs) {
         return new Hash(Arrays.asList(pairs));
     }
@@ -146,25 +152,6 @@ public enum IROperandFactory {
     /** $key => $value */
     public KeyValuePair createKeyValuePair(Operand key, Operand value) {
         return new KeyValuePair(key, value);
-    }
-
-    public IRException createIRException(String type) {
-        Reason reason = Reason.valueOf(type.toUpperCase());
-        switch (reason) {
-        case BREAK:
-            return IRException.BREAK_LocalJumpError;
-        case NEXT:
-            return IRException.NEXT_LocalJumpError;
-        case REDO:
-            return IRException.REDO_LocalJumpError;
-        case RETRY:
-            return IRException.RETRY_LocalJumpError;
-        case RETURN:
-            return IRException.RETURN_LocalJumpError;
-        default:
-            // what is that?
-            return null;
-        }
     }
 
     /** $label */
@@ -177,12 +164,26 @@ public enum IROperandFactory {
             String locationString) {
         int scopeDepth = Integer.parseInt(scopeDepthString);
         int location = Integer.parseInt(locationString);
+        
         return new LocalVariable(name, scopeDepth, location);
+    }
+    
+    /** <$name($scopeDepthString:$locationString)> */
+    public ClosureLocalVariable createClosureLocalVariable(String name, String scopeDepthString,
+            String locationString) {
+        int scopeDepth = Integer.parseInt(scopeDepthString);
+        int location = Integer.parseInt(locationString);
+        // FIXME: closure is null so far
+        return new ClosureLocalVariable(null, name, scopeDepth, location);
     }
 
     /** $name */
     public MethAddr createMethAddr(String name) {
         return new MethAddr(name);
+    }
+    
+    public MethAddr createUnknownSuperTarget() {
+        return MethAddr.UNKNOWN_SUPER_TARGET;
     }
 
     /** <$receiver.$methodName> */
@@ -208,8 +209,7 @@ public enum IROperandFactory {
 
     /** Range:($begin...$end) */
     public Range createRange(Operand begin, Operand end, boolean isExclusive) {
-        return new Range(begin, end, isExclusive); 
-
+        return new Range(begin, end, isExclusive);
     }
 
     /** RE:|$regexp|$options */
@@ -264,8 +264,10 @@ public enum IROperandFactory {
     }
 
     /** module<$name> */
-    public ScopeModule createScopeModule(IRScope scope, String name) {
-        return new ScopeModule(scope);
+    public ScopeModule createScopeModule(String name) {
+        // FIXME: its stubbed by current scope right now
+        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        return new ScopeModule(currentScope);
     }
 
     /** %self */
@@ -306,6 +308,12 @@ public enum IROperandFactory {
     /** nil(unexecutable) */
     public UnexecutableNil createUnexecutableNil() {
         return UnexecutableNil.U_NIL;
+    }
+    
+    public TemporaryVariable createTemporaryVariable(String name) {
+        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        
+        return currentScope.getNewTemporaryVariable("%" + name);
     }
 
     public WrappedIRClosure createWrappedIRClosure(IRClosure scope) {

@@ -51,14 +51,6 @@ public enum IRScopeFactory {
         return scope;
     }
     
-    public IRScopeType createScopeType(String type) {
-        return IRScopeType.valueOf(type);        
-    }
-    
-    public IRStaticScopeType createStaticScopeType(String type) {
-        return IRStaticScopeType.valueOf(type);        
-    }
-    
     public IRStaticScope buildStaticScope(IRStaticScopeType type, String[] names ) {
         StaticScope parent = IRParsingContext.INSTANCE.getStaticScope();
         return IRStaticScopeFactory.newStaticScope(parent, type, names);
