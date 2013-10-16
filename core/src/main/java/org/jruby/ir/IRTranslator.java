@@ -50,7 +50,7 @@ public abstract class IRTranslator<R, S> {
     private IRScope produceIrScope(Ruby runtime, Node node, boolean isDryRun) {
         IRManager irManager = runtime.getIRManager();
         irManager.setDryRun(isDryRun);
-        return IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) node);
+        return IRBuilder.createIRBuilder(runtime.getIRManager()).buildRoot((RootNode) node);
     }    
 
 }

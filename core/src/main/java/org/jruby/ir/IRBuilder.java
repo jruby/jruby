@@ -385,7 +385,7 @@ public class IRBuilder {
         }
     }
 
-    public static IRBuilder createIRBuilder(Ruby runtime, IRManager manager) {
+    public static IRBuilder createIRBuilder(IRManager manager) {
         return new IRBuilder20(manager);
     }
 
