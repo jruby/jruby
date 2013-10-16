@@ -49,12 +49,10 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
-import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -97,7 +95,6 @@ import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SClassNode;
-import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
@@ -128,7 +125,6 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 
 public class DefaultRubyParser implements RubyParser {
     protected ParserSupport support;
@@ -1902,22 +1898,7 @@ none_block_pass: /* none */ {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
 
-        Object debugger = null;
-        if (configuration.isDebug()) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-              // ignore, no debugger present
-            } catch (InstantiationException ie) {
-              // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-              // ignore, no debugger present
-            }
-        }
-        // convenience: awt debugger
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();
     }

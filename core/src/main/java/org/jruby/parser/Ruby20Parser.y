@@ -2216,21 +2216,7 @@ none_block_pass : /* none */ {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getDefaultEncoding());
 
-        Object debugger = null;
-        if (configuration.isDebug()) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-                // ignore, no debugger present
-            } catch (InstantiationException ie) {
-                // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-                // ignore, no debugger present
-            }
-        }
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();
     }

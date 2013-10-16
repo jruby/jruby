@@ -74,25 +74,8 @@ public class RipperParser {
     public IRubyObject parse(boolean isDebug) throws IOException {
         reset();
         
-        //setEncoding(configuration.getDefaultEncoding());
-
-        Object debugger = null;
-        if (false) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-                // ignore, no debugger present
-            } catch (InstantiationException ie) {
-                // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-                // ignore, no debugger present
-            }
-        }
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        
         lexer.parser_prepare();
-        return (IRubyObject) yyparse(lexer, debugger);
+        return (IRubyObject) yyparse(lexer, null);
     }    
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
@@ -390,7 +373,7 @@ public class RipperParser {
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
-    protected boolean yydebug; // FIXME: Hook up to jay yydebug
+    protected boolean yydebug; // FIXME: Hook up to yydebug
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;

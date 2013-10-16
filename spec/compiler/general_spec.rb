@@ -262,9 +262,17 @@ describe "JRuby's compiler" do
     expect{compile_and_run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
   end
   
+<<<<<<< HEAD
   it "compiles grouped and intra-list rest args" do
     result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
     expect(result).to eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+=======
+  if is19
+    it "compiles grouped and intra-list rest args" do
+      result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
+      expect(result).to eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+    end
+>>>>>>> jruby-1_7
   end
   
   it "compiles splatted values" do
@@ -278,8 +286,15 @@ describe "JRuby's compiler" do
     expect(compile_and_run("a, (b, c) = 1, 2; [a, b, c]")).to  eq([1,2,nil])
     expect(compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]")).to eq([1,2,3])
     expect(compile_and_run("class Coercible2;def to_ary;[2,3]; end; end; a, (b, c) = 1, Coercible2.new; [a, b, c]")).to  eq([1,2,3])
+<<<<<<< HEAD
     result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
     expect(result).to  eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+=======
+    if is19
+      result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
+      expect(result).to  eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
+    end
+>>>>>>> jruby-1_7
   end
   
   it "compiles dynamic regexp" do
@@ -452,12 +467,27 @@ ary
     expect(result).to  eq([nil, 1])
   end
 
+<<<<<<< HEAD
   it "does not break String#to_r and to_c" do
     # This is structured to cause a "dummy" scope because of the String constant
     # This caused to_r and to_c to fail since that scope always returns nil
     result = compile_and_run <<-EOC
     def foo
       [String.new("0.1".to_c.to_s), String.new("0.1".to_r.to_s)]
+=======
+  if is19
+    it "does not break String#to_r and to_c" do
+      # This is structured to cause a "dummy" scope because of the String constant
+      # This caused to_r and to_c to fail since that scope always returns nil
+      result = compile_and_run <<-EOC
+      def foo
+        [String.new("0.1".to_c.to_s), String.new("0.1".to_r.to_s)]
+      end
+      foo
+      EOC
+
+      expect(result).to  eq(["0.1+0i", "1/10"])
+>>>>>>> jruby-1_7
     end
     foo
     EOC
@@ -662,10 +692,18 @@ ary
     large_hash.gsub!(']', '}')
     expect(compile_and_run(large_array)).to  eq(eval(large_array))
 
+<<<<<<< HEAD
     # block arg spreading cases
     expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to eq([1])
     expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  eq([1])
     expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  eq([1,2])
+=======
+    if is19 # block arg spreading cases
+      expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to eq([1])
+      expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  eq([1])
+      expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  eq([1,2])
+    end
+>>>>>>> jruby-1_7
 
     # non-expr case statement with return with if modified with call
     # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
@@ -682,10 +720,20 @@ ary
         /(?<b>ell)(?<c>o)/ =~ 'hello'
         ary << a
         ary << b
+<<<<<<< HEAD
         ary << c
       }
       ary << b
       ary
+=======
+        ary
+      end
+      foo")).to  eq([nil,'ell', 'o', 'ell'])
+    end
+
+    if is19 # chained argscat and argspush
+      expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  eq([1,2,3,1,2,4,5])
+>>>>>>> jruby-1_7
     end
     foo")).to  eq([nil,'ell', 'o', 'ell'])
 
