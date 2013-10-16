@@ -41,30 +41,44 @@ import example.ExampleParser.Terminals;
 %}
 
 LineTerminator = \r|\n|\r\n
-InputCharacter = [^\r\n]
-WhiteSpace = {LineTerminator} | [ \t\f]
+WhiteSpace = [ \t\f]
 
-/* Element of symbols or identifiers */
-Letter = [:jletter:]+
+/* identifiers */
+Identifier = [:jletter:][:jletterdigit:]*
 
 /* Numbers */
-FixnumLiteral = 0 | [1-9][0-9]*
+FixnumLiteral = 0 | (-)?[1-9][0-9]*
 
-FloatLiteral = ({FLit1}|{FLit2}|{FLit3}) {Exponent}?
+FloatLiteral = (-)?({FLit1}|{FLit2}|{FLit3}) {Exponent}?
 
+/* Float elements */
 FLit1    = [0-9]+ \. [0-9]*
 FLit2    = \. [0-9]+
 FLit3    = [0-9]+
 Exponent = [eE] [+-]? [0-9]+
 
-/* Strings */
+/* String */
 StringCharacter = [^\r\n\"\\]
+SymbolCharacter = [^\r\n\'\\]
 
-%state STRING
+%state STRING, SYMBOL, REGEXP_OPTIONS, KCODE
 
 %%
 
 <YYINITIAL> {
+  /* string literal */
+  \"                             { yybegin(STRING); string.setLength(0); }
+  
+  /* symbol literal */
+  \'                             { yybegin(SYMBOL); string.setLength(0); }
+  
+  /* whitespace */
+  {WhiteSpace}                   { /* ignore */ }
+  
+  {Identifier}                   { return token(Terminals.IDENTIFIER); }
+  
+  {LineTerminator}               { return token(Terminals.EOLN); }
+
   /* operand markers */
   "Array:"                       { return token(Terminals.ARRAY_MARKER); }
   ":bignum"                      { return token(Terminals.BIGNUM_MARKER); }
@@ -76,7 +90,7 @@ StringCharacter = [^\r\n\"\\]
   ":float"                       { return token(Terminals.FLOAT_MARKER); }  
   ":Range"                       { return token(Terminals.RANGE_MARKER); }
   "RE:"                          { return token(Terminals.REGEXP_MARKER); }  
-  "RegexpOptions"                { return token(Terminals.REGEXP_OPTIONS_MARKER); }
+  "RegexpOptions"                { yybegin(REGEXP_OPTIONS); return token(Terminals.REGEXP_OPTIONS_MARKER); }
   "module"                       { return token(Terminals.MODULE_MARKER); }
   "SValue"                       { return token(Terminals.SVALUE_MARKER); }
   
@@ -87,18 +101,6 @@ StringCharacter = [^\r\n\"\\]
   "StandardError"                { return token(Terminals.STANDARD_ERROR); }
   "%undefined"                   { return token(Terminals.UNDEFINED_VALUE); }
   "nil(unexecutable)"            { return token(Terminals.UNEXECUTABLE_NIL); }
-  
-  /* regexp options */
-  "kcode:"                       { return token(Terminals.KCODE_MARKER); }
-  "encodingNone"                 { return token(Terminals.ENC_NODE); }
-  "extended"                     { return token(Terminals.EXPECTED); }
-  "fixed"                        { return token(Terminals.FIXED); }
-  "ignorecase"                   { return token(Terminals.IGNORECASE); }
-  "java"                         { return token(Terminals.JAVA); }
-  "kcodeDefault"                 { return token(Terminals.KCODE_DEFAULT); }
-  "literal"                      { return token(Terminals.LITERAL); }
-  "multiline"                    { return token(Terminals.MULTILINE); }
-  "once"                         { return token(Terminals.ONCE); }  
   
   /* nil literal */
   "nil"                          { return token(Terminals.NIL); }
@@ -130,19 +132,42 @@ StringCharacter = [^\r\n\"\\]
   ":"                            { return token(Terminals.COLON); }
   "$"                            { return token(Terminals.DOLLAR); }
   "#"                            { return token(Terminals.HASH); }
-  "%"                            { return token(Terminals.PERCENT); }
-  
-  /* string literal */
-  \"                             { yybegin(STRING); string.setLength(0); }
-  
-  /* whitespace */
-  {WhiteSpace}                   { /* ignore */ }
+  "%"                            { return token(Terminals.PERCENT);
 }
 
 <STRING> {
   \"                             { yybegin(YYINITIAL); return token(Terminals.STRING_LITERAL, string.toString()); }
 
   {StringCharacter}+             { string.append( yytext() ); }
+}
+
+<SYMBOL> {
+  \'                             { yybegin(YYINITIAL); return token(Terminals.SYMBOL_LITERAL, string.toString()); }
+
+  {SymbolCharacter}+             { string.append( yytext() ); }
+}
+
+<REGEXP_OPTIONS> {
+  ","                            { return token(Terminals.COMMA); }
+  "kcode:"                       { yybegin(KCODE); return token(Terminals.KCODE_MARKER); }
+  "encodingNone"                 { return token(Terminals.ENC_NODE); }
+  "extended"                     { return token(Terminals.EXPECTED); }
+  "fixed"                        { return token(Terminals.FIXED); }
+  "ignorecase"                   { return token(Terminals.IGNORECASE); }
+  "java"                         { return token(Terminals.JAVA); }
+  "kcodeDefault"                 { return token(Terminals.KCODE_DEFAULT); }
+  "literal"                      { return token(Terminals.LITERAL); }
+  "multiline"                    { return token(Terminals.MULTILINE); }
+  "once"                         { return token(Terminals.ONCE); }
+  ")"                            { yybegin(YYINITIAL); return token(Terminals.RPAREN); }
+}
+
+<KCODE> {
+  "NIL"                          { yybegin(REGEXP_OPTIONS); return token(Terminals.KCODE_NIL); }
+  "NONE"                         { yybegin(REGEXP_OPTIONS); return token(Terminals.KCODE_NONE); }
+  "UTF8"                         { yybegin(REGEXP_OPTIONS); return token(Terminals.KCODE_UTF8); }
+  "SJIS"                         { yybegin(REGEXP_OPTIONS); return token(Terminals.KCODE_SJIS); }
+  "EUC"                          { yybegin(REGEXP_OPTIONS); return token(Terminals.KCODE_EUC); }
 }
 
 /* error fallback */

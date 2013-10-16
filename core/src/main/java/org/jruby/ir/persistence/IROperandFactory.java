@@ -7,6 +7,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
+import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -16,10 +17,13 @@ import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.ObjectClass;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Range;
@@ -37,7 +41,8 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
-public class IROperandFactory {
+public enum IROperandFactory {
+    INSTANCE;
     
     /** Array:[$operands] */
     public Array createArray(Operand[] operands) {
@@ -47,6 +52,12 @@ public class IROperandFactory {
     /** #{$source} */
     public AsString createAsString(Operand source) {
         return new AsString(source);
+    }
+    
+    /** \$$name (e.g. $a) */
+    public Backref createBackref(String name) {
+        char t = name.charAt(0);
+        return new Backref(t);
     }
     
     /** $bignumString:bignum */
@@ -115,6 +126,10 @@ public class IROperandFactory {
         return new Float(value);
     }
     
+    public GlobalVariable createGlobalVariable(String name) {
+        return new GlobalVariable(name);
+    }
+    
     /** $label */
     public Label createLabel(String label) {
         return new Label(label);
@@ -127,6 +142,11 @@ public class IROperandFactory {
         return new LocalVariable(name, scopeDepth, location);
     }
     
+    /** $name */
+    public MethAddr createMethAddr(String name) {
+        return new MethAddr(name);
+    }
+    
     /** <$receiver.$methodName> */
     public MethodHandle createMethodHandle(Operand methodName, Operand receiver) {
         return new MethodHandle(methodName, receiver);
@@ -135,6 +155,12 @@ public class IROperandFactory {
     /** nil */
     public Nil createNil() {
         return new Nil();
+    }
+    
+    /** \$matchNumber */
+    public NthRef createNthRef(String matchNumberString) {
+        int matchNumber = Integer.parseInt(matchNumberString);
+        return new NthRef(matchNumber);
     }
     
     /** <Class:Object> */
@@ -213,4 +239,3 @@ public class IROperandFactory {
     }   
     
 }
-
