@@ -116,7 +116,6 @@ InsideChevrons = [^<>]
     "RegexpOptions"                              { return token(Terminals.REGEXP_OPTIONS_MARKER); }
     "module"                                     { yybegin(INSIDE_CHEVRONS); return token(Terminals.MODULE_MARKER); }
     "SValue:"                                    { return token(Terminals.SVALUE_MARKER); }
-    "Range:"                                     { return token(Terminals.RANGE_MARKER); }
     
     /* special cases */
     "-unknown-super-target-"                     { return token(Terminals.UNKNOWN_SUPER_TARGET); } 
