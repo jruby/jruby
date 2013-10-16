@@ -12,10 +12,9 @@ public class RegexpIRStringParser {
     private static final String INSTR_WITH_DEAD_RESULT_MARKER = "[DEAD-RESULT]";
     private static final String DEAD_INSTR_MARKER = "[DEAD]";
     private static final String INSTR_WITH_OPERANDS_REGEXP = "(\\w+)" +// instruction name (group1)
-            "\\(" + "(" + // parentheses and group delimiter (group2)
-            "([^,]+,\\s+)" + // operands (group3)
-            "*([^,]+)" + // last operand (group4)
-            ")" + "\\)"; // end of (group2)
+            "\\(" + // open parentheses of instr
+            "(.*)" + // operands string (group2)
+            "\\)"; // close parentheses 
     private static final Pattern instrWithOperands = Pattern.compile(INSTR_WITH_OPERANDS_REGEXP);
 
     private static final String WHITESPACES = "\\s+";
