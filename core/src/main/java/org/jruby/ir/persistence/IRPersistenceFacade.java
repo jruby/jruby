@@ -24,16 +24,16 @@ public class IRPersistenceFacade {
         boolean isIrFileName = IRFileExpert.INSTANCE.isIrFileName(fileName);
         return isIrFileName || IRFileExpert.INSTANCE.isIrFileForRbFileFound(config);
     }
- 
-    public static void persist(IRScope irScopeToPersist, Ruby runtime) throws IRPersistenceException {
-         try {
-             RubyInstanceConfig config = runtime.getInstanceConfig();
-             File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config);
 
-             StringBuilder instructions = new StringBuilder();
-             getIstructionsFromThisAndDescendantScopes(irScopeToPersist, instructions);
-             FileIO.INSTANCE.writeToFile(irFile, instructions.toString());
-
+    public static void persist(IRScope irScopeToPersist, Ruby runtime)
+            throws IRPersistenceException {
+        try {
+            RubyInstanceConfig config = runtime.getInstanceConfig();
+            File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config);
+            
+            StringBuilder instructions = new StringBuilder();
+            getIstructionsFromThisAndDescendantScopes(irScopeToPersist, instructions);
+            FileIO.INSTANCE.writeToFile(irFile, instructions.toString());
         } catch (Exception e) {
             throw new IRPersistenceException(e);
         }
@@ -42,9 +42,9 @@ public class IRPersistenceFacade {
 
     private static void getIstructionsFromThisAndDescendantScopes(IRScope irScopeToPersist,
             StringBuilder instructions) {
-        instructions.append(irScopeToPersist.toStringInstrs());
+        instructions.append(irScopeToPersist.toPersistableString());
+        instructions.append("\n\n");
         for(IRScope irScope : irScopeToPersist.getLexicalScopes()) {
-            instructions.append("\n");
             getIstructionsFromThisAndDescendantScopes(irScope, instructions);            
         }
     }
@@ -78,6 +78,4 @@ public class IRPersistenceFacade {
         }
         return null;
     }
-
-} 
-
+}

@@ -33,12 +33,12 @@ public enum FileIO {
     }
 
     public void writeToFile(File file, String containment) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        FileOutputStream fileOutputStream = new FileOutputStream(file, true);
         writeToFileCommon(containment, fileOutputStream);
     }
 
     public void writeToFile(String fileName, String containment) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+        FileOutputStream fileOutputStream = new FileOutputStream(fileName, true);
         writeToFileCommon(containment, fileOutputStream);
     }
 
