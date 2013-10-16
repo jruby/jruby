@@ -147,12 +147,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jay-yydebug</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>2.4.0</version>
