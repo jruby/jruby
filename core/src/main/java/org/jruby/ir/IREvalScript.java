@@ -48,9 +48,9 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public String getScopeName() {
-        return "EvalScript";
-    }
+    public IRScopeType getScopeType() {
+        return IRScopeType.EVAL_SCRIPT;
+    } 
 
     @Override
     public Operand[] getBlockArgs() {

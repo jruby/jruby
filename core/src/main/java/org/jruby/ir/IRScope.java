@@ -901,11 +901,11 @@ public abstract class IRScope {
         flagsComputed = true;
     }
 
-    public abstract String getScopeName();
+    public abstract IRScopeType getScopeType();
 
     @Override
     public String toString() {
-        return getScopeName() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
+        return getScopeType() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
     }
 
     public String toStringInstrs() {
@@ -933,12 +933,14 @@ public abstract class IRScope {
     public String toPersistableString() {
         StringBuilder b = new StringBuilder();
 
-        b.append("Scope:<");
-        b.append(name);
-        b.append(">");
+        b.append("Scope(").append(getScopeType()).append(", ").append(lineNumber);
+        b.append("):<").append(name).append(">");
+        if (lexicalParent != null) {
+            b.append("\n").append("LexicalParent:<").append(lexicalParent.getName()).append(">");
+        }
+        b.append("\n").append(staticScope);
         for (Instr instr : instrList) {
-            b.append("\n");
-            b.append(instr);
+            b.append("\n").append(instr);
         }
 
         return b.toString();
