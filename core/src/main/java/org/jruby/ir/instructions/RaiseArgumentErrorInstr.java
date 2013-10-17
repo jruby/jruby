@@ -32,7 +32,7 @@ public class RaiseArgumentErrorInstr extends Instr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+        return super.toString() + "(" + required + ", " + opt + ", " + rest + ", " + numArgs + ")"; 
     }
 
     @Override

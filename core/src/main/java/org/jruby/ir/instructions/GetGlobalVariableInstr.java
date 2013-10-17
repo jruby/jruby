@@ -12,7 +12,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class GetGlobalVariableInstr extends GetInstr {
     public GetGlobalVariableInstr(Variable dest, String gvarName) {
-        super(Operation.GET_GLOBAL_VAR, dest, new GlobalVariable(gvarName), null);
+        this(dest, new GlobalVariable(gvarName));
+    }
+    
+    public GetGlobalVariableInstr(Variable dest, GlobalVariable gvar) {
+        super(Operation.GET_GLOBAL_VAR, dest, gvar, null); 
     }
 
     @Override
@@ -29,4 +33,9 @@ public class GetGlobalVariableInstr extends GetInstr {
     public void visit(IRVisitor visitor) {
         visitor.GetGlobalVariableInstr(this);
     }
+    
+    @Override
+    public String toString() {
+        return getResult() + " = " + getOperation() + "(" + getSource() + ")";
+    } 
 }

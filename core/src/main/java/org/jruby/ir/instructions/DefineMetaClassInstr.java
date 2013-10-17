@@ -52,7 +52,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + metaClassBody.getName() + ", " + object + ", " + metaClassBody.getFileName() + ")";
+        return super.toString() + "(" + metaClassBody.getName() + ", " + object + ")";
     }
 
     @Override

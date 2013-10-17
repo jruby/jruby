@@ -12,12 +12,12 @@ import java.util.Map;
 // - Regular multiple/parallel assignments: x,y,*z = ...
 // - When blocks are inlined, all receive* instructions get
 //   converted into multiple-assign instructions
-public class MultipleAsgnBase extends Instr implements ResultInstr {
+public abstract class MultipleAsgnBase extends Instr implements ResultInstr {
     protected Variable result;
     protected Operand array;
     protected final int index;
 
-    public MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
+    protected MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
         super(op);
 
         assert result != null : "MultipleAsgnBase result is null";

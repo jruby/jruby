@@ -43,7 +43,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + (!checkType ? " [no-typecheck]" : "");
+        return super.toString() + "(" + checkType +  ")"; 
     }
 
     @Override

@@ -60,4 +60,9 @@ public class InstanceSuperInstr extends CallInstr {
     public void visit(IRVisitor visitor) {
         visitor.InstanceSuperInstr(this);
     }
+
+    @Override
+    protected boolean needToPersistCallType() {
+        return false;
+    }
 }

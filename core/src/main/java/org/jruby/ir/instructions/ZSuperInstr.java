@@ -61,4 +61,9 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     public void visit(IRVisitor visitor) {
         visitor.ZSuperInstr(this);
     }
+    
+    @Override
+    protected boolean needToPersistCallArgs() {
+        return false;
+    } 
 }

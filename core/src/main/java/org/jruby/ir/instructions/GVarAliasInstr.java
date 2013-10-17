@@ -28,11 +28,6 @@ public class GVarAliasInstr extends Instr {
     }
 
     @Override
-    public String toString() {
-        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
-    }
-
-    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         oldName = oldName.getSimplifiedOperand(valueMap, force);
         newName = newName.getSimplifiedOperand(valueMap, force);

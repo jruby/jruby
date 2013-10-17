@@ -72,7 +72,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + array + ", dont_to_ary_arrays: " + dontToAryArrays + ")";
+        return super.toString() + "(" + array + ", " + dontToAryArrays + ")"; 
     }
 
     @Override

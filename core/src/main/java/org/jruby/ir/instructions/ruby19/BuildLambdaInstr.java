@@ -79,4 +79,9 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     public void visit(IRVisitor visitor) {
         visitor.BuildLambdaInstr(this);
     }
+    
+    @Override
+    public String toString() {
+        return super.toString() + "(" + getLambdaBody().getName() + ")";
+    } 
 }

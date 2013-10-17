@@ -29,7 +29,7 @@ public class RecordEndBlockInstr extends Instr {
 
     @Override
     public String toString() {
-        return getOperation().toString() + "(" + endBlockClosure.getName() + ")";
+        return super.toString() + "(" + endBlockClosure.getName() + ")"; 
     }
 
     @Override

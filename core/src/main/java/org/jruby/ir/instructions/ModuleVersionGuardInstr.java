@@ -57,7 +57,7 @@ public class ModuleVersionGuardInstr extends Instr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + candidateObj + ", " + expectedVersion + "[" + module.getName() + "], " + failurePathLabel + ")";
+        return super.toString() + "(" + candidateObj + ", " + expectedVersion + ", " + module.getName() + ", " + failurePathLabel + ")";
     }
 
     @Override
