@@ -55,7 +55,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + newIRClassBody.getName() + ", " + container + ", " + superClass + ", " + newIRClassBody.getFileName() + ")";
+        return super.toString() + "(" + newIRClassBody.getName() + ", " + container + ", " + superClass  + ")";
     }
 
     @Override

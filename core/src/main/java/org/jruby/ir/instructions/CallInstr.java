@@ -81,11 +81,6 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     @Override
-    public String toString() {
-        return (hasUnusedResult() ? "[DEAD-RESULT]" : "") + result + " = " + super.toString();
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.CallInstr(this);
     }

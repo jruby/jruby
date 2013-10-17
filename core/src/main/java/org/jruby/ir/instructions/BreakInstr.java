@@ -78,7 +78,7 @@ public class BreakInstr extends Instr {
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
+        return getOperation() + "(" + returnValue + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo.getName()) + ")";
     }
 
     @Override

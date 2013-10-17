@@ -46,7 +46,20 @@ public abstract class Instr {
 
     @Override
     public String toString() {
-        return "" + (isDead() ? "[DEAD]" : "") + (hasUnusedResult ? "[DEAD-RESULT]" : "") + ((this instanceof ResultInstr) ? ((ResultInstr)this).getResult() + " = " : "") + operation;
+        StringBuilder builder = new StringBuilder();
+        if(isDead) {
+            builder.append("[DEAD]");
+        }
+        if(hasUnusedResult) {
+            builder.append("[DEAD-RESULT]");
+        } 
+        if(this instanceof ResultInstr) {
+            Variable result = ((ResultInstr)this).getResult();
+            builder.append(result).append(" = ");
+        }
+        
+        builder.append(operation);
+        return builder.toString(); 
     }
 
     @Interp
