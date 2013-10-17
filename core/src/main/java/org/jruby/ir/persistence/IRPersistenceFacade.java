@@ -55,8 +55,6 @@ public class IRPersistenceFacade {
 
     @SuppressWarnings("unchecked")
     public static Collection<IRScope> read(Ruby runtime) throws IRPersistenceException {
-        IRParsingContext.INSTANCE.newFileStarted();
-        IRParsingContext.INSTANCE.setRuntime(runtime);
         RubyInstanceConfig config = runtime.getInstanceConfig();
         String irFileName = IRReadingContext.INSTANCE.getFileName();
         File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, irFileName);
@@ -66,7 +64,10 @@ public class IRPersistenceFacade {
             try {
                 is = new ByteArrayInputStream(fileContent.getBytes(FileIO.CHARSET));
                 PersistedIRScanner input = new PersistedIRScanner(is);
-                return (Collection<IRScope>) new PersistedIRParser().parse(input);
+                PersistedIRParser parser = new PersistedIRParser();
+                IRParsingContext context = new IRParsingContext(runtime);
+                parser.init(context);
+                return (Collection<IRScope>) parser.parse(input);
             } finally {
                 if (is != null) {
                     is.close();

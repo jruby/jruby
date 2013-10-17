@@ -48,8 +48,13 @@ import org.jruby.ir.persistence.parser.dummy.MultipleParamInstr;
 import org.jruby.ir.persistence.parser.dummy.SingleParamInstr;
 import org.jruby.runtime.CallType;
 
-public enum IRInstructionFactory {
-    INSTANCE;    
+public class IRInstructionFactory {
+    
+    private final IRParsingContext context;
+
+    public IRInstructionFactory(IRParsingContext context) {
+        this.context = context;        
+    }
     
     public LabelInstr createLabel(String l) {
         Label label = new Label(l);
@@ -60,7 +65,7 @@ public enum IRInstructionFactory {
         return new JumpInstr(target);
     }
 
-    public ThreadPollInstr createTreadPoll() {
+    public ThreadPollInstr createThreadPoll() {
         return new ThreadPollInstr();
     }
     
@@ -98,7 +103,7 @@ public enum IRInstructionFactory {
 
     private LineNumberInstr createLineNum(Object param) {
         Integer number = (Integer) param;
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        IRScope currentScope = context.getCurrentScope();
         return new LineNumberInstr(currentScope, number);
     }
     
@@ -181,9 +186,9 @@ public enum IRInstructionFactory {
         BooleanLiteral isInstanceMethodLiteral = (BooleanLiteral) params.get(2);
         Integer lineNumber = (Integer) params.get(3);
         
-        IRManager manager = IRParsingContext.INSTANCE.getIRManager();
+        IRManager manager = context.getIRManager();
         // FIXME: Or there may be other scopes rather than current?
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope(); 
+        IRScope currentScope = context.getCurrentScope(); 
         // FIXME: No closure support so far
         IRMethod method = new IRMethod(manager, currentScope, nameLable.label, isInstanceMethodLiteral.isTrue(), lineNumber, null);
         
@@ -200,7 +205,7 @@ public enum IRInstructionFactory {
 
     private BranchInstr createBFalse(List<Object> params) {
         Operand arg1 = (Operand) params.get(0);
-        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getFalse();
+        Operand arg2 = context.getIRManager().getFalse();
         Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
@@ -211,14 +216,14 @@ public enum IRInstructionFactory {
         
         Label scopeNameLabel = (Label) params.get(1);
         String scopeName = scopeNameLabel.label;
-        IRScope s = IRParsingContext.INSTANCE.getScopeByName(scopeName);
+        IRScope s = context.getScopeByName(scopeName);
         
         return new BreakInstr(rv, s);
     }
 
     private BranchInstr createBTrue(List<Object> params) {
         Operand arg1 = (Operand) params.get(0);
-        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getTrue();
+        Operand arg2 = context.getIRManager().getTrue();
         Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
@@ -226,7 +231,7 @@ public enum IRInstructionFactory {
     
     private BranchInstr createBNil(List<Object> params) {
         Operand arg1 = (Operand) params.get(0);
-        Operand arg2 = IRParsingContext.INSTANCE.getIRManager().getNil();
+        Operand arg2 = context.getIRManager().getNil();
         Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
@@ -365,7 +370,7 @@ public enum IRInstructionFactory {
     private DefineClassInstr createDefClass(Variable result, List<Object> params) {
         
         Label  classNameLabel = (Label) params.get(0);
-        IRClassBody irClassBody = (IRClassBody) IRParsingContext.INSTANCE.getScopeByName(classNameLabel.label);
+        IRClassBody irClassBody = (IRClassBody) context.getScopeByName(classNameLabel.label);
         
         Operand container = (Operand) params.get(1);
         Operand superClass = (Operand) params.get(2);

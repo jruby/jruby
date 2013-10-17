@@ -12,17 +12,13 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.IRStaticScopeFactory;
-import org.jruby.parser.IRStaticScopeType;
-import org.jruby.parser.StaticScope;
 
-public enum IRScopeFactory {
+public enum IRScopeBuilder {
     INSTANCE;
 
     private static final String SCRIPT_BODY_PSEUDO_CLASS_NAME = "_file_";
 
-    public IRScope createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope) {
-        IRManager manager = IRParsingContext.INSTANCE.getIRManager();
+    public IRScope createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope, IRManager manager) {
         int lineNumber = Integer.parseInt(lineNumberString);
         IRScope scope;
         switch (type) {
@@ -49,26 +45,8 @@ public enum IRScopeFactory {
         default:
             throw new UnsupportedOperationException();
         }
-        IRParsingContext.INSTANCE.addToScopes(scope);
         
         return scope;
-    }
-    
-    public IRScope findLexicalParent(String name) {
-        IRScope parent = IRParsingContext.INSTANCE.getScopeByName(name);
-        // Its a side effect
-        IRParsingContext.INSTANCE.setCurrentScope(parent);
-        return parent;
-    }
-    
-    public IRStaticScope buildStaticScope(IRStaticScopeType type, String[] names ) {
-        // Use a side effect form 'findLexicalParent'
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
-        StaticScope parent = null;
-        if(currentScope != null) {
-            parent = currentScope.getStaticScope();
-        }
-        return IRStaticScopeFactory.newStaticScope(parent, type, names);
     }
     
     public IRScope addToScope(IRScope scope, List<Instr> instrs) {        
@@ -78,11 +56,4 @@ public enum IRScopeFactory {
         
         return scope;
     }
-    
-    public IRScope enterScope(String name) {
-        IRScope scope = IRParsingContext.INSTANCE.getScopeByName(name);
-        IRParsingContext.INSTANCE.setCurrentScope(scope);
-        return scope;
-    }
-
 }

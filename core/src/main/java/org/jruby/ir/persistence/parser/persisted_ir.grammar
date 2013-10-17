@@ -12,7 +12,6 @@
 %import "org.jruby.ir.operands.Variable";
 %import "org.jruby.ir.operands.KeyValuePair";
 
-%import "org.jruby.ir.persistence.parser.dummy.DummyInstrFactory";
 %import "org.jruby.ir.persistence.parser.dummy.MultipleParamInstr";
 %import "org.jruby.ir.persistence.parser.dummy.SingleParamInstr";
 
@@ -69,9 +68,19 @@
 
 %goal scopes;
 
+%embed {:
+
+    private PersistedIRParserLogic logic;
+
+    public void init(IRParsingContext context) {
+        logic = new PersistedIRParserLogic(context);
+    }
+
+:} ;
+
 scopes
     =    scopes_info.scope EOLN
-         scopes_instructions.instrs     {: return new Symbol( IRParsingContext.INSTANCE.getScopes() ); :}
+         scopes_instructions.instrs     {: return logic.getScopes(); :}
     ;
     
 scopes_info
@@ -84,25 +93,25 @@ scope_info
     =    SCOPE LPAREN scope_type.type RPAREN COLON LT STRING.name GT COLON FIXNUM.line EOLN
          lexical_parent.parent?
          static_scope.ss
-                                        {: return new Symbol( IRScopeFactory.INSTANCE.createScope(type, parent, name, line, ss) ); :}
+                                        {: return logic.createScope(type, parent, name, line, ss); :}
     ;
     
 scope_type
-    =    ID.type                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createScopeType(type) ); :}
+    =    ID.type                        {: return logic.createScopeType(type); :}
     ;
 
 lexical_parent
     =    LEXICAL_PARENT_MARKER LT STRING.name GT EOLN
-                                        {: return new Symbol( IRScopeFactory.INSTANCE.findLexicalParent(name) ); :}
+                                        {: return logic.findLexicalParent(name); :}
     ;
 
 static_scope   
     =    STATIC_SCOPE LPAREN static_scope_type.type RPAREN COLON LBRACK variables.vars? RBRACK
-                                        {: return new Symbol( IRScopeFactory.INSTANCE.buildStaticScope(type, vars) ); :}
+                                        {: return logic.buildStaticScope(type, vars); :}
     ;
     
 static_scope_type
-    =    ID.type                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createStaticScopeType(type) ); :}
+    =    ID.type                        {: return logic.createStaticScopeType(type); :}
     ;
     
 variables
@@ -117,25 +126,18 @@ scopes_instructions
     
 scope_instructions
     =    scope_descriptor.scope EOLN
-         instructions.instrs            {: return new Symbol( IRScopeFactory.INSTANCE.addToScope(scope, instrs) ); :}
+         instructions.instrs            {: return logic.addToScope(scope, instrs); :}
     ;
     
 scope_descriptor
-    =    SCOPE COLON LT STRING.name GT  {: return new Symbol( IRScopeFactory.INSTANCE.enterScope(name) ); :}
+    =    SCOPE COLON LT STRING.name GT  {: return logic.enterScope(name); :}
     ;
 
 /* Instructions */
 instructions
-    =    instruction.i EOLN             {: 
-                                           ArrayList<Object> lst = new ArrayList<Object>();
-                                           lst.add(i);
-                                           return new Symbol(lst);
-                                        :}
+    =    instruction.i EOLN             {: return logic.addFirstInstruction(i); :}
     |    instructions.lst instruction.i EOLN
-                                        {: 
-                                           lst.add(i);
-                                           return _symbol_lst;
-                                        :}
+                                        {: return logic.addFollowingInstrctions(lst, i, _symbol_lst); :}
                                         
     ;
     
@@ -147,57 +149,49 @@ instruction
     ;
     
 label_instr
-    =    ID.label COLON                 {: return new Symbol( IRInstructionFactory.INSTANCE.createLabel(label) ); :}
+    =    ID.label COLON                 {: return logic.createLabelInstr(label); :}
     ;
 
 simple_instr
     // only tread poll so far
-    =    ID.id                          {: return new Symbol( IRInstructionFactory.INSTANCE.createTreadPoll() ); :}
+    =    ID.id                          {: return logic.createThreadPoll(); :}
     // only jump so far
-    |    ID.id label.target             {: return new Symbol( IRInstructionFactory.INSTANCE.createJump(target) ); :}
-    |    single_param_instr.instr       {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithSingleParam(instr) ); :}
-    |    multi_param_instr.instr        {: return new Symbol( IRInstructionFactory.INSTANCE.createInstrWithMultipleParams(instr) ); :}
+    |    ID.id label.target             {: return logic.createJump(target); :}
+    |    single_param_instr.instr       {: return logic.createInstrWithSingleParam(instr); :}
+    |    multi_param_instr.instr        {: return logic.createInstrWithMultipleParams(instr); :}
     ;
      
 result_instr
     =    variable.var EQ rvalue_operand.rv
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createCopy(var, rv) ); :}
+                                        {: return logic.createCopy(var, rv); :}
     |    variable.var EQ ID.id
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithNoParams(var, id) ); :}
+                                        {: return logic.createReturnInstrWithNoParams(var, id); :}
     |    variable.var EQ single_param_instr.instr 
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithSingleParam(var, instr) ); :}
+                                        {: return logic.createReturnInstrWithSingleParam(var, instr); :}
     |    variable.var EQ multi_param_instr.instr 
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createReturnInstrWithMultipleParams(var, instr) ); :}
+                                        {: return logic.createReturnInstrWithMultipleParams(var, instr); :}
     ;
 
 put_instr
     =    single_param_instr.instr EQ operand.o
-                                        {: return new Symbol( IRInstructionFactory.INSTANCE.createPutInstr(instr, o) ); :}
+                                        {: return logic.createPutInstr(instr, o); :}
     ;
     
 /* Dummy instructions */    
 single_param_instr
     =    ID.id LPAREN param.param RPAREN
-                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createSingleParamInstr(id, param) ); :}
+                                        {: return logic.createSingleParamInstr(id, param); :}
     ;
     
 multi_param_instr
     =    ID.id LPAREN param_list.list RPAREN
-                                        {: return new Symbol( DummyInstrFactory.INSTANCE.createMultipleParamInstr(id, list) ); :}
+                                        {: return logic.createMultipleParamInstr(id, list); :}
     ;
 
 /* Parameters of instruction */ 
 param_list
-    =    param.p1 COMMA param.p2        {: 
-                                           ArrayList<Object> lst = new ArrayList<Object>();
-                                           lst.add(p1);
-                                           lst.add(p2);
-                                           return new Symbol(lst);
-                                        :}
-    |    param_list.list COMMA param.p  {:  
-                                            list.add(p);
-                                            return _symbol_list;
-                                        :}
+    =    param.p1 COMMA param.p2        {: return logic.addFirstParam(p1, p2); :}
+    |    param_list.list COMMA param.p  {: return logic.addFollowingParam(list, p, _symbol_list); :}
     ;
     
 param
@@ -239,7 +233,7 @@ rvalue_operand
     ;
     
 array_operand
-    =   ARRAY_MARKER array.a            {: return new Symbol( IROperandFactory.INSTANCE.createArray(a) ); :}
+    =   ARRAY_MARKER array.a            {: return logic.createArray(a); :}
     ;
     
 array
@@ -252,42 +246,42 @@ array_elements
     ;
     
 as_string
-    =   HASH LBRACE operand.o RBRACE    {: return new Symbol( IROperandFactory.INSTANCE.createAsString(o) ); :}
+    =   HASH LBRACE operand.o RBRACE    {: return logic.createAsString(o); :}
     ;
     
 backtick_string
-    =   BACKTICK array.a BACKTICK       {: return new Symbol( IROperandFactory.INSTANCE.createBacktickString(a) ); :}
+    =   BACKTICK array.a BACKTICK       {: return logic.createBacktickString(a); :}
     ;
     
 compound_array
     =   ARGS_PUSH_MARKER LBRACK operand.a1 COMMA operand.a2 RBRACK
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createArgsPush(a1, a2) ); :}
+                                        {: return logic.createArgsPush(a1, a2); :}
     |   ARGS_CAT_MARKER LBRACK operand.a1 COMMA operand.a2 RBRACK
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createArgsCat(a1, a2) ); :}
+                                        {: return logic.createArgsCat(a1, a2); :}
     ;
     
 compound_string
     =   COMPOUND_STRING_MARKER encoding.encoding array.pieces
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createCompoundString(encoding, pieces) ); :}
+                                        {: return logic.createCompoundString(encoding, pieces); :}
     ;
     
 encoding
-    =   ID.encoding                     {: return new Symbol( NonIRObjectFactory.INSTANCE.createEncoding(encoding) ); :}
+    =   ID.encoding                     {: return logic.createEncoding(encoding); :}
     ;
       
 current_scope
     =   SCOPE_MARKER LT STRING.name GT
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createCurrentScope(name) ); :}
+                                        {: return logic.createCurrentScope(name); :}
     ;
     
 dynamic_symbol
     =    COLON compound_string.symbol_name
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createDynamicSymbol(symbol_name) ); :} 
+                                        {: return logic.createDynamicSymbol(symbol_name); :} 
     ;
     
 hash
     =    LBRACE key_value_pairs.pairs? RBRACE
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createHash(pairs) ); :}    
+                                        {: return logic.createHash(pairs); :}    
     ;
     
 key_value_pairs
@@ -297,39 +291,39 @@ key_value_pairs
     
 key_value_pair
     =    operand.key GTE operand.value    
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createKeyValuePair(key, value) ); :} 
+                                        {: return logic.createKeyValuePair(key, value); :} 
     ;
 
 immutable_literal
-    =   BIGNUM_MARKER FIXNUM.b          {: return new Symbol( IROperandFactory.INSTANCE.createBignum(b) ); :}
-    |   FIXNUM_MARKER FIXNUM.n          {: return new Symbol( IROperandFactory.INSTANCE.createFixnum(n) ); :}
-	|	FLOAT_MARKER FLOAT.f            {: return new Symbol( IROperandFactory.INSTANCE.createFloat(f) ); :}
-	|	NIL                             {: return new Symbol( IROperandFactory.INSTANCE.createNil() ); :}
-	|	UNEXECUTABLE_NIL                {: return new Symbol( IROperandFactory.INSTANCE.createUnexecutableNil() ); :}
-	|   TRUE                            {: return new Symbol( IROperandFactory.INSTANCE.createTrueLiteral() ); :}
-	|   FALSE                           {: return new Symbol( IROperandFactory.INSTANCE.createFalseLiteral() ); :}
+    =   BIGNUM_MARKER FIXNUM.b          {: return logic.createBignum(b); :}
+    |   FIXNUM_MARKER FIXNUM.n          {: return logic.createFixnum(n); :}
+	|	FLOAT_MARKER FLOAT.f            {: return logic.createFloat(f); :}
+	|	NIL                             {: return logic.createNil(); :}
+	|	UNEXECUTABLE_NIL                {: return logic.createUnexecutableNil(); :}
+	|   TRUE                            {: return logic.createTrueLiteral(); :}
+	|   FALSE                           {: return logic.createFalseLiteral(); :}
 	;
 
 ir_exception
-    =   IREXCEPTION_MARKER ID.reason    {: return new Symbol( NonIRObjectFactory.INSTANCE.createIRException(reason) ); :}
+    =   IREXCEPTION_MARKER ID.reason    {: return logic.createIRException(reason); :}
     ;
        
 label
-    =   ID.label                        {: return new Symbol( IROperandFactory.INSTANCE.createLabel(label) ); :}
+    =   ID.label                        {: return logic.createLabel(label); :}
     ;
 
 method_handle
     =   LT operand.receiver DOT operand.methodName GT
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createMethodHandle(methodName, receiver) ); :}
+                                        {: return logic.createMethodHandle(methodName, receiver); :}
     ;
 
 object_class
-    =   OBJECT_CLASS                    {: return new Symbol( IROperandFactory.INSTANCE.createObjectClass() ); :}
+    =   OBJECT_CLASS                    {: return logic.createObjectClass(); :}
     ;
  
 range
     =   LPAREN operand.b range_type.isExclusive operand.e RPAREN
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createRange(b, e, isExclusive) ); :}
+                                        {: return logic.createRange(b, e, isExclusive); :}
     ;
    
 range_type
@@ -346,38 +340,38 @@ reference
     ;
     
 backref
-    =   DOLLAR SYMBOL_LITERAL.ch        {: return new Symbol( IROperandFactory.INSTANCE.createBackref(ch) ); :}
+    =   DOLLAR SYMBOL_LITERAL.ch        {: return logic.createBackref(ch); :}
     ;
     
 global_variable
-    =   DOLLAR ID.name                  {: return new Symbol( IROperandFactory.INSTANCE.createGlobalVariable(name) ); :}
+    =   DOLLAR ID.name                  {: return logic.createGlobalVariable(name); :}
     ;
     
 meth_addr
-    =   SYMBOL_LITERAL.name             {: return new Symbol( IROperandFactory.INSTANCE.createMethAddr(name) ); :}
-    |   UNKNOWN_SUPER_TARGET            {: return new Symbol( IROperandFactory.INSTANCE.createUnknownSuperTarget() ); :}
+    =   SYMBOL_LITERAL.name             {: return logic.createMethAddr(name); :}
+    |   UNKNOWN_SUPER_TARGET            {: return logic.createUnknownSuperTarget(); :}
     ;
     
 nth_ref
-    =   DOLLAR FIXNUM.num               {: return new Symbol( IROperandFactory.INSTANCE.createNthRef(num) ); :}
+    =   DOLLAR FIXNUM.num               {: return logic.createNthRef(num); :}
     ;
     
 symbol
-    =   COLON SYMBOL_LITERAL.s          {: return new Symbol( IROperandFactory.INSTANCE.createSymbol(s) ); :}	
+    =   COLON SYMBOL_LITERAL.s          {: return logic.createSymbol(s); :}	
     ;
     
 regexp
     =   REGEXP_MARKER BAR operand.operand BAR regexp_options.options
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createRegexp(operand, options) ); :}	
+                                        {: return logic.createRegexp(operand, options); :}	
     ;
     
 scope_module
-    =   MODULE_MARKER LT STRING.name GT {: return new Symbol( IROperandFactory.INSTANCE.createScopeModule(name) ); :}
+    =   MODULE_MARKER LT STRING.name GT {: return logic.createScopeModule(name); :}
     ;
 
 regexp_options
     =   REGEXP_OPTIONS_MARKER LPAREN KCODE_MARKER ID.kcode regexp_opt_options.opt? RPAREN
-                                        {: return new Symbol( NonIRObjectFactory.INSTANCE.createRegexpOptions(kcode, opt) ); :}
+                                        {: return logic.createRegexpOptions(kcode, opt); :}
     ;
     
 regexp_opt_options
@@ -390,24 +384,24 @@ regexp_opt_option
     ;
 
 splat
-    =   ASTERISK operand.array          {: return new Symbol( IROperandFactory.INSTANCE.createSplat(array) ); :}
+    =   ASTERISK operand.array          {: return logic.createSplat(array); :}
     ;
     
 standard_error
-    =   STANDARD_ERROR                  {: return new Symbol( IROperandFactory.INSTANCE.createStandardError() ); :}
+    =   STANDARD_ERROR                  {: return logic.createStandardError(); :}
     ;
     
 string_literal
-    =   STRING_LITERAL.s                {: return new Symbol( IROperandFactory.INSTANCE.createStringLiteral(s) ); :}
+    =   STRING_LITERAL.s                {: return logic.createStringLiteral(s); :}
     ;
     
 svalue
     =   SVALUE_MARKER operand.array
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createSValue(array) ); :}
+                                        {: return logic.createSValue(array); :}
     ;
     
 undefined_value
-    =   UNDEFINED_VALUE                 {: return new Symbol( IROperandFactory.INSTANCE.createUndefininedValue() ); :}
+    =   UNDEFINED_VALUE                 {: return logic.createUndefininedValue(); :}
 	;
 	
 variable
@@ -416,18 +410,18 @@ variable
     ;
     
 local_variable
-    =   SELF                            {: return new Symbol( IROperandFactory.INSTANCE.createSelf() ); :}
+    =   SELF                            {: return logic.createSelf(); :}
     |   BLOCK.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location RPAREN
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createLocalVariable(id, scopeDepth, location) ); :}
+                                        {: return logic.createLocalVariable(id, scopeDepth, location); :}
     |   LT ID.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location RPAREN GT // not implemented!    
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createClosureLocalVariable(id, scopeDepth, location) ); :}
+                                        {: return logic.createClosureLocalVariable(id, scopeDepth, location); :}
     |   ID.id LPAREN FIXNUM.scopeDepth COLON FIXNUM.location RPAREN 
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createLocalVariable(id, scopeDepth, location) ); :}
+                                        {: return logic.createLocalVariable(id, scopeDepth, location); :}
     ;
 
 temporary_variable
     =   PERCENT ID.id
-                                        {: return new Symbol( IROperandFactory.INSTANCE.createTemporaryVariable(id) ); :}
+                                        {: return logic.createTemporaryVariable(id); :}
 //    |    temporary_closure_variable
     ;
 

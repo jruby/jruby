@@ -8,22 +8,15 @@ import org.jruby.Ruby;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 
-public enum IRParsingContext {
-    INSTANCE;
+public class IRParsingContext {
     
-    // FIXME: Or store them as tread context?
     private Ruby runtime;
     private Map<String, IRScope> scopesByNames = new HashMap<String, IRScope>();
     private IRScope currentScope;
     
-    public void newFileStarted() {
-        scopesByNames.clear();
-        currentScope = null;
-    }
-    
-    public void setRuntime(Ruby runtime) {
-        this.runtime =runtime;        
-    }
+    public IRParsingContext(Ruby runtime) {
+        this.runtime = runtime;
+    }    
     
     public Ruby getRuntime() {
         return runtime;
@@ -52,5 +45,4 @@ public enum IRParsingContext {
     public Collection<IRScope> getScopes() {
         return scopesByNames.values();
     }
-
 }

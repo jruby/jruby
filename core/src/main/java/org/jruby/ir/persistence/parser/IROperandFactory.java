@@ -114,8 +114,7 @@ public enum IROperandFactory {
     }
 
     /** scope<$name> */
-    public CurrentScope createCurrentScope(String name) {
-        IRScope currentScope = IRParsingContext.INSTANCE.getScopeByName(name);
+    public CurrentScope createCurrentScope(IRScope currentScope) {
         return new CurrentScope(currentScope);
     }
 
@@ -163,15 +162,6 @@ public enum IROperandFactory {
         
         return new LocalVariable(name, scopeDepth, location);
     }
-    
-    /** <$name($scopeDepthString:$locationString)> */
-    public ClosureLocalVariable createClosureLocalVariable(String name, String scopeDepthString,
-            String locationString) {
-        int scopeDepth = Integer.parseInt(scopeDepthString);
-        int location = Integer.parseInt(locationString);
-        // FIXME: closure is null so far
-        return new ClosureLocalVariable(null, name, scopeDepth, location);
-    }
 
     /** $name */
     public MethAddr createMethAddr(String name) {
@@ -214,8 +204,7 @@ public enum IROperandFactory {
     }
 
     /** module<$name> */
-    public ScopeModule createScopeModule(String name) {
-        IRScope currentScope = IRParsingContext.INSTANCE.getScopeByName(name);
+    public ScopeModule createScopeModule(IRScope currentScope) {
         return new ScopeModule(currentScope);
     }
 
@@ -259,9 +248,7 @@ public enum IROperandFactory {
         return UnexecutableNil.U_NIL;
     }
     
-    public TemporaryVariable createTemporaryVariable(String name) {
-        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
-        
+    public TemporaryVariable createTemporaryVariable(IRScope currentScope, String name) {        
         return currentScope.getNewTemporaryVariable("%" + name);
     }
 
