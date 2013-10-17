@@ -19,6 +19,8 @@ import org.jruby.parser.StaticScope;
 public enum IRScopeFactory {
     INSTANCE;
 
+    private static final String SCRIPT_BODY_PSEUDO_CLASS_NAME = "_file_";
+
     public IRScope createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope) {
         IRManager manager = IRParsingContext.INSTANCE.getIRManager();
         int lineNumber = Integer.parseInt(lineNumberString);
@@ -39,7 +41,7 @@ public enum IRScopeFactory {
             scope = new IRModuleBody(manager, lexicalParent, name, lineNumber, staticScope);
             break;
         case SCRIPT_BODY:
-            scope = new IRScriptBody(manager, "_file_", name, staticScope);
+            scope = new IRScriptBody(manager, SCRIPT_BODY_PSEUDO_CLASS_NAME, name, staticScope);
             break;
 
         case CLOSURE:
@@ -47,27 +49,39 @@ public enum IRScopeFactory {
         default:
             throw new UnsupportedOperationException();
         }
-        IRParsingContext.INSTANCE.addToPreviousScopes(scope);
-        IRParsingContext.INSTANCE.setCurrentScope(scope);
+        IRParsingContext.INSTANCE.addToScopes(scope);
         
         return scope;
     }
     
+    public IRScope findLexicalParent(String name) {
+        IRScope parent = IRParsingContext.INSTANCE.getScopeByName(name);
+        // Its a side effect
+        IRParsingContext.INSTANCE.setCurrentScope(parent);
+        return parent;
+    }
+    
     public IRStaticScope buildStaticScope(IRStaticScopeType type, String[] names ) {
-        StaticScope parent = IRParsingContext.INSTANCE.getStaticScope();
+        // Use a side effect form 'findLexicalParent'
+        IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
+        StaticScope parent = null;
+        if(currentScope != null) {
+            parent = currentScope.getStaticScope();
+        }
         return IRStaticScopeFactory.newStaticScope(parent, type, names);
     }
     
-    public IRScope findLexicalParent(String name) {
-        IRScope parent = IRParsingContext.INSTANCE.getScopeByName(name);
-        IRParsingContext.INSTANCE.setStaticScope(parent.getStaticScope());
-        return parent;
-    }
-
-    public IRScope addToScope(IRScope scope, List<Instr> instrs) {
+    public IRScope addToScope(IRScope scope, List<Instr> instrs) {        
         for (Instr instr : instrs) {
             scope.addInstr(instr);
         }
+        
+        return scope;
+    }
+    
+    public IRScope enterScope(String name) {
+        IRScope scope = IRParsingContext.INSTANCE.getScopeByName(name);
+        IRParsingContext.INSTANCE.setCurrentScope(scope);
         return scope;
     }
 

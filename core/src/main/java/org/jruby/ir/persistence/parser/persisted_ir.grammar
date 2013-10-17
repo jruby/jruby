@@ -58,7 +58,7 @@
 %typeof param = "Object";
 %typeof encoding = "Encoding";
 
-%typeof scope, scope_info, lexical_parent = "IRScope";
+%typeof scope_info, lexical_parent, scope_descriptor = "IRScope";
 %typeof scope_type = "IRScopeType";
 
 %typeof static_scope = "IRStaticScope";
@@ -70,19 +70,18 @@
 %goal scopes;
 
 scopes
-    =    scope
-    |    scopes scope
+    =    scopes_info.scope EOLN
+         scopes_instructions.instrs     {: return new Symbol( IRParsingContext.INSTANCE.getScopes() ); :}
     ;
-
-scope
-    =    scope_info.scope EOLN
-         instructions.instrs EOLN
-                                        {: return new Symbol( IRScopeFactory.INSTANCE.addToScope(scope, instrs) ); :}
+    
+scopes_info
+    =    scope_info EOLN
+    |    scopes_info scope_info EOLN
     ;
     
 /* Info that is needed to recreate a scope itself, do not contain instructions */    
 scope_info
-    =    SCOPE LPAREN scope_type.type COMMA FIXNUM.line RPAREN COLON LT STRING.name GT EOLN
+    =    SCOPE LPAREN scope_type.type RPAREN COLON LT STRING.name GT COLON FIXNUM.line EOLN
          lexical_parent.parent?
          static_scope.ss
                                         {: return new Symbol( IRScopeFactory.INSTANCE.createScope(type, parent, name, line, ss) ); :}
@@ -109,6 +108,20 @@ static_scope_type
 variables
     =    ID
     |    variables COMMA ID
+    ;
+    
+scopes_instructions
+    =    scope_instructions EOLN
+    |    scopes_instructions scope_instructions EOLN
+    ;
+    
+scope_instructions
+    =    scope_descriptor.scope EOLN
+         instructions.instrs            {: return new Symbol( IRScopeFactory.INSTANCE.addToScope(scope, instrs) ); :}
+    ;
+    
+scope_descriptor
+    =    SCOPE COLON LT STRING.name GT  {: return new Symbol( IRScopeFactory.INSTANCE.enterScope(name) ); :}
     ;
 
 /* Instructions */

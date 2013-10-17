@@ -3,19 +3,25 @@ package org.jruby.ir.persistence.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.AliasInstr;
+import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
 import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BranchInstr;
+import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallInstr;
+import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.ClosureReturnInstr;
 import org.jruby.ir.instructions.ConstMissingInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineClassInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.Instr;
@@ -62,6 +68,10 @@ public enum IRInstructionFactory {
         Operation operation = instr.getOperation();
         Object param = instr.getParameter();
         switch (operation) {
+        case BREAK:
+            return createBreak(param);
+        case CLOSURE_RETURN:
+            return createClosureReturn(param);
         case LINE_NUM:
             return createLineNum(param);
         case RETURN:
@@ -71,7 +81,21 @@ public enum IRInstructionFactory {
             throw new UnsupportedOperationException();
         }
     }
+
+    private BreakInstr createBreak(Object param) {
+        Operand rv = (Operand) param;
+        // Scope is null if name was not persisted
+        IRScope s = null;
+        
+        return new BreakInstr(rv, s);
+    }
     
+    private Instr createClosureReturn(Object param) {
+        Operand rv = (Operand) param;
+        
+        return new ClosureReturnInstr(rv);
+    }
+
     private LineNumberInstr createLineNum(Object param) {
         Integer number = (Integer) param;
         IRScope currentScope = IRParsingContext.INSTANCE.getCurrentScope();
@@ -88,6 +112,10 @@ public enum IRInstructionFactory {
         Operation operation = instr.getOperation();
         List<Object> params = instr.getParameters();
         switch (operation) {
+        case ATTR_ASSIGN:
+            return createAttrAssign(params);
+        case CHECK_ARGS_ARRAY_ARITY:
+            return createCheckArgsArrayArity(params);
         case CHECK_ARITY:
             return createCheckArity(params);
         case DEF_INST_METH:
@@ -96,6 +124,8 @@ public enum IRInstructionFactory {
             return createBEQ(params);
         case B_FALSE:
             return createBFalse(params);
+        case BREAK:
+            return createBreak(params);
         case B_TRUE:
             return createBTrue(params);
         case B_NIL:
@@ -109,7 +139,34 @@ public enum IRInstructionFactory {
             throw new UnsupportedOperationException(operation.toString());
         }
     }
+
+    @SuppressWarnings("unchecked")
+    private AttrAssignInstr createAttrAssign(List<Object> params) {
+        MethAddr methAddr = (MethAddr) params.get(0);
+        Operand receiver = (Operand) params.get(1);
+        
+        @SuppressWarnings("rawtypes")
+        List argsList = (ArrayList) params.get(2);
+        Operand[] args = null;
+        if(argsList != null) {
+            args = new Operand[argsList.size()];
+            argsList.toArray(args);
+        } else {
+            args = Operand.EMPTY_ARRAY;
+        }
+        
+        return new AttrAssignInstr(receiver, methAddr, args);
+    }
     
+    private CheckArgsArrayArityInstr createCheckArgsArrayArity(List<Object> params) {
+        Operand argsArray = (Operand) params.get(0);
+        int required = (Integer) params.get(1);
+        int opt = (Integer) params.get(2);
+        int rest = (Integer) params.get(3);
+        
+        return new CheckArgsArrayArityInstr(argsArray, required, opt, rest);
+    }
+
     private CheckArityInstr createCheckArity(List<Object> params) {
         int required = (Integer) params.get(0);
         int opt = (Integer) params.get(1);
@@ -147,6 +204,16 @@ public enum IRInstructionFactory {
         Label target = (Label) params.get(1);
         
         return BEQInstr.create(arg1, arg2, target);
+    }
+    
+    private BreakInstr createBreak(List<Object> params) {
+        Operand rv = (Operand) params.get(0);
+        
+        Label scopeNameLabel = (Label) params.get(1);
+        String scopeName = scopeNameLabel.label;
+        IRScope s = IRParsingContext.INSTANCE.getScopeByName(scopeName);
+        
+        return new BreakInstr(rv, s);
     }
 
     private BranchInstr createBTrue(List<Object> params) {
@@ -247,6 +314,8 @@ public enum IRInstructionFactory {
             return createCall(result, params);
         case CONST_MISSING:
             return createConstMissing(result, params);
+        case DEF_CLASS:
+            return createDefClass(result, params);
         case INHERITANCE_SEARCH_CONST:
             return createInheritanceSearchConstInstr(result, params);
         case SEARCH_CONST:
@@ -291,6 +360,17 @@ public enum IRInstructionFactory {
         Label missingConstLabel = (Label) params.get(1);
         
         return new ConstMissingInstr(result, currentModule, missingConstLabel.label);
+    }
+    
+    private DefineClassInstr createDefClass(Variable result, List<Object> params) {
+        
+        Label  classNameLabel = (Label) params.get(0);
+        IRClassBody irClassBody = (IRClassBody) IRParsingContext.INSTANCE.getScopeByName(classNameLabel.label);
+        
+        Operand container = (Operand) params.get(1);
+        Operand superClass = (Operand) params.get(2);
+        
+        return new DefineClassInstr(result, irClassBody, container, superClass);
     }
     
     public InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result, List<Object> params) {
