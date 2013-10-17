@@ -930,17 +930,26 @@ public abstract class IRScope {
         return b.toString();
     }
 
-    public String toPersistableString() {
+    public String persistableGeneralInfo() {
         StringBuilder b = new StringBuilder();
 
-        b.append("Scope(").append(getScopeType()).append(", ").append(lineNumber);
-        b.append("):<").append(name).append(">");
+        b.append("Scope(").append(getScopeType()).append("):<").append(name).append(">:").append(lineNumber).append("\n");
+
         if (lexicalParent != null) {
-            b.append("\n").append("LexicalParent:<").append(lexicalParent.getName()).append(">");
+            b.append("LexicalParent:<").append(lexicalParent.getName()).append(">\n");
         }
-        b.append("\n").append(staticScope);
+        
+        b.append(staticScope).append("\n");
+        
+        return b.toString();
+    }
+    
+    public String persistableInstrsInfo() {
+        StringBuilder b = new StringBuilder();
+
+        b.append("Scope:<").append(name).append(">\n");
         for (Instr instr : instrList) {
-            b.append("\n").append(instr);
+            b.append(instr).append("\n");
         }
 
         return b.toString();
