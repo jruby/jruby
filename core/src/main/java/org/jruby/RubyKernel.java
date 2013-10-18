@@ -1584,14 +1584,6 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
         throw runtime.newNotImplementedError("fork is not available on this platform");
     }
-    
-    public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-        return getLastlineString(context, context.runtime).gsub_bang(context, arg0, block);
-    }
-
-    public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return getLastlineString(context, context.runtime).gsub_bang(context, arg0, arg1, block);
-    }
 
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
