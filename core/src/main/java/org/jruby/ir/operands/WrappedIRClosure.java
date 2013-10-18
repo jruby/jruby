@@ -35,7 +35,7 @@ public class WrappedIRClosure extends Operand {
 
     @Override
     public String toString() {
-        return "WrappedIRClosure:" + closure.getName();
+        return "WrappedIRClosure:<" + closure.getName() + ">";
     }
 
     @Override

@@ -17,11 +17,6 @@ public class ClosureLocalVariable extends LocalVariable {
     }
 
     @Override
-    public String toString() {
-        return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
-    }
-
-    @Override
     public int hashCode() {
         return name.hashCode();
     }

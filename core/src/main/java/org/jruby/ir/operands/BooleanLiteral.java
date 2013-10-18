@@ -25,7 +25,7 @@ public class BooleanLiteral extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return isTrue() ? "true" : "false";
+        return "Boolean:" + truthy;
     }
 
     @Override

@@ -37,4 +37,9 @@ public class ThreadPollInstr extends Instr {
     public void visit(IRVisitor visitor) {
         visitor.ThreadPollInstr(this);
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + onBackEdge + ")";
+    } 
 }

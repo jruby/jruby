@@ -25,9 +25,10 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     public String toString() {
         StringBuilder buf = new StringBuilder(super.toString());
 
-        buf.append("(").append(begin).append(", ").append(end).append(", rescue[").append(firstRescueBlockLabel).append("]");
-        if (ensureBlockLabel != null) buf.append(", ensure[").append(ensureBlockLabel).append("]");
-        buf.append(")");
+        buf.append(super.toString()).append("(").append(begin).append(", ").append(end).append(", ").append(firstRescueBlockLabel);
+        if (ensureBlockLabel != null) {
+            buf.append(", ").append(ensureBlockLabel);
+        } 
 
         return buf.toString();
     }

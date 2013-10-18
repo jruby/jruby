@@ -293,8 +293,9 @@ public abstract class CallBase extends Instr implements Specializeable {
         StringBuilder builder = new StringBuilder();
         
         builder.append(super.toString()).append("(");
+        builder.append(receiver);
         if(needToPersistCallType()) {
-            builder.append(callType).append(", ");
+            builder.append(", ").append(callType);
         }
         if(callType == CallType.SUPER) {
             SuperInstrType type;
@@ -308,7 +309,7 @@ public abstract class CallBase extends Instr implements Specializeable {
             builder.append(", ").append(type);
         }
         if(needToPersistMethAddr()) {
-            builder.append(methAddr).append(", ");
+            builder.append(", ").append(methAddr);
         }
         builder.append(receiver);
         if(needToPersistCallArgs()) {
