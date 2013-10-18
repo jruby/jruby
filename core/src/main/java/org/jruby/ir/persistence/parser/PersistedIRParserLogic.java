@@ -6,6 +6,7 @@ import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.instructions.CopyInstr;
@@ -19,7 +20,6 @@ import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
@@ -116,6 +116,11 @@ public class PersistedIRParserLogic {
     Symbol createStaticScopeType(String name) {
         IRStaticScopeType staticScopeType = NON_IR_OBJECT_FACTORY.createStaticScopeType(name);
         return new Symbol(staticScopeType);
+    }
+    
+    Symbol createBoolean(String booleanStringValue) {
+        boolean bool = NON_IR_OBJECT_FACTORY.createBoolean(booleanStringValue);
+        return new Symbol(bool);
     }
     
     Symbol addToScope(IRScope scope, List<Instr> instrs) {
@@ -217,6 +222,11 @@ public class PersistedIRParserLogic {
         return _symbol_list;
     }
     
+    Symbol createInteger(String value) {
+        Integer integer = NON_IR_OBJECT_FACTORY.createInteger(value);
+        return new Symbol(integer);
+    }
+    
     Symbol createArray(List<Operand> operands) {
         Array array = OPERAND_FACTORY.createArray(operands);
         return new Symbol(array);
@@ -299,14 +309,10 @@ public class PersistedIRParserLogic {
         return new Symbol(unexecutableNil);
     }
     
-    Symbol createTrueLiteral() {
-        BooleanLiteral trueLiteral = OPERAND_FACTORY.createTrueLiteral();
-        return new Symbol(trueLiteral);
-    }
-    
-    Symbol createFalseLiteral() {
-        BooleanLiteral falseLiteral = OPERAND_FACTORY.createFalseLiteral();
-        return new Symbol(falseLiteral);
+    Symbol createBooleanLiteral(String booleanLiteralString) {
+        IRManager irManager = context.getIRManager();
+        BooleanLiteral booleanLiteral = OPERAND_FACTORY.createBooleanLiteral(irManager, booleanLiteralString);     
+        return new Symbol(booleanLiteral);
     }
     
     Symbol createIRException(String type) {
@@ -323,7 +329,7 @@ public class PersistedIRParserLogic {
         Label label = context.getLabel(labelValue);
         if(label == null) {
             label = context.getCurrentScope().getNewLabel();
-            context.addLabel(label);
+            context.addLabel(labelValue, label);
         }
         return new Symbol(label);
     }
@@ -334,7 +340,7 @@ public class PersistedIRParserLogic {
             int endOfPrefix = labelValue.lastIndexOf("_");
             String prefix = labelValue.substring(0, endOfPrefix);
             label = context.getCurrentScope().getNewLabel(prefix);
-            context.addLabel(label);
+            context.addLabel(labelValue, label);
         }
         return new Symbol(label);
     }
@@ -434,12 +440,6 @@ public class PersistedIRParserLogic {
         IRScope currentScope = context.getCurrentScope();
         LocalVariable localVariable = OPERAND_FACTORY.createLocalVariable(name, scopeDepthString, currentScope);
         return new Symbol(localVariable);
-    }
-    
-    Symbol createClosureLocalVariable(String name, String scopeDepthString, String locationString) {
-        IRClosure scope = (IRClosure) context.getCurrentScope();
-        ClosureLocalVariable closureLocalVariable = OPERAND_FACTORY.createClosureLocalVariable(scope, name, scopeDepthString, locationString);
-        return new Symbol(closureLocalVariable);
     }
     
     Symbol createTemporaryVariable(String name) {

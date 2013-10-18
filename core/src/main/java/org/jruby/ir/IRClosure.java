@@ -322,4 +322,11 @@ public class IRClosure extends IRScope {
 
         return true;
     }
+    
+    @Override
+    public void setName(String name) {
+        // We can distinguish closures only with parent scope name 
+        String fullName = getLexicalParent().getName() + name;
+        super.setName(fullName);
+    } 
 }

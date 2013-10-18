@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jcodings.Encoding;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
@@ -13,7 +14,6 @@ import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
@@ -51,6 +51,9 @@ public enum IROperandFactory {
 
     /** Array:[$operands] */
     public Array createArray(List<Operand> operands) {
+        if(operands == null) {
+            return new Array();
+        }
         return new Array(operands);
     }
 
@@ -76,26 +79,16 @@ public enum IROperandFactory {
         return new Bignum(value);
     }
 
-    /** true|false */
-    public BooleanLiteral createBooleanLiteral(String booleanLiteralString) {
-        boolean truthy = Boolean.parseBoolean(booleanLiteralString);
-        return new BooleanLiteral(truthy);
-    }
-
-    public BooleanLiteral createTrueLiteral() {
-        return new BooleanLiteral(true);
-    }
-
-    public BooleanLiteral createFalseLiteral() {
-        return new BooleanLiteral(false);
-    }
-
-    /** <$name($scopeDepthString:$locationString)> */
-    public ClosureLocalVariable createClosureLocalVariable(IRClosure scope, String name,
-            String scopeDepthString, String locationString) {
-        int scopeDepth = Integer.parseInt(scopeDepthString);
-        int location = Integer.parseInt(locationString);
-        return new ClosureLocalVariable(scope, name, scopeDepth, location);
+    /** Boolean:(true|false) */
+    public BooleanLiteral createBooleanLiteral(IRManager irManager, String booleanLiteralString) {
+        boolean isTrue = NonIRObjectFactory.INSTANCE.createBoolean(booleanLiteralString);
+        BooleanLiteral booleanLiteral = null;
+        if(isTrue) {
+            booleanLiteral = irManager.getTrue();
+        } else {
+            booleanLiteral = irManager.getFalse();
+        }
+        return booleanLiteral;
     }
 
     /** ArgsPush:[$a1, $a2] */

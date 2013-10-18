@@ -32,6 +32,8 @@ import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.EnsureRubyArrayInstr;
+import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GVarAliasInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.ir.instructions.GetClassVariableInstr;
@@ -121,7 +123,6 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.parser.dummy.MultipleParamInstr;
 import org.jruby.ir.persistence.parser.dummy.SingleParamInstr;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
 
 public class IRInstructionFactory {
@@ -143,8 +144,8 @@ public class IRInstructionFactory {
     public Instr createInstrWithoutParams(String operationName) {
         Operation operation = NonIRObjectFactory.INSTANCE.createOperation(operationName);
         switch (operation) {
-        case THREAD_POLL:
-            return createThreadPoll();
+        case EXC_REGION_END:
+            return createExceptionRegionEndMarker();
         case NOP:
             return createNop();
         case POP_BINDING:
@@ -158,8 +159,8 @@ public class IRInstructionFactory {
         }
     }
 
-    private ThreadPollInstr createThreadPoll() {
-        return new ThreadPollInstr();
+    private ExceptionRegionEndMarkerInstr createExceptionRegionEndMarker() {
+        return new ExceptionRegionEndMarkerInstr();
     }
 
     private NopInstr createNop() {
@@ -192,6 +193,8 @@ public class IRInstructionFactory {
             return createLineNum(param);
         case RETURN:
             return createReturn(param);
+        case THREAD_POLL:
+            return createThreadPoll(param);
         case THROW:
             return createThrowException(param);
 
@@ -230,6 +233,12 @@ public class IRInstructionFactory {
         Operand returnValue = (Operand) param;
         return new ReturnInstr(returnValue);
     }
+    
+    private ThreadPollInstr createThreadPoll(Object param) {
+        boolean onBackEdge = (Boolean) param;
+        
+        return new ThreadPollInstr(onBackEdge);
+    }
 
     private ThrowExceptionInstr createThrowException(Object param) {
         Operand exception = (Operand) param;
@@ -241,6 +250,8 @@ public class IRInstructionFactory {
         Operation operation = instr.getOperation();
         List<Object> params = instr.getParameters();
         switch (operation) {
+        case ALIAS:
+            return createAlias(params);
         case ATTR_ASSIGN:
             return createAttrAssign(params);
         case B_FALSE:
@@ -267,6 +278,8 @@ public class IRInstructionFactory {
             return createDefineMethod(params, false);
         case DEF_INST_METH:
             return createDefineMethod(params, true);
+        case EXC_REGION_START:
+            return createExceptionRegionStartMarker(params);
         case GVAR_ALIAS:
             return createGvarAlias(params);
         case RETURN:
@@ -276,12 +289,21 @@ public class IRInstructionFactory {
             throw new UnsupportedOperationException(operation.toString());
         }
     }
+    
+    private AliasInstr createAlias(List<Object> params) {
+        Variable receiver = (Variable) params.get(0);
+        Operand newName = (Operand) params.get(1);
+        Operand oldName = (Operand) params.get(2);
 
-    @SuppressWarnings("unchecked")
+        // FIXME?: Maybe AliasInstr should implement ResultInstr?
+        return new AliasInstr(receiver, newName, oldName);
+    }
+    
     private AttrAssignInstr createAttrAssign(List<Object> params) {
-        MethAddr methAddr = (MethAddr) params.get(0);
-        Operand receiver = (Operand) params.get(1);
+        Operand receiver = (Operand) params.get(0);
+        MethAddr methAddr = (MethAddr) params.get(1);
 
+        @SuppressWarnings("unchecked")
         List<Operand> argsList = (ArrayList<Operand>) params.get(2);
         Operand[] args = null;
         if (argsList != null) {
@@ -370,8 +392,8 @@ public class IRInstructionFactory {
 
     private Instr createDefineMethod(List<Object> params, boolean isInstanceMethod) {
         Operand container = (Operand) params.get(0);
+        
         String name = (String) params.get(1);
-
         IRMethod method = (IRMethod) context.getScopeByName(name);
 
         if (isInstanceMethod) {
@@ -379,6 +401,19 @@ public class IRInstructionFactory {
         } else {
             return new DefineClassMethodInstr(container, method);
         }
+    }
+    
+    private ExceptionRegionStartMarkerInstr createExceptionRegionStartMarker(List<Object> params) {
+        Label begin = (Label) params.get(0);
+        Label end = (Label) params.get(1);
+        Label firstRescueBlockLabel = (Label) params.get(2);
+        
+        Label ensureBlockLabel = null;
+        if(params.size() == 4) {
+            ensureBlockLabel = (Label) params.get(3);
+        }
+        
+        return new ExceptionRegionStartMarkerInstr(begin, end, ensureBlockLabel, firstRescueBlockLabel);
     }
 
     private GVarAliasInstr createGvarAlias(List<Object> params) {
@@ -485,7 +520,7 @@ public class IRInstructionFactory {
         case RECV_REST_ARG:
             return createReceiveRestArgs18(result, param);
         case RECORD_END_BLOCK:
-            return createRecoreEndBlock(result, param);
+            return createRecordEndBlock(result, param);
         case RESTORE_ERROR_INFO:
             return createRestoreErrorInfo(result, param);
         case SET_RETADDR:
@@ -501,7 +536,9 @@ public class IRInstructionFactory {
     }
 
     public CopyInstr createCopy(Variable result, Object param) {
-        return new CopyInstr(result, (Operand) param);
+        Operand s = (Operand) param;
+        
+        return new CopyInstr(result, s);
     }
 
     private EnsureRubyArrayInstr createEnsureRubyArray(Variable result, Object param) {
@@ -561,8 +598,7 @@ public class IRInstructionFactory {
     }
 
     private ReceiveExceptionInstr createReceiveException(Variable result, Object param) {
-        BooleanLiteral booleanLiteral = (BooleanLiteral) param;
-        boolean checkType = booleanLiteral.isTrue();
+        boolean checkType = (Boolean) param;
 
         return new ReceiveExceptionInstr(result, checkType);
     }
@@ -574,7 +610,8 @@ public class IRInstructionFactory {
     }
 
     private ReceivePreReqdArgInstr createReceivePreReqdArg(Variable result, Object param) {
-        Integer argIndex = (Integer) param;
+        int argIndex = (Integer) param;
+        
         return new ReceivePreReqdArgInstr(result, argIndex);
     }
 
@@ -584,7 +621,7 @@ public class IRInstructionFactory {
         return new ReceiveOptArgInstr18(result, index);
     }
 
-    private RecordEndBlockInstr createRecoreEndBlock(Variable result, Object param) {
+    private RecordEndBlockInstr createRecordEndBlock(Variable result, Object param) {
         IRScope declaringScope = context.getCurrentScope();
         
         String endBlockClosureName = (String) param;
@@ -613,6 +650,7 @@ public class IRInstructionFactory {
 
     private UndefMethodInstr createUndefMethod(Variable result, Object param) {
         Operand methodName = (Operand) param;
+        
         return new UndefMethodInstr(result, methodName);
     }
 
@@ -620,8 +658,6 @@ public class IRInstructionFactory {
         Operation operation = instr.getOperation();
         List<Object> params = instr.getParameters();
         switch (operation) {
-        case ALIAS:
-            return createAlias(result, params);
         case CALL:
             return createCall(result, params);
         case CONST_MISSING:
@@ -694,22 +730,15 @@ public class IRInstructionFactory {
         }
     }
 
-    private AliasInstr createAlias(Variable receiver, List<Object> params) {
-        Operand newName = (Operand) params.get(0);
-        Operand oldName = (Operand) params.get(1);
-
-        return new AliasInstr(receiver, newName, oldName);
-    }
-
-    @SuppressWarnings("unchecked")
     private CallInstr createCall(Variable result, List<Object> params) {
         
-        String callTypString = (String) params.get(0);
+        Operand receiver = (Operand) params.get(0);
+        String callTypString = (String) params.get(1);
         CallType callType = CallType.valueOf(callTypString);
 
-        MethAddr methAddr = (MethAddr) params.get(1);
-        Operand receiver = (Operand) params.get(2);
-
+        MethAddr methAddr = (MethAddr) params.get(2);
+        
+        @SuppressWarnings("unchecked")
         ArrayList<Operand> argsList = (ArrayList<Operand>) params.get(3);
         Operand[] args = null;
         if (argsList != null) {
@@ -723,7 +752,7 @@ public class IRInstructionFactory {
             closure = (Operand) params.get(4);
         }
 
-        return CallInstr.create(callType, result, methAddr, receiver, args, closure);
+        return new CallInstr(callType, result, methAddr, receiver, args, closure);
     }
 
     private GetClassVarContainerModuleInstr createGetClassVarContainerModule(Variable result,
@@ -820,10 +849,10 @@ public class IRInstructionFactory {
             List<Object> params) {
         Operand currentModule = (Operand) params.get(0);
         String constName = (String) params.get(1);
-        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
+        Boolean noPrivateConsts = (Boolean) params.get(2);
 
         return new InheritanceSearchConstInstr(result, currentModule, constName,
-                noPrivateConstsLiteral.isTrue());
+                noPrivateConsts);
     }
 
     private InstanceOfInstr createInstanceOf(Variable result, List<Object> params) {
@@ -839,7 +868,7 @@ public class IRInstructionFactory {
 
         String fileName = (String) params.get(1);
         int line = (Integer) params.get(2);
-        ISourcePosition possition = new SimpleSourcePosition(fileName, line);
+        ISourcePosition possition = NonIRObjectFactory.INSTANCE.createSourcePosition(fileName, line);
 
         return new BuildLambdaInstr(result, lambdaBody, possition);
     }
@@ -1003,10 +1032,10 @@ public class IRInstructionFactory {
     private SearchConstInstr createSearchConst(Variable result, List<Object> params) {
         String constName = (String) params.get(0);
         Operand startingScope = (Operand) params.get(1);
-        BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
+        Boolean noPrivateConsts = (Boolean) params.get(2);
 
         return new SearchConstInstr(result, constName, startingScope,
-                noPrivateConstsLiteral.isTrue());
+                noPrivateConsts);
     }
 
     private ToAryInstr createToAry(Variable result, List<Object> params) {
@@ -1019,8 +1048,7 @@ public class IRInstructionFactory {
     private YieldInstr createYield(Variable result, List<Object> params) {
         Operand block = (Operand) params.get(0);
         Operand arg = (Operand) params.get(1);
-        BooleanLiteral unwrapArrayLiteral = (BooleanLiteral) params.get(2);
-        boolean unwrapArray = unwrapArrayLiteral.isTrue();
+        Boolean unwrapArray = (Boolean) params.get(2);
 
         return new YieldInstr(result, block, arg, unwrapArray);
     }

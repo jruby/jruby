@@ -505,8 +505,10 @@ public final class Ruby {
         Node scriptNode = null;
         if(!RubyInstanceConfig.IR_READING || !IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, filename).isFile()) {
             scriptNode = parseFromMain(inputStream, filename);
-        }            
-        IRReadingContext.INSTANCE.setFileName(filename);
+        }
+        if(RubyInstanceConfig.IR_READING || RubyInstanceConfig.IR_PERSISTENCE) { 
+            IRReadingContext.INSTANCE.setFileName(filename);
+        }
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -2648,19 +2650,16 @@ public final class Ruby {
         try {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
             context.preNodeEval(objectClass, self, scriptName);
-            Node node = null;
+            Node node = parseFile(in, scriptName, null);
 
-            // FIXME: This is confusing
-            if(!RubyInstanceConfig.IR_READING || !IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, scriptName).isFile()) {
-                StopWatch astWatch = new LoggingStopWatch("rb -> AST");
-                node = parseFile(in, scriptName, null);
-                astWatch.stop();
-                if (wrap) {
-                    // toss an anonymous module into the search path
-                    ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
-                }
+            if (wrap) {
+                // toss an anonymous module into the search path
+                ((RootNode) node).getStaticScope().setModule(RubyModule.newModule(this));
             }
-            IRReadingContext.INSTANCE.setFileName(scriptName);
+            
+            if(RubyInstanceConfig.IR_READING || RubyInstanceConfig.IR_PERSISTENCE) { 
+                IRReadingContext.INSTANCE.setFileName(scriptName);
+            }
 
             runInterpreter(context, node, self);
         } catch (JumpException.ReturnJump rj) {

@@ -47,6 +47,8 @@ public class IRParsingContext {
             this.toplevelScope = currentScope;
         }
         this.currentScope = currentScope;
+        labelsByNames.clear();
+        variablesByNames.clear();
     }
     
     public IRScope getToplevelScope() {
@@ -65,8 +67,12 @@ public class IRParsingContext {
         return labelsByNames.get(labelValue);      
     }    
     
-    public void addLabel(Label label) {
-        this.labelsByNames.put(label.label, label);      
+    /**
+     * @param labelName name of label in original IR
+     * @param label created during the IR reading
+     */
+    public void addLabel(String labelName, Label label) {
+        this.labelsByNames.put(labelName, label);      
     }  
     
 }
