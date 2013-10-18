@@ -71,7 +71,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     public MethAddr getMethodAddr() {
         return methAddr;
     }
-
+    
     public Operand getClosureArg(Operand ifUnspecified) {
         return closure == null ? ifUnspecified : closure;
     }

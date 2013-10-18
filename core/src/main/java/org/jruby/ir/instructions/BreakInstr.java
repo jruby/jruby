@@ -42,6 +42,14 @@ public class BreakInstr extends Instr {
         this.scopeToReturnTo = s;
         this.returnValue = rv;
     }
+    
+    public IRScope getScopeToReturnTo() {
+        return scopeToReturnTo;
+    }
+
+    public Operand getReturnValue() {
+        return returnValue;
+    }     
 
     public Operand[] getOperands() {
         return new Operand[] { returnValue };

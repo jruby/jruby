@@ -50,6 +50,7 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.IRStaticScopeType;
+import org.jruby.runtime.CallType;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
@@ -228,6 +229,10 @@ public enum NonIRObjectFactory {
         } else {
             return new RegexpOptions(kCode, false);
         }
+    }
+
+    public CallType createCallType(String callTypeString) {
+        return CallType.valueOf(callTypeString);
     }
 
 }

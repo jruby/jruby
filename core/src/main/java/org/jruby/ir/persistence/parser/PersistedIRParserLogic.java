@@ -140,9 +140,17 @@ public class PersistedIRParserLogic {
         return new Symbol(lst);
     }
     
-    Symbol addFollowingInstrctions(List<Instr> lst, Instr i, Symbol _symbol_lst) {
+    Symbol addFollowingInstructions(List<Instr> lst, Instr i, Symbol _symbol_lst) {
         lst.add(i);
         return _symbol_lst;
+    }
+    
+    Symbol markAsDeadIfNeeded(Symbol instrSymbol, Object marker) {
+        if(marker != null) {
+            Instr currentInstr =  (Instr) instrSymbol.value;
+            currentInstr.markDead();
+        }
+        return instrSymbol;
     }
     
     Symbol createLabelInstr(Label label) {
@@ -168,6 +176,14 @@ public class PersistedIRParserLogic {
     Symbol createInstrWithMultipleParams(MultipleParamInstr dummy) {
         Instr instr = instrFactory.createInstrWithMultipleParams(dummy);
         return new Symbol(instr);
+    }
+    
+    Symbol markHasUnusedResultIfNeeded(Symbol instrSymbol, Object marker) {
+        if(marker != null) {
+            Instr currentInstr =  (Instr) instrSymbol.value;
+            currentInstr.markUnusedResult();
+        }
+        return instrSymbol;
     }
     
     Symbol createCopy(Variable result, Object param) {

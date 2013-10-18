@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence.parser;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jcodings.Encoding;
@@ -55,6 +56,7 @@ import org.jruby.ir.instructions.Match3Instr;
 import org.jruby.ir.instructions.MatchInstr;
 import org.jruby.ir.instructions.MethodLookupInstr;
 import org.jruby.ir.instructions.ModuleVersionGuardInstr;
+import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
@@ -109,6 +111,12 @@ import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.ir.instructions.ruby19.ReceiveOptArgInstr19;
 import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ruby19.ReceiveRestArgInstr19;
+import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
+import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
+import org.jruby.ir.instructions.specialized.SpecializedInstType;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -248,152 +256,166 @@ public class IRInstructionFactory {
 
     public Instr createInstrWithMultipleParams(MultipleParamInstr instr) {
         Operation operation = instr.getOperation();
-        List<Object> params = instr.getParameters();
+        Iterator<Object> paramsIterator = instr.getParameters().iterator();
         switch (operation) {
         case ALIAS:
-            return createAlias(params);
+            return createAlias(paramsIterator);
         case ATTR_ASSIGN:
-            return createAttrAssign(params);
+            return createAttrAssign(paramsIterator);
         case B_FALSE:
-            return createBFalse(params);
+            return createBFalse(paramsIterator);
         case B_TRUE:
-            return createBTrue(params);
+            return createBTrue(paramsIterator);
         case B_NIL:
-            return createBNil(params);
+            return createBNil(paramsIterator);
         case B_UNDEF:
-            return createBUndef(params);
+            return createBUndef(paramsIterator);
         case BEQ:
-            return createBEQ(params);
+            return createBEQ(paramsIterator);
         case BINDING_STORE:
-            return createStoreLocalVar(params);
+            return createStoreLocalVar(paramsIterator);
         case BNE:
-            return createBNE(params);
+            return createBNE(paramsIterator);
         case BREAK:
-            return createBreak(params);
+            return createBreak(paramsIterator);
         case CHECK_ARGS_ARRAY_ARITY:
-            return createCheckArgsArrayArity(params);
+            return createCheckArgsArrayArity(paramsIterator);
         case CHECK_ARITY:
-            return createCheckArity(params);
+            return createCheckArity(paramsIterator);
         case DEF_CLASS_METH:
-            return createDefineMethod(params, false);
+            return createDefineMethod(paramsIterator, false);
         case DEF_INST_METH:
-            return createDefineMethod(params, true);
+            return createDefineMethod(paramsIterator, true);
         case EXC_REGION_START:
-            return createExceptionRegionStartMarker(params);
+            return createExceptionRegionStartMarker(paramsIterator);
         case GVAR_ALIAS:
-            return createGvarAlias(params);
+            return createGvarAlias(paramsIterator);
+        case CALL:
+        case CONST_MISSING:
+        case SUPER:
+        case ZSUPER:
+            return createNoResultCall(operation, paramsIterator);
         case RETURN:
-            return createReturn(params);
+            return createReturn(paramsIterator);
 
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
     }
-    
-    private AliasInstr createAlias(List<Object> params) {
-        Variable receiver = (Variable) params.get(0);
-        Operand newName = (Operand) params.get(1);
-        Operand oldName = (Operand) params.get(2);
+
+    private AliasInstr createAlias(Iterator<Object> paramsIterator) {
+        
+        Variable receiver = (Variable) paramsIterator.next();
+        Operand newName = (Operand) paramsIterator.next();
+        Operand oldName = (Operand) paramsIterator.next();
 
         // FIXME?: Maybe AliasInstr should implement ResultInstr?
         return new AliasInstr(receiver, newName, oldName);
     }
     
-    private AttrAssignInstr createAttrAssign(List<Object> params) {
-        Operand receiver = (Operand) params.get(0);
-        MethAddr methAddr = (MethAddr) params.get(1);
+    private AttrAssignInstr createAttrAssign(Iterator<Object> paramsIterator) {        
+        Operand receiver = (Operand) paramsIterator.next();
+        MethAddr methAddr = (MethAddr) paramsIterator.next();
 
         @SuppressWarnings("unchecked")
-        List<Operand> argsList = (ArrayList<Operand>) params.get(2);
-        Operand[] args = null;
-        if (argsList != null) {
-            args = new Operand[argsList.size()];
-            argsList.toArray(args);
-        } else {
-            args = Operand.EMPTY_ARRAY;
-        }
+        List<Operand> argsList = (ArrayList<Operand>) paramsIterator.next();
+        Operand[] args = retreiveArgs(argsList);
 
+        if(paramsIterator.hasNext()) {
+            String specializedInstName = (String) paramsIterator.next();
+            SpecializedInstType specializedInstType = SpecializedInstType.valueOf(specializedInstName);
+            
+            AttrAssignInstr attrAssignInstr = new AttrAssignInstr(receiver, methAddr, args);
+            
+            switch (specializedInstType) {
+            case ONE_OPERAND:
+                return new OneArgOperandAttrAssignInstr(attrAssignInstr);
+            default:
+                throw new UnsupportedOperationException(specializedInstName);    
+            }
+        }
+        
         return new AttrAssignInstr(receiver, methAddr, args);
     }
 
-    private BranchInstr createBEQ(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
-        Operand arg2 = (Operand) params.get(1);
-        Label target = (Label) params.get(2);
+    private BranchInstr createBEQ(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
+        Operand arg2 = (Operand) paramsIterator.next();
+        Label target = (Label) paramsIterator.next();
 
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBFalse(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
+    private BranchInstr createBFalse(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
         Operand arg2 = context.getIRManager().getFalse();
-        Label target = (Label) params.get(1);
+        Label target = (Label) paramsIterator.next();
 
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBTrue(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
+    private BranchInstr createBTrue(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
         Operand arg2 = context.getIRManager().getTrue();
-        Label target = (Label) params.get(1);
+        Label target = (Label) paramsIterator.next();
 
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBNil(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
+    private BranchInstr createBNil(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
         Operand arg2 = context.getIRManager().getNil();
-        Label target = (Label) params.get(1);
+        Label target = (Label) paramsIterator.next();
 
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBUndef(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
+    private BranchInstr createBUndef(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
         Operand arg2 = UndefinedValue.UNDEFINED;
-        Label target = (Label) params.get(1);
+        Label target = (Label) paramsIterator.next();
 
         return BEQInstr.create(arg1, arg2, target);
     }
 
-    private BranchInstr createBNE(List<Object> params) {
-        Operand arg1 = (Operand) params.get(0);
-        Operand arg2 = (Operand) params.get(1);
-        Label target = (Label) params.get(2);
+    private BranchInstr createBNE(Iterator<Object> paramsIterator) {
+        Operand arg1 = (Operand) paramsIterator.next();
+        Operand arg2 = (Operand) paramsIterator.next();
+        Label target = (Label) paramsIterator.next();
 
         return BNEInstr.create(arg1, arg2, target);
     }
     
-    private BreakInstr createBreak(List<Object> params) {
-        Operand rv = (Operand) params.get(0);
+    private BreakInstr createBreak(Iterator<Object> paramsIterator) {
+        Operand rv = (Operand) paramsIterator.next();
 
-        String scopeName = (String) params.get(1);
+        String scopeName = (String) paramsIterator.next();
         IRScope s = context.getScopeByName(scopeName);
 
         return new BreakInstr(rv, s);
     }
     
-    private CheckArgsArrayArityInstr createCheckArgsArrayArity(List<Object> params) {
-        Operand argsArray = (Operand) params.get(0);
-        int required = (Integer) params.get(1);
-        int opt = (Integer) params.get(2);
-        int rest = (Integer) params.get(3);
+    private CheckArgsArrayArityInstr createCheckArgsArrayArity(Iterator<Object> paramsIterator) {
+        Operand argsArray = (Operand) paramsIterator.next();
+        int required = (Integer) paramsIterator.next();
+        int opt = (Integer) paramsIterator.next();
+        int rest = (Integer) paramsIterator.next();
 
         return new CheckArgsArrayArityInstr(argsArray, required, opt, rest);
     }
 
-    private CheckArityInstr createCheckArity(List<Object> params) {
-        int required = (Integer) params.get(0);
-        int opt = (Integer) params.get(1);
-        int rest = (Integer) params.get(2);
+    private CheckArityInstr createCheckArity(Iterator<Object> paramsIterator) {
+        int required = (Integer) paramsIterator.next();
+        int opt = (Integer) paramsIterator.next();
+        int rest = (Integer) paramsIterator.next();
 
         return new CheckArityInstr(required, opt, rest);
     }
 
-    private Instr createDefineMethod(List<Object> params, boolean isInstanceMethod) {
-        Operand container = (Operand) params.get(0);
+    private Instr createDefineMethod(Iterator<Object> paramsIterator, boolean isInstanceMethod) {
+        Operand container = (Operand) paramsIterator.next();
         
-        String name = (String) params.get(1);
+        String name = (String) paramsIterator.next();
         IRMethod method = (IRMethod) context.getScopeByName(name);
 
         if (isInstanceMethod) {
@@ -403,40 +425,73 @@ public class IRInstructionFactory {
         }
     }
     
-    private ExceptionRegionStartMarkerInstr createExceptionRegionStartMarker(List<Object> params) {
-        Label begin = (Label) params.get(0);
-        Label end = (Label) params.get(1);
-        Label firstRescueBlockLabel = (Label) params.get(2);
+    private ExceptionRegionStartMarkerInstr createExceptionRegionStartMarker(Iterator<Object> paramsIterator) {
+        Label begin = (Label) paramsIterator.next();
+        Label end = (Label) paramsIterator.next();
+        Label firstRescueBlockLabel = (Label) paramsIterator.next();
         
         Label ensureBlockLabel = null;
-        if(params.size() == 4) {
-            ensureBlockLabel = (Label) params.get(3);
+        if(paramsIterator.hasNext()) {
+            ensureBlockLabel = (Label) paramsIterator.next();
         }
         
         return new ExceptionRegionStartMarkerInstr(begin, end, ensureBlockLabel, firstRescueBlockLabel);
     }
 
-    private GVarAliasInstr createGvarAlias(List<Object> params) {
-        Operand newName = (Operand) params.get(0);
-        Operand oldName = (Operand) params.get(1);
+    private GVarAliasInstr createGvarAlias(Iterator<Object> paramsIterator) {
+        Operand newName = (Operand) paramsIterator.next();
+        Operand oldName = (Operand) paramsIterator.next();
 
         return new GVarAliasInstr(newName, oldName);
     }
 
-    private StoreLocalVarInstr createStoreLocalVar(List<Object> params) {
-        Operand value = (Operand) params.get(0);
+    private StoreLocalVarInstr createStoreLocalVar(Iterator<Object> paramsIterator) {
+        Operand value = (Operand) paramsIterator.next();
 
-        String scopeName = (String) params.get(1);
+        String scopeName = (String) paramsIterator.next();
         IRScope scope = context.getScopeByName(scopeName);
 
-        LocalVariable lvar = (LocalVariable) params.get(2);
+        LocalVariable lvar = (LocalVariable) paramsIterator.next();
 
         return new StoreLocalVarInstr(value, scope, lvar);
     }
     
-    private ReturnInstr createReturn(List<Object> params) {
-        Operand rv = (Operand) params.get(0);
-        String methodName = (String) params.get(1);
+    private NoResultCallInstr createNoResultCall(Operation operation, Iterator<Object> paramsIterator) {
+        Operand receiver = (Operand) paramsIterator.next();
+        String callTypeString = (String) paramsIterator.next();
+        CallType callType = NonIRObjectFactory.INSTANCE.createCallType(callTypeString);
+        MethAddr methAddr = (MethAddr) paramsIterator.next();
+        
+        @SuppressWarnings("unchecked")
+        List<Operand> argsList = (ArrayList<Operand>) paramsIterator.next();
+        Operand[] args = retreiveArgs(argsList);
+        
+        Operand closure = null;
+        if(paramsIterator.hasNext()) {
+            Object parameter = paramsIterator.next();
+            if (parameter instanceof Operand) {
+                closure = (Operand) parameter;
+            } else if (parameter instanceof String){
+                String specializedInstName = (String) parameter;
+                SpecializedInstType specializedInstType = SpecializedInstType.valueOf(specializedInstName);
+                
+                NoResultCallInstr noResultCallInstr = new NoResultCallInstr(operation, callType, methAddr, receiver, args, closure);
+                
+                switch (specializedInstType) {
+                case ONE_OPERAND:
+                    return new OneOperandArgNoBlockNoResultCallInstr(noResultCallInstr);
+                default:
+                    throw new UnsupportedOperationException(specializedInstName);    
+                }
+            }
+        }
+        
+        return new NoResultCallInstr(operation, callType, methAddr, receiver, args, closure);
+    }
+    
+    private ReturnInstr createReturn(Iterator<Object> paramsIterator) {
+        Operand rv = (Operand) paramsIterator.next();
+        String methodName = (String) paramsIterator.next();
         IRMethod methodToReturn = (IRMethod) context.getScopeByName(methodName);
 
         return new ReturnInstr(rv, methodToReturn);
@@ -495,6 +550,8 @@ public class IRInstructionFactory {
             return createCopy(result, param);
         case ENSURE_RUBY_ARRAY:
             return createEnsureRubyArray(result, param);
+        case CLASS_VAR_MODULE:
+            return createGetClassVarContainerModule(result, param);
         case GET_ENCODING:
             return createGetEncoding(result, param);
         case GET_GLOBAL_VAR:
@@ -545,6 +602,12 @@ public class IRInstructionFactory {
         Operand s = (Operand) param;
 
         return new EnsureRubyArrayInstr(result, s);
+    }
+    
+    private GetClassVarContainerModuleInstr createGetClassVarContainerModule(Variable result, Object param) {
+        Operand startingScope = (Operand) param;
+        
+        return new GetClassVarContainerModuleInstr(result, startingScope, null);
     }
 
     private GetEncodingInstr createGetEncoding(Variable result, Object param) {
@@ -656,160 +719,176 @@ public class IRInstructionFactory {
 
     public Instr createReturnInstrWithMultipleParams(Variable result, MultipleParamInstr instr) {
         Operation operation = instr.getOperation();
-        List<Object> params = instr.getParameters();
+        Iterator<Object> paramsIterator = instr.getParameters().iterator();
         switch (operation) {
         case CALL:
-            return createCall(result, params);
+            return createCall(result, paramsIterator);
         case CONST_MISSING:
-            return createConstMissing(result, params);
+            return createConstMissing(result, paramsIterator);
         case DEF_CLASS:
-            return createDefineClass(result, params);
+            return createDefineClass(result, paramsIterator);
         case DEF_META_CLASS:
-            return createDefineMetaClass(result, params);
+            return createDefineMetaClass(result, paramsIterator);
         case DEF_MODULE:
-            return createDefineModule(result, params);
+            return createDefineModule(result, paramsIterator);
         case EQQ:
-            return createEQQ(result, params);
+            return createEQQ(result, paramsIterator);
         case CLASS_VAR_MODULE:
-            return createGetClassVarContainerModule(result, params);
+            return createGetClassVarContainerModule(result, paramsIterator);
         case GET_CVAR:
         case GET_FIELD:
-            return createGetInstr(operation, result, params);
+            return createGetInstr(operation, result, paramsIterator);
         case CLASS_VAR_IS_DEFINED:
         case DEFINED_CONSTANT_OR_METHOD:
         case HAS_INSTANCE_VAR:
         case IS_METHOD_BOUND:
         case METHOD_DEFINED:
         case METHOD_IS_PUBLIC:
-            return createDefinedObjectName(operation, result, params);
+            return createDefinedObjectName(operation, result, paramsIterator);
         case INHERITANCE_SEARCH_CONST:
-            return createInheritanceSearchConstInstr(result, params);
+            return createInheritanceSearchConstInstr(result, paramsIterator);
         case INSTANCE_OF:
-            return createInstanceOf(result, params);
+            return createInstanceOf(result, paramsIterator);
         case LAMBDA:
-            return createBuildLambda(result, params);
+            return createBuildLambda(result, paramsIterator);
         case LEXICAL_SEARCH_CONST:
-            return createLexicalSearchConst(result, params);
+            return createLexicalSearchConst(result, paramsIterator);
         case BINDING_LOAD:
-            return createLoadLocalVar(result, params);
+            return createLoadLocalVar(result, paramsIterator);
         case MATCH2:
-            return createMath2(result, params);
+            return createMath2(result, paramsIterator);
         case MATCH3:
-            return createMatch3(result, params);
+            return createMatch3(result, paramsIterator);
         case MODULE_GUARD:
-            return createModuleVersionGuard(result, params);
+            return createModuleVersionGuard(result, paramsIterator);
         case MASGN_OPT:
-            return createOptArgMultipleAsgn(result, params);
+            return createOptArgMultipleAsgn(result, paramsIterator);
         case RAISE_ARGUMENT_ERROR:
-            return createRaiseArgumentError(result, params);
+            return createRaiseArgumentError(result, paramsIterator);
         case RECV_OPT_ARG:
-            return createReceiveOptArg19(result, params);
+            return createReceiveOptArg19(result, paramsIterator);
         case RECV_POST_REQD_ARG:
-            return createReceivePostReqdArg(result, params);
+            return createReceivePostReqdArg(result, paramsIterator);
         case RECV_REST_ARG:
-            return createReceiveRestArg19(result, params);
+            return createReceiveRestArg19(result, paramsIterator);
         case MASGN_REQD:
-            return createReqdArgMultipleAsgn(result, params);
+            return createReqdArgMultipleAsgn(result, paramsIterator);
         case RESCUE_EQQ:
-            return createRescueEQQ(result, params);
+            return createRescueEQQ(result, paramsIterator);
         case MASGN_REST:
-            return createRestArgMultileAsgn(result, params);
+            return createRestArgMultileAsgn(result, paramsIterator);
         case SUPER:
-            return createSuperInstr(result, params);
+            return createSuperInstr(result, paramsIterator);
         case SEARCH_CONST:
-            return createSearchConst(result, params);
+            return createSearchConst(result, paramsIterator);
         case TO_ARY:
-            return createToAry(result, params);
+            return createToAry(result, paramsIterator);
         case YIELD:
-            return createYield(result, params);
+            return createYield(result, paramsIterator);
         case ZSUPER:
-            return createZSuper(result, params);
+            return createZSuper(result, paramsIterator);
 
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
     }
 
-    private CallInstr createCall(Variable result, List<Object> params) {
+    private CallInstr createCall(Variable result, Iterator<Object> paramsIterator) {
         
-        Operand receiver = (Operand) params.get(0);
-        String callTypString = (String) params.get(1);
+        Operand receiver = (Operand) paramsIterator.next();
+        String callTypString = (String) paramsIterator.next();
         CallType callType = CallType.valueOf(callTypString);
 
-        MethAddr methAddr = (MethAddr) params.get(2);
+        MethAddr methAddr = (MethAddr) paramsIterator.next();
         
         @SuppressWarnings("unchecked")
-        ArrayList<Operand> argsList = (ArrayList<Operand>) params.get(3);
-        Operand[] args = null;
-        if (argsList != null) {
-            args = new Operand[argsList.size()];
-            argsList.toArray(args);
-        } else {
-            args = Operand.EMPTY_ARRAY;
-        }
+        ArrayList<Operand> argsList = (ArrayList<Operand>) paramsIterator.next();
+        Operand[] args = retreiveArgs(argsList);
         Operand closure = null;
-        if (params.size() == 5) {
-            closure = (Operand) params.get(4);
-        }
+        if (paramsIterator.hasNext()) {
+            Object parameter = paramsIterator.next();
+            if (parameter instanceof Operand) {
+                closure = (Operand) parameter;
+            } else if (parameter instanceof String) {
+                CallInstr call = new CallInstr(callType, result, methAddr, receiver, args, closure);
+                
+                String specializedInstName = (String) parameter;
+                SpecializedInstType specializedInstType = SpecializedInstType.valueOf(specializedInstName);
+                
+                switch (specializedInstType) {
+                case ONE_OPERAND:
+                    return new OneOperandArgNoBlockCallInstr(call);
+                    
+                case ONE_FIXNUM:
+                    return new OneFixnumArgNoBlockCallInstr(call);
+                    
+                case ZERO_OPERAND:
+                    return new ZeroOperandArgNoBlockCallInstr(call);
+                    
+                default:
+                    throw new UnsupportedOperationException(specializedInstName);
+                }
+            }
+        }       
 
         return new CallInstr(callType, result, methAddr, receiver, args, closure);
     }
 
     private GetClassVarContainerModuleInstr createGetClassVarContainerModule(Variable result,
-            List<Object> params) {
-        Operand startingScope = (Operand) params.get(0);
-        Operand object = (Operand) params.get(1);
+            Iterator<Object> paramsIterator) {
+        Operand startingScope = (Operand) paramsIterator.next();
+        Operand object = (Operand) paramsIterator.next();
 
         return new GetClassVarContainerModuleInstr(result, startingScope, object);
     }
 
-    private ConstMissingInstr createConstMissing(Variable result, List<Object> params) {
-        Operand currentModule = (Operand) params.get(0);
-        String missingConst = (String) params.get(1);
+    private ConstMissingInstr createConstMissing(Variable result, Iterator<Object> paramsIterator) {
+        Operand currentModule = (Operand) paramsIterator.next();
+        String missingConst = (String) paramsIterator.next();
 
         return new ConstMissingInstr(result, currentModule, missingConst);
     }
 
-    private DefineClassInstr createDefineClass(Variable result, List<Object> params) {
+    private DefineClassInstr createDefineClass(Variable result, Iterator<Object> paramsIterator) {
 
-        String className = (String) params.get(0);
+        String className = (String) paramsIterator.next();
         IRClassBody irClassBody = (IRClassBody) context.getScopeByName(className);
 
-        Operand container = (Operand) params.get(1);
-        Operand superClass = (Operand) params.get(2);
+        Operand container = (Operand) paramsIterator.next();
+        Operand superClass = (Operand) paramsIterator.next();
 
         return new DefineClassInstr(result, irClassBody, container, superClass);
     }
 
-    private DefineMetaClassInstr createDefineMetaClass(Variable result, List<Object> params) {
-        String metaClassBodyName = (String) params.get(0);
+    private DefineMetaClassInstr createDefineMetaClass(Variable result, Iterator<Object> paramsIterator) {
+        String metaClassBodyName = (String) paramsIterator.next();
         IRModuleBody metaClassBody = (IRModuleBody) context
                 .getScopeByName(metaClassBodyName);
 
-        Operand object = (Operand) params.get(1);
+        Operand object = (Operand) paramsIterator.next();
 
         return new DefineMetaClassInstr(result, object, metaClassBody);
     }
 
-    private DefineModuleInstr createDefineModule(Variable result, List<Object> params) {
-        String moduleBodyName = (String) params.get(0);
+    private DefineModuleInstr createDefineModule(Variable result, Iterator<Object> paramsIterator) {
+        String moduleBodyName = (String) paramsIterator.next();
         IRModuleBody moduleBody = (IRModuleBody) context.getScopeByName(moduleBodyName);
 
-        Operand container = (Operand) params.get(1);
+        Operand container = (Operand) paramsIterator.next();
 
         return new DefineModuleInstr(result, moduleBody, container);
     }
 
-    private EQQInstr createEQQ(Variable result, List<Object> params) {
-        Operand v1 = (Operand) params.get(0);
-        Operand v2 = (Operand) params.get(1);
+    private EQQInstr createEQQ(Variable result, Iterator<Object> paramsIterator) {
+        Operand v1 = (Operand) paramsIterator.next();
+        Operand v2 = (Operand) paramsIterator.next();
 
         return new EQQInstr(result, v1, v2);
     }
 
-    private GetInstr createGetInstr(Operation operation, Variable dest, List<Object> params) {
-        Operand source = (Operand) params.get(0);
-        String ref = (String) params.get(1);        
+    private GetInstr createGetInstr(Operation operation, Variable dest, Iterator<Object> paramsIterator) {
+        Operand source = (Operand) paramsIterator.next();
+        String ref = (String) paramsIterator.next();        
 
         switch (operation) {
         case GET_CVAR:
@@ -823,9 +902,9 @@ public class IRInstructionFactory {
     }
 
     private DefinedObjectNameInstr createDefinedObjectName(Operation operation, Variable result,
-            List<Object> params) {
-        Operand object = (Operand) params.get(0);
-        StringLiteral name = (StringLiteral) params.get(1);
+            Iterator<Object> paramsIterator) {
+        Operand object = (Operand) paramsIterator.next();
+        StringLiteral name = (StringLiteral) paramsIterator.next();
 
         switch (operation) {
         case CLASS_VAR_IS_DEFINED:
@@ -846,155 +925,155 @@ public class IRInstructionFactory {
     }
 
     private InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result,
-            List<Object> params) {
-        Operand currentModule = (Operand) params.get(0);
-        String constName = (String) params.get(1);
-        Boolean noPrivateConsts = (Boolean) params.get(2);
+            Iterator<Object> paramsIterator) {
+        Operand currentModule = (Operand) paramsIterator.next();
+        String constName = (String) paramsIterator.next();
+        Boolean noPrivateConsts = (Boolean) paramsIterator.next();
 
         return new InheritanceSearchConstInstr(result, currentModule, constName,
                 noPrivateConsts);
     }
 
-    private InstanceOfInstr createInstanceOf(Variable result, List<Object> params) {
-        Operand object = (Operand) params.get(0);
-        String className = (String) params.get(1);
+    private InstanceOfInstr createInstanceOf(Variable result, Iterator<Object> paramsIterator) {
+        Operand object = (Operand) paramsIterator.next();
+        String className = (String) paramsIterator.next();
 
         return new InstanceOfInstr(result, object, className);
     }
     
-    private BuildLambdaInstr createBuildLambda(Variable result, List<Object> params) {
-        String scopeName = (String) params.get(0);
+    private BuildLambdaInstr createBuildLambda(Variable result, Iterator<Object> paramsIterator) {
+        String scopeName = (String) paramsIterator.next();
         IRClosure lambdaBody = (IRClosure) context.getScopeByName(scopeName);
 
-        String fileName = (String) params.get(1);
-        int line = (Integer) params.get(2);
+        String fileName = (String) paramsIterator.next();
+        int line = (Integer) paramsIterator.next();
         ISourcePosition possition = NonIRObjectFactory.INSTANCE.createSourcePosition(fileName, line);
 
         return new BuildLambdaInstr(result, lambdaBody, possition);
     }
 
-    private LexicalSearchConstInstr createLexicalSearchConst(Variable result, List<Object> params) {
-        Operand definingScope = (Operand) params.get(0);
+    private LexicalSearchConstInstr createLexicalSearchConst(Variable result, Iterator<Object> paramsIterator) {
+        Operand definingScope = (Operand) paramsIterator.next();
 
-        String constName = (String) params.get(1);
+        String constName = (String) paramsIterator.next();
 
         return new LexicalSearchConstInstr(result, definingScope, constName);
     }
 
-    private LoadLocalVarInstr createLoadLocalVar(Variable result, List<Object> params) {
+    private LoadLocalVarInstr createLoadLocalVar(Variable result, Iterator<Object> paramsIterator) {
         TemporaryVariable tempResult = (TemporaryVariable) result;
 
-        String scopeName = (String) params.get(0);
+        String scopeName = (String) paramsIterator.next();
         IRScope scope = context.getScopeByName(scopeName);
 
-        LocalVariable lvar = (LocalVariable) params.get(1);
+        LocalVariable lvar = (LocalVariable) paramsIterator.next();
 
         return new LoadLocalVarInstr(scope, tempResult, lvar);
     }
 
-    private Match2Instr createMath2(Variable result, List<Object> params) {
-        Operand receiver = (Operand) params.get(0);
-        Operand arg = (Operand) params.get(1);
+    private Match2Instr createMath2(Variable result, Iterator<Object> paramsIterator) {
+        Operand receiver = (Operand) paramsIterator.next();
+        Operand arg = (Operand) paramsIterator.next();
 
         return new Match2Instr(result, receiver, arg);
     }
 
-    private Match3Instr createMatch3(Variable result, List<Object> params) {
-        Operand receiver = (Operand) params.get(0);
-        Operand arg = (Operand) params.get(1);
+    private Match3Instr createMatch3(Variable result, Iterator<Object> paramsIterator) {
+        Operand receiver = (Operand) paramsIterator.next();
+        Operand arg = (Operand) paramsIterator.next();
 
         return new Match3Instr(result, receiver, arg);
     }
 
     // FIXME?: I havent found creation of this instruction
-    private ModuleVersionGuardInstr createModuleVersionGuard(Variable result, List<Object> params) {
-        Operand candidateObj = (Operand) params.get(0);
-        int expectedVersion = (Integer) params.get(1);
-        String moduleName = (String) params.get(2);
+    private ModuleVersionGuardInstr createModuleVersionGuard(Variable result, Iterator<Object> paramsIterator) {
+        Operand candidateObj = (Operand) paramsIterator.next();
+        int expectedVersion = (Integer) paramsIterator.next();
+        String moduleName = (String) paramsIterator.next();
         // FIXME?: persist module
         RubyModule module = null;
 
-        Label failurePathLabel = (Label) params.get(3);
+        Label failurePathLabel = (Label) paramsIterator.next();
 
         return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj, failurePathLabel);
     }
 
-    private OptArgMultipleAsgnInstr createOptArgMultipleAsgn(Variable result, List<Object> params) {
-        Operand array = (Operand) params.get(0);
-        Integer index = (Integer) params.get(1);
-        Integer minArgsLength = (Integer) params.get(2);
+    private OptArgMultipleAsgnInstr createOptArgMultipleAsgn(Variable result, Iterator<Object> paramsIterator) {
+        Operand array = (Operand) paramsIterator.next();
+        Integer index = (Integer) paramsIterator.next();
+        Integer minArgsLength = (Integer) paramsIterator.next();
 
         return new OptArgMultipleAsgnInstr(result, array, index, minArgsLength);
     }
 
-    private RaiseArgumentErrorInstr createRaiseArgumentError(Variable result, List<Object> params) {
-        int required = (Integer) params.get(0);
-        int opt = (Integer) params.get(1);
-        int rest = (Integer) params.get(2);
-        int numArgs = (Integer) params.get(3);
+    private RaiseArgumentErrorInstr createRaiseArgumentError(Variable result, Iterator<Object> paramsIterator) {
+        int required = (Integer) paramsIterator.next();
+        int opt = (Integer) paramsIterator.next();
+        int rest = (Integer) paramsIterator.next();
+        int numArgs = (Integer) paramsIterator.next();
 
         return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
     }
 
-    private ReceiveOptArgInstr19 createReceiveOptArg19(Variable result, List<Object> params) {
-        int index = (Integer) params.get(0);
-        int minArgsLength = (Integer) params.get(1);
+    private ReceiveOptArgInstr19 createReceiveOptArg19(Variable result, Iterator<Object> paramsIterator) {
+        int index = (Integer) paramsIterator.next();
+        int minArgsLength = (Integer) paramsIterator.next();
 
         return new ReceiveOptArgInstr19(result, index, minArgsLength);
     }
 
-    private ReceivePostReqdArgInstr createReceivePostReqdArg(Variable result, List<Object> params) {
-        int index = (Integer) params.get(0);
-        int preReqdArgsCount = (Integer) params.get(1);
-        int postReqdArgsCount = (Integer) params.get(2);
+    private ReceivePostReqdArgInstr createReceivePostReqdArg(Variable result, Iterator<Object> paramsIterator) {
+        int index = (Integer) paramsIterator.next();
+        int preReqdArgsCount = (Integer) paramsIterator.next();
+        int postReqdArgsCount = (Integer) paramsIterator.next();
 
         return new ReceivePostReqdArgInstr(result, index, preReqdArgsCount, postReqdArgsCount);
     }
 
-    private ReceiveRestArgInstr19 createReceiveRestArg19(Variable result, List<Object> params) {
-        int argIndex = (Integer) params.get(0);
-        int totalRequiredArgs = (Integer) params.get(1);
-        int totalOptArgs = (Integer) params.get(2);
+    private ReceiveRestArgInstr19 createReceiveRestArg19(Variable result, Iterator<Object> paramsIterator) {
+        int argIndex = (Integer) paramsIterator.next();
+        int totalRequiredArgs = (Integer) paramsIterator.next();
+        int totalOptArgs = (Integer) paramsIterator.next();
 
         return new ReceiveRestArgInstr19(result, argIndex, totalRequiredArgs, totalOptArgs);
     }
 
-    private ReqdArgMultipleAsgnInstr createReqdArgMultipleAsgn(Variable result, List<Object> params) {
-        Operand array = (Operand) params.get(0);
-        int index = (Integer) params.get(1);
-        int preArgsCount = (Integer) params.get(2);
-        int postArgsCount = (Integer) params.get(2);
+    private ReqdArgMultipleAsgnInstr createReqdArgMultipleAsgn(Variable result, Iterator<Object> paramsIterator) {
+        Operand array = (Operand) paramsIterator.next();
+        int index = (Integer) paramsIterator.next();
+        int preArgsCount = (Integer) paramsIterator.next();
+        int postArgsCount = (Integer) paramsIterator.next();
 
         return new ReqdArgMultipleAsgnInstr(result, array, preArgsCount, postArgsCount, index);
     }
 
-    private RescueEQQInstr createRescueEQQ(Variable result, List<Object> params) {
-        Operand v1 = (Operand) params.get(0);
-        Operand v2 = (Operand) params.get(1);
+    private RescueEQQInstr createRescueEQQ(Variable result, Iterator<Object> paramsIterator) {
+        Operand v1 = (Operand) paramsIterator.next();
+        Operand v2 = (Operand) paramsIterator.next();
 
         return new RescueEQQInstr(result, v1, v2);
     }
 
-    private RestArgMultipleAsgnInstr createRestArgMultileAsgn(Variable result, List<Object> params) {
-        Operand array = (Operand) params.get(0);
-        int index = (Integer) params.get(1);
-        int preArgsCount = (Integer) params.get(2);
-        int postArgsCount = (Integer) params.get(2);
+    private RestArgMultipleAsgnInstr createRestArgMultileAsgn(Variable result, Iterator<Object> paramsIterator) {
+        Operand array = (Operand) paramsIterator.next();
+        int index = (Integer) paramsIterator.next();
+        int preArgsCount = (Integer) paramsIterator.next();
+        int postArgsCount = (Integer) paramsIterator.next();
 
         return new RestArgMultipleAsgnInstr(result, array, preArgsCount, postArgsCount, index);
     }
 
-    private CallInstr createSuperInstr(Variable result, List<Object> params) {
-        String superInstrTypeString = (String) params.get(0);
+    private CallInstr createSuperInstr(Variable result, Iterator<Object> paramsIterator) {
+        String superInstrTypeString = (String) paramsIterator.next();
         SuperInstrType instrType = SuperInstrType.valueOf(superInstrTypeString);
         
         switch (instrType) {
         case CLASS:
         case INSTANCE:            
-            return createResolvedSuperInstr(instrType, result, params);
+            return createResolvedSuperInstr(instrType, result, paramsIterator);
             
         case UNRESOLVED:
-            return createUnresolvedSuperInstr(result, params);
+            return createUnresolvedSuperInstr(result, paramsIterator);
             
         default:            
             throw new UnsupportedOperationException(instrType.toString());
@@ -1003,11 +1082,15 @@ public class IRInstructionFactory {
         
     }
 
-    private CallInstr createResolvedSuperInstr(SuperInstrType type, Variable result, List<Object> params) {
-        MethAddr superMeth = (MethAddr) params.get(1);
-        Operand definingModule = (Operand) params.get(2);
-        Operand[] args = (Operand[]) params.get(3);
-        Operand closure = (Operand) params.get(4);
+    private CallInstr createResolvedSuperInstr(SuperInstrType type, Variable result, Iterator<Object> paramsIterator) {
+        Operand definingModule = (Operand) paramsIterator.next();
+        MethAddr superMeth = (MethAddr) paramsIterator.next();
+        Operand[] args = (Operand[]) paramsIterator.next();
+        // closure cannot be null in call instr with CallType.Super?
+        Operand closure = null;
+        if(paramsIterator.hasNext()) {
+            closure = (Operand) paramsIterator.next();
+        }
 
         switch (type) {
         case CLASS:
@@ -1021,41 +1104,53 @@ public class IRInstructionFactory {
         }
     }
     
-    private UnresolvedSuperInstr createUnresolvedSuperInstr(Variable result, List<Object> params) {
-        Operand receiver = (Operand) params.get(1);
-        Operand[] args = (Operand[]) params.get(2);
-        Operand closure = (Operand) params.get(3);
+    private UnresolvedSuperInstr createUnresolvedSuperInstr(Variable result, Iterator<Object> paramsIterator) {
+        Operand receiver = (Operand) paramsIterator.next();
+        
+        @SuppressWarnings("unchecked")
+        List<Operand> argsList = (ArrayList<Operand>) paramsIterator.next();
+        Operand[] args = retreiveArgs(argsList);
+        
+        Operand closure = null;
+        if(paramsIterator.hasNext()) {
+            closure = (Operand) paramsIterator.next();   
+        }
         
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
-    private SearchConstInstr createSearchConst(Variable result, List<Object> params) {
-        String constName = (String) params.get(0);
-        Operand startingScope = (Operand) params.get(1);
-        Boolean noPrivateConsts = (Boolean) params.get(2);
+    private SearchConstInstr createSearchConst(Variable result, Iterator<Object> paramsIterator) {
+        String constName = (String) paramsIterator.next();
+        Operand startingScope = (Operand) paramsIterator.next();
+        Boolean noPrivateConsts = (Boolean) paramsIterator.next();
 
         return new SearchConstInstr(result, constName, startingScope,
                 noPrivateConsts);
     }
 
-    private ToAryInstr createToAry(Variable result, List<Object> params) {
-        Operand array = (Operand) params.get(0);
-        BooleanLiteral dontToAryArrays = (BooleanLiteral) params.get(1);
+    private ToAryInstr createToAry(Variable result, Iterator<Object> paramsIterator) {
+        Operand array = (Operand) paramsIterator.next();
+        BooleanLiteral dontToAryArrays = (BooleanLiteral) paramsIterator.next();
 
         return new ToAryInstr(result, array, dontToAryArrays);
     }
 
-    private YieldInstr createYield(Variable result, List<Object> params) {
-        Operand block = (Operand) params.get(0);
-        Operand arg = (Operand) params.get(1);
-        Boolean unwrapArray = (Boolean) params.get(2);
+    private YieldInstr createYield(Variable result, Iterator<Object> paramsIterator) {
+        Operand block = (Operand) paramsIterator.next();
+        Operand arg = (Operand) paramsIterator.next();
+        Boolean unwrapArray = (Boolean) paramsIterator.next();
 
         return new YieldInstr(result, block, arg, unwrapArray);
     }
 
-    private ZSuperInstr createZSuper(Variable result, List<Object> params) {
-        Operand receiver = (Operand) params.get(0);
-        Operand closure = (Operand) params.get(1);
+    private ZSuperInstr createZSuper(Variable result, Iterator<Object> paramsIterator) {
+        Operand receiver = (Operand) paramsIterator.next();
+        
+        // Closure cannot be null here?
+        Operand closure = null;
+        if(paramsIterator.hasNext()) {
+            closure = (Operand) paramsIterator.next();
+        }
 
         return new ZSuperInstr(result, receiver, closure);
     }
@@ -1080,10 +1175,10 @@ public class IRInstructionFactory {
 
     public PutInstr createPutInstr(MultipleParamInstr instr, Operand value) {
         Operation operation = instr.getOperation();
-        List<Object> parameters = instr.getParameters();
+        Iterator<Object> parametersIterator = instr.getParameters().iterator();
 
-        Operand target = (Operand) parameters.get(0);
-        String ref = (String) parameters.get(1);
+        Operand target = (Operand) parametersIterator.next();
+        String ref = (String) parametersIterator.next();
 
         switch (operation) {
         case PUT_CVAR:
@@ -1110,5 +1205,17 @@ public class IRInstructionFactory {
 
     private PutFieldInstr createPutField(Operand obj, String fieldName, Operand value) {
         return new PutFieldInstr(obj, fieldName, value);
+    }
+    
+    // Helper method
+    private Operand[] retreiveArgs(List<Operand> argsList) {
+        Operand[] args = null;
+        if (argsList != null) {
+            args = new Operand[argsList.size()];
+            argsList.toArray(args);
+        } else {
+            args = Operand.EMPTY_ARRAY;
+        }
+        return args;
     }
 }
