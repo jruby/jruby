@@ -1,13 +1,12 @@
 package org.jruby.ir;
 
-import java.util.Collection;
-
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ir.persistence.IRPersistenceException;
 import org.jruby.ir.persistence.IRPersistenceFacade;
+import org.jruby.ir.persistence.IRReadingContext;
 import org.perf4j.LoggingStopWatch;
 import org.perf4j.StopWatch;
 
@@ -33,16 +32,16 @@ public abstract class IRTranslator<R, S> {
                 interpretWatch.stop();
                 IRPersistenceFacade.persist(producedIRScope, runtime);
             } else if (isIRReadingRequired()) {
-                StopWatch readWatch = new LoggingStopWatch(".ir -> IR");    
-                Collection<IRScope> allScopes = IRPersistenceFacade.read(runtime);
-                readWatch.stop();
-                
-//                for(IRScope currentScope : allScopes) {
-//                    System.out.print(currentScope.persistableGeneralInfo());
-//                }                
-//                for(IRScope currentScope : allScopes) {
-//                    System.out.print(currentScope.persistableInstrsInfo() + "\n");
-//                }
+                if (node != null) {
+                    producedIRScope = produceIrScope(runtime, node, false);
+                    result = translationSpecificLogic(runtime, producedIRScope, specificObject);
+                } else {
+                    StopWatch readWatch = new LoggingStopWatch(".ir -> IR");
+                    IRScope toplevelScope = IRPersistenceFacade.read(runtime);
+                    readWatch.stop();
+
+                    result = translationSpecificLogic(runtime, toplevelScope, specificObject);
+                }
             } else {
                 producedIRScope = produceIrScope(runtime, node, false);
                 result = translationSpecificLogic(runtime, producedIRScope, specificObject);

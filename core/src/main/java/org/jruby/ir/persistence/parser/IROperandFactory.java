@@ -156,11 +156,9 @@ public enum IROperandFactory {
 
     /** $name($scopeDepthString:$locationString) */
     public LocalVariable createLocalVariable(String name, String scopeDepthString,
-            String locationString) {
+            IRScope currentScope) {
         int scopeDepth = Integer.parseInt(scopeDepthString);
-        int location = Integer.parseInt(locationString);
-        
-        return new LocalVariable(name, scopeDepth, location);
+        return currentScope.getLocalVariable(name, scopeDepth);
     }
 
     /** $name */
@@ -249,7 +247,7 @@ public enum IROperandFactory {
     }
     
     public TemporaryVariable createTemporaryVariable(IRScope currentScope, String name) {        
-        return currentScope.getNewTemporaryVariable("%" + name);
+        return currentScope.getNewTemporaryVariable(name);
     }
 
     public WrappedIRClosure createWrappedIRClosure(IRClosure scope) {

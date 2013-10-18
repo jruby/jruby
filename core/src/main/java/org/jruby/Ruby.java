@@ -73,6 +73,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.persistence.IRReadingContext;
+import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.*;
 import org.jruby.runtime.Helpers;
@@ -499,7 +501,12 @@ public final class Ruby {
             return;
         }
         
-        Node scriptNode = parseFromMain(inputStream, filename);
+        // FIXME: This is confusing.
+        Node scriptNode = null;
+        if(!RubyInstanceConfig.IR_READING || !IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, filename).isFile()) {
+            scriptNode = parseFromMain(inputStream, filename);
+        }            
+        IRReadingContext.INSTANCE.setFileName(filename);
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -2641,12 +2648,20 @@ public final class Ruby {
         try {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
             context.preNodeEval(objectClass, self, scriptName);
+            Node node = null;
 
-            Node node = parseFile(in, scriptName, null);
-            if (wrap) {
-                // toss an anonymous module into the search path
-                ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
+            // FIXME: This is confusing
+            if(!RubyInstanceConfig.IR_READING || !IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, scriptName).isFile()) {
+                StopWatch astWatch = new LoggingStopWatch("rb -> AST");
+                node = parseFile(in, scriptName, null);
+                astWatch.stop();
+                if (wrap) {
+                    // toss an anonymous module into the search path
+                    ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
+                }
             }
+            IRReadingContext.INSTANCE.setFileName(scriptName);
+
             runInterpreter(context, node, self);
         } catch (JumpException.ReturnJump rj) {
             return;

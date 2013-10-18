@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -52,9 +51,8 @@ public class IRPersistenceFacade {
             getIstructionsFromThisAndDescendantScopes(irScope, builder);
         }
     }
-
-    @SuppressWarnings("unchecked")
-    public static Collection<IRScope> read(Ruby runtime) throws IRPersistenceException {
+    
+    public static IRScope read(Ruby runtime) throws IRPersistenceException {
         RubyInstanceConfig config = runtime.getInstanceConfig();
         String irFileName = IRReadingContext.INSTANCE.getFileName();
         File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(config, irFileName);
@@ -67,7 +65,7 @@ public class IRPersistenceFacade {
                 PersistedIRParser parser = new PersistedIRParser();
                 IRParsingContext context = new IRParsingContext(runtime);
                 parser.init(context);
-                return (Collection<IRScope>) parser.parse(input);
+                return (IRScope) parser.parse(input);
             } finally {
                 if (is != null) {
                     is.close();

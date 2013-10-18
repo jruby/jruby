@@ -179,7 +179,7 @@ public enum NonIRObjectFactory {
         KCode kCode = KCode.valueOf(kcodeString);
 
         if (options != null) {
-            List<String> optionList = Arrays.asList(options);
+            List<String> optionList = new ArrayList<String>(Arrays.asList(options));
 
             boolean isKCodeDefault = false;
             if (optionList.contains("kcodeDefault")) {

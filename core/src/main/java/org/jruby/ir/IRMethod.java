@@ -37,7 +37,7 @@ public class IRMethod extends IRScope {
 
     @Override
     public IRScopeType getScopeType() {
-        return IRScopeType.METHOD;
+        return isInstanceMethod ? IRScopeType.INSTANCE_METHOD : IRScopeType.CLASS_METHOD;
     }
 
     @Override

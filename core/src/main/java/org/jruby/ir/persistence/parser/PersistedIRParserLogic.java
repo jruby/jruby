@@ -1,7 +1,6 @@
 package org.jruby.ir.persistence.parser;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.jcodings.Encoding;
@@ -14,7 +13,6 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.PutInstr;
-import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -52,6 +50,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.parser.dummy.DummyInstrFactory;
 import org.jruby.ir.persistence.parser.dummy.MultipleParamInstr;
 import org.jruby.ir.persistence.parser.dummy.SingleParamInstr;
@@ -80,9 +79,9 @@ public class PersistedIRParserLogic {
         instrFactory = new IRInstructionFactory(context);
     }
     
-    Symbol getScopes() {
-        Collection<IRScope> scopes = context.getScopes();
-        return new Symbol(scopes);
+    Symbol getToplevelScope() {
+        IRScope scope = context.getToplevelScope();
+        return new Symbol(scope);
     }
     
     Symbol createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope) {
@@ -142,13 +141,18 @@ public class PersistedIRParserLogic {
     }
     
     Symbol createLabelInstr(String string) {
-        LabelInstr label = instrFactory.createLabel(string);
-        return new Symbol(label);
+        Label label = context.getLabel(string);
+        if(label == null) {
+            label = OPERAND_FACTORY.createLabel(string);
+            context.addLabel(label);
+        }
+        LabelInstr labelInstr = instrFactory.createLabel(label);
+        return new Symbol(labelInstr);
     }
     
-    Symbol createThreadPoll() {
-        ThreadPollInstr treadPoll = instrFactory.createThreadPoll();
-        return new Symbol(treadPoll);
+    Symbol createInstrWithoutParams(String operationName) {
+        Instr instr = instrFactory.createInstrWithoutParams(operationName);
+        return new Symbol(instr);
     }
     
     Symbol createJump(Label target) {
@@ -187,6 +191,11 @@ public class PersistedIRParserLogic {
     }
     
     Symbol createPutInstr(SingleParamInstr dummy, Operand value) {
+        PutInstr putInstr = instrFactory.createPutInstr(dummy, value);
+        return new Symbol(putInstr);
+    }
+    
+    Symbol createPutInstr(MultipleParamInstr dummy, Operand value) {
         PutInstr putInstr = instrFactory.createPutInstr(dummy, value);
         return new Symbol(putInstr);
     }
@@ -311,7 +320,15 @@ public class PersistedIRParserLogic {
     }
     
     Symbol createLabel(String labelValue) {
-        Label label = OPERAND_FACTORY.createLabel(labelValue);
+        Label label = context.getLabel(labelValue);
+        if(label == null) {
+            if(labelValue.contains("LBL")) {
+            label = context.getCurrentScope().getNewLabel();
+            } else {
+                label = OPERAND_FACTORY.createLabel(labelValue);
+            }
+            context.addLabel(label);
+        }
         return new Symbol(label);
     }
     
@@ -407,7 +424,8 @@ public class PersistedIRParserLogic {
     }
     
     Symbol createLocalVariable(String name, String scopeDepthString, String locationString) {
-        LocalVariable localVariable = OPERAND_FACTORY.createLocalVariable(name, scopeDepthString, locationString);
+        IRScope currentScope = context.getCurrentScope();
+        LocalVariable localVariable = OPERAND_FACTORY.createLocalVariable(name, scopeDepthString, currentScope);
         return new Symbol(localVariable);
     }
     
@@ -418,9 +436,19 @@ public class PersistedIRParserLogic {
     }
     
     Symbol createTemporaryVariable(String name) {
+        name = "%" + name;
         IRScope currentScope = context.getCurrentScope();
-        TemporaryVariable temporaryVariable = OPERAND_FACTORY.createTemporaryVariable(currentScope, name);
+        TemporaryVariable temporaryVariable = (TemporaryVariable) context.getVariablesByName(name);
+        if(temporaryVariable == null) {
+            temporaryVariable = OPERAND_FACTORY.createTemporaryVariable(currentScope, name);
+            context.addVariable(temporaryVariable);
+        }
         return new Symbol(temporaryVariable);
     }
+    
+    Symbol createWrapperIRClosure(String name) {
+        IRClosure closure = (IRClosure) context.getScopeByName(name);
+        WrappedIRClosure wrappedIRClosure = new WrappedIRClosure(closure);
+        return new Symbol(wrappedIRClosure);
+    }
 }
-

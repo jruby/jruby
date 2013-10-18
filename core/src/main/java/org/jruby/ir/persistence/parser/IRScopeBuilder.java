@@ -28,10 +28,11 @@ public enum IRScopeBuilder {
         case METACLASS_BODY:
             scope = new IRMetaClassBody(manager, lexicalParent, name, lineNumber, staticScope);
             break;
-        case METHOD:
-            // FIXME: not instance methods are not supported so far 
-            boolean isInstanceMethod = true;
-            scope = new IRMethod(manager, lexicalParent, name, isInstanceMethod, lineNumber, staticScope);
+        case INSTANCE_METHOD:
+            scope = new IRMethod(manager, lexicalParent, name, true, lineNumber, staticScope);
+            break;
+        case CLASS_METHOD:
+            scope = new IRMethod(manager, lexicalParent, name, false, lineNumber, staticScope);
             break;
         case MODULE_BODY:
             scope = new IRModuleBody(manager, lexicalParent, name, lineNumber, staticScope);
@@ -43,7 +44,7 @@ public enum IRScopeBuilder {
         case CLOSURE:
         case EVAL_SCRIPT:
         default:
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(type.toString());
         }
         
         return scope;
