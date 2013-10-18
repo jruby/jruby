@@ -82,6 +82,6 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     
     @Override
     public String toString() {
-        return super.toString() + "(" + getLambdaBody().getName() + ")";
+        return super.toString() + "(" + getLambdaBody().getName() + ", " + position.getFile() + ", " + position.getLine() + ")";
     } 
 }

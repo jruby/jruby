@@ -930,7 +930,7 @@ public abstract class IRScope {
         return b.toString();
     }
 
-    public String persistableGeneralInfo() {
+    public String getPersistableGeneralInfo() {
         StringBuilder b = new StringBuilder();
 
         b.append("Scope(").append(getScopeType()).append("):<").append(name).append(">:").append(lineNumber).append("\n");
@@ -944,7 +944,7 @@ public abstract class IRScope {
         return b.toString();
     }
     
-    public String persistableInstrsInfo() {
+    public String getPersistableInstrsInfo() {
         StringBuilder b = new StringBuilder();
 
         b.append("Scope:<").append(name).append(">\n");
