@@ -38,7 +38,7 @@ public class IRPersistenceFacade {
 
     private static void getScopeInfoFromThisAndDescendantScopes(IRScope irScopeToPersist,
             StringBuilder builder) {
-        builder.append(irScopeToPersist.persistableGeneralInfo());
+        builder.append(irScopeToPersist.getPersistableGeneralInfo());
         for (IRScope irScope : irScopeToPersist.getLexicalScopes()) {
             getScopeInfoFromThisAndDescendantScopes(irScope, builder);
         }
@@ -46,7 +46,7 @@ public class IRPersistenceFacade {
 
     private static void getIstructionsFromThisAndDescendantScopes(IRScope irScopeToPersist,
             StringBuilder builder) {
-        builder.append(irScopeToPersist.persistableInstrsInfo()).append("\n");
+        builder.append(irScopeToPersist.getPersistableInstrsInfo()).append("\n");
         for (IRScope irScope : irScopeToPersist.getLexicalScopes()) {
             getIstructionsFromThisAndDescendantScopes(irScope, builder);
         }

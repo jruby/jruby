@@ -21,6 +21,7 @@ import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.ClassSuperInstr;
 import org.jruby.ir.instructions.ClosureReturnInstr;
 import org.jruby.ir.instructions.ConstMissingInstr;
 import org.jruby.ir.instructions.CopyInstr;
@@ -78,10 +79,12 @@ import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
+import org.jruby.ir.instructions.SuperInstrType;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.UndefMethodInstr;
+import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
@@ -118,6 +121,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.parser.dummy.MultipleParamInstr;
 import org.jruby.ir.persistence.parser.dummy.SingleParamInstr;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
 
 public class IRInstructionFactory {
@@ -198,7 +202,7 @@ public class IRInstructionFactory {
 
     private BreakInstr createBreak(Object param) {
         Operand rv = (Operand) param;
-        // Scope is null if name was not persisted
+        // Scope is null if name was not been persisted
         IRScope s = null;
 
         return new BreakInstr(rv, s);
@@ -224,7 +228,6 @@ public class IRInstructionFactory {
 
     private ReturnInstr createReturn(Object param) {
         Operand returnValue = (Operand) param;
-        // FIXME: May have method to return as well
         return new ReturnInstr(returnValue);
     }
 
@@ -240,6 +243,22 @@ public class IRInstructionFactory {
         switch (operation) {
         case ATTR_ASSIGN:
             return createAttrAssign(params);
+        case B_FALSE:
+            return createBFalse(params);
+        case B_TRUE:
+            return createBTrue(params);
+        case B_NIL:
+            return createBNil(params);
+        case B_UNDEF:
+            return createBUndef(params);
+        case BEQ:
+            return createBEQ(params);
+        case BINDING_STORE:
+            return createStoreLocalVar(params);
+        case BNE:
+            return createBNE(params);
+        case BREAK:
+            return createBreak(params);
         case CHECK_ARGS_ARRAY_ARITY:
             return createCheckArgsArrayArity(params);
         case CHECK_ARITY:
@@ -248,24 +267,10 @@ public class IRInstructionFactory {
             return createDefineMethod(params, false);
         case DEF_INST_METH:
             return createDefineMethod(params, true);
-        case BEQ:
-            return createBEQ(params);
-        case B_FALSE:
-            return createBFalse(params);
-        case BREAK:
-            return createBreak(params);
-        case B_TRUE:
-            return createBTrue(params);
-        case B_NIL:
-            return createBNil(params);
-        case B_UNDEF:
-            return createBUndef(params);
-        case BNE:
-            return createBNE(params);
         case GVAR_ALIAS:
             return createGvarAlias(params);
-        case BINDING_STORE:
-            return createStoreLocalVar(params);
+        case RETURN:
+            return createReturn(params);
 
         default:
             throw new UnsupportedOperationException(operation.toString());
@@ -277,8 +282,7 @@ public class IRInstructionFactory {
         MethAddr methAddr = (MethAddr) params.get(0);
         Operand receiver = (Operand) params.get(1);
 
-        @SuppressWarnings("rawtypes")
-        List argsList = (ArrayList) params.get(2);
+        List<Operand> argsList = (ArrayList<Operand>) params.get(2);
         Operand[] args = null;
         if (argsList != null) {
             args = new Operand[argsList.size()];
@@ -288,38 +292,6 @@ public class IRInstructionFactory {
         }
 
         return new AttrAssignInstr(receiver, methAddr, args);
-    }
-
-    private CheckArgsArrayArityInstr createCheckArgsArrayArity(List<Object> params) {
-        Operand argsArray = (Operand) params.get(0);
-        int required = (Integer) params.get(1);
-        int opt = (Integer) params.get(2);
-        int rest = (Integer) params.get(3);
-
-        return new CheckArgsArrayArityInstr(argsArray, required, opt, rest);
-    }
-
-    private CheckArityInstr createCheckArity(List<Object> params) {
-        int required = (Integer) params.get(0);
-        int opt = (Integer) params.get(1);
-        int rest = (Integer) params.get(2);
-
-        return new CheckArityInstr(required, opt, rest);
-    }
-
-    private Instr createDefineMethod(List<Object> params, boolean isInstanceMethod) {
-        Operand container = (Operand) params.get(0);
-        Label nameLable = (Label) params.get(1);
-        String name = nameLable.label;
-
-        
-        IRMethod method = (IRMethod) context.getScopeByName(name);
-
-        if(isInstanceMethod) {
-            return new DefineInstanceMethodInstr(container, method);
-        } else {
-            return new DefineClassMethodInstr(container, method);
-        }
     }
 
     private BranchInstr createBEQ(List<Object> params) {
@@ -336,16 +308,6 @@ public class IRInstructionFactory {
         Label target = (Label) params.get(1);
 
         return BEQInstr.create(arg1, arg2, target);
-    }
-
-    private BreakInstr createBreak(List<Object> params) {
-        Operand rv = (Operand) params.get(0);
-
-        Label scopeNameLabel = (Label) params.get(1);
-        String scopeName = scopeNameLabel.label;
-        IRScope s = context.getScopeByName(scopeName);
-
-        return new BreakInstr(rv, s);
     }
 
     private BranchInstr createBTrue(List<Object> params) {
@@ -379,6 +341,45 @@ public class IRInstructionFactory {
 
         return BNEInstr.create(arg1, arg2, target);
     }
+    
+    private BreakInstr createBreak(List<Object> params) {
+        Operand rv = (Operand) params.get(0);
+
+        String scopeName = (String) params.get(1);
+        IRScope s = context.getScopeByName(scopeName);
+
+        return new BreakInstr(rv, s);
+    }
+    
+    private CheckArgsArrayArityInstr createCheckArgsArrayArity(List<Object> params) {
+        Operand argsArray = (Operand) params.get(0);
+        int required = (Integer) params.get(1);
+        int opt = (Integer) params.get(2);
+        int rest = (Integer) params.get(3);
+
+        return new CheckArgsArrayArityInstr(argsArray, required, opt, rest);
+    }
+
+    private CheckArityInstr createCheckArity(List<Object> params) {
+        int required = (Integer) params.get(0);
+        int opt = (Integer) params.get(1);
+        int rest = (Integer) params.get(2);
+
+        return new CheckArityInstr(required, opt, rest);
+    }
+
+    private Instr createDefineMethod(List<Object> params, boolean isInstanceMethod) {
+        Operand container = (Operand) params.get(0);
+        String name = (String) params.get(1);
+
+        IRMethod method = (IRMethod) context.getScopeByName(name);
+
+        if (isInstanceMethod) {
+            return new DefineInstanceMethodInstr(container, method);
+        } else {
+            return new DefineClassMethodInstr(container, method);
+        }
+    }
 
     private GVarAliasInstr createGvarAlias(List<Object> params) {
         Operand newName = (Operand) params.get(0);
@@ -390,13 +391,20 @@ public class IRInstructionFactory {
     private StoreLocalVarInstr createStoreLocalVar(List<Object> params) {
         Operand value = (Operand) params.get(0);
 
-        Label scopeNameLabel = (Label) params.get(1);
-        String scopeName = scopeNameLabel.label;
+        String scopeName = (String) params.get(1);
         IRScope scope = context.getScopeByName(scopeName);
 
         LocalVariable lvar = (LocalVariable) params.get(2);
 
         return new StoreLocalVarInstr(value, scope, lvar);
+    }
+    
+    private ReturnInstr createReturn(List<Object> params) {
+        Operand rv = (Operand) params.get(0);
+        String methodName = (String) params.get(1);
+        IRMethod methodToReturn = (IRMethod) context.getScopeByName(methodName);
+
+        return new ReturnInstr(rv, methodToReturn);
     }
 
     public Instr createReturnInstrWithNoParams(Variable result, String operationName) {
@@ -458,8 +466,6 @@ public class IRInstructionFactory {
             return createGetGlobalVar(result, param);
         case GLOBAL_IS_DEFINED:
             return createGlobalIsDefined(result, param);
-        case LAMBDA:
-            return createBuildLambda(result, param);
         case MATCH:
             return createMatch(result, param);
         case METHOD_LOOKUP:
@@ -505,8 +511,7 @@ public class IRInstructionFactory {
     }
 
     private GetEncodingInstr createGetEncoding(Variable result, Object param) {
-        Label encodingNameLabel = (Label) param;
-        String encodingName = encodingNameLabel.label;
+        String encodingName = (String) param;
         Encoding encoding = NonIRObjectFactory.INSTANCE.createEncoding(encodingName);
 
         return new GetEncodingInstr(result, encoding);
@@ -522,17 +527,6 @@ public class IRInstructionFactory {
         StringLiteral name = (StringLiteral) param;
 
         return new GlobalIsDefinedInstr(result, name);
-    }
-
-    private BuildLambdaInstr createBuildLambda(Variable result, Object param) {
-        Label scopeNameLabel = (Label) param;
-        String scopeName = scopeNameLabel.label;
-        IRClosure lambdaBody = (IRClosure) context.getScopeByName(scopeName);
-
-        // FIXME: Persist possition somehow?
-        ISourcePosition possition = ISourcePosition.INVALID_POSITION;
-
-        return new BuildLambdaInstr(result, lambdaBody, possition);
     }
 
     private MatchInstr createMatch(Variable result, Object param) {
@@ -560,8 +554,7 @@ public class IRInstructionFactory {
     }
 
     private PushBindingInstr createPushBinding(Variable result, Object param) {
-        Label scopeNameLabel = (Label) param;
-        String scopeName = scopeNameLabel.label;
+        String scopeName = (String) param;
         IRScope scope = context.getScopeByName(scopeName);
 
         return new PushBindingInstr(scope);
@@ -593,9 +586,8 @@ public class IRInstructionFactory {
 
     private RecordEndBlockInstr createRecoreEndBlock(Variable result, Object param) {
         IRScope declaringScope = context.getCurrentScope();
-
-        Label endBlockClosureNameLabel = (Label) param;
-        String endBlockClosureName = endBlockClosureNameLabel.label;
+        
+        String endBlockClosureName = (String) param;
         IRClosure endBlockClosure = (IRClosure) context.getScopeByName(endBlockClosureName);
 
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
@@ -658,6 +650,8 @@ public class IRInstructionFactory {
             return createInheritanceSearchConstInstr(result, params);
         case INSTANCE_OF:
             return createInstanceOf(result, params);
+        case LAMBDA:
+            return createBuildLambda(result, params);
         case LEXICAL_SEARCH_CONST:
             return createLexicalSearchConst(result, params);
         case BINDING_LOAD:
@@ -684,9 +678,8 @@ public class IRInstructionFactory {
             return createRescueEQQ(result, params);
         case MASGN_REST:
             return createRestArgMultileAsgn(result, params);
-            // FIXME: InstanceSuper or UnresolvedSuper is possible
         case SUPER:
-            return createInstanceSuperInstr(result, params);
+            return createSuperInstr(result, params);
         case SEARCH_CONST:
             return createSearchConst(result, params);
         case TO_ARY:
@@ -710,15 +703,14 @@ public class IRInstructionFactory {
 
     @SuppressWarnings("unchecked")
     private CallInstr createCall(Variable result, List<Object> params) {
-        // FIXME: Persisted as label so far
-        Label callTypeLabel = (Label) params.get(0);
-        CallType callType = CallType.valueOf(callTypeLabel.label);
+        
+        String callTypString = (String) params.get(0);
+        CallType callType = CallType.valueOf(callTypString);
 
         MethAddr methAddr = (MethAddr) params.get(1);
         Operand receiver = (Operand) params.get(2);
 
-        @SuppressWarnings("rawtypes")
-        ArrayList argsList = (ArrayList) params.get(3);
+        ArrayList<Operand> argsList = (ArrayList<Operand>) params.get(3);
         Operand[] args = null;
         if (argsList != null) {
             args = new Operand[argsList.size()];
@@ -726,8 +718,12 @@ public class IRInstructionFactory {
         } else {
             args = Operand.EMPTY_ARRAY;
         }
-        // FIXME: No closure support so far
-        return CallInstr.create(callType, result, methAddr, receiver, args, null);
+        Operand closure = null;
+        if (params.size() == 5) {
+            closure = (Operand) params.get(4);
+        }
+
+        return CallInstr.create(callType, result, methAddr, receiver, args, closure);
     }
 
     private GetClassVarContainerModuleInstr createGetClassVarContainerModule(Variable result,
@@ -740,15 +736,15 @@ public class IRInstructionFactory {
 
     private ConstMissingInstr createConstMissing(Variable result, List<Object> params) {
         Operand currentModule = (Operand) params.get(0);
-        Label missingConstLabel = (Label) params.get(1);
+        String missingConst = (String) params.get(1);
 
-        return new ConstMissingInstr(result, currentModule, missingConstLabel.label);
+        return new ConstMissingInstr(result, currentModule, missingConst);
     }
 
     private DefineClassInstr createDefineClass(Variable result, List<Object> params) {
 
-        Label classNameLabel = (Label) params.get(0);
-        IRClassBody irClassBody = (IRClassBody) context.getScopeByName(classNameLabel.label);
+        String className = (String) params.get(0);
+        IRClassBody irClassBody = (IRClassBody) context.getScopeByName(className);
 
         Operand container = (Operand) params.get(1);
         Operand superClass = (Operand) params.get(2);
@@ -757,9 +753,9 @@ public class IRInstructionFactory {
     }
 
     private DefineMetaClassInstr createDefineMetaClass(Variable result, List<Object> params) {
-        Label metaClassBodyNameLabel = (Label) params.get(0);
+        String metaClassBodyName = (String) params.get(0);
         IRModuleBody metaClassBody = (IRModuleBody) context
-                .getScopeByName(metaClassBodyNameLabel.label);
+                .getScopeByName(metaClassBodyName);
 
         Operand object = (Operand) params.get(1);
 
@@ -767,8 +763,8 @@ public class IRInstructionFactory {
     }
 
     private DefineModuleInstr createDefineModule(Variable result, List<Object> params) {
-        Label moduleBodyNameLabel = (Label) params.get(0);
-        IRModuleBody moduleBody = (IRModuleBody) context.getScopeByName(moduleBodyNameLabel.label);
+        String moduleBodyName = (String) params.get(0);
+        IRModuleBody moduleBody = (IRModuleBody) context.getScopeByName(moduleBodyName);
 
         Operand container = (Operand) params.get(1);
 
@@ -784,11 +780,7 @@ public class IRInstructionFactory {
 
     private GetInstr createGetInstr(Operation operation, Variable dest, List<Object> params) {
         Operand source = (Operand) params.get(0);
-        Label refLabel = (Label) params.get(1);
-        String ref = null;
-        if (refLabel != null) {
-            ref = refLabel.label;
-        }
+        String ref = (String) params.get(1);        
 
         switch (operation) {
         case GET_CVAR:
@@ -820,34 +812,42 @@ public class IRInstructionFactory {
         case METHOD_IS_PUBLIC:
             return new MethodIsPublicInstr(result, object, name);
         default:
-            break;
+            throw new UnsupportedOperationException(operation.toString());
         }
-
-        return new HasInstanceVarInstr(result, object, name);
     }
 
     private InheritanceSearchConstInstr createInheritanceSearchConstInstr(Variable result,
             List<Object> params) {
         Operand currentModule = (Operand) params.get(0);
-        Label constNameLabel = (Label) params.get(1);
+        String constName = (String) params.get(1);
         BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
 
-        return new InheritanceSearchConstInstr(result, currentModule, constNameLabel.label,
+        return new InheritanceSearchConstInstr(result, currentModule, constName,
                 noPrivateConstsLiteral.isTrue());
     }
 
     private InstanceOfInstr createInstanceOf(Variable result, List<Object> params) {
         Operand object = (Operand) params.get(0);
-        Label classNameLabel = (Label) params.get(1);
+        String className = (String) params.get(1);
 
-        return new InstanceOfInstr(result, object, classNameLabel.label);
+        return new InstanceOfInstr(result, object, className);
+    }
+    
+    private BuildLambdaInstr createBuildLambda(Variable result, List<Object> params) {
+        String scopeName = (String) params.get(0);
+        IRClosure lambdaBody = (IRClosure) context.getScopeByName(scopeName);
+
+        String fileName = (String) params.get(1);
+        int line = (Integer) params.get(2);
+        ISourcePosition possition = new SimpleSourcePosition(fileName, line);
+
+        return new BuildLambdaInstr(result, lambdaBody, possition);
     }
 
     private LexicalSearchConstInstr createLexicalSearchConst(Variable result, List<Object> params) {
         Operand definingScope = (Operand) params.get(0);
 
-        Label constNameLabel = (Label) params.get(1);
-        String constName = constNameLabel.label;
+        String constName = (String) params.get(1);
 
         return new LexicalSearchConstInstr(result, definingScope, constName);
     }
@@ -855,8 +855,7 @@ public class IRInstructionFactory {
     private LoadLocalVarInstr createLoadLocalVar(Variable result, List<Object> params) {
         TemporaryVariable tempResult = (TemporaryVariable) result;
 
-        Label scopeNameLabel = (Label) params.get(0);
-        String scopeName = scopeNameLabel.label;
+        String scopeName = (String) params.get(0);
         IRScope scope = context.getScopeByName(scopeName);
 
         LocalVariable lvar = (LocalVariable) params.get(1);
@@ -882,8 +881,7 @@ public class IRInstructionFactory {
     private ModuleVersionGuardInstr createModuleVersionGuard(Variable result, List<Object> params) {
         Operand candidateObj = (Operand) params.get(0);
         int expectedVersion = (Integer) params.get(1);
-        Label moduleNameLabel = (Label) params.get(2);
-        String moduleName = moduleNameLabel.label;
+        String moduleName = (String) params.get(2);
         // FIXME?: persist module
         RubyModule module = null;
 
@@ -928,7 +926,7 @@ public class IRInstructionFactory {
         int argIndex = (Integer) params.get(0);
         int totalRequiredArgs = (Integer) params.get(1);
         int totalOptArgs = (Integer) params.get(2);
-        
+
         return new ReceiveRestArgInstr19(result, argIndex, totalRequiredArgs, totalOptArgs);
     }
 
@@ -957,21 +955,57 @@ public class IRInstructionFactory {
         return new RestArgMultipleAsgnInstr(result, array, preArgsCount, postArgsCount, index);
     }
 
-    private InstanceSuperInstr createInstanceSuperInstr(Variable result, List<Object> params) {
-        MethAddr superMeth = (MethAddr) params.get(0);
-        Operand definingModule = (Operand) params.get(1);
+    private CallInstr createSuperInstr(Variable result, List<Object> params) {
+        String superInstrTypeString = (String) params.get(0);
+        SuperInstrType instrType = SuperInstrType.valueOf(superInstrTypeString);
+        
+        switch (instrType) {
+        case CLASS:
+        case INSTANCE:            
+            return createResolvedSuperInstr(instrType, result, params);
+            
+        case UNRESOLVED:
+            return createUnresolvedSuperInstr(result, params);
+            
+        default:            
+            throw new UnsupportedOperationException(instrType.toString());
+        }
+        
+        
+    }
+
+    private CallInstr createResolvedSuperInstr(SuperInstrType type, Variable result, List<Object> params) {
+        MethAddr superMeth = (MethAddr) params.get(1);
+        Operand definingModule = (Operand) params.get(2);
+        Operand[] args = (Operand[]) params.get(3);
+        Operand closure = (Operand) params.get(4);
+
+        switch (type) {
+        case CLASS:
+            return new ClassSuperInstr(result, definingModule, superMeth, args, closure);
+            
+        case INSTANCE:
+            return new InstanceSuperInstr(result, definingModule, superMeth, args, closure);
+            
+        default:
+            throw new UnsupportedOperationException(type.toString());
+        }
+    }
+    
+    private UnresolvedSuperInstr createUnresolvedSuperInstr(Variable result, List<Object> params) {
+        Operand receiver = (Operand) params.get(1);
         Operand[] args = (Operand[]) params.get(2);
         Operand closure = (Operand) params.get(3);
-
-        return new InstanceSuperInstr(result, definingModule, superMeth, args, closure);
+        
+        return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
     private SearchConstInstr createSearchConst(Variable result, List<Object> params) {
-        Label constNameLabel = (Label) params.get(0);
+        String constName = (String) params.get(0);
         Operand startingScope = (Operand) params.get(1);
         BooleanLiteral noPrivateConstsLiteral = (BooleanLiteral) params.get(2);
 
-        return new SearchConstInstr(result, constNameLabel.label, startingScope,
+        return new SearchConstInstr(result, constName, startingScope,
                 noPrivateConstsLiteral.isTrue());
     }
 
@@ -1021,8 +1055,7 @@ public class IRInstructionFactory {
         List<Object> parameters = instr.getParameters();
 
         Operand target = (Operand) parameters.get(0);
-        Label refLabel = (Label) parameters.get(1);
-        String ref = refLabel.label;
+        String ref = (String) parameters.get(1);
 
         switch (operation) {
         case PUT_CVAR:

@@ -150,8 +150,8 @@ public enum IROperandFactory {
     }
 
     /** $label */
-    public Label createLabel(String label) {
-        return new Label(label);
+    public Label createEnsureBlockLabel() {
+        return new Label(Label.GLOBAL_ENSURE_BLOCK);
     }
 
     /** $name($scopeDepthString:$locationString) */

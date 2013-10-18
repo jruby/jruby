@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.instructions.CopyInstr;
@@ -84,9 +84,9 @@ public class PersistedIRParserLogic {
         return new Symbol(scope);
     }
     
-    Symbol createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope) {
-        IRManager manager = context.getIRManager();
-        IRScope irScope = SCOPE_BUILDER.createScope(type, lexicalParent, name, lineNumberString, staticScope, manager);
+    Symbol createScope(IRScopeType type, IRScope lexicalParent, String name, String lineNumberString, IRStaticScope staticScope, List<String> specificArguments) {
+        Ruby runtime = context.getRuntime();
+        IRScope irScope = SCOPE_BUILDER.createScope(type, lexicalParent, name, lineNumberString, staticScope, runtime, specificArguments);
         context.addToScopes(irScope);
         return new Symbol(irScope);
     }
@@ -140,12 +140,7 @@ public class PersistedIRParserLogic {
         return _symbol_lst;
     }
     
-    Symbol createLabelInstr(String string) {
-        Label label = context.getLabel(string);
-        if(label == null) {
-            label = OPERAND_FACTORY.createLabel(string);
-            context.addLabel(label);
-        }
+    Symbol createLabelInstr(Label label) {
         LabelInstr labelInstr = instrFactory.createLabel(label);
         return new Symbol(labelInstr);
     }
@@ -319,14 +314,26 @@ public class PersistedIRParserLogic {
         return new Symbol(irException);
     }
     
-    Symbol createLabel(String labelValue) {
+    Symbol createEnsureBlockLabel() {
+        Label label = OPERAND_FACTORY.createEnsureBlockLabel();
+        return new Symbol(label);
+    }
+    
+    Symbol createSimpleLabel(String labelValue) {
         Label label = context.getLabel(labelValue);
         if(label == null) {
-            if(labelValue.contains("LBL")) {
             label = context.getCurrentScope().getNewLabel();
-            } else {
-                label = OPERAND_FACTORY.createLabel(labelValue);
-            }
+            context.addLabel(label);
+        }
+        return new Symbol(label);
+    }
+    
+    Symbol createComplexLabel(String labelValue) {
+        Label label = context.getLabel(labelValue);
+        if(label == null) {
+            int endOfPrefix = labelValue.lastIndexOf("_");
+            String prefix = labelValue.substring(0, endOfPrefix);
+            label = context.getCurrentScope().getNewLabel(prefix);
             context.addLabel(label);
         }
         return new Symbol(label);
@@ -438,10 +445,14 @@ public class PersistedIRParserLogic {
     Symbol createTemporaryVariable(String name) {
         name = "%" + name;
         IRScope currentScope = context.getCurrentScope();
-        TemporaryVariable temporaryVariable = (TemporaryVariable) context.getVariablesByName(name);
+        Variable temporaryVariable = (TemporaryVariable) context.getVariablesByName(name);
         if(temporaryVariable == null) {
             temporaryVariable = OPERAND_FACTORY.createTemporaryVariable(currentScope, name);
             context.addVariable(temporaryVariable);
+        } else if ("%current_scope".equals(name)) {
+            temporaryVariable = currentScope.getCurrentScopeVariable();
+        } else if ("%current_module".equals(name)) {
+            temporaryVariable = currentScope.getCurrentModuleVariable();
         }
         return new Symbol(temporaryVariable);
     }
