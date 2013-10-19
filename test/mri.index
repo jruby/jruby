@@ -185,10 +185,6 @@ mri/fileutils/test_fileutils
 mri/fileutils/test_nowrite
 mri/fileutils/test_verbose
 
-mri/iconv/test_basic
-mri/iconv/test_option
-mri/iconv/test_partial
-
 mri/json/test_json
 mri/json/test_json_addition
 mri/json/test_json_encoding
