@@ -49,6 +49,7 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
@@ -258,7 +259,7 @@ public class RubyDateFormatter {
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in);
+        Reader reader = new InputStreamReader(in, context.runtime.getEncodingService().charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
@@ -549,9 +550,7 @@ public class RubyDateFormatter {
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 
-            for (int i = 0; i < output.length(); i++) {
-                toAppendTo.append(output.charAt(i));
-            }
+            toAppendTo.append(output.getBytes(context.runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
         }
 
         RubyString str = context.runtime.newString(toAppendTo);
