@@ -88,13 +88,18 @@ public class RubyThreadGroup extends RubyObject {
         }
         
         RubyThread thread = (RubyThread)rubyThread;
-        
-        if (thread.getThreadGroup().isFrozen()) {
-            throw getRuntime().newTypeError("can't move from the frozen thread group");
-        }
-        
-        if (thread.getThreadGroup().enclosed_p(block).isTrue()) {
-            throw getRuntime().newTypeError("can't move from the enclosed thread group");
+
+        RubyThreadGroup threadGroup = thread.getThreadGroup();
+
+        // edit by headius: ThreadGroup may be null, perhaps if this is an adopted thread etc
+        if(threadGroup != null) {
+            if (threadGroup.isFrozen()) {
+                throw getRuntime().newTypeError("can't move from the frozen thread group");
+            }
+
+            if (threadGroup.enclosed_p(block).isTrue()) {
+                throw getRuntime().newTypeError("can't move from the enclosed thread group");
+            }
         }
 
         // we only add live threads
