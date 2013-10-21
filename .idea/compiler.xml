@@ -31,6 +31,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="jruby-core" target="1.6" />
+      <module name="jruby-tests" target="1.6" />
       <module name="openssl" target="1.6" />
       <module name="readline" target="1.6" />
       <module name="ripper" target="1.6" />
