@@ -29,7 +29,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -80,12 +79,12 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, newArgsArrayFromArgsWithUnbox(args, context), null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, args, null, null, true, binding, type, block);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, block);
     }
 
     @Override
@@ -125,7 +124,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -142,13 +141,12 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         }
     }
 
-    @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
     
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -157,8 +155,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
         
         try {
-            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
-            IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(preppedArgs), type, aValue);
+            IRubyObject[] realArgs = setupBlockArgs(args, type, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.

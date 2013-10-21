@@ -33,9 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -310,14 +308,13 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         }
     }
 
-    @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return yield(context, value, binding, type, Block.NULL_BLOCK);
 
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
@@ -329,12 +326,10 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
         try {
             if (!noargblock) {
-                IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
-                RubyArray argArray = context.runtime.newArrayNoCopyLight(preppedArgs);
-                IRubyObject values = alreadyArray ? assigner.convertIfAlreadyArray(runtime, argArray) :
-                    assigner.convertToArray(runtime, argArray);
+                value = alreadyArray ? assigner.convertIfAlreadyArray(runtime, value) :
+                    assigner.convertToArray(runtime, value);
 
-                assigner.assignArray(runtime, context, self, values, block);
+                assigner.assignArray(runtime, context, self, value, block);
             }
 
             // This while loop is for restarting the block call in case a 'redo' fires.
@@ -377,10 +372,9 @@ public class InterpretedBlock extends ContextAwareBlockBody {
      * @param alreadyArray do we need an array or should we assume it already is one?
      * @return result of block invocation
      */
-    @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
+        return yield(context, value, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
     }
     
     private IRubyObject evalBlockBody(ThreadContext context, Binding binding, IRubyObject self) {

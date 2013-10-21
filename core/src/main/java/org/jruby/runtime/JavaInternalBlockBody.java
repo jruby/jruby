@@ -5,6 +5,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
@@ -49,31 +50,43 @@ public abstract class JavaInternalBlockBody extends BlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, true, binding, type);
+        IRubyObject value;
+        if (args.length == 1) {
+            value = args[0];
+        } else {
+            value = RubyArray.newArrayNoCopy(context.runtime, args);
+        }
+        return yield(context, value, null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
                             Block.Type type, Block block) {
-        return yield(context, args, null, null, true, binding, type, block);
+        IRubyObject value;
+        if (args.length == 1) {
+            value = args[0];
+        } else {
+            value = RubyArray.newArrayNoCopy(context.runtime, args);
+        }
+        return yield(context, value, null, null, true, binding, type, block);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         threadCheck(context);
         
-        return yield(context, new IRubyObject[] { value });
+        return yield(context, value);        
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
         threadCheck(context);
         
         
-        return yield(context, args);
+        return yield(context, value);
     }
     
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);
+    public abstract IRubyObject yield(ThreadContext context, IRubyObject value);
 
     @Override
     public StaticScope getStaticScope() {

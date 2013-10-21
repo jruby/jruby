@@ -102,7 +102,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         IRubyObject[] args;
         if (type == Block.Type.LAMBDA) {
             args = new IRubyObject[] { value };
@@ -123,16 +123,16 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
 		// Unwrap the array arg
-        IRubyObject[] newArgs;
+        IRubyObject[] args;
         if (type == Block.Type.LAMBDA) {
-            newArgs = (args == null) ? IRubyObject.NULL_ARRAY : args;
+            args = (value == null) ? IRubyObject.NULL_ARRAY : (argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
             arity().checkArity(context.runtime, args);
         } else {
-            newArgs = (args == null) ? IRubyObject.NULL_ARRAY : args;
+            args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, false, argIsArray);
         }
-        return commonYieldPath(context, newArgs, self, klass, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     @Override

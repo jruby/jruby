@@ -28,19 +28,28 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.tempfile;
 
-import org.jruby.*;
+import java.io.File;
+import java.io.IOException;
+import org.jruby.CompatVersion;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyFile;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
-
-import java.io.File;
-import java.io.IOException;
-
-import static org.jruby.runtime.Visibility.*;
 
 /**
  * An implementation of tempfile.rb in Java.
@@ -91,7 +100,7 @@ public class Tempfile extends org.jruby.RubyFile {
         // #create and #make_tmpname come from Dir::Tmpname, included into
         // tempfile in lib/ruby/shared/tempfile.rb. We use create here to
         // match filename algorithm and allow them to be overridden.
-        callMethod(context, "create", args, CallBlock.newCallClosure(this, this.getMetaClass(), Arity.OPTIONAL, body, context));
+        callMethod(context, "create", args, CallBlock19.newCallClosure(this, this.getMetaClass(), Arity.OPTIONAL, body, context));
         
         return context.nil;
     }

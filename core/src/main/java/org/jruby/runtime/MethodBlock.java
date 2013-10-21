@@ -31,12 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -80,12 +79,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, args, null, null, true, binding, type, block);
+        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, block);
     }
     
     @Override
@@ -110,28 +109,28 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
     
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return yield(context, value, binding, type);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type, Block block) {
-        return yield(context, value, binding, type);
+        return yield(context, value, null, null, false, binding, type, block);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
                              RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+        return yield(context, value, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
 
     /**
@@ -145,7 +144,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
      * @return
      */
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = binding.getSelf();
@@ -158,8 +157,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
-                    return callback(context.runtime.newArrayNoCopyLight(preppedArgs), method, self, block);
+                    return callback(value, method, self, block);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo

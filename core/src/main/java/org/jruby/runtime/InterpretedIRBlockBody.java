@@ -48,12 +48,23 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-        return yield(context, value, binding, type);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        return yield(context, value, null, null, false, binding, type);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
+        IRubyObject[] args;
+        if (isArray) {
+            if (arity().getValue() > 1) {
+                args = value == null ? IRubyObject.NULL_ARRAY : prepareArgumentsForYield(context, ((RubyArray)value).toJavaArray(), type);
+            } else {
+                args = assignArrayToBlockArgs(context.runtime, value);
+            }
+        } else {
+            args = prepareArgumentsForYield(context, value == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value }, type);
+        }
+
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
