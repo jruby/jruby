@@ -35,6 +35,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
@@ -63,26 +64,48 @@ public abstract class BlockBody {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
+        return yield(context, args, null, null, true, binding, type);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
             Block.Type type, Block block) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type, block);
+        return yield(context, args, null, null, true, binding, type, block);
     }
 
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+    public final IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return doYield(context, value, binding, type);
+    }
 
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type);
+    public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, arity(), args);
+        return doYield(context, preppedValue, self, klass, aValue, binding, type);
+    }
+
+    /**
+     * Subclass specific yield implementation.
+     * <p>
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject, Binding, Block.Type)}
+     * after ensuring that any common yield logic is taken care of.
+     */
+    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+
+    /**
+     * Subclass specific yield implementation.
+     * <p>
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject[], IRubyObject, RubyModule, boolean, Binding, Block.Type)}
+     * after ensuring that all common yield logic is taken care of.
+     */
+    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+                                      RubyModule klass, boolean aValue, Binding binding, Block.Type type);
 
     // FIXME: This should replace blockless abstract versions of yield above and become abstract.
     // Here to allow incremental replacement. Overriden by subclasses which support it.
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
-        return yield(context, value, self, klass, aValue, binding, type);
+        return yield(context, args, self, klass, aValue, binding, type);
     }
 
     // FIXME: This should replace blockless abstract versions of yield above and become abstract.
@@ -100,7 +123,7 @@ public abstract class BlockBody {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
+        return yield(context, args, null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -108,13 +131,13 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
-        return yield(context, null, null, null, true, binding, type);
+        return yield(context, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
+        return yield(context, args, null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -122,13 +145,13 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return yield(context, arg0, null, null, true, binding, type);
+        return yield(context, arg0, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
+        return yield(context, args, null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -136,13 +159,13 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
+        return yield(context, args, null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -150,7 +173,7 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
     }
 
 
@@ -260,28 +283,4 @@ public abstract class BlockBody {
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();
-
-    public IRubyObject newArgsArrayFromArgsWithUnbox(IRubyObject[] args, ThreadContext context) {
-        IRubyObject value;
-        if (args.length == 0) {
-            value = context.runtime.getEmptyFrozenArray();
-        } else {
-            if (args.length == 1) {
-                value = args[0];
-            } else {
-                value = context.runtime.newArrayNoCopyLight(args);
-            }
-        }
-        return value;
-    }
-
-    public IRubyObject newArgsArrayFromArgsWithoutUnbox(IRubyObject[] args, ThreadContext context) {
-        IRubyObject value;
-        if (args.length == 0) {
-            value = context.runtime.getEmptyFrozenArray();
-        } else {
-            value = context.runtime.newArrayNoCopyLight(args);
-        }
-        return value;
-    }
 }
