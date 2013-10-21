@@ -269,4 +269,13 @@ public class Tempfile extends org.jruby.RubyFile {
         val.append(">");
         return getRuntime().newString(val.toString());
     }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            super.finalize();
+        } finally {
+            tmpFile.delete();
+        }
+    }
 }

@@ -102,3 +102,4 @@ test_jar_file
 test_jruby_synchronized
 test_instantiating_interfaces
 test_openssl
+test_tempfile_cleanup
