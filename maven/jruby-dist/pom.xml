@@ -56,19 +56,25 @@
         <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
-            <id>fix shebang on gem bin files</id>
+            <id>fix shebang on gem bin files and add *.bat files</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>exec</goal>
             </goals>
             <configuration>
 	      <script>
+		# get the stub files fixed
 		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
 		  content = File.read( f )
 		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
 ")
 		  File.open( f, "w" ) { |file| file.print( new_content ) }
 		end
+		
+		# generate the missing bat files
+		RbConfig::CONFIG['bindir'] = '${jruby.basedir}/bin'
+		require '${jruby.basedir}/core/src/main/ruby/jruby/commands.rb'
+		JRuby::Commands.generate_bat_stubs
 	      </script>
 	    </configuration>
           </execution>
