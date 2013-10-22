@@ -23,81 +23,64 @@ module OpenSSL
 
     attr_reader :key, :certificate, :ca_certs
 
-    def initialize(str = nil, pass = nil)
-      if str
-        if str.is_a?(File)
-          file = File.open(str.path, "rb")
-          @der = file.read
-          file.close
-        else
-          @der = str
-        end
+    def initialize(str = nil, password = '')
+      return @der = nil unless str
 
-        p12_input_stream = StringBufferInputStream.new(@der)
+      if str.is_a?(File)
+        file = File.open(str.path, "rb")
+        @der = file.read
+        file.close
+      else
+        @der = str
+      end
 
-        store = KeyStore.get_instance("PKCS12")
-        password = pass.nil? ? "" : pass
-        begin
-          store.load(p12_input_stream, password.to_java.to_char_array)
-        rescue java.lang.Exception => e
-          raise PKCS12Error, "Exception: #{e}"
-        end
+      p12_input_stream = StringBufferInputStream.new(@der)
 
-        aliases = store.aliases
-        aliases.each { |alias_name|
-          if store.is_key_entry(alias_name)
-            begin
-              java_certificate = store.get_certificate(alias_name)
-            rescue java.lang.Exception => e
-              raise PKCS12Error, "Exception: #{e}"
-            end
-            if java_certificate
-              der = String.from_java_bytes(java_certificate.get_encoded)
-              @certificate = OpenSSL::X509::Certificate.new(der)
-            end
+      store = KeyStore.get_instance("PKCS12")
+      store.load(p12_input_stream, password.to_java.to_char_array)
 
-            begin
-              java_key = store.get_key(alias_name, password.to_java.to_char_array)
-            rescue java.lang.Exception => e
-              raise PKCS12Error, "Exception: #{e}"
-            end
-            if java_key
-              der = String.from_java_bytes(java_key.get_encoded)
-              algorithm = java_key.get_algorithm
-              if algorithm == "RSA"
-                @key = OpenSSL::PKey::RSA.new(der)
-              elsif algorithm == "DSA"
-                @key = OpenSSL::PKey::DSA.new(der)
-              elsif algorithm == "DH"
-                @key = OpenSSL::PKey::DH.new(der)
-              elsif algorithm == "EC"
-                @key = OpenSSL::PKey::EC.new(der)
-              else
-                raise PKCS12Error, "Unknown key algorithm"
-              end
-            end
+      aliases = store.aliases
+      aliases.each do |alias_name|
+        if store.is_key_entry(alias_name)
+          java_certificate = store.get_certificate(alias_name)
+          if java_certificate
+            der = String.from_java_bytes(java_certificate.get_encoded)
+            @certificate = OpenSSL::X509::Certificate.new(der)
+          end
 
-            @ca_certs = Array.new
-            begin
-              java_ca_certs = store.get_certificate_chain(alias_name)
-            rescue java.lang.Exception => e
-              raise PKCS12Error, "Exception #{e}"
-            end
-            if java_ca_certs
-              java_ca_certs.each do |java_ca_cert|
-                  der = String.from_java_bytes(java_ca_cert.get_encoded)
-                  ruby_cert = OpenSSL::X509::Certificate.new(der)
-                  if (ruby_cert.to_pem != @certificate.to_pem)
-                    @ca_certs << ruby_cert
-                  end
-              end
+          java_key = store.get_key(alias_name, password.to_java.to_char_array)
+          if java_key
+            der = String.from_java_bytes(java_key.get_encoded)
+            algorithm = java_key.get_algorithm
+            if algorithm == "RSA"
+              @key = OpenSSL::PKey::RSA.new(der)
+            elsif algorithm == "DSA"
+              @key = OpenSSL::PKey::DSA.new(der)
+            elsif algorithm == "DH"
+              @key = OpenSSL::PKey::DH.new(der)
+            elsif algorithm == "EC"
+              @key = OpenSSL::PKey::EC.new(der)
+            else
+              raise PKCS12Error, "Unknown key algorithm #{algorithm}"
             end
           end
-          break
-        }
-      else
-        @der = nil
+
+          @ca_certs = Array.new
+          java_ca_certs = store.get_certificate_chain(alias_name)
+          if java_ca_certs
+            java_ca_certs.each do |java_ca_cert|
+                der = String.from_java_bytes(java_ca_cert.get_encoded)
+                ruby_cert = OpenSSL::X509::Certificate.new(der)
+                if (ruby_cert.to_pem != @certificate.to_pem)
+                  @ca_certs << ruby_cert
+                end
+            end
+          end
+        end
+        break
       end
+    rescue java.lang.Exception => e
+      raise PKCS12Error, "Exception: #{e}"
     end
 
     def generate(pass, alias_name, key, cert, ca = nil)
