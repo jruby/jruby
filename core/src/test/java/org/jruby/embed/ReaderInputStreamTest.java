@@ -29,13 +29,7 @@
  */
 package org.jruby.embed;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -56,9 +50,9 @@ import static org.junit.Assert.*;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ReaderInputStreamTest {
-    private String basedir = System.getProperty("user.dir");
-    private String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/readertest.rb";
-    private String filename2 = basedir + "/src/test/ruby/test_yaml.rb";
+    private String basedir = new File(System.getProperty("user.dir")).getParent();
+    private String filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/readertest.rb";
+    private String filename2 = basedir + "/core/src/test/ruby/test_yaml.rb";
 
     static Logger logger0 = Logger.getLogger(MultipleScriptsRunner.class.getName());
     static Logger logger1 = Logger.getLogger(MultipleScriptsRunner.class.getName());
@@ -77,7 +71,7 @@ public class ReaderInputStreamTest {
 
     @Before
     public void setUp() throws FileNotFoundException {
-        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -204,7 +198,7 @@ public class ReaderInputStreamTest {
             basedir + "/lib/ruby/1.9/rdoc",
             basedir + "/lib/ruby/shared",
             basedir + "/test",
-            basedir + "/target/test-classes",
+            basedir + "/core/target/test-classes",
             basedir
         };
         ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
@@ -213,7 +207,7 @@ public class ReaderInputStreamTest {
         container.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
         container.setError(new PrintStream(outStream, true));
         container.setOutput(new PrintStream(outStream, true));
-        container.setWriter(new FileWriter(basedir + "/target/run-junit-embed.txt", true));
+        container.setWriter(new FileWriter(basedir + "/core/target/run-junit-embed.txt", true));
         container.runScriptlet(new String(sb));
         container.terminate();
     }

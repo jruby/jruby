@@ -30,18 +30,8 @@
 package org.jruby.embed;
 
 import org.jruby.embed.internal.ConcurrentLocalContextProvider;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -69,6 +59,7 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -87,7 +78,7 @@ public class ScriptingContainerTest {
     static OutputStream outStream = null;
     PrintStream pstream = null;
     FileWriter writer = null;
-    String basedir = System.getProperty("user.dir");
+    String basedir = new File(System.getProperty("user.dir")).getParent();
 
     public ScriptingContainerTest() {
     }
@@ -103,7 +94,7 @@ public class ScriptingContainerTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -113,7 +104,7 @@ public class ScriptingContainerTest {
         logger1.setLevel(Level.WARNING);
 
         pstream = new PrintStream(outStream, true);
-        writer = new FileWriter(basedir + "/target/run-junit-embed.txt", true);
+        writer = new FileWriter(basedir + "/core/target/run-junit-embed.txt", true);
     }
 
     @After
@@ -536,7 +527,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(reader, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 2);
         result = instance.parse(reader, filename);
@@ -546,7 +537,7 @@ public class ScriptingContainerTest {
         assertEquals(expStringResult, ret.toJava(String.class));
 
         // line number test
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         reader = new FileReader(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
@@ -587,7 +578,7 @@ public class ScriptingContainerTest {
             t.printStackTrace(new PrintStream(outStream));
         }
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
         IRubyObject ret = result.run();
         assertEquals(getNextYear(), ret.toJava(Integer.class));
@@ -607,17 +598,17 @@ public class ScriptingContainerTest {
         instance.setAttribute(AttributeName.UNICODE_ESCAPE, true);
         planets = new String[]{"水星", "金星", "地球", "火星", "木星", "土星", "天王星", "海王星"};
         instance.put("@list", Arrays.asList(planets));
-        filename = "org/jruby/embed/ruby/list_printer.rb";
-        result = instance.parse(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        result = instance.parse(PathType.RELATIVE, filename);
         ret = result.run();
         expResult = "水星 >> 金星 >> 地球 >> 火星 >> 木星 >> 土星 >> 天王星 >> 海王星: 8 in total";
         assertEquals(expResult, sw.toString().trim());
 
-        filename = "org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = "src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         sw = new StringWriter();
         instance.setErrorWriter(sw);
         try {
-            instance.parse(PathType.CLASSPATH, filename, 2);
+            instance.parse(PathType.RELATIVE, filename, 2);
         } catch (Exception e) {
             logger1.info(sw.toString());
             assertTrue(sw.toString().contains(filename + ":7:"));
@@ -651,7 +642,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(istream, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         istream = new FileInputStream(filename);
         result = instance.parse(istream, filename);
         instance.put("@a", 1);
@@ -665,7 +656,7 @@ public class ScriptingContainerTest {
             assertEquals(60.0, angle, 0.00001);
         }
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         istream = new FileInputStream(filename);
@@ -740,7 +731,7 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(reader, filename);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 3);
         result = instance.runScriptlet(reader, filename);
@@ -769,12 +760,11 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(istream, filename);
         assertEquals(expResult, result);
 
-        filename = "org/jruby/embed/ruby/law_of_cosines.rb";
-        istream = getClass().getClassLoader().getResourceAsStream(filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         instance.put("@a", 2.0);
         instance.put("@b", 2 * Math.sqrt(3.0));
         instance.put("@c", 2.0);
-        List<Double> angles = (List<Double>) instance.runScriptlet(istream, filename);
+        List<Double> angles = (List<Double>) instance.runScriptlet(PathType.RELATIVE, filename);
         // this result goes to 30.00000000000004,30.00000000000004,120.0.
         // these should be 30.0, 30.0, 120.0. conversion precision error?
         logger1.info(angles.get(0) + ", " + angles.get(1) + ", " +angles.get(2));
@@ -812,14 +802,14 @@ public class ScriptingContainerTest {
         }
 
         // absolute path
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.ABSOLUTE, filename);
         // perhaps, a return type should be in a method argument
         // since implicit cast results in a Long type
         expResult = new Long(getNextYear());
         assertEquals(expResult, result);
 
-        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/src/test/ruby/org/jruby/embed");
+        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/core/src/test/ruby/org/jruby/embed");
         filename = "/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         assertEquals(expResult, result);
@@ -838,8 +828,8 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         radioactive_isotopes = new String[]{"ウラン", "プルトニウム", "炭素", "ラジウム", "アインスタイニウム", "ノーベリウム"};
         instance.put("@list", Arrays.asList(radioactive_isotopes));
-        filename = "org/jruby/embed/ruby/list_printer.rb";
-        result = instance.runScriptlet(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        result = instance.runScriptlet(PathType.RELATIVE, filename);
         expResult = "ウラン >> プルトニウム >> 炭素 >> ラジウム >> アインスタイニウム >> ノーベリウム: 6 in total";
         assertEquals(expResult, sw.toString().trim());
 
@@ -916,8 +906,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/next_year_1.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/next_year_1.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         int next_year = instance.callMethod(receiver, "get_year", Integer.class);
         assertEquals(getNextYear(), next_year);
 
@@ -959,8 +949,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, singleArg, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/list_printer_1.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/list_printer_1.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         methodName = "print_list";
         String[] hellos = {"你好", "こんにちは", "Hello", "Здравствуйте"};
         singleArg = Arrays.asList(hellos);
@@ -993,8 +983,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, args, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/quadratic_formula.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/quadratic_formula.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         methodName = "solve";
         args = new Double[]{12.0, -21.0, -6.0};
         List<Double> solutions = instance.callMethod(receiver, methodName, args, List.class);
@@ -1067,7 +1057,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         // local variable doesn't work in this case, so instance variable is used.
         instance.put("@text", text);
-        unit = instance.parse(PathType.CLASSPATH, "org/jruby/embed/ruby/yaml_dump.rb");
+        unit = instance.parse(PathType.RELATIVE, "src/test/ruby/org/jruby/embed/ruby/yaml_dump.rb");
         Object receiver = unit.run();
         instance.callMethod(instance.getProvider().getRuntime().getTopSelf(), "dump", null, unit);
         Object expResult =
@@ -1245,8 +1235,8 @@ public class ScriptingContainerTest {
 
         // calculates Plutonium decay
         instance.put("$h", 24100.0); // half-life of Plutonium is 24100 years.
-        String filename = "org/jruby/embed/ruby/radioactive_decay.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         result = instance.getInstance(receiver, RadioActiveDecay.class);
         double initial = 10.0; // 10.0 g
         double years = 1000; // 1000 years
@@ -1260,8 +1250,8 @@ public class ScriptingContainerTest {
         instance.put("initial_velocity", 16.0);
         instance.put("initial_height", 32.0);
         instance.put("system", "english");
-        filename = "org/jruby/embed/ruby/position_function.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/position_function.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         result = instance.getInstance(receiver, PositionFunction.class);
         double time = 2.0;
         double position = ((PositionFunction)result).getPosition(time);
@@ -1747,6 +1737,7 @@ public class ScriptingContainerTest {
      */
     @Test
     public void testGetCompileMode() {
+        System.clearProperty("jruby.compile.mode");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -2060,7 +2051,7 @@ public class ScriptingContainerTest {
     @Test
     public void testSetClassLoader() {
         logger1.info("setClassLoader");
-        ClassLoader loader = null;
+        ClassLoader loader = new JRubyClassLoader(ScriptingContainerTest.class.getClassLoader());
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
