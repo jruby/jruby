@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -94,20 +93,15 @@ public class CallBlock19 extends BlockBody {
      * Yield to this block, usually passed to the current call.
      * 
      * @param context represents the current thread-specific data
-     * @param value The value to yield, either a single value or an array of values
+     * @param args The args to yield
      * @param self The current self
      * @param klass
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        if (aValue) {
-            // expand args
-            return callback.call(context, ((RubyArray)value).toJavaArray(), Block.NULL_BLOCK);
-        }
-        
-        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+        return callback.call(context, args, Block.NULL_BLOCK);
     }
     
     public StaticScope getStaticScope() {

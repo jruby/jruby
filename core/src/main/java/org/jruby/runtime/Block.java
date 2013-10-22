@@ -41,6 +41,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -142,32 +143,22 @@ public final class Block {
         return body.yield(context, value, binding, type);
     }
 
-    @Deprecated
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue) {
-        return body.yield(context, value, self, klass, aValue, binding, type);
-    }
-
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass) {
-        return body.yield(context, value, self, klass, false, binding, type);
+        return body.yield(context, new IRubyObject[] { value }, self, klass, true, binding, type);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass) {
-        return body.yield(context, value, self, klass, true, binding, type);
+        IRubyObject[] args;
+        if (!(value instanceof RubyArray)) {
+            args = new IRubyObject[] { value };
+        } else {
+            args = value.convertToArray().toJavaArray();
+        }
+        return body.yield(context, args, self, klass, true, binding, type);
     }
 
-    @Deprecated
-    public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
-        return body.yield(context, value, null, null, aValue, binding, type);
-    }
-
-    @Deprecated
-    public IRubyObject yield(ThreadContext context, boolean aValue) {
-        return body.yield(context, null, null, null, aValue, binding, type);
-    }
-    
     public Block cloneBlock() {
         Block newBlock = new Block(body, binding);
         

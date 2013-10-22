@@ -113,16 +113,16 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
 		// Unwrap the array arg
-        IRubyObject[] args;
+        IRubyObject[] newArgs;
         if (type == Block.Type.LAMBDA) {
-            args = (value == null) ? IRubyObject.NULL_ARRAY : (argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
+            newArgs = (args == null) ? IRubyObject.NULL_ARRAY : args;
             arity().checkArity(context.runtime, args);
         } else {
-            args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, false, argIsArray);
+            newArgs = (args == null) ? IRubyObject.NULL_ARRAY : args;
         }
-        return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, newArgs, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
