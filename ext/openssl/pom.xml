@@ -8,7 +8,7 @@
     <version>1.7.7-SNAPSHOT</version>
   </parent>
   <artifactId>openssl</artifactId>
-  <version>0.9.3</version>
+  <version>0.9.4</version>
   <packaging>jar</packaging>
 
   <name>JRuby OpenSSL</name>
