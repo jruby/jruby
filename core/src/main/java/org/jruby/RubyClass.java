@@ -1200,6 +1200,9 @@ public class RubyClass extends RubyModule {
      * @param classDumpDir Directory to save reified java class
      */
     public synchronized void reify(String classDumpDir, boolean useChildLoader) {
+        // re-check reifiable in case another reify call has jumped in ahead of us
+        if (!isReifiable()) return;
+        
         Class reifiedParent = RubyObject.class;
 
         // calculate an appropriate name, using "Anonymous####" if none is present
