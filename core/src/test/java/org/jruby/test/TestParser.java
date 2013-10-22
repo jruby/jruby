@@ -6,7 +6,7 @@ public class TestParser extends TestRubyBase {
     
     public void testWarningLineNumber() throws Exception {
         String out;
-        String script = "$stdout.puts ('str')";
+        String script = "def foo; END {}; end";
         out = eval(script);
         assertTrue(out.indexOf("test:1") != -1);
     }
