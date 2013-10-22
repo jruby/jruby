@@ -39,6 +39,7 @@ import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.cli.Category.*;
 import static org.jruby.RubyInstanceConfig.Verbosity;
 import static org.jruby.RubyInstanceConfig.ProfilingMode;
+import static org.jruby.RubyInstanceConfig.CompileMode;
 
 /**
  * Options defines all configuration settings for JRuby in a consistent form.
@@ -52,7 +53,7 @@ public class Options {
     
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
-    public static final Option<String> COMPILE_MODE = string(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF", "OFFIR"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
+    public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
     public static final Option<Boolean> COMPILE_FASTOPS = bool(COMPILER, "compile.fastops", true, "Turn on fast operators for Fixnum and Float.");

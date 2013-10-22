@@ -103,21 +103,7 @@ public class RubyInstanceConfig {
             
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
             runRubyInProcess = Options.LAUNCH_INPROC.load();
-            
-            String jitModeProperty = Options.COMPILE_MODE.load();
-
-            if (jitModeProperty.equals("OFF")) {
-                compileMode = CompileMode.OFF;
-            } else if (jitModeProperty.equals("OFFIR")) {
-                compileMode = CompileMode.OFFIR;
-            } else if (jitModeProperty.equals("JIT")) {
-                compileMode = CompileMode.JIT;
-            } else if (jitModeProperty.equals("FORCE")) {
-                compileMode = CompileMode.FORCE;
-            } else {
-                error.print(Options.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
-                compileMode = CompileMode.JIT;
-            }
+            compileMode = Options.COMPILE_MODE.load();
             
             jitLogging = Options.JIT_LOGGING.load();
             jitDumping = Options.JIT_DUMPING.load();
