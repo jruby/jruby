@@ -34,7 +34,7 @@ public class SyntaxException extends RuntimeException {
 
     private static String prepareMessage(String message, String line) {
         if (line != null && line.length() > 5) {
-            boolean addNewline = message != null && message.endsWith("\n");
+            boolean addNewline = message != null && ! message.endsWith("\n");
             return message + (addNewline ? "\n" : "") + line;
         }
         
