@@ -124,48 +124,48 @@ public class TestAdoptedThreading extends TestCase {
         RubyThreadGroup rtg = (RubyThreadGroup)manager_.eval("ruby", "(java)", 1, 1, "ThreadGroup::Default");
         
         int initialCount = ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength();
-        
-        synchronized (start) {
-            Thread pausyThread = new Thread() {
-                public void run() {
-                    synchronized (this) {
-                        // Notify the calling thread that we're about to go to sleep the first time
-                        synchronized(start) {
-                            start.notify();
-                        }
-                
-                        // wait for the go signal
-                        try {
-                            this.wait();
-                        } catch (InterruptedException ie) {
-                            fail[0] = ie;
-                            return;
-                        }
-                    }
-                    
-                    // run ten separate calls into Ruby, with delay and explicit GC
-                    for (int i = 0; i < 10; i++) {
-                        try {
-                            manager_.exec("ruby", "(java)", 1, 1, "a = 0; while a < 1000; a += 1; end");
-                        } catch (BSFException bsfe) {
-                            fail[0] = bsfe;
-                        }
-                        System.gc();
 
-                        try {
-                            sleep(1000);
-                        } catch (InterruptedException ie) {
-                            fail[0] = ie;
-                            break;
-                        }
-                    }
-                    
-                    synchronized (start) {
+        Thread pausyThread = new Thread() {
+            public void run() {
+                synchronized (this) {
+                    // Notify the calling thread that we're about to go to sleep the first time
+                    synchronized(start) {
                         start.notify();
                     }
+
+                    // wait for the go signal
+                    try {
+                        this.wait();
+                    } catch (InterruptedException ie) {
+                        fail[0] = ie;
+                        return;
+                    }
                 }
-            };
-            
+
+                // run ten separate calls into Ruby, with delay and explicit GC
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        manager_.exec("ruby", "(java)", 1, 1, "a = 0; while a < 1000; a += 1; end");
+                    } catch (BSFException bsfe) {
+                        fail[0] = bsfe;
+                    }
+                    System.gc();
+
+                    try {
+                        sleep(1000);
+                    } catch (InterruptedException ie) {
+                        fail[0] = ie;
+                        break;
+                    }
+                }
+
+                synchronized (start) {
+                    start.notify();
+                }
+            }
+        };
+
+        synchronized (start) {
             pausyThread.start();
             
             // wait until thread has initialized
@@ -180,9 +180,13 @@ public class TestAdoptedThreading extends TestCase {
             start.wait();
         }
 
-        // Give thread time to finish and GC while we go
-        for (int i = 0; i < 10; i++) {
-            Thread.yield();
+        // Give thread time to finish
+        while (pausyThread.isAlive()) Thread.yield();
+
+        long startTime = System.currentTimeMillis();
+        // wait until thread count is as expected or 5s have passed, GCing all the while
+        while (rtg.size() != initialCount + 1
+                && (System.currentTimeMillis() - startTime) < 5000) {
             System.gc();
         }
         
@@ -190,7 +194,7 @@ public class TestAdoptedThreading extends TestCase {
         assertNull(fail[0]);
         
         // there should only be one more thread in thread group than before we started
-        assertEquals(initialCount + 1, ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength());
+        assertEquals(initialCount + 1, rtg.size());
     }
 
     class Runner extends Thread {

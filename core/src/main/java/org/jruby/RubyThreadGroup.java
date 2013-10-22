@@ -155,6 +155,16 @@ public class RubyThreadGroup extends RubyObject {
         }
     }
 
+    /**
+     * Number of threads in this thread group. Note that threads that have
+     * recently died may still be counted here.
+     *
+     * @return number of threads in this thread group
+     */
+    public int size() {
+        return rubyThreadList.size();
+    }
+
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
