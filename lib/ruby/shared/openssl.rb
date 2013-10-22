@@ -11,8 +11,10 @@ end
 
 # Load extension
 require 'jruby'
-require 'jopenssl.jar'
-org.jruby.ext.openssl.OSSLLibrary.new.load(JRuby.runtime, false)
+# only boot ext if jar has not been loaded before
+if require 'jopenssl.jar'
+  org.jruby.ext.openssl.OSSLLibrary.new.load(JRuby.runtime, false)
+end
 
 if RUBY_VERSION >= '1.9.0'
   load('jopenssl19/openssl.rb')
