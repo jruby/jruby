@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.6.dev</version>
+    <version>1.7.6</version>
   </parent>
   <artifactId>openssl</artifactId>
   <version>0.9.3</version>
