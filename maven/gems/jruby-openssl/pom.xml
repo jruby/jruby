@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>rubygems</groupId>
   <artifactId>jruby-openssl</artifactId>
-  <version>0.9.3</version>
+  <version>0.9.4</version>
   <packaging>gem</packaging>
   <name>OpenSSL add-on for JRuby</name>
   <description>JRuby-OpenSSL is an add-on gem for JRuby that emulates the Ruby OpenSSL native library.</description>
@@ -38,7 +38,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>openssl</artifactId>
-      <version>0.9.3</version>
+      <version>0.9.4</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
