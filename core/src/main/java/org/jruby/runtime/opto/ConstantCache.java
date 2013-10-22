@@ -41,7 +41,7 @@ public class ConstantCache {
     public final IRubyObject value;
     public final Object generation;
     public final Invalidator invalidator;
-    public final int targetHash;
+    public final int id;
 
     /**
      * Construct a new ConstantCache with the given elements.
@@ -55,7 +55,7 @@ public class ConstantCache {
         this.value = value;
         this.generation = generation;
         this.invalidator = invalidator;
-        this.targetHash = targetHash;
+        this.id = targetHash;
     }
 
     /**
@@ -78,7 +78,7 @@ public class ConstantCache {
         return cache != null
                 && cache.value != null
                 && cache.generation == cache.invalidator.getData()
-                && cache.targetHash == target.hashCode();
+                && cache.id == target.id;
     }
 
     /**
