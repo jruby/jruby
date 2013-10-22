@@ -1799,7 +1799,9 @@ public class Helpers {
                 return runtime.newArray(value);
             }
         }
-        return (RubyArray)tmp;
+        RubyArray arr = (RubyArray) tmp;
+        
+        return runtime.is1_9() ? arr.aryDup19() : arr;
     }
 
     public static IRubyObject aryToAry(IRubyObject value) {
