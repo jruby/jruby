@@ -8,7 +8,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: org.jruby:requireTest:1.0" level="project" />
     <orderEntry type="module" module-name="jruby-core" />
     <orderEntry type="library" name="Maven: org.ow2.asm:asm:4.0" level="project" />
     <orderEntry type="library" name="Maven: org.ow2.asm:asm-commons:4.0" level="project" />
