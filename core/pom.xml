@@ -480,7 +480,7 @@
           <argLine>-Xmx${jruby.test.memory}</argLine>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
           <argLine>-Dfile.encoding=UTF-8</argLine>
-          <argLine>-Djruby.compile.mode=OFF</argLine>
+          <argLine>-Djava.awt.headless=true</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
