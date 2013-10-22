@@ -127,15 +127,15 @@ public class CompiledIRBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
-		// Unwrap the array arg
-        IRubyObject[] args;
-        if (type == Block.Type.LAMBDA) {
-            args = (value == null) ? IRubyObject.NULL_ARRAY : (argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
-            arity().checkArity(context.runtime, args);
-        } else {
-            args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, false, argIsArray);
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
+        if (args == null) {
+            args = IRubyObject.NULL_ARRAY;
         }
+
+        if (type == Block.Type.LAMBDA) {
+            arity().checkArity(context.runtime, args);
+        }
+
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
