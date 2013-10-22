@@ -918,7 +918,8 @@ public class ScriptingContainerTest {
             "end\n" +
             "def surface_area\n" +
             "  Math::PI * @r * Math.sqrt((@r ** 2.0) + (@h ** 2.0)) + Math::PI * (@r ** 2.0)\n" +
-            "end";
+            "end\n" +
+            "self";
         receiver = instance.runScriptlet(script);
         instance.put("@r", 1.0);
         instance.put("@h", Math.sqrt(3.0));

@@ -179,6 +179,12 @@ public class TestAdoptedThreading extends TestCase {
             // wait until thread has completed
             start.wait();
         }
+
+        // Give thread time to finish and GC while we go
+        for (int i = 0; i < 10; i++) {
+            Thread.yield();
+            System.gc();
+        }
         
         // if any exceptions were raised, we fail
         assertNull(fail[0]);

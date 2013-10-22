@@ -809,10 +809,9 @@ public class JRubyEngineTest {
         logger1.info("Termination Test");
         ScriptEngineManager manager = new ScriptEngineManager();
         JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
-        instance.eval("$x='GVar'");
         StringWriter sw = new StringWriter();
         instance.getContext().setWriter(sw);
-        instance.eval("at_exit { puts \"#{$x} in an at_exit block\" }");
+        instance.eval("x = 'GVar'; at_exit { puts \"#{x} in an at_exit block\" }");
         String expResult = "";
         assertEquals(expResult, sw.toString().trim());
 
