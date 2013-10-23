@@ -703,7 +703,7 @@ public class RubyDir extends RubyObject {
         return newPos;
     }
 
-    @JRubyMethod(name = "path")
+    @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
         return path.strDup(context.runtime);
     }
