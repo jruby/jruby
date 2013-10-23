@@ -707,6 +707,11 @@ public class RubyDir extends RubyObject {
     public IRubyObject path(ThreadContext context) {
         return path.strDup(context.runtime);
     }
+    
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_path(ThreadContext context) {
+        return path(context);
+    }    
 
     /** Returns the next entry from this directory. */
     @JRubyMethod(name = "read")
