@@ -126,6 +126,19 @@ The complete CI test suite will take anywhere from 20 to 45 minutes to
 complete, but provides the most accurate indication of the stability of
 your local JRuby source.
 
+Clean Build
+-----------
+
+To clean the build it is important to use the same profile for the clean as what you want to build. the best way to clean build something is, i.e. jruby-jars
+
+```
+mvn clean install -Pjruby-jars
+```
+
+this first cleans everything and then starts the new build in one go !
+
+NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar** !
+
 Distribution Packages
 ---------------------
 
