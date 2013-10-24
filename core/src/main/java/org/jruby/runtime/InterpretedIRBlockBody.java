@@ -84,8 +84,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
         Visibility oldVis = binding.getFrame().getVisibility();
-        RubyModule currentModule = getStaticScope().getModule();
-
         Frame prevFrame = context.preYieldNoScope(binding, klass);
         if (klass == null) self = prepareSelf(binding);
         try {
