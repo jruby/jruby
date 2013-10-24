@@ -28,14 +28,12 @@ This will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* Install `rake`, `rspec`, `jruby-launcher`, and a few other gems for running tests
+* Install the jruby-launcher gem to provide a native 'jruby' executable.
 
-The environment is now suitable for hacking JRuby and running all test
-targets via Rake.
+The environment is now suitable for running Ruby applications.
 
 Bootstrapping only needs to be done once at first entry into a JRuby
-source dump or if you would like to ensure you're bootstrapped with
-updated gems.
+source dump or if you are updating JRuby from a git repository.
 
 Running JRuby
 -------------
@@ -79,6 +77,16 @@ Testing
 
 JRuby employs a large suite of tests, so there are many ways you can
 verify that JRuby is still fully functional.
+
+In order to prepare JRuby for testing, you must run the integration-test
+phase in Maven. This phase will do the following:
+
+* Install rspec, rake, minitest, minitest-excludes, and dependencies
+ needed to run integration tests.
+
+```
+mvn -Ptest
+```
 
 ### Day to Day
 
