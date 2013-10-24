@@ -1466,6 +1466,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         return entry;
     }
+    
+    // mri: rb_is_absolute_path
+    // Do this versus stand up full JRubyFile and perform stats + canonicalization
+    private static boolean isAbsolutePath(String path) {
+        return (path != null && path.length() > 1 && path.charAt(0) == '/') ||
+                startsWithDriveLetterOnWindows(path);
+    }
 
     public static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
@@ -1576,7 +1583,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // Handle ~user paths
         if (expandUser) {
-            relativePath = expandUserPath(context, relativePath);
+            relativePath = expandUserPath(context, relativePath, true);
         }
 
         if (uriParts != null) {
@@ -1595,7 +1602,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             // Handle ~user paths.
             if (expandUser) {
-                cwd = expandUserPath(context, cwd);
+                cwd = expandUserPath(context, cwd, true);
             }
 
             String[] cwdURIParts = splitURI(cwd);
@@ -1714,6 +1721,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @return Expanded path
      */
     public static String expandUserPath(ThreadContext context, String path) {
+        return expandUserPath(context, path, false);
+    }
+    
+    // FIXME: The variations of expand* and need for each to have a boolean discriminator makes
+    // this code ripe for refactoring...
+    public static String expandUserPath(ThreadContext context, String path, boolean raiseOnRelativePath) {
         int pathLength = path.length();
 
         if (pathLength >= 1 && path.charAt(0) == '~') {
@@ -1725,6 +1738,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     // Single '~' as whole path to expand
                     checkHome(context);
                     path = RubyDir.getHomeDirectoryPath(context).toString();
+                    
+                    if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
                 } else {
                     // No directory delimeter.  Rest of string is username
                     userEnd = pathLength;
@@ -1736,6 +1751,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 checkHome(context);
                 path = RubyDir.getHomeDirectoryPath(context).toString() +
                         path.substring(1);
+                
+                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home");
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
                 String user = path.substring(1, userEnd);
@@ -1746,6 +1763,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
 
                 path = "" + dir + (pathLength == userEnd ? "" : path.substring(userEnd));
+                
+                // getpwd (or /etc/passwd fallback) returns a home which is not absolute!!! [mecha-unlikely]
+                if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home of " + user);
             }
         }
         return path;
