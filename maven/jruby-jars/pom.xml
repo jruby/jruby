@@ -17,7 +17,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <url>http://github.com/jruby/jruby/tree/master/gem/jruby-jars</url>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.0-rc3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc4-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
@@ -57,14 +57,6 @@ freezing to) a specific jruby-complete jar version.</description>
           <gemspec>jruby-jars.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
         </configuration>
-        <executions>
-          <execution>
-            <id>default-push</id>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
@@ -89,6 +81,45 @@ freezing to) a specific jruby-complete jar version.</description>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-push</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>0.0.1</version>
+        <configuration>
+          <nativePom>Mavenfile</nativePom>
+        </configuration>
+        <executions>
+          <execution>
+            <id>rename gem file</id>
+            <phase>package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>rename gem file</taskId>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>0.0.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
