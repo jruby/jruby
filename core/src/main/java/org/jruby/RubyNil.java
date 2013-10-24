@@ -148,8 +148,8 @@ public class RubyNil extends RubyObject {
      *
      */
     @JRubyMethod
-    public static RubyString inspect(ThreadContext context, IRubyObject recv) {
-        return RubyString.newUSASCIIString(context.runtime, "nil");
+    public static  RubyString inspect(IRubyObject recv) {
+        return RubyString.newUSASCIIString(recv.getRuntime(), "nil");
     }
     
     /** nil_and
