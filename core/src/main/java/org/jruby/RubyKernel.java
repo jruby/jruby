@@ -75,7 +75,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.jruby.CompatVersion.RUBY2_0;
 import org.jruby.anno.FrameField;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
