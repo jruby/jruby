@@ -16,18 +16,16 @@
         <include>LICENSE*</include>
         <include>COPYING*</include>
         <include>lib/**/*</include>
-        <include>bin/ast</include>
-        <include>bin/gem</include>
-        <include>bin/irb</include>
-        <include>bin/jgem</include>
-        <include>bin/jirb</include>
-        <include>bin/jirb_swing</include>
+        <include>bin/ast*</include>
+        <include>bin/gem*</include>
+        <include>bin/irb*</include>
+        <include>bin/jgem*</include>
+        <include>bin/jirb*</include>
         <include>bin/jruby*</include>
-        <include>bin/rake</include>
-        <include>bin/ri</include>
-        <include>bin/rdoc</include>
-        <include>bin/testrb</include>
-        <include>bin/*.bat</include>
+        <include>bin/rake*</include>
+        <include>bin/ri*</include>
+        <include>bin/rdoc*</include>
+        <include>bin/testrb*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
