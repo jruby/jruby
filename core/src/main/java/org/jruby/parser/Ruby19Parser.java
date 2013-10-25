@@ -76,6 +76,7 @@ import org.jruby.ast.NextNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
@@ -137,7 +138,7 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 141 "-"
+					// line 142 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3002,10 +3003,14 @@ states[386] = new ParserState() {
                     if (((Node)yyVals[-1+yyTop]) instanceof YieldNode) {
                         throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "block given to yield");
                     }
-                    if (((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
+                    if (((Node)yyVals[-1+yyTop]) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
+                      yyVal = ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    } else {
+                        yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    }
                     ((Node)yyVal).setPosition(((Node)yyVals[-1+yyTop]).getPosition());
     return yyVal;
   }
@@ -4266,7 +4271,7 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 2016 "Ruby19Parser.y"
+					// line 2025 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4285,4 +4290,4 @@ states[267] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8250 "-"
+					// line 8255 "-"
