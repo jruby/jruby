@@ -607,6 +607,8 @@ public class RubyKernel {
 
     @JRubyMethod(name = "print", rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (args.length == 0 && context.runtime.is1_9()) return context.runtime.getNil();
+        
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         return RubyIO.print(context, defout, args);
