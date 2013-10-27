@@ -3491,14 +3491,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int sp = sub.value.getBegin();
         slen = sub.value.getRealSize();
 
-        boolean singlebyte = singleByteOptimizable();
-        while (true) {
-            int s = singlebyte ? p + pos : StringSupport.nth(enc, bytes, p, end, pos);
-            if (s == -1) return -1;
+        int s = StringSupport.nth(enc, bytes, p, end, pos);
+        while (s >= 0) {
             if (ByteList.memcmp(bytes, s, sbytes, sp, slen) == 0) return pos;
-            if (pos == 0) return -1;
+
+            if (pos == 0) break;
             pos--;
+
+            s = enc.prevCharHead(bytes, p, s, end);
         }
+        return -1;
     }
 
     @Deprecated
