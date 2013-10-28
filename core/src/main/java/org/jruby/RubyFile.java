@@ -611,13 +611,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         return runtime.newFixnum(count);
     }
-    
+
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = get_path(context, arg);
-        
+
         String jfilename = filename.asJavaString();
-        
+
+        return context.runtime.newString(dirname(context, jfilename)).infectBy(filename);
+    }
+
+    public static String dirname(ThreadContext context, String jfilename) {
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
         boolean trimmedSlashes = false;
@@ -647,13 +651,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
-                    return context.runtime.newString(jfilename.substring(0, 2) + ".");
+                    return jfilename.substring(0, 2) + ".";
                 } else {
-                    return context.runtime.newString(".");
+                    return ".";
                 }
             }
             if (index == 0) {
-                return context.runtime.newString("/");
+                return "/";
             }
 
             if (startsWithDriveLetterOnWindows && index == 2) {
@@ -687,7 +691,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return context.runtime.newString(result).infectBy(filename);
+        return result;
     }
 
     /**
