@@ -1,11 +1,7 @@
-package org.jruby.ir.instructions.ruby19;
+package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;

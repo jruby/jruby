@@ -1,10 +1,6 @@
-package org.jruby.ir.instructions.ruby20;
+package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
