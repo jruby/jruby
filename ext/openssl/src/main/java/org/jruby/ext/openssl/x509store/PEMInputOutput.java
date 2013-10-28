@@ -366,19 +366,19 @@ public class PEMInputOutput {
 
     private static PrivateKey derivePrivateKeyPBES2(EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
             throws GeneralSecurityException, InvalidCipherTextException {
-        PBES2Parameters pbeParams = new PBES2Parameters((ASN1Sequence) algId.getParameters());
+        PBES2Parameters pbeParams = PBES2Parameters.getInstance((ASN1Sequence) algId.getParameters());
         CipherParameters cipherParams = extractPBES2CipherParams(password, pbeParams);
 
         EncryptionScheme scheme = pbeParams.getEncryptionScheme();
         BufferedBlockCipher cipher;
         if (scheme.getAlgorithm().equals(PKCSObjectIdentifiers.RC2_CBC)) {
-            RC2CBCParameter rc2Params = RC2CBCParameter.getInstance((ASN1Sequence) scheme.getObject());
+            RC2CBCParameter rc2Params = RC2CBCParameter.getInstance(scheme);
             byte[] iv = rc2Params.getIV();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new RC2Engine()));
             cipher.init(false, param);
         } else {
-            byte[] iv = ((ASN1OctetString) scheme.getObject()).getOctets();
+            byte[] iv = ASN1OctetString.getInstance(scheme).getOctets();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new DESedeEngine()));
             cipher.init(false, param);
