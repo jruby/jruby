@@ -31,7 +31,7 @@ module OpenSSL
         @der = file.read
         file.close
       else
-        str.force_encoding(Encoding::ASCII_8BIT) unless str.encoding == Encoding::ASCII_8BIT
+        str.force_encoding(Encoding::ASCII_8BIT)
         @der = str
       end
 
