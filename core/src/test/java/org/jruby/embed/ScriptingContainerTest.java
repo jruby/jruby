@@ -30,6 +30,8 @@
 package org.jruby.embed;
 
 import org.jruby.embed.internal.ConcurrentLocalContextProvider;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -87,7 +89,7 @@ public class ScriptingContainerTest {
     static OutputStream outStream = null;
     PrintStream pstream = null;
     FileWriter writer = null;
-    String basedir = System.getProperty("user.dir");
+    String basedir = new File(System.getProperty("user.dir")).getParent();
 
     public ScriptingContainerTest() {
     }
@@ -113,7 +115,7 @@ public class ScriptingContainerTest {
         logger1.setLevel(Level.WARNING);
 
         pstream = new PrintStream(outStream, true);
-        writer = new FileWriter(basedir + "/target/run-junit-embed.txt", true);
+        writer = new FileWriter(basedir + "/core/target/run-junit-embed.txt", true);
     }
 
     @After
@@ -536,7 +538,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(reader, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 2);
         result = instance.parse(reader, filename);
@@ -546,7 +548,7 @@ public class ScriptingContainerTest {
         assertEquals(expStringResult, ret.toJava(String.class));
 
         // line number test
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         reader = new FileReader(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
@@ -587,7 +589,7 @@ public class ScriptingContainerTest {
             t.printStackTrace(new PrintStream(outStream));
         }
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
         IRubyObject ret = result.run();
         assertEquals(getNextYear(), ret.toJava(Integer.class));
@@ -651,7 +653,7 @@ public class ScriptingContainerTest {
         EmbedEvalUnit result = instance.parse(istream, filename, lines);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         istream = new FileInputStream(filename);
         result = instance.parse(istream, filename);
         instance.put("@a", 1);
@@ -665,7 +667,7 @@ public class ScriptingContainerTest {
             assertEquals(60.0, angle, 0.00001);
         }
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         istream = new FileInputStream(filename);
@@ -740,7 +742,7 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(reader, filename);
         assertEquals(expResult, result);
 
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
         reader = new FileReader(filename);
         instance.put("@t", 3);
         result = instance.runScriptlet(reader, filename);
@@ -812,14 +814,14 @@ public class ScriptingContainerTest {
         }
 
         // absolute path
-        filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
+        filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.ABSOLUTE, filename);
         // perhaps, a return type should be in a method argument
         // since implicit cast results in a Long type
         expResult = new Long(getNextYear());
         assertEquals(expResult, result);
 
-        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/src/test/ruby/org/jruby/embed");
+        instance.setAttribute(AttributeName.BASE_DIR, basedir + "/core/src/test/ruby/org/jruby/embed");
         filename = "/ruby/next_year.rb";
         result = instance.runScriptlet(PathType.RELATIVE, filename);
         assertEquals(expResult, result);
@@ -2107,7 +2109,7 @@ public class ScriptingContainerTest {
     @Test
     public void testSetClassLoader() {
         logger1.info("setClassLoader");
-        ClassLoader loader = null;
+        ClassLoader loader = ScriptingContainerTest.class.getClassLoader();
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
