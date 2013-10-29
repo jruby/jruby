@@ -62,10 +62,6 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  build_lib/junit.jar (http://www.junit.org) are distributed under the
  Common Public License v1.0.
 
- build_lib/jgrapht-jdk1.5.jar (http://jgrapht.sourceforge.net) is
- distributed under the GPL v3. It is not distributed with JRuby and
- will be removed in a future release.
-
  build_lib/jline-* (http://jline.sourceforge.net) is distributed
  under the following license:
 

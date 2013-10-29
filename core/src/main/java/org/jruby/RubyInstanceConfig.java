@@ -1361,6 +1361,20 @@ public class RubyInstanceConfig {
     public boolean getIPv4Preferred() {
         return preferIPv4;
     }
+
+    /**
+     * get whether uppercase package names will be honored
+     */
+    public boolean getAllowUppercasePackageNames() {
+        return allowUppercasePackageNames;
+    }
+
+    /**
+     * set whether uppercase package names will be honored
+     */
+    public void setAllowUppercasePackageNames(boolean allow) {
+        allowUppercasePackageNames = allow;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1475,6 +1489,8 @@ public class RubyInstanceConfig {
     private boolean loadGemfile = Options.CLI_LOAD_GEMFILE.load();
 
     private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
+
+    private boolean allowUppercasePackageNames = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
@@ -1737,6 +1753,7 @@ public class RubyInstanceConfig {
      * In Java integration, allow upper case name for a Java package;
      * e.g., com.example.UpperCase.Class
      */
+    @Deprecated
     public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
