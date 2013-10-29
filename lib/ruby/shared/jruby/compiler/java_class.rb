@@ -368,8 +368,8 @@ module JRuby::Compiler
     static {
 #{requires_string}
         RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-        metaclass.setRubyStaticAllocator(#{name}.class);
         if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
+        metaclass.setRubyStaticAllocator(#{name}.class);
         __metaclass__ = metaclass;
     }
 JAVA
