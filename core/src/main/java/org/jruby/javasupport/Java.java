@@ -977,7 +977,7 @@ public class Java implements Library {
 
                 return javaModule;
             } catch (Exception e) {
-                if (RubyInstanceConfig.UPPER_CASE_PACKAGE_NAME_ALLOWED) {
+                if (runtime.getInstanceConfig().getAllowUppercasePackageNames()) {
                     // but for those not hip to conventions and best practices,
                     // we'll try as a package
                     return getJavaPackageModule(runtime, fullName);
