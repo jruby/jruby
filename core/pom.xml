@@ -474,9 +474,6 @@
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
-          </additionalClasspathElements>
           <argLine>-Xmx${jruby.test.memory}</argLine>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
           <argLine>-Dfile.encoding=UTF-8</argLine>
@@ -485,6 +482,9 @@
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
           </includes>
+          <additionalClasspathElements>
+              <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
+          </additionalClasspathElements>
         </configuration>
       </plugin>
     </plugins>

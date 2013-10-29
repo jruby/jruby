@@ -29,9 +29,41 @@
  */
 package org.jruby.embed;
 
+import org.jruby.Profile;
+import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubyInstanceConfig.LoadServiceCreator;
+import org.jruby.ast.Node;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.internal.ConcurrentLocalContextProvider;
+import org.jruby.embed.internal.LocalContextProvider;
+import org.jruby.embed.internal.SingleThreadLocalContextProvider;
+import org.jruby.embed.internal.SingletonLocalContextProvider;
+import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache;
+import org.jruby.util.KCode;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,29 +76,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-import org.jruby.CompatVersion;
-import org.jruby.Profile;
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.RubyInstanceConfig.LoadServiceCreator;
-import org.jruby.ast.Node;
-import org.jruby.embed.internal.BiVariableMap;
-import org.jruby.embed.internal.LocalContextProvider;
-import org.jruby.embed.internal.SingleThreadLocalContextProvider;
-import org.jruby.embed.internal.SingletonLocalContextProvider;
-import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
-import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassCache;
-import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.KCode;
-import org.jruby.util.cli.Options;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**
@@ -2052,7 +2062,7 @@ public class ScriptingContainerTest {
     @Test
     public void testSetClassLoader() {
         logger1.info("setClassLoader");
-        ClassLoader loader = new JRubyClassLoader(ScriptingContainerTest.class.getClassLoader());
+        ClassLoader loader = ScriptingContainerTest.class.getClassLoader();
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
