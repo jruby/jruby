@@ -629,8 +629,14 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public void visitAll(Visitor visitor) {
+       visitLimited(visitor, size);
+    }
+
+    private void visitLimited(Visitor visitor, long size) {
         int startGeneration = generation;
-        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+        long count = size;
+        for (RubyHashEntry entry = head.nextAdded; entry != head && count != 0; entry = entry.nextAdded) {
+            count--;
             if (startGeneration != generation) {
                 startGeneration = generation;
                 entry = head.nextAdded;
@@ -638,6 +644,8 @@ public class RubyHash extends RubyObject implements Map {
             }
             if (entry.isLive()) visitor.visit(entry.key, entry.value);
         }
+        // if we have not walked exactly as many elements as +size+, something has changed; raise error
+        if (count != 0) concurrentModification();
     }
 
     /* ============================
@@ -1838,10 +1846,10 @@ public class RubyHash extends RubyObject implements Map {
     // to totally change marshalling to work with overridden core classes.
     public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
         output.registerLinkTarget(hash);
-        output.writeInt(hash.size);
+        int hashSize = hash.size;
+        output.writeInt(hashSize);
         try {
-            hash.visitAll(new Visitor() {
-                @Override
+            hash.visitLimited(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
                     try {
                         output.dumpObject(key);
@@ -1850,12 +1858,13 @@ public class RubyHash extends RubyObject implements Map {
                         throw new VisitorIOException(e);
                     }
                 }
-            });
+            }, hashSize);
         } catch (VisitorIOException e) {
             throw (IOException)e.getCause();
         }
 
-        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
+        IRubyObject ifNone = hash.ifNone;
+        if (!ifNone.isNil()) output.dumpObject(ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
