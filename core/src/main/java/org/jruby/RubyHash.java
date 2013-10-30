@@ -624,23 +624,29 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public void visitAll(Visitor visitor) {
-       visitLimited(visitor, size);
+        // use -1 to disable concurrency checks
+        visitLimited(visitor, -1);
     }
 
     private void visitLimited(Visitor visitor, long size) {
         int startGeneration = generation;
         long count = size;
+        // visit not more than size entries
         for (RubyHashEntry entry = head.nextAdded; entry != head && count != 0; entry = entry.nextAdded) {
-            count--;
             if (startGeneration != generation) {
                 startGeneration = generation;
                 entry = head.nextAdded;
                 if (entry == head) break;
             }
-            if (entry.isLive()) visitor.visit(entry.key, entry.value);
+            if (entry != null && entry.isLive()) {
+                visitor.visit(entry.key, entry.value);
+                count--;
+            }
         }
-        // if we have not walked exactly as many elements as +size+, something has changed; raise error
-        if (count != 0) concurrentModification();
+        // it does not handle all concurrent modification cases,
+        // but at least provides correct marshal as we have exactly size entries visited (count == 0)
+        // or if count < 0 - skipped concurrent modification checks
+        if (count > 0) throw concurrentModification();
     }
 
     /* ============================
@@ -1949,8 +1955,8 @@ public class RubyHash extends RubyObject implements Map {
     // to totally change marshalling to work with overridden core classes.
     public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
         output.registerLinkTarget(hash);
-        int hashSize = hash.size;
-        output.writeInt(hashSize);
+       int hashSize = hash.size;
+       output.writeInt(hashSize);
         try {
             hash.visitLimited(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
@@ -1966,8 +1972,7 @@ public class RubyHash extends RubyObject implements Map {
             throw (IOException)e.getCause();
         }
 
-        IRubyObject ifNone = hash.ifNone;
-        if (!ifNone.isNil()) output.dumpObject(ifNone);
+        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
