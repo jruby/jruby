@@ -22,6 +22,12 @@ class TestLazyEnumerator < Test::Unit::TestCase
     assert_equal([1, 2, 3], [1, 2, 3].lazy.to_a)
     assert_equal([1, 2, 3], Enumerator::Lazy.new([1, 2, 3]){|y, v| y << v}.to_a)
     assert_raise(ArgumentError) { Enumerator::Lazy.new([1, 2, 3]) }
+
+    a = [1, 2, 3].lazy
+    a.freeze
+    assert_raise(RuntimeError) {
+      a.__send__ :initialize, [4, 5], &->(y, *v) { y << yield(*v) }
+    }
   end
 
   def test_each_args
@@ -292,6 +298,18 @@ class TestLazyEnumerator < Test::Unit::TestCase
     assert_equal [[1, 42], [2, :foo]], zip.force
   end
 
+  def test_zip_nonsingle
+    bug8735 = '[ruby-core:56383] [Bug #8735]'
+
+    obj = Object.new
+    def obj.each
+      yield
+      yield 1, 2
+    end
+
+    assert_equal(obj.to_enum.zip(obj.to_enum), obj.to_enum.lazy.zip(obj.to_enum).force, bug8735)
+  end
+
   def test_take_rewound
     bug7696 = '[ruby-core:51470]'
     e=(1..42).lazy.take(2)
@@ -322,11 +340,11 @@ class TestLazyEnumerator < Test::Unit::TestCase
 
   def test_drop_while
     a = Step.new(1..10)
-    assert_equal(5, a.drop_while {|i| i < 5}.first)
+    assert_equal(5, a.drop_while {|i| i % 5 > 0}.first)
     assert_equal(10, a.current)
-    assert_equal(5, a.lazy.drop_while {|i| i < 5}.first)
+    assert_equal(5, a.lazy.drop_while {|i| i % 5 > 0}.first)
     assert_equal(5, a.current)
-    assert_equal((5..10).to_a, a.lazy.drop_while {|i| i < 5}.to_a)
+    assert_equal((5..10).to_a, a.lazy.drop_while {|i| i % 5 > 0}.to_a)
   end
 
   def test_drop_and_take
@@ -438,8 +456,8 @@ EOS
 
   def test_map_zip
     bug7507 = '[ruby-core:50545]'
-    assert_ruby_status(["-e", "GC.stress = true", "-e", "(1..10).lazy.map{}.zip(){}"], bug7507)
-    assert_ruby_status(["-e", "GC.stress = true", "-e", "(1..10).lazy.map{}.zip().to_a"], bug7507)
+    assert_ruby_status(["-e", "GC.stress = true", "-e", "(1..10).lazy.map{}.zip(){}"], "", bug7507)
+    assert_ruby_status(["-e", "GC.stress = true", "-e", "(1..10).lazy.map{}.zip().to_a"], "", bug7507)
   end
 
   def test_require_block
@@ -462,5 +480,14 @@ EOS
       assert_equal Enumerator::Lazy, [].lazy.send(method, *arg).class, bug7507
     end
     assert_equal Enumerator::Lazy, [].lazy.chunk{}.class, bug7507
+  end
+
+  def test_no_warnings
+    le = (1..3).lazy
+    assert_warning("") {le.zip([4,5,6]).force}
+    assert_warning("") {le.zip(4..6).force}
+    assert_warning("") {le.take(1).force}
+    assert_warning("") {le.drop(1).force}
+    assert_warning("") {le.drop_while{false}.force}
   end
 end

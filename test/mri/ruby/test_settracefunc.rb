@@ -397,42 +397,6 @@ class TestSetTraceFunc < Test::Unit::TestCase
     assert_equal(self, ok, bug3921)
   end
 
-  def assert_security_error_safe4(block)
-    assert_raise(SecurityError) do
-      block.call
-    end
-  end
-
-  def test_set_safe4
-    func = proc do
-      $SAFE = 4
-      set_trace_func(lambda {|*|})
-    end
-    assert_security_error_safe4(func)
-  end
-
-  def test_thread_set_safe4
-    th = Thread.start {sleep}
-    func = proc do
-      $SAFE = 4
-      th.set_trace_func(lambda {|*|})
-    end
-    assert_security_error_safe4(func)
-  ensure
-    th.kill
-  end
-
-  def test_thread_add_safe4
-    th = Thread.start {sleep}
-    func = proc do
-      $SAFE = 4
-      th.add_trace_func(lambda {|*|})
-    end
-    assert_security_error_safe4(func)
-  ensure
-    th.kill
-  end
-
   class << self
     define_method(:method_added, Module.method(:method_added))
   end
@@ -924,24 +888,6 @@ class TestSetTraceFunc < Test::Unit::TestCase
     end
   end
 
-  def test_trace_point_enable_safe4
-    tp = TracePoint.new {}
-    func = proc do
-      $SAFE = 4
-      tp.enable
-    end
-    assert_security_error_safe4(func)
-  end
-
-  def test_trace_point_disable_safe4
-    tp = TracePoint.new {}
-    func = proc do
-      $SAFE = 4
-      tp.disable
-    end
-    assert_security_error_safe4(func)
-  end
-
   def m1_for_test_trace_point_binding_in_ifunc(arg)
     arg + nil
   rescue
@@ -1006,5 +952,43 @@ class TestSetTraceFunc < Test::Unit::TestCase
     ensure
       set_trace_func(nil)
     end
+  end
+
+  def test_tracepoint_b_return_with_next
+    n = 0
+    TracePoint.new(:b_return){
+      n += 1
+    }.enable{
+      3.times{
+        next
+      } # 3 times b_retun
+    }   # 1 time b_return
+
+    assert_equal 4, n
+  end
+
+  def test_tracepoint_b_return_with_lambda
+    n = 0
+    TracePoint.new(:b_return){
+      n+=1
+    }.enable{
+      lambda{
+        return
+      }.call     # n += 1 #=> 1
+      3.times{
+        lambda{
+          return # n += 3 #=> 4
+        }.call
+      }          # n += 3 #=> 7
+      begin
+        lambda{
+          raise
+        }.call   # n += 1 #=> 8
+      rescue
+        # ignore
+      end        # n += 1 #=> 9
+    }
+
+    assert_equal 9, n
   end
 end

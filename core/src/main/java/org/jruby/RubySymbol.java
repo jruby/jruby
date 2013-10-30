@@ -101,6 +101,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 PerlHash.hash(symbolHashSeedK0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
+        setFrozen(true);
     }
 
     private RubySymbol(Ruby runtime, String internedSymbol) {

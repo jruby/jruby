@@ -82,6 +82,7 @@ class TestRange < Test::Unit::TestCase
   def test_initialize_twice
     r = eval("1..2")
     assert_raise(NameError) { r.instance_eval { initialize 3, 4 } }
+    assert_raise(NameError) { r.instance_eval { initialize_copy 3..4 } }
   end
 
   def test_uninitialized_range
@@ -250,6 +251,16 @@ class TestRange < Test::Unit::TestCase
   def test_first_last
     assert_equal([0, 1, 2], (0..10).first(3))
     assert_equal([8, 9, 10], (0..10).last(3))
+    assert_equal(0, (0..10).first)
+    assert_equal(10, (0..10).last)
+    assert_equal("a", ("a".."c").first)
+    assert_equal("c", ("a".."c").last)
+    assert_equal(0, (2..0).last)
+
+    assert_equal([0, 1, 2], (0...10).first(3))
+    assert_equal([7, 8, 9], (0...10).last(3))
+    assert_equal(0, (0...10).first)
+    assert_equal("a", ("a"..."c").first)
   end
 
   def test_to_s

@@ -118,6 +118,45 @@ source #{@gem_repo} already present in the cache
     assert_equal '', @ui.error
   end
 
+  def test_execute_add_http_rubygems_org
+    http_rubygems_org = 'http://rubygems.org'
+    util_setup_fake_fetcher
+
+    install_specs @a1
+
+    specs = Gem::Specification.map { |spec|
+      [spec.name, spec.version, spec.original_platform]
+    }
+
+    specs_dump_gz = StringIO.new
+    Zlib::GzipWriter.wrap specs_dump_gz do |io|
+      Marshal.dump specs, io
+    end
+
+    @fetcher.data["#{http_rubygems_org}/specs.#{@marshal_version}.gz"] =
+      specs_dump_gz.string
+
+    @cmd.handle_options %W[--add #{http_rubygems_org}]
+
+    util_setup_spec_fetcher
+
+    ui = Gem::MockGemUi.new "n"
+
+    use_ui ui do
+      assert_raises Gem::MockGemUi::TermError do
+        @cmd.execute
+      end
+    end
+
+    assert_equal [@gem_repo], Gem.sources
+
+    expected = <<-EXPECTED
+    EXPECTED
+
+    assert_equal expected, @ui.output
+    assert_empty @ui.error
+  end
+
   def test_execute_add_bad_uri
     @cmd.handle_options %w[--add beta-gems.example.com]
 
@@ -155,8 +194,25 @@ beta-gems.example.com is not a URI
     assert_equal expected, @ui.output
     assert_equal '', @ui.error
 
-    dir = File.join Gem.user_home, '.gem', 'specs'
+    dir = Gem.spec_cache_dir
     refute File.exist?(dir), 'cache dir removed'
+  end
+
+  def test_execute_list
+    @cmd.handle_options %w[--list]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+*** CURRENT SOURCES ***
+
+#{@gem_repo}
+    EOF
+
+    assert_equal expected, @ui.output
+    assert_equal '', @ui.error
   end
 
   def test_execute_remove

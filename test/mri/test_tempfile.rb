@@ -206,6 +206,21 @@ puts Tempfile.new('foo').path
     end
   end
 
+  def test_tempfile_finalizer_does_not_run_if_unlinked
+    bug8768 = '[ruby-core:56521] [Bug #8768]'
+    args = %w(--disable-gems -rtempfile)
+    assert_in_out_err(args, <<-'EOS') do |(filename), (error)|
+      tmp = Tempfile.new('foo')
+      puts tmp.path
+      tmp.close
+      tmp.unlink
+      $DEBUG = true
+      EOS
+      assert_file.not_exist?(filename)
+      assert_nil(error, "#{bug8768} we used to get a confusing 'removing ...done' here")
+    end
+  end
+
   def test_size_flushes_buffer_before_determining_file_size
     t = tempfile("foo")
     t.write("hello")
@@ -303,6 +318,27 @@ puts Tempfile.new('foo').path
     else
       assert_equal(0600, t.stat.mode & 0777)
     end
+  end
+
+  def test_create_with_block
+    path = nil
+    Tempfile.create("tempfile-create") {|f|
+      path = f.path
+      assert(File.exist?(path))
+    }
+    assert(!File.exist?(path))
+  end
+
+  def test_create_without_block
+    path = nil
+    f = Tempfile.create("tempfile-create")
+    path = f.path
+    assert(File.exist?(path))
+    f.close
+    assert(File.exist?(path))
+  ensure
+    f.close if f && !f.closed?
+    File.unlink path if path
   end
 end
 

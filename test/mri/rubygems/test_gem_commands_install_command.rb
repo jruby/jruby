@@ -1,20 +1,26 @@
 require 'rubygems/test_case'
 require 'rubygems/commands/install_command'
+require 'rubygems/rdoc'
 
 class TestGemCommandsInstallCommand < Gem::TestCase
 
   def setup
     super
+    common_installer_setup
 
     @cmd = Gem::Commands::InstallCommand.new
     @cmd.options[:document] = []
 
     @gemdeps = "tmp_install_gemdeps"
     @orig_args = Gem::Command.build_args
+
+    common_installer_setup
   end
 
   def teardown
     super
+
+    common_installer_teardown
 
     Gem::Command.build_args = @orig_args
     File.unlink @gemdeps if File.file? @gemdeps
@@ -32,10 +38,9 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     @cmd.options[:args] = [@a2.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
         @cmd.execute
       end
-      assert_equal 0, e.exit_code, @ui.error
     end
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
@@ -56,10 +61,9 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     assert @cmd.options[:version].satisfied_by?(@a2_pre.version)
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
         @cmd.execute
       end
-      assert_equal 0, e.exit_code, @ui.error
     end
 
     assert_equal %w[a-2.a], @cmd.installed_specs.map { |spec| spec.full_name }
@@ -77,10 +81,9 @@ class TestGemCommandsInstallCommand < Gem::TestCase
       orig_dir = Dir.pwd
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
           @cmd.execute
         end
-        assert_equal 0, e.exit_code
       ensure
         Dir.chdir orig_dir
       end
@@ -88,9 +91,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "1 gem installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "1 gem installed", @ui.output
   end
 
   def test_execute_no_user_install
@@ -127,7 +128,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     @cmd.options[:args] = %w[no_such_gem]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      e = assert_raises Gem::MockGemUi::TermError do
         @cmd.execute
       end
       assert_equal 2, e.exit_code
@@ -152,7 +153,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     @cmd.options[:args] = %w[nonexistent]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      e = assert_raises Gem::MockGemUi::TermError do
         @cmd.execute
       end
       assert_equal 2, e.exit_code
@@ -167,8 +168,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
 
     # This is needed because we need to exercise the cache path
     # within SpecFetcher
-    path = File.join Gem.user_home, '.gem', 'specs', "not-there.nothing%80",
-                                    "latest_specs.4.8"
+    path = File.join Gem.spec_cache_dir, "not-there.nothing%80", "latest_specs.4.8"
 
     FileUtils.mkdir_p File.dirname(path)
 
@@ -181,7 +181,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     @cmd.options[:args] = %w[nonexistent]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      e = assert_raises Gem::MockGemUi::TermError do
         @cmd.execute
       end
       assert_equal 2, e.exit_code
@@ -203,7 +203,7 @@ class TestGemCommandsInstallCommand < Gem::TestCase
     @cmd.options[:args] = [misspelled]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      e = assert_raises Gem::MockGemUi::TermError do
         @cmd.execute
       end
 
@@ -227,7 +227,7 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [misspelled]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      e = assert_raises Gem::MockGemUi::TermError do
         @cmd.execute
       end
 
@@ -270,10 +270,9 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [@a2_pre.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
         @cmd.execute
       end
-      assert_equal 0, e.exit_code, @ui.error
     end
 
     assert_equal %w[a-1], @cmd.installed_specs.map { |spec| spec.full_name }
@@ -293,10 +292,9 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [@a2_pre.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
         @cmd.execute
       end
-      assert_equal 0, e.exit_code, @ui.error
     end
 
     assert_equal %w[a-2.a], @cmd.installed_specs.map { |spec| spec.full_name }
@@ -316,10 +314,9 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [@a2_pre.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
         @cmd.execute
       end
-      assert_equal 0, e.exit_code, @ui.error
     end
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
@@ -344,14 +341,12 @@ ERROR:  Possible alternatives: non_existent_with_hint
 
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
           @cmd.execute
         end
       ensure
         Dir.chdir old
       end
-
-      assert_equal 0, e.exit_code
     end
 
     wait_for_child_process_to_exit
@@ -380,14 +375,12 @@ ERROR:  Possible alternatives: non_existent_with_hint
 
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
           @cmd.execute
         end
       ensure
         Dir.chdir old
       end
-
-      assert_equal 0, e.exit_code
     end
 
     path = @a2.build_info_file
@@ -407,19 +400,14 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [@a2.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "1 gem installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "1 gem installed", @ui.output
   end
 
   def test_execute_remote_ignores_files
@@ -447,18 +435,15 @@ ERROR:  Possible alternatives: non_existent_with_hint
 
     use_ui @ui do
       Dir.chdir @tempdir do
-        e = assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
           @cmd.execute
         end
-        assert_equal 0, e.exit_code
       end
     end
 
     assert_equal %w[a-1], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "1 gem installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "1 gem installed", @ui.output
 
     fin = Dir["#{gemdir}/*"]
 
@@ -479,10 +464,9 @@ ERROR:  Possible alternatives: non_existent_with_hint
       orig_dir = Dir.pwd
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
           @cmd.execute
         end
-        assert_equal 0, e.exit_code
       ensure
         Dir.chdir orig_dir
       end
@@ -490,9 +474,7 @@ ERROR:  Possible alternatives: non_existent_with_hint
 
     assert_equal %w[a-2 b-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "2 gems installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "2 gems installed", @ui.output
   end
 
   def test_execute_two_version
@@ -532,7 +514,7 @@ ERROR:  Possible alternatives: non_existent_with_hint
       orig_dir = Dir.pwd
       begin
         Dir.chdir @tempdir
-        assert_raises Gem::SystemExitException do
+        assert_raises Gem::MockGemUi::SystemExitException do
           @cmd.execute
         end
       ensure
@@ -542,10 +524,8 @@ ERROR:  Possible alternatives: non_existent_with_hint
 
     assert_equal %w[b-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
     assert_equal "", @ui.error
-    assert_equal "1 gem installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "1 gem installed", @ui.output
   end
 
   def test_parses_requirement_from_gemname
@@ -565,7 +545,7 @@ ERROR:  Possible alternatives: non_existent_with_hint
       orig_dir = Dir.pwd
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        e = assert_raises Gem::MockGemUi::TermError do
           @cmd.execute
         end
       ensure
@@ -587,7 +567,7 @@ ERROR:  Possible alternatives: non_existent_with_hint
       orig_dir = Dir.pwd
       begin
         Dir.chdir @tempdir
-        e = assert_raises Gem::SystemExitException do
+        e = assert_raises Gem::MockGemUi::TermError do
           @cmd.execute
         end
       ensure
@@ -612,85 +592,19 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:args] = [@a2.name]
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "1 gem installed", out.shift
-    assert out.empty?, out.inspect
+    assert_match "1 gem installed", @ui.output
 
     e = @ui.error
 
     x = "WARNING:  Unable to pull data from 'http://nonexistent.example': no data for http://nonexistent.example/latest_specs.4.8.gz (http://nonexistent.example/latest_specs.4.8.gz)\n"
     assert_equal x, e
-  end
-
-  def test_execute_installs_dependencies
-    r, r_gem = util_gem 'r', '1', 'q' => '= 1'
-    q, q_gem = util_gem 'q', '1'
-
-    util_setup_fake_fetcher
-    util_setup_spec_fetcher r, q
-
-    Gem::Specification.reset
-
-    @fetcher.data["#{@gem_repo}gems/#{q.file_name}"] = read_binary(q_gem)
-    @fetcher.data["#{@gem_repo}gems/#{r.file_name}"] = read_binary(r_gem)
-
-    @cmd.options[:args] = ["r"]
-
-    e = nil
-    use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
-      end
-    end
-
-    out = @ui.output.split "\n"
-    assert_equal "2 gems installed", out.shift
-    assert out.empty?, out.inspect
-
-    assert_equal %w[q-1 r-1], @cmd.installed_specs.map { |spec| spec.full_name }
-
-    assert_equal 0, e.exit_code
-  end
-
-  def test_execute_satisfy_deps_of_local_from_sources
-    r, r_gem = util_gem 'r', '1', 'q' => '= 1'
-    q, q_gem = util_gem 'q', '1'
-
-    util_setup_fake_fetcher
-    util_setup_spec_fetcher r, q
-
-    Gem::Specification.reset
-
-    @fetcher.data["#{@gem_repo}gems/#{q.file_name}"] = read_binary(q_gem)
-
-    @cmd.options[:args] = [r_gem]
-
-    use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
-      end
-      assert_equal 0, e.exit_code
-    end
-
-    assert_equal %w[q-1 r-1], @cmd.installed_specs.map { |spec| spec.full_name }
-
-    out = @ui.output.split "\n"
-    assert_equal "2 gems installed", out.shift
-    assert out.empty?, out.inspect
   end
 
   def test_execute_uses_from_a_gemdeps
@@ -707,19 +621,14 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     assert_equal %w[], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "Using a (2)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Using a (2)", @ui.output
   end
 
   def test_execute_installs_from_a_gemdeps
@@ -737,19 +646,14 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     assert_equal %w[a-2], @cmd.installed_specs.map { |spec| spec.full_name }
 
-    out = @ui.output.split "\n"
-    assert_equal "Installing a (2)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Installing a (2)", @ui.output
   end
 
   def test_execute_installs_deps_a_gemdeps
@@ -770,22 +674,17 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     names = @cmd.installed_specs.map { |spec| spec.full_name }
 
     assert_equal %w[q-1.0 r-2.0], names
 
-    out = @ui.output.split "\n"
-    assert_equal "Installing q (1.0)", out.shift
-    assert_equal "Installing r (2.0)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Installing q (1.0)", @ui.output
+    assert_match "Installing r (2.0)", @ui.output
   end
 
   def test_execute_uses_deps_a_gemdeps
@@ -807,22 +706,17 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     names = @cmd.installed_specs.map { |spec| spec.full_name }
 
     assert_equal %w[r-2.0], names
 
-    out = @ui.output.split "\n"
-    assert_equal "Using q (1.0)", out.shift
-    assert_equal "Installing r (2.0)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Using q (1.0)",      @ui.output
+    assert_match "Installing r (2.0)", @ui.output
   end
 
   def test_execute_installs_deps_a_gemdeps_into_a_path
@@ -844,22 +738,17 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     names = @cmd.installed_specs.map { |spec| spec.full_name }
 
     assert_equal %w[q-1.0 r-2.0], names
 
-    out = @ui.output.split "\n"
-    assert_equal "Installing q (1.0)", out.shift
-    assert_equal "Installing r (2.0)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Installing q (1.0)", @ui.output
+    assert_match "Installing r (2.0)", @ui.output
 
     assert File.file?("gf-path/specifications/q-1.0.gemspec"), "not installed"
     assert File.file?("gf-path/specifications/r-2.0.gemspec"), "not installed"
@@ -886,22 +775,17 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     names = @cmd.installed_specs.map { |spec| spec.full_name }
 
     assert_equal %w[q-1.0 r-2.0], names
 
-    out = @ui.output.split "\n"
-    assert_equal "Installing q (1.0)", out.shift
-    assert_equal "Installing r (2.0)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Installing q (1.0)", @ui.output
+    assert_match "Installing r (2.0)", @ui.output
 
     assert File.file?("gf-path/specifications/q-1.0.gemspec"), "not installed"
     assert File.file?("gf-path/specifications/r-2.0.gemspec"), "not installed"
@@ -930,24 +814,45 @@ ERROR:  Possible alternatives: non_existent_with_hint
     @cmd.options[:gemdeps] = @gemdeps
 
     use_ui @ui do
-      e = assert_raises Gem::SystemExitException do
-        capture_io do
-          @cmd.execute
-        end
+      assert_raises Gem::MockGemUi::SystemExitException, @ui.error do
+        @cmd.execute
       end
-      assert_equal 0, e.exit_code
     end
 
     names = @cmd.installed_specs.map { |spec| spec.full_name }
 
     assert_equal %w[r-2.0], names
 
-    out = @ui.output.split "\n"
-    assert_equal "Using q (1.0)", out.shift
-    assert_equal "Installing r (2.0)", out.shift
-    assert out.empty?, out.inspect
+    assert_match "Using q (1.0)", @ui.output
+    assert_match "Installing r (2.0)", @ui.output
   end
 
+  def test_handle_options_file
+    @cmd.handle_options %w[-g Gemfile]
+
+    assert_equal 'Gemfile', @cmd.options[:gemdeps]
+
+    @cmd.handle_options %w[--file gem.deps.rb]
+
+    assert_equal 'gem.deps.rb', @cmd.options[:gemdeps]
+
+    FileUtils.touch 'Isolate'
+
+    @cmd.handle_options %w[-g]
+
+    assert_equal 'Isolate', @cmd.options[:gemdeps]
+
+    FileUtils.touch 'Gemfile'
+
+    @cmd.handle_options %w[-g]
+
+    assert_equal 'Gemfile', @cmd.options[:gemdeps]
+
+    FileUtils.touch 'gem.deps.rb'
+
+    @cmd.handle_options %w[-g]
+
+    assert_equal 'gem.deps.rb', @cmd.options[:gemdeps]
+  end
 
 end
-

@@ -15,6 +15,13 @@ class TestGemGemcutterUtilities < Gem::TestCase
     @cmd.extend Gem::GemcutterUtilities
   end
 
+  def teardown
+    ENV['RUBYGEMS_HOST'] = nil
+    Gem.configuration.rubygems_api_key = nil
+
+    super
+  end
+
   def test_alternate_key_alternate_host
     keys = {
       :rubygems_api_key => 'KEY',
@@ -63,6 +70,22 @@ class TestGemGemcutterUtilities < Gem::TestCase
     assert_equal 'OTHER', @cmd.api_key
   end
 
+  def test_host
+    assert_equal 'https://rubygems.org', @cmd.host
+  end
+
+  def test_host_RUBYGEMS_HOST
+    ENV['RUBYGEMS_HOST'] = 'https://other.example'
+
+    assert_equal 'https://other.example', @cmd.host
+  end
+
+  def test_host_RUBYGEMS_HOST_empty
+    ENV['RUBYGEMS_HOST'] = ''
+
+    assert_equal 'https://rubygems.org', @cmd.host
+  end
+
   def test_sign_in
     api_key     = 'a5fdbb6ba150cbb83aad2bb2fede64cf040453903'
     util_sign_in [api_key, 200, 'OK']
@@ -78,9 +101,23 @@ class TestGemGemcutterUtilities < Gem::TestCase
   def test_sign_in_with_host
     api_key     = 'a5fdbb6ba150cbb83aad2bb2fede64cf040453903'
 
-    util_sign_in [api_key, 200, 'OK'], 'http://example.com', :param
+    util_sign_in [api_key, 200, 'OK'], 'http://example.com', ['http://example.com']
 
     assert_match "Enter your http://example.com credentials.",
+                 @sign_in_ui.output
+    assert @fetcher.last_request["authorization"]
+    assert_match %r{Signed in.}, @sign_in_ui.output
+
+    credentials = YAML.load_file Gem.configuration.credentials_path
+    assert_equal api_key, credentials[:rubygems_api_key]
+  end
+
+  def test_sign_in_with_host_nil
+    api_key     = 'a5fdbb6ba150cbb83aad2bb2fede64cf040453903'
+
+    util_sign_in [api_key, 200, 'OK'], nil, [nil]
+
+    assert_match "Enter your RubyGems.org credentials.",
                  @sign_in_ui.output
     assert @fetcher.last_request["authorization"]
     assert_match %r{Signed in.}, @sign_in_ui.output
@@ -140,14 +177,14 @@ class TestGemGemcutterUtilities < Gem::TestCase
     assert_match %r{Access Denied.}, @sign_in_ui.output
   end
 
-  def util_sign_in response, host = nil, style = :ENV
+  def util_sign_in response, host = nil, args = []
     skip 'Always uses $stdin on windows' if Gem.win_platform?
 
     email    = 'you@example.com'
     password = 'secret'
 
     if host
-      ENV['RUBYGEMS_HOST'] = host if style == :ENV
+      ENV['RUBYGEMS_HOST'] = host
     else
       host = Gem.host
     end
@@ -159,8 +196,8 @@ class TestGemGemcutterUtilities < Gem::TestCase
     @sign_in_ui = Gem::MockGemUi.new "#{email}\n#{password}\n"
 
     use_ui @sign_in_ui do
-      if style == :param then
-        @cmd.sign_in host
+      if args.length > 0 then
+        @cmd.sign_in(*args)
       else
         @cmd.sign_in
       end
@@ -186,4 +223,3 @@ class TestGemGemcutterUtilities < Gem::TestCase
   end
 
 end
-

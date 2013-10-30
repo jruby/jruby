@@ -83,20 +83,8 @@ class TestThread < Test::Unit::TestCase
   def test_thread_variable_frozen
     t = Thread.new { }.join
     t.freeze
-    assert_raises(RuntimeError) do
+    assert_raise(RuntimeError) do
       t.thread_variable_set(:foo, "bar")
-    end
-  end
-
-  def test_thread_variable_security
-    t = Thread.new { sleep }
-
-    assert_raises(SecurityError) do
-      Thread.new { $SAFE = 4; t.thread_variable_get(:foo) }.join
-    end
-
-    assert_raises(SecurityError) do
-      Thread.new { $SAFE = 4; t.thread_variable_set(:foo, :baz) }.join
     end
   end
 
@@ -118,6 +106,11 @@ class TestThread < Test::Unit::TestCase
       e.join
     }
     assert_equal(max * max * max, r)
+  end
+
+  def test_mutex_synchronize_yields_no_block_params
+    bug8097 = '[ruby-core:53424] [Bug #8097]'
+    assert_empty(Mutex.new.synchronize {|*params| break params}, bug8097)
   end
 
   def test_local_barrier
@@ -389,16 +382,6 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_thread_local_security
-    t = Thread.new { sleep }
-
-    assert_raise(SecurityError) do
-      Thread.new { $SAFE = 4; t[:foo] }.join
-    end
-
-    assert_raise(SecurityError) do
-      Thread.new { $SAFE = 4; t[:foo] = :baz }.join
-    end
-
     assert_raise(RuntimeError) do
       Thread.new do
         Thread.current[:foo] = :bar
@@ -510,10 +493,7 @@ class TestThread < Test::Unit::TestCase
     skip 'with win32ole, cannot run this testcase because win32ole redefines Thread#intialize' if defined?(WIN32OLE)
     bug5083 = '[ruby-dev:44208]'
     assert_equal([], Thread.new(&Module.method(:nesting)).value)
-    error = assert_raise(RuntimeError) do
-      Thread.new(:to_s, &Module.method(:undef_method)).join
-    end
-    assert_equal("Can't call on top of Fiber or Thread", error.message, bug5083)
+    assert_instance_of(Thread, Thread.new(:to_s, &Class.new.method(:undef_method)).join)
   end
 
   def make_handle_interrupt_test_thread1 flag
@@ -669,8 +649,8 @@ class TestThread < Test::Unit::TestCase
             q.push :ng1
           end
           begin
-            Thread.handle_interrupthandle_interrupt(Object => :immediate){} if Thread.pending_interrupt?
-          rescue => e
+            Thread.handle_interrupt(Object => :immediate){} if Thread.pending_interrupt?
+          rescue RuntimeError => e
             q.push :ok
           end
         rescue => e
@@ -738,12 +718,9 @@ _eom
     end
     t1 = Time.now.to_f
     assert_equal(pid, s.pid, bug5757)
-    unless /mswin|mingw/ =~ RUBY_PLATFORM
-      # status of signal is not supported on Windows
-      assert_equal([false, true, false, Signal.list["INT"]],
-                   [s.exited?, s.signaled?, s.stopped?, s.termsig],
-                   "[s.exited?, s.signaled?, s.stopped?, s.termsig]")
-    end
+    assert_equal([false, true, false, Signal.list["INT"]],
+                 [s.exited?, s.signaled?, s.stopped?, s.termsig],
+                 "[s.exited?, s.signaled?, s.stopped?, s.termsig]")
     assert_in_delta(t1 - t0, 1, 1, bug5757)
   end
 
@@ -771,13 +748,13 @@ _eom
   end
 
   def test_thread_join_current
-    assert_raises(ThreadError) do
+    assert_raise(ThreadError) do
       Thread.current.join
     end
   end
 
   def test_thread_join_main_thread
-    assert_raises(ThreadError) do
+    assert_raise(ThreadError) do
       Thread.new(Thread.current) {|t|
         t.join
       }.join
@@ -872,6 +849,23 @@ Thread.new(Thread.current) {|mth|
     end
   end
 
+  def test_mutex_unlock_on_trap
+    assert_in_out_err([], <<-INPUT, %w(locked unlocked false), [])
+      m = Mutex.new
+
+      Signal.trap("INT") { |signo|
+        m.unlock
+        puts "unlocked"
+      }
+
+      m.lock
+      puts "locked"
+      Process.kill("INT", $$)
+      sleep 0.01
+      puts m.locked?
+    INPUT
+  end
+
   def invoke_rec script, vm_stack_size, machine_stack_size, use_length = true
     env = {}
     env['RUBY_THREAD_VM_STACK_SIZE'] = vm_stack_size.to_s if vm_stack_size
@@ -915,4 +909,31 @@ Thread.new(Thread.current) {|mth|
     size_large = invoke_rec script, vm_stack_size, 1024 * 1024 * 10
     assert_operator(size_default, :<=, size_large, "large size")
   end
+
+  def test_blocking_mutex_unlocked_on_fork
+    bug8433 = '[ruby-core:55102] [Bug #8433]'
+
+    mutex = Mutex.new
+    flag = false
+    mutex.lock
+
+    th = Thread.new do
+      mutex.synchronize do
+        flag = true
+        sleep
+      end
+    end
+
+    Thread.pass until th.stop?
+    mutex.unlock
+
+    pid = Process.fork do
+      exit(mutex.locked?)
+    end
+
+    th.kill
+
+    pid, status = Process.waitpid2(pid)
+    assert_equal(false, status.success?, bug8433)
+  end if Process.respond_to?(:fork)
 end

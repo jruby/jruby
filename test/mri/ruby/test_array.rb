@@ -476,20 +476,16 @@ class TestArray < Test::Unit::TestCase
 
   def test_clone
     for taint in [ false, true ]
-      for untrust in [ false, true ]
-        for frozen in [ false, true ]
-          a = @cls[*(0..99).to_a]
-          a.taint  if taint
-          a.untrust  if untrust
-          a.freeze if frozen
-          b = a.clone
+      for frozen in [ false, true ]
+        a = @cls[*(0..99).to_a]
+        a.taint  if taint
+        a.freeze if frozen
+        b = a.clone
 
-          assert_equal(a, b)
-          assert_not_equal(a.__id__, b.__id__)
-          assert_equal(a.frozen?, b.frozen?)
-          assert_equal(a.untrusted?, b.untrusted?)
-          assert_equal(a.tainted?, b.tainted?)
-        end
+        assert_equal(a, b)
+        assert_not_equal(a.__id__, b.__id__)
+        assert_equal(a.frozen?, b.frozen?)
+        assert_equal(a.tainted?, b.tainted?)
       end
     end
   end
@@ -576,6 +572,29 @@ class TestArray < Test::Unit::TestCase
     assert_equal(3, a.count {|x| x % 2 == 1 })
     assert_equal(2, a.count(1) {|x| x % 2 == 1 })
     assert_raise(ArgumentError) { a.count(0, 1) }
+
+    bug8654 = '[ruby-core:56072]'
+    assert_in_out_err [], <<-EOS, ["0"], [], bug8654
+      a1 = []
+      a2 = Array.new(100) { |i| i }
+      a2.count do |i|
+        p i
+        a2.replace(a1) if i == 0
+      end
+    EOS
+
+    assert_in_out_err [], <<-EOS, ["[]", "0"], [], bug8654
+      ARY = Array.new(100) { |i| i }
+      class Fixnum
+        alias old_equal ==
+        def == other
+          ARY.replace([]) if self.equal?(0)
+          p ARY
+          self.equal?(other)
+        end
+      end
+      p ARY.count(42)
+    EOS
   end
 
   def test_delete
@@ -756,10 +775,8 @@ class TestArray < Test::Unit::TestCase
 
     a6 = @cls[[1, 2], 3]
     a6.taint
-    a6.untrust
     a7 = a6.flatten
     assert_equal(true, a7.tainted?)
-    assert_equal(true, a7.untrusted?)
 
     a8 = @cls[[1, 2], 3]
     a9 = a8.flatten(0)
@@ -950,23 +967,18 @@ class TestArray < Test::Unit::TestCase
     $, = ""
     a = @cls[1, 2, 3]
     a.taint
-    a.untrust
     s = a.join
     assert_equal(true, s.tainted?)
-    assert_equal(true, s.untrusted?)
 
     bug5902 = '[ruby-core:42161]'
-    sep = ":".taint.untrust
+    sep = ":".taint
 
     s = @cls[].join(sep)
     assert_equal(false, s.tainted?, bug5902)
-    assert_equal(false, s.untrusted?, bug5902)
     s = @cls[1].join(sep)
     assert_equal(false, s.tainted?, bug5902)
-    assert_equal(false, s.untrusted?, bug5902)
     s = @cls[1, 2].join(sep)
     assert_equal(true, s.tainted?, bug5902)
-    assert_equal(true, s.untrusted?, bug5902)
 
     e = ''.force_encoding('EUC-JP')
     u = ''.force_encoding('UTF-8')
@@ -1378,6 +1390,22 @@ class TestArray < Test::Unit::TestCase
     end
   end
 
+  def test_sort_bang_with_freeze
+    ary = []
+    o1 = Object.new
+    o1.singleton_class.class_eval {
+      define_method(:<=>) {|v|
+        ary.freeze
+        1
+      }
+    }
+    o2 = o1.dup
+    ary << o1 << o2
+    orig = ary.dup
+    assert_raise(RuntimeError, "frozen during comparison") {ary.sort!}
+    assert_equal(orig, ary, "must not be modified once frozen")
+  end
+
   def test_to_a
     a = @cls[ 1, 2, 3 ]
     a_id = a.__id__
@@ -1426,6 +1454,21 @@ class TestArray < Test::Unit::TestCase
     assert_equal("[1, 2, 3]", a.to_s)
   ensure
     $, = nil
+  end
+
+  def test_to_h
+    kvp = Object.new
+    def kvp.to_ary
+      [:obtained, :via_to_ary]
+    end
+    array = [
+      [:key, :value],
+      [:ignore_me],
+      [:ignore, :me, :too],
+      :ignore_me,
+      kvp,
+    ]
+    assert_equal({key: :value, obtained: :via_to_ary}, array.to_h)
   end
 
   def test_uniq
@@ -1553,6 +1596,15 @@ class TestArray < Test::Unit::TestCase
     assert_equal(nil, b)
   end
 
+  def test_uniq_bang_with_freeze
+    ary = [1,2]
+    orig = ary.dup
+    assert_raise(RuntimeError, "frozen during comparison") {
+      ary.uniq! {|v| ary.freeze; 1}
+    }
+    assert_equal(orig, ary, "must not be modified once frozen")
+  end
+
   def test_unshift
     a = @cls[]
     assert_equal(@cls['cat'], a.unshift('cat'))
@@ -1672,8 +1724,8 @@ class TestArray < Test::Unit::TestCase
                       [2,2,2,2],[2,2,2,3],[2,2,3,3],[2,3,3,3],[3,3,3,3]],
                  a.repeated_combination(4).to_a.sort)
     assert_equal(@cls[], a.repeated_combination(-1).to_a)
-    assert_equal("abcde".each_char.to_a.repeated_combination(5).map{|a|a.sort}.sort,
-                 "edcba".each_char.to_a.repeated_combination(5).map{|a|a.sort}.sort)
+    assert_equal("abcde".each_char.to_a.repeated_combination(5).map{|e|e.sort}.sort,
+                 "edcba".each_char.to_a.repeated_combination(5).map{|e|e.sort}.sort)
     assert_equal(@cls[].repeated_combination(0).to_a, @cls[[]])
     assert_equal(@cls[].repeated_combination(1).to_a, @cls[])
 
@@ -1705,19 +1757,6 @@ class TestArray < Test::Unit::TestCase
 
   def test_drop_while
     assert_equal([3,4,5,0], [1,2,3,4,5,0].drop_while {|i| i < 3 })
-  end
-
-  def test_modify_check
-    a = []
-    a.freeze
-    assert_raise(RuntimeError) { a.shift }
-    a = [1, 2]
-    assert_raise(SecurityError) do
-      Thread.new do
-        $SAFE = 4
-       a.shift
-      end.value
-    end
   end
 
   LONGP = [127, 63, 31, 15, 7].map {|x| 2**x-1 }.find do |x|
@@ -1768,6 +1807,11 @@ class TestArray < Test::Unit::TestCase
   def test_first2
     assert_equal([0], [0].first(2))
     assert_raise(ArgumentError) { [0].first(-1) }
+  end
+
+  def test_last2
+    assert_equal([0], [0].last(2))
+    assert_raise(ArgumentError) { [0].last(-1) }
   end
 
   def test_shift2
@@ -1911,11 +1955,20 @@ class TestArray < Test::Unit::TestCase
 
     ary = Object.new
     def ary.to_a;   [1, 2]; end
-    assert_raise(TypeError, NoMethodError) {%w(a b).zip(ary)}
+    assert_raise(TypeError) {%w(a b).zip(ary)}
     def ary.each; [3, 4].each{|e|yield e}; end
     assert_equal([['a', 3], ['b', 4]], %w(a b).zip(ary))
     def ary.to_ary; [5, 6]; end
     assert_equal([['a', 5], ['b', 6]], %w(a b).zip(ary))
+  end
+
+  def test_zip_bug
+    bug8153 = "ruby-core:53650"
+    r = 1..1
+    def r.respond_to?(*)
+      super
+    end
+    assert_equal [[42, 1]], [42].zip(r), bug8153
   end
 
   def test_transpose
@@ -2011,6 +2064,19 @@ class TestArray < Test::Unit::TestCase
       alias rand call
     end
     assert_raise(RuntimeError) {ary.shuffle!(random: gen)}
+
+    zero = Object.new
+    def zero.to_int
+      0
+    end
+    gen_to_int = proc do |max|
+      zero
+    end
+    class << gen_to_int
+      alias rand call
+    end
+    ary = (0...10000).to_a
+    assert_equal(ary.rotate, ary.shuffle(random: gen_to_int))
   end
 
   def test_sample
@@ -2055,14 +2121,14 @@ class TestArray < Test::Unit::TestCase
     ary = (0...10000).to_a
     assert_raise(ArgumentError) {ary.sample(1, 2, random: nil)}
     gen0 = proc do |max|
-      (max+1)/2
+      max/2
     end
     class << gen0
       alias rand call
     end
     gen1 = proc do |max|
       ary.replace([])
-      (max+1)/2
+      max/2
     end
     class << gen1
       alias rand call
@@ -2094,6 +2160,19 @@ class TestArray < Test::Unit::TestCase
     assert_equal([5000, 0, 5001, 2, 5002, 4, 5003, 6, 5004, 8, 5005], ary.sample(11, random: gen0))
     ary.sample(11, random: gen1) # implementation detail, may change in the future
     assert_equal([], ary)
+
+    half = Object.new
+    def half.to_int
+      5000
+    end
+    gen_to_int = proc do |max|
+      half
+    end
+    class << gen_to_int
+      alias rand call
+    end
+    ary = (0...10000).to_a
+    assert_equal(5000, ary.sample(random: gen_to_int))
   end
 
   def test_cycle
@@ -2149,10 +2228,8 @@ class TestArray < Test::Unit::TestCase
   def test_inspect
     a = @cls[1, 2, 3]
     a.taint
-    a.untrust
     s = a.inspect
     assert_equal(true, s.tainted?)
-    assert_equal(true, s.untrusted?)
   end
 
   def test_initialize2
@@ -2243,8 +2320,7 @@ class TestArray < Test::Unit::TestCase
     assert_equal([], a.rotate!(13))
     assert_equal([], a.rotate!(-13))
     a = [].freeze
-    e = assert_raise(RuntimeError) {a.rotate!}
-    assert_match(/can't modify frozen/, e.message)
+    assert_raise_with_message(RuntimeError, /can't modify frozen/) {a.rotate!}
     a = [1,2,3]
     assert_raise(ArgumentError) { a.rotate!(1, 1) }
   end

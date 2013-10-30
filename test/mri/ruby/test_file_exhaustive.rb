@@ -475,10 +475,12 @@ class TestFileExhaustive < Test::Unit::TestCase
     ENV["HOME"] = home
   end
 
+  UnknownUserHome = "~foo_bar_baz_unknown_user_wahaha".freeze
+
   def test_expand_path_home
     assert_kind_of(String, File.expand_path("~")) if ENV["HOME"]
-    assert_raise(ArgumentError) { File.expand_path("~foo_bar_baz_unknown_user_wahaha") }
-    assert_raise(ArgumentError) { File.expand_path("~foo_bar_baz_unknown_user_wahaha", "/") }
+    assert_raise(ArgumentError) { File.expand_path(UnknownUserHome) }
+    assert_raise(ArgumentError) { File.expand_path(UnknownUserHome, "/") }
     begin
       bug3630 = '[ruby-core:31537]'
       home = ENV["HOME"]
@@ -501,6 +503,48 @@ class TestFileExhaustive < Test::Unit::TestCase
       ENV["USERPROFILE"] = user_profile
     end
   end
+
+  def test_expand_path_home_dir_string
+    home = ENV["HOME"]
+    new_home = "#{DRIVE}/UserHome"
+    ENV["HOME"] = new_home
+    bug8034 = "[ruby-core:53168]"
+
+    assert_equal File.join(new_home, "foo"), File.expand_path("foo", "~"), bug8034
+    assert_equal File.join(new_home, "bar", "foo"), File.expand_path("foo", "~/bar"), bug8034
+
+    assert_raise(ArgumentError) { File.expand_path(".", UnknownUserHome) }
+    assert_nothing_raised(ArgumentError) { File.expand_path("#{DRIVE}/", UnknownUserHome) }
+  ensure
+    ENV["HOME"] = home
+  end
+
+  if /mswin|mingw/ =~ RUBY_PLATFORM
+    def test_expand_path_home_memory_leak_in_path
+      assert_no_memory_leak_at_expand_path_home('', 'in path')
+    end
+
+    def test_expand_path_home_memory_leak_in_base
+      assert_no_memory_leak_at_expand_path_home('".",', 'in base')
+    end
+
+    def assert_no_memory_leak_at_expand_path_home(arg, message)
+      prep = 'ENV["HOME"] = "foo"*100'
+      assert_no_memory_leak([], prep, <<-TRY, "memory leaked at non-absolute home #{message}")
+      10000.times do
+        begin
+          File.expand_path(#{arg}"~/a")
+        rescue ArgumentError => e
+          next
+        ensure
+          abort("ArgumentError (non-absolute home) expected") unless e
+        end
+      end
+      GC.start
+      TRY
+    end
+  end
+
 
   def test_expand_path_remove_trailing_alternative_data
     assert_equal File.join(@rootdir, "aaa"), File.expand_path("#{@rootdir}/aaa::$DATA")
@@ -651,6 +695,25 @@ class TestFileExhaustive < Test::Unit::TestCase
     bug = '[ruby-core:39597]'
     assert_raise(ArgumentError, bug) { File.expand_path("~anything") }
   end if DRIVE
+
+  def test_expand_path_for_existent_username
+    user = ENV['USER']
+    skip "ENV['USER'] is not set" unless user
+    assert_equal(ENV['HOME'], File.expand_path("~#{user}"))
+  end unless DRIVE
+
+  def test_expand_path_error_for_nonexistent_username
+    user = "\u{3086 3046 3066 3044}:\u{307F 3084 304A 3046}"
+    assert_raise_with_message(ArgumentError, /#{user}/) {File.expand_path("~#{user}")}
+  end unless DRIVE
+
+  def test_expand_path_error_for_non_absolute_home
+    old_home = ENV["HOME"]
+    ENV["HOME"] = "./UserHome"
+    assert_raise_with_message(ArgumentError, /non-absolute home/) {File.expand_path("~")}
+  ensure
+    ENV["HOME"] = old_home
+  end
 
   def test_expand_path_raises_a_type_error_if_not_passed_a_string_type
     assert_raise(TypeError) { File.expand_path(1) }
@@ -1090,15 +1153,6 @@ class TestFileExhaustive < Test::Unit::TestCase
 
   def test_path_check
     assert_nothing_raised { ENV["PATH"] }
-  end
-
-  def test_find_file
-    assert_raise(SecurityError) do
-      Thread.new do
-        $SAFE = 4
-        load(@file)
-      end.join
-    end
   end
 
   def test_size

@@ -85,6 +85,10 @@ class TestBacktrace < Test::Unit::TestCase
     rec[m]
   end
 
+  def test_caller_with_nil_length
+    assert_equal caller(0), caller(0, nil)
+  end
+
   def test_caller_locations
     cs = caller(0); locs = caller_locations(0).map{|loc|
       loc.to_s
@@ -137,6 +141,23 @@ class TestBacktrace < Test::Unit::TestCase
       n = th_backtrace.size
       assert_equal(n, th.backtrace(0, n + 1).size)
       assert_equal(n, th.backtrace_locations(0, n + 1).size)
+    ensure
+      q << true
+    end
+  end
+
+  def test_thread_backtrace_locations_with_range
+    begin
+      q = Queue.new
+      th = Thread.new{
+        th_rec q
+      }
+      sleep 0.5
+      bt = th.backtrace(0,2)
+      locs = th.backtrace_locations(0..1).map { |loc|
+        loc.to_s
+      }
+      assert_equal(bt, locs)
     ensure
       q << true
     end

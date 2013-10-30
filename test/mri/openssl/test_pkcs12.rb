@@ -40,7 +40,7 @@ Li8JsX5yIiuVYaBg/6ha3tOg4TCa5K/3r3tVliRZ2Es=
       _EOS_
 
       @inter_cacert = issue_cert(inter_ca, inter_ca_key, 2, now, now+3600, ca_exts,
-                                 @ca_cert, TEST_KEY_RSA2048, OpenSSL::Digest::SHA1.new)
+                                 @cacert, TEST_KEY_RSA2048, OpenSSL::Digest::SHA1.new)
 
       exts = [
         ["keyUsage","digitalSignature",true],
@@ -52,7 +52,12 @@ Li8JsX5yIiuVYaBg/6ha3tOg4TCa5K/3r3tVliRZ2Es=
     end
 
     def test_create
-      pkcs12 = create_store
+      pkcs12 = OpenSSL::PKCS12.create(
+        "omg",
+        "hello",
+        TEST_KEY_RSA1024,
+        @mycert
+      )
       assert_equal @mycert, pkcs12.certificate
       assert_equal TEST_KEY_RSA1024, pkcs12.key
       assert_nil pkcs12.ca_certs

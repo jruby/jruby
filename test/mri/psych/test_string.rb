@@ -1,4 +1,4 @@
-require 'psych/helper'
+require_relative 'helper'
 
 module Psych
   class TestString < TestCase
@@ -13,6 +13,46 @@ module Psych
       def initialize
         force_encoding Encoding::US_ASCII
       end
+    end
+
+    def test_doublequotes_when_there_is_a_single
+      yaml = Psych.dump "@123'abc"
+      assert_match(/---\s*"/, yaml)
+    end
+
+    def test_cycle_x
+      str = X.new 'abc'
+      assert_cycle str
+    end
+
+    def test_dash_dot
+      assert_cycle '-.'
+      assert_cycle '+.'
+    end
+
+    def test_string_subclass_with_anchor
+      y = Psych.load <<-eoyml
+---
+body:
+  string: &70121654388580 !ruby/string
+    str: ! 'foo'
+  x:
+    body: *70121654388580
+      eoyml
+      assert_equal({"body"=>{"string"=>"foo", "x"=>{"body"=>"foo"}}}, y)
+    end
+
+    def test_self_referential_string
+      y = Psych.load <<-eoyml
+---
+string: &70121654388580 !ruby/string
+  str: ! 'foo'
+  body: *70121654388580
+      eoyml
+
+      assert_equal({"string"=>"foo"}, y)
+      value = y['string']
+      assert_equal value, value.instance_variable_get(:@body)
     end
 
     def test_another_subclass_with_attributes
