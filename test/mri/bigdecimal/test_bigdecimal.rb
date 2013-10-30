@@ -1382,6 +1382,13 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
+  def test_BigMath_log_with_float_nan
+    BigDecimal.save_exception_mode do
+      BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
+      assert(BigMath.log(Float::NAN, 20).nan?)
+    end
+  end
+
   def test_BigMath_log_with_1
     assert_in_delta(0.0, BigMath.log(1, 20))
     assert_in_delta(0.0, BigMath.log(1.0, 20))
