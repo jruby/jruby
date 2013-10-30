@@ -245,11 +245,14 @@ module BigMath
   # call-seq:
   #   log(decimal, numeric) -> BigDecimal
   #
-  # Computes the log of +decimal+ to the specified number of digits of
-  # precision, +numeric+.
+  # Computes the natural logarithm of +decimal+ to the specified number of
+  # digits of precision, +numeric+.
+  #
+  # If +decimal+ is zero of negative raise Math::DomainError.
+  #
+  # If +decimal+ is positive infinity, returns Infinity.
   #
   # If +decimal+ is NaN, returns NaN.
-  # If +decimal+ is zero of negative, returns NaN.
   #
   #   BigMath::log(BigMath::E(10), 10).to_s
   #   #=> "1.000000000000"
@@ -257,4 +260,157 @@ module BigMath
   def log(x, prec)
     BigDecimal('0')
   end
+
+=begin
+
+BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
+{
+    ssize_t prec, n, i;
+    SIGNED_VALUE expo;
+    Real* vx = NULL;
+    VALUE argv[2], vn, one, two, w, x2, y, d;
+    int zero = 0;
+    int negative = 0;
+    int infinite = 0;
+    int nan = 0;
+    double flo;
+    long fix;
+
+    if (!is_integer(vprec)) {
+  rb_raise(rb_eArgError, "precision must be an Integer");
+    }
+
+    prec = NUM2SSIZET(vprec);
+    if (prec <= 0) {
+  rb_raise(rb_eArgError, "Zero or negative precision for exp");
+    }
+
+    /* TODO: the following switch statement is almostly the same as one in the
+     *       BigDecimalCmp function. */
+    switch (TYPE(x)) {
+      case T_DATA:
+    if (!is_kind_of_BigDecimal(x)) break;
+    vx = DATA_PTR(x);
+    zero = VpIsZero(vx);
+    negative = VpGetSign(vx) < 0;
+    infinite = VpIsPosInf(vx) || VpIsNegInf(vx);
+    nan = VpIsNaN(vx);
+    break;
+
+      case T_FIXNUM:
+  fix = FIX2LONG(x);
+  zero = fix == 0;
+  negative = fix < 0;
+  goto get_vp_value;
+
+      case T_BIGNUM:
+  zero = RBIGNUM_ZERO_P(x);
+  negative = RBIGNUM_NEGATIVE_P(x);
+get_vp_value:
+  if (zero || negative) break;
+  vx = GetVpValue(x, 0);
+  break;
+
+      case T_FLOAT:
+  flo = RFLOAT_VALUE(x);
+  zero = flo == 0;
+  negative = flo < 0;
+  infinite = isinf(flo);
+  nan = isnan(flo);
+  if (!zero && !negative && !infinite && !nan) {
+      vx = GetVpValueWithPrec(x, DBL_DIG+1, 1);
+  }
+  break;
+
+      case T_RATIONAL:
+  zero = RRATIONAL_ZERO_P(x);
+  negative = RRATIONAL_NEGATIVE_P(x);
+  if (zero || negative) break;
+  vx = GetVpValueWithPrec(x, prec, 1);
+  break;
+
+      case T_COMPLEX:
+  rb_raise(rb_eMathDomainError,
+     "Complex argument for BigMath.log");
+
+      default:
+  break;
+    }
+    if (infinite && !negative) {
+  Real* vy;
+  vy = VpCreateRbObject(prec, "#0");
+  RB_GC_GUARD(vy->obj);
+  VpSetInf(vy, VP_SIGN_POSITIVE_INFINITE);
+  return ToValue(vy);
+    }
+    else if (nan) {
+  Real* vy;
+  vy = VpCreateRbObject(prec, "#0");
+  RB_GC_GUARD(vy->obj);
+  VpSetNaN(vy);
+  return ToValue(vy);
+    }
+    else if (zero || negative) {
+  rb_raise(rb_eMathDomainError,
+     "Zero or negative argument for log");
+    }
+    else if (vx == NULL) {
+  cannot_be_coerced_into_BigDecimal(rb_eArgError, x);
+    }
+    x = ToValue(vx);
+
+    RB_GC_GUARD(one) = ToValue(VpCreateRbObject(1, "1"));
+    RB_GC_GUARD(two) = ToValue(VpCreateRbObject(1, "2"));
+
+    n = prec + rmpd_double_figures();
+    RB_GC_GUARD(vn) = SSIZET2NUM(n);
+    expo = VpExponent10(vx);
+    if (expo < 0 || expo >= 3) {
+  char buf[16];
+  snprintf(buf, 16, "1E%"PRIdVALUE, -expo);
+  x = BigDecimal_mult2(x, ToValue(VpCreateRbObject(1, buf)), vn);
+    }
+    else {
+  expo = 0;
+    }
+    w = BigDecimal_sub(x, one);
+    argv[0] = BigDecimal_add(x, one);
+    argv[1] = vn;
+    x = BigDecimal_div2(2, argv, w);
+    RB_GC_GUARD(x2) = BigDecimal_mult2(x, x, vn);
+    RB_GC_GUARD(y)  = x;
+    RB_GC_GUARD(d)  = y;
+    i = 1;
+    while (!VpIsZero((Real*)DATA_PTR(d))) {
+  SIGNED_VALUE const ey = VpExponent10(DATA_PTR(y));
+  SIGNED_VALUE const ed = VpExponent10(DATA_PTR(d));
+  ssize_t m = n - vabs(ey - ed);
+  if (m <= 0) {
+      break;
+  }
+  else if ((size_t)m < rmpd_double_figures()) {
+      m = rmpd_double_figures();
+  }
+
+  x = BigDecimal_mult2(x2, x, vn);
+  i += 2;
+  argv[0] = SSIZET2NUM(i);
+  argv[1] = SSIZET2NUM(m);
+  d = BigDecimal_div2(2, argv, x);
+  y = BigDecimal_add(y, d);
+    }
+
+    y = BigDecimal_mult(y, two);
+    if (expo != 0) {
+  VALUE log10, vexpo, dy;
+  log10 = BigMath_s_log(klass, INT2FIX(10), vprec);
+  vexpo = ToValue(GetVpValue(SSIZET2NUM(expo), 1));
+  dy = BigDecimal_mult(log10, vexpo);
+  y = BigDecimal_add(y, dy);
+    }
+
+    return y;
+}
+=end
+
 end
