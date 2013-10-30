@@ -30,6 +30,18 @@ require 'bigdecimal'
 module BigMath
   module_function
 
+  def zero
+    BigDecimal('0')
+  end
+
+  def one
+    BigDecimal('1')
+  end
+
+  def two
+    BigDecimal('2')
+  end
+
   # call-seq:
   #   sqrt(decimal, numeric) -> BigDecimal
   #
