@@ -1,4 +1,5 @@
 require 'bigdecimal'
+require 'bigdecimal/util'
 
 #
 #--
@@ -269,76 +270,66 @@ module BigMath
   #   BigMath::log(BigMath::E(10), 10).to_s
   #   #=> "1.000000000000"
   #
-  def log(x, prec)
+  def log(x, precision)
     raise ArgumentError if x.nil?
     raise Math::DomainError if x.is_a?(Complex)
     raise Math::DomainError if x <= 0
-    raise ArgumentError unless prec.is_a?(Integer)
-    raise ArgumentError if prec < 1
+    raise ArgumentError unless precision.is_a?(Integer)
+    raise ArgumentError if precision < 1
     return BigDecimal::INFINITY if x == BigDecimal::INFINITY
     return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
     return BigDecimal::NAN if x.is_a?(Float) && x.nan?
-    BigDecimal('0')
+
+    # this uses the series expansion of the Arctangh (Arc tangens hyperbolicus)
+    # http://en.wikipedia.org/wiki/Area_hyperbolic_tangent
+    # where ln(x) = 2 * artanh ((x - 1) / (x + 1))
+    # d are the elements in the series (getting smaller and smaller)
+
+    x = x.to_d
+    n = precision + BigDecimal.double_fig
+    z = (x - one) / (x + one)
+    z2 = z * z
+
+    series_sum = z
+    series_element = z
+
+    i = 1
+    while series_element != 0 do
+      sum_exponent = series_sum.exponent
+      element_exponent = series_element.exponent
+      remaining_precision = n - (sum_exponent - element_exponent).abs
+      break if remaining_precision < 0
+      z = z * z2
+      i += 2
+      series_element = z / i
+      series_sum += series_element
+    end
+
+    two * series_sum
   end
 
 =begin
-
 BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
 {
-    ssize_t prec, n, i;
-    SIGNED_VALUE expo;
-    Real* vx = NULL;
-    VALUE argv[2], vn, one, two, w, x2, y, d;
 
-    n = prec + rmpd_double_figures();
-    RB_GC_GUARD(vn) = SSIZET2NUM(n);
-    expo = VpExponent10(vx);
-    if (expo < 0 || expo >= 3) {
-  char buf[16];
-  snprintf(buf, 16, "1E%"PRIdVALUE, -expo);
-  x = BigDecimal_mult2(x, ToValue(VpCreateRbObject(1, buf)), vn);
-    }
-    else {
-  expo = 0;
-    }
-    w = BigDecimal_sub(x, one);
-    argv[0] = BigDecimal_add(x, one);
-    argv[1] = vn;
-    x = BigDecimal_div2(2, argv, w);
-    RB_GC_GUARD(x2) = BigDecimal_mult2(x, x, vn);
-    RB_GC_GUARD(y)  = x;
-    RB_GC_GUARD(d)  = y;
-    i = 1;
-    while (!VpIsZero((Real*)DATA_PTR(d))) {
-  SIGNED_VALUE const ey = VpExponent10(DATA_PTR(y));
-  SIGNED_VALUE const ed = VpExponent10(DATA_PTR(d));
-  ssize_t m = n - vabs(ey - ed);
-  if (m <= 0) {
-      break;
-  }
-  else if ((size_t)m < rmpd_double_figures()) {
-      m = rmpd_double_figures();
-  }
+   expo = VpExponent10(vx);
+   if (expo < 0 || expo >= 3) {
+     char buf[16];
+     snprintf(buf, 16, "1E%"PRIdVALUE, -expo);
+     x = BigDecimal_mult2(x, ToValue(VpCreateRbObject(1, buf)), vn);
+   }
+  else {
+ expo = 0;
+ }
 
-  x = BigDecimal_mult2(x2, x, vn);
-  i += 2;
-  argv[0] = SSIZET2NUM(i);
-  argv[1] = SSIZET2NUM(m);
-  d = BigDecimal_div2(2, argv, x);
-  y = BigDecimal_add(y, d);
-    }
-
-    y = BigDecimal_mult(y, two);
-    if (expo != 0) {
-  VALUE log10, vexpo, dy;
-  log10 = BigMath_s_log(klass, INT2FIX(10), vprec);
-  vexpo = ToValue(GetVpValue(SSIZET2NUM(expo), 1));
-  dy = BigDecimal_mult(log10, vexpo);
-  y = BigDecimal_add(y, dy);
-    }
-
-    return y;
-}
+# This is for later (recursive when out of bound)
+   if (expo != 0) {
+     VALUE log10, vexpo, dy;
+     log10 = BigMath_s_log(klass, INT2FIX(10), vprec);
+     vexpo = ToValue(GetVpValue(SSIZET2NUM(expo), 1));
+     dy = BigDecimal_mult(log10, vexpo);
+     y = BigDecimal_add(y, dy);
+   }
 =end
 
 end

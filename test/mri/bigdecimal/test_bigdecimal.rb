@@ -1438,7 +1438,7 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_BigMath_log_with_exp_1
-    assert_in_delta(1.0, BigMath.log(BigMath.exp(1, 20), 20))
+    assert_in_delta(1.0, BigMath.log(2.718281828459045, 10))
   end
 
   def test_BigMath_log_with_2
