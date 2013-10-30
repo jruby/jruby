@@ -330,10 +330,6 @@ get_vp_value:
   vx = GetVpValueWithPrec(x, prec, 1);
   break;
 
-      case T_COMPLEX:
-  rb_raise(rb_eMathDomainError,
-     "Complex argument for BigMath.log");
-
       default:
   break;
     }
