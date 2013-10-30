@@ -262,6 +262,8 @@ module BigMath
     raise ArgumentError unless prec.is_a?(Integer)
     raise ArgumentError if prec < 1
     return BigDecimal::INFINITY if x == BigDecimal::INFINITY
+    return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
+    return BigDecimal::NAN if x.is_a?(Float) && x.nan?
     BigDecimal('0')
   end
 
@@ -289,7 +291,6 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
     zero = VpIsZero(vx);
     negative = VpGetSign(vx) < 0;
     infinite = VpIsPosInf(vx) || VpIsNegInf(vx);
-    nan = VpIsNaN(vx);
     break;
 
       case T_FIXNUM:
@@ -311,7 +312,6 @@ get_vp_value:
   zero = flo == 0;
   negative = flo < 0;
   infinite = isinf(flo);
-  nan = isnan(flo);
   if (!zero && !negative && !infinite && !nan) {
       vx = GetVpValueWithPrec(x, DBL_DIG+1, 1);
   }
@@ -328,11 +328,6 @@ get_vp_value:
   break;
     }
     if (nan) {
-  Real* vy;
-  vy = VpCreateRbObject(prec, "#0");
-  RB_GC_GUARD(vy->obj);
-  VpSetNaN(vy);
-  return ToValue(vy);
     }
     else if (zero || negative) {
   rb_raise(rb_eMathDomainError,
