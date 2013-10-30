@@ -63,12 +63,10 @@ public class SSL {
         RubyModule mSSL = ossl.defineModuleUnder("SSL");
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
         RubyClass sslError = mSSL.defineClassUnder("SSLError",openSSLError,openSSLError.getAllocator());
-        if (runtime.is1_9()) {
-            RubyClass sslErrorWaitReadable = mSSL.defineClassUnder("SSLErrorWaitReadable",sslError,openSSLError.getAllocator());
-            sslErrorWaitReadable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
-            RubyClass sslErrorWaitWritable = mSSL.defineClassUnder("SSLErrorWaitWritable",sslError,openSSLError.getAllocator());
-            sslErrorWaitWritable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
-        }
+        RubyClass sslErrorWaitReadable = mSSL.defineClassUnder("SSLErrorWaitReadable",sslError,openSSLError.getAllocator());
+        sslErrorWaitReadable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
+        RubyClass sslErrorWaitWritable = mSSL.defineClassUnder("SSLErrorWaitWritable",sslError,openSSLError.getAllocator());
+        sslErrorWaitWritable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
 
         SSLContext.createSSLContext(runtime,mSSL);
         SSLSocket.createSSLSocket(runtime,mSSL);

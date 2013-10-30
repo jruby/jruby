@@ -224,7 +224,6 @@ public class JRubyApplet extends Applet {
                 setOutput(facade.getOutputStream());
                 setError(facade.getErrorStream());
                 setObjectSpaceEnabled(getBooleanParameter("jruby.objectspace", false));
-                setCompatVersion(getCompatVersionParameter("jruby.compat", CompatVersion.RUBY1_8));
             }};
             Ruby.setSecurityRestricted(true);
             runtime = Ruby.newInstance(config);

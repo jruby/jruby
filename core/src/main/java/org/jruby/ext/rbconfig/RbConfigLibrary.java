@@ -218,7 +218,7 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts;
-        versionParts = Constants.RUBY1_9_VERSION.split("\\.");
+        versionParts = Constants.RUBY_VERSION.split("\\.");
         
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);

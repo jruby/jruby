@@ -1797,7 +1797,7 @@ public class Helpers {
         }
         RubyArray arr = (RubyArray) tmp;
         
-        return runtime.is1_9() ? arr.aryDup19() : arr;
+        return arr.aryDup19();
     }
 
     public static IRubyObject aryToAry(IRubyObject value) {
