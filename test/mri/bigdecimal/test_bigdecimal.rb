@@ -1328,6 +1328,12 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
+  def test_BigMath_log_with_non_integer_precision
+    assert_raise(ArgumentError) do
+      BigMath.log(1, 0.5)
+    end
+  end
+
   def test_BigMath_log_with_nil_precision
     assert_raise(ArgumentError) do
       BigMath.log(1, nil)

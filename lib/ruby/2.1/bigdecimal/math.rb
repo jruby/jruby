@@ -259,6 +259,7 @@ module BigMath
   #
   def log(x, prec)
     raise Math::DomainError if x.is_a?(Complex)
+    raise ArgumentError unless prec.is_a?(Integer)
     BigDecimal('0')
   end
 
@@ -276,10 +277,6 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
     int nan = 0;
     double flo;
     long fix;
-
-    if (!is_integer(vprec)) {
-  rb_raise(rb_eArgError, "precision must be an Integer");
-    }
 
     prec = NUM2SSIZET(vprec);
     if (prec <= 0) {
