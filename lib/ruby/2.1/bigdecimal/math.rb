@@ -261,6 +261,7 @@ module BigMath
     raise Math::DomainError if x.is_a?(Complex)
     raise ArgumentError unless prec.is_a?(Integer)
     raise ArgumentError if prec < 1
+    return BigDecimal::INFINITY if x == BigDecimal::INFINITY
     BigDecimal('0')
   end
 
@@ -326,14 +327,7 @@ get_vp_value:
       default:
   break;
     }
-    if (infinite && !negative) {
-  Real* vy;
-  vy = VpCreateRbObject(prec, "#0");
-  RB_GC_GUARD(vy->obj);
-  VpSetInf(vy, VP_SIGN_POSITIVE_INFINITE);
-  return ToValue(vy);
-    }
-    else if (nan) {
+    if (nan) {
   Real* vy;
   vy = VpCreateRbObject(prec, "#0");
   RB_GC_GUARD(vy->obj);
