@@ -765,7 +765,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         shareLevel = SHARE_LEVEL_BYTELIST;
         RubyString dup = new RubyString(runtime, clazz, value);
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
-        dup.flags |= flags & (CR_MASK | TAINTED_F | UNTRUSTED_F);
+        dup.flags |= flags & (CR_MASK | TAINTED_F);
         
         return dup;
     }

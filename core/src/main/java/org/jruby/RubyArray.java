@@ -603,7 +603,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
         dup.isShared = isShared = true;
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-        dup.flags |= flags & UNTRUSTED_F;
 
         return dup;
     }
@@ -987,7 +986,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyArray dup = new RubyArray(metaClass.getClassRuntime(), metaClass, values, begin, realLength);
         dup.isShared = true;
         isShared = true;
-        dup.flags |= flags & (TAINTED_F | UNTRUSTED_F); // from DUP_SETUP
+        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
         return dup;
     }
@@ -1443,7 +1442,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, encoding);
         str.cat((byte)'[');
         boolean tainted = isTaint();
-        boolean untrust = isUntrusted();
 
         for (int i = 0; i < realLength; i++) {
             if (i > 0) str.cat((byte)',').cat((byte)' ');
@@ -1451,14 +1449,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             RubyString str2 = inspect(context, safeArrayRef(values, begin + i));
             if (i == 0 && str2.getEncoding() != encoding) str.setEncoding(str2.getEncoding());
             if (str2.isTaint()) tainted = true;
-            if (str2.isUntrusted()) untrust = true;
             
             str.cat19(str2);
         }
         str.cat((byte)']');
 
         if (tainted) str.setTaint(true);
-        if (untrust) str.setUntrusted(true);
 
         return str;
     }
@@ -1688,7 +1684,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         boolean sepTainted =  sep.isTaint();
         boolean taint = isTaint();
-        boolean untrusted = isUntrusted() || sep.isUntrusted();
 
         int len = 1;
         for (int i = begin; i < begin + realLength; i++) {
@@ -1731,13 +1726,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             buf.append(tmp.asString().getByteList());
             if (tmp.isTaint()) taint |= true;
             if (appended) taint |= sepTainted;
-            if (tmp.isUntrusted()) untrusted = true;
         }
 
         RubyString result = runtime.newString(buf); 
         if (taint) result.setTaint(true);
-        if (untrusted) result.untrust(context);
-        
+
         return result;
     }
 
@@ -2326,7 +2319,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (realLength > 1) {
             RubyArray dup = safeReverse();
             dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-            dup.flags |= flags & UNTRUSTED_F; // from DUP_SETUP
             // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
             return dup;
         } else {

@@ -1754,17 +1754,17 @@ public class RubyKernel {
         return ((RubyBasicObject)self).display(context, args);
     }
 
-    @JRubyMethod(name = "tainted?")
+    @JRubyMethod(name = {"tainted?", "untrusted?"})
     public static RubyBoolean tainted_p(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).tainted_p(context);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = {"taint", "untrust"})
     public static IRubyObject taint(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).taint(context);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = {"untaint", "trust"})
     public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).untaint(context);
     }
@@ -1777,21 +1777,6 @@ public class RubyKernel {
     @JRubyMethod(name = "frozen?")
     public static RubyBoolean frozen_p(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).frozen_p(context);
-    }
-
-    @JRubyMethod(name = "untrusted?")
-    public static RubyBoolean untrusted_p(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).untrusted_p(context);
-    }
-
-    @JRubyMethod
-    public static IRubyObject untrust(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).untrust(context);
-    }
-
-    @JRubyMethod
-    public static IRubyObject trust(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).trust(context);
     }
 
     @JRubyMethod(name = "inspect")

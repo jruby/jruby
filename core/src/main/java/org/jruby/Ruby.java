@@ -3879,7 +3879,6 @@ public final class Ruby {
         }
         if(list == null || list.isNil()) {
             list = RubyHash.newHash(this);
-            list.setUntrusted(true);
             hash.put(sym, (RubyHash)list);
         }
         return list;
@@ -3911,7 +3910,6 @@ public final class Ruby {
             if(!(pair_list instanceof RubyHash)) {
                 IRubyObject other_paired_obj = pair_list;
                 pair_list = RubyHash.newHash(this);
-                pair_list.setUntrusted(true);
                 ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
                 ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
             }

@@ -146,9 +146,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int NIL_F = 1 << 1;
     public static final int FROZEN_F = 1 << 2;
     public static final int TAINTED_F = 1 << 3;
-    public static final int UNTRUSTED_F = 1 << 4;
 
-    public static final int FL_USHIFT = 5;
+    public static final int FL_USHIFT = 4;
 
     public static final int USER0_F = (1<<(FL_USHIFT+0));
     public static final int USER1_F = (1<<(FL_USHIFT+1));
@@ -452,17 +451,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject infectBy(IRubyObject obj) {
         if (obj.isTaint()) setTaint(true);
-        if (obj.isUntrusted()) setUntrusted(true);
         return this;
     }
 
     final RubyBasicObject infectBy(RubyBasicObject obj) {
-        flags |= (obj.flags & (TAINTED_F | UNTRUSTED_F));
+        flags |= (obj.flags & TAINTED_F);
         return this;
     }
 
     final RubyBasicObject infectBy(int tuFlags) {
-        flags |= (tuFlags & (TAINTED_F | UNTRUSTED_F));
+        flags |= (tuFlags & TAINTED_F);
         return this;
     }
 
@@ -489,33 +487,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             flags |= FROZEN_F;
         } else {
             flags &= ~FROZEN_F;
-        }
-    }
-
-
-    /**
-     * Is this value untrusted or not? Shortcut for doing
-     * getFlag(UNTRUSTED_F).
-     *
-     * @return true if this object is frozen, false otherwise
-     */
-    @Override
-    public boolean isUntrusted() {
-        return (flags & UNTRUSTED_F) != 0;
-    }
-
-    /**
-     * Sets whether this object is untrusted or not. Shortcut for doing
-     * setFlag(UNTRUSTED_F, untrusted).
-     *
-     * @param untrusted should this object be frozen?
-     */
-    @Override
-    public void setUntrusted(boolean untrusted) {
-        if (untrusted) {
-            flags |= UNTRUSTED_F;
-        } else {
-            flags &= ~UNTRUSTED_F;
         }
     }
 
@@ -848,7 +819,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
-        if (isUntrusted()) dup.setUntrusted(true);
 
         initCopy(dup, this, "initialize_dup");
 
@@ -909,7 +879,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         initCopy(clone, this, "initialize_clone");
 
         if (isFrozen()) clone.setFrozen(true);
-        if (isUntrusted()) clone.setUntrusted(true);
         return clone;
     }
 
@@ -2169,44 +2138,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(isFrozen());
     }
 
-    /** rb_obj_untrusted
-     *  call-seq:
-     *     obj.untrusted?    => true or false
-     *
-     *  Returns <code>true</code> if the object is untrusted.
-     */
-    public RubyBoolean untrusted_p(ThreadContext context) {
-        return context.runtime.newBoolean(isUntrusted());
-    }
-
-    /** rb_obj_untrust
-     *  call-seq:
-     *     obj.untrust -> obj
-     *
-     *  Marks <i>obj</i> as untrusted.
-     */
-    public IRubyObject untrust(ThreadContext context) {
-        if (!isUntrusted() && !isImmediate()) {
-            checkFrozen();
-            flags |= UNTRUSTED_F;
-        }
-        return this;
-    }
-
-    /** rb_obj_trust
-     *  call-seq:
-     *     obj.trust    => obj
-     *
-     *  Removes the untrusted mark from <i>obj</i>.
-     */
-    public IRubyObject trust(ThreadContext context) {
-        if (isUntrusted() && !isImmediate()) {
-            checkFrozen();
-            flags &= ~UNTRUSTED_F;
-        }
-        return this;
-    }
-
     /** rb_obj_is_instance_of
      *
      *  call-seq:
@@ -3046,5 +2977,35 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
         return setInstanceVariable(internedName, value);
+    }
+
+    @Deprecated
+    public static final int UNTRUST_F = 1 << 3;
+
+    @Override
+    @Deprecated
+    public boolean isUntrusted() {
+        return isTaint();
+    }
+
+    @Override
+    @Deprecated
+    public void setUntrusted(boolean untrusted) {
+        setTaint(untrusted);
+    }
+
+    @Deprecated
+    public RubyBoolean untrusted_p(ThreadContext context) {
+        return tainted_p(context);
+    }
+
+    @Deprecated
+    public IRubyObject untrust(ThreadContext context) {
+        return taint(context);
+    }
+
+    @Deprecated
+    public IRubyObject trust(ThreadContext context) {
+        return untaint(context);
     }
 }
