@@ -1322,6 +1322,12 @@ class TestBigDecimal < Test::Unit::TestCase
     EOS
   end
 
+  def test_BigMath_log_with_string
+    assert_raise(ArgumentError) do
+      BigMath.log("foo", 20)
+    end
+  end
+
   def test_BigMath_log_with_nil
     assert_raise(ArgumentError) do
       BigMath.log(nil, 20)
