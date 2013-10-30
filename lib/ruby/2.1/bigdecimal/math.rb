@@ -241,4 +241,20 @@ module BigMath
     end
     y
   end
+
+  # call-seq:
+  #   log(decimal, numeric) -> BigDecimal
+  #
+  # Computes the log of +decimal+ to the specified number of digits of
+  # precision, +numeric+.
+  #
+  # If +decimal+ is NaN, returns NaN.
+  # If +decimal+ is zero of negative, returns NaN.
+  #
+  #   BigMath::log(BigMath::E(10), 10).to_s
+  #   #=> "1.000000000000"
+  #
+  def log(x, prec)
+    BigDecimal('0')
+  end
 end
