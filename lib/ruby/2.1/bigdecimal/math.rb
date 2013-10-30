@@ -258,6 +258,7 @@ module BigMath
   #   #=> "1.000000000000"
   #
   def log(x, prec)
+    raise ArgumentError if x.nil?
     raise Math::DomainError if x.is_a?(Complex)
     raise Math::DomainError if x <= 0
     raise ArgumentError unless prec.is_a?(Integer)
@@ -289,7 +290,6 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
       case T_DATA:
     if (!is_kind_of_BigDecimal(x)) break;
     vx = DATA_PTR(x);
-    infinite = VpIsPosInf(vx) || VpIsNegInf(vx);
     break;
 
       case T_FIXNUM:
@@ -314,9 +314,6 @@ get_vp_value:
 
       default:
   break;
-    }
-    if (vx == NULL) {
-  cannot_be_coerced_into_BigDecimal(rb_eArgError, x);
     }
     x = ToValue(vx);
 
