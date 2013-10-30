@@ -259,6 +259,7 @@ module BigMath
   #
   def log(x, prec)
     raise Math::DomainError if x.is_a?(Complex)
+    raise Math::DomainError if x <= 0
     raise ArgumentError unless prec.is_a?(Integer)
     raise ArgumentError if prec < 1
     return BigDecimal::INFINITY if x == BigDecimal::INFINITY
@@ -288,52 +289,33 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
       case T_DATA:
     if (!is_kind_of_BigDecimal(x)) break;
     vx = DATA_PTR(x);
-    zero = VpIsZero(vx);
-    negative = VpGetSign(vx) < 0;
     infinite = VpIsPosInf(vx) || VpIsNegInf(vx);
     break;
 
       case T_FIXNUM:
   fix = FIX2LONG(x);
-  zero = fix == 0;
-  negative = fix < 0;
   goto get_vp_value;
 
       case T_BIGNUM:
-  zero = RBIGNUM_ZERO_P(x);
-  negative = RBIGNUM_NEGATIVE_P(x);
 get_vp_value:
-  if (zero || negative) break;
   vx = GetVpValue(x, 0);
   break;
 
       case T_FLOAT:
   flo = RFLOAT_VALUE(x);
-  zero = flo == 0;
-  negative = flo < 0;
-  infinite = isinf(flo);
   if (!zero && !negative && !infinite && !nan) {
       vx = GetVpValueWithPrec(x, DBL_DIG+1, 1);
   }
   break;
 
       case T_RATIONAL:
-  zero = RRATIONAL_ZERO_P(x);
-  negative = RRATIONAL_NEGATIVE_P(x);
-  if (zero || negative) break;
   vx = GetVpValueWithPrec(x, prec, 1);
   break;
 
       default:
   break;
     }
-    if (nan) {
-    }
-    else if (zero || negative) {
-  rb_raise(rb_eMathDomainError,
-     "Zero or negative argument for log");
-    }
-    else if (vx == NULL) {
+    if (vx == NULL) {
   cannot_be_coerced_into_BigDecimal(rb_eArgError, x);
     }
     x = ToValue(vx);

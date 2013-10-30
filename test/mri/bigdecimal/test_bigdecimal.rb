@@ -1346,6 +1346,18 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
+  def test_BigMath_log_with_zero_arg
+    assert_raise(Math::DomainError) do
+      BigMath.log(0, 20)
+    end
+  end
+
+  def test_BigMath_log_with_negative_arg
+    assert_raise(Math::DomainError) do
+      BigMath.log(-1, 20)
+    end
+  end
+
   def test_BigMath_log_with_zero_precision
     assert_raise(ArgumentError) do
       BigMath.log(1, 0)
