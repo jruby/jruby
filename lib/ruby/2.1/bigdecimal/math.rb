@@ -289,48 +289,6 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
     SIGNED_VALUE expo;
     Real* vx = NULL;
     VALUE argv[2], vn, one, two, w, x2, y, d;
-    int zero = 0;
-    int negative = 0;
-    int infinite = 0;
-    int nan = 0;
-    double flo;
-    long fix;
-
-    /* TODO: the following switch statement is almostly the same as one in the
-     *       BigDecimalCmp function. */
-    switch (TYPE(x)) {
-      case T_DATA:
-    if (!is_kind_of_BigDecimal(x)) break;
-    vx = DATA_PTR(x);
-    break;
-
-      case T_FIXNUM:
-  fix = FIX2LONG(x);
-  goto get_vp_value;
-
-      case T_BIGNUM:
-get_vp_value:
-  vx = GetVpValue(x, 0);
-  break;
-
-      case T_FLOAT:
-  flo = RFLOAT_VALUE(x);
-  if (!zero && !negative && !infinite && !nan) {
-      vx = GetVpValueWithPrec(x, DBL_DIG+1, 1);
-  }
-  break;
-
-      case T_RATIONAL:
-  vx = GetVpValueWithPrec(x, prec, 1);
-  break;
-
-      default:
-  break;
-    }
-    x = ToValue(vx);
-
-    RB_GC_GUARD(one) = ToValue(VpCreateRbObject(1, "1"));
-    RB_GC_GUARD(two) = ToValue(VpCreateRbObject(1, "2"));
 
     n = prec + rmpd_double_figures();
     RB_GC_GUARD(vn) = SSIZET2NUM(n);
