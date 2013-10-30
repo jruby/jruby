@@ -258,6 +258,7 @@ module BigMath
   #   #=> "1.000000000000"
   #
   def log(x, prec)
+    raise Math::DomainError if x.is_a?(Complex)
     BigDecimal('0')
   end
 
