@@ -55,7 +55,6 @@ import java.util.regex.Pattern;
 
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
-import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.runtime.Constants;
@@ -458,11 +457,7 @@ public class RubyInstanceConfig {
     }
 
     public ASTCompiler newCompiler() {
-        if (getCompatVersion() == CompatVersion.RUBY1_8) {
-            return new ASTCompiler();
-        } else {
-            return new ASTCompiler19();
-        }
+        return new ASTCompiler();
     }
     
     ////////////////////////////////////////////////////////////////////////////

@@ -59,10 +59,6 @@ import org.jruby.util.StringSupport;
 public class ASTCompiler {
     private boolean isAtRoot = true;
 
-    protected boolean is1_9() {
-        return false;
-    }
-
     public void compileBody(Node node, BodyCompiler context, boolean expr) {
         Node oldBodyNode = currentBodyNode;
         currentBodyNode = node;
@@ -169,6 +165,9 @@ public class ASTCompiler {
             case DXSTRNODE:
                 compileDXStr(node, context, expr);
                 break;
+            case ENCODINGNODE:
+                compileEncoding(node, context, expr);
+                break;
             case ENSURENODE:
                 compileEnsureNode(node, context, expr);
                 break;
@@ -214,6 +213,9 @@ public class ASTCompiler {
             case ITERNODE:
                 compileIter(node, context);
                 break;
+            case LAMBDANODE:
+                compileLambda(node, context, expr);
+                break;
             case LITERALNODE:
                 compileLiteral((LiteralNode) node, context);
                 break;
@@ -237,6 +239,9 @@ public class ASTCompiler {
                 break;
             case MULTIPLEASGNNODE:
                 compileMultipleAsgn(node, context, expr);
+                break;
+            case MULTIPLEASGN19NODE:
+                compileMultipleAsgn19(node, context, expr);
                 break;
             case NEWLINENODE:
                 compileNewline(node, context, expr);
@@ -486,6 +491,9 @@ public class ASTCompiler {
             case MULTIPLEASGNNODE:
                 compileMultipleAsgnAssignment(node, context, false);
                 break;
+            case MULTIPLEASGN19NODE:
+                compileMultipleAsgn19Assignment(node, context, false);
+                break;
             case ZEROARGNODE:
                 context.consumeCurrentValue();
                 break;
@@ -609,7 +617,13 @@ public class ASTCompiler {
     }
 
     public void compileArgsPush(Node node, BodyCompiler context, boolean expr) {
-        throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
+        ArgsPushNode argsPush = (ArgsPushNode) node;
+
+        compile(argsPush.getFirstNode(), context,true);
+        compile(argsPush.getSecondNode(), context,true);
+        context.argsPush();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     private void compileAttrAssign(Node node, BodyCompiler context, boolean expr) {
@@ -1662,19 +1676,44 @@ public class ASTCompiler {
     }
 
     protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
-        context.rescue(new BranchCallback() {
+        context.pushDefinedMessage(DefinedMessage.EXPRESSION);
+    }
+
+    protected void compileDefinedBackref(final Node node, BodyCompiler context) {
+        context.backref();
+        context.isInstanceOf(RubyMatchData.class,
+                new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        compile(node, context, false);
-                        context.pushDefinedMessage(DefinedMessage.EXPRESSION);
+                        context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                     }
-                }, JumpException.class,
+                },
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
                         context.pushNull();
                     }
-                }, RubyString.class);
+                });
+    }
+
+    protected void compileDefinedDVar(final Node node, BodyCompiler context) {
+        context.pushDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
+    }
+
+    protected void compileDefinedNthref(final Node node, BodyCompiler context) {
+        context.isCaptured(((NthRefNode) node).getMatchNumber(),
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
+                    }
+                },
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                });
     }
 
     protected void compileDefinedCall(final Node node, BodyCompiler context) {
@@ -1704,43 +1743,6 @@ public class ASTCompiler {
             context.setEnding(isnull);
             context.pushNull();
             context.setEnding(ending);
-    }
-
-    protected void compileDefinedDVar(final Node node, BodyCompiler context) {
-        context.pushDefinedMessage(DefinedMessage.LOCAL_VARIABLE_IN_BLOCK);
-    }
-
-    protected void compileDefinedBackref(final Node node, BodyCompiler context) {
-        context.backref();
-        context.isInstanceOf(RubyMatchData.class,
-                new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        context.pushDefinedMessage(DefinedMessage.byText("$" + ((BackRefNode) node).getType()));
-                    }
-                },
-                new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        context.pushNull();
-                    }
-                });
-    }
-
-    protected void compileDefinedNthref(final Node node, BodyCompiler context) {
-        context.isCaptured(((NthRefNode) node).getMatchNumber(),
-                new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        context.pushDefinedMessage(DefinedMessage.byText("$" + ((NthRefNode) node).getMatchNumber()));
-                    }
-                },
-                new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        context.pushNull();
-                    }
-                });
     }
 
     public void compileDAsgn(Node node, BodyCompiler context, boolean expr) {
@@ -1883,6 +1885,21 @@ public class ASTCompiler {
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
 
+        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+        compileMethodArgs(node, context, expr);
+    }
+
+    protected void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
+        final ArgsNode argsNode = (ArgsNode) node;
+
+        if (argsNode.getKeyRest() != null || argsNode.getKeywords() != null) {
+            throw new NotCompilableException("keyword args not supported in JIT yet: " + argsNode);
+        }
+
+        final int required = argsNode.getRequiredArgsCount();
+        final int opt = argsNode.getOptionalArgsCount();
+        final int rest = argsNode.getRestArg();
+
         ArrayCallback requiredAssignment = null;
         ArrayCallback optionalGiven = null;
         ArrayCallback optionalNotGiven = null;
@@ -1891,54 +1908,63 @@ public class ASTCompiler {
 
         if (required > 0) {
             requiredAssignment = new ArrayCallback() {
-
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
-                            context.getVariableCompiler().assignLocalVariable(index, false);
-                        }
-                    };
+                public void nextValue(BodyCompiler context, Object object, int index) {
+                    ArrayNode arguments = (ArrayNode)object;
+                    Node argNode = arguments.get(index);
+                    switch (argNode.getNodeType()) {
+                        case ARGUMENTNODE:
+                            int varIndex = ((ArgumentNode)argNode).getIndex();
+                            context.getVariableCompiler().assignLocalVariable(varIndex, false);
+                            break;
+                        case MULTIPLEASGN19NODE:
+                            compileMultipleAsgn19Assignment(argNode, context, false);
+                            break;
+                        default:
+                            throw new NotCompilableException("unknown argument type: " + argNode);
+                    }
+                }
+            };
         }
 
         if (opt > 0) {
             optionalGiven = new ArrayCallback() {
+                public void nextValue(BodyCompiler context, Object object, int index) {
+                    OptArgNode optArg = (OptArgNode)((ListNode) object).get(index);
 
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            Node optArg = ((ListNode) object).get(index);
-
-                            compileAssignment(optArg, context);
-                        }
-                    };
+                    compileAssignment(optArg.getValue(), context);
+                }
+            };
             optionalNotGiven = new ArrayCallback() {
+                public void nextValue(BodyCompiler context, Object object, int index) {
+                    OptArgNode optArg = (OptArgNode)((ListNode) object).get(index);
 
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            Node optArg = ((ListNode) object).get(index);
-
-                            compile(optArg, context, false);
-                        }
-                    };
+                    compile(optArg.getValue(), context, false);
+                }
+            };
         }
 
         if (rest > -1) {
             restAssignment = new CompilerCallback() {
-
-                        public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
-                        }
-                    };
+                public void call(BodyCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
+                }
+            };
         }
 
         if (argsNode.getBlock() != null) {
             blockAssignment = new CompilerCallback() {
-
-                        public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
-                        }
-                    };
+                public void call(BodyCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
+                }
+            };
         }
 
-        context.getVariableCompiler().checkMethodArity(required, opt, rest);
-        context.getVariableCompiler().assignMethodArguments(argsNode.getPre(),
-                argsNode.getRequiredArgsCount(),
+        context.getVariableCompiler().assignMethodArguments19(
+                argsNode.getPre(),
+                argsNode.getPreCount(),
+                argsNode.getPost(),
+                argsNode.getPostCount(),
+                argsNode.getPostIndex(),
                 argsNode.getOptArgs(),
                 argsNode.getOptionalArgsCount(),
                 requiredAssignment,
@@ -1968,27 +1994,14 @@ public class ASTCompiler {
     public void compileDRegexp(Node node, BodyCompiler context, boolean expr) {
         final DRegexpNode dregexpNode = (DRegexpNode) node;
 
-        CompilerCallback createStringCallback = new CompilerCallback() {
-
-                    public void call(BodyCompiler context) {
-                        ArrayCallback dstrCallback = new ArrayCallback() {
-
-                                    public void nextValue(BodyCompiler context, Object sourceArray,
-                                            int index) {
-                                        compile(dregexpNode.get(index), context, true);
-                                    }
-                                };
-                        Encoding enc = null;
-                        if (dregexpNode.is19()) {
-                            enc = dregexpNode.getEncoding();
-                        }
-
-                        context.createNewString(dstrCallback, dregexpNode.size(), enc);
-                    }
-                };
+        ArrayCallback dElementsCallback = new ArrayCallback() {
+            public void nextValue(BodyCompiler context, Object sourceArray, int index) {
+                compile((Node)((Object[])sourceArray)[index], context, true);
+            }
+        };
 
         if (expr) {
-            context.createNewRegexp(createStringCallback, dregexpNode.getOptions().toEmbeddedOptions());
+            context.createDRegexp19(dElementsCallback, dregexpNode.childNodes().toArray(), dregexpNode.getOptions().toEmbeddedOptions());
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dregexpNode.childNodes()) {
@@ -2071,6 +2084,14 @@ public class ASTCompiler {
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileEncoding(Node node, BodyCompiler context, boolean expr) {
+        final EncodingNode encodingNode = (EncodingNode)node;
+
+        if (expr) {
+            context.loadEncoding(encodingNode.getEncoding());
+        }
     }
 
     public void compileEnsureNode(Node node, BodyCompiler context, boolean expr) {
@@ -2424,9 +2445,9 @@ public class ASTCompiler {
     }
 
     public void compileHash(Node node, BodyCompiler context, boolean expr) {
-        compileHashCommon((HashNode) node, context, expr);
+        compileHashCommon((Hash19Node) node, context, expr);
     }
-    
+
     protected void compileHashCommon(HashNode hashNode, BodyCompiler context, boolean expr) {
         if (expr) {
             if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
@@ -2455,9 +2476,9 @@ public class ASTCompiler {
             }
         }
     }
-    
+
     protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
-        context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+        context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
 
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {
@@ -2574,33 +2595,38 @@ public class ASTCompiler {
     }
 
     public void compileIter(Node node, BodyCompiler context) {
-        final IterNode iterNode = (IterNode) node;
+        final IterNode iterNode = (IterNode)node;
+        final ArgsNode argsNode = (ArgsNode)iterNode.getVarNode();
 
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
-
-                    public void call(BodyCompiler context) {
-                        if (iterNode.getBodyNode() != null) {
-                            compile(iterNode.getBodyNode(), context, true);
-                        } else {
-                            context.loadNil();
-                        }
-                    }
-                };
+            public void call(BodyCompiler context) {
+                if (iterNode.getBodyNode() != null) {
+                    compile(iterNode.getBodyNode(), context, true);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
 
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
             public void call(BodyCompiler context) {
+                // FIXME: This is temporary since the variable compilers assume we want
+                // args already on stack for assignment. We just pop and continue with
+                // 1.9 args logic.
+                context.consumeCurrentValue(); // args value
+                context.consumeCurrentValue(); // passed block
                 if (iterNode.getVarNode() != null) {
-                    compileAssignment(iterNode.getVarNode(), context);
-                } else {
-                    context.consumeCurrentValue();
-                }
-
-                if (iterNode.getBlockVarNode() != null) {
-                    compileAssignment(iterNode.getBlockVarNode(), context);
-                } else {
-                    context.consumeCurrentValue();
+                    if (iterNode instanceof LambdaNode) {
+                        final int required = argsNode.getRequiredArgsCount();
+                        final int opt = argsNode.getOptionalArgsCount();
+                        final int rest = argsNode.getRestArg();
+                        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+                        compileMethodArgs(argsNode, context, true);
+                    } else {
+                        compileMethodArgs(argsNode, context, true);
+                    }
                 }
             }
         };
@@ -2615,9 +2641,27 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(iterNode.getBodyNode());
         inspector.inspect(iterNode.getVarNode());
-        
-        context.createNewClosure(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
+
+        if (argsNodeId == null) {
+            // no args, do not pass args processor
+            context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, Helpers.encodeParameterList(argsNode), inspector);
+        } else {
+            context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, Helpers.encodeParameterList(argsNode), inspector);
+        }
+    }
+
+    public void compileLambda(Node node, BodyCompiler context, boolean expr) {
+        final LambdaNode lambdaNode = (LambdaNode)node;
+
+        if (expr) {
+            context.createNewLambda(new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compileIter(lambdaNode, context);
+                }
+            });
+        }
     }
 
     public void compileLiteral(LiteralNode literal, BodyCompiler context) {
@@ -2659,12 +2703,33 @@ public class ASTCompiler {
 
         compile(matchNode.getRegexpNode(), context,true);
 
-        context.match(is1_9());
+        context.match(true);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
 
     public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
+        if (!(node instanceof Match2CaptureNode)) {
+            compileMatch2Capture(node, context, expr);
+            return;
+        }
+
+        // match with capture logic
+        final Match2CaptureNode matchNode = (Match2CaptureNode) node;
+
+        compile(matchNode.getReceiverNode(), context,true);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(matchNode.getValueNode(), context,true);
+            }
+        };
+
+        context.match2Capture(value, matchNode.getScopeOffsets(), true);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileMatch2Capture(Node node, BodyCompiler context, boolean expr) {
         final Match2Node matchNode = (Match2Node) node;
 
         compile(matchNode.getReceiverNode(), context,true);
@@ -2674,7 +2739,7 @@ public class ASTCompiler {
             }
         };
 
-        context.match2(value, is1_9());
+        context.match2(value, true);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2685,7 +2750,7 @@ public class ASTCompiler {
         compile(matchNode.getReceiverNode(), context,true);
         compile(matchNode.getValueNode(), context,true);
 
-        context.match3(is1_9());
+        context.match3(true);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2865,6 +2930,118 @@ public class ASTCompiler {
                 context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, null);
             } else {
                 context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
+            }
+        }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileMultipleAsgn19(Node node, BodyCompiler context, boolean expr) {
+        MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node) node;
+
+        if (expr) {
+            // need the array, use unoptz version
+            compileUnoptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+        } else {
+            // try optz version
+            compileOptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+        }
+    }
+
+    private void compileOptimizedMultipleAsgn19(MultipleAsgn19Node multipleAsgn19Node, BodyCompiler context, boolean expr) {
+        // expect value to be an array of nodes
+        if (multipleAsgn19Node.getValueNode() instanceof ArrayNode) {
+            // head must not be null and there must be no "args" (like *arg)
+            if (multipleAsgn19Node.getPreCount() > 0 && multipleAsgn19Node.getPostCount() == 0 && multipleAsgn19Node.getRest() == null) {
+                // sizes must match
+                if (multipleAsgn19Node.getPreCount() == ((ArrayNode)multipleAsgn19Node.getValueNode()).size()) {
+                    // "head" must have no non-trivial assigns (array groupings, basically)
+                    boolean normalAssigns = true;
+                    for (Node asgn : multipleAsgn19Node.getPre().childNodes()) {
+                        if (asgn instanceof ListNode) {
+                            normalAssigns = false;
+                            break;
+                        }
+                    }
+
+                    if (normalAssigns) {
+                        // only supports simple parallel assignment of up to 4 values to the same number of assignees
+                        int size = multipleAsgn19Node.getPreCount();
+                        if (size >= 2 && size <= 10) {
+                            ArrayNode values = (ArrayNode)multipleAsgn19Node.getValueNode();
+                            for (Node value : values.childNodes()) {
+                                compile(value, context, true);
+                            }
+                            context.reverseValues(size);
+                            for (Node asgn : multipleAsgn19Node.getPre().childNodes()) {
+                                compileAssignment(asgn, context);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if we get here, no optz cases work; fall back on unoptz.
+        compileUnoptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+    }
+
+    private void compileUnoptimizedMultipleAsgn19(MultipleAsgn19Node multipleAsgn19Node, BodyCompiler context, boolean expr) {
+        compile(multipleAsgn19Node.getValueNode(), context, true);
+
+        compileMultipleAsgn19Assignment(multipleAsgn19Node, context, expr);
+    }
+
+    public void compileMultipleAsgn19Assignment(Node node, BodyCompiler context, boolean expr) {
+        final MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node) node;
+
+        // normal items at the front or back of the masgn
+        ArrayCallback prePostAssignCallback = new ArrayCallback() {
+
+            public void nextValue(BodyCompiler context, Object sourceArray,
+                                  int index) {
+                ListNode nodes = (ListNode) sourceArray;
+                Node assignNode = nodes.get(index);
+
+                // perform assignment for the next node
+                compileAssignment(assignNode, context);
+            }
+        };
+
+        CompilerCallback restCallback = new CompilerCallback() {
+
+            public void call(BodyCompiler context) {
+                Node argsNode = multipleAsgn19Node.getRest();
+                if (argsNode instanceof StarNode) {
+                    // done processing args
+                    context.consumeCurrentValue();
+                } else {
+                    // assign to appropriate variable
+                    compileAssignment(argsNode, context);
+                }
+            }
+        };
+
+        if (multipleAsgn19Node.getPreCount() == 0 && multipleAsgn19Node.getPostCount() == 0) {
+            if (multipleAsgn19Node.getRest() == null) {
+                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgn19Node.getPosition());
+            } else {
+                if (multipleAsgn19Node.getRest() instanceof StarNode) {
+                    // do nothing
+                } else {
+                    context.ensureMultipleAssignableRubyArray(multipleAsgn19Node.getPreCount() != 0 || multipleAsgn19Node.getPostCount() != 0);
+
+                    context.forEachInValueArray(0, 0, null, null, restCallback);
+                }
+            }
+        } else {
+            context.ensureMultipleAssignableRubyArray(multipleAsgn19Node.getPreCount() != 0 || multipleAsgn19Node.getPostCount() != 0);
+
+            if (multipleAsgn19Node.getRest() == null) {
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), prePostAssignCallback, null);
+            } else {
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), prePostAssignCallback, restCallback);
             }
         }
         // TODO: don't require pop
@@ -3502,7 +3679,7 @@ public class ASTCompiler {
     }
 
     protected void splatCurrentValue(BodyCompiler context) {
-        context.splatCurrentValue("splatValue");
+        context.splatCurrentValue("splatValue19");
     }
 
     public void compileStr(Node node, BodyCompiler context, boolean expr) {
@@ -3536,11 +3713,11 @@ public class ASTCompiler {
     }
 
     public void compileSValue(Node node, BodyCompiler context, boolean expr) {
-        SValueNode svalueNode = (SValueNode) node;
+        SValue19Node svalueNode = (SValue19Node)node;
 
         compile(svalueNode.getValue(), context,true);
 
-        context.singlifySplattedValue();
+        context.singlifySplattedValue19();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3688,6 +3865,35 @@ public class ASTCompiler {
     }
 
     public void compileYield(Node node, BodyCompiler context, boolean expr) {
+        if (!(node instanceof Yield19Node)) {
+            compileYieldOld(node, context, expr);
+            return;
+        }
+        final Yield19Node yieldNode = (Yield19Node) node;
+
+        CompilerCallback argsCallback = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(yieldNode.getArgsNode(), context,true);
+            }
+        };
+
+        boolean unsplat = false;
+
+        switch (yieldNode.getArgsNode().getNodeType()) {
+            case ARGSPUSHNODE:
+            case ARGSCATNODE:
+            case SPLATNODE:
+                unsplat = true;
+                break;
+        }
+
+        context.getInvocationCompiler().yield19(argsCallback, unsplat);
+
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileYieldOld(Node node, BodyCompiler context, boolean expr) {
         final YieldNode yieldNode = (YieldNode) node;
 
         ArgumentsCallback argsCallback = getArgsCallback(yieldNode.getArgsNode());
@@ -3738,8 +3944,8 @@ public class ASTCompiler {
         // be inefficient. Escape analysis may help, though.
         compileArguments(argsCatNode.getFirstNode(), context);
         compile(argsCatNode.getSecondNode(), context,true);
-        context.argsCatToArguments();
-        
+        context.argsCatToArguments19();
+
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3779,7 +3985,7 @@ public class ASTCompiler {
         SplatNode splatNode = (SplatNode) node;
 
         compile(splatNode.getValue(), context,true);
-        context.splatToArguments();
+        context.splatToArguments19();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
