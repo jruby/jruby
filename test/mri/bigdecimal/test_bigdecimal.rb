@@ -1346,7 +1346,7 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
-  def test_BigMath_log_with_zerp_precision
+  def test_BigMath_log_with_zero_precision
     assert_raise(ArgumentError) do
       BigMath.log(1, 0)
     end

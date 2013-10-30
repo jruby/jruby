@@ -260,6 +260,7 @@ module BigMath
   def log(x, prec)
     raise Math::DomainError if x.is_a?(Complex)
     raise ArgumentError unless prec.is_a?(Integer)
+    raise ArgumentError if prec < 1
     BigDecimal('0')
   end
 
@@ -277,11 +278,6 @@ BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
     int nan = 0;
     double flo;
     long fix;
-
-    prec = NUM2SSIZET(vprec);
-    if (prec <= 0) {
-  rb_raise(rb_eArgError, "Zero or negative precision for exp");
-    }
 
     /* TODO: the following switch statement is almostly the same as one in the
      *       BigDecimalCmp function. */
