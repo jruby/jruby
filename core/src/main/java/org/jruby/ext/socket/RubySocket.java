@@ -39,7 +39,6 @@ import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;

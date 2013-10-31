@@ -28,16 +28,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -45,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.Sockaddr;
 
-import static org.jruby.CompatVersion.*;
+import java.net.InetSocketAddress;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -75,12 +69,12 @@ public class RubyIPSocket extends RubyBasicSocket {
         return addrCommon(context, true);
     }
     
-    @JRubyMethod(name = "addr", compat = RUBY1_9)
+    @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context) {
         return addrCommon(context, true);
     }
     
-    @JRubyMethod(name = "addr", compat = RUBY1_9)
+    @JRubyMethod(name = "addr")
     public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
         return addrCommon(context, reverse.isTrue());
     }
@@ -90,12 +84,12 @@ public class RubyIPSocket extends RubyBasicSocket {
         return peeraddrCommon(context, true);
     }
     
-    @JRubyMethod(name = "peeraddr", compat = RUBY1_9)
+    @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context) {
         return peeraddrCommon(context, true);
     }
     
-    @JRubyMethod(name = "peeraddr", compat = RUBY1_9)
+    @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr19(ThreadContext context, IRubyObject reverse) {
         return peeraddrCommon(context, reverse.isTrue());
     }
@@ -147,7 +141,7 @@ public class RubyIPSocket extends RubyBasicSocket {
         return recvfrom(context, _length);
     }
 
-    @JRubyMethod(name = "getpeereid", compat = CompatVersion.RUBY1_9, notImplemented = true)
+    @JRubyMethod(name = "getpeereid", notImplemented = true)
     public IRubyObject getpeereid(ThreadContext context) {
         throw context.runtime.newNotImplementedError("getpeereid not implemented");
     }
