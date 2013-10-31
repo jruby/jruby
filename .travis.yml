@@ -19,7 +19,7 @@ env:
 
 matrix:
   allow_failures:
-    - env: TARGET='spec:interpreted_ir_travis'
+    - env: TARGET='spec:ci_interpreted_ir_travis'
 
 script: "ant $TARGET"
 install: /bin/true
