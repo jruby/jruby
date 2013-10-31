@@ -552,7 +552,7 @@ public class RubyNumeric extends RubyObject {
     /** num_imaginary
      *
      */
-    @JRubyMethod(name = "i", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "i")
     public IRubyObject num_imaginary(ThreadContext context) {
         return RubyComplex.newComplexRaw(context.runtime, RubyFixnum.zero(context.runtime), this);
     }
@@ -589,7 +589,6 @@ public class RubyNumeric extends RubyObject {
     /** num_quo (1.8)
      * quo and fdiv in 1.8 just invokes "/"
      */
-    @JRubyMethod(name = {"quo", "fdiv"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
@@ -597,7 +596,7 @@ public class RubyNumeric extends RubyObject {
     /** num_quo (1.9)
     *
     */
-    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "quo")
     public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
         return RubyRational.newRationalRaw(context.runtime, this).callMethod(context, "/", other);
     }
@@ -693,7 +692,7 @@ public class RubyNumeric extends RubyObject {
     /** num_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
     }
@@ -709,7 +708,7 @@ public class RubyNumeric extends RubyObject {
     /** num_real_p
     *
     */
-    @JRubyMethod(name = "real?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "real?")
     public IRubyObject scalar_p() {
         return getRuntime().getTrue();
     }
@@ -889,7 +888,7 @@ public class RubyNumeric extends RubyObject {
     /** num_numerator
      * 
      */
-    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
         return RubyRational.newRationalConvert(context, this).callMethod(context, "numerator");
     }
@@ -897,7 +896,7 @@ public class RubyNumeric extends RubyObject {
     /** num_denominator
      * 
      */
-    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
         return RubyRational.newRationalConvert(context, this).callMethod(context, "denominator");
     }
@@ -905,7 +904,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_to_c
      * 
      */
-    @JRubyMethod(name = "to_c", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_c")
     public IRubyObject to_c(ThreadContext context) {
         return RubyComplex.newComplexCanonicalize(context, this);
     }
@@ -913,7 +912,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_real
      * 
      */
-    @JRubyMethod(name = "real", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "real")
     public IRubyObject real(ThreadContext context) {
         return this;
     }
@@ -921,7 +920,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_image
      * 
      */
-    @JRubyMethod(name = {"imaginary", "imag"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"imaginary", "imag"})
     public IRubyObject image(ThreadContext context) {
         return RubyFixnum.zero(context.runtime);
     }
@@ -929,7 +928,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_abs2
      * 
      */
-    @JRubyMethod(name = "abs2", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "abs2")
     public IRubyObject abs2(ThreadContext context) {
         return f_mul(context, this, this);
     }
@@ -937,7 +936,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_arg
      * 
      */
-    @JRubyMethod(name = {"arg", "angle", "phase"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
         double value = this.getDoubleValue();
         if (Double.isNaN(value)) {
@@ -953,7 +952,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_rect
      * 
      */
-    @JRubyMethod(name = {"rectangular", "rect"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"rectangular", "rect"})
     public IRubyObject rect(ThreadContext context) {
         return context.runtime.newArray(this, RubyFixnum.zero(context.runtime));
     }    
@@ -961,7 +960,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_polar
      * 
      */
-    @JRubyMethod(name = "polar", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "polar")
     public IRubyObject polar(ThreadContext context) {
         return context.runtime.newArray(f_abs(context, this), f_arg(context, this));
     }    
@@ -969,7 +968,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_real
      * 
      */
-    @JRubyMethod(name = {"conjugate", "conj"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"conjugate", "conj"})
     public IRubyObject conjugate(ThreadContext context) {
         return this;
     }
