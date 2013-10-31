@@ -2664,12 +2664,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject ungetc(IRubyObject number) {
         return ungetc19(number);
     }
 
-    @JRubyMethod(name = {"ungetc", "ungetbyte"}, required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"ungetc", "ungetbyte"})
     public IRubyObject ungetc19(IRubyObject character) {
         Ruby runtime = getRuntime();
 
@@ -3285,7 +3284,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return lines19(context, block);
     }
 
-    @JRubyMethod(name = "lines", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "lines")
     public IRubyObject lines19(final ThreadContext context, Block block) {
         if (!block.isGiven()) {
             return enumeratorize(context.runtime, this, "each_line");
