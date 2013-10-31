@@ -30,15 +30,11 @@ import com.jcraft.jzlib.Deflater;
 import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.GZIPOutputStream;
 import com.jcraft.jzlib.JZlib;
-import java.io.IOException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.DateTime;
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -46,18 +42,19 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.stringio.RubyStringIO;
-import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.encoding.Transcoder;
+
+import java.io.IOException;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  *
@@ -81,18 +78,11 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return result;
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 2, meta = true, compat = RUBY1_8)
     public static IRubyObject open18(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        
-        args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
-        
-        JZlibRubyGzipWriter gzio = newInstance(recv, args, block);
-        
-        return RubyGzipFile.wrapBlock(context, gzio, block);
+        return open19(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         
@@ -107,19 +97,11 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
-        
-        level = processLevel(args.length, args, runtime);
-        
-        // unused; could not figure out how to get JZlib to take this right
-        /*int strategy = */processStrategy(args.length, args);
-        
-        return initializeCommon(args[0], level);
+        return initialize19(getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block unused) {
         Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
