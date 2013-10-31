@@ -229,9 +229,7 @@ public final class Ruby {
     }
 
     void reinitialize(boolean reinitCore) {
-        this.is1_9              = config.getCompatVersion().is1_9();
-        this.is2_0              = config.getCompatVersion().is2_0();
-        this.doNotReverseLookupEnabled = is1_9;
+        this.doNotReverseLookupEnabled = true;
 
         if (config.getCompileMode() == CompileMode.OFFIR ||
                 config.getCompileMode() == CompileMode.FORCEIR) {
@@ -4105,18 +4103,8 @@ public final class Ruby {
         return config;
     }
 
-    @Deprecated
-    public boolean is1_8() {
-        return false;
-    }
-
-    @Deprecated
-    public boolean is1_9() {
-        return is1_9;
-    }
-
     public boolean is2_0() {
-        return is2_0;
+        return true;
     }
 
     /** GET_VM_STATE_VERSION */
@@ -4469,6 +4457,16 @@ public final class Ruby {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
+    @Deprecated
+    public boolean is1_8() {
+        return false;
+    }
+
+    @Deprecated
+    public boolean is1_9() {
+        return true;
+    }
+
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
             16    /* default initial capacity */,
@@ -4560,8 +4558,6 @@ public final class Ruby {
     private final long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
-    private boolean is1_9;
-    private boolean is2_0;
 
     private InputStream in;
     private PrintStream out;
