@@ -1248,13 +1248,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return initialize_m19(arg0, arg1, arg2);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m19(IRubyObject arg) {
         if (arg instanceof RubyRegexp) return initializeByRegexp19((RubyRegexp)arg);
         return initializeCommon19(arg.convertToString(), new RegexpOptions());
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyRegexp) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
@@ -1265,7 +1265,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1)));
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
