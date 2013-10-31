@@ -569,7 +569,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newArray(values);
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY2_0)
+    @JRubyMethod
     public RubyHash to_h(ThreadContext context) {
         RubyHash hash = RubyHash.newHash(context.runtime);
         RubyArray members = __member__();

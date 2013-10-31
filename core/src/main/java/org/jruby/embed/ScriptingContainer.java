@@ -959,7 +959,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion() {
-        return OutputStrings.getVersionString(provider.getRubyInstanceConfig().getCompatVersion()).trim();
+        return OutputStrings.getVersionString().trim();
     }
 
     /**

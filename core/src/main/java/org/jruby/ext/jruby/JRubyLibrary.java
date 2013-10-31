@@ -150,11 +150,6 @@ public class JRubyLibrary implements Library {
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
-
-    @JRubyMethod(module = true, compat = CompatVersion.RUBY2_0)
-    public static IRubyObject ruby2_0(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newString("Welcome to the future of Ruby!");
-    }
     
     public static class MethodExtensions {
         @JRubyMethod(name = "args")

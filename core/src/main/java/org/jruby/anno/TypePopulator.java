@@ -105,48 +105,6 @@ public abstract class TypePopulator {
                     if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
                 }
             }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_8().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_8().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_9().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_9().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
-
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods2_0().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
-
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods2_0().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
-                }
-            }
         }
     }
 }

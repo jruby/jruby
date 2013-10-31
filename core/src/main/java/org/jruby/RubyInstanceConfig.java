@@ -82,8 +82,6 @@ public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
-        compatVersion = CompatVersion.RUBY2_1;
-
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;
             jitLogging = false;
@@ -126,7 +124,6 @@ public class RubyInstanceConfig {
     
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
-        compatVersion = parentConfig.compatVersion;
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
         jitDumping = parentConfig.jitDumping;
@@ -602,16 +599,11 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    /**
-     * @see Options.COMPAT_VERSION
-     */
+    @Deprecated
     public CompatVersion getCompatVersion() {
-        return compatVersion;
+        return CompatVersion.RUBY2_1;
     }
 
-    /**
-     * @see Options.COMPAT_VERSION
-     */
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
@@ -1406,7 +1398,6 @@ public class RubyInstanceConfig {
     private int jitThreshold;
     private int jitMax;
     private int jitMaxSize;
-    private CompatVersion compatVersion;
 
     private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
     private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
@@ -1862,7 +1853,7 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public String getVersionString() {
-        return OutputStrings.getVersionString(compatVersion);
+        return OutputStrings.getVersionString();
     }
 
     @Deprecated

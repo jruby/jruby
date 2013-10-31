@@ -16,7 +16,7 @@ public class Config implements ConfigMBean {
     }
     
     public String getVersionString() {
-        return OutputStrings.getVersionString(ruby.get().getInstanceConfig().getCompatVersion());
+        return OutputStrings.getVersionString();
     }
 
     public String getCopyrightString() {

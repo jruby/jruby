@@ -651,12 +651,6 @@ public class RubyModule extends RubyObject {
     public static class MethodClumper {
         Map<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> annotatedMethods1_8 = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_8 = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> annotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> annotatedMethods2_0 = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods2_0 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
         
         public void clump(Class cls) {
@@ -672,25 +666,9 @@ public class RubyModule extends RubyObject {
                 List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash = null;
                 if (desc.isStatic) {
-                    if (anno.compat() == CompatVersion.RUBY1_8) {
-                        methodsHash = staticAnnotatedMethods1_8;
-                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
-                        methodsHash = staticAnnotatedMethods1_9;
-                    } else if (anno.compat() == CompatVersion.RUBY2_0) {
-                        methodsHash = staticAnnotatedMethods2_0;
-                    } else {
-                        methodsHash = staticAnnotatedMethods;
-                    }
+                    methodsHash = staticAnnotatedMethods;
                 } else {
-                    if (anno.compat() == CompatVersion.RUBY1_8) {
-                        methodsHash = annotatedMethods1_8;
-                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
-                        methodsHash = annotatedMethods1_9;
-                    } else if (anno.compat() == CompatVersion.RUBY2_0) {
-                        methodsHash = annotatedMethods2_0;
-                    } else {
-                        methodsHash = annotatedMethods;
-                    }
+                    methodsHash = annotatedMethods;
                 }
 
                 // add to specific
@@ -721,32 +699,8 @@ public class RubyModule extends RubyObject {
             return annotatedMethods;
         }
 
-        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods1_8() {
-            return annotatedMethods1_8;
-        }
-
-        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods1_9() {
-            return annotatedMethods1_9;
-        }
-
-        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods2_0() {
-            return annotatedMethods2_0;
-        }
-
         public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
             return staticAnnotatedMethods;
-        }
-
-        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods1_8() {
-            return staticAnnotatedMethods1_8;
-        }
-
-        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods1_9() {
-            return staticAnnotatedMethods1_9;
-        }
-
-        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods2_0() {
-            return staticAnnotatedMethods2_0;
         }
     }
     
@@ -779,15 +733,10 @@ public class RubyModule extends RubyObject {
         if (methods.size() == 1) {
             return defineAnnotatedMethod(name, desc, methodFactory);
         } else {
-            CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
-            if (CompatVersion.shouldBindMethod(compatVersion, desc.anno.compat())) {
-                DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
-                define(this, desc, name, dynamicMethod);
-            
-                return true;
-            }
-            
-            return false;
+            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+            define(this, desc, name, dynamicMethod);
+
+            return true;
         }
     }
     
@@ -796,15 +745,11 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-        CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
-        if (CompatVersion.shouldBindMethod(compatVersion, jrubyMethod.compat())) {
-            JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            define(this, desc, method.getName(), dynamicMethod);
+        JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        define(this, desc, method.getName(), dynamicMethod);
 
-            return true;
-        }
-        return false;
+        return true;
     }
     
     public boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) { 
@@ -812,14 +757,10 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-        CompatVersion compatVersion = getRuntime().getInstanceConfig().getCompatVersion();
-        if (CompatVersion.shouldBindMethod(compatVersion, jrubyMethod.compat())) {
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            define(this, desc, name, dynamicMethod);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        define(this, desc, name, dynamicMethod);
 
-            return true;
-        }
-        return false;
+        return true;
     }
 
     public void undefineMethod(String name) {
