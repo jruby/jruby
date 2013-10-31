@@ -150,20 +150,11 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        Ruby runtime = context.runtime;
-
-        initFieldsFromArgs(runtime, domain, type, protocol);
-
-        ChannelDescriptor descriptor = initChannel(runtime);
-
-        initSocket(runtime, descriptor);
-
-        return this;
+        return initialize(context, domain, type, protocol);
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize")
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
@@ -176,7 +167,7 @@ public class RubySocket extends RubyBasicSocket {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize")
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
@@ -291,7 +282,7 @@ public class RubySocket extends RubyBasicSocket {
         return SocketUtils.getnameinfo(context, args);
     }
 
-    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
         return SocketUtils.ip_address_list(context);
     }
