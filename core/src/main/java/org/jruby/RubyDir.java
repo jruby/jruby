@@ -708,7 +708,7 @@ public class RubyDir extends RubyObject {
         return path.strDup(context.runtime);
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path(context);
     }    
