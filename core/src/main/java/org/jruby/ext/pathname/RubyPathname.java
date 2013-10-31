@@ -30,7 +30,6 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -212,12 +211,11 @@ public class RubyPathname extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject to_str(ThreadContext context) {
         return path;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path;
     }
