@@ -30,8 +30,8 @@ namespace :test do
   task :rake_targets => long_tests
   
   task :extended do
-    # cause unit tests to run
-    sh 'mvn -q -Ptest test'
+    # do a build and cause unit tests to run
+    sh 'mvn -q -Ptest package'
     
     # run Ruby integration tests
     Rake::Task["test:rake_targets"].invoke
