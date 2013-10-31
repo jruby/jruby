@@ -2663,23 +2663,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.checkClosed(getRuntime());
         }
     }
-    
-    /** 
-     * <p>Pushes char represented by int back onto IOS.</p>
-     * 
-     * @param number to push back
-     */
+
     @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject ungetc(IRubyObject number) {
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        if (!myOpenFile.isReadBuffered()) {
-            throw getRuntime().newIOError("unread stream");
-        }
-
-        ungetcCommon((int)number.convertToInteger().getLongValue());
-
-        return getRuntime().getNil();
+        return ungetc19(number);
     }
 
     @JRubyMethod(name = {"ungetc", "ungetbyte"}, required = 1, compat = CompatVersion.RUBY1_9)
@@ -3294,9 +3281,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return enumeratorize(context.runtime, this, "each_byte");
     }
 
-    @JRubyMethod(name = "lines", compat = CompatVersion.RUBY1_8)
     public IRubyObject lines(final ThreadContext context, Block block) {
-        return enumeratorize(context.runtime, this, "each_line");
+        return lines19(context, block);
     }
 
     @JRubyMethod(name = "lines", compat = CompatVersion.RUBY1_9)
