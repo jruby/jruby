@@ -19,7 +19,6 @@
     <import file="antlib/test.xml"/>
     <import file="antlib/spec.xml"/>
     <import file="antlib/util.xml"/>
-    <import file="antlib/dist.xml"/>
 
     <condition property="dev.null" value="/dev/null">
         <os family="unix"/>
@@ -313,57 +312,10 @@
         </java>
     </target>
 
-    <target name="install-gems" depends="install-dev-gems,install-jruby-launcher-gem"/>
-
-    <condition property="dev.gems.installed">
-        <uptodate>
-            <srcfiles dir="${basedir}" includes="${dev.gems}"/>
-            <chainedmapper>
-                <flattenmapper/>
-                <globmapper from="*.gem" to="${jruby.gem.home}/specifications/*.gemspec"/>
-            </chainedmapper>
-        </uptodate>
-    </condition>
-
-    <target name="install-dev-gems" depends="jar" unless="dev.gems.installed">
-        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
-            <classpath path="lib/jruby.jar"/>
-            <sysproperty key="jruby.home" value="${basedir}"/>
-            <arg line="-S gem uninstall --all --force ${dev.gem.names}"/>
-        </java>
-        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath path="lib/jruby.jar"/>
-            <sysproperty key="jruby.home" value="${basedir}"/>
-            <arg line="-S gem install --local --ignore-dependencies ${dev.gems}"/>
-        </java>
-    </target>
-
-    <condition property="jruby-launcher.gem.installed">
-        <or>
-            <os family="windows"/>
-            <!-- windows doesn't need the launcher -->
-            <uptodate>
-                <srcfiles dir="${basedir}" includes="${jruby.launcher.gem}"/>
-                <chainedmapper>
-                    <flattenmapper/>
-                    <globmapper from="*.gem" to="${jruby.gem.home}/specifications/*.gemspec"/>
-                </chainedmapper>
-            </uptodate>
-        </or>
-    </condition>
-
-    <target name="install-jruby-launcher-gem" depends="install-dev-gems" unless="jruby-launcher.gem.installed">
-        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
-            <classpath path="lib/jruby.jar"/>
-            <sysproperty key="jruby.home" value="${basedir}"/>
-            <arg line="-S gem uninstall --all --force jruby-launcher"/>
-        </java>
-        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-            <classpath path="lib/jruby.jar"/>
-            <sysproperty key="jruby.home" value="${basedir}"/>
-            <env key="PATH" value="${basedir}/lib/ruby/gems/shared/bin:${env.PATH}"/>
-            <arg line="-S gem install --local --ignore-dependencies ${jruby.launcher.gem}"/>
-        </java>
+    <target name="bootstrap">
+        <exec executable="mvn">
+            <arg line="-q -Pbootstrap"/>
+        </exec>
     </target>
 
     <target name="apidocs" depends="prepare"
@@ -391,9 +343,6 @@
         </javadoc>
     </target>
 
-    <target name="gem" depends="dist-jar-complete">
-        <rake task="gem"/>
-    </target>
     <target name="installer">
         <rake task="installer"/>
     </target>
@@ -411,12 +360,6 @@
           <arg line="-q"/>
           <arg line="clean"/>
         </exec>
-    </target>
-
-    <target name="clean-all" depends="clean, dist-clean, clear-specs"
-            description="Cleans everything, including dist files and specs">
-        <delete dir="build.eclipse"/>
-        <delete dir="lib/native"/>
     </target>
 
     <property name="nailgun.home" value="tool/nailgun"/>

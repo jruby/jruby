@@ -19,61 +19,61 @@
     </target>
 
     <!-- Main spec runs (See rakelib/spec.rake for definitions/descriptions) -->
-    <target name="spec:ci_18" depends="install-gems">
+    <target name="spec:ci_18" depends="bootstrap">
         <rake task="spec:ci_18"/>
     </target>
-    <target name="spec:ci_19" depends="install-gems">
+    <target name="spec:ci_19" depends="bootstrap">
         <rake task="spec:ci_19"/>
     </target>
-    <target name="spec:ci_interpreted_18_19" depends="install-gems">
+    <target name="spec:ci_interpreted_18_19" depends="bootstrap">
         <rake task="spec:ci_interpreted_18_19"/>
     </target>
-    <target name="spec:ci_interpreted_18" depends="install-gems">
+    <target name="spec:ci_interpreted_18" depends="bootstrap">
         <rake task="spec:ci_interpreted_18"/>
     </target>
-    <target name="spec:ci_interpreted_19" depends="install-gems">
+    <target name="spec:ci_interpreted_19" depends="bootstrap">
         <rake task="spec:ci_interpreted_19"/>
     </target>
-    <target name="spec:ci_interpreted_via_env" depends="install-gems">
+    <target name="spec:ci_interpreted_via_env" depends="bootstrap">
         <rake task="spec:ci_interpreted_via_env"/>
     </target>
-    <target name="spec:ci_compiled_18" depends="install-gems">
+    <target name="spec:ci_compiled_18" depends="bootstrap">
         <rake task="spec:ci_compiled_18"/>
     </target>
-    <target name="spec:ci_compiled_19" depends="install-gems">
+    <target name="spec:ci_compiled_19" depends="bootstrap">
         <rake task="spec:ci_compiled_19"/>
     </target>
-    <target name="spec:ci_precompiled_18" depends="install-gems">
+    <target name="spec:ci_precompiled_18" depends="bootstrap">
         <rake task="spec:ci_precompiled_18"/>
     </target>
-    <target name="spec:ci_precompiled_19" depends="install-gems">
+    <target name="spec:ci_precompiled_19" depends="bootstrap">
         <rake task="spec:ci_precompiled_19"/>
     </target>
-    <target name="spec:ci_all_precompiled_18" depends="install-gems">
+    <target name="spec:ci_all_precompiled_18" depends="bootstrap">
         <rake task="spec:ci_all_precompiled_18"/>
     </target>
-    <target name="spec:ci_all_precompiled_19" depends="install-gems">
+    <target name="spec:ci_all_precompiled_19" depends="bootstrap">
         <rake task="spec:ci_all_precompiled_19"/>
     </target>
-    <target name="spec:ci_all_interpreted_18" depends="install-gems">
+    <target name="spec:ci_all_interpreted_18" depends="bootstrap">
         <rake task="spec:ci_all_interpreted_18"/>
     </target>
-    <target name="spec:ci_all_interpreted_19" depends="install-gems">
+    <target name="spec:ci_all_interpreted_19" depends="bootstrap">
         <rake task="spec:ci_all_interpreted_19"/>
     </target>
-    <target name="spec:ci_all" depends="install-gems">
+    <target name="spec:ci_all" depends="bootstrap">
         <rake task="spec:ci_all"/>
     </target>
-    <target name="spec:ci_latest" depends="install-gems">
+    <target name="spec:ci_latest" depends="bootstrap">
         <rake task="spec:ci_latest"/>
     </target>
-    <target name="spec:ci_latest_19" depends="install-gems">
+    <target name="spec:ci_latest_19" depends="bootstrap">
         <rake task="spec:ci_latest_19"/>
     </target>
-    <target name="spec:ci_cext" depends="install-gems,build-jruby-cext-native">
+    <target name="spec:ci_cext" depends="bootstrap,build-jruby-cext-native">
         <rake task="spec:ci_cext"/>
     </target>
-    <target name="spec:ir" depends="install-gems">
+    <target name="spec:ir" depends="bootstrap">
         <rake task="spec:ir"/>
     </target>
 
