@@ -319,12 +319,11 @@ public class RubyStringScanner extends RubyObject {
         regs = null;
     }
 
-    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_8)
     public IRubyObject getch(ThreadContext context) {
-        return getchCommon(context, false);
+        return getch19(context);
     }
 
-    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "getch")
     public IRubyObject getch19(ThreadContext context) {
         return getchCommon(context, true);
     }
