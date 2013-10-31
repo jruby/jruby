@@ -13,8 +13,13 @@ env:
     - JAVA_OPTS="-server -Djruby.cext.enabled=false"
   matrix:
     - TARGET='test-extended'
-    - TARGET='spec:ci_interpreted_via_env'
+    - TARGET='spec:ci_interpreted_travis'
+    - TARGET='spec:ci_interpreted_ir_travis'
     - TARGET='spec:ir'
+
+matrix:
+  allow_failures:
+    - env: TARGET='spec:interpreted_ir_travis'
 
 script: "ant $TARGET"
 install: /bin/true

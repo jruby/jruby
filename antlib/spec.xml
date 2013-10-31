@@ -34,8 +34,11 @@
     <target name="spec:ci_interpreted_19" depends="bootstrap">
         <rake task="spec:ci_interpreted_19"/>
     </target>
-    <target name="spec:ci_interpreted_via_env" depends="bootstrap">
-        <rake task="spec:ci_interpreted_via_env"/>
+    <target name="spec:ci_interpreted_travis" depends="bootstrap">
+        <rake task="spec:ci_interpreted_travis"/>
+    </target>
+    <target name="spec:ci_interpreted_ir_travis" depends="bootstrap">
+        <rake task="spec:ci_interpreted_ir_travis"/>
     </target>
     <target name="spec:ci_compiled_18" depends="bootstrap">
         <rake task="spec:ci_compiled_18"/>

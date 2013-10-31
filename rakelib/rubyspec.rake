@@ -12,6 +12,10 @@ namespace :spec do
   task :'ruby:jit' => :ci_compiled
   desc "Run rubyspecs expected to pass in precompiled mode"
   task :'ruby:aot' => :ci_precompiled
+  desc "Run rubyspecs expected to pass in interpreted IR mode"
+  task :'ruby:int_ir' => :ci_interpreted_ir
+  desc "Run rubyspecs expected to pass in interpreted IR mode"
+  task :'ruby:jit_ir' => :ci_compiled_ir
 
   desc "Run rubyspecs expected to pass"
   task :ci => ['spec:tagged']
@@ -19,6 +23,8 @@ namespace :spec do
   task :ci_interpreted => ['spec:interpreted']
   task :ci_compiled => ['spec:compiled']
   task :ci_precompiled => ['spec:precompiled']
+  task :ci_interpreted_ir => ['spec:interpreted_ir']
+  task :ci_compiled_ir => ['spec:compiled_ir']
 
   desc "Run all the specs including failures"
   task :ci_all => ['spec:all']
@@ -61,6 +67,12 @@ namespace :spec do
        :format => 'd'
   end
 
+  desc "Tagged specs in JIT (IR) mode only"
+  task :compiled_ir do
+    mspec :compile_mode => "JITIR",
+          :format => 'd'
+  end
+
   desc "Tagged specs in AOT mode only"
   task :precompiled do
     mspec :compile_mode => "FORCE",
@@ -93,10 +105,16 @@ namespace :spec do
   end
 
   # Parameterized rubyspec runs for e.g. TravisCI
-  desc "Run RubySpec in interpreted mode under the language compat version ENV['RUBYSPEC_LANG_VER']"
-  task :ci_interpreted_via_env do
+  desc "Run RubySpec on Travis in interpreted mode"
+  task :ci_interpreted_travis do
     mspec :compile_mode => 'OFF',
      :format => 's'
+  end
+
+  desc "Run RubySpec on Travis in interpreted_ir mode"
+  task :ci_interpreted_ir_travis do
+    mspec :compile_mode => 'OFFIR',
+          :format => 's'
   end
   
   # Complimentary tasks for running specs
