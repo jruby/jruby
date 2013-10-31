@@ -46,7 +46,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-import org.jruby.CompatVersion;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -149,7 +148,6 @@ public class MultipleScriptsRunner {
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
-                instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));
@@ -179,7 +177,6 @@ public class MultipleScriptsRunner {
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
-                instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.setError(new PrintStream(outStream, true));
                 instance.setOutput(new PrintStream(outStream, true));

@@ -127,19 +127,6 @@ public class JRubyApplet extends Applet {
             return defaultValue;
         }
     }
-    
-    /**
-     * Return Ruby language version from the applet parameter
-     * @param compat - name of the parameter handed to the applet
-     * @param defaultVersion
-     * @return Ruby language version; CompatVersion.RUBY1_9 if parameter is exactly "1.9".
-     * Otherwise, return defaultVersion
-     */
-    private CompatVersion getCompatVersionParameter(String compat, CompatVersion defaultVersion) {
-        CompatVersion compatVersion = defaultVersion;
-        if (getParameter(compat).equals("1.9")) compatVersion = CompatVersion.RUBY1_9;
-        return compatVersion;
-    }
 
     private InputStream getCodeResourceAsStream(String name) {
         if (name == null) {

@@ -1226,12 +1226,6 @@ public class ParserSupport {
                 throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
                         lexer.getCurrentLine(), "Block argument should not be given.");
             }
-
-            if (node instanceof ArrayNode && configuration.getVersion() == CompatVersion.RUBY1_8 &&
-                    ((ArrayNode)node).size() == 1) {
-                node = ((ArrayNode)node).get(0);
-                state = false;
-            }
             
             if (node != null && node instanceof SplatNode) {
                 state = true;
