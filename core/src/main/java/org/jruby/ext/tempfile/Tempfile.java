@@ -28,15 +28,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.tempfile;
 
-import java.io.File;
-import java.io.IOException;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -45,11 +40,15 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * An implementation of tempfile.rb in Java.
@@ -82,13 +81,12 @@ public class Tempfile extends org.jruby.RubyFile {
         super(runtime, type);
     }
 
-    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         return initializeCommon(getRuntime().getCurrentContext(), args);
     }
 
-    @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE)
     @Override
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         return initializeCommon(context, args);
@@ -204,18 +202,12 @@ public class Tempfile extends org.jruby.RubyFile {
         return context.runtime.getNil();
     }
 
-    @JRubyMethod(name = {"size", "length"}, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject size(ThreadContext context) {
-        if (!isClosed()) {
-            flush();
-            return context.runtime.newFileStat(path, false).size();
-        }
-
-        return RubyFixnum.zero(context.runtime);
+        return size19(context);
     }
 
-    @JRubyMethod(name = {"size", "length"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"size", "length"})
     public IRubyObject size19(ThreadContext context) {
         if (!isClosed()) {
             flush();
@@ -223,25 +215,11 @@ public class Tempfile extends org.jruby.RubyFile {
         return context.runtime.newFileStat(path, false).size();
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        RubyClass klass = (RubyClass) recv;
-        Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
-
-        if (block.isGiven()) {
-            try {
-                block.yield(context, tempfile);
-            } finally {
-                if (!tempfile.isClosed()) tempfile.close();
-            }
-            return runtime.getNil();
-        }
-
-        return tempfile;
+        return open19(context, recv, args, block);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         RubyClass klass = (RubyClass) recv;
