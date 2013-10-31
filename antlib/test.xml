@@ -68,7 +68,7 @@
 
     <target name="test-all" depends="
       copy-test-files,
-      install-gems,
+      bootstrap,
       test-security-manager,
       run-junit-interpreted,
       run-junit-embed,
