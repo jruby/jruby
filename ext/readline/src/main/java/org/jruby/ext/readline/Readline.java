@@ -253,31 +253,16 @@ public class Readline {
     }
 
     @JRubyMethod(name = {
-        "basic_quote_characters", "basic_quote_characters=",
-        "completer_quote_characters", "completer_quote_characters=",
-        "completer_word_break_characters", "completer_word_break_characters=",
-        "completion_append_character",
-        "completion_proc",
-        "emacs_editing_mode",
-        "filename_quote_characters", "filename_quote_characters=",
-        "vi_editing_mode"}, frame = true, module = true, visibility = PRIVATE)
+            "basic_quote_characters", "basic_quote_characters=",
+            "completer_quote_characters", "completer_quote_characters=",
+            "completer_word_break_characters", "completer_word_break_characters=",
+            "completion_append_character",
+            "completion_proc",
+            "emacs_editing_mode", "emacs_editing_mode?",
+            "filename_quote_characters", "filename_quote_characters=",
+            "vi_editing_mode", "vi_editing_mode?",
+            "set_screen_size"}, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject unimplemented(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        String err = context.getFrameName() + "() function is unimplemented on this machine";
-        throw runtime.newNotImplementedError(err);
-    }
-
-    @JRubyMethod(name = {
-        "basic_quote_characters", "basic_quote_characters=",
-        "completer_quote_characters", "completer_quote_characters=",
-        "completer_word_break_characters", "completer_word_break_characters=",
-        "completion_append_character",
-        "completion_proc",
-        "emacs_editing_mode", "emacs_editing_mode?",
-        "filename_quote_characters", "filename_quote_characters=",
-        "vi_editing_mode", "vi_editing_mode?",
-        "set_screen_size"}, frame = true, module = true, visibility = PRIVATE)
-    public static IRubyObject unimplemented19(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         String err = context.getFrameName() + "() function is unimplemented on this machine";
         throw runtime.newNotImplementedError(err);

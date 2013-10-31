@@ -63,8 +63,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
-    
-    @JRubyMethod
+
     public IRubyObject addr(ThreadContext context) {
         return addrCommon(context, true);
     }
@@ -78,8 +77,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
         return addrCommon(context, reverse.isTrue());
     }
-    
-    @JRubyMethod
+
     public IRubyObject peeraddr(ThreadContext context) {
         return peeraddrCommon(context, true);
     }

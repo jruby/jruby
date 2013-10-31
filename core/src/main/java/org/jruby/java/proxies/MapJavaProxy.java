@@ -289,14 +289,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_s(context);
-    }
-
-    /** rb_hash_to_s19
-     *
-     */
-    @JRubyMethod(name = "to_s")
-    public IRubyObject to_s19(ThreadContext context) {
         return getOrCreateRubyHashMap().to_s19(context);
     }
 
@@ -503,11 +495,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "select")
     public IRubyObject select(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().select(context, block);
-    }
-
-    @JRubyMethod(name = "select")
-    public IRubyObject select19(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().select19(context, block);
     }
 
