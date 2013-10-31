@@ -74,15 +74,12 @@
       <type>jar</type>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-launcher</artifactId>
       <version>${jruby-launcher.version}</version>
       <type>gem</type>
     </dependency>
-<!--
--->
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
@@ -168,29 +165,10 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
+        <artifactId>maven-deploy-plugin</artifactId>
         <configuration>
-          <forkCount>1C</forkCount>
-          <reuseForks>false</reuseForks>
-          <systemProperties>
-            <jruby.compat.version>1.9</jruby.compat.version>
-            <jruby.home>${project.parent.basedir}</jruby.home>
-          </systemProperties>
-          <testFailureIgnore>true</testFailureIgnore>
-          <argLine>-Xmx${jruby.test.memory}</argLine>
-          <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
-          <argLine>-Dfile.encoding=UTF-8</argLine>
-          <includes>
-            <include>org/jruby/test/MainTestSuite.java</include>
-            <include>org/jruby/embed/**/*Test*.java</include>
-          </includes>
+          <skip>true</skip>
         </configuration>
-      </plugin>
-      <plugin>
-	<artifactId>maven-deploy-plugin</artifactId>
-	<configuration>
-	  <skip>true</skip>
-	</configuration>
       </plugin>
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
@@ -236,44 +214,44 @@
   </build>
   <profiles>
     <profile>
-      <id>test</id>
+      <id>bootstrap</id>
       <dependencies>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>rake</artifactId>
-	  <version>${rake.version}</version>
-	  <type>gem</type>
-	</dependency>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>rspec</artifactId>
-	  <version>${rspec.version}</version>
-	  <type>gem</type>
-	</dependency>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>minitest</artifactId>
-	  <version>${minitest.version}</version>
-	  <type>gem</type>
-	</dependency>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>minitest-excludes</artifactId>
-	  <version>${minitest-excludes.version}</version>
-	  <type>gem</type>
-	</dependency>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>json</artifactId>
-	  <version>${json.version}</version>
-	  <type>gem</type>
-	</dependency>
-	<dependency>
-	  <groupId>rubygems</groupId>
-	  <artifactId>rdoc</artifactId>
-	  <version>${rdoc.version}</version>
-	  <type>gem</type>
-	</dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>rake</artifactId>
+          <version>${rake.version}</version>
+          <type>gem</type>
+        </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>rspec</artifactId>
+          <version>${rspec.version}</version>
+          <type>gem</type>
+        </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>minitest</artifactId>
+          <version>${minitest.version}</version>
+          <type>gem</type>
+        </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>minitest-excludes</artifactId>
+          <version>${minitest-excludes.version}</version>
+          <type>gem</type>
+        </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>json</artifactId>
+          <version>${json.version}</version>
+          <type>gem</type>
+        </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>rdoc</artifactId>
+          <version>${rdoc.version}</version>
+          <type>gem</type>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

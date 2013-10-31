@@ -72,23 +72,28 @@ The `-S` flag will run any script installed in JRuby's bin dir by RubyGems.
 This can be a simple way to ensure you're running the JRuby (or Ruby) version
 you think you are.
 
-Testing
--------
+Developing and Testing
+----------------------
 
 JRuby employs a large suite of tests, so there are many ways you can
 verify that JRuby is still fully functional.
 
-In order to prepare JRuby for testing, you must run the integration-test
-phase in Maven. This phase will do the following:
+### Bootstrapping
+
+In order to prepare JRuby for testing, you must bootstrap the dev
+environment. This will do the following:
 
 * Install rspec, rake, minitest, minitest-excludes, and dependencies
  needed to run integration tests.
 
 ```
-mvn -Ptest
+mvn -Pbootstrap
 ```
 
-### Day to Day
+This only needs to be run once to install these gems or if you update
+one of the gems to a newer version or clean out all installed gems.
+
+### Day to Day Testing
 
 For normal day-to-day testing, we recommend running the Ruby 1.9 tests
 via the following rake command:
