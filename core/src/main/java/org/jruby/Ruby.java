@@ -1675,7 +1675,6 @@ public final class Ruby {
         
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel21.rb", false);
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
