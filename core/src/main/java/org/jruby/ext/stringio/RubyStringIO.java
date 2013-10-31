@@ -30,14 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.stringio;
 
-import org.jruby.util.StringSupport;
 import org.jcodings.Encoding;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.jcodings.specific.ASCIIEncoding;
-import org.joni.Regex;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -46,7 +40,6 @@ import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -54,17 +47,18 @@ import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Stream;
 
+import java.util.Arrays;
+
 import static org.jruby.RubyEnumerator.enumeratorize;
-import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.util.encoding.Transcoder;
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="StringIO")
 @SuppressWarnings("deprecation")
