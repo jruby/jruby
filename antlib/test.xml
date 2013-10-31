@@ -39,10 +39,10 @@
     <target name="test" depends="test-extended"/>
 
     <target name="test-extended">
-        <!-- First, run up through integration phases -->
+        <!-- First, ensure we're bootstrapped -->
         <exec executable="mvn">
             <arg line="-q"/>
-            <arg line="-Ptest"/>
+            <arg line="-Pbootstrap"/>
             <arg line="package"/>
         </exec>
         
