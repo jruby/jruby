@@ -39,7 +39,14 @@
     <target name="test" depends="test-extended"/>
 
     <target name="test-extended">
-        <!-- Run Ruby tests from Rake -->
+        <!-- First, run up through integration phases -->
+        <exec executable="mvn">
+            <arg line="-q"/>
+            <arg line="-Ptest"/>
+            <arg line="package"/>
+        </exec>
+        
+        <!-- Then run Ruby tests from Rake -->
         <java classname="org.jruby.Main" fork="true" failonerror="true">
             <classpath refid="test.class.path"/>
             <jvmarg line="${java.opts}"/>
