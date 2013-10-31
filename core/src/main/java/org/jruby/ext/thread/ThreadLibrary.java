@@ -40,7 +40,6 @@ import org.jruby.runtime.load.Library;
  */
 public class ThreadLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        runtime.getThread().defineAnnotatedMethods(ThreadMethods.class);
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
