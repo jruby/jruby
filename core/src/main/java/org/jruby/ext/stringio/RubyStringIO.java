@@ -294,13 +294,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "each", optional = 1, writes = FrameField.LASTLINE)
     @Override
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each", args);
+        return each19(context, args, block);
     }
 
-    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE)
     public IRubyObject each19(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", args);
         
@@ -312,26 +311,24 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return eachInternal(context, args, block);
     }
 
-    @JRubyMethod(optional = 1, compat = RUBY1_8)
     @Override
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
+        return each_line19(context, args, block);
     }
 
-    @JRubyMethod(name = "each_line", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "each_line", optional = 2)
     public IRubyObject each_line19(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", args);
         
         return each19(context, args, block);
     }
 
-    @JRubyMethod(optional = 1, compat = RUBY1_8)
     @Override
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "lines", args);
+        return lines19(context, args, block);
     }
 
-    @JRubyMethod(name = "lines", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "lines", optional = 2)
     public IRubyObject lines19(ThreadContext context, IRubyObject[] args, Block block) {
         context.runtime.getWarnings().warn("StringIO#lines is deprecated; use #each_line instead");
         return block.isGiven() ? each19(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
@@ -436,7 +433,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return RubyFixnum.zero(getRuntime());
     }
 
-    @JRubyMethod(name = {"getc", "getbyte"})
+    @JRubyMethod(name = "getbyte")
     @Override
     public IRubyObject getc() {
         checkReadable();
@@ -445,7 +442,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().newFixnum(ptr.string.getByteList().get((int)ptr.pos++) & 0xFF);
     }
 
-    @JRubyMethod(name = "getc", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "getc")
     @Override
     public IRubyObject getc19(ThreadContext context) {
         checkReadable();
@@ -768,16 +765,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         }
     }
 
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        IRubyObject result = getsOnly(context, args);
-        context.setLastLine(result);
-
-        return result;
+        return gets19(context, args);
     }
 
-    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE)
     @Override
     public IRubyObject gets19(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
@@ -820,7 +813,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject path() {
         return getRuntime().getNil();
@@ -848,25 +840,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "print", rest = true)
     @Override
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        if (args.length != 0) {
-            for (int i=0,j=args.length;i<j;i++) {
-                append(context, args[i]);
-            }
-        } else {
-            IRubyObject arg = runtime.getGlobalVariables().get("$_");
-            append(context, arg.isNil() ? makeString(runtime, new ByteList(new byte[] {'n', 'i', 'l'})) : arg);
-        }
-        IRubyObject sep = runtime.getGlobalVariables().get("$\\");
-        if (!sep.isNil()) append(context, sep);
-
-        return runtime.getNil();
+        return print19(context, args);
     }
 
-    @JRubyMethod(name = "print", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "print", rest = true)
     @Override
     public IRubyObject print19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -1162,7 +1141,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return originalString != null ? originalString : makeString(getRuntime(), buf);
     }
 
-    @JRubyMethod(name="read_nonblock", compat = CompatVersion.RUBY1_9, optional = 2)
+    @JRubyMethod(name="read_nonblock", optional = 2)
     @Override
     public IRubyObject read_nonblock(ThreadContext contet, IRubyObject[] args) {
         return sysreadCommon(args);
@@ -1172,22 +1151,17 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
      * readpartial(length, [buffer])
      *
      */
-    @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, optional = 2)
+    @JRubyMethod(name ="readpartial", optional = 2)
     @Override
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         return sysreadCommon(args);
     }
 
-    @JRubyMethod(name = {"readchar", "readbyte"}, compat = RUBY1_8)
     public IRubyObject readchar() {
-        IRubyObject c = getc();
-
-        if (c.isNil()) throw getRuntime().newEOFError();
-
-        return c;
+        return readchar19(getRuntime().getCurrentContext());
     }
 
-    @JRubyMethod(name = "readchar", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "readchar")
     public IRubyObject readchar19(ThreadContext context) {
         IRubyObject c = callMethod(context, "getc");
 
@@ -1196,7 +1170,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return c;
     }
 
-    @JRubyMethod(name = "readbyte", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "readbyte")
     public IRubyObject readbyte(ThreadContext context) {
         IRubyObject c = callMethod(context, "getbyte");
 
@@ -1205,16 +1179,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return c;
     }
 
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_8)
     public IRubyObject readline18(ThreadContext context, IRubyObject[] args) {
-        IRubyObject line = gets(context, args);
-
-        if (line.isNil()) throw getRuntime().newEOFError();
-
-        return line;
+        return readline(context, args);
     }
 
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     @Override
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = callMethod(context, "gets", args);
@@ -1224,12 +1193,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return line;
     }
 
-    @JRubyMethod(name = "readlines", optional = 1, compat = RUBY1_8)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         return readlines19(context, args);
     }
 
-    @JRubyMethod(name = "readlines", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "readlines", optional = 2)
     public IRubyObject readlines19(ThreadContext context, IRubyObject[] args) {
         checkReadable();
         
@@ -1357,12 +1325,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return getRuntime().getTrue();
     }
 
-    @JRubyMethod(name = "sysread", optional = 2, compat = RUBY1_8)
     public IRubyObject sysread18(IRubyObject[] args) {
-        return sysreadCommon(args);
+        return sysread(getRuntime().getCurrentContext(), args);
     }
     
-    @JRubyMethod(name = "sysread", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "sysread", optional = 2)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         IRubyObject val = callMethod(context, "read", args);
         
@@ -1404,18 +1371,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return arg;
     }
 
-    @JRubyMethod(name = "ungetc", required = 1, compat = RUBY1_8)
     @Override
     public IRubyObject ungetc(IRubyObject arg) {
-        checkReadable();
-
-        int c = RubyNumeric.num2int(arg);
-        if (ptr.pos == 0) return getRuntime().getNil();
-        ungetbyteCommon(c);
-        return getRuntime().getNil();
+        return ungetc19(getRuntime().getCurrentContext(), arg);
     }
 
-    @JRubyMethod(name = "ungetc", compat = RUBY1_9)
+    @JRubyMethod(name = "ungetc")
     @Override
     public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
         return ungetbyte(context, arg);
@@ -1461,7 +1422,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         ptr.pos = start;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject arg) {
         checkReadable();
         
@@ -1546,7 +1507,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return val.getByteList().length();
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     @Override
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc) {
         if (enc.isNil()) {
@@ -1557,29 +1518,29 @@ public class RubyStringIO extends org.jruby.RubyStringIO implements EncodingCapa
         return this;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored) {
         return set_encoding(context, enc);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored1, IRubyObject ignored2) {
         return set_encoding(context, enc);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     @Override
     public IRubyObject external_encoding(ThreadContext context) {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.string.getEncoding());
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     @Override
     public IRubyObject internal_encoding(ThreadContext context) {
         return context.nil;
     }
     
-    @JRubyMethod(name = {"each_codepoint", "codepoints"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"each_codepoint", "codepoints"})
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
         return block.isGiven() ? eachCodepointInternal(context, block) : enumeratorize(context.runtime, this, "each_codepoint");
     }
