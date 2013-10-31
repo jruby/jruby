@@ -41,7 +41,7 @@ describe "JRuby's compiler" do
   include CompilerTestUtils
 
   StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler19
+  ASTCompiler = org.jruby.compiler.ASTCompiler
   ASTInspector = org.jruby.compiler.ASTInspector
   Block = org.jruby.runtime.Block
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
