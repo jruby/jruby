@@ -109,6 +109,7 @@ freezing to) a specific jruby-complete jar version.</description>
               <goal>execute</goal>
             </goals>
             <configuration>
+              <nativePom>Mavenfile</nativePom>
               <taskId>rename gem file</taskId>
             </configuration>
           </execution>
