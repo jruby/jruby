@@ -31,7 +31,7 @@ execute 'rename gem file', :package do |ctx|
   require 'fileutils'
   gem = File.join( ctx.project.build.directory,
                    ctx.project.build.final_name + ".gem" )
-  FileUtils.mv( gem.sub( /-SNAPSHOT/, '.SNAPSHOT' ), gem )
+  FileUtils.mv( gem.sub( /-SNAPSHOT/, '.SNAPSHOT' ), gem ) if gem.match /-SNAPSHOT/
 
 end
 # vim: syntax=Ruby
