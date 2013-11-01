@@ -27,7 +27,6 @@ import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
-import org.jruby.runtime.InterpretedIRBlockBody19;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -57,13 +56,12 @@ public class IRClosure extends IRScope {
         setName("_CLOSURE_CLONE_" + closureId);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
-        this.body = (c.body instanceof InterpretedIRBlockBody19) ? new InterpretedIRBlockBody19(this, c.body.arity(), c.body.getArgumentType())
-                                                                 : new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+        this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
         this.addedGEBForUncaughtBreaks = false;
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
-            int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_8) {
+            int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
@@ -71,8 +69,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = is1_8 ? new InterpretedIRBlockBody(this, arity, argumentType)
-                              : new InterpretedIRBlockBody19(this, arity, argumentType);
+            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         }
 
