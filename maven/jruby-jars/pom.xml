@@ -19,6 +19,7 @@ freezing to) a specific jruby-complete jar version.</description>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <jruby.home>${basedir}/../../</jruby.home>
   </properties>
   <dependencies>
     <dependency>
