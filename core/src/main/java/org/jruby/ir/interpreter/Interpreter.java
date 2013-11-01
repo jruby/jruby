@@ -533,6 +533,19 @@ public class Interpreter {
             break;
         case RECV_EXCEPTION: {
             ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
+            // FIXME: HACK for now .. make semantics explicit rather
+            // than piggybacking on top of the checkType field
+            //
+            // Unrescuable:
+            //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
+            //    These cannot be rescued -- only run ensure blocks
+            //
+            // Others:
+            //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
+            //    These can be rescued -- run rescue blocks
+            if (rei.checkType && (exception instanceof Unrescuable)) {
+                Helpers.throwException((Throwable)exception);
+            }
             result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
             break;
         }
@@ -766,17 +779,9 @@ public class Interpreter {
                 }
                 }
             } catch (Throwable t) {
-                // Unrescuable:
-                //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
-                //    These cannot be rescued -- only run ensure blocks
-                //
-                // Others:
-                //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
-                //    These can be rescued -- run rescue blocks
-
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                ipc = (t instanceof Unrescuable) ? scope.getEnsurerPC(instr) : scope.getRescuerPC(instr);
-                if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
+                ipc = scope.getRescuerPC(instr);
+                if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {
                     Helpers.throwException((Throwable)t);

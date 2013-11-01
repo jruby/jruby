@@ -851,13 +851,24 @@ public class IRBuilder {
         Label rEndLabel   = s.getNewLabel();
         Label gebLabel    = s.getNewLabel();
 
-        // protect the entire body as it exists now with the global ensure block
+        // Protect the entire body as it exists now with the global ensure block
+        //
+        // Add label and marker instruction in reverse order to the beginning
+        // so that the label ends up being the first instr.
         s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel, gebLabel));
+        s.addInstrAtBeginning(new LabelInstr(rBeginLabel));
         s.addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
         s.addInstr(new LabelInstr(gebLabel));
         Variable exc = s.getNewTemporaryVariable();
+        // FIXME: This should be rethrowable-exception-instr
+        // (for ensure blocks and can receive Unrescuable exceptions)
+        //
+        // UGLY HACK: For now, we are going to piggyback on top of the
+        // no-type-checking field which is indicating the same thing
+        // but worth thinking over and either adding a new flag or a
+        // new instruction
         s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
 
         // Handle break using runtime helper
@@ -891,6 +902,7 @@ public class IRBuilder {
         Label rescueLabel = s.getNewLabel();
 
         // Protected region
+        s.addInstr(new LabelInstr(rBeginLabel));
         s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
         s.addInstr(callInstr);
         s.addInstr(new JumpInstr(rEndLabel));
@@ -2280,6 +2292,13 @@ public class IRBuilder {
         Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
+        // FIXME: This should be rethrowable-exception-instr
+        // (for ensure blocks and can receive Unrescuable exceptions)
+        //
+        // UGLY HACK: For now, we are going to piggyback on top of the
+        // no-type-checking field which is indicating the same thing
+        // but worth thinking over and either adding a new flag or a
+        // new instruction
         s.addInstr(new ReceiveExceptionInstr(exc, false)); // Dont check type since we are simply throwing it back
         s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
 
