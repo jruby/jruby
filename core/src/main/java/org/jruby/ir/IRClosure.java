@@ -228,9 +228,11 @@ public class IRClosure extends IRScope {
         IRScope scope = this;
         int d = -1;
 
-        // FIXME: why are we getting into a null scope scenario?
+        // 'scope' can be null because scopeDepth can exceed the
+        // lexical scope nesting depth when AST has this information
+        // incorrect, as above.
         while (scope != null && lvar == null && d < scopeDepth) {
-            // skip for-loop bodie
+            // skip for-loop bodies
             while (scope.isForLoopBody()) scope = scope.getLexicalParent();
 
             // lookup
