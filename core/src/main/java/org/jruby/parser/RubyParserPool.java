@@ -31,8 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import org.jruby.CompatVersion;
-
 public class RubyParserPool {
     private static RubyParserPool instance = new RubyParserPool();
 
@@ -46,11 +44,7 @@ public class RubyParserPool {
         return instance;
     }
 
-    public DefaultRubyParser borrowParser() {
-        return new DefaultRubyParser();
-    }
-
-    public RubyParser borrowParser(CompatVersion version) {
+    public RubyParser borrowParser() {
         return new Ruby20Parser();
     }
 

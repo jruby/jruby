@@ -107,7 +107,7 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = RubyParserPool.getInstance().borrowParser(configuration.getVersion());
+        RubyParser parser = RubyParserPool.getInstance().borrowParser();
         RubyParserResult result = null;
         parser.setWarnings(runtime.getWarnings());
         try {
