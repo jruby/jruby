@@ -108,8 +108,18 @@ public class IREvalScript extends IRClosure {
         // Look in the nearest non-eval scope's shared eval scope vars first.
         // If you dont find anything there, look in the nearest non-eval scope's regular vars.
         LocalVariable lvar = nearestNonEvalScope.evalScopeVars.getVariable(name);
-        if ((lvar != null) || scopeDepth == 0) return lvar;
+        if (lvar != null || scopeDepth == 0) return lvar;
         else return nearestNonEvalScope.findExistingLocalVariable(name, scopeDepth-nearestNonEvalScopeDepth-1);
+    }
+
+    @Override
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
+        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
+        // Create a copy of the variable usable at the right depth
+        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
+
+        return lvar;
     }
 
     @Override

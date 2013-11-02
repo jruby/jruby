@@ -215,10 +215,39 @@ public class IRClosure extends IRScope {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 
-        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
-        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
-        // Create a copy of the variable usable at the right depth
-        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
+        // AST doesn't seem to be implementing shadowing properly and sometimes
+        // has the wrong depths which screws up variable access. So, we implement
+        // shadowing here by searching for an existing local var from depth 0 and upwards.
+        //
+        // Check scope depths for 'a' in the closure in the following snippet:
+        //
+        //   "a = 1; foo(1) { |(a)| a }"
+        //
+        // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
+        LocalVariable lvar = null;
+        IRScope scope = this;
+        int d = -1;
+
+        // FIXME: why are we getting into a null scope scenario?
+        while (scope != null && lvar == null && d < scopeDepth) {
+            // skip for-loop bodie
+            while (scope.isForLoopBody()) scope = scope.getLexicalParent();
+
+            // lookup
+            lvar = scope.lookupExistingLVar(name);
+
+            // walk up
+            d++;
+            scope = scope.getLexicalParent();
+        }
+
+        if (lvar == null) {
+            // Create a new var at requested depth
+            lvar = getNewLocalVariable(name, scopeDepth);
+        } else {
+            // Create a copy of the variable usable at the right depth
+            if (lvar.getScopeDepth() != d) lvar = lvar.cloneForDepth(d);
+        }
 
         return lvar;
     }

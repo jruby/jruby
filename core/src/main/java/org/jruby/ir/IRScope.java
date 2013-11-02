@@ -1016,6 +1016,10 @@ public abstract class IRScope {
         hasUnusedImplicitBlockArg = true;
     }
 
+    public LocalVariable lookupExistingLVar(String name) {
+        return localVars.getVariable(name);
+    }
+
     public LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.getVariable(name);
     }
