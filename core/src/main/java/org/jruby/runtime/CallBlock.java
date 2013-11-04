@@ -73,40 +73,17 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
+        return callback.call(context, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
-    }
-    
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+        return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
     }
 
-    /**
-     * Yield to this block, usually passed to the current call.
-     * 
-     * @param context represents the current thread-specific data
-     * @param value The value to yield, either a single value or an array of values
-     * @param self The current self
-     * @param klass
-     * @param aValue Should value be arrayified or not?
-     * @return
-     */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        IRubyObject[] args = value.respondsTo("to_a") ? value.convertToArray().toJavaArray() : new IRubyObject[] {value};
-        return yield(context, args, Block.NULL_BLOCK);
-    }
-
-    private IRubyObject yield(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject[] preppedArgs = RubyProc.prepareProcArgs(context, arity(), args);
         return callback.call(context, preppedArgs, Block.NULL_BLOCK);
     }

@@ -82,20 +82,21 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return yield(context, value, binding, type, Block.NULL_BLOCK);
     }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
 
@@ -119,13 +120,14 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
 
+        RubyArray value = context.runtime.newArrayNoCopyLight(args);
         IRubyObject realArg = aValue ?
-                setupBlockArgs(context, args, self) : setupBlockArg(context.runtime, args, self);
+                setupBlockArgs(context, value, self) : setupBlockArg(context.runtime, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
 

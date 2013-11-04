@@ -79,12 +79,12 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, newArgsArrayFromArgsWithUnbox(args, context), null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, true, binding, type, block);
+        return yield(context, args, null, null, true, binding, type, block);
     }
 
     @Override
@@ -141,12 +141,13 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         }
     }
 
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
     
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -155,7 +156,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArgs(args, type, aValue);
+            IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(args), type, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
