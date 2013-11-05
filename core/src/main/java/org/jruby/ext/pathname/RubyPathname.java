@@ -392,7 +392,7 @@ public class RubyPathname extends RubyObject {
 
     /* Mix of File and Dir */
 
-    @JRubyMethod
+    @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
         try {
             return context.runtime.getDir().callMethod(context, "unlink", path);
