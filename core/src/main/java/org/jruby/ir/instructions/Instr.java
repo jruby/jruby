@@ -9,6 +9,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -46,20 +47,7 @@ public abstract class Instr {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        if(isDead) {
-            builder.append("[DEAD]");
-        }
-        if(hasUnusedResult) {
-            builder.append("[DEAD-RESULT]");
-        } 
-        if(this instanceof ResultInstr) {
-            Variable result = ((ResultInstr)this).getResult();
-            builder.append(result).append(" = ");
-        }
-        
-        builder.append(operation);
-        return builder.toString(); 
+        return IRToStringTranslator.translate(this);
     }
 
     @Interp

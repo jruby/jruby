@@ -13,6 +13,8 @@ public class AsString extends Operand {
     final private Operand source;
 
     public AsString(Operand source) {
+        super(OperandType.AS_STRING);
+        
         if (source == null) source = new StringLiteral("");
         this.source = source;
     }
@@ -36,11 +38,6 @@ public class AsString extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         source.addUsedVariables(l);
-    }
-
-    @Override
-    public String toString() {
-        return "#{" + source + "}";
     }
 
     public Operand getSource() {

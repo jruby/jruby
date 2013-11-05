@@ -21,11 +21,13 @@ public class BacktickString extends Operand {
     final public List<Operand> pieces;
 
     public BacktickString(Operand val) {
+        super(OperandType.BACKTICK_STRING);
         pieces = new ArrayList<Operand>();
         pieces.add(val);
     }
 
     public BacktickString(List<Operand> pieces) {
+        super(OperandType.BACKTICK_STRING);
         this.pieces = pieces;
     }
 
@@ -83,10 +85,5 @@ public class BacktickString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.BacktickString(this);
-    }
-
-    @Override
-    public String toString() {
-        return "`" + (pieces == null ? "[]" : pieces) + "`";
     }
 }

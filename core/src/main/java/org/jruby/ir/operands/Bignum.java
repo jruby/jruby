@@ -30,17 +30,13 @@ public class Bignum extends ImmutableLiteral {
     final public BigInteger value;
 
     public Bignum(BigInteger value) {
+        super(OperandType.BIGNUM);
         this.value = value;
     }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
         return RubyBignum.newBignum(context.runtime, value);
-    }
-
-    @Override
-    public String toString() {
-        return "Bignum:" + value;
     }
 
     @Override

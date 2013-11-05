@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.jruby.ParseResult;
+import org.jruby.RubyInstanceConfig;
 
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
@@ -72,7 +74,7 @@ import org.jruby.util.log.LoggerFactory;
  *
  * and so on ...
  */
-public abstract class IRScope {
+public abstract class IRScope implements ParseResult {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
     private static Integer globalScopeCount = 0;
@@ -342,7 +344,7 @@ public abstract class IRScope {
     }
 
     private final void setupLexicalContainment() {
-        if (manager.isDryRun()) {
+        if (manager.isDryRun() || RubyInstanceConfig.IR_PERSISTENCE) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
@@ -502,7 +504,7 @@ public abstract class IRScope {
         return name;
     }
 
-    public void setName(String name) { // This is for IRClosure ;(
+    public void setName(String name) { // This is for IRClosure and IRMethod ;(
         this.name = name;
     }
 
@@ -925,31 +927,6 @@ public abstract class IRScope {
             for (IRClosure c: nestedClosures)
                 b.append(c.toStringBody());
             b.append("------------------------------------------------\n");
-        }
-
-        return b.toString();
-    }
-
-    public String getPersistableGeneralInfo() {
-        StringBuilder b = new StringBuilder();
-
-        b.append("Scope(").append(getScopeType()).append("):<").append(name).append(">:").append(lineNumber).append("\n");
-
-        if (lexicalParent != null) {
-            b.append("LexicalParent:<").append(lexicalParent.getName()).append(">\n");
-        }
-        
-        b.append(staticScope).append("\n");
-        
-        return b.toString();
-    }
-    
-    public String getPersistableInstrsInfo() {
-        StringBuilder b = new StringBuilder();
-
-        b.append("Scope:<").append(name).append(">\n");
-        for (Instr instr : instrList) {
-            b.append(instr).append("\n");
         }
 
         return b.toString();

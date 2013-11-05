@@ -1,14 +1,11 @@
 package org.jruby.ir;
 
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ir.persistence.IRPersistenceException;
-import org.jruby.ir.persistence.IRPersistenceFacade;
-import org.jruby.ir.persistence.IRReadingContext;
-import org.perf4j.LoggingStopWatch;
-import org.perf4j.StopWatch;
+import org.jruby.ir.persistence.persist.IRPersister;
 
 /**
  * Abstract class that contains general logic for both IR Compiler and IR
@@ -21,30 +18,30 @@ import org.perf4j.StopWatch;
  */
 public abstract class IRTranslator<R, S> {
 
-    public R performTranslation(Ruby runtime, Node node, S specificObject) {
+    public R performTranslation(Ruby runtime, ParseResult parseResult, S specificObject) {
         R result = null;
         try {
 
             IRScope producedIRScope = null;
-            if (isIRPersistenceRequired()) {
-                StopWatch interpretWatch = new LoggingStopWatch("AST -> IR");
-                producedIRScope = produceIrScope(runtime, node, true);
-                interpretWatch.stop();
-                IRPersistenceFacade.persist(producedIRScope, runtime);
-            } else if (isIRReadingRequired()) {
-                if (node != null) {
-                    producedIRScope = produceIrScope(runtime, node, false);
+            if (parseResult instanceof RootNode) {                
+                
+                RootNode rootNode = (RootNode) parseResult;
+                if (isIRPersistenceRequired()) {
+                    producedIRScope = produceIrScope(runtime, rootNode, false);
+                    IRPersister.persist(producedIRScope);
                     result = translationSpecificLogic(runtime, producedIRScope, specificObject);
                 } else {
-                    StopWatch readWatch = new LoggingStopWatch(".ir -> IR");
-                    IRScope toplevelScope = IRPersistenceFacade.read(runtime);
-                    readWatch.stop();
-
-                    result = translationSpecificLogic(runtime, toplevelScope, specificObject);
-                }
-            } else {
-                producedIRScope = produceIrScope(runtime, node, false);
+                    producedIRScope = produceIrScope(runtime, rootNode, false);
+                    result = translationSpecificLogic(runtime, producedIRScope, specificObject);
+                }                
+                
+            } else if (parseResult instanceof IRScope){
+                producedIRScope = (IRScope) parseResult;
                 result = translationSpecificLogic(runtime, producedIRScope, specificObject);
+                
+            } else {
+                throw new IllegalArgumentException();
+                
             }
 
         } catch (IRPersistenceException e) {
@@ -61,17 +58,12 @@ public abstract class IRTranslator<R, S> {
         return RubyInstanceConfig.IR_PERSISTENCE;
     }
 
-    private static boolean isIRReadingRequired() {
-        return RubyInstanceConfig.IR_READING;
-    }
-
-    private IRScope produceIrScope(Ruby runtime, Node node, boolean isDryRun) {
+    private IRScope produceIrScope(Ruby runtime, RootNode rootNode, boolean isDryRun) {
         IRManager irManager = runtime.getIRManager();
-        boolean is1_9 = runtime.is1_9();
         irManager.setDryRun(isDryRun);
-        IRBuilder irBuilder = IRBuilder.createIRBuilder(irManager, is1_9);
+        IRBuilder irBuilder = IRBuilder.createIRBuilder(irManager);
 
-        final IRScope irScope = irBuilder.buildRoot((RootNode) node);
+        final IRScope irScope = irBuilder.buildRoot(rootNode);
         return irScope;
     }
 

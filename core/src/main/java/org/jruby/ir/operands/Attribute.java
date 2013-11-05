@@ -17,11 +17,13 @@ import java.util.Map;
 // Example: v = BOXED_FIXNUM(n)
 //          v = HAS_TYPE(Fixnum)
 //
-public class Attribute extends Operand
-{
+public class Attribute extends Operand {
     Operand        _target;    // The operand that this attribute targets
 //    DEFERRED
 //    AttributeValue _val;       // Attribute value
+    public Attribute() {
+        super(OperandType.ATTRIBUTE);
+    }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force)
     {

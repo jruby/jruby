@@ -36,6 +36,7 @@ package org.jruby.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
@@ -46,13 +47,12 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder {    
+public abstract class Node implements ISourcePositionHolder, ParseResult {    
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
     

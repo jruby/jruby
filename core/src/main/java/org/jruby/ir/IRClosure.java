@@ -277,14 +277,7 @@ public class IRClosure extends IRScope {
         clonedClosure.setCFG(getCFG().cloneForCloningClosure(clonedClosure, ii));
 
         return clonedClosure;
-    }
-    
-    @Override
-    public String getPersistableGeneralInfo() {
-        
-        return super.getPersistableGeneralInfo() +
-        "SpecificInfo:(" + isForLoopBody + ", " + arity.getValue() + ", " +argumentType + ")" + "\n";
-    }     
+    }    
 
     // Add a global-ensure-block to catch uncaught breaks
     // This is usually required only if this closure is being
@@ -328,5 +321,13 @@ public class IRClosure extends IRScope {
         // We can distinguish closures only with parent scope name 
         String fullName = getLexicalParent().getName() + name;
         super.setName(fullName);
-    } 
+    }
+    
+    public Arity getArity() {
+        return arity;
+    }
+
+    public int getArgumentType() {
+        return argumentType;
+    }
 }

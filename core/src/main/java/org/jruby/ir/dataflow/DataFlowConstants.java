@@ -6,6 +6,7 @@ import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
@@ -21,6 +22,10 @@ public class DataFlowConstants {
     public static final Operand ANY    = new Anything();
 
     private static class LatticeBottom extends Operand {
+        public LatticeBottom() {
+            super(OperandType.LATTICE_BOTTOM);
+        }
+
         @Override
         public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
@@ -38,6 +43,10 @@ public class DataFlowConstants {
     }
 
     private static class LatticeTop extends Operand {
+        public LatticeTop() {
+            super(OperandType.LATTICE_TOP);
+        }
+        
         @Override
         public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
@@ -54,6 +63,10 @@ public class DataFlowConstants {
     }
 
     private static class Anything extends Operand {
+        public Anything() {
+            super(OperandType.ANYTHING);
+        }
+        
         @Override
         public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
