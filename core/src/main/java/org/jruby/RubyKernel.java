@@ -375,7 +375,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return Helpers.arrayValue(context, context.runtime, object);
+        return Helpers.asArray18(context, object);
     }
 
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE, compat = RUBY1_9)
