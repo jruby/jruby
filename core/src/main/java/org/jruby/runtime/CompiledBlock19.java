@@ -29,6 +29,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -124,7 +125,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -142,7 +143,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
     
@@ -156,7 +157,8 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(args), type, aValue);
+            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+            IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(preppedArgs), type, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.

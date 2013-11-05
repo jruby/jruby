@@ -1,1 +1,0 @@
-fails:Enumerable#any? with block gathers initial args as elements when each yields multiple
