@@ -70,6 +70,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -644,6 +645,7 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
+    @Extension
     public void defineAnnotatedMethods(Class clazz) {
         defineAnnotatedMethodsIndividually(clazz);
     }
@@ -3051,6 +3053,7 @@ public class RubyModule extends RubyObject {
     /** rb_define_const
      *
      */
+    @Extension
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
