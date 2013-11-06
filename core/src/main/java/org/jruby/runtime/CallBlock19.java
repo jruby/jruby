@@ -84,8 +84,8 @@ public class CallBlock19 extends BlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
     }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
     }
 
@@ -99,7 +99,7 @@ public class CallBlock19 extends BlockBody {
      * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }

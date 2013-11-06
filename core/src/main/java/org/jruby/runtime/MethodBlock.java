@@ -33,6 +33,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceElement;
@@ -118,7 +119,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
     }
     
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return yield(context, value, binding, type);
     }
 
@@ -128,7 +129,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
                              RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
@@ -157,7 +158,8 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback(context.runtime.newArrayNoCopyLight(args), method, self, block);
+                    IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+                    return callback(context.runtime.newArrayNoCopyLight(preppedArgs), method, self, block);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo

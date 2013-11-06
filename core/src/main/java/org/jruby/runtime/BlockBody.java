@@ -35,6 +35,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
@@ -73,19 +74,41 @@ public abstract class BlockBody {
         return yield(context, args, null, null, true, binding, type, block);
     }
 
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+    public final IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return doYield(context, value, binding, type);
+    }
 
-    public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                      RubyModule klass, boolean aValue, Binding binding, Block.Type type);
+    public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+                                   RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, arity(), args);
+        return doYield(context, preppedValue, self, klass, aValue, binding, type);
+    }
 
-    // FIXME: This should replace blockless abstract versions of yield above and become abstract.
+    /**
+     * Subclass specific yield implementation.
+     * <p>
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject, Binding, Block.Type)}
+     * after ensuring that any common yield logic is taken care of.
+     */
+    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+
+    /**
+     * Subclass specific yield implementation.
+     * <p>
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject[], IRubyObject, RubyModule, boolean, Binding, Block.Type)}
+     * after ensuring that all common yield logic is taken care of.
+     */
+    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+                                           RubyModule klass, boolean aValue, Binding binding, Block.Type type);
+
+    // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         return yield(context, args, self, klass, aValue, binding, type);
     }
 
-    // FIXME: This should replace blockless abstract versions of yield above and become abstract.
+    // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, IRubyObject value,
             Binding binding, Block.Type type, Block block) {
