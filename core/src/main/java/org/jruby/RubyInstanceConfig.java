@@ -1173,8 +1173,7 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * Set whether native code is enabled for this config. Disabling it also
-     * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
+     * Set whether native code is enabled for this config.
      * 
      * @see Options.NATIVE_ENABLED
      * 
@@ -1193,28 +1192,6 @@ public class RubyInstanceConfig {
      */
     public boolean isNativeEnabled() {
         return _nativeEnabled;
-    }
-    
-    /**
-     * Set whether C extensions are enabled for this config.
-     * 
-     * @see Options.CEXT_ENABLED
-     * 
-     * @param b new value indicating whether native code is enabled
-     */
-    public void setCextEnabled(boolean b) {
-        _cextEnabled = b;
-    }
-    
-    /**
-     * Get whether C extensions are enabled for this config.
-     * 
-     * @see Options.CEXT_ENABLED
-     * 
-     * @return true if C extensions are enabled; false otherwise.
-     */
-    public boolean isCextEnabled() {
-        return _cextEnabled;
     }
     
     /**
@@ -1452,11 +1429,6 @@ public class RubyInstanceConfig {
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
-    
-    /**
-     * Whether C extensions are enabled for this configuration.
-     */
-    private boolean _cextEnabled = CEXT_ENABLED;
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
@@ -1658,14 +1630,8 @@ public class RubyInstanceConfig {
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
-    /**
-     * Indicates the global default for whether C extensions are enabled.
-     * Default is the value of RubyInstanceConfig.NATIVE_ENABLED. This value
-     * is used to default new runtime configurations.
-     *
-     * Set with the <tt>jruby.cext.enabled</tt> system property.
-     */
-    public final static boolean CEXT_ENABLED = Options.CEXT_ENABLED.load();
+    @Deprecated
+    public final static boolean CEXT_ENABLED = false;
 
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
@@ -1938,6 +1904,15 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public boolean isBenchmarking() {
+        return false;
+    }
+
+    @Deprecated
+    public void setCextEnabled(boolean b) {
+    }
+
+    @Deprecated
+    public boolean isCextEnabled() {
         return false;
     }
 }
