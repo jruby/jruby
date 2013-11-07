@@ -47,7 +47,6 @@ import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,18 +126,23 @@ public class RubyEnumerable {
             return self.callMethod(context, "size");
         }
 
-        return count(context, self, block);
+        return countCommon(context, self, block, Arity.OPTIONAL);
     }
 
     @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
+        return countCommon(context, self, block, block.arity());
+    }
+
+    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
         
         if (block.isGiven()) {
-            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.OPTIONAL) {
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    if (block.yield(context, arg).isTrue()) result[0]++; 
+            callEach(runtime, context, self, callbackArity, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject packedArgs = packEnumValues(ctx.runtime, largs);
+                    if (block.yield(ctx, packedArgs).isTrue()) result[0]++;
                     return runtime.getNil();
                 }
             });
