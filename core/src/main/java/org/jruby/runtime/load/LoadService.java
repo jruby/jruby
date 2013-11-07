@@ -42,6 +42,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -141,6 +142,7 @@ public class LoadService {
     private static final Logger LOG = LoggerFactory.getLogger("LoadService");
 
     private final LoadTimer loadTimer;
+    private boolean canGetAbsolutePath = true;
 
     public enum SuffixType {
         Source, Extension, Both, Neither;
@@ -1302,8 +1304,7 @@ public class LoadService {
     }
     
     protected String getLoadPathEntry(IRubyObject entry) {
-        RubyString entryString = entry.convertToString();
-        return entryString.asJavaString();
+        return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
 
     protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
@@ -1589,14 +1590,23 @@ public class LoadService {
     }
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        return previousPath;
+        if (canGetAbsolutePath) {
+            try {
+                String path = foundResource.getAbsolutePath();
+                if (Platform.IS_WINDOWS) {
+                    path = path.replace('\\', '/');
+                }
+                return path;
+            } catch (AccessControlException ace) {
+                // can't get absolute path in this security context, so we give up forever
+                runtime.getWarnings().warn("can't canonicalize loaded names due to security restrictions; disabling");
+                canGetAbsolutePath = false;
+            }
+        }
+        return resolveLoadName(foundResource, previousPath);
     }
 
     protected String getFileName(JRubyFile file, String namePlusSuffix) {
-        String s = namePlusSuffix;
-        if(!namePlusSuffix.startsWith("./")) {
-            s = "./" + s;
-        }
-        return s;
+        return file.getAbsolutePath();
     }
 }

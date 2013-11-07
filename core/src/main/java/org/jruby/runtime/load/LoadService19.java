@@ -35,39 +35,10 @@ import org.jruby.util.JRubyFile;
 import java.security.AccessControlException;
 import org.jruby.RubyFile;
 
+@Deprecated
 public class LoadService19 extends LoadService {
-    private boolean canGetAbsolutePath = true;
-    
     public LoadService19(Ruby runtime) {
         super(runtime);
-    }
-
-    @Override
-    protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        if (canGetAbsolutePath) {
-            try {
-                String path = foundResource.getAbsolutePath();
-                if (Platform.IS_WINDOWS) {
-                    path = path.replace('\\', '/');
-                }
-                return path;
-            } catch (AccessControlException ace) {
-                // can't get absolute path in this security context, so we give up forever
-                runtime.getWarnings().warn("can't canonicalize loaded names due to security restrictions; disabling");
-                canGetAbsolutePath = false;
-            }
-        }
-        return super.resolveLoadName(foundResource, previousPath);
-    }
-
-    @Override
-    protected String getFileName(JRubyFile file, String nameWithSuffix) {
-        return file.getAbsolutePath();
-    }
-
-    @Override
-    protected String getLoadPathEntry(IRubyObject entry) {
-        return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
 }
 

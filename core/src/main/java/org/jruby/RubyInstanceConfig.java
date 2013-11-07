@@ -60,7 +60,6 @@ import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.load.LoadService19;
 import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.util.ClassCache;
 import org.jruby.util.InputStreamMarkCursor;
@@ -1489,7 +1488,7 @@ public class RubyInstanceConfig {
 
         LoadServiceCreator DEFAULT = new LoadServiceCreator() {
                 public LoadService create(Ruby runtime) {
-                    return new LoadService19(runtime);
+                    return new LoadService(runtime);
                 }
             };
     }
