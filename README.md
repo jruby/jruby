@@ -46,9 +46,6 @@ See [BUILDING](BUILDING.md) for more information.
 
 ## Testing
 
-In order to run the unit tests, copy the `build_lib/junit.jar` file to either
-`$ANT_HOME/lib/junit.jar` or `~/.ant/lib/junit.jar`.
-
 See [README.test](docs/README.test.md) for more information.
 
 ## More Information
