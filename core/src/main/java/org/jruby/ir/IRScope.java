@@ -755,20 +755,8 @@ public abstract class IRScope {
     private List<Object[]> buildJVMExceptionTable() {
         List<Object[]> etEntries = new ArrayList<Object[]>();
         for (BasicBlock b: linearizedBBList) {
-            // We need handlers for:
-            // - Unrescuable    (handled by ensures),
-            // - Throwable      (handled by rescues)
-            // in that order since Throwable < Unrescuable
             BasicBlock rBB = cfg().getRescuerBBFor(b);
-            BasicBlock eBB = cfg().getEnsurerBBFor(b);
-            if ((eBB != null) && (rBB == eBB || rBB == null)) {
-                // 1. same rescue and ensure handler ==> just spit out one entry with a Throwable class
-                // 2. only ensure handler            ==> just spit out one entry with a Throwable class
-
-                etEntries.add(new Object[] {b.getLabel(), eBB.getLabel(), Throwable.class});
-            } else if (rBB != null) {
-                // Unrescuable comes before Throwable
-                if (eBB != null) etEntries.add(new Object[] {b.getLabel(), eBB.getLabel(), Unrescuable.class});
+            if (rBB != null) {
                 etEntries.add(new Object[] {b.getLabel(), rBB.getLabel(), Throwable.class});
             }
         }
@@ -1189,24 +1177,6 @@ public abstract class IRScope {
 
         // SSS FIXME: Cannot happen! Throw runtime exception
         LOG.error("Fell through looking for rescuer ipc for " + excInstr);
-        return -1;
-    }
-
-    // SSS FIXME: Extremely inefficient
-    public int getEnsurerPC(Instr excInstr) {
-        depends(cfg());
-
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock ensurerBB = cfg.getEnsurerBBFor(b);
-                    return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for ensurer ipc for " + excInstr);
         return -1;
     }
 
