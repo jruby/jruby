@@ -5,6 +5,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.ISO8859_16Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
@@ -24,6 +25,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
+import org.jruby.util.encoding.ISO_8859_16;
 
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
@@ -419,6 +421,10 @@ public final class EncodingService {
 
         if (encoding.toString().equals("ASCII-8BIT")) {
             return Charset.forName("ISO-8859-1");
+        }
+
+        if (encoding == ISO8859_16Encoding.INSTANCE) {
+            return ISO_8859_16.INSTANCE;
         }
 
         try {

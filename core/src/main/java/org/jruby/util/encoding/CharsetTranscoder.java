@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.encoding;
 
+import org.jcodings.specific.ISO8859_16Encoding;
 import org.jruby.util.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -1009,7 +1010,10 @@ public class CharsetTranscoder extends Transcoder {
         } catch (Exception e) {}
         
         if (from == null) {
+            // special cases
             if (is7Bit) return Charset.forName("US-ASCII");
+
+            if (encoding == ISO8859_16Encoding.INSTANCE) return ISO_8859_16.INSTANCE;
             
             throw runtime.newConverterNotFoundError("code converter not found for " + encoding.toString());
         }

@@ -137,6 +137,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.embed.Extension;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.ext.fiber.ThreadFiberLibrary;
 import org.jruby.ext.tracepoint.TracePoint;
@@ -948,6 +949,7 @@ public final class Ruby {
      * instances of the new class.
      * @return The new class
      */
+    @Extension
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
         return defineClassUnder(name, superClass, allocator, objectClass);
     }
@@ -981,6 +983,7 @@ public final class Ruby {
      * @param parent The namespace under which to define the new class
      * @return The new class
      */
+    @Extension
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
         return defineClassUnder(name, superClass, allocator, parent, null);
     }
@@ -1033,6 +1036,7 @@ public final class Ruby {
      * @param name The name of the new module
      * @returns The new module
      */
+    @Extension
     public RubyModule defineModule(String name) {
         return defineModuleUnder(name, objectClass);
     }
@@ -1046,6 +1050,7 @@ public final class Ruby {
      * module
      * @returns The new module
      */
+    @Extension
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
         IRubyObject moduleObj = parent.getConstantAt(name);
         
