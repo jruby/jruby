@@ -1004,8 +1004,6 @@ class TestSetTraceFunc < Test::Unit::TestCase
         4
       }
     }
-    # pp events
-    # expected_events =
     assert_equal([
       :b_call,
       :c_call,
