@@ -107,20 +107,17 @@ class Enumerator
       :each_entry => [],
       :each_cons => 42,
     }.each do |method, args|
-      next unless Enumerator.method_defined? method
-      unless [].lazy.send(method, *args).is_a?(Lazy) # Nothing to do if already backported, since it would use to_enum...
-        module_eval <<-EOT, __FILE__, __LINE__ + 1
-          def #{method}(*args)                                     # def cycle(*args)
-            return to_enum(:#{method}, *args) unless block_given?  #   return to_enum(:cycle, *args) unless block_given?
-            super                                                  #   super
-          end                                                      # end
-        EOT
-      end
+      module_eval <<-EOT, __FILE__, __LINE__ + 1
+        def #{method}(*args)                                     # def cycle(*args)
+          return to_enum(:#{method}, *args) unless block_given?  #   return to_enum(:cycle, *args) unless block_given?
+          super                                                  #   super
+        end                                                      # end
+      EOT
     end
 
     def chunk(*)
       super.lazy
-    end if Enumerable.method_defined?(:chunk) && ![].lazy.chunk{}.is_a?(Lazy)
+    end
 
     def map
       _block_error(:map) unless block_given?
