@@ -69,7 +69,7 @@ public class ISO_8859_16 extends Charset {
             for (;;) {
                 if (!in.hasRemaining()) return CoderResult.UNDERFLOW;
                 if (!out.hasRemaining()) return CoderResult.OVERFLOW;
-                byte b = in.get();
+                int b = in.get() & 0xFF;
                 char c = TABLE[b];
                 out.put(c);
             }
