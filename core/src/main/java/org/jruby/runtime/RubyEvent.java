@@ -12,6 +12,10 @@ public enum RubyEvent {
     END      ("end", 1),
     CALL     ("call", 1),
     RETURN   ("return", 1),
+    // A_CALL is CALL + B_CALL + C_CALL
+    A_CALL   ("a-call", 1),
+    // A_RETURN is RETURN + B_RETURN + C_RETURN
+    A_RETURN ("a-return", 1),
     C_CALL   ("c-call", 1),
     C_RETURN ("c-return", 1),
     B_CALL   ("b-call", 1),
