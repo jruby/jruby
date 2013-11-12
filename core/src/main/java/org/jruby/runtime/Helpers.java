@@ -1835,41 +1835,6 @@ public class Helpers {
         if (tmp.isNil()) {
             tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_a");
 
-    public static RubyArray asArray18(ThreadContext context, IRubyObject value) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = value.checkArrayType();
-
-        if (tmp.isNil()) {
-            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
-            // remove this hack too.
-
-            if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
-                IRubyObject avalue = value.callMethod(context, "to_a");
-                if (!(avalue instanceof RubyArray)) {
-                    if (runtime.is1_9() && avalue.isNil()) {
-                        return runtime.newArray(value);
-                    } else {
-                        throw runtime.newTypeError("`to_a' did not return Array");
-                    }
-                }
-                return (RubyArray)avalue;
-            } else {
-                return runtime.newArray(value);
-            }
-        }
-        
-        return (RubyArray) tmp;
-    }
-    
-    // mri: rb_Array
-    // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
-    public static RubyArray asArray(ThreadContext context, IRubyObject value) {
-        RubyClass array = context.runtime.getArray();
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_ary");
-        
-        if (tmp.isNil()) {
-            tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_a");
-
             if (tmp.isNil()) return context.runtime.newEmptyArray();
         }
         
