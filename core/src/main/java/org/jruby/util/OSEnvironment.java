@@ -90,10 +90,11 @@ public class OSEnvironment {
         }
 
         for (Map.Entry<Object, Object> entry : entrySet) {
-            String value = (String)entry.getValue();
-            String key = (String)entry.getKey();
+            String key = (String) entry.getKey();
+            
+            if (Platform.IS_WINDOWS && key.startsWith("=")) continue;
 
-            addRubyKeyValuePair(runtime, envs, key, value, encoding);
+            addRubyKeyValuePair(runtime, envs, key, (String) entry.getValue(), encoding);
         }
 
         return envs;
