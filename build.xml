@@ -224,12 +224,6 @@
             </fileset>
         </copy>
 
-        <copy todir="${build.dir}/jar-complete/cext">
-            <fileset dir="${lib.dir}">
-                <patternset refid="dist.jruby-cext-native.files"/>
-            </fileset>
-        </copy>
-
         <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
             <classpath>
                 <pathelement location="lib/jruby.jar"/>
@@ -403,30 +397,6 @@
             description="Set up JRuby to be run with Nailgun (jruby-ng, jruby-ng-server)">
         <mkdir dir="${build.dir}/nailmain"/>
     </target>
-
-    <property name="jruby-cext-native.home" value="cext/src/"/>
-
-    <target name="build-jruby-cext-native" depends="jar"
-            description="Build JRuby cext support">
-        <exec osfamily="unix" executable="${make.cmd}" dir="${jruby-cext-native.home}" failonerror="true">
-            <arg value="JAVA_HOME=&quot;${java.home}&quot;"/>
-        </exec>
-        <exec osfamily="windows" executable="cmd" dir="${jruby-cext-native.home}" failonerror="true">
-            <arg line='/c sh -c "${make.cmd} CC=gcc JAVA_HOME=${java.home}"'/>
-        </exec>
-    </target>
-
-    <target name="clean-jruby-cext-native" depends="compile"
-            description="Build JRuby cext support">
-        <exec osfamily="unix" executable="${make.cmd}" dir="${jruby-cext-native.home}" failonerror="true">
-            <arg value="dist-clean"/>
-        </exec>
-        <exec osfamily="windows" executable="cmd" dir="${jruby-cext-native.home}" failonerror="true">
-            <arg line='/c sh -c "${make.cmd} dist-clean"'/>
-        </exec>
-    </target>
-
-    <target name="cext" depends="build-jruby-cext-native"/>
 
     <target name="bench-language" depends="jar">
         <rake task="bench:language"/>

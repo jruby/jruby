@@ -55,9 +55,6 @@ public class CFG {
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     private Map<BasicBlock, BasicBlock> rescuerMap;
 
-    // Map of bb -> first bb of the ensure block that protects this bb
-    private Map<BasicBlock, BasicBlock> ensurerMap;
-
     private List<ExceptionRegion> outermostERs;
 
     /** Entry BB */
@@ -81,7 +78,6 @@ public class CFG {
         this.graph = new DirectedGraph<BasicBlock>();
         this.bbMap = new HashMap<Label, BasicBlock>();
         this.rescuerMap = new HashMap<BasicBlock, BasicBlock>();
-        this.ensurerMap = new HashMap<BasicBlock, BasicBlock>();
         this.outermostERs = new ArrayList<ExceptionRegion>();
         this.nextBBId = 0;
         this.entryBB = this.exitBB = null;
@@ -99,16 +95,11 @@ public class CFG {
     }
 
     public boolean bbIsProtected(BasicBlock b) {
-        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
         return getRescuerBBFor(b) != null;
     }
 
     public BasicBlock getBBForLabel(Label label) {
         return bbMap.get(label);
-    }
-
-    public BasicBlock getEnsurerBBFor(BasicBlock block) {
-        return ensurerMap.get(block);
     }
 
     public BasicBlock getEntryBB() {
@@ -241,7 +232,6 @@ public class CFG {
             if (b != geb && !bbIsProtected(b)) {
                 addEdge(b, geb, EdgeType.EXCEPTION);
                 setRescuerBB(b, geb);
-                setEnsurerBB(b, geb);
             }
         }
 
@@ -250,10 +240,6 @@ public class CFG {
         // That requires a linearized form of the CFG's bbs.  So, the JIT can add
         // a special case for this global exception block since it has access to the
         // linearized form.
-    }
-
-    public void setEnsurerBB(BasicBlock block, BasicBlock ensureBlock) {
-        ensurerMap.put(block, ensureBlock);
     }
 
     public void setRescuerBB(BasicBlock block, BasicBlock rescuerBlock) {
@@ -324,7 +310,7 @@ public class CFG {
             if (i instanceof ExceptionRegionStartMarkerInstr) {
                 // We dont need the instruction anymore -- so it is not added to the CFG.
                 ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
-                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, ersmi.ensureBlockLabel, currBB);
+                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, currBB);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
@@ -407,21 +393,9 @@ public class CFG {
 
             // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
             // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
-            BasicBlock ensureBlockBB = rr.getEnsureBlockLabel() == null ? null : bbMap.get(rr.getEnsureBlockLabel());
             for (BasicBlock b : rr.getExclusiveBBs()) {
                 setRescuerBB(b, firstRescueBB);
                 graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
-                if (ensureBlockBB != null) {
-                    setEnsurerBB(b, ensureBlockBB);
-                    if (ensureBlockBB != firstRescueBB) {
-                        // SSS FIXME: This is a conservative edge because when a rescue block is present
-                        // that catches an exception, control never reaches the ensure block directly.
-                        // Only when we get an error or threadkill even, or when breaks propagate upward
-                        // do we need to hit an ensure directly.  This edge is present to account for that
-                        // control-flow scenario.
-                        graph.addEdge(b, ensureBlockBB, EdgeType.EXCEPTION);
-                    }
-                }
             }
         }
 
@@ -562,15 +536,9 @@ public class CFG {
             // Delete bb
             removeBB(b);
 
-            // Update rescue and ensure maps
-            if ((aR == null) && (bR != null)) {
+            // Update rescue map
+            if (aR == null && bR != null) {
                 setRescuerBB(a, bR);
-                BasicBlock aE = getEnsurerBBFor(a);
-                BasicBlock bE = getEnsurerBBFor(b);
-                if ((aE == null) && (bE != null)) {
-                    setRescuerBB(a, bE);
-                    setEnsurerBB(a, bE);
-                }
             }
 
             // Fix up exception regions
@@ -588,7 +556,6 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
-        ensurerMap.remove(b);
         // SSS FIXME: Patch up rescued regions as well??
     }
 
@@ -634,7 +601,6 @@ public class CFG {
                     toRemove.add(e);
 
                     if (rescuerMap.get(source) == destination) rescuerMap.remove(source);
-                    if (ensurerMap.get(source) == destination) ensurerMap.remove(source);
                 }
             }
         }
@@ -663,10 +629,6 @@ public class CFG {
         buf.append("\n\n------ Rescue block map ------\n");
         for (BasicBlock bb : rescuerMap.keySet()) {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
-        }
-        buf.append("\n\n------ Ensure block map ------\n");
-        for (BasicBlock bb : ensurerMap.keySet()) {
-            buf.append("BB ").append(bb.getID()).append(" --> BB ").append(ensurerMap.get(bb).getID()).append("\n");
         }
 
         List<IRClosure> closures = scope.getClosures();
@@ -766,11 +728,6 @@ public class CFG {
         // Clone rescuer map
         for (BasicBlock b: rescuerMap.keySet()) {
             clone.setRescuerBB(cloneBBMap.get(b), cloneBBMap.get(rescuerMap.get(b)));
-        }
-
-        // Clone ensurer map
-        for (BasicBlock b: ensurerMap.keySet()) {
-            clone.setEnsurerBB(cloneBBMap.get(b), cloneBBMap.get(ensurerMap.get(b)));
         }
 
         return clone;

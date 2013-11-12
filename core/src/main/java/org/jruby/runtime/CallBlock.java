@@ -28,7 +28,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -77,15 +76,14 @@ public class CallBlock extends BlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        IRubyObject[] preppedArgs = RubyProc.prepareProcArgs(context, arity(), args);
-        return callback.call(context, preppedArgs, Block.NULL_BLOCK);
+        return callback.call(context, args, Block.NULL_BLOCK);
     }
     
     public StaticScope getStaticScope() {

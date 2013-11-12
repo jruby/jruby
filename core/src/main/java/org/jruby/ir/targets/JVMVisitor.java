@@ -659,21 +659,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void EnsureRubyArrayInstr(EnsureRubyArrayInstr ensurerubyarrayinstr) {
-        visit(ensurerubyarrayinstr.getObject());
-        jvm.method().adapter.dup();
-        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
-        jvm.method().adapter.instance_of("org/jruby/RubyArray");
-        jvm.method().adapter.iftrue(after);
-        jvm.method().adapter.swap();
-        jvm.method().loadRuntime();
-        jvm.method().adapter.ldc(false);
-        jvm.method().invokeStatic(Type.getType(ArgsUtil.class), Method.getMethod("org.jruby.RubyArray convertToRubyArray(org.jruby.Ruby, org.jruby.runtime.builtin.IRubyObject, boolean)"));
-        jvm.method().adapter.label(after);
-        jvmStoreLocal(ensurerubyarrayinstr.getResult());
-    }
-
-    @Override
     public void EQQInstr(EQQInstr eqqinstr) {
         super.EQQInstr(eqqinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }

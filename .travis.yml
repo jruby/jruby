@@ -9,8 +9,6 @@ jdk:
 
 env:
   # disable cext
-  global:
-    - JAVA_OPTS="-server -Djruby.cext.enabled=false"
   matrix:
     - TARGET='test-extended'
     - TARGET='spec:ci_interpreted_travis'

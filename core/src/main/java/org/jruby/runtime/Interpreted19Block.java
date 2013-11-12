@@ -29,6 +29,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.IterNode;
@@ -146,7 +147,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -174,7 +175,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
      * @return
      */
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
 
@@ -191,7 +192,8 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
 
         try {
-            setupBlockArgs(context, context.runtime.newArrayNoCopyLight(args), self, block, type, aValue);
+            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+            setupBlockArgs(context, context.runtime.newArrayNoCopyLight(preppedArgs), self, block, type, aValue);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);

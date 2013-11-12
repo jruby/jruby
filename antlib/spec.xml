@@ -73,9 +73,6 @@
     <target name="spec:ci_latest_19" depends="bootstrap">
         <rake task="spec:ci_latest_19"/>
     </target>
-    <target name="spec:ci_cext" depends="bootstrap,build-jruby-cext-native">
-        <rake task="spec:ci_cext"/>
-    </target>
     <target name="spec:ir" depends="bootstrap">
         <rake task="spec:ir"/>
     </target>
@@ -101,7 +98,6 @@
     <!-- latest, unstable specs -->
     <target name="spec-latest-all" depends="spec:ci_all"/>
     <target name="spec-latest" depends="spec:ci_latest"/>
-    <target name="spec-cext" depends="spec:ci_cext"/>
     <target name="spec-ir" depends="spec:ir"/>
 
     <target name="update-excludes">

@@ -855,7 +855,7 @@ public class IRBuilder {
         //
         // Add label and marker instruction in reverse order to the beginning
         // so that the label ends up being the first instr.
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel, gebLabel));
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel));
         s.addInstrAtBeginning(new LabelInstr(rBeginLabel));
         s.addInstr(new ExceptionRegionEndMarkerInstr());
 
@@ -903,7 +903,7 @@ public class IRBuilder {
 
         // Protected region
         s.addInstr(new LabelInstr(rBeginLabel));
-        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
         s.addInstr(callInstr);
         s.addInstr(new JumpInstr(rEndLabel));
         s.addInstr(new ExceptionRegionEndMarkerInstr());
@@ -1266,7 +1266,7 @@ public class IRBuilder {
 
         // Protected region code
         m.addInstr(new LabelInstr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(rv, (Operand)v1));
         m.addInstr(new JumpInstr(rEndLabel));
@@ -2100,7 +2100,7 @@ public class IRBuilder {
         Label rescueLabel = s.getNewLabel();
 
         // protect the entire body as it exists now with the global ensure block
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
         s.addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
@@ -2262,7 +2262,7 @@ public class IRBuilder {
 
         // start of protected region
         s.addInstr(new LabelInstr(rBeginLabel));
-        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel));
 
         // Generate IR for code being protected
         Operand rv;
@@ -3135,7 +3135,7 @@ public class IRBuilder {
         if (ensure == null) s.addInstr(new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ensure == null ? null : ensure.dummyRescueBlockLabel, rescueLabel));
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
 
         // Save $! in a temp var so it can be restored when the exception gets handled.
         // SSS FIXME: Dont yet understand why an exception needs to be saved/restored.

@@ -265,14 +265,6 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getObjectIdAccessorField();
     }
 
-    public VariableAccessorField getNativeHandleAccessorField() {
-        return variableTableManager.getNativeHandleAccessorField();
-    }
-
-    public VariableAccessor getNativeHandleAccessorForWrite() {
-        return variableTableManager.getNativeHandleAccessorForWrite();
-    }
-
     public VariableAccessorField getFFIHandleAccessorField() {
         return variableTableManager.getFFIHandleAccessorField();
     }

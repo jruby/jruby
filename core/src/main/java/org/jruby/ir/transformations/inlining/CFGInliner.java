@@ -190,9 +190,6 @@ public class CFGInliner {
         BasicBlock callBBrescuer = cfg.getRescuerBBFor(callBB);
         if (callBBrescuer != null) cfg.setRescuerBB(splitBB, callBBrescuer);
 
-        BasicBlock callBBensurer = cfg.getEnsurerBBFor(callBB);
-        if (callBBensurer != null) cfg.setEnsurerBB(splitBB, callBBensurer);
-
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
         for (BasicBlock x : methodBBs) {
@@ -203,13 +200,6 @@ public class CFGInliner {
                     cfg.setRescuerBB(xRenamed, ii.getRenamedBB(xProtector));
                 } else if (callBBrescuer != null) {
                     cfg.setRescuerBB(xRenamed, callBBrescuer);
-                }
-
-                BasicBlock xEnsurer = methodCFG.getEnsurerBBFor(x);
-                if (xEnsurer != null) {
-                    cfg.setEnsurerBB(xRenamed, ii.getRenamedBB(xEnsurer));
-                } else if (callBBensurer != null) {
-                    cfg.setEnsurerBB(xRenamed, callBBensurer);
                 }
             }
         }
@@ -330,9 +320,6 @@ public class CFGInliner {
         BasicBlock yieldBBrescuer = cfg.getRescuerBBFor(yieldBB);
         if (yieldBBrescuer != null) cfg.setRescuerBB(splitBB, yieldBBrescuer);
 
-        BasicBlock yieldBBensurer = cfg.getEnsurerBBFor(yieldBB);
-        if (yieldBBensurer != null) cfg.setEnsurerBB(splitBB, yieldBBensurer);
-
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by yieldBBrescuer/yieldBBensurer
         for (BasicBlock cb : closureCFG.getBasicBlocks()) {
@@ -342,13 +329,6 @@ public class CFGInliner {
                     cfg.setRescuerBB(cb, cbProtector);
                 } else if (yieldBBrescuer != null) {
                     cfg.setRescuerBB(cb, yieldBBrescuer);
-                }
-
-                BasicBlock cbEnsurer = ii.getRenamedBB(closureCFG.getEnsurerBBFor(cb));
-                if (cbEnsurer != null) {
-                    cfg.setEnsurerBB(cb, cbEnsurer);
-                } else if (yieldBBensurer != null) {
-                    cfg.setEnsurerBB(cb, yieldBBensurer);
                 }
             }
         }

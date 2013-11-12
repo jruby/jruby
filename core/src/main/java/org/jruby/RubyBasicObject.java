@@ -1209,14 +1209,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (index < 0) return;
         metaClass.getVariableTableManager().setVariableInternal(this, index, value);
     }
-    
-    public final Object getNativeHandle() {
-        return metaClass.getVariableTableManager().getNativeHandle(this);
-    }
-
-    public final void setNativeHandle(Object value) {
-        metaClass.getVariableTableManager().setNativeHandle(this, value);
-    }
 
     public final Object getFFIHandle() {
         return metaClass.getVariableTableManager().getFFIHandle(this);
@@ -3007,5 +2999,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Deprecated
     public IRubyObject trust(ThreadContext context) {
         return untaint(context);
+    }
+
+    @Deprecated
+    public final Object getNativeHandle() {
+        return null;
+    }
+
+    @Deprecated
+    public final void setNativeHandle(Object value) {
     }
 }

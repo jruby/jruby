@@ -331,7 +331,7 @@ public class IRClosure extends IRScope {
 
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionInstr)instrs.get(0)).getResult();
-            instrs.set(instrs.size(), new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+            instrs.set(instrs.size()-1, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
         }
 
         // Update scope
