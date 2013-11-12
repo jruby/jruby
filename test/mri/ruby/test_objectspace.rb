@@ -64,6 +64,20 @@ End
       !b
     END
     assert_raise(ArgumentError) { ObjectSpace.define_finalizer([], Object.new) }
+
+    code = proc do |priv|
+      <<-"CODE"
+      fin = Object.new
+      class << fin
+        #{priv}def call(id)
+          puts "finalized"
+        end
+      end
+      ObjectSpace.define_finalizer([], fin)
+      CODE
+    end
+    assert_in_out_err([], code[""], ["finalized"])
+    assert_in_out_err([], code["private "], ["finalized"])
   end
 
   def test_each_object

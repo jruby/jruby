@@ -41,7 +41,7 @@ end
   EOF
 
   def make_spec_c1
-    @c1 = quick_spec 'a', '1' do |s|
+    @c1 = util_spec 'a', '1' do |s|
       s.executable = 'exec'
       s.extensions << 'ext/a/extconf.rb'
       s.test_file = 'test/suite.rb'
@@ -59,7 +59,7 @@ end
   end
 
   def ext_spec
-    @ext = quick_spec 'ext', '1' do |s|
+    @ext = util_spec 'ext', '1' do |s|
       s.executable = 'exec'
       s.test_file = 'test/suite.rb'
       s.extensions = %w[ext/extconf.rb]
@@ -74,7 +74,7 @@ end
   def setup
     super
 
-    @a1 = quick_spec 'a', '1' do |s|
+    @a1 = util_spec 'a', '1' do |s|
       s.executable = 'exec'
       s.test_file = 'test/suite.rb'
       s.requirements << 'A working computer'
@@ -85,11 +85,11 @@ end
       s.files = %w[lib/code.rb]
     end
 
-    @a2 = quick_spec 'a', '2' do |s|
+    @a2 = util_spec 'a', '2' do |s|
       s.files = %w[lib/code.rb]
     end
 
-    @a3 = quick_spec 'a', '3' do |s|
+    @a3 = util_spec 'a', '3' do |s|
       s.metadata['allowed_push_host'] = "https://privategemserver.com"
     end
 
@@ -840,37 +840,59 @@ dependencies: []
   end
 
   def test_self_outdated
-    util_clear_gems
-    util_setup_fake_fetcher true
+    spec_fetcher do |fetcher|
+      fetcher.spec 'a', 4
 
-    a4 = quick_gem @a1.name, '4'
-    util_build_gem a4
-    util_setup_spec_fetcher @a1, @a2, @a3a, a4
+      fetcher.clear
 
-    Gem::Specification.remove_spec @a1
-    Gem::Specification.remove_spec @a2
-    Gem::Specification.remove_spec a4
+      fetcher.spec 'a', 3
+    end
 
     assert_equal %w[a], Gem::Specification.outdated
   end
 
   def test_self_outdated_and_latest_remotes
-    util_clear_gems
-    util_setup_fake_fetcher true
+    specs = spec_fetcher do |fetcher|
+      fetcher.spec 'a', 4
+      fetcher.spec 'b', 3
 
-    a4 = quick_gem @a1.name, '4'
-    util_build_gem a4
-    b3 = quick_gem @b2.name, '3'
-    util_build_gem b3
-    util_setup_spec_fetcher @a1, @a2, @a3a, a4, @b2, b3
+      fetcher.clear
+
+      fetcher.spec 'a', '3.a'
+      fetcher.spec 'b', 2
+    end
+
+    expected = [
+      [specs['a-3.a'], v(4)],
+      [specs['b-2'],   v(3)],
+    ]
+
+    assert_equal expected, Gem::Specification.outdated_and_latest_version.to_a
+  end
+
+  def test_self_remove_spec
+    assert_includes Gem::Specification.all_names, 'a-1'
+    assert_includes Gem::Specification.stubs.map { |s| s.full_name }, 'a-1'
 
     Gem::Specification.remove_spec @a1
-    Gem::Specification.remove_spec @a2
-    Gem::Specification.remove_spec a4
-    Gem::Specification.remove_spec b3
 
-    assert_equal [[@a3a, a4.version], [@b2, b3.version]],
-                 Gem::Specification.outdated_and_latest_version.to_a
+    refute_includes Gem::Specification.all_names, 'a-1'
+    refute_includes Gem::Specification.stubs.map { |s| s.full_name }, 'a-1'
+  end
+
+  def test_self_remove_spec_removed
+    open @a1.spec_file, 'w' do |io|
+      io.write @a1.to_ruby
+    end
+
+    Gem::Specification.reset
+
+    FileUtils.rm @a1.spec_file # bug #698
+
+    Gem::Specification.remove_spec @a1
+
+    refute_includes Gem::Specification.all_names, 'a-1'
+    refute_includes Gem::Specification.stubs.map { |s| s.full_name }, 'a-1'
   end
 
   DATA_PATH = File.expand_path "../data", __FILE__
@@ -1037,7 +1059,7 @@ dependencies: []
   end
 
   def test_add_dependency_with_type
-    gem = quick_spec "awesome", "1.0" do |awesome|
+    gem = util_spec "awesome", "1.0" do |awesome|
       awesome.add_dependency true
       awesome.add_dependency :gem_name
     end
@@ -1046,7 +1068,7 @@ dependencies: []
   end
 
   def test_add_dependency_with_type_explicit
-    gem = quick_spec "awesome", "1.0" do |awesome|
+    gem = util_spec "awesome", "1.0" do |awesome|
       awesome.add_development_dependency "monkey"
     end
 
@@ -1235,6 +1257,32 @@ dependencies: []
     refute_path_exists gem_make_out
   end
 
+  def test_build_extensions_preview
+    ext_spec
+
+    extconf_rb = File.join @ext.gem_dir, @ext.extensions.first
+    FileUtils.mkdir_p File.dirname extconf_rb
+
+    open extconf_rb, 'w' do |f|
+      f.write <<-'RUBY'
+        open 'Makefile', 'w' do |f|
+          f.puts "clean:\n\techo clean"
+          f.puts "default:\n\techo built"
+          f.puts "install:\n\techo installed"
+        end
+      RUBY
+    end
+
+    refute_empty @ext.extensions, 'sanity check'
+
+    @ext.installed_by_version = v('2.2.0.preview.2')
+
+    @ext.build_extensions
+
+    gem_make_out = File.join @ext.extension_install_dir, 'gem_make.out'
+    assert_path_exists gem_make_out
+  end
+
   def test_contains_requirable_file_eh
     code_rb = File.join @a1.gem_dir, 'lib', 'code.rb'
     FileUtils.mkdir_p File.dirname code_rb
@@ -1319,7 +1367,7 @@ dependencies: []
 
     assert_empty @gem.dependent_gems
 
-    bonobo = quick_spec 'bonobo'
+    bonobo = util_spec 'bonobo'
 
     expected = [
       [@gem, @bonobo, [bonobo]],
@@ -1668,7 +1716,7 @@ dependencies: []
   end
 
   def test_prerelease_spec_adds_required_rubygems_version
-    @prerelease = quick_spec('tardis', '2.2.0.a')
+    @prerelease = util_spec('tardis', '2.2.0.a')
     refute @prerelease.required_rubygems_version.satisfied_by?(Gem::Version.new('1.3.1'))
     assert @prerelease.required_rubygems_version.satisfied_by?(Gem::Version.new('1.4.0'))
   end
@@ -1886,7 +1934,7 @@ Gem::Specification.new do |s|
   s.rubygems_version = "#{Gem::VERSION}"
   s.summary = "this is a summary"
 
-  s.installed_by_version = "#{Gem::VERSION}"
+  s.installed_by_version = "#{Gem::VERSION}" if s.respond_to? :installed_by_version
 
   if s.respond_to? :specification_version then
     s.specification_version = #{Gem::Specification::CURRENT_SPECIFICATION_VERSION}
@@ -2128,6 +2176,15 @@ end
     Dir.chdir @tempdir do
       @a1.add_runtime_dependency     'b', '>= 1.0.rc1'
       @a1.add_development_dependency 'c', '>= 2.0.rc2'
+      @a1.add_runtime_dependency     'd', '~> 1.2.3'
+      @a1.add_runtime_dependency     'e', '~> 1.2.3.4'
+      @a1.add_runtime_dependency     'g', '~> 1.2.3', '>= 1.2.3.4'
+      @a1.add_runtime_dependency     'h', '>= 1.2.3', '<= 2'
+      @a1.add_runtime_dependency     'i', '>= 1.2'
+      @a1.add_runtime_dependency     'j', '>= 1.2.3'
+      @a1.add_runtime_dependency     'k', '> 1.2'
+      @a1.add_runtime_dependency     'l', '> 1.2.3'
+      @a1.add_runtime_dependency     'm', '~> 2.1.0'
 
       use_ui @ui do
         @a1.validate
@@ -2136,9 +2193,57 @@ end
       expected = <<-EXPECTED
 #{w}:  prerelease dependency on b (>= 1.0.rc1) is not recommended
 #{w}:  prerelease dependency on c (>= 2.0.rc2, development) is not recommended
+#{w}:  pessimistic dependency on d (~> 1.2.3) may be overly strict
+  if d is semantically versioned, use:
+    add_runtime_dependency 'd', '~> 1.2', '>= 1.2.3'
+#{w}:  pessimistic dependency on e (~> 1.2.3.4) may be overly strict
+  if e is semantically versioned, use:
+    add_runtime_dependency 'e', '~> 1.2', '>= 1.2.3.4'
+#{w}:  open-ended dependency on i (>= 1.2) is not recommended
+  if i is semantically versioned, use:
+    add_runtime_dependency 'i', '~> 1.2'
+#{w}:  open-ended dependency on j (>= 1.2.3) is not recommended
+  if j is semantically versioned, use:
+    add_runtime_dependency 'j', '~> 1.2', '>= 1.2.3'
+#{w}:  open-ended dependency on k (> 1.2) is not recommended
+  if k is semantically versioned, use:
+    add_runtime_dependency 'k', '~> 1.2', '> 1.2'
+#{w}:  open-ended dependency on l (> 1.2.3) is not recommended
+  if l is semantically versioned, use:
+    add_runtime_dependency 'l', '~> 1.2', '> 1.2.3'
+#{w}:  pessimistic dependency on m (~> 2.1.0) may be overly strict
+  if m is semantically versioned, use:
+    add_runtime_dependency 'm', '~> 2.1', '>= 2.1.0'
+#{w}:  See http://guides.rubygems.org/specification-reference/ for help
       EXPECTED
 
-      assert_match expected, @ui.error, 'warning'
+      assert_equal expected, @ui.error, 'warning'
+    end
+  end
+
+  def test_validate_dependencies_open_ended
+    util_setup_validate
+
+    Dir.chdir @tempdir do
+      @a1.add_runtime_dependency 'b', '~> 1.2'
+      @a1.add_runtime_dependency 'b', '>= 1.2.3'
+
+      use_ui @ui do
+        e = assert_raises Gem::InvalidSpecificationException do
+          @a1.validate
+        end
+
+        expected = <<-EXPECTED
+duplicate dependency on b (>= 1.2.3), (~> 1.2) use:
+    add_runtime_dependency 'b', '>= 1.2.3', '~> 1.2'
+        EXPECTED
+
+        assert_equal expected, e.message
+      end
+
+      assert_equal <<-EXPECTED, @ui.error
+#{w}:  See http://guides.rubygems.org/specification-reference/ for help
+      EXPECTED
     end
   end
 
@@ -2541,48 +2646,30 @@ WARNING:  licenses is empty.  Use a license abbreviation from:
   # KEEP a-3-x86-other_platform-1
 
   def test_latest_specs
-    util_clear_gems
-    util_setup_fake_fetcher
+    spec_fetcher do |fetcher|
+      fetcher.spec 'a', 1 do |s|
+        s.platform = Gem::Platform.new 'x86-my_platform1'
+      end
 
-    quick_spec 'p', '1'
+      fetcher.spec 'a', 2
 
-    p1_curr = quick_spec 'p', '1' do |spec|
-      spec.platform = Gem::Platform::CURRENT
+      fetcher.spec 'a', 2 do |s|
+        s.platform = Gem::Platform.new 'x86-my_platform1'
+      end
+
+      fetcher.spec 'a', 2 do |s|
+        s.platform = Gem::Platform.new 'x86-other_platform1'
+      end
+
+      fetcher.spec 'a', 3 do |s|
+        s.platform = Gem::Platform.new 'x86-other_platform1'
+      end
     end
-
-    quick_spec @a1.name, @a1.version do |s|
-      s.platform = Gem::Platform.new 'x86-my_platform1'
-    end
-
-    quick_spec @a1.name, @a1.version do |s|
-      s.platform = Gem::Platform.new 'x86-third_platform1'
-    end
-
-    quick_spec @a2.name, @a2.version do |s|
-      s.platform = Gem::Platform.new 'x86-my_platform1'
-    end
-
-    quick_spec @a2.name, @a2.version do |s|
-      s.platform = Gem::Platform.new 'x86-other_platform1'
-    end
-
-    quick_spec @a2.name, @a2.version.bump do |s|
-      s.platform = Gem::Platform.new 'x86-other_platform1'
-    end
-
-    Gem::Specification.remove_spec @b2
-    Gem::Specification.remove_spec @pl1
 
     expected = %W[
                   a-2
                   a-2-x86-my_platform-1
                   a-3-x86-other_platform-1
-                  a_evil-9
-                  c-1.2
-                  dep_x-1
-                  p-1
-                  #{p1_curr.full_name}
-                  x-1
                  ]
 
     latest_specs = Gem::Specification.latest_specs.map(&:full_name).sort
@@ -2749,7 +2836,7 @@ end
   end
 
   def util_setup_deps
-    @gem = quick_spec "awesome", "1.0" do |awesome|
+    @gem = util_spec "awesome", "1.0" do |awesome|
       awesome.add_runtime_dependency "bonobo", []
       awesome.add_development_dependency "monkey", []
     end

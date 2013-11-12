@@ -85,8 +85,7 @@ mri/ruby/test_sleep
 mri/ruby/test_sprintf
 # TODO defines many tests programmatically with unusual names
 #mri/ruby/test_sprintf_comb
-# TODO 2.1 parser for "string"f suffix
-#mri/ruby/test_string
+mri/ruby/test_string
 mri/ruby/test_stringchar
 mri/ruby/test_struct
 mri/ruby/test_super

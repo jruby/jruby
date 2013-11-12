@@ -63,24 +63,6 @@ Li8JsX5yIiuVYaBg/6ha3tOg4TCa5K/3r3tVliRZ2Es=
       assert_nil pkcs12.ca_certs
     end
 
-    def test_from_file
-      tempfile do |f|
-        OpenSSL::PKCS12.new(f, 'omg')
-      end
-    end
-
-    def test_from_ascii_string
-      tempfile do |f|
-        OpenSSL::PKCS12.new(f.read.force_encoding(Encoding::ASCII_8BIT), 'omg')
-      end
-    end
-
-    def test_from_utf8_string
-     tempfile do |f|
-        OpenSSL::PKCS12.new(f.read.force_encoding(Encoding::UTF_8), 'omg')
-      end
-    end
-
     def test_create_no_pass
       pkcs12 = OpenSSL::PKCS12.create(
         nil,
@@ -219,23 +201,6 @@ Li8JsX5yIiuVYaBg/6ha3tOg4TCa5K/3r3tVliRZ2Es=
         end
       end
       false
-    end
-
-    def create_store
-      OpenSSL::PKCS12.create(
-        "omg",
-        "hello",
-        TEST_KEY_RSA1024,
-        @mycert
-      )
-    end
-
-    def tempfile store=create_store
-      Tempfile.open('test_cert.pk12') do |f|
-        f << store.to_der
-        f.rewind
-        yield f
-      end
     end
 
   end
