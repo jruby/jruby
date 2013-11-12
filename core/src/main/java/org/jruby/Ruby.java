@@ -1899,6 +1899,20 @@ public final class Ruby {
         this.yielderClass = yielderClass;
     }
 
+    public RubyClass getGenerator() {
+        return generatorClass;
+    }
+    public void setGenerator(RubyClass generatorClass) {
+        this.generatorClass = generatorClass;
+    }
+
+    public RubyClass getFiber() {
+        return fiberClass;
+    }
+    public void setFiber(RubyClass fiberClass) {
+        this.fiberClass = fiberClass;
+    }
+
     public RubyClass getString() {
         return stringClass;
     }
@@ -4521,7 +4535,7 @@ public final class Ruby {
     private RubyClass
            basicObjectClass, objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
-            complexClass, rationalClass, enumeratorClass, yielderClass,
+            complexClass, rationalClass, enumeratorClass, yielderClass, fiberClass, generatorClass,
             arrayClass, hashClass, rangeClass, stringClass, encodingClass, converterClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,

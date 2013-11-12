@@ -47,7 +47,7 @@ public class CallBlock19 extends BlockBody {
         return new Block(body, binding);
     }
 
-    private CallBlock19(Arity arity, BlockCallback callback, ThreadContext context) {
+    public CallBlock19(Arity arity, BlockCallback callback, ThreadContext context) {
         super(BlockBody.SINGLE_RESTARG);
         this.arity = arity;
         this.callback = callback;
