@@ -41,7 +41,7 @@
     <target name="test-extended">
         <!-- First, ensure we're bootstrapped -->
         <exec executable="mvn">
-            <arg line="-B"/>
+            <arg line="-q"/>
             <arg line="-Pbootstrap"/>
             <arg line="package"/>
         </exec>
