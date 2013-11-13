@@ -683,7 +683,7 @@
                 <configuration>
                   <tasks>
                     <exec executable="/bin/sh" osfamily="unix">
-                      <arg line="-c 'pushd &quot;${jruby.basedir}/bin/&quot; ; test -f jruby || ln -s jruby.bash jruby; popd'" />
+                      <arg line="-c 'cd &quot;${jruby.basedir}/bin/&quot; ; test -f jruby || ln -s jruby.bash jruby; cd &quot;$OLDPWD&quot;'" />
                     </exec>
                     <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
                   </tasks>
