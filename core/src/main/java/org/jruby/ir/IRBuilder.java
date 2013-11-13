@@ -911,7 +911,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         s.addInstr(new LabelInstr(rescueLabel));
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc));
+        s.addInstr(new ReceiveExceptionInstr(exc, false));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)

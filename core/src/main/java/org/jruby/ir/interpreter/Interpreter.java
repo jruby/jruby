@@ -533,12 +533,6 @@ public class Interpreter {
             break;
         case RECV_EXCEPTION: {
             ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
-            // FIXME: Alternatively, we could update 'RescueEQQInstr' to check for
-            // Unrescuable. This will eliminate this special case from this code
-            // altogether, but will slow down breaks and nonlocal-returns marginally
-            // since we would execute 'search-const(Exception...)' and a 'rescue_eqq'
-            // before bailing rather than bailing right away.
-            //
             // FIXME: HACK for now .. make semantics explicit rather
             // than piggybacking on top of the checkType field
             //
