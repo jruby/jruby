@@ -4027,6 +4027,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IRubyObject popen3_19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
 
+        // TODO: handle opts
+        if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
+            args = Arrays.copyOf(args, args.length - 1);
+        }
+
         final POpenTuple tuple = popenSpecial(context, args);
         final long pid = ShellLauncher.getPidFromProcess(tuple.process);
 
