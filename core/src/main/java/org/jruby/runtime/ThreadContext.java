@@ -333,6 +333,10 @@ public final class ThreadContext {
         this.rootFiber = rootFiber;
     }
     
+    public RubyThread getRootThread() {
+        return rootThread;
+    }
+
     public void setRootThread(RubyThread rootThread) {
         this.rootThread = rootThread;
     }
