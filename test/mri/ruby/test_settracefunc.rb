@@ -991,30 +991,4 @@ class TestSetTraceFunc < Test::Unit::TestCase
 
     assert_equal 9, n
   end
-
-  def test_tracepoint_a_call_and_a_return_events
-    events = []
-    TracePoint.new(:a_call, :a_return){|tp|
-      events << tp.event
-    }.enable{
-      1.times{
-        3
-      }
-      method_for_test_tracepoint_block{
-        4
-      }
-    }
-    assert_equal([
-      :b_call,
-      :c_call,
-      :b_call,
-      :b_return,
-      :c_return,
-      :call,
-      :b_call,
-      :b_return,
-      :return,
-      :b_return
-    ], events)
-  end
 end
