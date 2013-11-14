@@ -17,7 +17,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <url>http://github.com/jruby/jruby/tree/master/gem/jruby-jars</url>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.0-rc4-SNAPSHOT</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.home>${basedir}/../../</jruby.home>
