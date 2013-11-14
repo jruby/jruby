@@ -1799,15 +1799,14 @@ public class IRBuilder {
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
         IRMethod method = defineNewMethod(node, s, true);
         s.addInstr(new DefineInstanceMethodInstr(new StringLiteral("--unused--"), method));
-        return manager.getNil();
+        return new Symbol(method.getName());
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, false);
-
         s.addInstr(new DefineClassMethodInstr(container, method));
-        return manager.getNil();
+        return new Symbol(method.getName());
     }
 
     protected int receiveOptArgs(final ArgsNode argsNode, IRScope s, int opt, int argIndex) {
