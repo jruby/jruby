@@ -8,7 +8,6 @@ jdk:
   - openjdk6
 
 env:
-  # disable cext
   matrix:
     - TARGET='test-extended'
     - TARGET='spec:ci_interpreted_travis'
