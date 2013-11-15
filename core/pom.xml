@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.8-SNAPSHOT</version>
+    <version>1.7.8</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
@@ -683,7 +683,7 @@
                 <configuration>
                   <tasks>
                     <exec executable="/bin/sh" osfamily="unix">
-                      <arg line="-c 'cd &quot;${jruby.basedir}/bin/&quot; ; test -f jruby || ln -s jruby.bash jruby; cd &quot;$OLDPWD&quot;'" />
+                      <arg line="-c 'cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
                     </exec>
                     <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
                   </tasks>
