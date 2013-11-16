@@ -47,7 +47,6 @@ import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1430,21 +1429,27 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
     
-    @JRubyMethod(name = "any?")
+    @JRubyMethod(name = "any?", compat = CompatVersion.RUBY1_8)
+    public static IRubyObject any_p18(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
+        return any_pCommon(context, self, block, Arity.OPTIONAL);
+    }
+
+    @JRubyMethod(name = "any?", compat = CompatVersion.RUBY1_9)
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
-        
-        return any_pCommon(context, self, block);
+        return any_pCommon(context, self, block, block.arity());
     }
     
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
 
         try {
             if (block.isGiven()) {
-                each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", block.arity()) {
-                    public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                        if (block.yield(context, arg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                callEach(runtime, context, self, callbackArity, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        IRubyObject packedArgs = packEnumValues(ctx.runtime, largs);
+                        if (block.yield(ctx, packedArgs).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return runtime.getNil();
                     }
                 });
