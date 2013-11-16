@@ -1309,10 +1309,6 @@ public class IRBuilder {
         return rv;
     }
 
-    protected Operand buildGenericGetDefinitionIR(Node node, IRScope s) {
-        return buildGetDefinition(node, s);
-    }
-
     public Operand buildVersionSpecificGetDefinitionIR(Node node, IRScope s) {
         switch (node.getNodeType()) {
             case ORNODE:
@@ -1330,7 +1326,7 @@ public class IRBuilder {
             }
             case DREGEXPNODE:
             case DSTRNODE: {
-                Operand v = buildVersionSpecificGetDefinitionIR(node, s);
+                Operand v = buildGetDefinition(node, s);
                 Label doneLabel = s.getNewLabel();
                 Variable tmpVar = getValueInTemporaryVariable(s, v);
                 s.addInstr(BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
@@ -1378,7 +1374,7 @@ public class IRBuilder {
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("global-variable"));
             }
             default: {
-                return buildGenericGetDefinitionIR(node, s);
+                return buildGetDefinition(node, s);
             }
         }
     }
