@@ -49,13 +49,13 @@ public abstract class JavaInternalBlockBody extends BlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
                             Block.Type type, Block block) {
-        return yield(context, args, null, null, true, binding, type, block);
+        return yield(context, args, null, null, binding, type, block);
     }
 
     @Override
@@ -66,7 +66,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type) {
         threadCheck(context);
         
         return yield(context, args);

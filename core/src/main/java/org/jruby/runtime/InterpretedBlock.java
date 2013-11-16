@@ -318,7 +318,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type, Block block) {
+            RubyModule klass, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -331,10 +331,9 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             if (!noargblock) {
                 IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
                 RubyArray argArray = context.runtime.newArrayNoCopyLight(preppedArgs);
-                IRubyObject values = alreadyArray ? assigner.convertIfAlreadyArray(runtime, argArray) :
-                    assigner.convertToArray(runtime, argArray);
+                IRubyObject value = assigner.convertIfAlreadyArray(runtime, argArray);
 
-                assigner.assignArray(runtime, context, self, values, block);
+                assigner.assignArray(runtime, context, self, value, block);
             }
 
             // This while loop is for restarting the block call in case a 'redo' fires.
@@ -374,13 +373,12 @@ public class InterpretedBlock extends ContextAwareBlockBody {
      * @param args The args for yield
      * @param self The current self
      * @param klass
-     * @param alreadyArray do we need an array or should we assume it already is one?
      * @return result of block invocation
      */
     @Override
     protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
+            RubyModule klass, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
     
     private IRubyObject evalBlockBody(ThreadContext context, Binding binding, IRubyObject self) {

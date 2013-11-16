@@ -83,12 +83,12 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
     }
 
     @Override
@@ -97,8 +97,8 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     // FIXME: These two duplicate overrides should go away
@@ -121,15 +121,14 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
 
         IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
         RubyArray value = context.runtime.newArrayNoCopyLight(preppedArgs);
-        IRubyObject realArg = aValue ?
-                setupBlockArgs(context, value, self) : setupBlockArg(context.runtime, value, self);
+        IRubyObject realArg = setupBlockArgs(context, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
 
