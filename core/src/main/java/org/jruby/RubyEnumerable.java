@@ -128,7 +128,7 @@ public class RubyEnumerable {
         final int result[] = new int[] { 0 };
         
         if (block.isGiven()) {
-            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.OPTIONAL) {
+            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", block.arity()) {
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     IRubyObject packedArg = packEnumValues(context.runtime, args);
                     if (block.yield(context, packedArg).isTrue()) result[0]++;
