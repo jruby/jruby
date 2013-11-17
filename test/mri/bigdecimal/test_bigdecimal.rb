@@ -1440,6 +1440,11 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_in_delta(Math.log(42), BigMath.log(BigDecimal(42), 20))
   end
 
+  def test_BigMath_log_with_101
+    # this is mainly a performance test (should be very fast, not the 0.3 s)
+    assert_in_delta(Math.log(101), BigMath.log(101, 20), 1E-20)
+  end
+
   def test_BigMath_log_with_reciprocal_of_42
     assert_in_delta(Math.log(1e-42), BigMath.log(1e-42, 20))
     assert_in_delta(Math.log(1e-42), BigMath.log(BigDecimal("1e-42"), 20))

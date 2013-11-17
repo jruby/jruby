@@ -276,6 +276,15 @@ module BigMath
     x = x.to_d
     rmpd_double_figures = 16 # from MRI ruby
     n = precision + rmpd_double_figures
+
+    # offset the calculation to the efficient (0.1)...(10) window
+    expo = x.exponent
+    use_window = (x > 10) || (expo < 0) # allow up to 10 itself
+    if use_window
+      offset = BigDecimal.new("1E#{-expo}")
+      x = x.mult(offset, n)
+    end
+
     z = (x - 1).div((x + 1), n)
     z2 = z.mult(z, n)
     series_sum = z
@@ -293,31 +302,14 @@ module BigMath
       series_sum += series_element
     end
 
-    series_sum * 2
+    window_result = series_sum * 2
+
+    # reset the result back to the original value if needed
+    if use_window
+      log10 = log(10, n)
+      window_result + log10.mult(expo, n)
+    else
+      window_result
+    end
   end
-
-=begin
-BigMath_s_log(VALUE klass, VALUE x, VALUE vprec)
-{
-
-   expo = VpExponent10(vx);
-   if (expo < 0 || expo >= 3) {
-     char buf[16];
-     snprintf(buf, 16, "1E%"PRIdVALUE, -expo);
-     x = BigDecimal_mult2(x, ToValue(VpCreateRbObject(1, buf)), vn);
-   }
-  else {
- expo = 0;
- }
-
-# This is for later (recursive when out of bound)
-   if (expo != 0) {
-     VALUE log10, vexpo, dy;
-     log10 = BigMath_s_log(klass, INT2FIX(10), vprec);
-     vexpo = ToValue(GetVpValue(SSIZET2NUM(expo), 1));
-     dy = BigDecimal_mult(log10, vexpo);
-     y = BigDecimal_add(y, dy);
-   }
-=end
-
 end
