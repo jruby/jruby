@@ -31,18 +31,6 @@ require 'bigdecimal/util'
 module BigMath
   module_function
 
-  def zero
-    BigDecimal('0')
-  end
-
-  def one
-    BigDecimal('1')
-  end
-
-  def two
-    BigDecimal('2')
-  end
-
   # call-seq:
   #   sqrt(decimal, numeric) -> BigDecimal
   #
@@ -286,10 +274,10 @@ module BigMath
     # d are the elements in the series (getting smaller and smaller)
 
     x = x.to_d
-    n = precision + BigDecimal.double_fig
-    z = (x - one) / (x + one)
-    z2 = z * z
-
+    rmpd_double_figures = 16 # from MRI ruby
+    n = precision + rmpd_double_figures
+    z = (x - 1).div((x + 1), n)
+    z2 = z.mult(z, n)
     series_sum = z
     series_element = z
 
@@ -299,13 +287,13 @@ module BigMath
       element_exponent = series_element.exponent
       remaining_precision = n - (sum_exponent - element_exponent).abs
       break if remaining_precision < 0
-      z = z * z2
+      z = z.mult(z2, n)
       i += 2
-      series_element = z / i
+      series_element = z.div(i, n)
       series_sum += series_element
     end
 
-    two * series_sum
+    series_sum * 2
   end
 
 =begin

@@ -1322,30 +1322,6 @@ class TestBigDecimal < Test::Unit::TestCase
     EOS
   end
 
-  def test_zero_is_private
-    assert_raise(NoMethodError) do
-      o = Object.new
-      o.extend(BigMath)
-      o.zero
-    end
-  end
-
-  def test_one_is_private
-    assert_raise(NoMethodError) do
-      o = Object.new
-      o.extend(BigMath)
-      o.one
-    end
-  end
-
-  def test_two_is_private
-    assert_raise(NoMethodError) do
-      o = Object.new
-      o.extend(BigMath)
-      o.two
-    end
-  end
-
   def test_BigMath_log_with_string
     assert_raise(ArgumentError) do
       BigMath.log("foo", 20)
