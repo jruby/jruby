@@ -1427,6 +1427,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_in_delta(2, BigMath.log(BigMath.E(20)**2, 20))
   end
 
+  def test_BigMath_log_with_high_precision_case
+    e   = BigDecimal('2.71828182845904523536028747135266249775724709369996')
+    e_3 = e.mult(e, 50).mult(e, 50)
+    log_3 = BigMath.log(e_3, 50)
+    assert_in_delta(3, log_3, 0.0000000000_0000000000_0000000000_0000000000_0000000001)
+  end
+
   def test_BigMath_log_with_42
     assert_in_delta(Math.log(42), BigMath.log(42, 20))
     assert_in_delta(Math.log(42), BigMath.log(42.0, 20))
