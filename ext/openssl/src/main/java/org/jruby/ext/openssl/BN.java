@@ -126,6 +126,15 @@ public class BN extends RubyObject {
         int base = argc == 2 ? RubyNumeric.num2int(args[1]) : 10;
         RubyString str = RubyString.stringValue(args[0]);
         switch (base) {
+        case 0:
+            byte[] bytes = str.getBytes();
+            if ((bytes[0] & 0x80) != 0) {
+                bytes[0] &= 0x7f;
+                this.value = new BigInteger(-1, bytes);
+            } else {
+                this.value = new BigInteger(1, bytes);
+            }
+            break;
         case 2:
             // this seems wrong to me, but is the behavior of the
             // MRI implementation. rather than interpreting the string
@@ -144,8 +153,6 @@ public class BN extends RubyObject {
             } catch (NumberFormatException e) {
                 throw runtime.newArgumentError("value " + str + " is not legal for radix " + base);
             }
-        case 0: // FIXME: not currently supporting BN_mpi2bn
-            throw runtime.newArgumentError("unsupported radix: " + base);
         default:
             throw runtime.newArgumentError("illegal radix: " + base);
         }
@@ -165,13 +172,43 @@ public class BN extends RubyObject {
         Ruby runtime = getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
         int base = argc == 1 ? RubyNumeric.num2int(args[0]) : 10;
+        byte[] bytes;
         switch (base) {
+        case 0:
+            bytes = this.value.abs().toByteArray();
+            int offset = 0;
+            if (bytes[0] == 0) {
+                offset = 1;
+            }
+            int length = bytes.length - offset;
+            boolean negative = BigInteger.ZERO.compareTo(this.value) > 0;
+            // for positive values with most significant bit in first byte,
+            // add leading '\0'
+            boolean need0 = !negative && (bytes[offset] & 0x80) != 0;
+            if (negative) {
+                // for negative values, set most significant bit in first byte
+                bytes[offset] |= 0x80;
+            } else if (need0) {
+                length++;
+            }
+            byte[] data = new byte[5 + length];
+            data[0] = (byte)(0xff & (length >> 24));
+            data[1] = (byte)(0xff & (length >> 16));
+            data[2] = (byte)(0xff & (length >>  8));
+            data[3] = (byte)(0xff & (length >>  0));
+            if (need0) {
+                data[4] = 0;
+                System.arraycopy(bytes, offset, data, 5, length - 1);
+            } else {
+                System.arraycopy(bytes, offset, data, 4, length);
+            }
+            return runtime.newString(new ByteList(data, 0, 4 + length, false));
         case 2:
             // again, following MRI implementation, wherein base 2 deals
             // with strings as byte arrays rather than ASCII-encoded binary
             // digits.  note that negative values are returned as though positive:
 
-            byte[] bytes = this.value.abs().toByteArray();
+            bytes = this.value.abs().toByteArray();
 
             // suppress leading 0 byte to conform to MRI behavior
             if (bytes[0] == 0) {
@@ -181,8 +218,6 @@ public class BN extends RubyObject {
         case 10:
         case 16:
             return runtime.newString(value.toString(base).toUpperCase());
-        case 0: // FIXME: not currently supporting BN_mpi2bn
-            throw runtime.newArgumentError("unsupported radix: " + base);
         default:
             throw runtime.newArgumentError("illegal radix: " + base);
         }
