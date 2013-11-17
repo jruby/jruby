@@ -532,7 +532,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static RubyThread current(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().getThread();
+        return recv.getRuntime().getCurrentContext().getRootThread();
     }
 
     @JRubyMethod(meta = true)
