@@ -1423,8 +1423,8 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_in_delta(Math.log(2), BigMath.log(BigDecimal(2), 20))
   end
 
-  def test_BigMath_log_with_square_of_exp_2
-    assert_in_delta(2, BigMath.log(BigMath.exp(1, 20)**2, 20))
+  def test_BigMath_log_with_square_of_E
+    assert_in_delta(2, BigMath.log(BigMath.E(20)**2, 20))
   end
 
   def test_BigMath_log_with_42
