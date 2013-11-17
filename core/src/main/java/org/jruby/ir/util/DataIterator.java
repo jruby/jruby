@@ -32,13 +32,16 @@ public class DataIterator<T> implements Iterator<T> {
 
         while (internalIterator.hasNext()) {
             Edge edge = internalIterator.next();
+            Object edgeType = edge.getType();
 
             if (negate) {
-                if (edge.getType() != type) {
+                // When edgeType or type is null compare them directly. Otherwise compare them using equals
+                if ((edgeType != null && !edgeType.equals(type)) || (edgeType == null && edgeType != type)) {
                     nextEdge = edge;
                     return true;
                 }
-            } else  if (edge.getType() == type) {
+                // When edgeType or type is null compare them directly. Otherwise compare them using equals
+            } else if ((edgeType != null && edgeType.equals(type)) || (edgeType == null && edgeType == type)) {
                 nextEdge = edge;
                 return true;
             }
