@@ -525,6 +525,21 @@ ary
     obj.blank?.should == false
     $~.should be_nil
   end
+
+  # GH-1239
+  it "properly scopes singleton method definitions in a compiled body" do
+    cls = compile_and_run(<<-EOS)
+      class GH1239
+        def self.define; def bar; end; end
+        def self.remove; remove_method :bar; end
+      end
+      GH1239
+    EOS
+
+    cls.define
+    expect(cls.methods).not_to be_include :bar
+    expect{cls.remove}.not_to raise_error
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
