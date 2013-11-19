@@ -415,25 +415,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         mv.start();
 
-        // save off callNumber
-        mv.aload(1);
-        mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+        boolean heapScoped = callConfig.scoping() != Scoping.None;
+        boolean framed = callConfig.framing() != Framing.None;
+
+        // save off callNumber if framed or scoped, for non-local returns
         int callNumberIndex = -1;
-        if (specificArity) {
-            switch (scope.getRequiredArgs()) {
-            case -1:
-                callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
-                break;
-            case 0:
+        if (framed || heapScoped) {
+            mv.aload(1);
+            mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+            if (specificArity) {
+                switch (scope.getRequiredArgs()) {
+                case -1:
+                    callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
+                    break;
+                case 0:
+                    callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+                    break;
+                default:
+                    callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                }
+            } else {
                 callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
-                break;
-            default:
-                callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
             }
-        } else {
-            callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+            mv.istore(callNumberIndex);
         }
-        mv.istore(callNumberIndex);
 
         // invoke pre method stuff
         if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -478,9 +483,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label doRedoFinally = new Label();
         Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
-
-        boolean heapScoped = callConfig.scoping() != Scoping.None;
-        boolean framed = callConfig.framing() != Framing.None;
 
         if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
         if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
