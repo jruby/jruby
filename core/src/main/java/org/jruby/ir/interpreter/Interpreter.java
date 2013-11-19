@@ -603,6 +603,48 @@ public class Interpreter {
         }
     }
 
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, IRubyObject self, Block block, RubyModule implClass, Visibility visibility, boolean profile)
+    {
+        switch(operation) {
+        case PUSH_FRAME: {
+            context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+            context.setCurrentVisibility(visibility);
+            break;
+        }
+        case POP_FRAME:
+            context.popFrame();
+            context.popRubyClass();
+            break;
+        case POP_BINDING:
+            context.popScope();
+            break;
+        case THREAD_POLL:
+            if (profile) {
+                // SSS: Not being used currently
+                // tpCount.count++;
+                globalThreadPollCount++;
+
+                // 20K is arbitrary
+                // Every 20K profile counts, spit out profile stats
+                if (globalThreadPollCount % 20000 == 0) {
+                    analyzeProfile();
+                    // outputProfileStats();
+                }
+            }
+            context.callThreadPoll();
+            break;
+        case CHECK_ARITY:
+            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs);
+            break;
+        case LINE_NUM:
+            context.setLine(((LineNumberInstr)instr).lineNumber);
+            break;
+        case RECORD_END_BLOCK:
+            ((RecordEndBlockInstr)instr).interpret();
+            break;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = scope.getInstrsForInterpretation();
@@ -667,52 +709,15 @@ public class Interpreter {
                     break;
                 }
                 case BOOK_KEEPING_OP: {
-                    switch(operation) {
-                    case PUSH_FRAME: {
-                        context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
-                        context.setCurrentVisibility(visibility);
-                        break;
-                    }
-                    case PUSH_BINDING: {
+                    if (operation == Operation.PUSH_BINDING) {
                         // SSS NOTE: Method scopes only!
                         //
                         // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
-                        break;
-                    }
-                    case CHECK_ARITY:
-                        ((CheckArityInstr)instr).checkArity(context.runtime, args.length);
-                        break;
-                    case POP_FRAME:
-                        context.popFrame();
-                        context.popRubyClass();
-                        break;
-                    case POP_BINDING:
-                        context.popScope();
-                        break;
-                    case THREAD_POLL:
-                        if (profile) {
-                            // SSS: Not being used currently
-                            // tpCount.count++;
-                            globalThreadPollCount++;
-
-                            // 20K is arbitrary
-                            // Every 20K profile counts, spit out profile stats
-                            if (globalThreadPollCount % 20000 == 0) {
-                                analyzeProfile();
-                                // outputProfileStats();
-                            }
-                        }
-                        context.callThreadPoll();
-                        break;
-                    case LINE_NUM:
-                        context.setLine(((LineNumberInstr)instr).lineNumber);
-                        break;
-                    case RECORD_END_BLOCK:
-                        ((RecordEndBlockInstr)instr).interpret();
-                        break;
+                    } else {
+                        processBookKeepingOp(context, instr, operation, scope, args.length, self, block, implClass, visibility, profile);
                     }
                     break;
                 }
