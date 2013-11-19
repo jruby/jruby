@@ -32,6 +32,8 @@
         <include>tool/nailgun/**/*.c</include>
       </includes>
       <excludes>
+        <exclude>bin/jruby*_*</exclude>
+        <exclude>bin/jruby*-*</exclude>
         <exclude>**/*.ac</exclude>
         <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
