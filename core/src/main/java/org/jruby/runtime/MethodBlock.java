@@ -80,12 +80,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, args, null, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, args, null, null, true, binding, type, block);
+        return yield(context, args, null, null, binding, type, block);
     }
     
     @Override
@@ -110,12 +110,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
     }
     
     @Override
@@ -130,8 +130,8 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+                             RubyModule klass, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     /**
@@ -141,12 +141,11 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
      * @param args The args for yield
      * @param self The current self
      * @param klass
-     * @param aValue Should value be arrayified or not?
      * @return
      */
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+            RubyModule klass, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);

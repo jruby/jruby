@@ -145,7 +145,7 @@ public final class Block {
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass) {
-        return body.yield(context, new IRubyObject[] { value }, self, klass, true, binding, type);
+        return body.yield(context, new IRubyObject[] { value }, self, klass, binding, type);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self,
@@ -156,7 +156,7 @@ public final class Block {
         } else {
             args = value.convertToArray().toJavaArray();
         }
-        return body.yield(context, args, self, klass, true, binding, type);
+        return body.yield(context, args, self, klass, binding, type);
     }
 
     public Block cloneBlock() {
