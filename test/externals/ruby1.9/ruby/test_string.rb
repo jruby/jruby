@@ -473,9 +473,7 @@ class TestString < Test::Unit::TestCase
   def test_concat
     assert_equal(S("world!"), S("world").concat(33))
     assert_equal(S("world!"), S("world").concat(S('!')))
-    assert_raise TypeError do
-      "foo" << :foo
-    end
+    assert_raise(TypeError) { 'foo' << :foo }
   end
 
   def test_count
