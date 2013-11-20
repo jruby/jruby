@@ -1402,12 +1402,6 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
     
-    @JRubyMethod(name = "any?", compat = CompatVersion.RUBY1_8)
-    public static IRubyObject any_p18(ThreadContext context, IRubyObject self, final Block block) {
-        if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
-        return any_pCommon(context, self, block, Arity.OPTIONAL);
-    }
-
     @JRubyMethod(name = "any?", compat = CompatVersion.RUBY1_9)
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
