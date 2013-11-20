@@ -3,6 +3,8 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * Argument receive in IRExecution scopes.
@@ -40,5 +42,9 @@ public abstract class ReceiveArgBase extends Instr implements ResultInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + argIndex + ")";
+    }
+
+    public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
+        throw new RuntimeException("ReceiveArgBase.interpret called! " + this.getClass().getName() + " does not define receiveArg");
     }
 }
