@@ -2608,6 +2608,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             long c = ((RubyBignum) other).getLongValue();
             return concatNumeric(runtime, (int) c);
         }
+        
+        if (!(other instanceof RubyString)) {
+            throw runtime.newTypeError("can't convert " + other.getMetaClass().getName() + " into String");
+
+        }
         return append19(other);
     }
 
