@@ -3811,7 +3811,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public IRubyObject any_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
         if (!block.isGiven()) return any_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {

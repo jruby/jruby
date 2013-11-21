@@ -35,18 +35,16 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
@@ -510,27 +508,22 @@ public class Interpreter {
         case RECV_PRE_REQD_ARG:
             int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
             result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_CLOSURE:
             result = (block == Block.NULL_BLOCK) ? context.nil : context.runtime.newProc(Block.Type.PROC, block);
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_OPT_ARG:
             result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount);
-            break;
+            // For blocks, missing arg translates to nil
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_POST_REQD_ARG:
             result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, kwArgHashCount);
             // For blocks, missing arg translates to nil
-            result = result == null ? context.nil : result;
-            break;
-        case RECV_REST_ARG:
-            result = ((ReceiveRestArgInstr)instr).receiveRestArg(context.runtime, args, kwArgHashCount);
-            break;
-        case RECV_KW_ARG:
-            result = ((ReceiveKeywordArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
-            break;
-        case RECV_KW_REST_ARG:
-            result = ((ReceiveKeywordRestArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
+            return;
         case RECV_EXCEPTION: {
             ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
             // FIXME: HACK for now .. make semantics explicit rather
@@ -547,11 +540,14 @@ public class Interpreter {
                 Helpers.throwException((Throwable)exception);
             }
             result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         }
+        default:
+            result = ((ReceiveArgBase)instr).receiveArg(context, kwArgHashCount, args);
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         }
-
-        setResult(temp, currDynScope, instr.getResult(), result);
     }
 
     private static void processCall(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
@@ -599,6 +595,48 @@ public class Interpreter {
         default:
             result = instr.interpret(context, currDynScope, self, temp, block);
             setResult(temp, currDynScope, instr, result);
+            break;
+        }
+    }
+
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, IRubyObject self, Block block, RubyModule implClass, Visibility visibility, boolean profile)
+    {
+        switch(operation) {
+        case PUSH_FRAME: {
+            context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+            context.setCurrentVisibility(visibility);
+            break;
+        }
+        case POP_FRAME:
+            context.popFrame();
+            context.popRubyClass();
+            break;
+        case POP_BINDING:
+            context.popScope();
+            break;
+        case THREAD_POLL:
+            if (profile) {
+                // SSS: Not being used currently
+                // tpCount.count++;
+                globalThreadPollCount++;
+
+                // 20K is arbitrary
+                // Every 20K profile counts, spit out profile stats
+                if (globalThreadPollCount % 20000 == 0) {
+                    analyzeProfile();
+                    // outputProfileStats();
+                }
+            }
+            context.callThreadPoll();
+            break;
+        case CHECK_ARITY:
+            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs);
+            break;
+        case LINE_NUM:
+            context.setLine(((LineNumberInstr)instr).lineNumber);
+            break;
+        case RECORD_END_BLOCK:
+            ((RecordEndBlockInstr)instr).interpret();
             break;
         }
     }
@@ -667,52 +705,15 @@ public class Interpreter {
                     break;
                 }
                 case BOOK_KEEPING_OP: {
-                    switch(operation) {
-                    case PUSH_FRAME: {
-                        context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
-                        context.setCurrentVisibility(visibility);
-                        break;
-                    }
-                    case PUSH_BINDING: {
+                    if (operation == Operation.PUSH_BINDING) {
                         // SSS NOTE: Method scopes only!
                         //
                         // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
-                        break;
-                    }
-                    case CHECK_ARITY:
-                        ((CheckArityInstr)instr).checkArity(context.runtime, args.length);
-                        break;
-                    case POP_FRAME:
-                        context.popFrame();
-                        context.popRubyClass();
-                        break;
-                    case POP_BINDING:
-                        context.popScope();
-                        break;
-                    case THREAD_POLL:
-                        if (profile) {
-                            // SSS: Not being used currently
-                            // tpCount.count++;
-                            globalThreadPollCount++;
-
-                            // 20K is arbitrary
-                            // Every 20K profile counts, spit out profile stats
-                            if (globalThreadPollCount % 20000 == 0) {
-                                analyzeProfile();
-                                // outputProfileStats();
-                            }
-                        }
-                        context.callThreadPoll();
-                        break;
-                    case LINE_NUM:
-                        context.setLine(((LineNumberInstr)instr).lineNumber);
-                        break;
-                    case RECORD_END_BLOCK:
-                        ((RecordEndBlockInstr)instr).interpret();
-                        break;
+                    } else {
+                        processBookKeepingOp(context, instr, operation, scope, args.length, self, block, implClass, visibility, profile);
                     }
                     break;
                 }

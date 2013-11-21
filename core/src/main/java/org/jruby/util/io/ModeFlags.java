@@ -33,6 +33,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.OpenFlags;
+import org.jruby.Ruby;
 
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
@@ -100,12 +101,10 @@ public class ModeFlags implements Cloneable {
         }
     }
 
-    @Deprecated
     public ModeFlags(String flagString) throws InvalidValueException {
         this.flags = getOFlagsFromString(flagString);
     }
-    
-    @Deprecated
+
     public static int getOFlagsFromString(String modesString) throws InvalidValueException {
         int modes = 0;
         int length = modesString.length();
@@ -147,6 +146,14 @@ public class ModeFlags implements Cloneable {
         }
 
         return modes;        
+    }
+
+    public static int getOFlagsFromString(Ruby runtime, String modesString) {
+        try {
+            return getOFlagsFromString(modesString);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError("mode string: " + modesString);
+        }
     }
 
     /**

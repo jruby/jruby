@@ -124,6 +124,10 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
+        return countCommon(context, self, block, block.arity());
+    }
+
+    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
         
@@ -1401,11 +1405,10 @@ public class RubyEnumerable {
     @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
-        
-        return any_pCommon(context, self, block);
+        return any_pCommon(context, self, block, block.arity());
     }
     
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
 
         try {

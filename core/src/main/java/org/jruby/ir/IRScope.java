@@ -33,8 +33,10 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
+import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -681,6 +683,19 @@ public abstract class IRScope {
         CompilerPassScheduler scheduler = getManager().schedulePasses();
         for (CompilerPass pass: scheduler) {
             pass.run(this);
+        }
+
+        // For methods with unescaped bindings, inline the binding
+        // by converting local var loads/store to tmp var loads/stores
+        if (this instanceof IRMethod && !this.bindingHasEscaped()) {
+            CompilerPass pass = new DeadCodeElimination();
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
+            pass = new AddLocalVarLoadStoreInstructions();
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
         }
     }
 

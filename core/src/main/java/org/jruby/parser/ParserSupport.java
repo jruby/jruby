@@ -1521,10 +1521,7 @@ public class ParserSupport {
 
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
         RegexpOptions options = end.getOptions();
-        Encoding encoding = null;
-        if (!lexer.isOneEight()) {
-            encoding = lexer.getEncoding();
-        }
+        Encoding encoding = lexer.getEncoding();
 
         if (contents == null) {
             ByteList newValue = ByteList.create("");
@@ -1558,7 +1555,7 @@ public class ParserSupport {
         // EvStrNode: #{val}: no fragment check, but at least set encoding
         ByteList master = createMaster(options);
         regexpFragmentCheck(end, master);
-        if (!lexer.isOneEight()) encoding = master.getEncoding();
+        encoding = master.getEncoding();
         DRegexpNode node = new DRegexpNode(position, options, encoding);
         node.add(new StrNode(contents.getPosition(), master));
         node.add(contents);
@@ -1569,14 +1566,9 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        if (lexer.isOneEight()) {
-            return ByteList.create("");
-        } else {
-            Encoding encoding = options.setup19(configuration.getRuntime());
-            
-            return new ByteList(new byte[] {}, encoding);
-        }
-        
+        Encoding encoding = options.setup19(configuration.getRuntime());
+
+        return new ByteList(new byte[] {}, encoding);
     }
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer

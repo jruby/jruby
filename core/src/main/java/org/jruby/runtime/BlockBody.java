@@ -64,14 +64,14 @@ public abstract class BlockBody {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
             Block.Type type, Block block) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type, block);
+        return yield(context, args, null, null, binding, type, block);
     }
 
     public final IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -79,9 +79,9 @@ public abstract class BlockBody {
     }
 
     public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                   RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+                                   RubyModule klass, Binding binding, Block.Type type) {
         IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, arity(), args);
-        return doYield(context, preppedValue, self, klass, aValue, binding, type);
+        return doYield(context, preppedValue, self, klass, binding, type);
     }
 
     /**
@@ -95,17 +95,17 @@ public abstract class BlockBody {
     /**
      * Subclass specific yield implementation.
      * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject[], IRubyObject, RubyModule, boolean, Binding, Block.Type)}
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject[], IRubyObject, RubyModule, Binding, Block.Type)}
      * after ensuring that all common yield logic is taken care of.
      */
     protected abstract IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                           RubyModule klass, boolean aValue, Binding binding, Block.Type type);
+                                           RubyModule klass, Binding binding, Block.Type type);
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
-        return yield(context, args, self, klass, aValue, binding, type);
+            RubyModule klass, Binding binding, Block.Type type, Block block) {
+        return yield(context, args, self, klass, binding, type);
     }
 
     // FIXME: This should be unified with the final versions above
@@ -123,7 +123,7 @@ public abstract class BlockBody {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -137,7 +137,7 @@ public abstract class BlockBody {
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -151,7 +151,7 @@ public abstract class BlockBody {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -159,13 +159,13 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, args, null, null, true, binding, type);
+        return yield(context, args, null, null, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -173,7 +173,7 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, true, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
     }
 
 

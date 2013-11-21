@@ -41,7 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.stringio.RubyStringIO;
+import org.jruby.ext.stringio.StringIO;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -273,10 +273,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-        RubyStringIO sio = (RubyStringIO) getRuntime().getClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
+        StringIO sio = (StringIO) getRuntime().getClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
         
         sio.puts(context, args);
-        write(sio.string());
+        write(sio.string(context));
 
         return getRuntime().getNil();
     }

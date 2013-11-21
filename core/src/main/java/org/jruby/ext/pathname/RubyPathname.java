@@ -52,8 +52,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyPathname extends RubyObject {
     private RubyString path;
     
-    private static final String TO_PATH_METHOD = "to_path";
-
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
                 PATHNAME_ALLOCATOR);
@@ -194,9 +192,8 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        String toPath = TO_PATH_METHOD;
-        if (path.respondsTo(toPath)) {
-            path = path.callMethod(context, toPath);
+        if (path.respondsTo("to_path")) {
+            path = path.callMethod(context, "to_path");
         }
 
         RubyString str = path.convertToString();
@@ -211,8 +208,11 @@ public class RubyPathname extends RubyObject {
         return this;
     }
 
-    public IRubyObject to_str(ThreadContext context) {
-        return path;
+    @JRubyMethod
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
+        super.initialize_copy(pathname);
+        initialize(context, pathname);
+        return this;
     }
 
     @JRubyMethod

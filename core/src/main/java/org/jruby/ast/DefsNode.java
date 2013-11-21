@@ -44,6 +44,7 @@ import org.jruby.internal.runtime.methods.DynamicMethodFactory;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -99,14 +100,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
         IRubyObject receiver = receiverNode.interpret(runtime,context, self, aBlock);
         String name = getName();
 
-        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-          throw runtime.newTypeError("can't define singleton method \"" + name
-          + "\" for " + receiver.getMetaClass().getBaseName());
-        }
-
-        if (receiver.isFrozen()) throw runtime.newFrozenError("object");
-
-        RubyClass rubyClass = receiver.getSingletonClass();
+        RubyClass rubyClass = Helpers.performSingletonMethodChecks(runtime, receiver, name);
 
         scope.determineModule();
       

@@ -129,7 +129,7 @@ public class Ruby20Parser implements RubyParser {
 
     public Ruby20Parser(ParserSupport19 support) {
         this.support = support;
-        lexer = new RubyYaccLexer(false);
+        lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
         support.setLexer(lexer);
     }

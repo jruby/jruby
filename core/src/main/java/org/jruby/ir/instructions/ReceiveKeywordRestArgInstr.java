@@ -24,7 +24,8 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
     }
 
-    public Object receiveKWArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
+    @Override
+    public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
         if (kwArgHashCount == 0) {
             return RubyHash.newSmallHash(context.getRuntime());
         } else {
