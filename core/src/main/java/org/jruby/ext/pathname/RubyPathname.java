@@ -211,6 +211,12 @@ public class RubyPathname extends RubyObject {
         return this;
     }
 
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
+        super.initialize_copy(pathname);
+        initialize(context, pathname);
+        return this;
+    }
+
     public IRubyObject to_str(ThreadContext context) {
         return path;
     }
