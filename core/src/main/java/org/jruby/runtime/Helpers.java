@@ -551,13 +551,15 @@ public class Helpers {
      * invoking.
      */
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        checkSuperDisabledOrOutOfMethod(context);
-        RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
+    }
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
+        checkSuperDisabledOrOutOfMethod(context, klass, name);
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
-        
+
         if (method.isUndefined()) {
             return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
         }
@@ -1128,12 +1130,15 @@ public class Helpers {
     }
     
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {
-        if (context.getFrameKlazz() == null) {
-            String name = context.getFrameName();
+        checkSuperDisabledOrOutOfMethod(context, context.getFrameKlazz(), context.getFrameName());
+    }
+
+    public static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule klass, String name) {
+        if (klass == null) {
             if (name != null) {
                 throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
             } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
             }
         }
     }
@@ -2192,7 +2197,7 @@ public class Helpers {
         }
     }
 
-    private static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
+    public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + receiver.getMetaClass().getBaseName());
         }
