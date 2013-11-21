@@ -47,7 +47,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,11 +58,9 @@ import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.Stream;
 
 import java.util.Arrays;
 
-import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -121,7 +118,12 @@ public class StringIO extends RubyObject implements EncodingCapable {
         IRubyObject val = strio;
 
         if (block.isGiven()) {
-            val = block.yield(context, strio);
+            try {
+                val = block.yield(context, strio);
+            } finally {
+                strio.ptr.string = null;
+                strio.flags &= ~STRIO_READWRITE;
+            }
         }
         return val;
     }
@@ -653,11 +655,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         ptr.lineno = RubyNumeric.fix2int(arg);
 
         return context.nil;
-    }
-
-    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_8)
-    public IRubyObject path() {
-        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = {"pos", "tell"})
