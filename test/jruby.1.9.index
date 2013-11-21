@@ -53,6 +53,7 @@ test_primitive_to_java
 test_process
 test_proc_visibility
 test_parsing
+test_pathname_dup
 test_random
 test_rbconfig
 test_require_once
