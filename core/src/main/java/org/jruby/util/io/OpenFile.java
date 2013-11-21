@@ -112,6 +112,14 @@ public class OpenFile {
     }
     
     // mri: rb_io_modestr_fmode
+    public static int ioModestrFmode(Ruby runtime, String modesString) {
+        try {
+            return getFModeFromString(modesString);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError(modesString);
+        }
+    }
+
     public static int getFModeFromString(String modesString) throws InvalidValueException {
         int fmode = 0;
         int length = modesString.length();
