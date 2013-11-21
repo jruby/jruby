@@ -21,6 +21,7 @@ env:
 matrix:
   allow_failures:
     - env: TARGET='spec:ir'
+    - jdk: oraclejdk8
 
 script: "ant $TARGET"
 install: /bin/true
