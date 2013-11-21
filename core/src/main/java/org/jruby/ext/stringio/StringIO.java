@@ -116,7 +116,12 @@ public class StringIO extends RubyObject implements EncodingCapable {
         IRubyObject val = strio;
 
         if (block.isGiven()) {
-            val = block.yield(context, strio);
+            try {
+                val = block.yield(context, strio);
+            } finally {
+                strio.ptr.string = null;
+                strio.flags &= ~STRIO_READWRITE;
+            }
         }
         return val;
     }
