@@ -46,10 +46,11 @@
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>   
-	<include>lib/ruby/gems/shared/gems/rake-${rake.version}/**/*</include>
+	<include>lib/ruby/gems/shared/gems/rake-${rake.version}/bin/r*</include>
+	<include>lib/ruby/gems/shared/gems/rdoc-${rdoc.version}/bin/r*</include>
         <include>lib/ruby/gems/shared/specifications/rake-${rake.version}.gemspec</include>
-	<include>lib/ruby/gems/shared/cache/rake-${rake.version}.gem</include>
-	<include>lib/ruby/gems/shared/doc</include>
+	<include>lib/ruby/gems/shared/specifications/rdoc-${rdoc.version}.gemspec</include>
+	<include>lib/ruby/gems/shared/specifications/json-${json.version}-java.gemspec</include>
       </includes>
     </fileSet>
   </fileSets>
