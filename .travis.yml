@@ -5,6 +5,7 @@ before_script:
 
 jdk:
   - oraclejdk7
+  - oraclejdk8
   - openjdk6
 
 env:
@@ -17,6 +18,7 @@ env:
 matrix:
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
+    - jdk: oraclejdk8
 
 script: "ant $TARGET"
 install: /bin/true
