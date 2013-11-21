@@ -204,7 +204,7 @@ public class RubyPathname extends RubyObject {
         infectBy(str);
         this.path = (RubyString) str.dup();
         // TODO: remove (either direct bridge to field or all native)
-        setInstanceVariable("@path", path);
+        setInstanceVariable("@path", this.path);
         return this;
     }
 
