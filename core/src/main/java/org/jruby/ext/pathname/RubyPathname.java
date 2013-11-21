@@ -214,6 +214,13 @@ public class RubyPathname extends RubyObject {
         return runtime.is1_8() ? "to_str" : "to_path";
     }
 
+    @JRubyMethod
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
+        super.initialize_copy(pathname);
+        initialize(context, pathname);
+        return this;
+    }
+
     @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject to_str(ThreadContext context) {
         return path;
