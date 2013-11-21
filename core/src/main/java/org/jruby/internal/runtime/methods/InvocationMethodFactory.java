@@ -265,49 +265,54 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String invokerPath = getCompiledCallbackName(typePath, javaName);
+        Class generatedClass = null;
+        boolean tryLoad = false;
+
         try {
-            Class generatedClass = tryClass(invokerPath, scriptClass, COMPILED_SUPER_CLASS);
+            byte[] invokerBytes = getCompiledMethodOffline(
+                    rubyName,
+                    javaName,
+                    typePath,
+                    invokerPath,
+                    arity,
+                    scope,
+                    callConfig,
+                    position.getFile(),
+                    position.getStartLine());
+            generatedClass = endCallWithBytes(invokerBytes, invokerPath);
+        } catch (LinkageError le) {
+            tryLoad = true;
+        } catch (SecurityException se) {
+            tryLoad = true;
+        }
+
+        if (tryLoad) {
+            // failed to define a new class, try loading existing
+            generatedClass = tryClass(invokerPath, scriptClass, COMPILED_SUPER_CLASS);
             if (generatedClass == null) {
-                synchronized (syncObject) {
-                    // try again in case someone else loaded it under us
-                    generatedClass = tryClass(invokerPath, scriptClass, COMPILED_SUPER_CLASS);
-                    if (generatedClass == null) {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("no generated handle in classloader for: {}", invokerPath);
-                        }
-                        byte[] invokerBytes = getCompiledMethodOffline(
-                                rubyName,
-                                javaName,
-                                typePath,
-                                invokerPath,
-                                arity,
-                                scope,
-                                callConfig,
-                                position.getFile(),
-                                position.getStartLine());
-                        generatedClass = endCallWithBytes(invokerBytes, invokerPath);
-                    }
-                }
-            } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                LOG.debug("found generated handle in classloader: {}", invokerPath);
+                throw implementationClass.getRuntime().newLoadError("failed to generate or load invoker for " + invokerPath);
             }
+        }
 
-            CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
-            compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
-
-            Class[] params;
-            if (arity.isFixed() && scope.getRequiredArgs() < 4) {
-                params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
-            } else {
-                params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
-            }
-            compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
-
-            return compiledMethod;
-        } catch(Exception e) {
+        CompiledMethod compiledMethod;
+        try {
+            compiledMethod = (CompiledMethod)generatedClass.newInstance();
+        } catch (Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
+
+        compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+
+        Class[] params;
+        if (arity.isFixed() && scope.getRequiredArgs() < 4) {
+            params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+        } else {
+            params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
+        }
+        compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
+
+        return compiledMethod;
     }
 
     /**
