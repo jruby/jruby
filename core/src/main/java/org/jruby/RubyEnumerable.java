@@ -1402,7 +1402,7 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
     
-    @JRubyMethod(name = "any?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
         return any_pCommon(context, self, block, block.arity());

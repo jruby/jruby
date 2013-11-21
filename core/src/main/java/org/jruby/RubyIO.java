@@ -1604,9 +1604,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     @JRubyMethod(rest = true, reads = FrameField.LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        return context.runtime.is1_9() ?
-                print19(context, this, args) :
-                print(context, this, args);
+        return print19(context, this, args);
     }
 
     /** Print some objects to the stream.

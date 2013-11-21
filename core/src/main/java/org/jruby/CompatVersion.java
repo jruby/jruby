@@ -2,7 +2,11 @@ package org.jruby;
 
 public enum CompatVersion {
 
-    RUBY1_8, RUBY1_9, RUBY2_0, RUBY2_1, BOTH;
+    @Deprecated RUBY1_8,
+    @Deprecated RUBY1_9,
+    @Deprecated RUBY2_0,
+    @Deprecated RUBY2_1,
+    @Deprecated BOTH;
 
     public boolean is1_9() {
         return this == RUBY1_9 || this == RUBY2_0 || this == RUBY2_1;
