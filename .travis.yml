@@ -5,6 +5,7 @@ before_script:
 
 jdk:
   - oraclejdk7
+  - oraclejdk8
   - openjdk6
 
 env:
