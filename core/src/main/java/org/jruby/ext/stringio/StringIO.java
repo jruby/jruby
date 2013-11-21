@@ -32,7 +32,6 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -47,7 +46,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,12 +57,9 @@ import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.Stream;
 
 import java.util.Arrays;
 
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -284,7 +279,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return getRuntime().newBoolean(!writable());
     }
 
-    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", args);
 
@@ -302,14 +297,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = "each_line", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    @JRubyMethod(name = "each_line", optional = 2, writes = FrameField.LASTLINE)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", args);
         
         return each(context, args, block);
     }
 
-    @JRubyMethod(name = "lines", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "lines", optional = 2)
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
         context.runtime.getWarnings().warn("StringIO#lines is deprecated; use #each_line instead");
         return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
@@ -361,7 +356,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return ptr.pos >= ptr.string.size();
     }
 
-    @JRubyMethod(name = "getc", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "getc")
     public IRubyObject getc(ThreadContext context) {
         checkReadable();
 
@@ -521,7 +516,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 //        }
 //    }
 
-    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
@@ -655,11 +650,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return context.nil;
     }
 
-    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_8)
-    public IRubyObject path() {
-        return getRuntime().getNil();
-    }
-
     @JRubyMethod(name = {"pos", "tell"})
     public IRubyObject pos(ThreadContext context) {
         checkInitialized();
@@ -746,13 +736,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
 
         for (int i = 0; i < args.length; i++) {
-            RubyString line = runtime.newString();
+            RubyString line = null;
 
-            if (args[i].isNil()) {
-                if (!runtime.is1_9()) {
-                    line = runtime.newString("nil");
-                }
-            } else {
+            if (!args[i].isNil()) {
                 IRubyObject tmp = args[i].checkArrayType();
                 if (!tmp.isNil()) {
                     RubyArray arr = (RubyArray) tmp;
@@ -771,9 +757,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 }
             }
 
-            RubyIO.write(context, maybeIO, line);
+            if (line != null) RubyIO.write(context, maybeIO, line);
 
-            if (!line.getByteList().endsWith(NEWLINE)) {
+            if (line == null || !line.getByteList().endsWith(NEWLINE)) {
                 RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
             }
         }
@@ -878,7 +864,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    @JRubyMethod(name="read_nonblock", compat = CompatVersion.RUBY1_9, optional = 2)
+    @JRubyMethod(name="read_nonblock", optional = 2)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         // TODO: nonblock exception option
 
@@ -890,7 +876,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return val;
     }
 
-    @JRubyMethod(name = "readchar", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "readchar")
     public IRubyObject readchar(ThreadContext context) {
         IRubyObject c = callMethod(context, "getc");
 
@@ -899,7 +885,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return c;
     }
 
-    @JRubyMethod(name = "readbyte", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "readbyte")
     public IRubyObject readbyte(ThreadContext context) {
         IRubyObject c = callMethod(context, "getbyte");
 
@@ -908,7 +894,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return c;
     }
 
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_9)
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = callMethod(context, "gets", args);
 
@@ -917,7 +903,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return line;
     }
 
-    @JRubyMethod(name = "readlines", optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = "readlines", optional = 2)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
@@ -1017,7 +1003,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return context.runtime.getTrue();
     }
     
-    @JRubyMethod(name = {"sysread", "readpartial"}, optional = 2, compat = RUBY1_9)
+    @JRubyMethod(name = {"sysread", "readpartial"}, optional = 2)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         IRubyObject val = callMethod(context, "read", args);
         
@@ -1049,7 +1035,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return len;
     }
 
-    @JRubyMethod(name = "ungetc", compat = RUBY1_9)
+    @JRubyMethod(name = "ungetc")
     public IRubyObject ungetc(ThreadContext context, IRubyObject arg) {
         // TODO: Not a line-by-line port.
         checkReadable();
@@ -1096,7 +1082,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         ptr.pos = start;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject arg) {
         // TODO: Not a line-by-line port.
         checkReadable();
@@ -1164,7 +1150,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return RubyFixnum.newFixnum(runtime, len);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject ext_enc) {
         Encoding enc;
 
@@ -1177,27 +1163,27 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored) {
         return set_encoding(context, enc);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored1, IRubyObject ignored2) {
         return set_encoding(context, enc);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject external_encoding(ThreadContext context) {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.string.getEncoding());
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject internal_encoding(ThreadContext context) {
         return context.nil;
     }
     
-    @JRubyMethod(name = "each_codepoint", compat = RUBY1_9)
+    @JRubyMethod(name = "each_codepoint")
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
 
@@ -1220,7 +1206,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
     }
 
-    @JRubyMethod(name = "codepoints", compat = RUBY1_9)
+    @JRubyMethod(name = "codepoints")
     public IRubyObject codepoints(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         runtime.getWarnings().warn("StringIO#codepoints is deprecated; use #each_codepoint");
