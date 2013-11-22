@@ -40,20 +40,23 @@ describe "List Ruby extensions" do
     @list.index.each {|x| x == ":-(" }.should == nil
   end
 
-  it "should be sortable with sort() without block" do
-    @list.sort.to_a.should == @data.sort
-  end
-
-  it "should be sortable with sort() with block" do
-    result = @list.sort do |a, b|
-      a.length <=> b.length
+  # Java 8 adds a single-parameter sort method to List that sorts in-place
+  if ENV_JAVA['java.specification.version'] < '1.8'
+    it "should be sortable with sort() without block" do
+      @list.sort.to_a.should == @data.sort
     end
 
-    expected = @data.sort do |a, b|
-      a.length <=> b.length
-    end
+    it "should be sortable with sort() with block" do
+      result = @list.sort do |a, b|
+        a.length <=> b.length
+      end
 
-    result.to_a.should == expected
+      expected = @data.sort do |a, b|
+        a.length <=> b.length
+      end
+
+      result.to_a.should == expected
+    end
   end
 
   it "should be sortable with sort!() without block" do
