@@ -530,10 +530,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public static RubyString newUnicodeString(Ruby runtime, String str) {
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-        if (defaultInternal == null || defaultInternal == UTF8Encoding.INSTANCE) {
-            return newUTF8String(runtime, str);
-        } else {
+        if (defaultInternal == UTF16BEEncoding.INSTANCE) {
             return newUTF16String(runtime, str);
+        } else {
+            return newUTF8String(runtime, str);
         }
     }
 
@@ -549,10 +549,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-        if (defaultInternal == null || defaultInternal == UTF8Encoding.INSTANCE) {
-            return newUTF8String(runtime, str);
-        } else {
+        if (defaultInternal == UTF16BEEncoding.INSTANCE) {
             return newUTF16String(runtime, str);
+        } else {
+            return newUTF8String(runtime, str);
         }
     }
 
