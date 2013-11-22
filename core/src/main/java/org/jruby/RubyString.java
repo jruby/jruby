@@ -45,6 +45,7 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.IntHash;
@@ -526,14 +527,42 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
         return new RubyString(runtime, runtime.getString(), bytes, encoding);
     }
-    
+
     public static RubyString newUnicodeString(Ruby runtime, String str) {
+        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
+        if (defaultInternal == null || defaultInternal == UTF8Encoding.INSTANCE) {
+            return newUTF8String(runtime, str);
+        } else {
+            return newUTF16String(runtime, str);
+        }
+    }
+
+    public static RubyString newUTF8String(Ruby runtime, String str) {
         ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
+        return new RubyString(runtime, runtime.getString(), byteList);
+    }
+
+    public static RubyString newUTF16String(Ruby runtime, String str) {
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str), UTF16BEEncoding.INSTANCE, false);
         return new RubyString(runtime, runtime.getString(), byteList);
     }
     
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
+        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
+        if (defaultInternal == null || defaultInternal == UTF8Encoding.INSTANCE) {
+            return newUTF8String(runtime, str);
+        } else {
+            return newUTF16String(runtime, str);
+        }
+    }
+
+    public static RubyString newUTF8String(Ruby runtime, CharSequence str) {
         ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
+        return new RubyString(runtime, runtime.getString(), byteList);
+    }
+
+    public static RubyString newUTF16String(Ruby runtime, CharSequence str) {
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str.toString()), UTF16BEEncoding.INSTANCE, false);
         return new RubyString(runtime, runtime.getString(), byteList);
     }
 
