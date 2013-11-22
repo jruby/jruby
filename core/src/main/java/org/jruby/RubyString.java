@@ -7710,7 +7710,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         // if null charset, fall back on Java default charset
         if (charset == null) charset = Charset.defaultCharset();
 
-        byte[] bytes = RubyEncoding.encode(value, charset);
+        byte[] bytes;
+        if (charset == RubyEncoding.UTF8) {
+            bytes = RubyEncoding.encodeUTF8(value);
+        } else if (charset == RubyEncoding.UTF16) {
+            bytes = RubyEncoding.encodeUTF16(value);
+        } else {
+            bytes = RubyEncoding.encode(value, charset);
+        }
 
         return new ByteList(bytes, encoding, false);
     }
