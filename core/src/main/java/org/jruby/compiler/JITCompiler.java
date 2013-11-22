@@ -86,6 +86,7 @@ import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -355,9 +356,14 @@ public class JITCompiler implements JITCompilerMBean {
     public static class JITClassGenerator implements ClassCache.ClassGenerator {
         public JITClassGenerator(String className, String methodName, String key, Ruby ruby, DefaultMethod method, JITCounts counts) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
-            if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7) {
-                // recent Java 7 seems to have a bug that leaks definitions across cousin classloaders
-                // so we force the class name to be unique to this runtime
+            if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
+                // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
+                // so we force the class name to be unique to this runtime.
+
+                // Also, invokedynamic forces us to make jitted code unique to each runtime, since the call sites cache
+                // at class level rather than at our runtime level. This makes it impossible to share jitted code
+                // across runtimes.
+                
                 digestString = getHashForString(key) + Math.abs(ruby.hashCode());
             } else {
                 digestString = getHashForString(key);
