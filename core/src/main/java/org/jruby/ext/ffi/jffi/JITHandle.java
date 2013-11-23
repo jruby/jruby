@@ -9,6 +9,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.Type;
 import org.jruby.util.cli.Options;
@@ -36,7 +37,7 @@ final class JITHandle {
     }
 
     final NativeInvoker compile(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature, String methodName) {
-        if (compilationFailed || (counter.incrementAndGet() < THRESHOLD && !"force".equalsIgnoreCase(Options.COMPILE_MODE.load()))) {
+        if (compilationFailed || (counter.incrementAndGet() < THRESHOLD && Options.COMPILE_MODE.load() != RubyInstanceConfig.CompileMode.FORCE)) {
             return null;
         }
 
