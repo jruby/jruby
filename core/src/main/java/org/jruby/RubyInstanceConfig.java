@@ -1572,7 +1572,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
      */
-    public static final boolean POOLING_ENABLED = Options.THREADPOOL_ENABLED.load();
+    public static final boolean POOLING_ENABLED = false;
 
     /**
      * Maximum thread pool size (integer, default Integer.MAX_VALUE).

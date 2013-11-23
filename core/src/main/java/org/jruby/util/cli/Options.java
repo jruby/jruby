@@ -116,7 +116,6 @@ public class Options {
     
     public static final Option<Integer> TIMEOUT_THREADPOOL_MAX = integer(THREADPOOL, "timeout.thread.pool.max", Runtime.getRuntime().availableProcessors(), "The maximum number of threads to allow in the timeout pool.");
 
-    public static final Option<Boolean> THREADPOOL_ENABLED = bool(THREADPOOL, "thread.pool.enabled", false, "Enable reuse of native threads via a thread pool.");
     public static final Option<Integer> THREADPOOL_MIN = integer(THREADPOOL, "thread.pool.min", 0, "The minimum number of threads to keep alive in the pool.");
     public static final Option<Integer> THREADPOOL_MAX = integer(THREADPOOL, "thread.pool.max", Integer.MAX_VALUE, "The maximum number of threads to allow in the pool.");
     public static final Option<Integer> THREADPOOL_TTL = integer(THREADPOOL, "thread.pool.ttl", 60, "The maximum number of seconds to keep alive an idle thread.");

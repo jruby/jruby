@@ -49,7 +49,6 @@ import java.util.Set;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.internal.runtime.FutureThread;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -168,7 +167,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         errorInfo = runtime.getNil();
     }
     
-    public RubyThread(Ruby runtime, RubyClass klass, ThreadedRunnable runnable) {
+    public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
         this(runtime, klass);
         
         startWith(runnable);
@@ -435,34 +434,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return startWith(runnable);
     }
 
-    private IRubyObject startWith(ThreadedRunnable runnable) throws RaiseException, OutOfMemoryError {
+    private IRubyObject startWith(Runnable runnable) throws RaiseException, OutOfMemoryError {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         
         try {
-            if (RubyInstanceConfig.POOLING_ENABLED) {
-                FutureThread futureThread = new FutureThread(this, runnable);
-                threadImpl = futureThread;
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            thread.setName("Ruby" + thread.getName() + ": " + context.getFile() + ":" + (context.getLine() + 1));
+            threadImpl = new NativeThread(this, thread);
 
-                addToCorrectThreadGroup(context);
+            addToCorrectThreadGroup(context);
 
-                threadImpl.start();
+            // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
+            runtime.getThreadService().associateThread(thread, this);
 
-                // JRUBY-2380, associate future early so it shows up in Thread.list right away, in case it doesn't run immediately
-                runtime.getThreadService().associateThread(futureThread.getFuture(), this);
-            } else {
-                Thread thread = new Thread(runnable);
-                thread.setDaemon(true);
-                thread.setName("Ruby" + thread.getName() + ": " + context.getFile() + ":" + (context.getLine() + 1));
-                threadImpl = new NativeThread(this, thread);
-
-                addToCorrectThreadGroup(context);
-
-                // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
-                runtime.getThreadService().associateThread(thread, this);
-
-                threadImpl.start();
-            }
+            threadImpl.start();
 
             // We yield here to hopefully permit the target thread to schedule
             // MRI immediately schedules it, so this is close but not exact
@@ -911,7 +898,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * Ruby threads like Timeout's thread.
      * 
      * @param args Same args as for Thread#raise
-     * @param block Same as for Thread#raise
      */
     public void internalRaise(IRubyObject[] args) {
         Ruby runtime = getRuntime();
