@@ -32,6 +32,7 @@
         <include>tool/nailgun/**/*.c</include>
       </includes>
       <excludes>
+        <exclude>bin/jruby</exclude>
         <exclude>bin/jruby*_*</exclude>
         <exclude>bin/jruby*-*</exclude>
         <exclude>**/*.ac</exclude>
@@ -41,6 +42,13 @@
         <exclude>lib/ruby/gems/**/*</exclude>
         <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
       </excludes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/src/main/resources</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>   
+	<include>bin/jruby</include>
+      </includes>
     </fileSet>
     <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
