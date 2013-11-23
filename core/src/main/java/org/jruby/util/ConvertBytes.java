@@ -605,7 +605,7 @@ public class ConvertBytes {
         if(badcheck && str < end && data[str] == '_') {
             invalidString("Integer");
         }
-System.out.println(System.currentTimeMillis());
+
         char[] result = new char[end-str];
         int resultIndex = 0;
 
@@ -634,7 +634,6 @@ System.out.println(System.currentTimeMillis());
             result[resultIndex++] = (char)cx;
         }
 
-        System.out.println(System.currentTimeMillis());
         BigInteger z;
         if(resultIndex == 0) {
             z = BigInteger.ZERO;
@@ -642,7 +641,6 @@ System.out.println(System.currentTimeMillis());
             z = new BigInteger(new String(result, 0, resultIndex), base);
         }
 
-        System.out.println(System.currentTimeMillis());
         if(!sign) {
             z = z.negate();
         }
