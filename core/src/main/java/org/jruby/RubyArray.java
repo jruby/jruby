@@ -75,6 +75,7 @@ import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -1541,7 +1542,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
-        return block.isGiven() ? eachCommon(context, block) : enumeratorize(context.runtime, this, "each");
+        return block.isGiven() ? eachCommon(context, block) : enumeratorizeWithSize(context, this, "each", length());
     }
 
     public IRubyObject eachSlice(ThreadContext context, int size, Block block) {
@@ -1621,7 +1622,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject reverse_each(ThreadContext context, Block block) {
-        return block.isGiven() ? reverseEach(context, block) : enumeratorize(context.runtime, this, "reverse_each");
+        return block.isGiven() ? reverseEach(context, block) : enumeratorizeWithSize(context, this, "reverse_each", length());
     }
 
     private IRubyObject inspectJoin(ThreadContext context, RubyArray tmp, IRubyObject sep) {
@@ -2272,12 +2273,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = {"collect"})
     public IRubyObject collect19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect(context, block) : enumeratorize(context.runtime, this, "collect");
+        return block.isGiven() ? collect(context, block) : enumeratorizeWithSize(context, this, "collect", length());
     }
 
     @JRubyMethod(name = {"map"})
     public IRubyObject map19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect(context, block) : enumeratorize(context.runtime, this, "map");
+        return block.isGiven() ? collect(context, block) : enumeratorizeWithSize(context, this, "map", length());
     }
 
     /** rb_ary_collect_bang
@@ -2309,7 +2310,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     */
     @JRubyMethod(name = "map!")
     public IRubyObject map_bang(ThreadContext context, Block block) {
-        return block.isGiven() ? collectBang(context, block) : enumeratorize(context.runtime, this, "map!");
+        return block.isGiven() ? collectBang(context, block) : enumeratorizeWithSize(context, this, "map!", length());
     }
 
     /** rb_ary_select
@@ -2333,13 +2334,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject select(ThreadContext context, Block block) {
-        return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.runtime, this, "select");
+        return block.isGiven() ? selectCommon(context, block) : enumeratorizeWithSize(context, this, "select", length());
     }
 
     @JRubyMethod(name = "select!")
     public IRubyObject select_bang(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "select!");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select!", length());
         
         modify();
         
@@ -2367,7 +2368,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod
     public IRubyObject keep_if(ThreadContext context, Block block) {
         if (!block.isGiven()) {
-            return enumeratorize(context.runtime, this, "keep_if");
+            return enumeratorizeWithSize(context, this, "keep_if", length());
         }
         select_bang(context, block);
         return this;
@@ -2474,7 +2475,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject reject(ThreadContext context, Block block) {
-        return block.isGiven() ? rejectCommon(context, block) : enumeratorize(context.runtime, this, "reject");
+        return block.isGiven() ? rejectCommon(context, block) : enumeratorizeWithSize(context, this, "reject", length());
     }
 
     /** rb_ary_reject_bang
@@ -2511,7 +2512,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = "reject!")
     public IRubyObject reject_bang(ThreadContext context, Block block) {
-        return block.isGiven() ? rejectBang(context, block) : enumeratorize(context.runtime, this, "reject!");
+        return block.isGiven() ? rejectBang(context, block) : enumeratorizeWithSize(context, this, "reject!", length());
     }
 
     /** rb_ary_delete_if
@@ -2524,7 +2525,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject delete_if(ThreadContext context, Block block) {
-        return block.isGiven() ? deleteIf(context, block) : enumeratorize(context.runtime, this, "delete_if");
+        return block.isGiven() ? deleteIf(context, block) : enumeratorizeWithSize(context, this, "delete_if", length());
     }
 
     /** rb_ary_zip
@@ -3237,7 +3238,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "sort_by!")
     public IRubyObject sort_by_bang(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "sort_by!");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "sort_by!", length());
 
         modifyCheck();
         RubyArray sorted = Helpers.invoke(context, this, "sort_by", block).convertToArray();

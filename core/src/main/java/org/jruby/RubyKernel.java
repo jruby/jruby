@@ -42,6 +42,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
@@ -52,11 +53,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
-import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -75,8 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.jruby.anno.FrameField;
-import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
@@ -1612,28 +1611,22 @@ public class RubyKernel {
         return recv;
     }
     
-    @JRubyMethod(name = {"to_enum", "enum_for"})
-    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self) {
-        return RubyEnumerator.newEnumerator(context, self);
-    }
-
-    @JRubyMethod(name = {"to_enum", "enum_for"})
-    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return RubyEnumerator.newEnumerator(context, self, arg);
-    }
-
-    @JRubyMethod(name = {"to_enum", "enum_for"})
-    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        return RubyEnumerator.newEnumerator(context, self, arg0, arg1);
-    }
-
     @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true)
-    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        newArgs[0] = self;
-        System.arraycopy(args, 0, newArgs, 1, args.length);
+    public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+        String method = "each";
+        IRubyObject size = null;
 
-        return context.runtime.getEnumerator().callMethod(context, "new", newArgs);
+        if (args.length > 0) {
+            method = args[0].asJavaString();
+            args = Arrays.copyOfRange(args, 1, args.length);
+        }
+
+        if (block.isGiven()) {
+            size = RubyProc.newProc(runtime, block, block.type);
+        }
+
+        return RubyEnumerator.enumeratorizeWithSize(context, self, method, args, size);
     }
 
     @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
