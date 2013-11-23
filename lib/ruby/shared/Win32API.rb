@@ -1,28 +1,30 @@
 require 'rbconfig'
 raise  LoadError.new("Win32API only supported on win32") unless RbConfig::CONFIG['host_os'] =~ /mswin/
 
-require 'jruby/cffi.jar'
+require 'ffi-internal.so'
 
 class Win32API
-  SUFFIXES = Encoding.default_internal == Encoding::UTF_8 ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  if RUBY_VERSION =~ /1\.9/
+    SUFFIXES = Encoding.default_internal == Encoding::UTF_8 ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  else
+    SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  end
 
   class Pointer
-    extend JRuby::CFFI::DataConverter
-    native_type JRuby::CFFI::Type::POINTER
+    extend FFI::DataConverter
+    native_type FFI::Type::POINTER
     
-    def self.to_native(value, ctx = nil)
+    def self.to_native(value, ctx)
       if value.kind_of?(Integer)
-        JRuby::CFFI::Pointer.new(value)
-      elsif value.kind_of?(String)
-        JRuby::CFFI::Pointer.from_string(value)
+        FFI::Pointer.new(value)
       else
         value
       end
     end
 
-    def self.from_native(value, ctx = nil)
+    def self.from_native(value, ctx)
       if !value.null?
-        value.read_string
+        value.get_string(0)
       else
         nil
       end
@@ -30,12 +32,12 @@ class Win32API
   end
 
   TypeDefs = {
-    '0' => JRuby::CFFI::Type::VOID,
-    'V' => JRuby::CFFI::Type::VOID,
-    'P' => JRuby::CFFI::Type::Mapped.new(Pointer),
-    'I' => JRuby::CFFI::Type::SINT,
-    'N' => JRuby::CFFI::Type::SINT,
-    'L' => JRuby::CFFI::Type::SINT,
+    '0' => FFI::Type::VOID,
+    'V' => FFI::Type::VOID,
+    'P' => FFI::Type::Mapped.new(Pointer),
+    'I' => FFI::Type::INT,
+    'N' => FFI::Type::INT,
+    'L' => FFI::Type::INT,
   }
 
   def self.find_type(name)
@@ -57,8 +59,8 @@ class Win32API
   def self.map_library_name(lib)
     # Mangle the library name to reflect the native library naming conventions
     if lib && File.basename(lib) == lib
-      ext = ".#{JRuby::CFFI::Platform::LIBSUFFIX}"
-      lib = JRuby::CFFI::Platform::LIBPREFIX + lib unless lib =~ /^#{JRuby::CFFI::Platform::LIBPREFIX}/
+      ext = ".#{FFI::Platform::LIBSUFFIX}"
+      lib = FFI::Platform::LIBPREFIX + lib unless lib =~ /^#{FFI::Platform::LIBPREFIX}/
       lib += ext unless lib =~ /#{ext}/
     end
     lib
@@ -73,12 +75,12 @@ class Win32API
     #
     # Attach the method as 'call', so it gets all the froody arity-splitting optimizations
     #
-    @lib = JRuby::CFFI::DynamicLibrary.open(Win32API.map_library_name(lib), JRuby::CFFI::DynamicLibrary::LAZY | JRuby::CFFI::DynamicLibrary::GLOBAL)
+    @lib = FFI::DynamicLibrary.open(Win32API.map_library_name(lib), FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
     SUFFIXES.each do |suffix|
       sym = @lib.find_function(func.to_s + suffix)
       if sym
-        call_context = JRuby::CFFI::CallContext.new(Win32API.find_type(ret), Win32API.map_types(params), :convention => calltype)
-        @ffi_func = JRuby::CFFI::Function.new(call_context, sym)
+        options = { :convention => calltype }
+        @ffi_func = FFI::Function.new(Win32API.find_type(ret), Win32API.map_types(params), sym, options)
         @ffi_func.attach(self, :call)
         self.instance_eval("alias :Call :call")
         break

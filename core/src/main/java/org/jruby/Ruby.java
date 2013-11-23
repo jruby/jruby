@@ -1651,7 +1651,6 @@ public final class Ruby {
         addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
         addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
         addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
-        addLazyBuiltin("jruby/cffi.jar", "cffi", "org.jruby.ext.cffi.JRubyCFFILibrary");
 
         // TODO: implement something for these?
         Library dummy = new Library() {
