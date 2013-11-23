@@ -1110,7 +1110,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
         ThreadContext myContext = getContext();
 
+        // context can be nil if we have not started or GC has claimed our context
         if (myContext == null) return context.nil;
+
+        Thread nativeThread = getNativeThread();
+
+        // nativeThread can be null if the thread has terminated and GC has claimed it
+        if (nativeThread == null) return context.nil;
         
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
