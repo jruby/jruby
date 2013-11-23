@@ -325,6 +325,14 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
       it_behaves_like "an Enumerable method which takes a block", :array
     end
 
+    describe "Enumerable#slice_before" do
+      it "passes all #each args to its block" do
+        @test_enum.slice_before do |obj|
+          obj.should == [1, 2, 3]
+        end.each{}
+      end
+    end
+
     describe "Enumerable#flat_map" do
       subject { :flat_map }
       it_behaves_like "an Enumerable method which takes a block", :first_arg
