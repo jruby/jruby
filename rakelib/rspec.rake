@@ -44,6 +44,10 @@ namespace :spec do
     t.pattern = 'spec/profiler/**/*_spec.rb'
   end
 
+  permute_specs "ffi", compile_flags do |t|
+    t.pattern = 'spec/ffi/**/*_spec.rb'
+  end
+
   permute_specs "java_signature_parser", compile_flags do |t|
     t.rspec_opts = "--options spec/java_integration/spec.quiet.opts"
     t.pattern = 'spec/grammar/**/*_spec.rb'
