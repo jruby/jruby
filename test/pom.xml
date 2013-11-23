@@ -82,12 +82,6 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/requireTest-1.0.jar</systemPath>
     </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jruby-launcher</artifactId>
-      <version>${jruby-launcher.version}</version>
-      <type>gem</type>
-    </dependency>
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
@@ -191,6 +185,12 @@
     <profile>
       <id>bootstrap</id>
       <dependencies>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>jruby-launcher</artifactId>
+          <version>${jruby-launcher.version}</version>
+          <type>gem</type>
+        </dependency>
         <dependency>
           <groupId>rubygems</groupId>
           <artifactId>rake</artifactId>
