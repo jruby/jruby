@@ -157,9 +157,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
 
-    /** The thread's initial priority, for use in thread pooled mode */
-    private int initialPriority;
-
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
 
@@ -242,8 +239,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * have not yet called the Ruby code for the thread.
      */
     public void beforeStart() {
-        // store initial priority, for restoring pooled threads to normal
-        this.initialPriority = Thread.currentThread().getPriority();
     }
 
     /**
@@ -262,11 +257,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // unlock all locked locks
             unlockAll();
-
-            // reset thread priority to initial if pooling
-            if (Options.THREADPOOL_ENABLED.load()) {
-                threadImpl.setPriority(initialPriority);
-            }
 
             // mark thread as DEAD
             beDead();
