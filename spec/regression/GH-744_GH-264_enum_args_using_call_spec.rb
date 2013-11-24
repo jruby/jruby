@@ -284,6 +284,16 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     end
   end
 
+  describe "Enumerable#take_while" do
+    subject { :take_while }
+    it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
+    it "returns all #each args even if its block does not use them" do
+      @test_enum.take_while do |a|
+        true
+      end.should == [[1, 2, 3]]
+    end
+  end
+
   describe "Enumerable#find_index" do
     subject { :find_index }
     it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array

@@ -258,8 +258,8 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod
-    public static IRubyObject take_while(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod(name = "take_while", compat = RUBY1_8)
+    public static IRubyObject take_while18(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
             return enumeratorize(context.runtime, self, "take_while");
         }
@@ -272,6 +272,33 @@ public class RubyEnumerable {
                 public IRubyObject yield(ThreadContext context, IRubyObject arg) {
                     if (!block.yield(context, arg).isTrue()) throw JumpException.SPECIAL_JUMP;
                     synchronized (result) { result.append(arg); }
+                    return runtime.getNil();
+                }
+            });
+        } catch (JumpException.SpecialJump sj) {}
+        return result;
+    }
+
+    @JRubyMethod(name = "take_while", compat = RUBY1_9)
+    public static IRubyObject take_while19(ThreadContext context, IRubyObject self, final Block block) {
+        if (!block.isGiven()) {
+            return enumeratorize(context.runtime, self, "take_while");
+        }
+
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
+
+        try {
+            callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blk) {
+                    // note the we do not want to call the block with packed args, since to match MRI behavior,
+                    // the block's test is against the raw args (using block.arity() rather than the Arity.OPTIONAL
+                    // we pass to callEach)
+                    if (!block.call(context, args).isTrue()) {
+                        throw JumpException.SPECIAL_JUMP;
+                    }
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    synchronized (result) { result.append(packedArg); }
                     return runtime.getNil();
                 }
             });
