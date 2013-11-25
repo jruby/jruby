@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
@@ -91,6 +92,9 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         for (IRClosure c: s.getClosures()) execute(c);
 
         s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
+
+        // LVA information is no longer valid after the pass
+        s.setDataFlowSolution(LiveVariablesProblem.NAME, null);
 
         return slvp;
     }

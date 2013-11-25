@@ -18,6 +18,7 @@ import org.jruby.ir.instructions.PushFrameInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
@@ -138,6 +139,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         // Mark as done
         addedInstrs = true;
+
+        // LVA information is no longer valid after the pass
+        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
 
         return null;
     }
