@@ -254,8 +254,8 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod
-    public static IRubyObject take_while(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod(name = "take_while")
+    public static IRubyObject take_while19(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
             return enumeratorize(context.runtime, self, "take_while");
         }
@@ -264,10 +264,15 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Arity.OPTIONAL) {
-                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+            callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blk) {
+                    // note the we do not want to call the block with packed args, since to match MRI behavior,
+                    // the block's test is against the raw args (using block.arity() rather than the Arity.OPTIONAL
+                    // we pass to callEach)
+                    if (!block.call(context, args).isTrue()) {
+                        throw JumpException.SPECIAL_JUMP;
+                    }
                     IRubyObject packedArg = packEnumValues(context.runtime, args);
-                    if (!block.yield(context, packedArg).isTrue()) throw JumpException.SPECIAL_JUMP;
                     synchronized (result) { result.append(packedArg); }
                     return runtime.getNil();
                 }
@@ -1712,7 +1717,7 @@ public class RubyEnumerable {
     }
 
     static class ChunkArg {
-        public IRubyObject categorize;
+        public RubyProc categorize;
         public IRubyObject state;
         public IRubyObject prev_value;
         public IRubyObject prev_elts;
@@ -1733,7 +1738,7 @@ public class RubyEnumerable {
             IRubyObject args = packEnumValues(runtime, largs);
             final ChunkArg arg = new ChunkArg();
             IRubyObject enumerable = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_enumerable");
-            arg.categorize = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
+            arg.categorize = (RubyProc)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
             arg.state = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_initial_state");
             arg.prev_value = runtime.getNil();
             arg.prev_elts = runtime.getNil();
@@ -1746,14 +1751,20 @@ public class RubyEnumerable {
             final IRubyObject alone = runtime.newSymbol("_alone");
             final IRubyObject separator = runtime.newSymbol("_separator");
 
-            callEach(runtime, context, enumerable, Arity.ONE_ARGUMENT, new BlockCallback() {
+            callEach(runtime, context, enumerable, Arity.OPTIONAL, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject i = packEnumValues(runtime, largs);
+                        IRubyObject packedArgs = packEnumValues(runtime, largs);
                         IRubyObject v;
                         if(arg.state.isNil()) {
-                            v = arg.categorize.callMethod(ctx, "call", i);
+                            if (arg.categorize.getBlock().arity().getValue() == 1) {
+                                // if chunk's categorize block has arity one, we pass it the packed args
+                                v = arg.categorize.callMethod(ctx, "call", packedArgs);
+                            } else {
+                                // else we let it spread the args as it sees fit for its arity
+                                v = arg.categorize.callMethod(ctx, "call", largs);
+                            }
                         } else {
-                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{i, arg.state});
+                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{packedArgs, arg.state});
                         }
 
                         if(v == alone) {
@@ -1761,7 +1772,7 @@ public class RubyEnumerable {
                                 arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
                                 arg.prev_value = arg.prev_elts = runtime.getNil();
                             }
-                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(i)));
+                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(packedArgs)));
                         } else if(v.isNil() || v == separator) {
                             if(!arg.prev_value.isNil()) {
                                 arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
@@ -1772,14 +1783,14 @@ public class RubyEnumerable {
                         } else {
                             if(arg.prev_value.isNil()) {
                                 arg.prev_value = v;
-                                arg.prev_elts = runtime.newArray(i);
+                                arg.prev_elts = runtime.newArray(packedArgs);
                             } else {
                                 if(arg.prev_value.equals(v)) {
-                                    ((RubyArray)arg.prev_elts).append(i);
+                                    ((RubyArray)arg.prev_elts).append(packedArgs);
                                 } else {
                                     arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
                                     arg.prev_value = v;
-                                    arg.prev_elts = runtime.newArray(i);
+                                    arg.prev_elts = runtime.newArray(packedArgs);
                                 }
                             }
                         }

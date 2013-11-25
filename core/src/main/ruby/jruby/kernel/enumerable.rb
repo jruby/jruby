@@ -17,7 +17,11 @@ module Enumerable
 
     Enumerator.new do |yielder|
       ary = nil
-      self.each do |elt|
+      self.each do |*elt|
+        if elt.size < 2
+          elt = elt.size == 0 ? nil : elt[0]
+        end
+
         if block
           if no_filter
             state = block.call elt
