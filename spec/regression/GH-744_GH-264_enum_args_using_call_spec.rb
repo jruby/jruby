@@ -347,5 +347,21 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
       subject { :flat_map }
       it_behaves_like "an Enumerable method which takes a block", :first_arg
     end
+
+    describe "Enumerable#chunk" do
+      it "passes all #each args to its block" do
+        @test_enum.chunk do |a, b, c|
+          a.should == 1
+          b.should == 2
+          c.should == 3
+        end.each {}
+      end
+        
+      it "passes all #each args to its block" do
+        @test_enum.chunk do |obj|
+          obj.should == [1, 2, 3]
+        end.each{}
+      end
+    end
   end
 end
