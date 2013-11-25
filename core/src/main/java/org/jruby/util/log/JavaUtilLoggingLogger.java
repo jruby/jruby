@@ -41,23 +41,6 @@ public class JavaUtilLoggingLogger implements Logger {
 
     public JavaUtilLoggingLogger(String loggerName) {
         logger = java.util.logging.Logger.getLogger(loggerName);
-        logger.setUseParentHandlers(false);
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setFormatter(new Formatter() {
-            @Override
-            public String format(LogRecord lr) {
-                StringBuilder sb = new StringBuilder();
-                sb
-                        .append(new DateTime(lr.getMillis()).toString())
-                        .append(": ")
-                        .append(lr.getLoggerName())
-                        .append(": ")
-                        .append(lr.getMessage())
-                        .append("\n");
-                return sb.toString();
-            }
-        });
-        logger.addHandler(handler);
     }
 
     public String getName() {
