@@ -378,7 +378,9 @@ public class PEMInputOutput {
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new RC2Engine()));
             cipher.init(false, param);
         } else {
-            byte[] iv = ASN1OctetString.getInstance(scheme).getOctets();
+            byte[] iv = ((ASN1OctetString) scheme.getObject()).getOctets();
+            // this version, done for BC 1.49 compat, caused #1238.
+//            byte[] iv = ASN1OctetString.getInstance(scheme).getOctets();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new DESedeEngine()));
             cipher.init(false, param);
