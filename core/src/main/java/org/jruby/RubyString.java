@@ -1354,18 +1354,23 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    // // rb_str_buf_append
-    public final RubyString cat19(RubyString str) {
-        ByteList other = str.value;
-        int otherCr = cat19(other, str.getCodeRange());
-        infectBy(str);
-        str.setCodeRange(otherCr);
+    // // rb_str_buf_append against VALUE
+    public final RubyString cat19(RubyString str2) {
+        ByteList ptr = str2.value;
+
+        int str2_cr = cat19(str2.getByteList(), str2.getCodeRange());
+
+        infectBy(str2);
+        str2.setCodeRange(str2_cr);
+
         return this;
     }
 
+    // rb_str_buf_append against ptr
     public final int cat19(ByteList other, int codeRange) {
-        return cat(other.getUnsafeBytes(), other.getBegin(), other.getRealSize(),
-                other.getEncoding(), codeRange);
+        int[] ptr_cr_ret = {codeRange};
+        EncodingUtils.encCrStrBufCat(getRuntime(), this, other, other.getEncoding(), codeRange, ptr_cr_ret);
+        return ptr_cr_ret[0];
     }
 
     public final RubyString cat(RubyString str) {
@@ -1398,82 +1403,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    public final int cat(byte[]bytes, int p, int len, Encoding enc, int cr) {
-        modify(value.getRealSize() + len);
-        int toCr = getCodeRange();
-        Encoding toEnc = value.getEncoding();
-        int cr2 = cr;
-
-        if (toEnc == enc) {
-            if (toCr == CR_UNKNOWN) {
-                cr = CR_UNKNOWN;
-            } else if (cr == CR_UNKNOWN) {
-                cr = codeRangeScan(enc, bytes, p, len);
-            }
-        } else {
-            if (!toEnc.isAsciiCompatible() || !enc.isAsciiCompatible()) {
-                if (len == 0) return toCr;
-                if (value.getRealSize() == 0) {
-                    System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
-                    value.setRealSize(value.getRealSize() + len);
-                    setEncodingAndCodeRange(enc, cr);
-                    return cr;
-                }
-                throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
-            }
-            if (cr == CR_UNKNOWN) cr = codeRangeScan(enc, bytes, p, len);
-            if (toCr == CR_UNKNOWN) {
-                if (toEnc == ASCIIEncoding.INSTANCE || cr != CR_7BIT) toCr = scanForCodeRange();
-            }
-        }
-        if (cr2 != 0) cr2 = cr;
-
-        if (toEnc != enc && toCr != CR_7BIT && cr != CR_7BIT) {
-            throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
-        }
-
-        final int resCr;
-        final Encoding resEnc;
-        if (toCr == CR_UNKNOWN) {
-            resEnc = toEnc;
-            resCr = CR_UNKNOWN;
-        } else if (toCr == CR_7BIT) {
-            if (cr == CR_7BIT) {
-                resEnc = toEnc;
-                resCr = CR_7BIT;
-            } else {
-                resEnc = enc;
-                resCr = cr;
-            }
-        } else if (toCr == CR_VALID) {
-            resEnc = toEnc;
-            if (cr == CR_7BIT || cr == CR_VALID) {
-                resCr = toCr;
-            } else {
-                resCr = cr;
-            }
-        } else {
-            resEnc = toEnc;
-            resCr = len > 0 ? CR_UNKNOWN : toCr;
-        }
-
-        if (len < 0) throw getRuntime().newArgumentError("negative string size (or size too big)");
-
-        System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
-        value.setRealSize(value.getRealSize() + len);
-        setEncodingAndCodeRange(resEnc, resCr);
-
-        return cr2;
-    }
-
     public final int cat(byte[]bytes, int p, int len, Encoding enc) {
-        return cat(bytes, p, len, enc, CR_UNKNOWN);
+        int[] ptr_cr_ret = {CR_UNKNOWN};
+        EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_UNKNOWN, ptr_cr_ret);
+        return ptr_cr_ret[0];
     }
 
     public final RubyString catAscii(byte[]bytes, int p, int len) {
         Encoding enc = value.getEncoding();
         if (enc.isAsciiCompatible()) {
-            cat(bytes, p, len, enc, CR_7BIT);
+            EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_7BIT, null);
         } else {
             byte buf[] = new byte[enc.maxLength()];
             int end = p + len;
@@ -1481,7 +1420,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 int c = bytes[p];
                 int cl = codeLength(getRuntime(), enc, c);
                 enc.codeToMbc(c, buf, 0);
-                cat(buf, 0, cl, enc, CR_VALID);
+                EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_7BIT, null);
                 p++;
             }
         }
@@ -7731,5 +7670,79 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else {
             return super.toJava(target);
         }
+    }
+
+    // old port of rb_enc_cr_str_buf_cat
+    @Deprecated
+    public final int cat(byte[]bytes, int p, int len, Encoding enc, int ptr_cr) {
+        Encoding str_enc = value.getEncoding();
+        Encoding res_enc;
+        int str_cr, res_cr;
+
+        modify(value.getRealSize() + len);
+        int toCr = getCodeRange();
+        Encoding toEnc = value.getEncoding();
+        int cr2 = ptr_cr;
+
+        if (toEnc == enc) {
+            if (toCr == CR_UNKNOWN) {
+                ptr_cr = CR_UNKNOWN;
+            } else if (ptr_cr == CR_UNKNOWN) {
+                ptr_cr = codeRangeScan(enc, bytes, p, len);
+            }
+        } else {
+            if (!toEnc.isAsciiCompatible() || !enc.isAsciiCompatible()) {
+                if (len == 0) return toCr;
+                if (value.getRealSize() == 0) {
+                    System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
+                    value.setRealSize(value.getRealSize() + len);
+                    setEncodingAndCodeRange(enc, ptr_cr);
+                    return ptr_cr;
+                }
+                throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
+            }
+            if (ptr_cr == CR_UNKNOWN) ptr_cr = codeRangeScan(enc, bytes, p, len);
+            if (toCr == CR_UNKNOWN) {
+                if (toEnc == ASCIIEncoding.INSTANCE || ptr_cr != CR_7BIT) toCr = scanForCodeRange();
+            }
+        }
+        if (cr2 != 0) cr2 = ptr_cr;
+
+        if (toEnc != enc && toCr != CR_7BIT && ptr_cr != CR_7BIT) {
+            throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
+        }
+
+        final int resCr;
+        final Encoding resEnc;
+        if (toCr == CR_UNKNOWN) {
+            resEnc = toEnc;
+            resCr = CR_UNKNOWN;
+        } else if (toCr == CR_7BIT) {
+            if (ptr_cr == CR_7BIT) {
+                resEnc = toEnc;
+                resCr = CR_7BIT;
+            } else {
+                resEnc = enc;
+                resCr = ptr_cr;
+            }
+        } else if (toCr == CR_VALID) {
+            resEnc = toEnc;
+            if (ptr_cr == CR_7BIT || ptr_cr == CR_VALID) {
+                resCr = toCr;
+            } else {
+                resCr = ptr_cr;
+            }
+        } else {
+            resEnc = toEnc;
+            resCr = len > 0 ? CR_UNKNOWN : toCr;
+        }
+
+        if (len < 0) throw getRuntime().newArgumentError("negative string size (or size too big)");
+
+        System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
+        value.setRealSize(value.getRealSize() + len);
+        setEncodingAndCodeRange(resEnc, resCr);
+
+        return cr2;
     }
 }

@@ -1018,14 +1018,39 @@ public class EncodingUtils {
         return runtime.getEncodingService().getLocaleEncoding();
     }
 
+    // rb_str_buf_cat
+    public static void  rbStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
+        if (ptr.length() == 0) return;
+        // negative length check here, we shouldn't need
+        strBufCat(runtime, str, ptr);
+    }
+
+    // str_buf_cat
+    public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
+        int total, off = -1;
+
+        // termlen is not relevant since we have no termination sequence
+
+        // missing: if ptr string is inside str, off = ptr start minus str start
+
+        str.modify();
+        if (ptr.length() == 0) return;
+
+        // much logic is missing here, since we don't manually manage the ByteList buffer
+
+        total = str.size() + ptr.length();
+        str.getByteList().ensure(total);
+        str.getByteList().append(ptr);
+    }
+
     // rb_enc_str_buf_cat
-    public static RubyString encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
-        return encCrStrBufCat(runtime, str, ptr,
+    public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
+        encCrStrBufCat(runtime, str, ptr,
                 enc, StringSupport.CR_UNKNOWN, null);
     }
 
     // rb_enc_cr_str_buf_cat
-    public static RubyString encCrStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+    public static void encCrStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
         Encoding strEnc = str.getEncoding();
         Encoding resEnc;
         int str_cr, res_cr;
@@ -1042,12 +1067,12 @@ public class EncodingUtils {
         } else {
             if (!strEnc.isAsciiCompatible() || !ptrEnc.isAsciiCompatible()) {
                 if (ptr.getRealSize() == 0) {
-                    return str;
+                    return;
                 }
                 if (str.size() == 0) {
-                    str.cat19(ptr, ptr_cr);
-                    str.setEncoding(ptrEnc);
-                    return str;
+                    rbStrBufCat(runtime, str, ptr);
+                    str.setEncodingAndCodeRange(ptrEnc, ptr_cr);
+                    return;
                 }
                 incompatible = true;
             }
@@ -1099,9 +1124,7 @@ public class EncodingUtils {
 
         // MRI checks for len < 0 here, but I don't think that's possible for us
 
-        str.cat19(ptr, res_cr);
-        str.setEncoding(resEnc);
-
-        return str;
+        strBufCat(runtime, str, ptr);
+        str.setEncodingAndCodeRange(resEnc, res_cr);
     }
 }
