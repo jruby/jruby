@@ -1416,17 +1416,19 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "all?", compat = RUBY1_8)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
+
         return all_pCommon(context, self, block, Arity.OPTIONAL);
     }
 
     @JRubyMethod(name = "all?", compat = RUBY1_9)
     public static IRubyObject all_p19(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
+
         return all_pCommon(context, self, block, block.arity());
     }
 
     public static IRubyObject all_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
-
         final Ruby runtime = context.runtime;
         final ThreadContext localContext = context;
 
