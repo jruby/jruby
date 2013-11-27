@@ -1223,6 +1223,24 @@ public class RubyClass extends RubyModule {
             }
         }
 
+        // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
+        try {
+            parentCL.loadClass(javaName);
+
+            // If we get here, there's some other class in this classloader hierarchy with the same name. In order to
+            // avoid a naming conflict, we set reified class to parent and skip reification.
+            if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
+                LOG.error("failed to reify class " + getName() + " due to naming conflict");
+            }
+            if (superClass.reifiedClass != null) {
+                reifiedClass = superClass.reifiedClass;
+                allocator = superClass.allocator;
+            }
+            return;
+        } catch (ClassNotFoundException e) {
+            // ok, proceed
+        }
+
         if (superClass.reifiedClass != null) {
             reifiedParent = superClass.reifiedClass;
         }
