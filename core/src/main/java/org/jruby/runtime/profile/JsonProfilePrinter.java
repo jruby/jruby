@@ -45,7 +45,7 @@ public class JsonProfilePrinter extends ProfilePrinter {
     }
 
     public void printHeader(PrintStream out) {
-        out.println("{\n\tthread_profiles:[");
+        out.println("{\n\t\"thread_profiles\":[");
     }
 
     public void printFooter(PrintStream out) {
