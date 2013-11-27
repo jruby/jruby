@@ -32,6 +32,10 @@ class TestString < Test::Unit::TestCase
     $KCODE = original_kcode
   end
 
+  def test_concat
+    assert_raise(TypeError) { "foo" << :foo }
+  end
+
   def test_hash_random
     str = 'abc'
     a = [str.hash.to_s]

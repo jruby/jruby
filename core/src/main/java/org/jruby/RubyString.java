@@ -2567,6 +2567,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod(name = {"concat", "<<"}, compat = RUBY1_8)
     public RubyString concat(IRubyObject other) {
+        Ruby runtime = getRuntime();
+        if (other instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
         if (other instanceof RubyFixnum) {
             long longValue = ((RubyFixnum) other).getLongValue();
             if (longValue >= 0 && longValue < 256) return cat((byte) longValue);
@@ -2590,6 +2592,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             long c = ((RubyBignum) other).getLongValue();
             return concatNumeric(runtime, (int) c);
         }
+        
+        if (other instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
         return append19(other);
     }
 
