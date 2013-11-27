@@ -472,10 +472,9 @@ public class RubyKernel {
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject defout = runtime.getGlobalVariables().get("$>");
-
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                defout.callMethod(context, "write", RubyObject.inspect(context, args[i]));
+        for (IRubyObject arg: args) {
+            if (arg != null) {
+                defout.callMethod(context, "write", RubyObject.inspect(context, arg));
                 defout.callMethod(context, "write", runtime.newString("\n"));
             }
         }
@@ -868,10 +867,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
-        if (runtime.getLoadService().require(name.convertToString().toString())) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return runtime.newBoolean(runtime.getLoadService().require(name.convertToString().toString()));
     }
 
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
