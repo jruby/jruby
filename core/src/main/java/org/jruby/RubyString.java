@@ -2365,6 +2365,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             long c = ((RubyBignum) other).getLongValue();
             return concatNumeric(runtime, (int) c);
         }
+        
+        if (other instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
         return append19(other);
     }
 
