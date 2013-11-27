@@ -38,38 +38,38 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-
-import java.io.IOException;
-import java.util.AbstractCollection;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.TypeConverter;
 
+import java.io.IOException;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 // Design overview:
@@ -1297,7 +1297,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "each")
     public IRubyObject each19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorize(context.runtime, this, "each");
+        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorizeWithSize(context, this, "each", rb_size());
     }
 
     /** rb_hash_each_pair
@@ -1323,7 +1323,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorize(context.runtime, this, "each_pair");
+        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorizeWithSize(context, this, "each_pair", rb_size());
     }
 
     /** rb_hash_each_value
@@ -1342,7 +1342,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_value(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_valueCommon(context, block) : enumeratorize(context.runtime, this, "each_value");
+        return block.isGiven() ? each_valueCommon(context, block) : enumeratorizeWithSize(context, this, "each_value", rb_size());
     }
 
     /** rb_hash_each_key
@@ -1361,14 +1361,14 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_key(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_keyCommon(context, block) : enumeratorize(context.runtime, this, "each_key");
+        return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", rb_size());
     }
 
     @JRubyMethod(name = "select!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.runtime.getNil();
 
-        return enumeratorize(context.runtime, this, "each_key");
+        return enumeratorizeWithSize(context, this, "select!", rb_size());
     }
 
     @JRubyMethod
@@ -1378,7 +1378,7 @@ public class RubyHash extends RubyObject implements Map {
             return this;
         } 
 
-        return enumeratorize(context.runtime, this, "each_key");
+        return enumeratorizeWithSize(context, this, "keep_if", rb_size());
     }
     
     public boolean keep_ifCommon(final ThreadContext context, final Block block) {
@@ -1546,7 +1546,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "select")
     public IRubyObject select19(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "select");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", rb_size());
 
         final RubyHash result = newHash(runtime);
 
@@ -1584,7 +1584,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject delete_if(final ThreadContext context, final Block block) {
-        return block.isGiven() ? delete_ifInternal(context, block) : enumeratorize(context.runtime, this, "delete_if");
+        return block.isGiven() ? delete_ifInternal(context, block) : enumeratorizeWithSize(context, this, "delete_if", rb_size());
     }
 
     /** rb_hash_reject
@@ -1596,7 +1596,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject reject(final ThreadContext context, final Block block) {
-        return block.isGiven() ? rejectInternal(context, block) : enumeratorize(context.runtime, this, "reject");
+        return block.isGiven() ? rejectInternal(context, block) : enumeratorizeWithSize(context, this, "reject", rb_size());
     }
 
     /** rb_hash_reject_bang
@@ -1611,7 +1611,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "reject!")
     public IRubyObject reject_bang(final ThreadContext context, final Block block) {
-        return block.isGiven() ? reject_bangInternal(context, block) : enumeratorize(context.runtime, this, "reject!");
+        return block.isGiven() ? reject_bangInternal(context, block) : enumeratorizeWithSize(context, this, "reject!", rb_size());
     }
 
     /** rb_hash_clear
