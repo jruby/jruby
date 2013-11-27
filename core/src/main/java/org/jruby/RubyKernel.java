@@ -71,7 +71,6 @@ import org.jruby.util.cli.Options;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -88,7 +87,6 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
-import org.jruby.runtime.backtrace.TraceType;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -216,10 +214,12 @@ public class RubyKernel {
         if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
 
         module.defineAutoload(baseName, new IAutoloadMethod() {
+            @Override
             public String file() {
                 return fileString.asJavaString();
             }
 
+            @Override
             public void load(Ruby runtime) {
                 if (runtime.getLoadService().autoloadRequire(file())) {
                     // Do not finish autoloading by cyclic autoload 
@@ -532,10 +532,9 @@ public class RubyKernel {
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject defout = runtime.getGlobalVariables().get("$>");
-
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                defout.callMethod(context, "write", RubyObject.inspect(context, args[i]));
+        for (IRubyObject arg: args) {
+            if (arg != null) {
+                defout.callMethod(context, "write", RubyObject.inspect(context, arg));
                 defout.callMethod(context, "write", runtime.newString("\n"));
             }
         }
@@ -1087,10 +1086,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
-        if (runtime.getLoadService().require(name.convertToString().toString())) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return runtime.newBoolean(runtime.getLoadService().require(name.convertToString().toString()));
     }
 
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE, compat = RUBY1_8)
@@ -1165,6 +1161,7 @@ public class RubyKernel {
     }
 
     private static EvalBinding evalBinding18 = new EvalBinding() {
+        @Override
         public Binding convertToBinding(IRubyObject scope) {
             if (scope instanceof RubyBinding) {
                 return ((RubyBinding)scope).getBinding().cloneForEval();
@@ -1180,6 +1177,7 @@ public class RubyKernel {
     };
 
     private static EvalBinding evalBinding19 = new EvalBinding() {
+        @Override
         public Binding convertToBinding(IRubyObject scope) {
             if (scope instanceof RubyBinding) {
                 return ((RubyBinding)scope).getBinding().cloneForEval();
@@ -1371,12 +1369,14 @@ public class RubyKernel {
     }
 
     private static final Uncaught uncaught18 = new Uncaught() {
+        @Override
         public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
             return runtime.newNameErrorObject(message, tag);
         }
     };
 
     private static final Uncaught uncaught19 = new Uncaught() {
+        @Override
         public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
             return runtime.newArgumentError(message);
         }
