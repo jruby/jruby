@@ -1102,16 +1102,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "size", compat = RUBY1_9)
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) {
-            flush();
-        }
+        
+        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) flush();
+
+        // FIXME: jnr-posix is calling _osf_close + throwing random native exceptions with weird paths.
+        // Once these are fixed remove this full file stat path and go back to faster one.
+        if (Platform.IS_WINDOWS) return runtime.newFileStat(path, false).size();
 
         try {
-            FileStat stat = runtime.getPosix().fstat(
-                    getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor());
-            if (stat == null) {
-                throw runtime.newErrnoEACCESError(path);
-            }
+            FileDescriptor fd = getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor();
+            FileStat stat = runtime.getPosix().fstat(fd);
+                    
+            if (stat == null) throw runtime.newErrnoEACCESError(path);
 
             return runtime.newFixnum(stat.st_size());
         } catch (BadDescriptorException e) {
