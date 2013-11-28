@@ -19,7 +19,6 @@ env:
     - TARGET='spec:ir'
 
 matrix:
-  fast_finish: true
   allow_failures:
     - env: TARGET='spec:ir'
     - jdk: oraclejdk8
