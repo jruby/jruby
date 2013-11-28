@@ -669,7 +669,7 @@ public class RubyModule extends RubyObject {
                 String name = anno.name().length == 0 ? method.getName() : anno.name()[0];
                 
                 List<JavaMethodDescriptor> methodDescs;
-                Map<String, List<JavaMethodDescriptor>> methodsHash = null;
+                Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
                     methodsHash = staticAnnotatedMethods;
                 } else {
