@@ -78,7 +78,6 @@ public @interface JRubyMethod {
     /**
      * Whether this method is specific to Ruby 1.9
      */
-    @Deprecated
     CompatVersion compat() default CompatVersion.BOTH;
     /**
      * The visibility of this method.
