@@ -27,7 +27,7 @@ public class LineNumberInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: Okay to share this or not?
+        // SSS FIXME: This is buggy! 'scope' might have changed because of cloning.
         return this;
     }
 

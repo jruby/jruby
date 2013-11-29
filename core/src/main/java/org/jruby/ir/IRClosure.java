@@ -288,7 +288,8 @@ public class IRClosure extends IRScope {
         return blockVar;
     }
 
-    public IRClosure cloneForClonedInstr(InlinerInfo ii) {
+    public IRClosure cloneForInlining(InlinerInfo ii) {
+        // FIXME: This is buggy! Is this not dependent on clone-mode??
         IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
         clonedClosure.isForLoopBody = this.isForLoopBody;
         clonedClosure.nestingDepth  = this.nestingDepth;

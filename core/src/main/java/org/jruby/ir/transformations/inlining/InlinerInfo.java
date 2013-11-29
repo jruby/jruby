@@ -40,19 +40,6 @@ public class InlinerInfo {
     private Operand callReceiver;
     private String inlineVarPrefix;
 
-    private enum CloneMode {
-        // Cloning of a scope's instructions. Used in two contexts currently.
-        // 1. Cloning of a method's instructions which is going to get other methods inlined into it.
-        // 2. Cloning of a closure when its containing scope is being inlined into another scope.
-        NORMAL_CLONE,
-        // Cloning of a method's instructions when
-        // it is being inlined into a host scope
-        METHOD_INLINE,
-        // Cloning of a closure when it is being inlined
-        // into a host scope
-        CLOSURE_INLINE
-    }
-
     private CloneMode cloneMode;
 
     // SSS FIXME: Ugly?
@@ -129,6 +116,10 @@ public class InlinerInfo {
         return clone;
     }
 
+    public CloneMode getCloneMode() {
+        return cloneMode;
+    }
+
     /**
      * Returns the scope into which code is being inlined.
      */
@@ -177,23 +168,26 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            if (cloneMode == CloneMode.NORMAL_CLONE) {
-                // when cloning a closure, local vars and temps are not renamed
-                newVar = v.cloneForCloningClosure(this);
-            } else if (cloneMode == CloneMode.CLOSURE_INLINE) {
-                // when inlining a closure,
-                // - local var depths are reduced by 1 (to move them to the host scope)
-                // - tmp vars are reallocated in the host scope
-                if (v instanceof LocalVariable) {
-                    LocalVariable lv = (LocalVariable)v;
-                    int depth = lv.getScopeDepth();
-                    newVar = getInlineHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
-                } else {
-                    newVar = getInlineHostScope().getNewTemporaryVariable();
-                }
-            } else {
-                // when inlining a method, local vars and temps have to be renamed
-                newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
+            switch (cloneMode) {
+                case NORMAL_CLONE:
+                    newVar = v.clone(this);
+                    break;
+                case CLOSURE_INLINE:
+                    // when inlining a closure,
+                    // - local var depths are reduced by 1 (to move them to the host scope)
+                    // - tmp vars are reallocated in the host scope
+                    if (v instanceof LocalVariable) {
+                        LocalVariable lv = (LocalVariable)v;
+                        int depth = lv.getScopeDepth();
+                        newVar = getInlineHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
+                    } else {
+                        newVar = getInlineHostScope().getNewTemporaryVariable();
+                    }
+                    break;
+                case METHOD_INLINE:
+                    // when inlining a method, local vars and temps have to be renamed
+                    newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
+                    break;
             }
             this.varRenameMap.put(v, newVar);
         } else if ((cloneMode == CloneMode.NORMAL_CLONE) && (v instanceof LocalVariable)) {

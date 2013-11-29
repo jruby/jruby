@@ -58,7 +58,7 @@ public class TemporaryVariable extends Variable {
     }
 
     @Override
-    public Variable cloneForCloningClosure(InlinerInfo ii) {
+    public Variable clone(InlinerInfo ii) {
         return new TemporaryVariable(name, offset);
     }
 

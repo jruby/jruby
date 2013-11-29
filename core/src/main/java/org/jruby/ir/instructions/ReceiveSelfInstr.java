@@ -32,14 +32,15 @@ public class ReceiveSelfInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // receive-self will disappear after inlining
-        // all uses of %self will be replaced by the call receiver
-        return null;
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return this;
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return this;
+            default:
+                // receive-self will disappear after inlining
+                // all uses of %self will be replaced by the call receiver
+                // FIXME: What about 'self' in closures??
+                return null;
+        }
     }
 
     @Override

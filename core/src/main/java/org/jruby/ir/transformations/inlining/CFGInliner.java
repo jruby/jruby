@@ -41,7 +41,7 @@ public class CFGInliner {
         BasicBlock exit = cfg.getExitBB();
         for (BasicBlock b : cfg.getBasicBlocks()) {
             if ((b != entry) && (b != exit)) {
-                selfClone.addBasicBlock(b.cloneForInlinedMethod(ii));
+                selfClone.addBasicBlock(b.cloneForInlining(ii));
             }
         }
 
@@ -102,7 +102,7 @@ public class CFGInliner {
             // 2. clone callee and add it to the host cfg
             for (BasicBlock b : methodCFG.getBasicBlocks()) {
                 if (b != mEntry && b != mExit) {
-                    cfg.addBasicBlock(b.cloneForInlinedMethod(ii));
+                    cfg.addBasicBlock(b.cloneForInlining(ii));
                 }
             }
             for (BasicBlock x : methodCFG.getBasicBlocks()) {
@@ -265,7 +265,7 @@ public class CFGInliner {
         BasicBlock cExit = closureCFG.getExitBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) {
-                cfg.addBasicBlock(b.cloneForInlinedClosure(ii));
+                cfg.addBasicBlock(b.cloneForInlining(ii));
             }
         }
 

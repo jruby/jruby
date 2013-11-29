@@ -19,18 +19,18 @@ public class ReturnInstr extends ReturnBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReturnInstr(returnValue.cloneForInlining(ii));
-    }
-
-    @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        Variable v = ii.getCallResultVariable();
-        return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
-    }
-
-    @Override
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new ReturnInstr(returnValue.cloneForInlining(ii));
+            case CLOSURE_INLINE:
+                return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
+            case METHOD_INLINE:
+                Variable v = ii.getCallResultVariable();
+                return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+            default:
+                // Should not get here
+                return super.cloneForInlining(ii);
+        }
     }
 
     @Override

@@ -57,7 +57,6 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS: So, do we clone the meta-class body scope or not?
         return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), metaClassBody);
     }
 

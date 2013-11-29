@@ -45,6 +45,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
+        // SSS FIXME: This is buggy. The lambda body might have to be cloned depending on cloning context.
         return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
     }
 

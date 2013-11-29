@@ -703,7 +703,7 @@ public class CFG {
         for (BasicBlock b : getBasicBlocks()) {
             BasicBlock bCloned = new BasicBlock(clone, b.getLabel().clone());
             for (Instr i: b.getInstrs()) {
-                Instr clonedInstr = i.cloneForBlockCloning(ii);
+                Instr clonedInstr = i.cloneForInlining(ii);
                 if (clonedInstr != null) bCloned.addInstr(clonedInstr);
             }
             clone.addBasicBlock(bCloned);

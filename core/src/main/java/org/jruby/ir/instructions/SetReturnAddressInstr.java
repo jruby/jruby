@@ -56,13 +56,8 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new SetReturnAddressInstr(ii.getRenamedVariable(result), ii.getRenamedLabel(returnAddr));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new SetReturnAddressInstr(ii.getRenamedVariable(result), returnAddr);
     }
 
     @Override

@@ -23,7 +23,14 @@ public class PushFrameInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+        // FIXME: Is this correct?
+        switch (ii.getCloneMode()) {
+            case CLOSURE_INLINE:
+            case METHOD_INLINE:
+                return NopInstr.NOP;
+            default:
+                return this;
+        }
     }
 
     @Override

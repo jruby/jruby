@@ -27,13 +27,8 @@ public class BEQInstr extends BranchInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), getJumpTarget());
     }
 
     @Override

@@ -23,7 +23,14 @@ public class PopBindingInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PopBindingInstr();
+        // FIXME: Is this correct
+        switch (ii.getCloneMode()) {
+            case CLOSURE_INLINE:
+            case METHOD_INLINE:
+                return NopInstr.NOP;
+            default:
+                return new PopBindingInstr();
+        }
     }
 
     @Override

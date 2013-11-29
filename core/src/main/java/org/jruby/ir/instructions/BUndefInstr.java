@@ -16,13 +16,8 @@ public class BUndefInstr extends BranchInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BUndefInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BUndefInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
     @Override

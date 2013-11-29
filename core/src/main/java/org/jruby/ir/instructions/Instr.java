@@ -143,8 +143,9 @@ public abstract class Instr {
     /**
      * Clone the instruction for use in an inlining context (either when a scope is inlined into
      * another scope, or when a block has to be cloned because its associated call belongs to
-     * an inlined scope).  This requires renaming variables and labels to eliminate naming
-     * conflicts.
+     * an inlined scope). This might renaming variables and labels to eliminate naming conflicts.
+     *
+     * The implementation might vary on the cloning mode.
      *
      * @param inlinerInfo This object manages renaming of variables and labels, handles
      *                    args and return values.
@@ -152,43 +153,6 @@ public abstract class Instr {
      */
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         throw new RuntimeException("cloneForInlining: Not implemented for: " + this.getOperation());
-    }
-
-    /**
-     * Clone the instruction (present in a method/closure) so it can be inlined into another scope.
-     * This requires renaming variables and labels to eliminate naming conflicts.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handles
-     *                    args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return cloneForInlining(ii);
-    }
-
-    /**
-     * Clone the instruction (present in a closure) so it can be inlined into another scope.
-     * This requires renaming variables and labels to eliminate naming conflicts.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handles
-     *                    args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return cloneForInlinedScope(ii);
-    }
-
-    /**
-     * Clone the instruction so it can be used in a cloned block which is present in a scope that itself
-     * or an ancestor scope (in the case of nested blocks) is being inlined.  This requires renaming
-     * variables to eliminate naming conflicts. Labels need not be renamed.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handling
-     *                    scope args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return cloneForInlining(ii);
     }
 
     /**

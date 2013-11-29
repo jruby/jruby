@@ -13,6 +13,7 @@ import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
@@ -121,35 +122,17 @@ public class BasicBlock implements ExplicitVertexID {
         this.instrs.addAll(foodBB.instrs);
     }
 
-    public BasicBlock cloneForInlinedMethod(InlinerInfo ii) {
+    public BasicBlock cloneForInlining(InlinerInfo ii) {
         IRScope hostScope = ii.getInlineHostScope();
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
+
         for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlinedScope(ii);
+            Instr clonedInstr = i.cloneForInlining(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
-                if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
-                if (clonedInstr instanceof CallBase) {
-                    CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) hostScope.addClosure(((WrappedIRClosure)block).getClosure());
+                if (clonedInstr instanceof YieldInstr && ii.getCloneMode() != CloneMode.NORMAL_CLONE) {
+                    ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
                 }
-            }
-        }
-
-        return clonedBB;
-    }
-
-    public BasicBlock cloneForInlinedClosure(InlinerInfo ii) {
-        // Update cfg for this bb
-        IRScope hostScope = ii.getInlineHostScope();
-        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
-
-        // Process instructions
-        for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlinedClosure(ii);
-            if (clonedInstr != null) {
-                clonedBB.addInstr(clonedInstr);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);

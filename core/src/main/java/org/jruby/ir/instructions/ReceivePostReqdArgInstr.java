@@ -32,26 +32,26 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        if (ii.canMapArgsStatically()) {
-           int n = ii.getArgsCount();
-           int remaining = n - preReqdArgsCount;
-           Operand argVal;
-           if (remaining <= argIndex) {
-               // SSS: FIXME: Argh!
-               argVal = ii.getInlineHostScope().getManager().getNil();
-           } else {
-               argVal = (remaining > postReqdArgsCount) ? ii.getArg(n - postReqdArgsCount + argIndex) : ii.getArg(preReqdArgsCount + argIndex);
-           }
-           return new CopyInstr(ii.getRenamedVariable(result), argVal);
-        } else {
-            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preReqdArgsCount, postReqdArgsCount, argIndex);
+    public Instr cloneForInlining(InlinerInfo ii) {
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
+            default:
+                if (ii.canMapArgsStatically()) {
+                   int n = ii.getArgsCount();
+                   int remaining = n - preReqdArgsCount;
+                   Operand argVal;
+                   if (remaining <= argIndex) {
+                       // SSS: FIXME: Argh!
+                       argVal = ii.getInlineHostScope().getManager().getNil();
+                   } else {
+                       argVal = (remaining > postReqdArgsCount) ? ii.getArg(n - postReqdArgsCount + argIndex) : ii.getArg(preReqdArgsCount + argIndex);
+                   }
+                   return new CopyInstr(ii.getRenamedVariable(result), argVal);
+                } else {
+                    return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preReqdArgsCount, postReqdArgsCount, argIndex);
+                }
         }
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
     public IRubyObject receivePostReqdArg(IRubyObject[] args, int kwArgHashCount) {

@@ -41,7 +41,7 @@ public class ClosureLocalVariable extends LocalVariable {
     }
 
     @Override
-    public Variable cloneForCloningClosure(InlinerInfo ii) {
+    public Variable clone(InlinerInfo ii) {
         return new ClosureLocalVariable(ii.getClonedClosure(), name, scopeDepth, offset);
     }
 

@@ -24,13 +24,13 @@ public class ThreadPollInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
-    }
-
-    @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        // Get rid of non-back-edge thread-poll instructions when scopes are inlined
-        return onBackEdge ? this : null;
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return this;
+            default:
+                // Get rid of non-back-edge thread-poll instructions when scopes are inlined
+                return onBackEdge ? this : null;
+        }
     }
 
     @Override

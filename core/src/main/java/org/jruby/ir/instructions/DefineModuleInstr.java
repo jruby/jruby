@@ -55,7 +55,6 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: So, do we clone the module body scope or not?
         return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, container.cloneForInlining(ii));
     }
 

@@ -42,7 +42,6 @@ public class DefineClassMethodInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: So, what happens to the method?
         return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
     }
 

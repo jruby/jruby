@@ -37,7 +37,7 @@ public class RaiseArgumentErrorInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
+        return this;
     }
 
     @Override
