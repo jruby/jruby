@@ -27,7 +27,7 @@ import org.jruby.ir.representations.CFG;
 public class InlinerInfo {
     private static Integer globalInlineCount = 0;
 
-    private CFG callerCFG;
+    private CFG hostCFG;
     private CallBase call;
 
     private Operand[] callArgs;
@@ -40,15 +40,28 @@ public class InlinerInfo {
     private Operand callReceiver;
     private String inlineVarPrefix;
 
+    private enum CloneMode {
+        // Cloning of a scope's instructions. Used in two contexts currently.
+        // 1. Cloning of a method's instructions which is going to get other methods inlined into it.
+        // 2. Cloning of a closure when its containing scope is being inlined into another scope.
+        NORMAL_CLONE,
+        // Cloning of a method's instructions when
+        // it is being inlined into a host scope
+        METHOD_INLINE,
+        // Cloning of a closure when it is being inlined
+        // into a host scope
+        CLOSURE_INLINE
+    }
+
+    private CloneMode cloneMode;
+
     // SSS FIXME: Ugly?
     // For inlining closures
     private Operand yieldArg;
     private Variable yieldResult;
-    private boolean inClosureInlineMode;
 
     // SSS FIXME: Ugly?
     // For cloning closure
-    private boolean inClosureCloneMode;
     private IRClosure clonedClosure;
 
     // SSS FIXME: This is a copy of a method in instructions/calladapter/CallAdapter.java
@@ -61,7 +74,15 @@ public class InlinerInfo {
         return false;
     }
 
-    public InlinerInfo() { }
+    public InlinerInfo() {
+        this.varRenameMap = new HashMap<Variable, Variable>();
+        this.lblRenameMap = new HashMap<Label, Label>();
+        this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
+        this.yieldSites = new ArrayList();
+        this.cloneMode = CloneMode.NORMAL_CLONE;
+        this.canMapArgsStatically = false;
+        this.argsArray = null;
+    }
 
     public InlinerInfo(CallBase call, CFG c) {
         this.varRenameMap = new HashMap<Variable, Variable>();
@@ -70,10 +91,9 @@ public class InlinerInfo {
         this.yieldSites = new ArrayList();
         this.call = call;
         this.callArgs = call.getCallArgs();
-        this.callerCFG = c;
+        this.hostCFG = c;
         this.callReceiver = call.getReceiver();
-        this.inClosureCloneMode = false;
-        this.inClosureInlineMode = false;
+        this.cloneMode = CloneMode.METHOD_INLINE;
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
         synchronized(globalInlineCount) {
@@ -89,10 +109,9 @@ public class InlinerInfo {
         clone.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         clone.call = this.call;
         clone.callArgs = this.callArgs;
-        clone.callerCFG = this.callerCFG;
+        clone.hostCFG = this.hostCFG;
         clone.callReceiver = this.callReceiver;
-        clone.inClosureCloneMode = false;
-        clone.inClosureInlineMode = true;
+        clone.cloneMode = CloneMode.CLOSURE_INLINE;
         clone.canMapArgsStatically = false;
         return clone;
     }
@@ -105,8 +124,7 @@ public class InlinerInfo {
         }
         clone.lblRenameMap = new HashMap<Label, Label>();
         clone.clonedClosure = clonedClosure;
-        clone.inClosureCloneMode = true;
-        clone.inClosureInlineMode = false;
+        clone.cloneMode = CloneMode.NORMAL_CLONE;
         clone.canMapArgsStatically = false;
         return clone;
     }
@@ -115,17 +133,17 @@ public class InlinerInfo {
      * Returns the scope into which code is being inlined.
      */
     public IRScope getInlineHostScope() {
-        return callerCFG.getScope();
+        return hostCFG.getScope();
     }
 
     public IRScope getNewLexicalParentForClosure() {
-        return inClosureCloneMode ? clonedClosure : getInlineHostScope();
+        return cloneMode == CloneMode.NORMAL_CLONE ? clonedClosure : getInlineHostScope();
     }
 
     public Label getRenamedLabel(Label l) {
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
-           newLbl = inClosureCloneMode ? l.clone() : getInlineHostScope().getNewLabel();
+           newLbl = cloneMode == CloneMode.NORMAL_CLONE ? l.clone() : getInlineHostScope().getNewLabel();
            this.lblRenameMap.put(l, newLbl);
         }
         return newLbl;
@@ -159,10 +177,10 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            if (inClosureCloneMode) {
+            if (cloneMode == CloneMode.NORMAL_CLONE) {
                 // when cloning a closure, local vars and temps are not renamed
                 newVar = v.cloneForCloningClosure(this);
-            } else if (inClosureInlineMode) {
+            } else if (cloneMode == CloneMode.CLOSURE_INLINE) {
                 // when inlining a closure,
                 // - local var depths are reduced by 1 (to move them to the host scope)
                 // - tmp vars are reallocated in the host scope
@@ -178,7 +196,7 @@ public class InlinerInfo {
                 newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
             }
             this.varRenameMap.put(v, newVar);
-        } else if (inClosureCloneMode && (v instanceof LocalVariable)) {
+        } else if ((cloneMode == CloneMode.NORMAL_CLONE) && (v instanceof LocalVariable)) {
             LocalVariable l_v = (LocalVariable)v;
             LocalVariable l_newVar = (LocalVariable)newVar;
             if (l_v.getScopeDepth() != l_newVar.getScopeDepth()) newVar = l_newVar.cloneForDepth(l_v.getScopeDepth());
@@ -193,7 +211,7 @@ public class InlinerInfo {
     public BasicBlock getOrCreateRenamedBB(BasicBlock bb) {
         BasicBlock renamedBB = getRenamedBB(bb);
         if (renamedBB == null) {
-            renamedBB =  new BasicBlock(this.callerCFG, getRenamedLabel(bb.getLabel()));
+            renamedBB =  new BasicBlock(this.hostCFG, getRenamedLabel(bb.getLabel()));
             if (bb.isRescueEntry()) renamedBB.markRescueEntryBB();
             bbRenameMap.put(bb, renamedBB);
         }
@@ -205,22 +223,22 @@ public class InlinerInfo {
     }
 
     public Operand getArgs() {
-        return inClosureInlineMode ? yieldArg : argsArray;
+        return cloneMode == CloneMode.CLOSURE_INLINE ? yieldArg : argsArray;
     }
 
     public int getArgsCount() {
-        return canMapArgsStatically ? (inClosureInlineMode ? ((Array)yieldArg).size() : callArgs.length) : -1;
+        return canMapArgsStatically ? (cloneMode == CloneMode.CLOSURE_INLINE ? ((Array)yieldArg).size() : callArgs.length) : -1;
     }
 
     public Operand getArg(int index) {
         int n = getArgsCount();
-        return index < n ? (inClosureInlineMode ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
+        return index < n ? (cloneMode == CloneMode.CLOSURE_INLINE ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
     }
 
     public Operand getArg(int argIndex, boolean restOfArgArray) {
         if (restOfArgArray == false) {
             return getArg(argIndex);
-        } else if (inClosureInlineMode) {
+        } else if (cloneMode == CloneMode.CLOSURE_INLINE) {
             throw new RuntimeException("Cannot get rest yield arg at inline time!");
         } else {
             if(argIndex >= callArgs.length) {
@@ -237,11 +255,11 @@ public class InlinerInfo {
     }
 
     public Operand getSelfValue(Self self) {
-        return inClosureCloneMode ? self : callReceiver;
+        return cloneMode == CloneMode.NORMAL_CLONE ? self : callReceiver;
     }
 
     public Operand getCallClosure() {
-        return call.getClosureArg(callerCFG.getScope().getManager().getNil());
+        return call.getClosureArg(hostCFG.getScope().getManager().getNil());
     }
 
     // SSS FIXME: Ugly?

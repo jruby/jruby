@@ -348,7 +348,7 @@ public class Interpreter {
         }
 
         for (IRScope x: inlinedScopes) {
-            // update version count for 'hs'
+            // Update version count for inlined scopes
             scopeVersionMap.put(x, versionCount);
             // System.out.println("Updating version of " + x + " to " + versionCount);
             //System.out.println("--- pre-inline-instrs ---");
@@ -357,11 +357,11 @@ public class Interpreter {
             //System.out.println(x.getCFG().toStringInstrs());
         }
 
-        // reset
+        // Reset
         codeModificationsCount = 0;
         callProfile = new HashMap<Long, CallSiteProfile>();
 
-        // Every 1M thread polls, discard stats by reallocating the thread-poll count map
+        // Every 1M thread polls, discard stats
         if (globalThreadPollCount % 1000000 == 0)  {
             globalThreadPollCount = 0;
         }

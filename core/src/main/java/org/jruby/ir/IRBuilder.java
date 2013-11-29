@@ -884,14 +884,10 @@ public class IRBuilder {
     // Wrap call in a rescue handler that catches the IRBreakJump
     private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr) {
         // Check if we have to handle a break
-        if (block != null && block instanceof WrappedIRClosure) {
-            IRClosure closure = ((WrappedIRClosure)block).getClosure();
-            if (!closure.hasBreakInstrs) {
-                // No protection needed -- add the call and return
-                s.addInstr(callInstr);
-                return;
-            }
-        } else {
+        if (block == null ||
+            !(block instanceof WrappedIRClosure) ||
+            !(((WrappedIRClosure)block).getClosure()).hasBreakInstrs)
+        {
             // No protection needed -- add the call and return
             s.addInstr((Instr)callInstr);
             return;
