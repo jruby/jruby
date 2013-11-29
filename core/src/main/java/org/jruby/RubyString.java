@@ -74,12 +74,14 @@ import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.string.JavaCrypt;
 
 import java.nio.charset.Charset;
 import java.util.Locale;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -99,7 +101,6 @@ import static org.jruby.util.StringSupport.toLower;
 import static org.jruby.util.StringSupport.toUpper;
 import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
-import org.jruby.util.io.EncodingUtils;
 
 /**
  * Implementation of Ruby String class
@@ -5729,7 +5730,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "each_byte");
+        return block.isGiven() ? each_byte(context, block) : enumeratorizeWithSize(context, this, "each_byte", bytesize());
     }
 
     @JRubyMethod
@@ -5739,12 +5740,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.runtime, this, "each_char");
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorizeWithSize(context, this, "each_char", length());
     }
 
     @JRubyMethod(name = "chars")
     public IRubyObject chars19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.runtime, this, "chars");
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorizeWithSize(context, this, "chars", length());
     }
 
     private IRubyObject each_charCommon19(ThreadContext context, Block block) {
@@ -5779,13 +5780,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_codepoint");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each_codepoint", length());
         return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
     }
 
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "codepoints");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "codepoints", length());
         return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
     }
 
