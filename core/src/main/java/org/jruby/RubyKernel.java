@@ -1206,11 +1206,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
+        Ruby runtime = context.runtime;
         if (!block.isGiven()) {
-            return RubyEnumerator.enumeratorize(context.runtime, recv, "loop");
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", RubyFloat.newFloat(runtime, RubyFloat.INFINITY));
         }
-        IRubyObject nil = context.runtime.getNil();
-        RubyClass stopIteration = context.runtime.getStopIteration();
+        IRubyObject nil = runtime.getNil();
+        RubyClass stopIteration = runtime.getStopIteration();
         try {
             while (true) {
                 block.yieldSpecific(context);

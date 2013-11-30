@@ -34,11 +34,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.util.Numeric.checkInteger;
-import static org.jruby.util.Numeric.f_gcd;
-import static org.jruby.util.Numeric.f_lcm;
-
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -53,6 +48,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+
+import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.util.Numeric.checkInteger;
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_lcm;
 
 /** Implementation of the Integer class.
  *
@@ -241,8 +242,18 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "times");
+            return enumeratorizeWithSize(context, this, "times", timesSize(context.runtime));
         }
+    }
+
+    protected RubyInteger timesSize(Ruby runtime) {
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        if ((this instanceof RubyFixnum && getLongValue() < 0)
+                || this.callMethod("<", zero).isTrue()) {
+            return zero;
+        }
+
+        return this;
     }
 
     /** int_succ

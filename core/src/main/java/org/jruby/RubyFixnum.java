@@ -36,13 +36,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
@@ -54,7 +51,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
-import org.jruby.runtime.Arity;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 /** 
  * Implementation of the Fixnum class.
@@ -276,7 +276,7 @@ public class RubyFixnum extends RubyInteger {
             }
             return this;
         } else {
-            return RubyEnumerator.enumeratorize(context.runtime, this, "times");
+            return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSize(context.runtime));
         }
     }
 
