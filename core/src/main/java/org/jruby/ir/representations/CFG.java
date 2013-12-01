@@ -695,42 +695,39 @@ public class CFG {
         return list;
     }
 
-    public CFG cloneForCloningClosure(IRScope scope, InlinerInfo ii) {
+    public void cloneForCloningClosure(CFG sourceCFG, IRScope scope, InlinerInfo ii) {
         Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<BasicBlock, BasicBlock>();
-        CFG clone = new CFG(scope);
 
         // clone bbs
-        for (BasicBlock b : getBasicBlocks()) {
-            BasicBlock bCloned = new BasicBlock(clone, b.getLabel().clone());
+        for (BasicBlock b : sourceCFG.getBasicBlocks()) {
+            BasicBlock bCloned = new BasicBlock(this, ii.getRenamedLabel(b.getLabel()));
             for (Instr i: b.getInstrs()) {
                 Instr clonedInstr = i.cloneForInlining(ii);
                 if (clonedInstr != null) bCloned.addInstr(clonedInstr);
             }
-            clone.addBasicBlock(bCloned);
+            this.addBasicBlock(bCloned);
             cloneBBMap.put(b, bCloned);
         }
 
         // clone edges
-        for (BasicBlock x : getBasicBlocks()) {
+        for (BasicBlock x : sourceCFG.getBasicBlocks()) {
              BasicBlock rx = cloneBBMap.get(x);
-             for (Edge<BasicBlock> e : getOutgoingEdges(x)) {
+             for (Edge<BasicBlock> e : sourceCFG.getOutgoingEdges(x)) {
                  BasicBlock b = e.getDestination().getData();
-                 clone.addEdge(rx, cloneBBMap.get(b), e.getType());
+                 this.addEdge(rx, cloneBBMap.get(b), e.getType());
              }
         }
 
-        clone.entryBB = cloneBBMap.get(entryBB);
-        clone.exitBB  = cloneBBMap.get(exitBB);
+        this.entryBB = cloneBBMap.get(sourceCFG.entryBB);
+        this.exitBB  = cloneBBMap.get(sourceCFG.exitBB);
 
-        // SSS FIXME: Is this required after cfg is built?
-        clone.outermostERs = null;
+        // SSS FIXME: Is this field required after cfg is built?
+        this.outermostERs = null;
 
         // Clone rescuer map
-        for (BasicBlock b: rescuerMap.keySet()) {
-            clone.setRescuerBB(cloneBBMap.get(b), cloneBBMap.get(rescuerMap.get(b)));
+        for (BasicBlock b: sourceCFG.rescuerMap.keySet()) {
+            this.setRescuerBB(cloneBBMap.get(b), cloneBBMap.get(sourceCFG.rescuerMap.get(b)));
         }
-
-        return clone;
     }
 
     private void printError(String message) {

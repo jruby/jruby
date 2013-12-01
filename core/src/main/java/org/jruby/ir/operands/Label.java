@@ -20,7 +20,7 @@ public class Label extends Operand {
 
     @Override
     public String toString() {
-        return label;
+        return label + ":" + targetPC;
     }
 
     @Override

@@ -33,6 +33,17 @@ public class CFGInliner {
         this.cfg = build;
     }
 
+    private InlinerInfo cloneHostInstrs(CFG cfg) {
+        cfg.getScope().initNestedClosures();
+
+        InlinerInfo ii = new InlinerInfo(cfg);
+        for (BasicBlock b : cfg.getBasicBlocks()) {
+            b.cloneInstrs(ii);
+        }
+
+        return ii;
+    }
+
     private CFG cloneSelf(InlinerInfo ii) {
         CFG selfClone = new CFG(cfg.getScope());
 
@@ -59,23 +70,59 @@ public class CFGInliner {
         return selfClone;
     }
 
-    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
+    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
         // Temporarily turn off inlining of recursive methods
         // Conservative turning off for inlining of a method in a closure nested within the same method
         IRScope hostScope = cfg.getScope();
         if (hostScope.getNearestMethod() == scope) return;
 
 /*
+        System.out.println("Looking for: " + call.getIPC() + ": " + call);
         System.out.println("host cfg   :" + cfg.toStringGraph());
         System.out.println("host instrs:" + cfg.toStringInstrs());
         System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
         System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
 */
 
+        // Find callBB
+        if (callBB == null) {
+            for (BasicBlock x: cfg.getBasicBlocks()) {
+                for (Instr i: x.getInstrs()) {
+                    // System.out.println("IPC " + i.getIPC() + " = " + i);
+                    if (i.getIPC() == call.getIPC()) {
+                        // System.out.println("Found it!!!! -- " + call);
+                        callBB = x;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (callBB == null) {
+            System.out.println("----------------------------------");
+            System.out.println("Did not find BB with call: " + call);
+            System.out.println("Host cfg   :" + cfg.toStringGraph());
+            System.out.println("Host instrs:" + cfg.toStringInstrs());
+            System.out.println("----------------------------------");
+            return;
+        }
+
+        // Split callsite bb, move outbound edges from callsite bb to split bb, and unhook call bb
+        Label splitBBLabel = hostScope.getNewLabel();
+        BasicBlock splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
+        cfg.addBasicBlock(splitBB);
+        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
+            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
+        }
+        cfg.removeAllOutgoingEdgesForBB(callBB);
+
+        InlinerInfo hostCloneInfo = null;
+        if (cloneHost) {
+            hostCloneInfo = cloneHostInstrs(cfg);
+        }
+
         // Host method data init
         InlinerInfo ii = new InlinerInfo(call, cfg);
-        Label splitBBLabel = hostScope.getNewLabel();
-        BasicBlock splitBB;
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
@@ -99,7 +146,7 @@ public class CFGInliner {
                 }
             }
         } else {
-            // 2. clone callee and add it to the host cfg
+            // clone callee and add it to the host cfg
             for (BasicBlock b : methodCFG.getBasicBlocks()) {
                 if (b != mEntry && b != mExit) {
                     cfg.addBasicBlock(b.cloneForInlining(ii));
@@ -116,48 +163,21 @@ public class CFGInliner {
             }
         }
 
-        if (callBB == null) {
-            for (BasicBlock x: cfg.getBasicBlocks()) {
-                for (Instr i: x.getInstrs()) {
-                    if (i == call) {
-                        callBB = x;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (callBB == null) {
-            System.out.println("----------------------------------");
-            System.out.println("Did not find BB with call: " + call);
-            System.out.println("Host cfg   :" + cfg.toStringGraph());
-            System.out.println("Host instrs:" + cfg.toStringInstrs());
-            System.out.println("----------------------------------");
-            return;
-        }
-
-        // 3. split callsite bb, move outbound edges from callsite bb to split bb, and unhook call bb
-        splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
-        cfg.addBasicBlock(splitBB);
-        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
-            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
-        }
-        cfg.removeAllOutgoingEdgesForBB(callBB);
-
-        // 4a. Hook up entry edges
+        // Hook up entry edges
         assert methodCFG.outDegree(mEntry) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
         for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(mEntry)) {
             BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
                 BasicBlock dstBB = ii.getRenamedBB(destination);
                 if (!ii.canMapArgsStatically()) {
+                    // FIXME: Does call args need renaming via hostCloneInfo??
                     dstBB.addInstr(new ToAryInstr((Variable)ii.getArgs(), new Array(call.getCallArgs()), cfg.getScope().getManager().getTrue()));
                 }
                 cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
             }
         }
 
-        // 4b. Hook up exit edges
+        // Hook up exit edges
         for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(mExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != mEntry) {
@@ -179,19 +199,19 @@ public class CFGInliner {
         }
 
         // SSS FIXME: Are these used anywhere post-CFG building?
-        // 5. Clone exception regions
+        // Clone exception regions
         List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : methodCFG.getOutermostExceptionRegions()) {
             exceptionRegions.add(r.cloneForInlining(ii));
         }
 
-        // 6. Update bb rescuer map
-        // 6a. splitBB will be protected by the same bb as callBB
+        // Update bb rescuer map
+        // splitBB will be protected by the same bb as callBB
         BasicBlock callBBrescuer = cfg.getRescuerBBFor(callBB);
         if (callBBrescuer != null) cfg.setRescuerBB(splitBB, callBBrescuer);
 
-        // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
-        // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
+        // Remap existing protections for bbs in mcfg to their renamed bbs.
+        // bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
         for (BasicBlock x : methodBBs) {
             if (x != mEntry && x != mExit) {
                 BasicBlock xRenamed = ii.getRenamedBB(x);
@@ -204,7 +224,7 @@ public class CFGInliner {
             }
         }
 
-        // 7. Add inline guard that verifies that the method inlined is the same
+        // Add inline guard that verifies that the method inlined is the same
         // that gets called in future invocations.  In addition to the guard, add
         // a failure path code.
         Label failurePathLabel = hostScope.getNewLabel();
@@ -213,13 +233,13 @@ public class CFGInliner {
         BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
         cfg.addBasicBlock(failurePathBB);
         failurePathBB.addInstr(call);
-        failurePathBB.addInstr(new JumpInstr(splitBBLabel));
+        failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
         call.blockInlining();
 
         cfg.addEdge(callBB, failurePathBB, CFG.EdgeType.REGULAR);
         cfg.addEdge(failurePathBB, splitBB, CFG.EdgeType.REGULAR);
 
-        // 8. Inline any closure argument passed into the call.
+        // Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(null);
         List yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
@@ -237,7 +257,7 @@ public class CFGInliner {
             inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
         }
 
-        // 9. Optimize cfg by merging straight-line bbs
+        // Optimize cfg by merging straight-line bbs
         cfg.collapseStraightLineBBs();
 /*
         System.out.println("final cfg   :" + cfg.toStringGraph());

@@ -29,7 +29,12 @@ public class BasicBlock implements ExplicitVertexID {
         label         = l;
         cfg           = c;
         id            = c.getNextBBID();
-        instrs        = new ArrayList<Instr>();
+        isRescueEntry = false;
+        initInstrs();
+    }
+
+    private void initInstrs() {
+        instrs = new ArrayList<Instr>();
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
             IRManager irManager = cfg.getScope().getManager();
             InstructionsListener listener = irManager.getInstructionsListener();
@@ -37,8 +42,7 @@ public class BasicBlock implements ExplicitVertexID {
                 instrs = new InstructionsListenerDecorator(instrs, listener);
             }
         }
-        instrsArray   = null;
-        isRescueEntry = false;
+        instrsArray = null;
     }
 
     @Override
@@ -48,6 +52,11 @@ public class BasicBlock implements ExplicitVertexID {
 
     public Label getLabel() {
         return label;
+    }
+
+    @Override
+    public int hashCode() {
+        return label.hashCode();
     }
 
     public void markRescueEntryBB() {
@@ -99,11 +108,11 @@ public class BasicBlock implements ExplicitVertexID {
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
-            if (i == splitPoint) found = true;
+            if (i.getIPC() == splitPoint.getIPC()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                if (includeSplitPointInstr || i != splitPoint) newBB.addInstr(i);
+                if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
             } else {
                 idx++;
             }
@@ -120,6 +129,32 @@ public class BasicBlock implements ExplicitVertexID {
     public void swallowBB(BasicBlock foodBB) {
         // Gulp!
         this.instrs.addAll(foodBB.instrs);
+    }
+
+    public void cloneInstrs(InlinerInfo ii) {
+        if (!isEmpty()) {
+            List<Instr> oldInstrs = instrs;
+            initInstrs();
+
+            for (Instr i: oldInstrs) {
+                Instr clonedInstr = i.cloneForInlining(ii);
+                if (clonedInstr == null)  {
+                    System.out.println("i: " + i);
+                    System.out.println("clonedInstr: " + clonedInstr);
+                } else {
+                    clonedInstr.setIPC(i.getIPC());
+                    if (clonedInstr instanceof CallBase) {
+                        CallBase call = (CallBase)clonedInstr;
+                        Operand block = call.getClosureArg(null);
+                        if (block instanceof WrappedIRClosure) cfg.getScope().addClosure(((WrappedIRClosure)block).getClosure());
+                    }
+                    instrs.add(clonedInstr);
+                }
+            }
+        }
+
+        // Rename the label as well!
+        this.label = ii.getRenamedLabel(this.label);
     }
 
     public BasicBlock cloneForInlining(InlinerInfo ii) {

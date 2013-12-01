@@ -291,15 +291,18 @@ public class IRClosure extends IRScope {
     public IRClosure cloneForInlining(InlinerInfo ii) {
         // FIXME: This is buggy! Is this not dependent on clone-mode??
         IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
+        CFG clonedCFG = new CFG(clonedClosure);
+        clonedClosure.setCFG(clonedCFG);
+
         clonedClosure.isForLoopBody = this.isForLoopBody;
         clonedClosure.nestingDepth  = this.nestingDepth;
         clonedClosure.parameterList = this.parameterList;
 
         // Create a new inliner info object
-        ii = ii.cloneForCloningClosure(clonedClosure);
+        InlinerInfo clonedII = ii.cloneForCloningClosure(clonedClosure);
 
-        // clone the cfg, and all instructions
-        clonedClosure.setCFG(getCFG().cloneForCloningClosure(clonedClosure, ii));
+        // Clone the cfg and all instructions
+        clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
 
         return clonedClosure;
     }

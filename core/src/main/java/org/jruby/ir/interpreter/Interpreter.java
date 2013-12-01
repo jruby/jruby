@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
@@ -334,7 +335,7 @@ public class Interpreter {
             if (inlineCall) {
                 noInlining = false;
                 long start = new java.util.Date().getTime();
-                hs.inlineMethod(tgtMethod, implClass, classToken, null, call);
+                hs.inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
                 inlinedScopes.add(hs);
                 long end = new java.util.Date().getTime();
                 // System.out.println("Inlined " + tgtMethod + " in " + hs +
@@ -648,6 +649,8 @@ public class Interpreter {
         // The base IR may not have been processed yet
         if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
 
+        Map<Integer, Integer> rescueMap = scope.getRescueMap();
+
         int      numTempVars    = scope.getTemporaryVariableSize();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
         int      n              = instrs.length;
@@ -781,7 +784,7 @@ public class Interpreter {
                 }
             } catch (Throwable t) {
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                ipc = scope.getRescuerPC(instr);
+                ipc = rescueMap.get(instr.getIPC());
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {

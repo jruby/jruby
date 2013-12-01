@@ -33,6 +33,7 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
+    private int ipc;
     private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
@@ -41,6 +42,7 @@ public abstract class Instr {
     private boolean hasUnusedResult;
 
     public Instr(Operation operation) {
+        this.ipc = -1;
         this.operation = operation;
     }
 
@@ -53,6 +55,10 @@ public abstract class Instr {
     public Operation getOperation() {
         return operation;
     }
+
+    public int getIPC() { return ipc; }
+
+    public void setIPC(int ipc) { this.ipc = ipc; }
 
     // Does this instruction have side effects as a result of its operation
     // This information is used in optimization phases to impact dead code elimination

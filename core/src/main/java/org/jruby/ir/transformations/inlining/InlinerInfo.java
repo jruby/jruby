@@ -61,26 +61,27 @@ public class InlinerInfo {
         return false;
     }
 
-    public InlinerInfo() {
+    private void init(CFG c) {
         this.varRenameMap = new HashMap<Variable, Variable>();
         this.lblRenameMap = new HashMap<Label, Label>();
         this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
+        this.hostCFG = c;
+    }
+
+    public InlinerInfo(CFG c) {
+        init(c);
         this.cloneMode = CloneMode.NORMAL_CLONE;
         this.canMapArgsStatically = false;
         this.argsArray = null;
     }
 
     public InlinerInfo(CallBase call, CFG c) {
-        this.varRenameMap = new HashMap<Variable, Variable>();
-        this.lblRenameMap = new HashMap<Label, Label>();
-        this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
-        this.yieldSites = new ArrayList();
+        init(c);
+        this.cloneMode = CloneMode.METHOD_INLINE;
         this.call = call;
         this.callArgs = call.getCallArgs();
-        this.hostCFG = c;
         this.callReceiver = call.getReceiver();
-        this.cloneMode = CloneMode.METHOD_INLINE;
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
         synchronized(globalInlineCount) {
@@ -90,29 +91,21 @@ public class InlinerInfo {
     }
 
     public InlinerInfo cloneForInliningClosure() {
-        InlinerInfo clone = new InlinerInfo();
-        clone.varRenameMap = new HashMap<Variable, Variable>();
-        clone.lblRenameMap = new HashMap<Label, Label>();
-        clone.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
+        InlinerInfo clone = new InlinerInfo(this.hostCFG);
+        clone.cloneMode = CloneMode.CLOSURE_INLINE;
         clone.call = this.call;
         clone.callArgs = this.callArgs;
-        clone.hostCFG = this.hostCFG;
         clone.callReceiver = this.callReceiver;
-        clone.cloneMode = CloneMode.CLOSURE_INLINE;
-        clone.canMapArgsStatically = false;
         return clone;
     }
 
     public InlinerInfo cloneForCloningClosure(IRClosure clonedClosure) {
-        InlinerInfo clone = new InlinerInfo();
-        clone.varRenameMap = new HashMap<Variable, Variable>();
+        InlinerInfo clone = new InlinerInfo(clonedClosure.getCFG());
+        clone.cloneMode = CloneMode.NORMAL_CLONE;
         for (Variable v: varRenameMap.keySet()) {
             clone.varRenameMap.put(v, varRenameMap.get(v));
         }
-        clone.lblRenameMap = new HashMap<Label, Label>();
         clone.clonedClosure = clonedClosure;
-        clone.cloneMode = CloneMode.NORMAL_CLONE;
-        clone.canMapArgsStatically = false;
         return clone;
     }
 
@@ -128,7 +121,7 @@ public class InlinerInfo {
     }
 
     public IRScope getNewLexicalParentForClosure() {
-        return cloneMode == CloneMode.NORMAL_CLONE ? clonedClosure : getInlineHostScope();
+        return hostCFG.getScope();
     }
 
     public Label getRenamedLabel(Label l) {

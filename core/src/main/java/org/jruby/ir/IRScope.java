@@ -127,6 +127,7 @@ public abstract class IRScope {
 
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
+    private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
@@ -378,6 +379,10 @@ public abstract class IRScope {
         return lexicalChildren;
     }
 
+    public void initNestedClosures() {
+        this.nestedClosures = new ArrayList<IRClosure>();
+    }
+
     public void addClosure(IRClosure c) {
         nestedClosures.add(c);
     }
@@ -613,13 +618,6 @@ public abstract class IRScope {
         return cfg;
     }
 
-    private void setupLabelPCs(HashMap<Label, Integer> labelIPCMap) {
-        for (BasicBlock b: linearizedBBList) {
-            Label l = b.getLabel();
-            l.setTargetPC(labelIPCMap.get(l));
-        }
-    }
-
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
@@ -641,7 +639,9 @@ public abstract class IRScope {
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
-            labelIPCMap.put(b.getLabel(), ipc);
+            Label l = b.getLabel();
+            labelIPCMap.put(l, ipc);
+            l.setTargetPC(ipc);
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
@@ -654,16 +654,27 @@ public abstract class IRScope {
 
                 if (!(instr instanceof ReceiveSelfInstr)) {
                     newInstrs.add(instr);
+                    instr.setIPC(ipc);
                     ipc++;
                 }
             }
         }
 
-        // Set up label PCs
-        setupLabelPCs(labelIPCMap);
+        // System.out.println("SCOPE: " + getName());
+        // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+
+        // Set up rescue map
+        this.rescueMap = new HashMap<Integer, Integer>();
+        for (BasicBlock b : linearizedBBList) {
+            BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
+            int rescuerPC = (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
+            for (Instr i : b.getInstrs()) {
+                rescueMap.put(i.getIPC(), rescuerPC);
+            }
+        }
 
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
@@ -759,6 +770,7 @@ public abstract class IRScope {
             for (Instr i : b.getInstrs()) {
                 if (!(i instanceof ReceiveSelfInstr)) {
                     newInstrs.add(i);
+                    i.setIPC(ipc);
                     ipc++;
                 }
             }
@@ -1177,22 +1189,8 @@ public abstract class IRScope {
         return linearizedBBList;
     }
 
-    // SSS FIXME: Extremely inefficient
-    public int getRescuerPC(Instr excInstr) {
-        depends(cfg());
-
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
-                    return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for rescuer ipc for " + excInstr);
-        return -1;
+    public Map<Integer, Integer> getRescueMap() {
+        return this.rescueMap;
     }
 
     public List<BasicBlock> linearization() {
@@ -1266,15 +1264,16 @@ public abstract class IRScope {
         hasNonlocalReturns = false;
         canReceiveBreaks = false;
         canReceiveNonlocalReturns = false;
+        rescueMap = null;
 
         // Reset dataflow problems state
         resetDFProblemsState();
     }
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
+    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         // Inline
         depends(cfg());
-        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
+        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();
@@ -1284,7 +1283,6 @@ public abstract class IRScope {
             pass.run(this);
         }
     }
-
 
     public void buildCFG(List<Instr> instrList) {
         CFG newBuild = new CFG(this);
