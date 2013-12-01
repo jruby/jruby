@@ -768,7 +768,7 @@ public class Dir {
                                 } else {
                                     st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 }
-                                if(!isSymlink(st) && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
+                                if(!isResolvedSymlink(st) && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                     int t = buf.getRealSize();
                                     buf.append(SLASH);
                                     buf.append(DOUBLE_STAR);
@@ -917,7 +917,7 @@ public class Dir {
         return RubyEncoding.decodeUTF8(buf);
     }
     
-    private static boolean isSymlink(File st) {
+    private static boolean isResolvedSymlink(File st) {
         try {
             File canon;
             if (st.getParent() == null) {
