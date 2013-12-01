@@ -28,6 +28,7 @@
 package org.jruby.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -35,10 +36,12 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFile;
 
 import jnr.posix.JavaSecuredFile;
+
 import org.jruby.platform.Platform;
 
 /**
@@ -419,6 +422,7 @@ public class Dir {
      */
     private static int push_braces(String cwd, List<ByteList> result, GlobPattern pattern) {
         pattern.reset();
+
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
 
@@ -764,7 +768,7 @@ public class Dir {
                                 } else {
                                     st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 }
-                                if(st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
+                                if(!isSymlink(st) && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                     int t = buf.getRealSize();
                                     buf.append(SLASH);
                                     buf.append(DOUBLE_STAR);
@@ -911,5 +915,22 @@ public class Dir {
 
     private static String newStringFromUTF8(byte[] buf) {
         return RubyEncoding.decodeUTF8(buf);
+    }
+    
+    private static boolean isSymlink(File st) {
+        try {
+            File canon;
+            if (st.getParent() == null) {
+                canon = st;
+            } else {
+                File canonDir;
+                canonDir = st.getParentFile().getCanonicalFile();
+
+                canon = new File(canonDir, st.getName());
+            }
+            return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
