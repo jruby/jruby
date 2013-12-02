@@ -177,7 +177,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorize(context.runtime, self, "cycle");
+            return enumeratorizeWithSize(context, self, "cycle", cycleSize(context, self, null));
         }
         
         return cycleCommon(context, self, -1, block);
@@ -187,7 +187,7 @@ public class RubyEnumerable {
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (arg.isNil()) return cycle(context, self, block);
         if (!block.isGiven()) {
-            return enumeratorize(context.runtime, self, "cycle", arg);
+            return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, cycleSize(context, self, arg));
         }
 
         long times = RubyNumeric.num2long(arg);
@@ -224,6 +224,31 @@ public class RubyEnumerable {
         }
 
         return runtime.getNil();
+    }
+
+    private static IRubyObject cycleSize(ThreadContext context, IRubyObject self, IRubyObject cycleArg) {
+        Ruby runtime = context.runtime;
+        IRubyObject n = runtime.getNil();
+        IRubyObject size = enumSize(context, self);
+
+        if (size == null || size.isNil()) {
+            return runtime.getNil();
+        }
+
+        if (cycleArg != null) {
+            n = cycleArg;
+        }
+
+        if (n.isNil()) {
+            return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
+        }
+
+        long multiple = RubyNumeric.num2long(n);
+        if (multiple <= 0) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        return size.callMethod(context, "*", RubyFixnum.newFixnum(runtime, multiple));
     }
 
     @JRubyMethod(name = "take")
