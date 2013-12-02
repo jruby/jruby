@@ -13,11 +13,12 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ModuleVersionGuardInstr;
-import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
@@ -170,8 +171,17 @@ public class CFGInliner {
             if (destination != mExit) {
                 BasicBlock dstBB = ii.getRenamedBB(destination);
                 if (!ii.canMapArgsStatically()) {
-                    // FIXME: Does call args need renaming via hostCloneInfo??
-                    dstBB.addInstr(new ToAryInstr((Variable)ii.getArgs(), new Array(call.getCallArgs()), cfg.getScope().getManager().getTrue()));
+                    // SSS FIXME: This is buggy!
+                    // This code has to mimic whatever CallBase.prepareArguments does!
+                    // We may need a special instruction that takes care of this.
+                    Operand args;
+                    Operand[] callArgs = call.cloneCallArgs(hostCloneInfo);
+                    if (callArgs.length == 1 && callArgs[0] instanceof Splat) {
+                        args = callArgs[0];
+                    } else {
+                        args = new Array(callArgs);
+                    }
+                    dstBB.insertInstr(new CopyInstr((Variable)ii.getArgs(), args));
                 }
                 cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
             }

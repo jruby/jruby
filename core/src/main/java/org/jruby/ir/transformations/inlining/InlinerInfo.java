@@ -147,7 +147,6 @@ public class InlinerInfo {
             // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction
             // that takes care of aligning the stars and bringing good fortune to arg yielder and arg receiver.
-
             IRScope callerScope   = getInlineHostScope();
             boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
             Variable yieldArgArray = callerScope.getNewTemporaryVariable();

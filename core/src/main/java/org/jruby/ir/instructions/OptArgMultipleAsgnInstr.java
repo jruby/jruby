@@ -39,10 +39,8 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
-        Object val;
-
         int n = rubyArray.getLength();
-		  return minArgsLength <= n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+        return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
     }
 
     @Override
