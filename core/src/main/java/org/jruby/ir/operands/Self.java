@@ -33,11 +33,6 @@ public class Self extends LocalVariable {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        return ii.getSelfValue(this);
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.Self(this);
     }

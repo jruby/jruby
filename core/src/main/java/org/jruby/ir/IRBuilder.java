@@ -449,7 +449,9 @@ public class IRBuilder {
         // catchUncaughtBreakInLambdas(closure);
 
         Variable lambda = s.getNewTemporaryVariable();
-        s.addInstr(new BuildLambdaInstr(lambda, closure, node.getPosition()));
+        // SSS FIXME: Is this the right self here?
+        WrappedIRClosure lambdaBody = new WrappedIRClosure(getSelf(s), closure);
+        s.addInstr(new BuildLambdaInstr(lambda, lambdaBody, node.getPosition()));
         return lambda;
     }
 
@@ -2485,7 +2487,7 @@ public class IRBuilder {
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
 
-        return new WrappedIRClosure(closure);
+        return new WrappedIRClosure(getSelf(s), closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope s) {
@@ -2639,7 +2641,7 @@ public class IRBuilder {
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
 
-        return new WrappedIRClosure(closure);
+        return new WrappedIRClosure(getSelf(s), closure);
     }
 
     public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
