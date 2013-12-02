@@ -123,7 +123,15 @@ public class CFGInliner {
         }
 
         // Host method data init
-        InlinerInfo ii = new InlinerInfo(call, cfg);
+        Operand callReceiver = call.getReceiver();
+        Variable callReceiverVar;
+        if (callReceiver instanceof Variable) {
+            callReceiverVar = (Variable)callReceiver;
+        } else {
+            callReceiverVar = hostScope.getNewTemporaryVariable();
+        }
+
+        InlinerInfo ii = new InlinerInfo(call, cfg, callReceiverVar);
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
@@ -170,6 +178,9 @@ public class CFGInliner {
             BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
                 BasicBlock dstBB = ii.getRenamedBB(destination);
+                if (callReceiver != callReceiverVar) {
+                    dstBB.insertInstr(new CopyInstr(callReceiverVar, callReceiver));
+                }
                 if (!ii.canMapArgsStatically()) {
                     // SSS FIXME: This is buggy!
                     // This code has to mimic whatever CallBase.prepareArguments does!

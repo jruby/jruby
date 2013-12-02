@@ -37,7 +37,7 @@ public class InlinerInfo {
     private Map<Variable, Variable> varRenameMap;
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
-    private Operand callReceiver;
+    private Variable callReceiver;
     private String inlineVarPrefix;
 
     private CloneMode cloneMode;
@@ -76,12 +76,12 @@ public class InlinerInfo {
         this.argsArray = null;
     }
 
-    public InlinerInfo(CallBase call, CFG c) {
+    public InlinerInfo(CallBase call, CFG c, Variable callReceiver) {
         init(c);
         this.cloneMode = CloneMode.METHOD_INLINE;
         this.call = call;
         this.callArgs = call.getCallArgs();
-        this.callReceiver = call.getReceiver();
+        this.callReceiver = callReceiver;
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
         synchronized(globalInlineCount) {
@@ -158,6 +158,12 @@ public class InlinerInfo {
     }
 
     public Variable getRenamedVariable(Variable v) {
+        // Special case for %self
+        if (v instanceof Self) {
+            return cloneMode == CloneMode.NORMAL_CLONE ? v : callReceiver;
+        }
+
+        // Everything else
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
             switch (cloneMode) {
@@ -187,6 +193,7 @@ public class InlinerInfo {
             LocalVariable l_newVar = (LocalVariable)newVar;
             if (l_v.getScopeDepth() != l_newVar.getScopeDepth()) newVar = l_newVar.cloneForDepth(l_v.getScopeDepth());
         }
+
         return newVar;
     }
 
@@ -238,10 +245,6 @@ public class InlinerInfo {
                return new Array(tmp);
            }
         }
-    }
-
-    public Operand getSelfValue(Self self) {
-        return cloneMode == CloneMode.NORMAL_CLONE ? self : callReceiver;
     }
 
     public Operand getCallClosure() {

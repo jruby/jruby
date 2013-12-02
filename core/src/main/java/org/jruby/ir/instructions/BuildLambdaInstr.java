@@ -22,11 +22,11 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand[] operands;
 
-    public BuildLambdaInstr(Variable lambda, IRClosure lambdaBody, ISourcePosition position) {
+    public BuildLambdaInstr(Variable lambda, WrappedIRClosure lambdaBody, ISourcePosition position) {
         super(Operation.LAMBDA);
 
         this.result = lambda;
-        this.operands = new Operand[] { new WrappedIRClosure(lambdaBody) };
+        this.operands = new Operand[] { lambdaBody };
         this.position = position;
     }
 
@@ -46,7 +46,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: This is buggy. The lambda body might have to be cloned depending on cloning context.
-        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
+        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), (WrappedIRClosure)operands[0], position);
     }
 
     @Override
@@ -69,6 +69,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
 
         IRClosure body = getLambdaBody();
         // ENEBO: Now can live nil be passed as block reference?
+        // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
         return RubyProc.newProc(context.runtime,
                 (Block) (body == null ? context.runtime.getIRManager().getNil() : operands[0]).retrieve(context, self, currDynScope, temp),
                 Block.Type.LAMBDA, position);
