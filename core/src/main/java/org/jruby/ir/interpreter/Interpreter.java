@@ -169,7 +169,7 @@ public class Interpreter {
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
             b.prepareForInterpretation(false);
-            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(context, self, context.getCurrentScope(), temp);
+            Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
     }
