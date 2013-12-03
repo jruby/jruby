@@ -3305,7 +3305,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "cycle")
     public IRubyObject cycle(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "cycle");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", cycleSize(context, null));
         return cycleCommon(context, -1, block);
     }
 
@@ -3315,7 +3315,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "cycle")
     public IRubyObject cycle(ThreadContext context, IRubyObject arg, Block block) {
         if (arg.isNil()) return cycle(context, block);
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "cycle", arg);
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", new IRubyObject[] { arg }, cycleSize(context, arg));
 
         long times = RubyNumeric.num2long(arg);
         if (times <= 0) return context.runtime.getNil();
@@ -3330,6 +3330,30 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
         }
         return context.runtime.getNil();
+    }
+
+    private IRubyObject cycleSize(ThreadContext context, IRubyObject cycleArg) {
+        Ruby runtime = context.runtime;
+        IRubyObject n = runtime.getNil();
+
+        if (realLength == 0) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        if (cycleArg != null) {
+            n = cycleArg;
+        }
+
+        if (n.isNil()) {
+            return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
+        }
+
+        long multiple = RubyNumeric.num2long(n);
+        if (multiple <= 0) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        return length().callMethod(context, "*", RubyFixnum.newFixnum(runtime, multiple));
     }
 
 
