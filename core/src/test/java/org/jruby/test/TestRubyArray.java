@@ -27,6 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 
@@ -167,5 +170,22 @@ public class TestRubyArray extends TestRubyBase {
         runtime.evalScriptlet("$h.delete('foo')");
         assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
         assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
+    }
+    
+    private void assertSublistContainsCorrectSubset(final List<?> list) {
+        final List<?> subList = list.subList(1, 3);
+        assertEquals(2, subList.size());
+        assertEquals("bar", subList.get(0));
+        assertEquals("baz", subList.get(1));
+    }
+    
+    public void testSubListContainsCorrectSubset() {
+        // Demonstrates that this is a fair test
+        final List<?> javaArray = Arrays.asList("foo", "bar", "baz", "anything");
+        assertSublistContainsCorrectSubset(javaArray);
+        
+        // Ruby should give the same results
+        final RubyArray rubyArray = (RubyArray)runtime.evalScriptlet("$h = ['foo', 'bar', 'baz', 'anything']");
+        assertSublistContainsCorrectSubset(rubyArray);
     }
 }
