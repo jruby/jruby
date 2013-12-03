@@ -1831,30 +1831,26 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public RubyBoolean compare(ThreadContext context, MethodNames method, IRubyObject other) {
-
-        Ruby runtime = context.runtime;
-
         if (!(other instanceof RubyArray)) {
-            if (!other.respondsTo("to_ary")) {
-                return runtime.getFalse();
-            } else {
-                return Helpers.rbEqual(context, other, this);
-            }
+            if (!other.respondsTo("to_ary")) return context.runtime.getFalse();
+
+            return Helpers.rbEqual(context, other, this);
         }
 
         RubyArray ary = (RubyArray) other;
 
-        if (realLength != ary.realLength) {
-            return runtime.getFalse();
-        }
+        if (realLength != ary.realLength) return context.runtime.getFalse();
 
         for (int i = 0; i < realLength; i++) {
-            if (!invokedynamic(context, elt(i), method, ary.elt(i)).isTrue()) {
-                return runtime.getFalse();
-            }
+            IRubyObject a = elt(i);
+            IRubyObject b = ary.elt(i);
+            
+            if (a == b) continue; // matching MRI opt. mock frameworks can throw errors if we don't
+            
+            if (!invokedynamic(context, a, method, b).isTrue()) return context.runtime.getFalse();
         }
 
-        return runtime.getTrue();
+        return context.runtime.getTrue();
     }
 
     /** rb_ary_eql
