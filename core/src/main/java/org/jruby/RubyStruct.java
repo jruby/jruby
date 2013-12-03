@@ -32,13 +32,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-
-
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -48,15 +50,10 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.ClassIndex;
 
-import static org.jruby.runtime.Visibility.*;
-
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 /**
@@ -442,9 +439,18 @@ public class RubyStruct extends RubyObject {
     public RubyArray members19() {
         return members19(classOf(), Block.NULL_BLOCK);
     }
-    
-    @JRubyMethod
-    public RubyArray select(ThreadContext context, Block block) {
+
+    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_8)
+    public RubyArray select18(ThreadContext context, Block block) {
+        return selectCommon(context, block);
+    }
+
+    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_9)
+    public IRubyObject select(ThreadContext context, Block block) {
+        return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.runtime, this, "select");
+    }
+
+    public RubyArray selectCommon(ThreadContext context, Block block) {
         RubyArray array = RubyArray.newArray(context.runtime);
         
         for (int i = 0; i < values.length; i++) {
