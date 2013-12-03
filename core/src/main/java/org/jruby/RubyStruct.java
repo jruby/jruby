@@ -440,17 +440,8 @@ public class RubyStruct extends RubyObject {
         return members19(classOf(), Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_8)
-    public RubyArray select18(ThreadContext context, Block block) {
-        return selectCommon(context, block);
-    }
-
-    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_9)
-    public IRubyObject select(ThreadContext context, Block block) {
-        return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.runtime, this, "select");
-    }
-
-    public RubyArray selectCommon(ThreadContext context, Block block) {
+    @JRubyMethod
+    public RubyArray select(ThreadContext context, Block block) {
         RubyArray array = RubyArray.newArray(context.runtime);
         
         for (int i = 0; i < values.length; i++) {
