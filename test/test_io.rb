@@ -540,4 +540,11 @@ class TestIO < Test::Unit::TestCase
     closed_io_count = JRuby.runtime.fileno_int_map_size
     assert_equal(starting_count, closed_io_count)
   end
+
+  # JRUBY-1222
+  def test_stringio_gets_utf8
+    @stringio = StringIO.new("®\r\n®\r\n")
+    assert_equal "®\r\n", @stringio.gets("\r\n")
+    assert_equal "®\r\n", @stringio.gets("\r\n")
+  end
 end
