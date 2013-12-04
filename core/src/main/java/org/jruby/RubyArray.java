@@ -4213,7 +4213,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             throw new IndexOutOfBoundsException();
         }
         
-        IRubyObject subList = subseq(fromIndex, toIndex - fromIndex + 1);
+        IRubyObject subList = subseq(fromIndex, toIndex - fromIndex);
 
         return subList.isNil() ? null : (List) subList;
     }
