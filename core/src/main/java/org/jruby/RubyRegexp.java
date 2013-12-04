@@ -42,8 +42,6 @@ import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;

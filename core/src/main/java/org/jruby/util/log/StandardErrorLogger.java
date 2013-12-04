@@ -29,6 +29,8 @@ package org.jruby.util.log;
 
 import java.io.PrintStream;
 
+import org.joda.time.DateTime;
+
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
@@ -112,16 +114,27 @@ public class StandardErrorLogger implements Logger {
     }
 
     private void write(String message, Object[] args) {
-        writer.write(message, args);
+        writer.write(format(message), args);
     }
 
     private void write(String message, Throwable throwable) {
-        writer.write(message);
+        writer.write(format(message));
         writeStackTrace(throwable);
     }
 
     private void writeStackTrace(Throwable throwable) {
         throwable.printStackTrace(writer.getStream());
+    }
+    
+    private String format(String message){
+        StringBuilder sb = new StringBuilder();
+        sb
+            .append(new DateTime(System.currentTimeMillis()).toString())
+            .append(": ")
+            .append(loggerName)
+            .append(": ")
+            .append(message);
+        return sb.toString();
     }
 
 }

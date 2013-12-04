@@ -36,8 +36,6 @@ public class LoggerFactory {
     private static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
 
     private static final Constructor<?> CTOR;
-    private static final Logger LOG;
-    
     static {
         Constructor<?> ctor;
         Logger log;
@@ -58,7 +56,6 @@ public class LoggerFactory {
             }
         }
         CTOR = ctor;
-        LOG = log;
     }
 
     public static Logger getLogger(String loggerName) {
