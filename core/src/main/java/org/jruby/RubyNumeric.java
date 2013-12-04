@@ -914,7 +914,7 @@ public class RubyNumeric extends RubyObject {
             if (!excludeLast || from.callMethod(context, "+", result.callMethod(context, "*", step)).callMethod(context, cmpString, to).isTrue()) {
                 result = result.callMethod(context, "+", RubyFixnum.newFixnum(runtime, 1));
             }
-            return (RubyFixnum) result;
+            return (RubyNumeric) result;
         }
     }
 
