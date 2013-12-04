@@ -435,7 +435,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 j--;
             }
             if (j < 0) return k + 1;
-            i += skip[big[i + bstart]];
+            i += skip[big[i + bstart] & 0xFF];
         }
         return -1;
     }
