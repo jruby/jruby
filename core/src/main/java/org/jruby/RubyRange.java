@@ -672,7 +672,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        if (begin instanceof RubyInteger && end instanceof RubyInteger) {
+        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
         }
         return context.nil;
