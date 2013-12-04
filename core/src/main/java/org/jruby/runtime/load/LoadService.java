@@ -986,13 +986,13 @@ public class LoadService {
 
     protected void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info( "LoadService: trying " + what + ": " + msg );
+            LOG.info( "trying " + what + ": " + msg );
         }
     }
 
     protected void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info( "LoadService: found " + what + ": " + msg );
+            LOG.info( "found " + what + ": " + msg );
         }
     }
 
@@ -1004,7 +1004,7 @@ public class LoadService {
             } catch (IOException e) {
                 resourceUrl = e.getMessage();
             }
-            LOG.info( "LoadService: found: " + resourceUrl );
+            LOG.info( "found: " + resourceUrl );
         }
     }
 
