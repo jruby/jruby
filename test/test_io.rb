@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'test/unit'
 require 'rbconfig'
 require 'stringio'
@@ -491,16 +492,16 @@ class TestIO < Test::Unit::TestCase
     
     # sanity check
     io1 = channel.to_io(:autoclose => false)
-    assert_equal "r", io1.sysread(1)
+    assert_equal "#", io1.sysread(1)
     io2 = channel.to_io(:autoclose => false)
-    assert_equal "e", io2.sysread(1)
+    assert_equal " ", io2.sysread(1)
     
     # dereference and force GC a few times to finalize
     io1 = nil
     5.times { java.lang.System.gc }
     
     # io2 and original channel should still be open and usable
-    assert_equal "q", io2.sysread(1)
+    assert_equal "-", io2.sysread(1)
     assert !io2.closed?
     
     assert channel.open?
