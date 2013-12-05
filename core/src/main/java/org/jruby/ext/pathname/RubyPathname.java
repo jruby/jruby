@@ -84,7 +84,7 @@ public class RubyPathname extends RubyObject {
     }
 
     static interface ReturnValueMapper {
-        IRubyObject map(ThreadContext context, IRubyObject value);
+        IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value);
     }
 
     static interface AddArg {
@@ -93,22 +93,22 @@ public class RubyPathname extends RubyObject {
 
     private static final ReturnValueMapper IDENTITY_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
             return value;
         }
     };
 
     private static final ReturnValueMapper SINGLE_PATH_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
-            return newInstance(context, value);
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
+            return newInstance(context, klazz, value);
         }
     };
 
     private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
-            return mapToPathnames(context, value);
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
+            return mapToPathnames(context, klazz, value);
         }
     };
 
@@ -136,7 +136,7 @@ public class RubyPathname extends RubyObject {
                         String name, IRubyObject[] args, Block block) {
                     RubyPathname self = (RubyPathname) _self;
                     args = addArg.addArg(args, self.path);
-                    return mapper.map(context, klass.callMethod(context, name, args, block));
+                    return mapper.map(context, (RubyClass) clazz, klass.callMethod(context, name, args, block));
                 }
             });
         }
@@ -358,7 +358,7 @@ public class RubyPathname extends RubyObject {
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
             Block block) {
         // TODO: yield block while iterating
-        RubyArray files = mapToPathnames(context,
+        RubyArray files = mapToPathnames(context, (RubyClass) recv,
                 context.runtime.getDir().callMethod(context, "glob", args));
         if (block.isGiven()) {
             files.each(context, block);
@@ -422,11 +422,11 @@ public class RubyPathname extends RubyObject {
         return ary;
     }
 
-    private static RubyArray mapToPathnames(ThreadContext context, IRubyObject ary) {
+    private static RubyArray mapToPathnames(ThreadContext context, RubyClass clazz, IRubyObject ary) {
         RubyArray paths = ary.convertToArray();
         for (int i = 0; i < paths.size(); i++) {
             RubyString path = paths.eltOk(i).convertToString();
-            paths.store(i, newInstance(context, path));
+            paths.store(i, newInstance(context, clazz, path));
         }
         return paths;
     }
