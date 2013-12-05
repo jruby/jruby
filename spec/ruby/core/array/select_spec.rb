@@ -11,7 +11,7 @@ describe "Array#select" do
   end
 
   it "does not return subclass instance on Array subclasses" do
-    ArraySpecs::MyArray[1, 2, 3].select { true }.should be_kind_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].select { true }.should be_an_instance_of(Array)
   end
 
   it "properly handles recursive arrays" do

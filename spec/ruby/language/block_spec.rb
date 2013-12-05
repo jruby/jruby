@@ -405,6 +405,11 @@ describe "A block" do
       @y.s([1, 2]) { |(a, b)| [a, b] }.should == [1, 2]
     end
 
+    it "destructures a single Array value yielded when shadowing an outer variable" do
+      a = 9
+      @y.s([1, 2]) { |(a, b)| [a, b] }.should == [1, 2]
+    end
+
     it "calls #to_ary to convert a single yielded object to an Array" do
       obj = mock("block yield to_ary")
       obj.should_receive(:to_ary).and_return([1, 2])

@@ -1,0 +1,5 @@
+critical(hangs):Rational#** when passed Bignum returns positive Infinity when self is > 1
+critical(hangs):Rational#** when passed Bignum returns 0.0 when self is > 1 and the exponent is negative
+critical(hangs):Rational#** when passed Bignum returns positive Infinity when self < -1
+critical(hangs):Rational#** when passed Bignum returns 0.0 when self is < -1 and the exponent is negative
+fails:Rational#** raises ZeroDivisionError for Rational(0, 1) passed a negative Rational

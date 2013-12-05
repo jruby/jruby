@@ -5,7 +5,7 @@ describe :unixsocket_new, :shared => true do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
 
       @server = UNIXServer.open(@path)
     end
@@ -13,7 +13,7 @@ describe :unixsocket_new, :shared => true do
     after :each do
       @server.close if @server && !@server.closed?
       @server = nil
-      File.unlink(@path) rescue nil
+      rm_r @path
     end
 
     it "opens a unix socket on the specified file" do

@@ -34,11 +34,19 @@ describe "Math.acos" do
     it "raises an ArgumentError if the string argument cannot be coerced with Float()" do
       lambda { Math.acos("test") }.should raise_error(ArgumentError)
     end
+
+    it "raises Errno::EDOM given NaN" do
+      lambda { Math.acos(nan_value) }.should raise_error(Errno::EDOM)
+    end
   end
 
   ruby_version_is "1.9" do
     it "raises a TypeError if the string argument cannot be coerced with Float()" do
       lambda { Math.acos("test") }.should raise_error(TypeError)
+    end
+
+    it "returns NaN given NaN" do
+      Math.acos(nan_value).nan?.should be_true
     end
   end
 

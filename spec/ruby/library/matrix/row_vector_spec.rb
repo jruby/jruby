@@ -16,9 +16,19 @@ describe "Matrix.row_vector" do
     Matrix.row_vector([]).should == Matrix[ [] ]
   end
 
-  describe "for a subclass of Matrix" do
-    it "returns an instance of that subclass" do
-      MatrixSub.row_vector([1]).should be_an_instance_of(MatrixSub)
+  ruby_version_is ""..."1.9" do
+    describe "for a subclass of Matrix" do
+      it "returns an instance of Matrix" do
+        MatrixSub.row_vector([1]).should be_an_instance_of(Matrix)
+      end
+    end
+  end
+
+  ruby_version_is "1.9" do
+    describe "for a subclass of Matrix" do
+      it "returns an instance of that subclass" do
+        MatrixSub.row_vector([1]).should be_an_instance_of(MatrixSub)
+      end
     end
   end
 end

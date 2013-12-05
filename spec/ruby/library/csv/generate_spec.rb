@@ -40,7 +40,7 @@ describe "CSV.generate" do
     end
 
     after :each do
-      File.unlink(@outfile_name)
+      rm_r @outfile_name
     end
   end
 

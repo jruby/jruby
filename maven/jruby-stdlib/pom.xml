@@ -1,30 +1,148 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
-    <version>1.7.3.dev</version>
-    <relativePath>../../pom.xml</relativePath>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>9000.dev</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-stdlib</artifactId>
   <packaging>jar</packaging>
   <name>JRuby Stdlib</name>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>readline</artifactId>
+      <version>1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>openssl</artifactId>
+      <version>0.9.4</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>${bouncy-castle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${bouncy-castle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
   <properties>
-    <ant.target>jar-stdlib</ant.target>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
+    <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <bundle.name>JRuby Stdlib</bundle.name>
+    <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
   </properties>
 
   <build>
+    <resources>
+      <resource>
+        <directory>${gem.home}</directory>
+        <targetPath>${jruby.complete.gems}</targetPath>
+        <includes>
+          <include>gems/rake-${rake.version}/**/*</include>
+          <include>specifications/rake-${rake.version}.gemspec</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${jruby.basedir}</directory>
+        <targetPath>${jruby.complete.home}</targetPath>
+        <includes>
+          <include>bin/jruby</include>
+          <include>bin/*jruby*</include>
+          <include>bin/*gem*</include>
+          <include>bin/*ri*</include>
+          <include>bin/*rdoc*</include>
+          <include>bin/*irb*</include>
+          <include>bin/generate_yaml_index.rb</include>
+          <include>bin/testrb</include>
+          <include>bin/ast*</include>
+          <include>bin/spec.bat</include>
+          <include>bin/rake</include>
+          <include>bin/rake.bat</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${jruby.basedir}</directory>
+        <targetPath>${jruby.complete.home}</targetPath>
+        <includes>
+          <include>lib/ruby/2.1/**</include>
+          <include>lib/ruby/shared/**</include>
+        </includes>
+	<!--
+        <excludes>
+          <exclude>lib/**/bc*.jar</exclude>
+        </excludes>
+	-->
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
+	<artifactId>maven-source-plugin</artifactId>
+	<configuration>
+	  <skipSource>true</skipSource>
+	</configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${basedir}/src/empty.jar</file>
+                  <classifier>sources</classifier>
+                </artifact>
+                <artifact>
+                  <file>${basedir}/src/empty.jar</file>
+                  <classifier>javadoc</classifier>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+	    </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

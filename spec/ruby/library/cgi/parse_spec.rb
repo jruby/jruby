@@ -8,6 +8,11 @@ describe "CGI.parse when passed String" do
     CGI.parse("test=a&a=&b=").should == { "test" => ["a"], "a" => [""], "b" => [""] }
   end
 
+  it "parses query strings with semicolons in place of ampersands" do
+    CGI.parse("test=test;a=b").should == { "a" => ["b"], "test" => ["test"] }
+    CGI.parse("test=a;a=;b=").should == { "test" => ["a"], "a" => [""], "b" => [""] }
+  end
+
   it "allows passing multiple values for one key" do
     CGI.parse("test=1&test=2&test=3").should == { "test" => ["1", "2", "3"] }
     CGI.parse("test[]=1&test[]=2&test[]=3").should == { "test[]" => [ "1", "2", "3" ] }

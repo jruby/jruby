@@ -1,0 +1,37 @@
+fails:Process.getrlimit returns a two-element Array of Integers
+fails:Process.getrlimit when passed an Object calls #to_int to convert to an Integer
+fails:Process.getrlimit when passed an Object raises a TypeError if #to_int does not return an Integer
+fails:Process.getrlimit when passed a Symbol coerces :AS into RLIMIT_AS
+fails:Process.getrlimit when passed a Symbol coerces :CORE into RLIMIT_CORE
+fails:Process.getrlimit when passed a Symbol coerces :CPU into RLIMIT_CPU
+fails:Process.getrlimit when passed a Symbol coerces :DATA into RLIMIT_DATA
+fails:Process.getrlimit when passed a Symbol coerces :FSIZE into RLIMIT_FSIZE
+fails:Process.getrlimit when passed a Symbol coerces :NOFILE into RLIMIT_NOFILE
+fails:Process.getrlimit when passed a Symbol coerces :STACK into RLIMIT_STACK
+fails:Process.getrlimit when passed a Symbol coerces :MEMLOCK into RLIMIT_MEMLOCK
+fails:Process.getrlimit when passed a Symbol coerces :NPROC into RLIMIT_NPROC
+fails:Process.getrlimit when passed a Symbol coerces :RSS into RLIMIT_RSS
+fails:Process.getrlimit when passed a Symbol coerces :RTPRIO into RLIMIT_RTPRIO
+fails:Process.getrlimit when passed a Symbol coerces :RTTIME into RLIMIT_RTTIME
+fails:Process.getrlimit when passed a Symbol coerces :SIGPENDING into RLIMIT_SIGPENDING
+fails:Process.getrlimit when passed a Symbol coerces :MSGQUEUE into RLIMIT_MSGQUEUE
+fails:Process.getrlimit when passed a Symbol coerces :NICE into RLIMIT_NICE
+fails:Process.getrlimit when passed a Symbol raises ArgumentError when passed an unknown resource
+fails:Process.getrlimit when passed a String coerces 'AS' into RLIMIT_AS
+fails:Process.getrlimit when passed a String coerces 'CORE' into RLIMIT_CORE
+fails:Process.getrlimit when passed a String coerces 'CPU' into RLIMIT_CPU
+fails:Process.getrlimit when passed a String coerces 'DATA' into RLIMIT_DATA
+fails:Process.getrlimit when passed a String coerces 'FSIZE' into RLIMIT_FSIZE
+fails:Process.getrlimit when passed a String coerces 'NOFILE' into RLIMIT_NOFILE
+fails:Process.getrlimit when passed a String coerces 'STACK' into RLIMIT_STACK
+fails:Process.getrlimit when passed a String coerces 'MEMLOCK' into RLIMIT_MEMLOCK
+fails:Process.getrlimit when passed a String coerces 'NPROC' into RLIMIT_NPROC
+fails:Process.getrlimit when passed a String coerces 'RSS' into RLIMIT_RSS
+fails:Process.getrlimit when passed a String coerces 'RTPRIO' into RLIMIT_RTPRIO
+fails:Process.getrlimit when passed a String coerces 'RTTIME' into RLIMIT_RTTIME
+fails:Process.getrlimit when passed a String coerces 'SIGPENDING' into RLIMIT_SIGPENDING
+fails:Process.getrlimit when passed a String coerces 'MSGQUEUE' into RLIMIT_MSGQUEUE
+fails:Process.getrlimit when passed a String coerces 'NICE' into RLIMIT_NICE
+fails:Process.getrlimit when passed a String raises ArgumentError when passed an unknown resource
+fails:Process.getrlimit when passed on Object calls #to_str to convert to a String
+fails:Process.getrlimit when passed on Object calls #to_int if #to_str does not return a String

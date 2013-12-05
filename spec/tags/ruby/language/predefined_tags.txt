@@ -1,0 +1,37 @@
+windows(JRUBY-4151):Execution variable $: does not include '.' when the taint check level > 1
+critical(JRUBY-5656,hangs):Processing RUBYOPT raises a RuntimeError for '-p'
+critical(JRUBY-5656,hangs):Processing RUBYOPT raises a RuntimeError for '-n'
+fails(JRUBY-5661):Processing RUBYOPT sets $KCODE to 'NONE' with '-K'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-a'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-y'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-c'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-s'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-h'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--help'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-l'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-S'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-e'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-i'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-x'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-C'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-X'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-F'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-0'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--copyright'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--version'
+fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--yydebug'
+fails(JRUBY-5668):Processing RUBYOPT prints the version number for '-v'
+fails(unsupported):Execution variable $: does not include '.' when the taint check level > 1
+fails:Predefined global $& sets the encoding to the encoding of the source String
+fails:Predefined global $` sets the encoding to the encoding of the source String
+fails:Predefined global $` sets an empty result to the encoding of the source String
+fails:Predefined global $' sets the encoding to the encoding of the source String
+fails:Predefined global $' sets an empty result to the encoding of the source String
+fails:Predefined global $+ sets the encoding to the encoding of the source String
+fails:Predefined globals $1..N sets the encoding to the encoding of the source String
+fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
+fails:Predefined global $/ changes $-0
+fails:Predefined global $-0 changes $/
+fails:Predefined global $-0 does not call #to_str to convert the object to a String
+fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
+fails:Predefined global $-0 raises a TypeError if assigned a boolean

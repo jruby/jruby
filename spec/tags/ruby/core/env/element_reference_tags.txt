@@ -1,0 +1,2 @@
+fails:ENV.[] uses the locale encoding if Encoding.default_internal is nil
+fails:ENV.[] transcodes from the locale encoding to Encoding.default_internal if set

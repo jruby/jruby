@@ -27,17 +27,6 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_nothing_raised {BigDecimal("3.14159")}
   end
 
-  if RUBY_VERSION =~ /1\.8/
-    def test_reject_arguments_not_responding_to_to_str
-      assert_raise(TypeError) { BigDecimal.new(4) }
-      assert_raise(TypeError) { BigDecimal(4) }
-      if RUBY_VERSION =~ /1\.8/
-        assert_raise(TypeError) { BigDecimal.new(3.14159) }
-        assert_raise(TypeError) { BigDecimal(3.14159) }
-      end
-    end
-  end
-
   def test_alphabetic_args_return_zero
     assert_equal( BigDecimal("0.0"), BigDecimal("XXX"),
                   'Big Decimal objects instanitiated with a value that starts
@@ -247,8 +236,18 @@ class TestBigDecimal < Test::Unit::TestCase
   #JRUBY-5190
   def test_large_precisions 
     a = BigDecimal("1").div(BigDecimal("3"), 307)
-    b = BigDecimal("1").div(BigDecimal("3") , 308)
+    b = BigDecimal("1").div(BigDecimal("3"), 308)
     assert_equal a.to_f, b.to_f
   end
-  
+
+  # GH-644, GH-648
+  def test_div_by_float_precision_gh644
+    a = BigDecimal.new(11023)/2.2046
+    assert_equal 5_000, a.to_f
+  end
+
+  def test_div_by_float_precision_gh648
+    b = BigDecimal.new(1.05, 10)/1.48
+    assert (b.to_f - 0.7094594594594595) < Float::EPSILON
+  end
 end

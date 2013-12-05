@@ -2,8 +2,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe "Dir" do
   before(:each) do
-    @path_in_jar = "file:" + File.dirname(__FILE__) + "/../../../build_lib/junit.jar!/META-INF"
-    @local_file_path = "file:" + File.dirname(__FILE__) + "/../../../build_lib"
+    @path_in_jar = "file:" + File.dirname(__FILE__) + "/../../../test/target/junit.jar!/META-INF"
+    @local_file_path = "file:" + File.dirname(__FILE__) + "/../../../test/target"
   end
 
   describe "new" do

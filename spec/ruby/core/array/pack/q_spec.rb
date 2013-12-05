@@ -10,7 +10,9 @@ describe "Array#pack with format 'Q'" do
   it_behaves_like :array_pack_arguments, 'Q'
   it_behaves_like :array_pack_numeric_basic, 'Q'
   it_behaves_like :array_pack_integer, 'Q'
-  it_behaves_like :array_pack_no_platform, 'Q'
+  ruby_version_is '' ... '2.0' do
+    it_behaves_like :array_pack_no_platform, 'Q'
+  end
 end
 
 describe "Array#pack with format 'q'" do
@@ -19,7 +21,9 @@ describe "Array#pack with format 'q'" do
   it_behaves_like :array_pack_arguments, 'q'
   it_behaves_like :array_pack_numeric_basic, 'q'
   it_behaves_like :array_pack_integer, 'q'
-  it_behaves_like :array_pack_no_platform, 'q'
+  ruby_version_is '' ... '2.0' do
+    it_behaves_like :array_pack_no_platform, 'q'
+  end
 end
 
 ruby_version_is "1.9.3" do

@@ -9,8 +9,21 @@ describe "Bignum#<=" do
     (@bignum <= @bignum).should == true
     (-@bignum <= -(@bignum - 1)).should == true
 
-    (@bignum <= (@bignum + 0.5)).should == true
     (@bignum <= 4.999).should == false
+  end
+
+  ruby_version_is ""..."2.0" do
+    it "returns true if compares with near float" do
+      (@bignum <= (@bignum + 0.0)).should == true
+      (@bignum <= (@bignum + 0.5)).should == true
+    end
+  end
+
+  ruby_version_is "2.0" do
+    it "returns false if compares with near float" do
+      (@bignum <= (@bignum + 0.0)).should == false
+      (@bignum <= (@bignum + 0.5)).should == false
+    end
   end
 
   it "raises an ArgumentError when given a non-Integer" do

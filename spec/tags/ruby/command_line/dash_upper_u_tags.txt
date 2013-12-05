@@ -1,0 +1,3 @@
+fails(compiler):ruby -U does not affect the source encoding
+fails(compiler):ruby -U raises a RuntimeError if used with -Eext:int
+fails(compiler):ruby -U raises a RuntimeError if used with -E:int

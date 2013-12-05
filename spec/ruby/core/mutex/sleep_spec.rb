@@ -18,7 +18,9 @@ ruby_version_is "1.9" do
 
     it "unlocks the mutex while sleeping" do
       m = Mutex.new
-      th = Thread.new { m.lock; m.sleep }
+      locked = false
+      th = Thread.new { m.lock; locked = true; m.sleep }
+      Thread.pass until locked
       Thread.pass while th.status and th.status != "sleep"
       m.locked?.should be_false
       th.run

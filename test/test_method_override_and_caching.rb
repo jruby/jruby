@@ -23,13 +23,8 @@ class TestMethodOverrideAndCaching < Test::Unit::TestCase
   end
  
   def test_jruby_2921
-    if RUBY_VERSION =~ /1\.9/
-      meth1 = :meth1
-      meth2 = :meth2
-    else
-      meth1 = 'meth1'
-      meth2 = 'meth2'
-    end
+    meth1 = :meth1
+    meth2 = :meth2
     assert_equal 1, MySub.methods.select {|m| m == meth1}.size
     assert_equal 1, MySub.methods.select {|m| m == meth2}.size
  

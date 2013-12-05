@@ -1,4 +1,0 @@
-fails:Rational#** when passed Bignum returns positive Infinity when self is > 1
-fails:Rational#** when passed Bignum returns 0.0 when self is > 1 and the exponent is negative
-fails:Rational#** when passed Bignum returns positive Infinity when self < -1
-fails:Rational#** when passed Bignum returns 0.0 when self is < -1 and the exponent is negative

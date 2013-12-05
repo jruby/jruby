@@ -17,11 +17,18 @@ describe "Kernel#instance_variables" do
       end
     end
 
-    ruby_version_is "1.9" do
+    ruby_version_is "1.9"..."2.0" do
       it "returns the correct array if an instance variable is added" do
         a = 0
         a.instance_variable_set("@test", 1)
         a.instance_variables.should == [:@test]
+      end
+    end
+
+    ruby_version_is "2.0" do
+      it "returns the correct array if an instance variable is added" do
+        a = 0
+        lambda{ a.instance_variable_set("@test", 1) }.should raise_error(RuntimeError)
       end
     end
   end

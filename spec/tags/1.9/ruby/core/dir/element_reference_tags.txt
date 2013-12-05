@@ -1,1 +1,0 @@
-fails(JRUBY-5667):Dir.[] splits the string on \0 if there is only one string given

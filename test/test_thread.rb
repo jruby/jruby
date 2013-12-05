@@ -327,19 +327,11 @@ class TestThread < Test::Unit::TestCase
     assert done
   end
 
-  # JRUBY-4154
-  if RUBY_VERSION < "1.9"
-    def test_thread_exclusive
-      out = Thread.exclusive { :result }
-      assert_equal(:result, out)
-    end
-  end
-
   # JRUBY-5290
   def test_default_priority
     require 'java'
     t = Thread.new { sleep 1 while true }
-    assert_equal java.lang.Thread::NORM_PRIORITY, t.priority
+    assert_equal 0, t.priority
     t.exit
   end
 end

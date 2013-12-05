@@ -1,0 +1,2 @@
+fails:Module#name is nil when assigned to a constant in an anonymous module
+fails:Module#name is set with a conditional assignment to a nested constant

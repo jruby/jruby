@@ -61,22 +61,14 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # -s option (-g-a=123) is passed and is ignored.
   def test_dash_little_s
     with_temp_script(%q{puts $g, $v, $foo, *ARGV}) do |s|
-      assert_equal "nil\n123\nbar\n4\n5\n6", `#{RUBY} --1.8 -s #{s.path} -g-a=123 -v=123 -foo=bar 4 5 6`.chomp
-      assert_equal 0, $?.exitstatus
-    end
-    with_temp_script(%q{puts $g, $v, $foo, *ARGV}) do |s|
-      assert_equal "\n123\nbar\n4\n5\n6", `#{RUBY} --1.9 -s #{s.path} -g-a=123 -v=123 -foo=bar 4 5 6`.chomp
+      assert_equal "\n123\nbar\n4\n5\n6", `#{RUBY} -s #{s.path} -g-a=123 -v=123 -foo=bar 4 5 6`.chomp
       assert_equal 0, $?.exitstatus
     end
   end
 
   def test_dash_little_s_options_must_come_after_script
     with_temp_script(%q{puts $v, *ARGV}) do |s|
-      assert_equal "nil\na\n-v=123\nb\nc", `#{RUBY} --1.8 -s #{s.path} a -v=123 b c`.chomp
-      assert_equal 0, $?.exitstatus
-    end
-    with_temp_script(%q{puts $v, *ARGV}) do |s|
-      assert_equal "\na\n-v=123\nb\nc", `#{RUBY} --1.9 -s #{s.path} a -v=123 b c`.chomp
+      assert_equal "\na\n-v=123\nb\nc", `#{RUBY} -s #{s.path} a -v=123 b c`.chomp
       assert_equal 0, $?.exitstatus
     end
   end
@@ -116,50 +108,24 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_big_S_resolves_relative___FILE___correctly
     
     with_temp_script(%q{puts __FILE__}) do |s|
-      Dir.chdir(Dir.tmpdir)
-      relative_tmp = File.basename(s.path)
-      output = jruby("-S #{relative_tmp}").chomp
+      Dir.chdir(Dir.tmpdir) do
+        relative_tmp = File.basename(s.path)
+        output = jruby("-S #{relative_tmp}").chomp
 
-      assert_equal 0, $?.exitstatus
-      assert_equal relative_tmp, output
+        assert_equal 0, $?.exitstatus
+        assert_equal relative_tmp, output
+      end
     end
-  end
-
-  def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_18
-    e_line = 'puts $VERBOSE, $SAFE, $DEBUG, $KCODE, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "--1.8 -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
-    lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
-    assert_equal 0, $?.exitstatus
-    parent_dir = Dir.chdir('..') { Dir.pwd }
-
-    assert_match /ruby \d+\.\d+\.\d+/, lines[0]
-    assert_match /true$/, lines[1]
-    assert_equal "0", lines[2]
-    assert_equal "true", lines[3]
-    assert_equal "UTF8", lines[4]
-    assert_equal "1;2;3", lines[5].rstrip
-    assert_match /^hello/, lines[6]
-    # The gsub is for windows
-    assert_equal "#{parent_dir}", lines[7].gsub('\\', '/')
-    assert_equal "bar", lines[8]
-    assert_match /Runtime: \d+ ms/, lines[9]
-
-    e_line = 'puts Gem'
-    args = " -rrubygems -e #{q + e_line + q}"
-    lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
-    assert_equal 0, $?.exitstatus
-
-    assert_equal "Gem", lines[0]
   end
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "--1.9 -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    args = "-J-Dfoo=bar -v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
-    assert_equal 0, $?.exitstatus
+    assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
-    assert_match /ruby \d+\.\d+\.\d+/, lines[0]
+    assert_match /jruby \d+(\.\d+\.\d+)?/, lines[0]
     assert_match /true$/, lines[1]
     assert_equal "0", lines[2]
     assert_equal "true", lines[3]
@@ -169,7 +135,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # The gsub is for windows
     assert_equal "#{parent_dir}", lines[7].gsub('\\', '/')
     assert_equal "bar", lines[8]
-    assert_match /Runtime: \d+ ms/, lines[9]
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
@@ -239,8 +204,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_dash_version_shows_version
     version_string = `#{RUBY} --version`
     assert_equal 0, $?.exitstatus
-    assert_match /ruby \d+\.\d+\.\d+/, version_string
-    assert_match /jruby \d+\.\d+\.\d+/, version_string
+    assert_match /\(\d+\.\d+\.\d+/, version_string
+    assert_match /jruby \d+(\.\d+\.\d+)?/, version_string
   end
 
   # Only HotSpot has "client" and "server" so pointless to test others

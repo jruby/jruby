@@ -10,7 +10,8 @@ describe "REXML::Attributes#to_a" do
     e.attributes << name
     e.attributes << last
 
-    e.attributes.to_a.should == [name, last]
+    result = e.attributes.to_a.sort { |a, b| a.to_s <=> b.to_s }
+    result.should == [name, last]
   end
 
   it "returns an empty array if it has no attributes" do

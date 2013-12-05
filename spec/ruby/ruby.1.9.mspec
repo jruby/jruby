@@ -56,8 +56,10 @@ class MSpecScript
   # Optional library specs
   set :ffi, 'optional/ffi'
 
+  set :capi, 'optional/capi'
+
   # A list of _all_ optional library specs
-  set :optional, [get(:ffi)]
+  set :optional, [get(:capi)]
 
   # The default implementation to run the specs. Since use of RVM has become
   # widespread, assume that 'ruby' is the executable even for 1.9.

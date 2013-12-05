@@ -1,1 +1,0 @@
-fails(JRUBY-3746):self.send(:block_given?) always returns false

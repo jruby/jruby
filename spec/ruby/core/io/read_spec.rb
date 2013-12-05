@@ -441,6 +441,23 @@ with_feature :encoding do
   end
 
   describe "IO#read" do
+    describe "when IO#external_encoding and IO#internal_encoding are nil" do
+      before :each do
+        @name = tmp("io_read.txt")
+        touch(@name) { |f| f.write "\x00\x01\x02" }
+        @io = new_io @name, "r+"
+      end
+
+      after :each do
+        @io.close if @io and not @io.closed?
+        rm_r @name
+      end
+
+      it "sets the String encoding to Encoding.default_external" do
+        @io.read.encoding.should equal(Encoding.default_external)
+      end
+    end
+
     describe "with internal encoding" do
       after :each do
         @io.close unless @io.closed?

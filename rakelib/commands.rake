@@ -20,20 +20,15 @@ end
 def initialize_paths
   self.class.const_set(:JVM_MODEL, jvm_model)
 
-  ant.path(:id => "build.classpath") do
-    fileset :dir => BUILD_LIB_DIR, :includes => "*.jar"
-  end
-
   ant.path(:id => "jruby.execute.classpath") do
-    path :refid => "build.classpath"
-    pathelement :path => JRUBY_CLASSES_DIR
+    pathelement :path => "lib/jruby.jar"
   end
 
   ant.path(:id => "test.class.path") do
     pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223-2.0.6.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging-1.1.1.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging.jar')
     #  pathelement :path => "${java.class.path}"/>
     pathelement :path => File.join(LIB_DIR, 'jruby.jar')
     pathelement :location => TEST_CLASSES_DIR
@@ -53,8 +48,7 @@ def jruby(java_options = {}, &code)
   puts "JAVA options: #{java_options.inspect}"
 
   ant.java(java_options) do
-    classpath :refid => 'build.classpath'
-    classpath :path => JRUBY_CLASSES_DIR
+    classpath :path => 'lib/jruby.jar'
     jvmarg :line => JVM_MODEL if JVM_MODEL
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
@@ -80,7 +74,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:objectspace_enabled] ||= true
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
-  mspec_options[:compat] ||= "1.8"
+  mspec_options[:format] ||= "m"
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
@@ -97,10 +91,9 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
     env :key => "JRUBY_OPTS", :value => ""
     # launch in the same mode we're testing, since config is loaded by top process
-    arg :line => "--#{ms[:compat]}"
 
-    # if 1.9 mode, add . to load path so mspec config is found
-    arg :line => "-I ." if ms[:compat] == '1.9'
+    # add . to load path so mspec config is found
+    arg :line => "-I ."
 
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"
@@ -111,13 +104,12 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Djruby.objectspace.enabled=#{ms[:objectspace_enabled]}"
     arg :line => "-T -J-Djruby.thread.pool.enabled=#{ms[:thread_pooling]}"
     arg :line => "-T -J-Djruby.reflection=#{ms[:reflection]}"
-    arg :line => "-T --#{ms[:compat]}"
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-T -J-XX:MaxPermSize=512M" if ENV_JAVA["java.version"] !~ /\A1\.8/
-    arg :line => "-f m"
+    arg :line => "-f #{ms[:format]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
   end
 end

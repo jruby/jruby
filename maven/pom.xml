@@ -3,22 +3,85 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
-    <version>1.7.3.dev</version>
-    <relativePath>../pom.xml</relativePath>
+    <artifactId>jruby-parent</artifactId>
+    <version>9000.dev</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>jruby-common</artifactId>
+  <artifactId>jruby-artifacts</artifactId>
+  <version>9000.dev</version>
   <packaging>pom</packaging>
-  <name>JRuby Common</name>
+  <name>JRuby Artifacts</name>
 
-  <modules>  
-    <module>jruby</module>
-    <module>jruby-core</module>
-    <module>jruby-complete</module>
-    <module>jruby-stdlib</module>
-    <module>jruby-dist</module>
-    <module>jruby-rake-plugin</module>
-  </modules>
-
+  <profiles>
+    <profile>
+      <id>all</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-core-complete</module>
+        <module>jruby-stdlib-complete</module>
+        <module>jruby-jars</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>release</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-core-complete</module>
+        <module>jruby-stdlib-complete</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>main</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>complete</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>rake-plugin</id>
+      <modules>
+        <module>jruby-rake-plugin</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>dist</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>jruby-jars</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-core-complete</module>
+        <module>jruby-stdlib-complete</module>
+        <module>jruby-jars</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>gems</id>
+      <modules>
+        <module>gems</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

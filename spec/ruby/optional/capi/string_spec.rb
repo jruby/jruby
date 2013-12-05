@@ -478,10 +478,11 @@ describe "C-API String function" do
     end
 
     it "increases the size of the string" do
-      str = @s.rb_str_resize("test", 12)
+      expected = Object.encode("test", "US-ASCII")
+      str = @s.rb_str_resize(expected.dup, 12)
       str.size.should == 12
       @s.RSTRING_LEN(str).should == 12
-      str[0, 4].should == "test"
+      str[0, 4].should == expected
     end
   end
 
@@ -613,28 +614,6 @@ end
 
 ruby_version_is "1.9" do
 
-  describe "rb_str_length" do
-    it "returns the string's length" do
-      @s.rb_str_length("dewdrops").should == 8
-    end
-
-    it "counts characters in multi byte encodings" do
-      @s.rb_str_length("düwdrops").should == 8
-    end
-  end
-
-  describe "rb_str_equal" do
-    it "compares two same strings" do
-      s = "hello"
-      @s.rb_str_equal(s, "hello").should be_true
-    end
-
-    it "compares two different strings" do
-      s = "hello"
-      @s.rb_str_equal(s, "hella").should be_false
-    end
-  end
-
   describe :rb_external_str_new, :shared => true do
     it "returns a String in the default external encoding" do
       Encoding.default_external = "UTF-8"
@@ -654,11 +633,35 @@ ruby_version_is "1.9" do
   describe "C-API String function" do
     before :each do
       @s = CApiStringSpecs.new
-      @encoding = Encoding.default_external
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
     end
 
     after :each do
-      Encoding.default_external = @encoding
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+    end
+
+    describe "rb_str_length" do
+      it "returns the string's length" do
+        @s.rb_str_length("dewdrops").should == 8
+      end
+
+      it "counts characters in multi byte encodings" do
+        @s.rb_str_length("düwdrops").should == 8
+      end
+    end
+
+    describe "rb_str_equal" do
+      it "compares two same strings" do
+        s = "hello"
+        @s.rb_str_equal(s, "hello").should be_true
+      end
+
+      it "compares two different strings" do
+        s = "hello"
+        @s.rb_str_equal(s, "hella").should be_false
+      end
     end
 
     describe "rb_external_str_new" do
@@ -680,10 +683,141 @@ ruby_version_is "1.9" do
         s.encoding.should == Encoding::ASCII_8BIT
       end
 
+      it "transcodes a String to Encoding.default_internal if it is set" do
+        Encoding.default_internal = Encoding::EUC_JP
+
+        a = "\xE3\x81\x82\xe3\x82\x8c".force_encoding("utf-8")
+        s = @s.rb_external_str_new_with_enc(a, a.bytesize, Encoding::UTF_8)
+
+        s.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+        s.encoding.should equal(Encoding::EUC_JP)
+      end
+
       it "returns a tainted String" do
         s = @s.rb_external_str_new_with_enc("abc", 3, Encoding::US_ASCII)
         s.tainted?.should be_true
       end
     end
+
+    describe "rb_locale_str_new" do
+      it "returns a String with 'locale' encoding" do
+        s = @s.rb_locale_str_new("abc", 3)
+        s.should == "abc".force_encoding(Encoding.find("locale"))
+        s.encoding.should equal(Encoding.find("locale"))
+      end
+    end
+
+    describe "rb_locale_str_new_cstr" do
+      it "returns a String with 'locale' encoding" do
+        s = @s.rb_locale_str_new_cstr("abc")
+        s.should == "abc".force_encoding(Encoding.find("locale"))
+        s.encoding.should equal(Encoding.find("locale"))
+      end
+    end
+
+    describe "rb_str_conv_enc" do
+      it "returns the original String when to encoding is not specified" do
+        a = "abc".force_encoding("us-ascii")
+        @s.rb_str_conv_enc(a, Encoding::US_ASCII, nil).should equal(a)
+      end
+
+      it "returns the original String if a transcoding error occurs" do
+        a = "\xEE".force_encoding("utf-8")
+        @s.rb_str_conv_enc(a, Encoding::UTF_8, Encoding::EUC_JP).should equal(a)
+      end
+
+      it "returns a transcoded String" do
+        a = "\xE3\x81\x82\xE3\x82\x8C".force_encoding("utf-8")
+        result = @s.rb_str_conv_enc(a, Encoding::UTF_8, Encoding::EUC_JP)
+        result.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+        result.encoding.should equal(Encoding::EUC_JP)
+      end
+
+      describe "when the String encoding is equal to the destination encoding" do
+        it "returns the original String" do
+          a = "abc".force_encoding("us-ascii")
+          @s.rb_str_conv_enc(a, Encoding::US_ASCII, Encoding::US_ASCII).should equal(a)
+        end
+
+        it "returns the original String if the destination encoding is ASCII compatible and the String has no high bits set" do
+          a = "abc".encode("us-ascii")
+          @s.rb_str_conv_enc(a, Encoding::UTF_8, Encoding::US_ASCII).should equal(a)
+        end
+
+        it "returns the origin String if the destination encoding is ASCII-8BIT" do
+          a = "abc".force_encoding("ascii-8bit")
+          @s.rb_str_conv_enc(a, Encoding::US_ASCII, Encoding::ASCII_8BIT).should equal(a)
+        end
+      end
+    end
+
+    describe "rb_str_conv_enc_opts" do
+      it "returns the original String when to encoding is not specified" do
+        a = "abc".force_encoding("us-ascii")
+        @s.rb_str_conv_enc_opts(a, Encoding::US_ASCII, nil, 0, nil).should equal(a)
+      end
+
+      it "returns the original String if a transcoding error occurs" do
+        a = "\xEE".force_encoding("utf-8")
+        @s.rb_str_conv_enc_opts(a, Encoding::UTF_8,
+                                Encoding::EUC_JP, 0, nil).should equal(a)
+      end
+
+      it "returns a transcoded String" do
+        a = "\xE3\x81\x82\xE3\x82\x8C".force_encoding("utf-8")
+        result = @s.rb_str_conv_enc_opts(a, Encoding::UTF_8, Encoding::EUC_JP, 0, nil)
+        result.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+        result.encoding.should equal(Encoding::EUC_JP)
+      end
+
+      describe "when the String encoding is equal to the destination encoding" do
+        it "returns the original String" do
+          a = "abc".force_encoding("us-ascii")
+          @s.rb_str_conv_enc_opts(a, Encoding::US_ASCII,
+                                  Encoding::US_ASCII, 0, nil).should equal(a)
+        end
+
+        it "returns the original String if the destination encoding is ASCII compatible and the String has no high bits set" do
+          a = "abc".encode("us-ascii")
+          @s.rb_str_conv_enc_opts(a, Encoding::UTF_8,
+                                  Encoding::US_ASCII, 0, nil).should equal(a)
+        end
+
+        it "returns the origin String if the destination encoding is ASCII-8BIT" do
+          a = "abc".force_encoding("ascii-8bit")
+          @s.rb_str_conv_enc_opts(a, Encoding::US_ASCII,
+                                  Encoding::ASCII_8BIT, 0, nil).should equal(a)
+        end
+      end
+    end
+
+    describe "rb_str_export" do
+      it "returns the original String with the external encoding" do
+        Encoding.default_external = Encoding::ISO_8859_1
+        s = @s.rb_str_export("Hëllo")
+        s.encoding.should equal(Encoding::ISO_8859_1)
+      end
+    end
+
+    describe "rb_str_export_locale" do
+      it "returns the original String with the locale encoding" do
+        s = @s.rb_str_export_locale("abc")
+        s.should == "abc".force_encoding(Encoding.find("locale"))
+        s.encoding.should equal(Encoding.find("locale"))
+      end
+    end
+
+    describe "rb_sprintf" do
+      it "replaces the parts like sprintf" do
+        @s.rb_sprintf1("Awesome %s is replaced", "string").should == "Awesome string is replaced"
+        @s.rb_sprintf1("%s", "TestFoobarTest").should == "TestFoobarTest"
+      end
+
+      it "accepts multiple arguments" do
+        s = "Awesome %s is here with %s"
+        @s.rb_sprintf2(s, "string", "content").should == "Awesome string is here with content"
+      end
+    end
+
   end
 end

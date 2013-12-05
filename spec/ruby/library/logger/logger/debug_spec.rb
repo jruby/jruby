@@ -11,7 +11,7 @@ describe "Logger#debug?" do
   after :each do
     @logger.close
     @log_file.close unless @log_file.closed?
-    File.unlink(@path) if File.exists?(@path)
+    rm_r @path
   end
 
   it "returns true if severity level allows debug messages" do
@@ -35,7 +35,7 @@ describe "Logger#debug" do
   after :each do
     @logger.close
     @log_file.close unless @log_file.closed?
-    File.unlink(@path) if File.exists?(@path)
+    rm_r @path
   end
 
   it "logs a DEBUG message" do

@@ -46,17 +46,8 @@ class TestKernel < Test::Unit::TestCase
     assert !Kernel.eval("defined? some_unknown_variable")
     assert_equal nil, true && defined?(unknownConstant)
 
-    # JRUBY-117 - to_a should be public
-    unless RUBY_VERSION =~ /1\.9/
-      assert_equal ["to_a"], Object.public_instance_methods.grep("to_a")
-    end
-
     # JRUBY-117 - remove_instance_variable should be private
-    if RUBY_VERSION =~ /1\.9/
-      assert_equal [:remove_instance_variable], Object.private_instance_methods.grep(:remove_instance_variable)
-    else
-      assert_equal ["remove_instance_variable"], Object.private_instance_methods.grep("remove_instance_variable")
-    end
+    assert_equal [:remove_instance_variable], Object.private_instance_methods.grep(:remove_instance_variable)
   end
 
 
@@ -134,11 +125,7 @@ class TestKernel < Test::Unit::TestCase
     catch :fred do throw :fred; fail("shouldn't get here") end
     assert(!been_where_it_shouldnt)
 
-    if RUBY_VERSION =~ /1\.9/
-      ex = ArgumentError
-    else
-      ex = NameError
-    end
+    ex = ArgumentError
     assert_raises (ex) do
       catch :fred do throw :wilma end
     end
@@ -164,11 +151,7 @@ class TestKernel < Test::Unit::TestCase
   def test_invalid_throw_after_inner_catch_should_unwind_the_stack_all_the_way_to_the_top
     been_at_fred1 = false
     been_at_fred2 = false
-    if RUBY_VERSION =~ /1\.9/
-      ex = ArgumentError
-    else
-      ex = NameError
-    end
+    ex = ArgumentError
     assert_raises(ex) do
       catch :fred1 do
         catch :fred2 do
@@ -192,11 +175,7 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_catch_stack_should_be_cleaned_up
-    if RUBY_VERSION =~ /1\.9/
-      ex = ArgumentError
-    else
-      ex = NameError
-    end
+    ex = ArgumentError
     assert_raises(ex) do
       catch :fred1 do
         catch :fred2 do
@@ -208,29 +187,6 @@ class TestKernel < Test::Unit::TestCase
       fail "catch stack should have been cleaned up"
     end
   end
-  
-#  chomp
-#  chomp!
-
-  # JRUBY-2527
-  unless RUBY_VERSION =~ /1\.9/
-    def test_chomp_no_block_doesnt_break
-      $_ = "test"
-      assert_equal("test", chomp)
-      assert_equal("te", chomp("st"))
-
-      $_ = "test"
-      chomp!
-      assert_equal("test", $_)
-
-      chomp!("st")
-      assert_equal("te", $_)
-    end
-  end
-
-#  chop
-#  chop!
-
 
   #  eval
   def test_eval_should_use_local_variable_defined_in_parent_scope
@@ -315,18 +271,10 @@ class TestKernel < Test::Unit::TestCase
 
   def test_local_variables
     if RbConfig::CONFIG['ruby_install_name'] == 'jruby'
-      if RUBY_VERSION =~ /1\.9/
-        a = lambda do
-          assert_equal [:a, :b], local_variables
-          b = 1
-          assert_equal [:a, :b], local_variables
-        end
-      else
-        a = lambda do
-          assert_equal %w(a b), local_variables
-          b = 1
-          assert_equal %w(a b), local_variables
-        end
+      a = lambda do
+        assert_equal [:a, :b], local_variables
+        b = 1
+        assert_equal [:a, :b], local_variables
       end
       a.call
     else
@@ -445,11 +393,7 @@ class TestKernel < Test::Unit::TestCase
   def test_srand
     Kernel.srand
     Kernel.srand(0)
-    if RUBY_VERSION =~ /1\.9/
-      assert_raises(TypeError) { Kernel.srand(:foo) }
-    else
-      Kernel.srand(:foo)
-    end
+    assert_raises(TypeError) { Kernel.srand(:foo) }
     assert_raises(TypeError) { Kernel.srand([:foo]) }
   end
 
@@ -469,7 +413,7 @@ class TestKernel < Test::Unit::TestCase
     assert !system('')
   end
 
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass in 1.9 mode
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_system_existing
       quiet do
         if (WINDOWS)
@@ -482,7 +426,7 @@ class TestKernel < Test::Unit::TestCase
     end
   end
 
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass in 1.9 mode
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_system_existing_with_leading_space
       quiet do
         if (WINDOWS)
@@ -495,7 +439,7 @@ class TestKernel < Test::Unit::TestCase
     end
   end
 
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass in 1.9 mode
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_system_existing_with_trailing_space
       quiet do
         if (WINDOWS)
@@ -513,7 +457,7 @@ class TestKernel < Test::Unit::TestCase
     assert !res
   end
 
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass in 1.9 mode
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_system_existing_with_arg
       if (WINDOWS)
         res = system('cd .')
@@ -785,7 +729,7 @@ class TestKernel < Test::Unit::TestCase
     end
   end
 
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass in 1.9 mode
+  unless false # FIXME figure out why this doesn't pass in 1.9+
     def test_system_with_executable_in_cwd
       Dir.chdir(TESTAPP_DIR) do
         result = nil
@@ -808,15 +752,6 @@ class TestKernel < Test::Unit::TestCase
         assert_equal 0, $?.exitstatus
         assert result
       end
-    end
-  end
-
-  unless RUBY_VERSION =~ /1\.9/
-    def test_test
-      assert "Test file existence", test(?f, "README")
-      assert "Test file non-existence", !test(?f, "READMEaewertsert45t4w5tgrsfdgrf")
-      # Make sure that absolute paths work for testing
-      assert "Test should handle absolute paths", test(?f, File.expand_path("README"))
     end
   end
 

@@ -36,13 +36,13 @@ describe "Array#compact" do
 
   ruby_version_is '' ... '1.9.3' do
     it "returns subclass instance for Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_kind_of(ArraySpecs::MyArray)
+      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(ArraySpecs::MyArray)
     end
   end
 
   ruby_version_is '1.9.3' do
     it "does not return subclass instance for Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_kind_of(Array)
+      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(Array)
     end
 
     it "does not keep tainted status even if all elements are removed" do

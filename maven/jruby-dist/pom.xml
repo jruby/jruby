@@ -1,51 +1,177 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
-    <version>1.7.3.dev</version>
-    <relativePath>../../pom.xml</relativePath>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>9000.dev</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
-  <name>JRuby Distribution</name>
+  <name>JRuby Dist</name>
 
-  <properties>
-    <ant.target>dist</ant.target>
-    <dist.dir>${basedir}/../../dist</dist.dir>
-  </properties>
+    <properties>
+      <jruby.basedir>${basedir}/../..</jruby.basedir>
+      <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+	  <tarLongFileMode>gnu</tarLongFileMode>
+          <descriptors>
+            <descriptor>src/main/assembly/jruby.xml</descriptor>
+          </descriptors>
+	</configuration>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>single</goal>
+	    </goals>
+	  </execution>
+	</executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.5</version>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
-            <id>attach-artifacts</id>
-            <phase>package</phase>
+            <id>fix shebang on gem bin files</id>
+            <phase>generate-sources</phase>
             <goals>
-              <goal>attach-artifact</goal>
+              <goal>exec</goal>
             </goals>
             <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${dist.dir}/jruby-bin-${project.version}.zip</file>
-                  <type>zip</type>
-                  <classifier>bin</classifier>
-                </artifact>
-              </artifacts>
-            </configuration>
+	      <script>
+		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
+		  content = File.read( f )
+		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
+")
+		  File.open( f, "w" ) { |file| file.print( new_content ) }
+		end
+	      </script>
+	    </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>source dist</id>
+      <activation>
+	<file>
+	  <exists>../../.git</exists>
+	</file>
+      </activation>
+      <build>
+	<plugins>
+	  <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>buildnumber-maven-plugin</artifactId>
+	    <version>1.2</version>
+	    <executions>
+	      <execution>
+		<id>jruby-revision</id>
+		<phase>generate-sources</phase>
+		<goals>
+		  <goal>create</goal>
+		</goals>
+		<configuration>
+		  <shortRevisionLength>7</shortRevisionLength>
+		  <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+		</configuration>
+	      </execution>
+	    </executions>
+	  </plugin>
+	  <plugin>  
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>exec-maven-plugin</artifactId>
+	    <executions>
+	      <execution>
+		<id>build source archive - tar</id>
+		<phase>package</phase>
+		<goals>
+		  <goal>exec</goal>
+		</goals>
+		<configuration>
+		  <workingDirectory>${basedir}/../..</workingDirectory>
+		  <arguments>
+		    <argument>archive</argument>
+		    <argument>--prefix</argument>
+		    <argument>jruby-${project.version}/</argument>
+		    <argument>--format</argument>
+		    <argument>tar</argument>
+		    <argument>${jruby.revision}</argument>
+		    <argument>.</argument>
+		    <argument>-o</argument>
+		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+		  </arguments>
+		  <executable>git</executable>
+		</configuration>
+	      </execution>
+	      <execution>
+		<id>gzip build source tar</id>
+		<phase>package</phase>
+		<goals>
+		  <goal>exec</goal>
+		</goals>
+		<configuration>
+		  <workingDirectory>${basedir}/../..</workingDirectory>
+		  <arguments>
+		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+		    <argument>-f</argument>
+		  </arguments>
+		  <executable>gzip</executable>
+		</configuration>
+	      </execution>
+	      <execution>
+		<id>build source archive - zip</id>
+		<phase>package</phase>
+		<goals>
+		  <goal>exec</goal>
+		</goals>
+		<configuration>
+		  <workingDirectory>${basedir}/../..</workingDirectory>
+		  <arguments>
+		    <argument>archive</argument>
+		    <argument>--prefix</argument>
+		    <argument>jruby-${project.version}/</argument>
+		    <argument>-9</argument>
+		    <argument>--format</argument>
+		    <argument>zip</argument>
+		    <argument>${jruby.revision}</argument>
+		    <argument>.</argument>
+		    <argument>-o</argument>
+		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
+		  </arguments>
+		  <executable>git</executable>
+		</configuration>
+	      </execution>
+	    </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

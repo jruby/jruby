@@ -11,7 +11,7 @@ module ProcessSpecs
     end
 
     def wait_for_daemon
-      5.times do
+      10.times do
         return true if File.exists? @signal and
                        File.exists? @data and
                        File.size? @data

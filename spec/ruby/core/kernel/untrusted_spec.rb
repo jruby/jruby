@@ -14,15 +14,27 @@ describe "Kernel#untrusted?" do
       a = nil
       b = true
       c = false
-      d = 1
       a.untrust
       b.untrust
       c.untrust
-      d.untrust
       a.untrusted?.should == false
       b.untrusted?.should == false
       c.untrusted?.should == false
+    end
+  end
+
+  ruby_version_is "1.9"..."2.0" do
+    it "has no effect on immediate values" do
+      d = 1
+      d.untrust
       d.untrusted?.should == false
+    end
+  end
+
+  ruby_version_is "2.0" do
+    it "has no effect on immediate values" do
+      d = 1
+      lambda { d.untrust }.should raise_error(RuntimeError)
     end
   end
 end

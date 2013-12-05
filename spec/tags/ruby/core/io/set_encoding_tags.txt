@@ -1,0 +1,1 @@
+fails:IO#set_encoding calls #to_str to convert an abject to a String

@@ -1,137 +1,313 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-describe "String#chomp with separator" do
-  it "returns a new string with the given record separator removed" do
-    "hello".chomp("llo").should == "he"
-    "hellollo".chomp("llo").should == "hello"
-  end
+describe "String#chomp" do
+  describe "when passed no argument" do
+    before do
+      # Ensure that $/ is set to the default value
+      @dollar_slash, $/ = $/, "\n"
+    end
 
-  it "removes carriage return (except \\r) chars multiple times when separator is an empty string" do
-    "".chomp("").should == ""
-    "hello".chomp("").should == "hello"
-    "hello\n".chomp("").should == "hello"
-    "hello\nx".chomp("").should == "hello\nx"
-    "hello\r\n".chomp("").should == "hello"
-    "hello\r\n\r\n\n\n\r\n".chomp("").should == "hello"
+    after do
+      $/ = @dollar_slash
+    end
 
-    "hello\r".chomp("").should == "hello\r"
-    "hello\n\r".chomp("").should == "hello\n\r"
-    "hello\r\r\r\n".chomp("").should == "hello\r\r"
-  end
+    it "does not modify a String with no trailing carriage return or newline" do
+      "abc".chomp.should == "abc"
+    end
 
-  it "removes carriage return chars (\\n, \\r, \\r\\n) when separator is \\n" do
-    "hello".chomp("\n").should == "hello"
-    "hello\n".chomp("\n").should == "hello"
-    "hello\r\n".chomp("\n").should == "hello"
-    "hello\n\r".chomp("\n").should == "hello\n"
-    "hello\r".chomp("\n").should == "hello"
-    "hello \n there".chomp("\n").should == "hello \n there"
-    "hello\r\n\r\n\n\n\r\n".chomp("\n").should == "hello\r\n\r\n\n\n"
+    it "returns a copy of the String when it is not modified" do
+      str = "abc"
+      str.chomp.should_not equal(str)
+    end
 
-    "hello\n\r".chomp("\r").should == "hello\n"
-    "hello\n\r\n".chomp("\r\n").should == "hello\n"
-  end
+    it "removes one trailing newline" do
+      "abc\n\n".chomp.should == "abc\n"
+    end
 
-  it "returns self if the separator is nil" do
-    "hello\n\n".chomp(nil).should == "hello\n\n"
-  end
+    it "removes one trailing carriage return" do
+      "abc\r\r".chomp.should == "abc\r"
+    end
 
-  it "returns an empty string when called on an empty string" do
-    "".chomp("\n").should == ""
-    "".chomp("\r").should == ""
-    "".chomp("").should == ""
-    "".chomp(nil).should == ""
-  end
+    it "removes one trailing carrige return, newline pair" do
+      "abc\r\n\r\n".chomp.should == "abc\r\n"
+    end
 
-  it "uses $/ as the separator when none is given" do
-    ["", "x", "x\n", "x\r", "x\r\n", "x\n\r\r\n", "hello"].each do |str|
-      ["", "llo", "\n", "\r", nil].each do |sep|
-        begin
-          expected = str.chomp(sep)
+    it "returns an empty String when self is empty" do
+      "".chomp.should == ""
+    end
 
-          old_rec_sep, $/ = $/, sep
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp.tainted?.should be_true
+    end
 
-          str.chomp.should == expected
-        ensure
-          $/ = old_rec_sep
-        end
-      end
+    it "returns subclass instances when called on a subclass" do
+      str = StringSpecs::MyString.new("hello\n").chomp
+      str.should be_kind_of(StringSpecs::MyString)
+    end
+
+    it "removes trailing characters that match $/ when it has been assigned a value" do
+      $/ = "cdef"
+      "abcdef".chomp.should == "ab"
     end
   end
 
-  it "taints result when self is tainted" do
-    "hello".taint.chomp("llo").tainted?.should == true
-    "hello".taint.chomp("").tainted?.should == true
-    "hello".taint.chomp(nil).tainted?.should == true
-    "hello".taint.chomp.tainted?.should == true
-    "hello\n".taint.chomp.tainted?.should == true
+  describe "when passed nil" do
+    it "does not modify the String" do
+      "abc\r\n".chomp(nil).should == "abc\r\n"
+    end
 
-    "hello".chomp("llo".taint).tainted?.should == false
+    it "returns a copy of the String" do
+      str = "abc"
+      str.chomp(nil).should_not equal(str)
+    end
+
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp(nil).tainted?.should be_true
+    end
+
+    it "returns an empty String when self is empty" do
+      "".chomp(nil).should == ""
+    end
   end
 
-  it "calls #to_str to convert separator to a String" do
-    separator = mock('llo')
-    separator.should_receive(:to_str).and_return("llo")
+  describe "when passed ''" do
+    it "removes a final newline" do
+      "abc\n".chomp("").should == "abc"
+    end
 
-    "hello".chomp(separator).should == "he"
+    it "removes a final carriage return, newline" do
+      "abc\r\n".chomp("").should == "abc"
+    end
+
+    it "does not remove a final carriage return" do
+      "abc\r".chomp("").should == "abc\r"
+    end
+
+    it "removes more than one trailing newlines" do
+      "abc\n\n\n".chomp("").should == "abc"
+    end
+
+    it "removes more than one trailing carriage return, newline pairs" do
+      "abc\r\n\r\n\r\n".chomp("").should == "abc"
+    end
+
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp("").tainted?.should be_true
+    end
+
+    it "returns an empty String when self is empty" do
+      "".chomp("").should == ""
+    end
   end
 
-  it "raises a TypeError if separator can't be converted to a string" do
-    lambda { "hello".chomp(30.3)      }.should raise_error(TypeError)
-    lambda { "hello".chomp([])        }.should raise_error(TypeError)
-    lambda { "hello".chomp(mock('x')) }.should raise_error(TypeError)
+  describe "when passed '\\n'" do
+    it "removes one trailing newline" do
+      "abc\n\n".chomp("\n").should == "abc\n"
+    end
+
+    it "removes one trailing carriage return" do
+      "abc\r\r".chomp("\n").should == "abc\r"
+    end
+
+    it "removes one trailing carrige return, newline pair" do
+      "abc\r\n\r\n".chomp("\n").should == "abc\r\n"
+    end
+
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp("\n").tainted?.should be_true
+    end
+
+    it "returns an empty String when self is empty" do
+      "".chomp("\n").should == ""
+    end
   end
 
-  it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("hello\n").chomp.should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("hello").chomp.should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("").chomp.should be_kind_of(StringSpecs::MyString)
+  describe "when passed an Object" do
+    it "calls #to_str to convert to a String" do
+      arg = mock("string chomp")
+      arg.should_receive(:to_str).and_return("bc")
+      "abc".chomp(arg).should == "a"
+    end
+
+    it "raises a TypeError if #to_str does not return a String" do
+      arg = mock("string chomp")
+      arg.should_receive(:to_str).and_return(1)
+      lambda { "abc".chomp(arg) }.should raise_error(TypeError)
+    end
+  end
+
+  describe "when passed a String" do
+    it "removes the trailing characters if they match the argument" do
+      "abcabc".chomp("abc").should == "abc"
+    end
+
+    it "does not modify the String if the argument does not match the trailing characters" do
+      "abc".chomp("def").should == "abc"
+    end
+
+    it "returns an empty String when self is empty" do
+      "".chomp("abc").should == ""
+    end
+
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp("abc").tainted?.should be_true
+    end
+
+    it "does not taint the result when the argument is tainted" do
+      "abc".chomp("abc".taint).tainted?.should be_false
+    end
   end
 end
 
-describe "String#chomp! with separator" do
-  it "modifies self in place and returns self" do
-    s = "one\n"
-    s.chomp!.should equal(s)
-    s.should == "one"
+describe "String#chomp!" do
+  describe "when passed no argument" do
+    before do
+      # Ensure that $/ is set to the default value
+      @dollar_slash, $/ = $/, "\n"
+    end
 
-    t = "two\r\n"
-    t.chomp!.should equal(t)
-    t.should == "two"
+    after do
+      $/ = @dollar_slash
+    end
 
-    u = "three\r"
-    u.chomp!
-    u.should == "three"
+    it "modifies self" do
+      str = "abc\n"
+      str.chomp!.should equal(str)
+    end
 
-    v = "four\n\r"
-    v.chomp!
-    v.should == "four\n"
+    it "returns nil if self is not modified" do
+      "abc".chomp!.should be_nil
+    end
 
-    w = "five\n\n"
-    w.chomp!(nil)
-    w.should == "five\n\n"
+    it "removes one trailing newline" do
+      "abc\n\n".chomp!.should == "abc\n"
+    end
 
-    x = "six"
-    x.chomp!("ix")
-    x.should == "s"
+    it "removes one trailing carriage return" do
+      "abc\r\r".chomp!.should == "abc\r"
+    end
 
-    y = "seven\n\n\n\n"
-    y.chomp!("")
-    y.should == "seven"
+    it "removes one trailing carrige return, newline pair" do
+      "abc\r\n\r\n".chomp!.should == "abc\r\n"
+    end
+
+    it "returns nil when self is empty" do
+      "".chomp!.should be_nil
+    end
+
+    it "taints the result if self is tainted" do
+      "abc\n".taint.chomp!.tainted?.should be_true
+    end
+
+    it "returns subclass instances when called on a subclass" do
+      str = StringSpecs::MyString.new("hello\n").chomp!
+      str.should be_kind_of(StringSpecs::MyString)
+    end
+
+    it "removes trailing characters that match $/ when it has been assigned a value" do
+      $/ = "cdef"
+      "abcdef".chomp!.should == "ab"
+    end
   end
 
-  it "returns nil if no modifications were made" do
-     v = "four"
-     v.chomp!.should == nil
-     v.should == "four"
+  describe "when passed nil" do
+    it "returns nil" do
+      "abc\r\n".chomp!(nil).should be_nil
+    end
 
-    "".chomp!.should == nil
-    "line".chomp!.should == nil
+    it "returns nil when self is empty" do
+      "".chomp!(nil).should be_nil
+    end
+  end
 
-    "hello\n".chomp!("x").should == nil
-    "hello".chomp!("").should == nil
-    "hello".chomp!(nil).should == nil
+  describe "when passed ''" do
+    it "removes a final newline" do
+      "abc\n".chomp!("").should == "abc"
+    end
+
+    it "removes a final carriage return, newline" do
+      "abc\r\n".chomp!("").should == "abc"
+    end
+
+    it "does not remove a final carriage return" do
+      "abc\r".chomp!("").should be_nil
+    end
+
+    it "removes more than one trailing newlines" do
+      "abc\n\n\n".chomp!("").should == "abc"
+    end
+
+    it "removes more than one trailing carriage return, newline pairs" do
+      "abc\r\n\r\n\r\n".chomp!("").should == "abc"
+    end
+
+    it "taints the result if self is tainted" do
+      "abc\n".taint.chomp!("").tainted?.should be_true
+    end
+
+    it "returns nil when self is empty" do
+      "".chomp!("").should be_nil
+    end
+  end
+
+  describe "when passed '\\n'" do
+    it "removes one trailing newline" do
+      "abc\n\n".chomp!("\n").should == "abc\n"
+    end
+
+    it "removes one trailing carriage return" do
+      "abc\r\r".chomp!("\n").should == "abc\r"
+    end
+
+    it "removes one trailing carrige return, newline pair" do
+      "abc\r\n\r\n".chomp!("\n").should == "abc\r\n"
+    end
+
+    it "taints the result if self is tainted" do
+      "abc\n".taint.chomp!("\n").tainted?.should be_true
+    end
+
+    it "returns nil when self is empty" do
+      "".chomp!("\n").should be_nil
+    end
+  end
+
+  describe "when passed an Object" do
+    it "calls #to_str to convert to a String" do
+      arg = mock("string chomp")
+      arg.should_receive(:to_str).and_return("bc")
+      "abc".chomp!(arg).should == "a"
+    end
+
+    it "raises a TypeError if #to_str does not return a String" do
+      arg = mock("string chomp")
+      arg.should_receive(:to_str).and_return(1)
+      lambda { "abc".chomp!(arg) }.should raise_error(TypeError)
+    end
+  end
+
+  describe "when passed a String" do
+    it "removes the trailing characters if they match the argument" do
+      "abcabc".chomp!("abc").should == "abc"
+    end
+
+    it "returns nil if the argument does not match the trailing characters" do
+      "abc".chomp!("def").should be_nil
+    end
+
+    it "returns nil when self is empty" do
+      "".chomp!("abc").should be_nil
+    end
+
+    it "taints the result if self is tainted" do
+      "abc".taint.chomp!("abc").tainted?.should be_true
+    end
+
+    it "does not taint the result when the argument is tainted" do
+      "abc".chomp!("abc".taint).tainted?.should be_false
+    end
   end
 
   ruby_version_is ""..."1.9" do
@@ -159,7 +335,7 @@ describe "String#chomp! with separator" do
       b = ""
       b.freeze
 
-       b.chomp!.should be_nil
+      b.chomp!.should be_nil
     end
 
     it "does not raise an exception when the string would not be modified" do
@@ -185,6 +361,38 @@ describe "String#chomp! with separator" do
       a.freeze
       lambda { a.chomp!(nil) }.should raise_error(RuntimeError)
       lambda { a.chomp!("x") }.should raise_error(RuntimeError)
+    end
+  end
+end
+
+with_feature :encoding do
+  describe "String#chomp" do
+    it "does not modify a multi-byte character" do
+      "あれ".chomp.should == "あれ"
+    end
+
+    it "removes the final carriage return, newline from a multibyte String" do
+      "あれ\r\n".chomp.should == "あれ"
+    end
+
+    it "removes the final carriage return, newline from a non-ASCII String" do
+      str = "abc\r\n".encode "utf-32be"
+      str.chomp.should == "abc".encode("utf-32be")
+    end
+  end
+
+  describe "String#chomp!" do
+    it "returns nil when the String is not modified" do
+      "あれ".chomp!.should be_nil
+    end
+
+    it "removes the final carriage return, newline from a multibyte String" do
+      "あれ\r\n".chomp!.should == "あれ"
+    end
+
+    it "removes the final carriage return, newline from a non-ASCII String" do
+      str = "abc\r\n".encode "utf-32be"
+      str.chomp!.should == "abc".encode("utf-32be")
     end
   end
 end

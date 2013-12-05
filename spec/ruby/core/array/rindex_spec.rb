@@ -63,7 +63,7 @@ describe "Array#rindex" do
     describe "given no argument and no block" do
       it "produces an Enumerator" do
         enum = [4, 2, 1, 5, 1, 3].rindex
-        enum.should be_kind_of(enumerator_class)
+        enum.should be_an_instance_of(enumerator_class)
         enum.each { |x| x < 2 }.should == 4
       end
     end

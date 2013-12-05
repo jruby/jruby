@@ -8,12 +8,12 @@ describe "The '&&' statement" do
     x.should be_nil
   end
 
-  it "evalutes to the first condition not to be true" do
+  it "evaluates to the first condition not to be true" do
     ("yes" && 1 && nil && true).should == nil
     ("yes" && 1 && false && true).should == false
   end
 
-  it "evalutes to the last condition if all are true" do
+  it "evaluates to the last condition if all are true" do
     ("yes" && 1).should == 1
     (1 && "yes").should == "yes"
   end
@@ -40,12 +40,12 @@ describe "The 'and' statement" do
     x.should be_nil
   end
 
-  it "evalutes to the first condition not to be true" do
+  it "evaluates to the first condition not to be true" do
     ("yes" and 1 and nil and true).should == nil
     ("yes" and 1 and false and true).should == false
   end
 
-  it "evalutes to the last condition if all are true" do
+  it "evaluates to the last condition if all are true" do
     ("yes" and 1).should == 1
     (1 and "yes").should == "yes"
   end

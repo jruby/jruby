@@ -70,13 +70,13 @@ ruby_version_is "1.9" do
 
     platform_is_not :windows do # impossible to remove opened file on Windows
       it "returns the cached size of the file if subsequently deleted" do
-        rm_r @file
+        rm_r @file.path
         @file.size.should == 8
       end
     end
 
     it "returns the file's current size even if modified" do
-      File.open(@file,'a') {|f| f.write '!'}
+      File.open(@file.path,'a') {|f| f.write '!'}
       @file.size.should == 9
     end
 
@@ -96,7 +96,7 @@ ruby_version_is "1.9" do
           file.size.should == 8
         ensure
           file.close if file && !file.closed?
-          File.unlink(ln_file) if File.exists?(ln_file)
+          rm_r ln_file
         end
       end
     end

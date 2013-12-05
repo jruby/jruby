@@ -2,45 +2,44 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Fixnum#**" do
   it "returns self raised to the given power" do
-    (2 ** 0).should == 1
-    (2 ** 1).should == 2
-    (2 ** 2).should == 4
+    (2 ** 0).should eql 1
+    (2 ** 1).should eql 2
+    (2 ** 2).should eql 4
 
-    (9 ** 0.5).to_s.should == '3.0'
+    (9 ** 0.5).should eql 3.0
     (5 ** -1).to_f.to_s.should == '0.2'
 
-    (2 ** 40).should == 1099511627776
+    (2 ** 40).should eql 1099511627776
   end
 
   it "overflows the answer to a bignum transparantly" do
-    (2 ** 29).should == 536870912
-    (2 ** 30).should == 1073741824
-    (2 ** 31).should == 2147483648
-    (2 ** 32).should == 4294967296
+    (2 ** 29).should eql 536870912
+    (2 ** 30).should eql 1073741824
+    (2 ** 31).should eql 2147483648
+    (2 ** 32).should eql 4294967296
 
-    (2 ** 61).should == 2305843009213693952
-    (2 ** 62).should == 4611686018427387904
-    (2 ** 63).should == 9223372036854775808
-    (2 ** 64).should == 18446744073709551616
-
-    (8 ** 23).should == 590295810358705651712
+    (2 ** 61).should eql 2305843009213693952
+    (2 ** 62).should eql 4611686018427387904
+    (2 ** 63).should eql 9223372036854775808
+    (2 ** 64).should eql 18446744073709551616
+    (8 ** 23).should eql 590295810358705651712
   end
 
   it "raises negative numbers to the given power" do
-    ((-2) ** 29).should == -536870912
-    ((-2) ** 30).should == 1073741824
-    ((-2) ** 31).should == -2147483648
-    ((-2) ** 32).should == 4294967296
+    ((-2) ** 29).should eql -536870912
+    ((-2) ** 30).should eql 1073741824
+    ((-2) ** 31).should eql -2147483648
+    ((-2) ** 32).should eql 4294967296
 
-    ((-2) ** 61).should == -2305843009213693952
-    ((-2) ** 62).should == 4611686018427387904
-    ((-2) ** 63).should == -9223372036854775808
-    ((-2) ** 64).should == 18446744073709551616
+    ((-2) ** 61).should eql -2305843009213693952
+    ((-2) ** 62).should eql 4611686018427387904
+    ((-2) ** 63).should eql -9223372036854775808
+    ((-2) ** 64).should eql 18446744073709551616
   end
 
   it "can raise 1 to a Bignum safely" do
     big = bignum_value(4611686018427387904)
-    (1 ** big).should == 1
+    (1 ** big).should eql 1
   end
 
   it "can raise -1 to a Bignum safely" do

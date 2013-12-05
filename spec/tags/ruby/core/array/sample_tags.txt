@@ -1,0 +1,4 @@
+fails:Array#sample uses default random generator
+fails:Array#sample uses given random generator
+fails:Array#sample uses default random generator and return proper array size
+fails:Array#sample uses given random generator and return proper array size

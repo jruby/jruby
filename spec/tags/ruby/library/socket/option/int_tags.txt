@@ -1,0 +1,3 @@
+fails:Socket::Option.int creates a new Socket::Option for SO_LINGER
+fails:Socket::Option#int returns int option
+fails:Socket::Option#int raises TypeError if option has not good size

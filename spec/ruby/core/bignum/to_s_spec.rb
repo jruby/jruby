@@ -24,3 +24,25 @@ describe "Bignum#to_s when given no base" do
     (-bignum_value(675)).to_s.should == "-9223372036854776483"
   end
 end
+
+with_feature :encoding do
+  describe "Bignum#to_s" do
+    before :each do
+      @internal = Encoding.default_internal
+    end
+
+    after :each do
+      Encoding.default_internal = @internal
+    end
+
+    it "returns a String in US-ASCII encoding when Encoding.default_internal is nil" do
+      Encoding.default_internal = nil
+      bignum_value.to_s.encoding.should equal(Encoding::US_ASCII)
+    end
+
+    it "returns a String in US-ASCII encoding when Encoding.default_internal is not nil" do
+      Encoding.default_internal = Encoding::IBM437
+      bignum_value.to_s.encoding.should equal(Encoding::US_ASCII)
+    end
+  end
+end

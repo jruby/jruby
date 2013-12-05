@@ -1,0 +1,41 @@
+<project>
+  <groupId>org.jruby</groupId>
+  <artifactId>it-hello</artifactId>
+  <version>1</version>
+  <modelVersion>4.0.0</modelVersion>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby</artifactId>
+      <version>@project.version@</version>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2</version>
+        <configuration>          
+	  <executable>java</executable> 
+          <arguments>
+	    <argument>-classpath</argument>
+	    <!-- automatically creates the classpath using all project dependencies,
+		 also adding the project build directory -->
+	    <classpath/>
+	    <argument>org.jruby.Main</argument>
+            <argument>-e</argument>
+            <!-- make sure openssl loads -->
+            <argument>
+              puts 'hello world'
+              puts 'openssl loaded' if require 'openssl'
+            </argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

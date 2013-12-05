@@ -193,9 +193,11 @@ describe :io_new, :shared => true do
       @io.internal_encoding.to_s.should == 'ISO-8859-1'
     end
 
-    it "accepts nil options" do
-      @io = IO.send(@method, @fd, 'w', nil)
-      @io.write("foo").should == 3
+    ruby_version_is "1.9.3" do
+      it "accepts nil options" do
+        @io = IO.send(@method, @fd, 'w', nil)
+        @io.write("foo").should == 3
+      end
     end
 
     it "coerces mode with #to_str" do
@@ -216,10 +218,12 @@ describe :io_new, :shared => true do
       @io = IO.send(@method, @fd, :mode => mode)
     end
 
-    it "coerces mode with #to_int when passed in options" do
-      mode = mock("mode")
-      mode.should_receive(:to_int).any_number_of_times.and_return(File::WRONLY)
-      @io = IO.send(@method, @fd, :mode => mode)
+    ruby_version_is "1.9.3" do
+      it "coerces mode with #to_int when passed in options" do
+        mode = mock("mode")
+        mode.should_receive(:to_int).any_number_of_times.and_return(File::WRONLY)
+        @io = IO.send(@method, @fd, :mode => mode)
+      end
     end
 
     it "coerces :encoding option with #to_str" do
@@ -264,10 +268,12 @@ describe :io_new, :shared => true do
       }.should raise_error(ArgumentError)
     end
 
-    it "raises TypeError if passed a hash for mode and nil for options" do
-      lambda {
-        @io = IO.send(@method, @fd, {:mode => 'w'}, nil)
-      }.should raise_error(TypeError)
+    ruby_version_is "1.9.3" do
+      it "raises TypeError if passed a hash for mode and nil for options" do
+        lambda {
+          @io = IO.send(@method, @fd, {:mode => 'w'}, nil)
+        }.should raise_error(TypeError)
+      end
     end
   end
 

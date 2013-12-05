@@ -1,5 +1,5 @@
 require 'rubygems/command'
-require 'rubygems/format'
+require 'rubygems/package'
 require 'rubygems/installer'
 require 'rubygems/version_option'
 
@@ -10,7 +10,8 @@ class Gem::Commands::PristineCommand < Gem::Command
   def initialize
     super 'pristine',
           'Restores installed gems to pristine condition from files located in the gem cache',
-          :version => Gem::Requirement.default, :extensions => true,
+          :version => Gem::Requirement.default,
+          :extensions => true,
           :all => false
 
     add_option('--all',
@@ -20,8 +21,20 @@ class Gem::Commands::PristineCommand < Gem::Command
     end
 
     add_option('--[no-]extensions',
-               'Restore gems with extensions') do |value, options|
+               'Restore gems with extensions',
+               'in addition to regular gems') do |value, options|
       options[:extensions] = value
+    end
+
+    add_option('--only-executables',
+               'Only restore executables') do |value, options|
+      options[:only_executables] = value
+    end
+
+    add_option('-E', '--[no-]env-shebang',
+               'Rewrite executables with a shebang',
+               'of /usr/bin/env') do |value, options|
+      options[:env_shebang] = value
     end
 
     add_version_option('restore to', 'pristine condition')
@@ -32,28 +45,28 @@ class Gem::Commands::PristineCommand < Gem::Command
   end
 
   def defaults_str # :nodoc:
-    "--all --extensions"
+    '--extensions'
   end
 
   def description # :nodoc:
     <<-EOF
-The pristine command compares the installed gems with the contents of the
-cached gem and restores any files that don't match the cached gem's copy.
+The pristine command compares an installed gem with the contents of its
+cached .gem file and restores any files that don't match the cached .gem's
+copy.
 
-If you have made modifications to your installed gems, the pristine command
-will revert them.  After all the gem's files have been checked all bin stubs
-for the gem are regenerated.
+If you have made modifications to an installed gem, the pristine command
+will revert them.  All extensions are rebuilt and all bin stubs for the gem
+are regenerated after checking for modifications.
 
-If the cached gem cannot be found, you will need to use `gem install` to
-revert the gem.
+If the cached gem cannot be found it will be downloaded.
 
-If --no-extensions is provided pristine will not attempt to restore gems with
-extensions.
+If --no-extensions is provided pristine will not attempt to restore a gem
+with an extension.
     EOF
   end
 
   def usage # :nodoc:
-    "#{program_name} [args]"
+    "#{program_name} [GEMNAME ...]"
   end
 
   def execute
@@ -78,6 +91,11 @@ extensions.
     say "Restoring gems to pristine condition..."
 
     specs.each do |spec|
+      if spec.default_gem?
+        say "Skipped #{spec.full_name}, it is a default gem"
+        next
+      end
+
       unless spec.extensions.empty? or options[:extensions] then
         say "Skipped #{spec.full_name}, it needs to compile an extension"
         next
@@ -93,16 +111,26 @@ extensions.
         Gem::RemoteFetcher.fetcher.download_to_cache dep
       end
 
-      # TODO use installer options
-      install_defaults = Gem::ConfigFile::PLATFORM_DEFAULTS['install']
-      installer_env_shebang = install_defaults.to_s['--env-shebang']
-      
+      env_shebang =
+        if options.include? :env_shebang then
+          options[:env_shebang]
+        else
+          install_defaults = Gem::ConfigFile::PLATFORM_DEFAULTS['install']
+          install_defaults.to_s['--env-shebang']
+        end
+
       installer = Gem::Installer.new(gem,
                                      :wrappers => true,
                                      :force => true,
                                      :install_dir => spec.base_dir,
-                                     :env_shebang => installer_env_shebang)
-      installer.install
+                                     :env_shebang => env_shebang,
+                                     :build_args => spec.build_args)
+
+      if options[:only_executables] then
+        installer.generate_bin
+      else
+        installer.install
+      end
 
       say "Restored #{spec.full_name}"
     end

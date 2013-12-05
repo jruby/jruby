@@ -465,7 +465,7 @@ class TestFile < Test::Unit::TestCase
     assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/abc/foo.rb"))
     assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar.rb"))
     assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar2.rb"))
-    assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/"))
+    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/"))
   end
 
   def with_load_path(entry)
@@ -726,12 +726,6 @@ class TestFile < Test::Unit::TestCase
       require abs_path
       assert_equal($test_require_symlink_filename, abs_path)
       abs_path_linked = File.join(Dir.pwd, "linked_file.rb")
-      unless RUBY_VERSION =~ /1\.9/
-        require abs_path_linked
-        assert_equal($test_require_symlink_filename, abs_path_linked)
-        load abs_path_linked
-        assert_equal($test_require_symlink_filename, abs_path_linked)
-      end
     ensure
       File.delete("real_file.rb")
       File.delete("linked_file.rb")
@@ -1069,24 +1063,6 @@ class TestFile < Test::Unit::TestCase
   def test_basename_unicode
     utf8_filename = "dir/glk\u00a9.pdf"
     assert_equal("glk\u00a9.pdf", File.basename(utf8_filename))
-  end
-
-  #JRUBY-4387, JRUBY-4416
-  unless RUBY_VERSION =~ /1\.9/
-    def test_file_gets_separator
-      filename = 'gets.out'
-      begin
-        File.open(filename, "wb") do |file|
-          file.print "this is a test\xFFit is only a test\ndoes it work?"
-        end
-
-        file = File.open("gets.out", "rb") do |file|
-          assert_equal("this is a test\377", file.gets("\xFF"))
-        end
-      ensure
-        File.unlink(filename)
-      end
-    end
   end
 
   def test_file_stat_with_missing_path

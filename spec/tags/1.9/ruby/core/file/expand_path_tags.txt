@@ -1,1 +1,0 @@
-fails:File.expand_path raises a Encoding::CompatibilityError if the external encoding is not compatible

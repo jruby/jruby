@@ -3,9 +3,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
-    <version>1.7.3.dev</version>
-    <relativePath>../../pom.xml</relativePath>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>9000.dev</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-complete</artifactId>
@@ -13,19 +12,212 @@
   <name>JRuby Complete</name>
 
   <properties>
-    <ant.target>jar-complete</ant.target>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
   </properties>
 
+  <pluginRepositories>
+    <pluginRepository>  
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
   <build>
+    <resources>
+      <resource>
+        <directory>${jruby.basedir}/lib</directory>
+        <targetPath>${jruby.complete.home}/lib</targetPath>
+        <includes>
+          <include>**/ruby/shared/bc*.jar</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.1</version>
+        <executions>
+          <execution>
+            <id>pack jruby.artifact</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+              </relocations>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.jruby.Main</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>  
+	<groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unzip jruby-core.jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <workingDirectory>${basedir}/../..</workingDirectory>
+              <arguments>
+                <argument>-d</argument>
+		<argument>${project.build.outputDirectory}</argument>
+		<argument>-o</argument>
+		<argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+              </arguments>
+              <executable>unzip</executable>
+            </configuration>
+	  </execution>
+	</executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
+	<groupId>org.apache.felix</groupId>
+	<artifactId>maven-bundle-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>manifest</goal>
+	    </goals>
+	  </execution>
+	</executions>
+	<configuration>
+	  <archive>
+            <manifest>
+	      <mainClass>org.jruby.Main</mainClass>
+	    </manifest>
+	  </archive>
+	</configuration>
+      </plugin>
+      <plugin>
+	<artifactId>maven-jar-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <id>update manifest</id>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>jar</goal>
+	    </goals>
+	    <configuration>
+	      <archive>
+		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+	      </archive>
+		<excludes>
+		  <exclue>Dummy.class</exclue>
+		</excludes>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <preBuildHookScript>setup.bsh</preBuildHookScript>
+          <postBuildHookScript>verify.bsh</postBuildHookScript>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>sonatype-oss-release</id>
+      <build>
+	<resources>
+	  <resource>
+	    <targetPath>${project.build.directory}</targetPath>
+	    <directory>${jruby.basedir}/core/target</directory>
+	    <includes>
+	      <include>*-sources.jar</include>
+	      <include>*-javadoc.jar</include>
+	    </includes>
+	  </resource>
+	</resources>
+	<plugins>      
+	  <plugin>
+	    <artifactId>maven-source-plugin</artifactId>
+	    <configuration>
+	      <skipSource>true</skipSource>
+	    </configuration>
+	  </plugin>
+	  <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>build-helper-maven-plugin</artifactId>
+	    <executions>
+	      <execution>
+		<id>attach-artifacts</id>
+		<phase>package</phase>
+		<goals>
+		  <goal>attach-artifact</goal>
+		</goals>
+		<configuration>
+		  <artifacts>
+		    <artifact>
+		      <file>${project.build.directory}/jruby-core-${project.version}-sources.jar</file>
+		      <classifier>sources</classifier>
+		    </artifact>
+		    <artifact>
+		      <file>${project.build.directory}/jruby-core-${project.version}-javadoc.jar</file>
+		      <classifier>javadoc</classifier>
+		    </artifact>
+		  </artifacts>
+		</configuration>
+	      </execution>
+	    </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -15,13 +15,15 @@ describe :mutex_locked, :shared => true do
     m2 = Mutex.new
 
     m2.lock # hold th with only m1 locked
+    m1_locked = false
 
     th = Thread.new do
       m1.lock
+      m1_locked = true
       m2.lock
     end
 
-    Thread.pass while th.status and th.status != "sleep"
+    Thread.pass until m1_locked
 
     m1.locked?.should be_true
     m2.unlock # release th

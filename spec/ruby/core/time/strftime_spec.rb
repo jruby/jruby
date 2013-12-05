@@ -288,5 +288,12 @@ describe "Time#strftime" do
       time = Time.local(2010,10,10,12,10,42)
       time.strftime("%-m/%-d/%-y %-I:%-M %p").should == "10/10/10 12:10 PM"
     end
+
+    it "supports the '-' modifier for padded format directives" do
+      time = Time.local(2010, 8, 8, 8, 10, 42)
+      time.strftime("%-e").should == "8"
+      time.strftime("%-k%p").should == "8AM"
+      time.strftime("%-l%p").should == "8AM"
+    end
   end
 end

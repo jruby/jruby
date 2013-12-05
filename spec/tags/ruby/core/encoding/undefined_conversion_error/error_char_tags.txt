@@ -1,0 +1,1 @@
+fails:Encoding::UndefinedConversionError#error_char returns the one-character String that caused the exception

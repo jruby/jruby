@@ -11,7 +11,7 @@ ruby_version_is "1.9" do
 
     it "returns an Enumerator of all repeated permutations of given length when called without a block" do
       enum = @numbers.repeated_permutation(2)
-      enum.should be_kind_of(Enumerable)
+      enum.should be_an_instance_of(enumerator_class)
       enum.to_a.sort.should == @permutations
     end
 
@@ -63,7 +63,7 @@ ruby_version_is "1.9" do
         ary[0] = 5
       end
 
-      accum.should ==
+      accum.sort.should ==
         [[1, 1, 1], [1, 1, 2], [1, 2, 1],
          [1, 2, 2], [2, 1, 1], [2, 1, 2],
          [2, 2, 1], [2, 2, 2]]

@@ -27,6 +27,10 @@ describe "Math.atan" do
       lambda { Math.atan("test") }.should raise_error(TypeError)
     end
   end
+    
+  it "returns NaN given NaN" do
+    Math.atan(nan_value).nan?.should be_true
+  end
 
   it "raises a TypeError if the argument is nil" do
     lambda { Math.atan(nil) }.should raise_error(TypeError)

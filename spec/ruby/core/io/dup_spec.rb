@@ -20,7 +20,7 @@ describe "IO#dup" do
   end
 
   after :all do
-    File.unlink @file if File.exists?(@file)
+    rm_r @file
   end
 
   it "returns a new IO instance" do

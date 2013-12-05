@@ -1,0 +1,3 @@
+critical(hangs):Range#step returns self
+fails:Range#step with inclusive end and Float values returns Float values of 'step * n + begin <= end'
+fails:Range#step with exclusive end and Integer values yields Float values incremented by a Float step

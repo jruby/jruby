@@ -1,1 +1,0 @@
-fails:Bignum#div raises ZeroDivisionError if the argument is Float zero

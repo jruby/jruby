@@ -1,1 +1,0 @@
-fails(JRUBY-2543):Iconv.conv acts exactly as if opening a converter and invoking #iconv once

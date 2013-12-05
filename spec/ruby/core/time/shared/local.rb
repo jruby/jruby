@@ -21,4 +21,19 @@ describe :time_local_10_arg, :shared => true do
         [1, 15, 20, 1, 1, 2000, 6, 1, false, "PST"]
     end
   end
+
+  it "creates the correct time just before dst change" do
+    with_timezone("US/Eastern") do
+      time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, true, ENV['TZ'])
+      time.utc_offset.should == -4 * 3600
+    end
+  end
+
+  it "creates the correct time just after dst change" do
+    with_timezone("US/Eastern") do
+      time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, false, ENV['TZ'])
+      time.utc_offset.should == -5 * 3600
+    end
+  end
+
 end

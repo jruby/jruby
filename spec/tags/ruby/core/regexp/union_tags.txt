@@ -1,0 +1,2 @@
+fails(compiler):Regexp.union raises ArgumentError if the kcodes conflict
+fails:Regexp.union returns a Regexp with the encoding of multiple non-conflicting ASCII-incompatible String arguments

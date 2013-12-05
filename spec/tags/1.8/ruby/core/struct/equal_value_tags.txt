@@ -1,1 +1,0 @@
-fails(JRUBY-3938):Struct#== handles recursive structures by returning false if a difference can be found 

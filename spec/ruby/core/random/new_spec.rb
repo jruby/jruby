@@ -8,6 +8,12 @@ ruby_version_is "1.9" do
       Random.new.seed.should be_an_instance_of(Bignum)
     end
 
+    it "returns Random instances initialized with different seeds" do
+      first = Random.new
+      second = Random.new
+      (0..20).map { first.rand } .should_not == (0..20).map { second.rand }
+    end
+
     it "accepts an Integer seed value as an argument" do
       Random.new(2).seed.should == 2
     end

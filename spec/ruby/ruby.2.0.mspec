@@ -56,13 +56,15 @@ class MSpecScript
   # Optional library specs
   set :ffi, 'optional/ffi'
 
+  set :capi, 'optional/capi'
+
   # A list of _all_ optional library specs
-  set :optional, [get(:ffi)]
+  set :optional, [get(:capi)]
 
   # The default implementation to run the specs.
   # TODO: this needs to be more sophisticated since the
   # executable is not consistently named.
-  set :target, 'ruby1.9'
+  set :target, 'ruby'
 
   set :backtrace_filter, /mspec\//
 

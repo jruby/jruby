@@ -82,16 +82,6 @@ class TestClass < Test::Unit::TestCase
     end
   end
 
-  unless RUBY_VERSION =~ /1\.9/
-    def test_freeze_halts_execution
-      g = GV1.new
-      assert_raise(TypeError) { g.modifyAfterFreeze }
-      assert_nothing_raised {g = GV1.new}
-      g.class.freeze
-      assert_raise(TypeError) {g.createAfterFreeze}
-    end
-  end
-
   module A
     class Failure
       def Failure.bar()

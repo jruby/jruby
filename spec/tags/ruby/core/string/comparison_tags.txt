@@ -1,0 +1,2 @@
+fails:String#<=> uses the result of calling #to_str for comparison when #to_str is defined
+fails:String#<=> uses the result of calling #<=> on its argument when #<=> is defined but #to_str is not

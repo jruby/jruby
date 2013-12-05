@@ -162,6 +162,56 @@ ruby_version_is "1.9" do
       it_behaves_like :rb_enc_set_index, :rb_enc_set_index
     end
 
+    describe "rb_enc_str_new" do
+      it "returns a String in US-ASCII encoding when high bits are set" do
+        result = @s.rb_enc_str_new("\xEE", 1, Encoding::US_ASCII)
+        result.encoding.should equal(Encoding::US_ASCII)
+      end
+    end
+
+    describe "rb_enc_str_coderange" do
+      describe "when the encoding is ASCII-8BIT" do
+        it "returns ENC_CODERANGE_7BIT if there are no high bits set" do
+          result = @s.rb_enc_str_coderange("abc".force_encoding("ascii-8bit"))
+          result.should == :coderange_7bit
+        end
+
+        it "returns ENC_CODERANGE_VALID if there are high bits set" do
+          result = @s.rb_enc_str_coderange("\xEE".force_encoding("ascii-8bit"))
+          result.should == :coderange_valid
+        end
+      end
+
+      describe "when the encoding is UTF-8" do
+        it "returns ENC_CODERANGE_7BIT if there are no high bits set" do
+          result = @s.rb_enc_str_coderange("abc".force_encoding("utf-8"))
+          result.should == :coderange_7bit
+        end
+
+        it "returns ENC_CODERANGE_VALID if there are high bits set in a valid string" do
+          result = @s.rb_enc_str_coderange("\xE3\x81\x82".force_encoding("utf-8"))
+          result.should == :coderange_valid
+        end
+
+        it "returns ENC_CODERANGE_BROKEN if there are high bits set in an invalid string" do
+          result = @s.rb_enc_str_coderange("\xEE".force_encoding("utf-8"))
+          result.should == :coderange_broken
+        end
+      end
+
+      describe "when the encoding is US-ASCII" do
+        it "returns ENC_CODERANGE_7BIT if there are no high bits set" do
+          result = @s.rb_enc_str_coderange("abc".force_encoding("us-ascii"))
+          result.should == :coderange_7bit
+        end
+
+        it "returns ENC_CODERANGE_BROKEN if there are high bits set" do
+          result = @s.rb_enc_str_coderange("\xEE".force_encoding("us-ascii"))
+          result.should == :coderange_broken
+        end
+      end
+    end
+
     describe "ENCODING_GET" do
       it_behaves_like :rb_enc_get_index, :ENCODING_GET
     end
@@ -173,6 +223,7 @@ ruby_version_is "1.9" do
     describe "ENC_CODERANGE_ASCIIONLY" do
       it "returns true if the object encoding is only ASCII" do
         str = encode("abc", "us-ascii")
+        str.valid_encoding? # make sure to set the coderange
         @s.ENC_CODERANGE_ASCIIONLY(str).should be_true
       end
 
@@ -217,6 +268,23 @@ ruby_version_is "1.9" do
         obj.should_receive(:to_str).and_return("utf-8")
 
         @s.rb_to_encoding_index(obj).should >= 0
+      end
+    end
+
+    describe "rb_enc_compatible" do
+      it "returns 0 if the encodings of the Strings are not compatible" do
+        a = "\xff".force_encoding "ascii-8bit"
+        b = "\u3042".encode("utf-8")
+        @s.rb_enc_compatible(a, b).should == 0
+      end
+
+      # The coverage of this sucks, but there is not a simple way (yet?) to
+      # easily share the specs between rb_enc_compatible and
+      # Encoding.compatible?
+      it "returns the same value as Encoding.compatible? if the Strings have a compatible encoding" do
+        a = "abc".force_encoding("us-ascii")
+        b = "\u3042".encode("utf-8")
+        @s.rb_enc_compatible(a, b).should == Encoding.compatible?(a, b)
       end
     end
 
@@ -348,8 +416,10 @@ ruby_version_is "1.9" do
         @s.rb_enc_to_index("UTF-8").should >= 0
       end
 
-      it "returns 0 if the encoding is not defined" do
-        @s.rb_enc_to_index("FTU-81").should == 0
+      it "returns a non-negative int if the encoding is not defined" do
+        # Encoding indexes are an implementation detail and not guaranteed
+        # across implementations.
+        @s.rb_enc_to_index("FTU-81").should >= 0
       end
     end
 

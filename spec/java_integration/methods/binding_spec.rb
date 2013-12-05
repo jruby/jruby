@@ -34,7 +34,7 @@ describe "A private subclass with interfaces" do
 
     sub_without_cls = sub_without.class
 
-    sub_without_cls.instance_methods.should include("run")
+    sub_without_cls.instance_methods.should have_strings_or_symbols "run"
   end
 end
 

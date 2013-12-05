@@ -143,6 +143,24 @@ static VALUE thread_spec_rb_thread_wait_for(VALUE self, VALUE s, VALUE ms) {
 }
 #endif
 
+#ifdef HAVE_RB_THREAD_CREATE
+
+VALUE thread_spec_call_proc(VALUE arg_array) {
+  VALUE arg = rb_ary_pop(arg_array);
+  VALUE proc = rb_ary_pop(arg_array);
+  return rb_funcall(proc, rb_intern("call"), 1, arg);
+}
+
+static VALUE thread_spec_rb_thread_create(VALUE self, VALUE proc, VALUE arg) {
+  VALUE args = rb_ary_new();
+  rb_ary_push(args, proc);
+  rb_ary_push(args, arg);
+
+  return rb_thread_create(thread_spec_call_proc, (void*)args);
+}
+#endif
+
+
 void Init_thread_spec() {
   VALUE cls;
   cls = rb_define_class("CApiThreadSpecs", rb_cObject);
@@ -179,6 +197,10 @@ void Init_thread_spec() {
 
 #ifdef HAVE_RB_THREAD_WAIT_FOR
   rb_define_method(cls,  "rb_thread_wait_for", thread_spec_rb_thread_wait_for, 2);
+#endif
+
+#ifdef HAVE_RB_THREAD_CREATE
+  rb_define_method(cls,  "rb_thread_create", thread_spec_rb_thread_create, 2);
 #endif
 }
 

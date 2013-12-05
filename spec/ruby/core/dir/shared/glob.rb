@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 describe :dir_glob, :shared => true do
   before(:all) do
     @cwd = Dir.pwd
@@ -8,12 +9,10 @@ describe :dir_glob, :shared => true do
     Dir.chdir @cwd
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls #to_str to convert patterns" do
-      obj = mock('file_one.ext')
-      obj.should_receive(:to_str).and_return('file_one.ext')
-
-      Dir.send(@method, obj).should == %w[file_one.ext]
+  with_feature :encoding do
+    it "raises an Encoding::CompatibilityError if the argument encoding is not compatible with US-ASCII" do
+      pattern = "file*".force_encoding Encoding::UTF_16BE
+      lambda { Dir.send(@method, pattern) }.should raise_error(Encoding::CompatibilityError)
     end
   end
 
@@ -102,6 +101,10 @@ describe :dir_glob, :shared => true do
     Dir.send(@method, 'special/\}').should == ['special/}']
   end
 
+  it "matches paths with glob patterns" do
+    Dir.send(@method, 'special/test\{1\}/*').should == ['special/test{1}/file[1]']
+  end
+
   it "matches dotfiles with '.*'" do
     Dir.send(@method, '.*').sort.should == %w|. .. .dotfile .dotsubdir|.sort
   end
@@ -160,6 +163,7 @@ describe :dir_glob, :shared => true do
       deeply/nested/directory/structure/
       dir/
       special/
+      special/test{1}/
       subdir_one/
       subdir_two/
     ]
@@ -250,6 +254,8 @@ describe :dir_glob, :shared => true do
          file_two.ext
 
          nondotfile
+
+         special/test{1}/file[1]
 
          subdir_one/nondotfile
          subdir_two/nondotfile

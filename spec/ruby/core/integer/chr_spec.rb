@@ -185,7 +185,7 @@ ruby_version_is "1.9" do
       end
     end
 
-    ruby_bug "http://redmine.ruby-lang.org/issues/4869", "1.9.2.290" do
+    ruby_bug "http://redmine.ruby-lang.org/issues/4869", "1.9.2" do
       it "raises a RangeError is self is less than 0" do
         lambda { -1.chr(Encoding::UTF_8) }.should raise_error(RangeError)
         lambda { -bignum_value.chr(Encoding::EUC_JP) }.should raise_error(RangeError)
@@ -240,7 +240,7 @@ ruby_version_is "1.9" do
       0xFC4B.chr(Encoding::SHIFT_JIS).bytes.to_a.should == [0xFC, 0x4B] # Largest assigned CP932 codepoint
     end
 
-    ruby_bug "#5864", "2.0" do
+    ruby_bug "#5864", "1.9.2" do
       it "raises RangeError if self is invalid as a codepoint in the specified encoding" do
         [ [0x80,   "US-ASCII"],
           [0x0100, "ASCII-8BIT"],
@@ -249,8 +249,8 @@ ruby_version_is "1.9" do
           [0xA1,   "EUC-JP"],
           [0x80,   "SHIFT_JIS"],
           [0xE0,   "SHIFT_JIS"],
-          [0x0100, "ISO_8859_9"],
-          [620,    "TIS_620"]
+          [0x0100, "ISO-8859-9"],
+          [620,    "TIS-620"]
         ].each do |integer, encoding_name|
           lambda { integer.chr(encoding_name) }.should raise_error(RangeError)
         end

@@ -1,0 +1,3 @@
+fails:Thread#raise on a running thread raises a RuntimeError when called with no arguments inside rescue
+fails:Thread#raise on same thread raises a RuntimeError when called with no arguments inside rescue
+fails(gh-631):Thread#raise on a sleeping thread raises a RuntimeError when called with no arguments inside rescue

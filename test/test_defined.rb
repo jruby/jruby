@@ -113,11 +113,7 @@ class TestDefined < Test::Unit::TestCase
     assert_nil DefinedMethods::unexisting_block_local_variable
   end
   def test_existing_block_local_variable
-    if RUBY_VERSION =~ /1\.9/
-      assert_equal "local-variable", DefinedMethods::existing_block_local_variable
-    else
-      assert_equal "local-variable(in-block)", DefinedMethods::existing_block_local_variable
-    end
+    assert_equal "local-variable", DefinedMethods::existing_block_local_variable
   end
   def test_global_assign
     assert_equal "assignment", DefinedMethods::global_assign
@@ -132,18 +128,10 @@ class TestDefined < Test::Unit::TestCase
     assert_nil DefinedMethods::unexisting_dollar_number2
   end
   def test_existing_dollar_special
-    if RUBY_VERSION =~ /1\.9/
-      assert_equal "global-variable",DefinedMethods::existing_dollar_special
-    else
-      assert_equal "$`",DefinedMethods::existing_dollar_special
-    end
+    assert_equal "global-variable",DefinedMethods::existing_dollar_special
   end
   def test_existing_dollar_number
-    if RUBY_VERSION =~ /1\.9/
-      assert_equal "global-variable",DefinedMethods::existing_dollar_special
-    else
-      assert_equal "$1",DefinedMethods::existing_dollar_number
-    end
+    assert_equal "global-variable",DefinedMethods::existing_dollar_special
   end
   def test_true
     assert_equal "true", DefinedMethods::test_true

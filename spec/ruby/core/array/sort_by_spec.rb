@@ -17,11 +17,11 @@ ruby_version_is "1.9" do
     it "completes when supplied a block that always returns the same result" do
       a = [2, 3, 5, 1, 4]
       a.sort_by!{  1 }
-      a.should be_kind_of(Array)
+      a.should be_an_instance_of(Array)
       a.sort_by!{  0 }
-      a.should be_kind_of(Array)
+      a.should be_an_instance_of(Array)
       a.sort_by!{ -1 }
-      a.should be_kind_of(Array)
+      a.should be_an_instance_of(Array)
     end
 
     it "raises a RuntimeError on a frozen array" do

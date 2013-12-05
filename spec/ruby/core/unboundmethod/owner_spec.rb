@@ -18,5 +18,33 @@ describe "UnboundMethod#owner" do
       UnboundMethodSpecs::Methods.new.method(:from_mod).owner.should == UnboundMethodSpecs::Mod
     end
 
+    ruby_version_is "" ... "1.9" do
+
+      before :each do
+        @parent_singleton_class = class << UnboundMethodSpecs::Parent; self; end
+        @child_singleton_class  = class << UnboundMethodSpecs::Child3; self; end
+      end
+
+      it "returns the original owner for aliased methods" do
+        @child_singleton_class.instance_method(:class_method).owner.should == @parent_singleton_class
+        @child_singleton_class.instance_method(:another_class_method).owner.should == @parent_singleton_class
+      end
+
+    end
+
+    ruby_version_is "1.9" do
+
+      before :each do
+        @parent_singleton_class = class << UnboundMethodSpecs::Parent; self; end
+        @child_singleton_class  = class << UnboundMethodSpecs::Child3; self; end
+      end
+
+      it "returns the new owner for aliased methods" do
+        @child_singleton_class.instance_method(:class_method).owner.should == @parent_singleton_class
+        @child_singleton_class.instance_method(:another_class_method).owner.should == @child_singleton_class
+      end
+
+    end
+
   end
 end

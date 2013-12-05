@@ -58,6 +58,11 @@ describe "Range#each" do
       t = Time.now
       lambda { (t..t+1).each { |i| i } }.should raise_error(TypeError)
     end
+
+    it "passes each Symbol element by using #succ" do
+      (:aa..:ac).each.to_a.should == [:aa, :ab, :ac]
+      (:aa...:ac).each.to_a.should == [:aa, :ab]
+    end
   end
 
 end

@@ -9,8 +9,16 @@ with_feature :encoding_transition do
       @utf8_ascii = @utf8 + @ascii
     end
 
-    it "returns an Enumerator when no block is given" do
-      @utf8.bytes.should be_kind_of(Enumerable)
+    ruby_version_is ""..."2.0" do
+      it "returns an Enumerator when no block is given" do
+        @utf8.bytes.should be_an_instance_of(enumerator_class)
+      end
+    end
+
+    ruby_version_is "2.0" do
+      it "returns an Array when no block is given" do
+        @utf8.bytes.should be_an_instance_of(Array)
+      end
     end
 
     it "yields each byte to a block if one is given, returning self" do

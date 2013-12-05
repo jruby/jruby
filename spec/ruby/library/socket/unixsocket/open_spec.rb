@@ -7,14 +7,14 @@ describe "UNIXSocket.open" do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
 
       @server = UNIXServer.open(@path)
     end
 
     after :each do
       @server.close
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     it "opens a unix socket on the specified file and yields it to the block" do

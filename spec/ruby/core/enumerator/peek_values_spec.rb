@@ -10,6 +10,8 @@ ruby_version_is "1.9" do
         yield :c
         yield :d1, :d2
         yield :e1, :e2, :e3
+        yield nil
+        yield
       end
 
       @e = o.to_enum
@@ -39,8 +41,18 @@ ruby_version_is "1.9" do
       @e.peek_values.should == [:a]
     end
 
-    it "raises StopIteration if called on a finished enumerator" do
+    it "returns an array with only nil if yield is called with nil" do
       5.times { @e.next }
+      @e.peek_values.should == [nil]
+    end
+
+    it "returns an empty array if yield is called without arguments" do
+      6.times { @e.next }
+      @e.peek_values.should == []
+    end
+
+    it "raises StopIteration if called on a finished enumerator" do
+      7.times { @e.next }
       lambda { @e.peek_values }.should raise_error(StopIteration)
     end
   end

@@ -27,6 +27,13 @@ describe :hash_store, :shared => true do
     h.size.should == 2
   end
 
+  it "accepts keys with private #hash method" do
+    key = HashSpecs::KeyWithPrivateHash.new
+    h = new_hash
+    h[key] = "foo"
+    h[key].should == "foo"
+  end
+
   it "duplicates and freezes string keys" do
     key = "foo"
     h = new_hash

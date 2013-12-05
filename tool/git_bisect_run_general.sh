@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # simple script for use with 'git bisect run'
-# e.g., git bisect run tool/git_bisect_run.sh -T--1.9 spec/ruby/language/defined_spec.rb
+# e.g., git bisect run tool/git_bisect_run.sh spec/ruby/language/defined_spec.rb
 
 PRE_COMMAND=''
 POST_COMMAND=''

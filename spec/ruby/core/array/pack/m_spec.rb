@@ -145,7 +145,7 @@ describe "Array#pack with format 'M'" do
 
   it "encodes a recursive array" do
     empty = ArraySpecs.empty_recursive_array
-    empty.pack('M').should be_kind_of(String)
+    empty.pack('M').should be_an_instance_of(String)
 
     array = ArraySpecs.recursive_array
     array.pack('M').should == "1=\n"

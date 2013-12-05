@@ -1,38 +1,53 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
+describe :kernel_remove_instance_variable, :shared => true do
+  it "returns the instance variable's value" do
+    value = @instance.send :remove_instance_variable, @object
+    value.should == "hello"
+  end
+
+  it "removes the instance variable" do
+    @instance.send :remove_instance_variable, @object
+    @instance.instance_variable_defined?(@object).should be_false
+  end
+end
+
 describe "Kernel#remove_instance_variable" do
+  before do
+    @instance = KernelSpecs::InstanceVariable.new
+  end
+
   it "is a private method" do
     Kernel.should have_private_instance_method(:remove_instance_variable)
   end
 
-  it "removes an ivar of a given name and return it's value" do
-    val = KernelSpecs::Ivar.new.send :remove_instance_variable, :@greeting
-    val.should == "hello"
+  it "raises a NameError if the instance variable is not defined" do
+    lambda do
+      @instance.send :remove_instance_variable, :@unknown
+    end.should raise_error(NameError)
   end
 
-  it "supports the name being a string" do
-    val = KernelSpecs::Ivar.new.send :remove_instance_variable, "@greeting"
-    val.should == "hello"
+  it "raises a TypeError if passed an Object not defining #to_str" do
+    lambda do
+      obj = mock("kernel remove_instance_variable")
+      @instance.send :remove_instance_variable, obj
+    end.should raise_error(TypeError)
   end
 
-  it "tries to call #to_str if it's not a String or Symbol" do
-    s = mock("str")
-    s.should_receive(:to_str).and_return("@greeting")
-
-    val = KernelSpecs::Ivar.new.send :remove_instance_variable, s
-    val.should == "hello"
+  describe "when passed a String" do
+    it_behaves_like :kernel_remove_instance_variable, nil, "@greeting"
   end
 
-  it "raises NameError if the ivar isn't defined" do
-    lambda {
-      KernelSpecs::Ivar.new.send :remove_instance_variable, :@unknown
-    }.should raise_error(NameError)
+  describe "when passed a Symbol" do
+    it_behaves_like :kernel_remove_instance_variable, nil, :@greeting
   end
 
-  it "rejects unknown argument types" do
-    lambda {
-      KernelSpecs::Ivar.new.send :remove_instance_variable, Object
-    }.should raise_error(TypeError)
+  describe "when passed an Object" do
+    it "calls #to_str to convert the argument" do
+      name = mock("kernel remove_instance_variable")
+      name.should_receive(:to_str).and_return("@greeting")
+      @instance.send :remove_instance_variable, name
+    end
   end
 end

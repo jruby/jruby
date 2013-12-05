@@ -1,0 +1,5 @@
+fails:Proc#arity returns 1 for a block taking |a, | arguments
+fails:Proc#arity returns 0 for a Proc taking one optional argument
+fails:Proc#arity returns 1 for a Proc taking |a, b = 0| argument 
+fails:Proc#arity returns 1 for a Proc taking |a, b = 0, c = 0| argument 
+fails:Proc#arity returns 1 for a Proc taking |(a, b), c = 0| argument 

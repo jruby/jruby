@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 require File.expand_path('../fixtures/utf-8-encoding.rb', __FILE__)
@@ -435,9 +436,22 @@ describe "String#rindex with Regexp" do
     lambda { "str".rindex(/../, nil) }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9.2" do
-    it "reverse matches multibyte UTF-8 chars" do
-      StringSpecs::UTF8Encoding.egrave.rindex(/[\w\W]/).should == 0
+  with_feature :encoding do
+    it "returns the reverse character index of a multibyte character" do
+      "ありがりがとう".rindex("が").should == 4
+      "ありがりがとう".rindex(/が/).should == 4
+    end
+
+    it "returns the character index before the finish" do
+       "ありがりがとう".rindex("が", 3).should == 2
+       "ありがりがとう".rindex(/が/, 3).should == 2
+    end
+
+    it "raises an Encoding::CompatibilityError if the encodings are incompatible" do
+      re = Regexp.new "れ".encode(Encoding::EUC_JP)
+      lambda do
+        "あれ".rindex re
+      end.should raise_error(Encoding::CompatibilityError)
     end
   end
 end

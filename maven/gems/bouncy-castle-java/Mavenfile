@@ -1,0 +1,26 @@
+#-*- mode: ruby -*-
+
+# tell maven to include the jar files
+gemspec :include_jars => true
+
+jar 'org.bouncycastle:bcpkix-jdk15on', "#{BouncyCastle::MAVEN_VERSION}"
+jar 'org.bouncycastle:bcprov-jdk15on', "#{BouncyCastle::MAVEN_VERSION}"
+
+resource do
+  directory '../../../lib/ruby/shared/'
+  target_path '${basedir}/lib'
+  includes 'bouncy-castle-java.rb'
+end
+
+plugin( :clean, '2.5' ) do
+  execute_goals( :clean,
+                 :phase => :clean, 
+                 :id => 'clean-lib',
+                 :filesets => [ { :directory => '${basedir}/lib' } ],
+                 :failOnError => false )
+end
+
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readonly' => true )
+
+# vim: syntax=Ruby

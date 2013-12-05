@@ -11,7 +11,7 @@ describe "Logger::Application#log" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
   it "logs a message" do
@@ -61,7 +61,7 @@ describe "Logger::Application#log=" do
 
   after :all do
     @log_file.close
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
   it "sets the log device" do

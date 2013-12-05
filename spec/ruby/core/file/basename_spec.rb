@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 
 # TODO: Fix these
@@ -140,4 +141,13 @@ describe "File.basename" do
       File.basename("c:\\bar.txt.exe", ".*").should == "bar.txt"
     end
   end
+
+  with_feature :encoding do
+
+    it "returns the extension for a multibyte filename" do
+      File.basename('/path/Офис.m4a').should == "Офис.m4a"
+    end
+
+  end
+
 end

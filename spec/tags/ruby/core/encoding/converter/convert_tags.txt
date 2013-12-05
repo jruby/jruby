@@ -1,0 +1,1 @@
+fails:Encoding::Converter#convert raises an ArgumentError if called on a finished stream

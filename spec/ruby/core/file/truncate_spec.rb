@@ -48,15 +48,15 @@ describe "File.truncate" do
 
   it "raises an Errno::ENOENT if the file does not exist" do
     # TODO: missing_file
-    not_existing_file = "file-does-not-exist-for-sure.txt"
+    not_existing_file = tmp("file-does-not-exist-for-sure.txt")
 
     # make sure it doesn't exist for real
-    File.delete(not_existing_file) if File.exist?(not_existing_file)
+    rm_r not_existing_file
 
     begin
       lambda { File.truncate(not_existing_file, 5) }.should raise_error(Errno::ENOENT)
     ensure
-      File.delete(not_existing_file) if File.exist?(not_existing_file)
+      rm_r not_existing_file
     end
   end
 

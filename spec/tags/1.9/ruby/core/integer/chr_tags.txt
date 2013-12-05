@@ -1,2 +1,0 @@
-fails:Integer#chr without argument when Encoding.default_internal is not nil and self is greater than 255 raises RangeError if self is invalid as a codepoint in the default internal encoding
-fails:Integer#chr with an encoding argument raises RangeError if self is invalid as a codepoint in the specified encoding

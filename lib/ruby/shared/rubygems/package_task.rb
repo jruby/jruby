@@ -20,6 +20,7 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require 'rubygems'
+require 'rubygems/package'
 begin
   gem 'rake'
 rescue Gem::LoadError
@@ -43,13 +44,10 @@ require 'rake/packagetask'
 #   require 'rubygems/package_task'
 #
 #   spec = Gem::Specification.new do |s|
-#     s.platform = Gem::Platform::RUBY
 #     s.summary = "Ruby based make-like utility."
 #     s.name = 'rake'
 #     s.version = PKG_VERSION
 #     s.requirements << 'none'
-#     s.require_path = 'lib'
-#     s.autorequire = 'rake'
 #     s.files = PKG_FILES
 #     s.description = <<-EOF
 #   Rake is a Make-like program implemented in Ruby. Tasks
@@ -98,11 +96,14 @@ class Gem::PackageTask < Rake::PackageTask
   def define
     super
 
-    task :package => [:gem]
-
     gem_file = File.basename gem_spec.cache_file
     gem_path = File.join package_dir, gem_file
     gem_dir  = File.join package_dir, gem_spec.full_name
+
+    task :package => [:gem]
+
+    directory package_dir
+    directory gem_dir
 
     desc "Build the gem file #{gem_file}"
     task :gem => [gem_path]
@@ -113,7 +114,8 @@ class Gem::PackageTask < Rake::PackageTask
     file gem_path => [package_dir, gem_dir] + @gem_spec.files do
       chdir(gem_dir) do
         when_writing "Creating #{gem_spec.file_name}" do
-          Gem::Builder.new(gem_spec).build
+          Gem::Package.build gem_spec
+
           verbose trace do
             mv gem_file, '..'
           end

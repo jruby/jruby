@@ -1,0 +1,1 @@
+fails:IO#ungetbyte puts back one byte for an Integer argument

@@ -1,4 +1,4 @@
-describe :fiber_resume, :shared => :true do
+describe :fiber_resume, :shared => true do
   it "can be invoked from the root Fiber" do
    fiber = Fiber.new { :fiber }
    fiber.send(@method).should == :fiber

@@ -1,0 +1,5 @@
+exclude :test_to_kddi, "needs investigation"
+exclude :test_to_eucjp, "needs investigation"
+exclude :test_to_softbank, "needs investigation"
+exclude :test_to_sjis, "needs investigation"
+exclude :test_to_utf8, "needs investigation"

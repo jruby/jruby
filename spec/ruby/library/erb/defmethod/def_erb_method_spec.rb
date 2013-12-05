@@ -23,17 +23,18 @@ END
 END
     #
     begin
-      File.open('_example.rhtml', 'w') {|f| f.write(input) }
-      class MyClass3ForEruby
+      file = tmp('_example.rhtml')
+      File.open(file, 'w') {|f| f.write(input) }
+      klass = Class.new do
         extend ERB::DefMethod
-        def_erb_method('render()', '_example.rhtml')
+        def_erb_method('render()', file)
         def initialize(items)
           @items = items
         end
       end
-      MyClass3ForEruby.new([10,20,30]).render().should == expected
+      klass.new([10,20,30]).render().should == expected
     ensure
-      File.unlink('_example.rhtml')
+      rm_r file
     end
 
   end

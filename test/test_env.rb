@@ -6,6 +6,16 @@ require 'java'
 class TestEnv < Test::Unit::TestCase
   include TestHelper
 
+  if ENV.respond_to? :key
+    def key(value)
+      ENV.key(value)
+    end
+  else
+    def key(value)
+      ENV.index(value)
+    end
+  end
+
   def test_jruby_version
     assert defined? JRUBY_VERSION
     assert String === JRUBY_VERSION
@@ -79,15 +89,15 @@ class TestEnv < Test::Unit::TestCase
     val.succ! while ENV.has_value?(val) && ENV.has_value?(val.upcase)
     ENV['test'] = val[0...-1]
 
-    assert_equal(nil, ENV.index(val))
-    assert_equal(nil, ENV.index(val.upcase))
+    assert_equal(nil, key(val))
+    assert_equal(nil, key(val.upcase))
     ENV['test'] = val
-    assert_equal('test', ENV.index(val))
+    assert_equal('test', key(val))
 
-    assert_equal(nil, ENV.index(val.upcase))
+    assert_equal(nil, key(val.upcase))
     ENV['test'] = val.upcase
-    assert_equal(nil, ENV.index(val))
-    assert_equal('test', ENV.index(val.upcase))
+    assert_equal(nil, key(val))
+    assert_equal('test', key(val.upcase))
 
     #nil values are ok (corresponding key will be deleted)
     #nil keys are not ok

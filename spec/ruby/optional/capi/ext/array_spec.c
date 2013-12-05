@@ -202,6 +202,12 @@ static VALUE array_spec_rb_ary_store(VALUE self, VALUE array, VALUE offset, VALU
 }
 #endif
 
+#ifdef HAVE_RB_ARY_CONCAT
+static VALUE array_spec_rb_ary_concat(VALUE self, VALUE array1, VALUE array2) {
+  return rb_ary_concat(array1, array2);
+}
+#endif
+
 #ifdef HAVE_RB_ARY_UNSHIFT
 static VALUE array_spec_rb_ary_unshift(VALUE self, VALUE array, VALUE val) {
   return rb_ary_unshift(array, val);
@@ -341,7 +347,7 @@ void Init_array_spec() {
   rb_define_method(cls, "rb_ary_join", array_spec_rb_ary_join, 2);
 #endif
 
-#ifdef HAVE_RB_ARY_JOIN
+#ifdef HAVE_RB_ARY_TO_S
   rb_define_method(cls, "rb_ary_to_s", array_spec_rb_ary_to_s, 1);
 #endif
 
@@ -379,6 +385,10 @@ void Init_array_spec() {
 
 #ifdef HAVE_RB_ARY_STORE
   rb_define_method(cls, "rb_ary_store", array_spec_rb_ary_store, 3);
+#endif
+
+#ifdef HAVE_RB_ARY_CONCAT
+  rb_define_method(cls, "rb_ary_concat", array_spec_rb_ary_concat, 2);
 #endif
 
 #ifdef HAVE_RB_ARY_UNSHIFT

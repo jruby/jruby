@@ -106,6 +106,20 @@ describe "CApiObject" do
     end
   end
 
+  describe "rb_method_boundp" do
+    it "returns true when the given method is bound" do
+      @o.rb_method_boundp(Object, :class, true).should == true
+      @o.rb_method_boundp(Object, :class, false).should == true
+      @o.rb_method_boundp(Object, :initialize, true).should == false
+      @o.rb_method_boundp(Object, :initialize, false).should == true
+    end
+
+    it "returns false when the given method is not bound" do
+      @o.rb_method_boundp(Object, :foo, true).should == false
+      @o.rb_method_boundp(Object, :foo, false).should == false
+    end
+  end
+
   describe "rb_to_id" do
     it "returns a symbol representation of the object" do
       @o.rb_to_id("foo").should == :foo
@@ -126,6 +140,22 @@ describe "CApiObject" do
     it "gets an instance variable" do
       o = ObjectTest.new
       @o.rb_attr_get(o, :@foo).should == 7
+    end
+  end
+
+  describe "rb_obj_instance_variables" do
+    ruby_version_is "1.9" do
+      it "returns an array with instance variable names as symbols" do
+        o = ObjectTest.new
+        @o.rb_obj_instance_variables(o).should include(:@foo)
+      end
+    end
+
+    ruby_version_is ""..."1.9" do
+      it "returns an array with instance variable names as strings" do
+        o = ObjectTest.new
+        @o.rb_obj_instance_variables(o).should include("@foo")
+      end
     end
   end
 
@@ -305,6 +335,23 @@ describe "CApiObject" do
       @o.rb_is_type_module(ObjectTest).should == false
       @o.rb_is_type_class(ObjectTest).should == true
       @o.rb_is_type_data(Time.now).should == true
+    end
+  end
+
+  ruby_version_is "1.9" do
+    describe "rb_type_p" do
+      it "returns whether object is of the given type" do
+        class DescArray < Array
+        end
+        @o.rb_is_rb_type_p_nil(nil).should == true
+        @o.rb_is_rb_type_p_object([]).should == false
+        @o.rb_is_rb_type_p_object(ObjectTest.new).should == true
+        @o.rb_is_rb_type_p_array([]).should == true
+        @o.rb_is_rb_type_p_array(DescArray.new).should == true
+        @o.rb_is_rb_type_p_module(ObjectTest).should == false
+        @o.rb_is_rb_type_p_class(ObjectTest).should == true
+        @o.rb_is_rb_type_p_data(Time.now).should == true
+      end
     end
   end
 

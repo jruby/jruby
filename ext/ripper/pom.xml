@@ -1,0 +1,79 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-ext</artifactId>
+    <version>9000.dev</version>
+  </parent>
+  <artifactId>ripper</artifactId>
+  <version>9000.dev</version>
+  <packaging>jar</packaging>
+
+  <name>JRuby Ripper</name>
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <shared.dir>${project.basedir}/../../lib/ruby/shared</shared.dir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <encoding>utf-8</encoding>
+          <debug>true</debug>
+          <verbose>true</verbose>
+          <fork>true</fork>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+          <source>${base.java.version}</source>
+          <target>${base.javac.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <outputFile>${shared.dir}/ripper.jar</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${shared.dir}</directory>
+              <includes>
+                <include>ripper.jar</include>
+              </includes>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

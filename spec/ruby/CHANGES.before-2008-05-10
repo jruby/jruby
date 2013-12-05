@@ -309,7 +309,7 @@ Date:   Thu May 1 10:48:20 2008 -0700
 
     This is the result of ping-pong between Evan and Wilson. It refactors
     out enclosing_class from being used, and instead information is always
-    pulled directly from the ConstantScope object. This lets us inject proper
+    pulled directly from the StaticScope object. This lets us inject proper
     scoping changes in ruby.
 
 commit 2db27aef88e2ca7752beba846d172ede276275e0
@@ -8199,9 +8199,9 @@ commit 79da85bb1b1d63e617251b3a3ea6b0657c1e8ddb
 Author: Adam Gardiner <adam.b.gardiner@gmail.com>
 Date:   Mon Jan 7 13:04:22 2008 +1100
 
-    Modified CompiledCode#decode to use #local_names
+    Modified CompiledMethod#decode to use #local_names
 
-    * CompiledCode#decode now leverages new #local_names
+    * CompiledMethod#decode now leverages new #local_names
       method to return the names of locals accessed via
       push_local/set_local etc.
     * Removed excludes, as all decode specs now pass
@@ -8378,11 +8378,11 @@ commit 43ff733a3097fff44ba8a12334f20a1bf77a965f
 Author: Adam Gardiner <adam.b.gardiner@gmail.com>
 Date:   Thu Jan 3 23:54:34 2008 +1100
 
-    CompiledCode#decode now uses local variable names (if avail)
+    CompiledMethod#decode now uses local variable names (if avail)
 
-    * CompiledCode#decode now looks in the bonus tuple for the names
+    * CompiledMethod#decode now looks in the bonus tuple for the names
       of stack and slot local variables
-    * Moved compiledcode specs to spec/core/compiledcode
+    * Moved compiledmethod specs to spec/core/compiledmethod
 
     Note: Compiler2 appears not to be setting the bonus tuple, so code
     compiled under it cannot decode local names at present.
@@ -9222,9 +9222,9 @@ commit 469527ddf33484a4a77f3d73c611e9a393bd48ad
 Author: Adam Gardiner <adam.b.gardiner@gmail.com>
 Date:   Fri Dec 21 12:02:50 2007 +1100
 
-    Added CompiledCode#decode specs
+    Added CompiledMethod#decode specs
 
-    * Added UnboundMethod#compiled_code accessor
+    * Added UnboundMethod#compiled_method accessor
     * Improved robustness of ISeq decode when dealing with junk at
       the end of an iseq
 
@@ -10207,8 +10207,8 @@ Date:   Wed Dec 5 14:42:27 2007 -0800
     Vastly simplify and fix constant lookup
 
     * New constant lookup specs to test behavior
-    * Added ConstantScope object and field on CompiledCode which stores
-      a ConstantScope instance which indicates the lexical scope of the CM.
+    * Added StaticScope object and field on CompiledMethod which stores
+      a StaticScope instance which indicates the lexical scope of the CM.
 
 commit 163e56646a817301201af843b45c973da058688c
 Author: Tilman Sauerbeck <tilman@code-monkey.de>
@@ -11024,8 +11024,8 @@ commit 1ef46468d7808c52b07388130069cb2e7854bff8
 Author: Matt Pelletier <matt@eastmedia.com>
 Date:   Wed Nov 7 04:48:39 2007 -0500
 
-    * Update CompiledCode#arity to be accurate for cases of required and/or optional arguments, with or without blocks
-     * CompiledCode#arity is still inaccurate when splat argument is present (the presence of splat overrides #required)
+    * Update CompiledMethod#arity to be accurate for cases of required and/or optional arguments, with or without blocks
+     * CompiledMethod#arity is still inaccurate when splat argument is present (the presence of splat overrides #required)
      * Add specs for more thorough coverage of various argument use cases
      * Includes known Rubinius-failing specs for splat-related arity
 

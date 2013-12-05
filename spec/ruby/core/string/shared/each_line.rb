@@ -129,12 +129,4 @@ describe :string_each_line, :shared => true do
       lambda { "hello world".send(@method, :o).to_a }.should raise_error(TypeError)
     end
   end
-
-  ruby_version_is "1.8.7" do
-    it "returns an enumerator when no block given" do
-      enum = "hello world".send(@method, ' ')
-      enum.should be_an_instance_of(enumerator_class)
-      enum.to_a.should == ["hello ", "world"]
-    end
-  end
 end

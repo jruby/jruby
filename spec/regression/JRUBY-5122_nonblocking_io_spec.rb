@@ -160,19 +160,6 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "fo"
   end
 
-  if RUBY_VERSION =~ /1\.8/
-    it "should not block for sysread in ST condition" do
-      server = TCPServer.new(0)
-      client = TCPSocket.new('localhost', server.addr[1])
-      sock = accept(server)
-      begin
-        sock.read_nonblock(5)
-      rescue SystemCallError => e
-        [Errno::EAGAIN, Errno::EWOULDBLOCK].include?(e.class).should == true
-      end
-    end
-  end
-
   it "should not block for each_byte" do
     server = TCPServer.new(0)
     value = nil
@@ -214,7 +201,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   #   Oracle's build block with > 131072 (2**17)
   # On a Windows 7(64) box:
   #   Oracle's build does not block (use memory till OOMException)
-  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (65536 * 4)
+  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (219463 * 4)
 
   it "should not block for write" do
   100.times do # for acceleration; it failed w/o wait_for_accepted call

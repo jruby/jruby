@@ -1,0 +1,7 @@
+fails:Socket.new calls #to_str to convert the family to a String
+fails:Socket.new raises a TypeError if #to_str does not return a String
+fails:Socket.new raises a SocketError if given symbol is not a Socket constants reference
+fails:Socket.new with a Socket::PF_INET family creates a socket with a :DGRAM type specifier
+fails:Socket.new with a Socket::PF_INET family creates a socket with a Socket::PF_STREAM type specifier
+fails:Socket.new with a Socket::PF_UNIX family creates a socket with a :DGRAM type specifier
+fails:Socket.new with a Socket::PF_UNIX family creates a socket with a :STREAM type specifier

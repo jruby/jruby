@@ -1,3 +1,0 @@
-fails(JRUBY-5656):String#unpack with format 'U' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 'u' decodes an empty string as an empty string
-fails(JRUBY-5656):String#unpack with format 'u' appends empty string to the array for directives exceeding the input size

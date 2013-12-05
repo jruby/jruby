@@ -675,6 +675,17 @@ describe "A Ruby class implementing an interface" do
       lambda {c2.new}.should_not raise_error
     end
   end
+  
+  it "returns the Java class implementing the interface for .java_class" do
+    cls = Class.new do
+      include java.lang.Runnable
+    end
+    obj = cls.new
+    
+    java_cls = obj.java_class
+    
+    java_cls.interfaces.should include(java.lang.Runnable.java_class)
+  end
 end
 
 # JRUBY-6590

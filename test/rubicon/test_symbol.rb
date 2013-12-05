@@ -2,8 +2,6 @@ require 'test/unit'
 
 
 class TestSymbol < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   #
   # Check that two arrays contain the same "bag" of elements.
   # A mathematical bag differs from a "set" by counting the
@@ -99,15 +97,6 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(':"with \\\\ \" chars"', 'with \ " chars'.intern.inspect)
   end
 
-  unless IS19
-    def test_to_i
-      assert_equal($f1.to_i,$f2.to_i)
-      assert_equal($f2.to_i,$f3.to_i)
-      assert(:wilma.to_i != :Fred.to_i)
-      assert(:Barney.to_i != :wilma.to_i)
-    end
-  end
-
   def test_to_s
     assert_equal("Fred",:Fred.id2name)
     assert_equal("Barney",:Barney.id2name)
@@ -132,11 +121,7 @@ class TestSymbol < Test::Unit::TestCase
 
   def test_freeze
     assert_same(:Fred, :Fred.freeze)
-    if IS19
-      assert(:Fred.frozen?)
-    else
-      assert(! :Fred.frozen?)
-    end
+    assert(:Fred.frozen?)
   end
 
   def test_dup

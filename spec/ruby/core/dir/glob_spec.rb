@@ -40,6 +40,19 @@ describe "Dir.glob" do
     DirSpecs.delete_mock_dirs
   end
 
+  with_feature :encoding do
+    describe "with encoding" do
+      it "returns Strings in the encoding of the pattern" do
+        a = "file_one*".force_encoding Encoding::IBM437
+        b = "file_two*".force_encoding Encoding::EUC_JP
+        files = Dir.glob([a, b])
+
+        files.first.encoding.should equal(Encoding::IBM437)
+        files.last.encoding.should equal(Encoding::EUC_JP)
+      end
+    end
+  end
+
   it "can take an array of patterns" do
     Dir.glob(["file_o*", "file_t*"]).should ==
                %w!file_one.ext file_two.ext!
@@ -67,6 +80,7 @@ describe "Dir.glob" do
       deeply/nested/directory/structure/
       dir/
       special/
+      special/test{1}/
       subdir_one/
       subdir_two/
     ]
@@ -87,6 +101,7 @@ describe "Dir.glob" do
       ./deeply/nested/directory/structure/
       ./dir/
       ./special/
+      ./special/test{1}/
       ./subdir_one/
       ./subdir_two/
     ]
@@ -104,12 +119,6 @@ describe "Dir.glob" do
   it "ignores non-dirs when traversing recursively" do
     touch "spec"
     Dir.glob("spec/**/*.rb").should == []
-  end
-
-  it "yields correct Unicode filename" do
-    Dir.glob("special/*").each do |f|
-      File.exist?(f).should be_true
-    end
   end
 
   platform_is_not(:windows) do

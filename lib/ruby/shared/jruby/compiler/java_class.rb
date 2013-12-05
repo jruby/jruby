@@ -274,12 +274,12 @@ module JRuby::Compiler
       # ignore other nodes
     end
   end
-  
+
   class RubyScript
     BASE_IMPORTS = [
       "org.jruby.Ruby",
       "org.jruby.RubyObject",
-      "org.jruby.javasupport.util.RuntimeHelpers",
+      "org.jruby.runtime.Helpers",
       "org.jruby.runtime.builtin.IRubyObject",
       "org.jruby.javasupport.JavaUtil",
       "org.jruby.RubyClass"
@@ -288,7 +288,7 @@ module JRuby::Compiler
     def initialize(script_name, imports = BASE_IMPORTS)
       @classes = []
       @script_name = script_name
-      @imports = imports
+      @imports = imports.dup
       @requires = []
       @package = ""
     end
@@ -368,8 +368,8 @@ module JRuby::Compiler
     static {
 #{requires_string}
         RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-        metaclass.setRubyStaticAllocator(#{name}.class);
         if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
+        metaclass.setRubyStaticAllocator(#{name}.class);
         __metaclass__ = metaclass;
     }
 JAVA
@@ -398,7 +398,7 @@ JAVA
         "        String source = new StringBuilder(\"#{source_line}\").toString();\n        __ruby__.executeScript(source, \"#{script_name}\");"
       else
         requires.map do |r|
-          "        __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+          "        __ruby__.getLoadService().require(\"#{r}\");"
         end.join("\n")
       end
     end
@@ -438,7 +438,7 @@ JAVA
 
       unless @has_constructor
         str << <<JAVA
-        
+
     /**
      * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
      * Ruby and RubyClass instances assocated with this class, and then invokes the
@@ -446,7 +446,7 @@ JAVA
      */
     public #{name}() {
         this(__ruby__, __metaclass__);
-        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+        Helpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
     }
 JAVA
       end
@@ -508,7 +508,7 @@ JAVA
       declarator_string do
         <<-JAVA
 #{conversion_string(var_names)}
-        IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+        IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
         #{return_string}
         JAVA
       end
@@ -529,7 +529,7 @@ JAVA
 
     def conversion_string(var_names)
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+        var_names.map { |a| "        IRubyObject ruby_arg_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
       else
         str =  "        IRubyObject ruby_args[] = new IRubyObject[#{arity}];\n"
         var_names.each_with_index { |a, i| str += "        ruby_args[#{i}] = JavaUtil.convertJavaToRuby(__ruby__, #{a});\n" }
@@ -559,7 +559,7 @@ JAVA
       end
 
       annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(" ")
-      
+
       "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
@@ -600,7 +600,7 @@ JAVA
       return @passed_args if @passed_args
 
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        @passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+        @passed_args = var_names.map {|a| "ruby_arg_#{a}"}.join(', ')
         @passed_args = ', ' + @passed_args if args.size > 0
       else
         @passed_args = ", ruby_args";
@@ -660,7 +660,7 @@ JAVA
         <<-JAVA
         this(__ruby__, __metaclass__);
 #{conversion_string(var_names)}
-        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
+        Helpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
         JAVA
       end
     end

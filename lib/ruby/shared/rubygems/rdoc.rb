@@ -5,6 +5,13 @@ require 'fileutils'
 begin
   gem 'rdoc'
 rescue Gem::LoadError
+  # swallow
+else
+  # This will force any deps that 'rdoc' might have
+  # (such as json) that are ambigious to be activated, which
+  # is important because we end up using Specification.reset
+  # and we don't want the warning it pops out.
+  Gem.finish_resolve
 end
 
 loaded_hook = false
@@ -30,6 +37,7 @@ end
 class Gem::RDoc # :nodoc: all
 
   include Gem::UserInteraction
+  extend  Gem::UserInteraction
 
   @rdoc_version = nil
   @specs = []
@@ -63,7 +71,8 @@ class Gem::RDoc # :nodoc: all
   # +specs+
 
   def self.generation_hook installer, specs
-    types     = installer.document
+    start = Time.now
+    types = installer.document
 
     generate_rdoc = types.include? 'rdoc'
     generate_ri   = types.include? 'ri'
@@ -71,6 +80,13 @@ class Gem::RDoc # :nodoc: all
     specs.each do |spec|
       new(spec, generate_rdoc, generate_ri).generate
     end
+
+    return unless generate_rdoc or generate_ri
+
+    duration = (Time.now - start).to_i
+    names    = specs.map(&:name).join ', '
+
+    say "Done installing documentation for #{names} after #{duration} seconds"
   end
 
   ##
@@ -79,24 +95,24 @@ class Gem::RDoc # :nodoc: all
   def self.load_rdoc
     return if @rdoc_version
 
-    begin
-      require 'rdoc/rdoc'
+    require 'rdoc/rdoc'
 
-      @rdoc_version = if ::RDoc.const_defined? :VERSION then
-                        Gem::Version.new ::RDoc::VERSION
-                      else
-                        Gem::Version.new '1.0.1'
-                      end
+    @rdoc_version = if ::RDoc.const_defined? :VERSION then
+                      Gem::Version.new ::RDoc::VERSION
+                    else
+                      Gem::Version.new '1.0.1'
+                    end
 
-    rescue LoadError => e
-      raise Gem::DocumentError, "RDoc is not installed: #{e}"
-    end
+  rescue LoadError => e
+    raise Gem::DocumentError, "RDoc is not installed: #{e}"
   end
 
   ##
   # Creates a new documentation generator for +spec+.  RDoc and ri data
-  # generation can be disabled through +generate_rdoc+ and +generate_ri+
-  # respectively.
+  # generation can be enabled or disabled through +generate_rdoc+ and
+  # +generate_ri+ respectively.
+  #
+  # Only +generate_ri+ is enabled by default.
 
   def initialize spec, generate_rdoc = true, generate_ri = true
     @doc_dir   = spec.doc_dir
@@ -114,6 +130,8 @@ class Gem::RDoc # :nodoc: all
 
   ##
   # Removes legacy rdoc arguments from +args+
+  #--
+  # TODO move to RDoc::Options
 
   def delete_legacy_args args
     args.delete '--inline-source'
@@ -129,16 +147,20 @@ class Gem::RDoc # :nodoc: all
   # Documentation will be generated into +destination+
 
   def document generator, options, destination
+    generator_name = generator
+
     options = options.dup
     options.exclude ||= [] # TODO maybe move to RDoc::Options#finish
     options.setup_generator generator
     options.op_dir = destination
     options.finish
 
-    @rdoc.options = options
-    @rdoc.generator = options.generator.new options
+    generator = options.generator.new @rdoc.store, options
 
-    say "Installing #{generator} documentation for #{@spec.full_name}"
+    @rdoc.options = options
+    @rdoc.generator = generator
+
+    say "Installing #{generator_name} documentation for #{@spec.full_name}"
 
     FileUtils.mkdir_p options.op_dir
 
@@ -160,44 +182,51 @@ class Gem::RDoc # :nodoc: all
 
     setup
 
+    options = nil
+
     if Gem::Requirement.new('< 3').satisfied_by? self.class.rdoc_version then
       generate_legacy
-    else
-      ::RDoc::TopLevel.reset # TODO ::RDoc::RDoc.reset
-      ::RDoc::Parser::C.reset
+      return
+    end
 
+    ::RDoc::TopLevel.reset # TODO ::RDoc::RDoc.reset
+    ::RDoc::Parser::C.reset
+
+    args = @spec.rdoc_options
+    args.concat @spec.require_paths
+    args.concat @spec.extra_rdoc_files
+
+    case config_args = Gem.configuration[:rdoc]
+    when String then
+      args = args.concat config_args.split
+    when Array then
+      args = args.concat config_args
+    end
+
+    delete_legacy_args args
+
+    Dir.chdir @spec.full_gem_path do
       options = ::RDoc::Options.new
       options.default_title = "#{@spec.full_name} Documentation"
-      options.files = []
-      options.files.push(*@spec.require_paths)
-      options.files.push(*@spec.extra_rdoc_files)
-
-      args = @spec.rdoc_options
-
-      case config_args = Gem.configuration[:rdoc]
-      when String then
-        args = args.concat config_args.split
-      when Array then
-        args = args.concat config_args
-      end
-
-      delete_legacy_args args
       options.parse args
-      options.quiet = !Gem.configuration.really_verbose
-
-      @rdoc = new_rdoc
-      @rdoc.options = options
-
-      Dir.chdir @spec.full_gem_path do
-        @file_info = @rdoc.parse_files options.files
-      end
-
-      document 'ri',       options, @ri_dir if
-        @generate_ri   and (@force or not File.exist? @ri_dir)
-
-      document 'darkfish', options, @rdoc_dir if
-        @generate_rdoc and (@force or not File.exist? @rdoc_dir)
     end
+
+    options.quiet = !Gem.configuration.really_verbose
+
+    @rdoc = new_rdoc
+    @rdoc.options = options
+
+    say "Parsing documentation for #{@spec.full_name}"
+
+    Dir.chdir @spec.full_gem_path do
+      @file_info = @rdoc.parse_files options.files
+    end
+
+    document 'ri',       options, @ri_dir if
+      @generate_ri   and (@force or not File.exist? @ri_dir)
+
+    document 'darkfish', options, @rdoc_dir if
+      @generate_rdoc and (@force or not File.exist? @rdoc_dir)
   end
 
   ##
@@ -248,8 +277,7 @@ class Gem::RDoc # :nodoc: all
         alert_error "While generating documentation for #{@spec.full_name}"
         ui.errs.puts "... MESSAGE:   #{ex}"
         ui.errs.puts "... RDOC args: #{args.join(' ')}"
-        ui.errs.puts "\t#{ex.backtrace.join "\n\t"}" if
-        Gem.configuration.backtrace
+        ui.backtrace ex
         ui.errs.puts "(continuing with the rest of the installation)"
       ensure
       end
@@ -260,7 +288,7 @@ class Gem::RDoc # :nodoc: all
   # #new_rdoc creates a new RDoc instance.  This method is provided only to
   # make testing easier.
 
-  def new_rdoc
+  def new_rdoc # :nodoc:
     ::RDoc::RDoc.new
   end
 

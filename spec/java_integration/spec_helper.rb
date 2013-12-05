@@ -1,5 +1,5 @@
 require 'java'
-$CLASSPATH << File.expand_path('../../../build/classes/test', __FILE__)
+$CLASSPATH << File.expand_path('../../../test/target/test-classes', __FILE__)
 require 'rspec'
 
 unless $is_rspec_reconfigured
@@ -13,9 +13,10 @@ end
 # Works like 'should include('str1', 'str2') but for arrays of
 # strings. Reports closest matches using Levenshtein distance when a
 # string is not found instead of dumping a huge inspect string.
-RSpec::Matchers.define :have_strings do |*strings|
+RSpec::Matchers.define :have_strings_or_symbols do |*strings|
   match do |container|
     @included, @missing = [], []
+    strings.map!(&:to_sym)
     strings.flatten.each do |s|
       if container.include?(s)
         @included << s

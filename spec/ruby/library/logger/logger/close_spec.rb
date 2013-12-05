@@ -10,7 +10,7 @@ describe "Logger#close" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@path) if File.exists?(@path)
+    rm_r @path
   end
 
   ruby_version_is "" ... "1.9" do

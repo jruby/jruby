@@ -1,0 +1,4 @@
+fails:The defined? keyword for super for a method taking no arguments returns 'super' from a block when a superclass method exists
+fails:The defined? keyword for super for a method taking no arguments returns 'super' from a block in a #define_method when a superclass method exists
+fails:The defined? keyword for super for a method taking arguments returns 'super' from a block when a superclass method exists
+fails:The defined? keyword for super for a method taking arguments returns 'super' from a block in a #define_method when a superclass method exists

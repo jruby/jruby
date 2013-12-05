@@ -82,21 +82,6 @@ class TestZlib < Test::Unit::TestCase
     rescue Zlib::GzipReader::Error
     end
   end
-  
-  def test_deflate_positive_winbits
-    d =  Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, Zlib::MAX_WBITS)
-    d << 'hello'
-    res = d.finish
-    assert_equal("x\234\313H\315\311\311\a\000\006,\002\025", res)
-  end
-  
-   # negative winbits means no header and no checksum.
-   def test_deflate_negative_winbits
-     d =  Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, -Zlib::MAX_WBITS)
-     d << 'hello'
-     res = d.finish
-     assert_equal("\313H\315\311\311\a\000", res)
-  end
 
   # JRUBY-2228
   def test_gzipreader_descriptor_leak
@@ -336,10 +321,6 @@ class TestZlib < Test::Unit::TestCase
     # add bytes, one by one
     (main_data * 2).each_byte { |d| result << z.inflate(d.chr)}
     assert_equal("foo", result)
-    # the first chunk is inflated to its completion,
-    # the second chunk is just passed through.
-    result << z.finish
-    assert_equal("foo" + main_data, result)
   end
 
   # JRUBY-4503: cruby-zlib does not require 'close'
@@ -476,35 +457,6 @@ class TestZlib < Test::Unit::TestCase
     end
   end
 
-  def test_writer_sync
-    marker = "\x00\x00\xff\xff"
-
-    sio = StringIO.new("")
-
-    if RUBY_VERSION >= '1.9.0'
-      sio.set_encoding "ASCII-8BIT"
-    end
-
-    Zlib::GzipWriter.wrap(sio) { |z|
-      z.write 'a'
-      z.sync = true
-      z.write 'b'           # marker
-      z.write 'c'           # marker
-      z.sync = false
-      z.write 'd'
-      z.write 'e'
-      assert_equal(false, z.sync);
-    }
-
-    data = sio.string
-
-    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-
-    assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
-    assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
-    assert_equal("de", i.inflate(data))
-  end
-
   def test_writer_flush
     marker = "\x00\x00\xff\xff"
 
@@ -521,18 +473,8 @@ class TestZlib < Test::Unit::TestCase
     }
 
     data = sio.string
-
-    if RUBY_VERSION >= '1.9.0'
-      #data.index(marker) will return nil
-    else
-      i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-      assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
-      assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
-      assert_equal("de", i.inflate(data))
-    end
   end
 
-  if RUBY_VERSION >= '1.9.0'
   def test_error_input
     t = Tempfile.new("test_zlib_gzip_reader_open")
     t.close
@@ -553,7 +495,6 @@ class TestZlib < Test::Unit::TestCase
     }
     assert_equal("not in gzip format", e.message)
     assert_equal("foobarzothoge", e.input)
-  end
   end
 end
 
@@ -944,12 +885,5 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     assert_raise(Zlib::DataError) do
       z.inflate("\x00")
     end
-  end
-
-  def test_deflate_full_flush
-    z = Zlib::Deflate.new(8, 15)
-    s = z.deflate("f", Zlib::FULL_FLUSH)
-    s << z.deflate("b", Zlib::FINISH)
-    assert_equal("x\332J\003\000\000\000\377\377K\002\000\0010\000\311", s)
   end
 end

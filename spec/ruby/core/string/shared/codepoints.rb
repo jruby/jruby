@@ -1,15 +1,5 @@
 
 describe :string_codepoints, :shared => true do
-  it "returns an Enumerator when no block is given" do
-    "".send(@method).should be_an_instance_of(enumerator_class)
-  end
-
-  it "returns an Enumerator when no block is given even when self has an invalid encoding" do
-    s = "\xDF".force_encoding(Encoding::UTF_8)
-    s.valid_encoding?.should be_false
-    "".send(@method).should be_an_instance_of(enumerator_class)
-  end
-
   it "raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator" do
     s = "\xDF".force_encoding(Encoding::UTF_8)
     s.valid_encoding?.should be_false

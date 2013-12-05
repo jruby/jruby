@@ -1,1 +1,0 @@
-fails:String#inspect returns a string with non-printing characters replaced by \x notation

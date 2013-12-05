@@ -2,7 +2,7 @@ require File.expand_path('../spec_helper', __FILE__)
 
 load_extension('file')
 
-describe :rb_file_open, :shared =>true do
+describe :rb_file_open, :shared => true do
   it "raises an ArgumentError if passed an empty mode string" do
     touch @name
     lambda { @s.rb_file_open(@name, "") }.should raise_error(ArgumentError)

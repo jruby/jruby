@@ -1,3 +1,0 @@
-fails:String#setbyte can invalidate a String's encoding
-fails:String#setbyte changes the byte at the given index to the new byte
-fails:String#setbyte regards a negative index as counting from the end of the String

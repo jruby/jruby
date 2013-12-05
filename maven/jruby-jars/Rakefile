@@ -1,0 +1,7 @@
+#-*- mode: ruby -*-
+
+require 'maven/ruby/tasks'
+    
+task :default => :build
+
+# vim: syntax=Ruby

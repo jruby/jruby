@@ -1,4 +1,4 @@
-path = File.expand_path('../../../build/classes/test', __FILE__)
+path = File.expand_path('../../../target/test-classes', __FILE__)
 # This test depends on test build. Skip if test classes are not built.
 if File.exist?(File.join(path, 'dummy'))
   require 'rspec'

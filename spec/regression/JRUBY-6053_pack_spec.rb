@@ -22,6 +22,6 @@ describe 'JRUBY-6053: Array#pack' do
   end
 
   it 'returns 2 bytes for "B2"' do
-    ["1"].pack("B2").should == "\x80\x00"
+    ["1"].pack("B2").should == "\x80\x00".force_encoding('ASCII-8BIT')
   end
 end

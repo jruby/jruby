@@ -1,0 +1,9 @@
+fails:IO.copy_stream from an IO to an IO starts writing at the destination IO's current position
+fails:IO.copy_stream from a file name to an IO starts writing at the destination IO's current position
+fails:IO.copy_stream from a pipe IO raises an error when an offset is specified
+fails:IO.copy_stream from a pipe IO to a file name copies only length bytes when specified
+fails:IO.copy_stream from a pipe IO to an IO copies the entire IO contents to the IO
+fails:IO.copy_stream from a pipe IO to an IO starts writing at the destination IO's current position
+fails:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
+fails:IO.copy_stream from a pipe IO to an IO copies only length bytes when specified
+fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined

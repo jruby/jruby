@@ -177,9 +177,9 @@ class Ant
       else
         options = options.join(" ") if options.respond_to? :to_ary
         ant_bin = ENV['ANT_HOME'] ? File.join(ENV['ANT_HOME'], 'bin', 'ant') : 'ant' # find one on $PATH
-        sh "#{ant_bin} #{options.to_s}" # FIXME: Make this more secure if using array form
+        system "#{ant_bin} #{options.to_s}" # FIXME: Make this more secure if using array form
       end
-    rescue => e
+    rescue Exception => e
       warn e.message
       warn e.backtrace.join("\n")
     end

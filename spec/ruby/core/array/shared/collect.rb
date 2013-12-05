@@ -7,7 +7,7 @@ describe :array_collect, :shared => true do
   end
 
   it "does not return subclass instance" do
-    ArraySpecs::MyArray[1, 2, 3].send(@method) { |x| x + 1 }.should be_kind_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].send(@method) { |x| x + 1 }.should be_an_instance_of(Array)
   end
 
   it "does not change self" do

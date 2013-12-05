@@ -65,7 +65,7 @@ describe "Time#+" do
     end
 
     it "accepts arguments that can be coerced into Rational" do
-      (obj = mock('10')).should_receive(:to_r).and_return(Rational(10))
+      (obj = mock_numeric('10')).should_receive(:to_r).and_return(Rational(10))
       (Time.at(100) + obj).should == Time.at(110)
     end
 

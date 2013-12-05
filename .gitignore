@@ -3,6 +3,8 @@
 *.zip
 *.md5
 *.sha1
+*.releaseBackup
+release.properties
 jruby-complete.jar
 bin/*
 !bin/gem
@@ -14,12 +16,12 @@ target
 dist
 lib/jruby*.jar
 lib/native
+lib/jni
 lib/ruby/gems
 lib/ruby/shared/rubygems/defaults/jruby_native.rb
 nbproject/private
 share
 latest_source_cache
-src_gen
 docs/api
 test/rails
 test/prawn
@@ -55,6 +57,21 @@ build_graph.png
 /.idea/
 /.rbx/
 *.sw[mnop]
-lib/ruby/shared/bcmail-jdk15-146.jar
-lib/ruby/shared/bcprov-jdk15-146.jar
-lib/ruby/shared/jopenssl.jar
+lib/ruby/shared/bcpkix-jdk15on-*.jar
+lib/ruby/shared/bcprov-jdk15on-*.jar
+lib/ruby/shared/*jopenssl*.jar
+lib/ruby/shared/readline/*readline*.jar
+lib/ruby/shared/readline/jline*.jar
+lib/ruby/shared/ripper.jar
+core/src/main/java/org/jruby/runtime/Constants.java
+dependency-reduced-pom.xml
+
+# These files are bin files for default gems
+!lib/ruby/gems/shared/gems/rake-10.1.0/bin/rake
+!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
+!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
+install/updates.xml
+
+# IntelliJ project files
+.idea
+*.iml

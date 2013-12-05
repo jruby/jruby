@@ -14,4 +14,8 @@ describe "Time#zone" do
       Time.new(2001, 1, 1, 0, 0, 0, "+05:00").zone.should == nil
     end
   end
+
+  it "returns UTC when called on a UTC time" do
+    Time.now.utc.zone.should == "UTC"
+  end
 end

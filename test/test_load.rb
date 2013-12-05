@@ -103,7 +103,7 @@ class TestLoad < Test::Unit::TestCase
     `#{cmd}`
   end
 
-  unless WINDOWS || RUBY_VERSION =~ /1\.9/ # FIXME for Windows and 1.9
+  unless WINDOWS || true # FIXME for Windows and 1.9+
     def test_load_relative_with_classpath
       assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar')), 'OK'
     end
@@ -227,20 +227,18 @@ DEPS
   end
 
   # JRUBY-6172
-  unless RUBY_VERSION =~ /1\.9/ # FIXME figure out why this doesn't pass
-    def test_load_from_jar_with_symlink_in_path
-      if !WINDOWS
-        begin
-    Dir.mkdir 'not_A' unless File.exists? 'not_A'
-    File.symlink("not_A", "A") unless File.symlink?('A')
-    with_jruby_shell_spawning do
-      `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname('#{__FILE__}')), 'requireTest.jar!'), 'A', 'B.rb') ; B"`
-      assert_equal 0, $?
-    end
-        ensure
-    File.delete("A") if File.symlink?('A')
-    Dir.rmdir 'not_A' if File.exists? 'not_A'
+  def test_load_from_jar_with_symlink_in_path
+    if !WINDOWS
+      begin
+        Dir.mkdir 'not_A' unless File.exists? 'not_A'
+        File.symlink("not_A", "A") unless File.symlink?('A')
+        with_jruby_shell_spawning do
+          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'test/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
+          assert_equal 0, $?
         end
+      ensure
+        File.delete("A") if File.symlink?('A')
+        Dir.rmdir 'not_A' if File.exists? 'not_A'
       end
     end
   end
@@ -253,6 +251,14 @@ DEPS
     }
   end
 
+  def test_loading_jar_with_leading_underscore
+    assert_in_sub_runtime %{
+      require 'test/_leading_and_consecutive__underscores.jar'
+      load 'test/_leading_and_consecutive__underscores.jar'
+      true
+    }
+  end
+
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading
     assert_equal "hi", run_in_sub_runtime(%{
@@ -261,5 +267,22 @@ DEPS
       require 'hello_from_jar'
       $hello
     })
+  end
+
+  def test_symlinked_jar
+    Dir.chdir('test') do
+      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exists?('jarwithoutextension')
+      File.symlink 'jarwithoutextension', 'symlink.jar' unless File.symlink?('symlink.jar')
+    end
+
+    assert_in_sub_runtime %{
+      require 'test/symlink.jar'
+    }
+  ensure
+    Dir.chdir('test') do
+      [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
+        File.delete(file)
+      end
+    end
   end
 end

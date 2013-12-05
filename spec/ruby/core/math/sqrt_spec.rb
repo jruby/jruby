@@ -22,6 +22,10 @@ describe "Math.sqrt" do
     it "raises a TypeError if the argument cannot be coerced with Float()" do
       lambda { Math.sqrt("test") }.should raise_error(TypeError)
     end
+
+    it "returns NaN given NaN" do
+      Math.sqrt(nan_value).nan?.should be_true
+    end
   end
 
   it "raises a TypeError if the argument is nil" do

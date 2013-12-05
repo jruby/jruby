@@ -1,1 +1,0 @@
-fails:Array#pack with format 'P' returns a String who's size is equal to the number of bytes in a machine word

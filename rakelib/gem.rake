@@ -1,7 +1,8 @@
 desc "Build the jruby-jars gem"
 namespace :gem do
   task 'jruby-jars' do
-    ruby "-S", "maybe_install_gems", "rdoc"
+    rdoc_gem = Dir.glob("target/rdoc-*.gem").sort.last
+    ruby "-S", "maybe_install_gems", rdoc_gem
     Dir.chdir("gems/jruby-jars") do
       ruby "-S", "rake", "package"
       cp FileList["pkg/*.gem"], "../../#{DIST_DIR}"
@@ -12,7 +13,8 @@ namespace :gem do
     end
   end
   task 'jruby-openssl' do
-    ruby "-S", "maybe_install_gems", "rdoc"
+    rdoc_gem = Dir.glob("target/rdoc-*.gem").sort.last
+    ruby "-S", "maybe_install_gems", rdoc_gem
     Dir.chdir("gems/jruby-openssl") do
       ruby "-S", "rake", "package"
       cp FileList["pkg/*.gem"], "../../#{DIST_DIR}"

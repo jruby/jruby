@@ -1,0 +1,1 @@
+fails(JRUBY-4082):File.new opens directories

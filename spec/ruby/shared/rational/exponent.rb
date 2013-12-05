@@ -266,8 +266,10 @@ describe :rational_exponent, :shared => true do
       end
     end
 
-    it "returns Infinity for Rational(0, 1) passed a negative Rational with denominator not 1" do
-      (Rational(0, 1) ** Rational(-3, 2)).infinite?.should == 1
+    ruby_bug "#7513", "2.0.0" do
+      it "raises ZeroDivisionError for Rational(0, 1) passed a negative Rational" do
+        lambda { Rational(0, 1) ** Rational(-3, 2) }.should raise_error(ZeroDivisionError, "divided by 0")
+      end
     end
   end
 

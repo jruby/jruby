@@ -5,7 +5,7 @@ require File.expand_path('../fixtures/example_class', __FILE__)
 describe "Object#to_yaml" do
 
   it "returns the YAML representation of an Array object" do
-    %w( 30 ruby maz irb 99 ).to_yaml.should == "--- \n- \"30\"\n- ruby\n- maz\n- irb\n- \"99\"\n"
+    %w( 30 ruby maz irb 99 ).to_yaml.gsub("'", '"').should match_yaml("--- \n- \"30\"\n- ruby\n- maz\n- irb\n- \"99\"\n")
   end
 
   it "returns the YAML representation of a Hash object" do
@@ -18,39 +18,39 @@ describe "Object#to_yaml" do
   end
 
   it "returns the YAML representation of a Date object" do
-    Date.parse('1997/12/30').to_yaml.should == "--- 1997-12-30\n"
+    Date.parse('1997/12/30').to_yaml.should match_yaml("--- 1997-12-30\n")
   end
 
   it "returns the YAML representation of a FalseClass" do
     false_klass = false
     false_klass.should be_kind_of(FalseClass)
-    false_klass.to_yaml.should == "--- false\n"
+    false_klass.to_yaml.should match_yaml("--- false\n")
   end
 
   it "returns the YAML representation of a Float object" do
     float = 1.2
     float.should be_kind_of(Float)
-    float.to_yaml.should == "--- 1.2\n"
+    float.to_yaml.should match_yaml("--- 1.2\n")
   end
 
   it "returns the YAML representation of an Integer object" do
     int = 20
     int.should be_kind_of(Integer)
-    int.to_yaml.should == "--- 20\n"
+    int.to_yaml.should match_yaml("--- 20\n")
   end
 
   it "returns the YAML representation of a NilClass object" do
     nil_klass = nil
     nil_klass.should be_kind_of(NilClass)
-    nil_klass.to_yaml.should == "--- \n"
+    nil_klass.to_yaml.should match_yaml("--- \n")
   end
 
   it "returns the YAML represenation of a RegExp object" do
-    Regexp.new('^a-z+:\\s+\w+').to_yaml.should == "--- !ruby/regexp /^a-z+:\\s+\\w+/\n"
+    Regexp.new('^a-z+:\\s+\w+').to_yaml.should match_yaml("--- !ruby/regexp /^a-z+:\\s+\\w+/\n")
   end
 
   it "returns the YAML representation of a String object" do
-    "I love Ruby".to_yaml.should == "--- I love Ruby\n"
+    "I love Ruby".to_yaml.should match_yaml("--- I love Ruby\n")
   end
 
   it "returns the YAML representation of a Struct object" do
@@ -59,17 +59,17 @@ describe "Object#to_yaml" do
   end
 
   it "returns the YAML representation of a Symbol object" do
-    :symbol.to_yaml.should ==  "--- :symbol\n"
+    :symbol.to_yaml.should match_yaml("--- :symbol\n")
   end
 
   it "returns the YAML representation of a Time object" do
-    Time.utc(2000,"jan",1,20,15,1).to_yaml.should == "--- 2000-01-01 20:15:01 Z\n"
+    Time.utc(2000,"jan",1,20,15,1).to_yaml.sub(/\.0+/, "").should match_yaml("--- 2000-01-01 20:15:01 Z\n")
   end
 
   it "returns the YAML representation of a TrueClass" do
     true_klass = true
     true_klass.should be_kind_of(TrueClass)
-    true_klass.to_yaml.should == "--- true\n"
+    true_klass.to_yaml.should match_yaml("--- true\n")
   end
 
   it "returns the YAML representation of a Error object" do
@@ -85,14 +85,14 @@ describe "Object#to_yaml" do
   end
 
   it "returns the YAML representation of numeric constants" do
-    nan_value.to_yaml.should == "--- .NaN\n"
-    infinity_value.to_yaml.should == "--- .Inf\n"
-    (-infinity_value).to_yaml.should == "--- -.Inf\n"
-    (0.0).to_yaml.should == "--- 0.0\n"
+    nan_value.to_yaml.downcase.should match_yaml("--- .nan\n")
+    infinity_value.to_yaml.downcase.should match_yaml("--- .inf\n")
+    (-infinity_value).to_yaml.downcase.should match_yaml("--- -.inf\n")
+    (0.0).to_yaml.should match_yaml("--- 0.0\n")
   end
 
   it "returns the YAML representation of an array of hashes" do
     players = [{"a" => "b"}, {"b" => "c"}]
-    players.to_yaml.should == "--- \n- a: b\n- b: c\n"
+    players.to_yaml.should match_yaml("--- \n- a: b\n- b: c\n")
   end
 end

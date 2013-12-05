@@ -119,6 +119,7 @@ describe :regexp_new_string, :shared => true do
       Regexp.send(@method, 'Hi', nil, 'N').kcode.should == 'none'
       Regexp.send(@method, 'Hi', nil, 'n').kcode.should == 'none'
       Regexp.send(@method, 'Hi', nil, 'nONE').kcode.should == 'none'
+      Regexp.send(@method, '[^\\x0d\\x22\\x5c\\x80-\\xff]', nil, 'n').kcode.should == 'none'
     end
   end
 
@@ -158,6 +159,7 @@ describe :regexp_new_string, :shared => true do
       Regexp.send(@method, "\xff", nil, 'N').encoding.should     == Encoding::ASCII_8BIT
       Regexp.send(@method, "\xff", nil, 'n').encoding.should     == Encoding::ASCII_8BIT
       Regexp.send(@method, "\xff", nil, 'nONE').encoding.should  == Encoding::ASCII_8BIT
+      Regexp.send(@method, '[^\\x0d\\x22\\x5c\\x80-\\xff]', nil, 'n').encoding.should  == Encoding::ASCII_8BIT
     end
   end
 
@@ -567,6 +569,23 @@ describe :regexp_new_regexp, :shared => true do
       Regexp.send(@method, /Hi/e).kcode.should == 'euc'
       Regexp.send(@method, /Hi/s).kcode.should == 'sjis'
       Regexp.send(@method, /Hi/n).kcode.should == 'none'
+    end
+
+    describe "with $KCODE set" do
+
+      before :each do
+        @kcode = $KCODE
+        $KCODE = 'u'
+      end
+
+      after :each do
+        $KCODE = @kcode
+      end
+
+      it "falls back to ASCII for an invalid UTF-8 regexp" do
+        (Regexp.send(@method, /^([\x00-\x7F]|[\xC2-\xDF][\x80-\xBF])*$/) =~ "hellø").should == 0
+      end
+
     end
   end
 

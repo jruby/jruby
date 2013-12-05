@@ -1,1 +1,0 @@
-windows(JRUBY-4445):File.identical? returns true if both named files are identical

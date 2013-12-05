@@ -1,1 +1,0 @@
-fails(JRUBY-2627):Module#module_function as a toggle (no arguments) in a Module body affects definitions when inside an eval even if the definitions are outside of it

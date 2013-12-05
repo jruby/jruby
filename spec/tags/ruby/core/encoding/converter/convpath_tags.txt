@@ -1,0 +1,2 @@
+fails:Encoding::Converter#convpath only lists a source encoding once
+fails:Encoding::Converter#convpath indicates if crlf_newline conversion would occur

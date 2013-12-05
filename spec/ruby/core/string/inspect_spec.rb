@@ -354,8 +354,7 @@ describe "String#inspect" do
   ruby_version_is "1.9" do
     it "returns a string with non-printing characters replaced by \\x notation" do
       # Avoid the file encoding by computing the string with #chr.
-      [ [0000.chr, '"\\x00"'],
-        [0001.chr, '"\\x01"'],
+      [ [0001.chr, '"\\x01"'],
         [0002.chr, '"\\x02"'],
         [0003.chr, '"\\x03"'],
         [0004.chr, '"\\x04"'],
@@ -510,7 +509,25 @@ describe "String#inspect" do
       ].should be_computed_by(:inspect)
     end
 
-    describe "When default external is UTF-8" do
+    ruby_version_is "1.9"..."2.0" do
+      it "returns a string with a NUL character replaced by \\x notation" do
+        0.chr.inspect.should == '"\\x00"'
+      end
+    end
+
+    ruby_version_is "2.0" do
+      it "returns a string with a NUL character replaced by \\0" do
+        0.chr.inspect.should == '"\\0"'
+      end
+    end
+
+    ruby_version_is "2.1"..."" do
+      it "returns a string with a NUL character replaced by \\000" do
+        0.chr.inspect.should == '"\\000"'
+      end
+    end
+
+    describe "when default external is UTF-8" do
       before :each do
         @extenc, Encoding.default_external = Encoding.default_external, Encoding::UTF_8
       end
@@ -520,8 +537,7 @@ describe "String#inspect" do
       end
 
       it "returns a string with non-printing characters replaced by \\u notation for Unicode strings" do
-        [ [0000.chr('utf-8'), '"\u0000"'],
-          [0001.chr('utf-8'), '"\u0001"'],
+        [ [0001.chr('utf-8'), '"\u0001"'],
           [0002.chr('utf-8'), '"\u0002"'],
           [0003.chr('utf-8'), '"\u0003"'],
           [0004.chr('utf-8'), '"\u0004"'],
@@ -577,6 +593,24 @@ describe "String#inspect" do
           [0236.chr('utf-8'), '"\u009E"'],
           [0237.chr('utf-8'), '"\u009F"'],
         ].should be_computed_by(:inspect)
+      end
+
+      ruby_version_is "1.9"..."2.0" do
+        it "returns a string with a NUL character replaced by \\x notation" do
+          0.chr('utf-8').inspect.should == '"\\u0000"'
+        end
+      end
+
+      ruby_version_is "2.0" do
+        it "returns a string with a NUL character replaced by \\0" do
+          0.chr('utf-8').inspect.should == '"\\0"'
+        end
+      end
+
+      ruby_version_is "2.1"..."" do
+        it "returns a string with a NUL character replaced by \\000" do
+          0.chr('utf-8').inspect.should == '"\\000"'
+        end
       end
 
       it "returns a string with extended characters for Unicode strings" do
@@ -677,6 +711,48 @@ describe "String#inspect" do
           [0376.chr('utf-8'), '"þ"'],
           [0377.chr('utf-8'), '"ÿ"']
         ].should be_computed_by(:inspect)
+      end
+    end
+  end
+end
+
+with_feature :encoding do
+  describe "String#inspect" do
+    before :each do
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
+    end
+
+    after :each do
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+    end
+
+    describe "when Encoding.default_internal is nil" do
+      before :each do
+        Encoding.default_internal = nil
+      end
+
+      it "returns a String with Encoding.default_external encoding if it is ASCII compatible" do
+        Encoding.default_external = Encoding::IBM437
+        "\u00b8".inspect.encoding.should equal(Encoding::IBM437)
+      end
+
+      it "returns a String in US-ASCII encoding if Encoding.default_external is not ASCII compatible" do
+        Encoding.default_external = Encoding::UTF_16BE
+        "\u00b8".inspect.encoding.should equal(Encoding::US_ASCII)
+      end
+    end
+
+    describe "when Encoding.default_internal is not nil" do
+      it "returns a String with Encoding.default_internal encoding if it is ASCII compatible" do
+        Encoding.default_internal = Encoding::IBM866
+        "\u00b8".inspect.encoding.should equal(Encoding::IBM866)
+      end
+
+      it "returns a String in US-ASCII encoding if Encoding.default_internal is not ASCII compatible" do
+        Encoding.default_internal = Encoding::UTF_16BE
+        "\u00b8".inspect.encoding.should equal(Encoding::US_ASCII)
       end
     end
   end

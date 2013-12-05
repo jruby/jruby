@@ -10,11 +10,11 @@ describe "A Ruby class generating a Java stub" do
   end
 
   EMPTY_INITIALIZE_PATTERN =
-    /public\s+Foo\(\) {\s+this\(__ruby__, __metaclass__\);\s+RuntimeHelpers.invoke\(.*, this, "initialize"\);/
+    /public\s+Foo\(\) {\s+this\(__ruby__, __metaclass__\);\s+Helpers.invoke\(.*, this, "initialize"\);/
   OBJECT_INITIALIZE_PATTERN =
-    /public\s+Foo\(Object \w+\) {\s+this\(__ruby__, __metaclass__\);\s+IRubyObject \w+ = JavaUtil.convertJavaToRuby\(__ruby__, \w+\);\s+RuntimeHelpers.invoke\(.*, this, "initialize", .*\);/
+    /public\s+Foo\(Object \w+\) {\s+this\(__ruby__, __metaclass__\);\s+IRubyObject \w+ = JavaUtil.convertJavaToRuby\(__ruby__, \w+\);\s+Helpers.invoke\(.*, this, "initialize", .*\);/
   STRING_INITIALIZE_PATTERN =
-    /public\s+Foo\(String \w+\) {\s+this\(__ruby__, __metaclass__\);\s+IRubyObject \w+ = JavaUtil.convertJavaToRuby\(__ruby__, \w+\);\s+RuntimeHelpers.invoke\(.*, this, "initialize", .*\);/
+    /public\s+Foo\(String \w+\) {\s+this\(__ruby__, __metaclass__\);\s+IRubyObject \w+ = JavaUtil.convertJavaToRuby\(__ruby__, \w+\);\s+Helpers.invoke\(.*, this, "initialize", .*\);/
 
   describe "with no initialize method" do
     it "generates a default constructor" do

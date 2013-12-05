@@ -1,0 +1,33 @@
+fails:IO.read from a pipe opens a pipe to a fork if the rest is -
+fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
+fails:IO#read in binary mode does transcode file contents when an internal encoding is specified
+fails:IO#read with internal encoding not specified does not change the buffer's encoding when passed a limit
+fails:IO#read with internal encoding not specified trucates the buffer but does not change the buffer's encoding when no data remains
+fails:IO#read with internal encoding specified by open mode does not change the buffer's encoding when passed a limit
+fails:IO#read with internal encoding specified by open mode trucates the buffer but does not change the buffer's encoding when no data remains
+fails:IO#read with internal encoding specified by open mode when passed nil for limit sets the buffer to a transcoded String
+fails:IO#read with internal encoding specified by open mode when passed nil for limit sets the buffer's encoding to the internal encoding
+fails:IO#read with internal encoding specified by mode: option returns a transcoded String
+fails:IO#read with internal encoding specified by mode: option sets the String encoding to the internal encoding
+fails:IO#read with internal encoding specified by mode: option reads bytes when passed a size
+fails:IO#read with internal encoding specified by mode: option returns a String in ASCII-8BIT when passed a size
+fails:IO#read with internal encoding specified by mode: option does not change the buffer's encoding when passed a limit
+fails:IO#read with internal encoding specified by mode: option trucates the buffer but does not change the buffer's encoding when no data remains
+fails:IO#read with internal encoding specified by mode: option when passed nil for limit sets the buffer to a transcoded String
+fails:IO#read with internal encoding specified by mode: option when passed nil for limit sets the buffer's encoding to the internal encoding
+fails:IO#read with internal encoding specified by internal_encoding: option returns a transcoded String
+fails:IO#read with internal encoding specified by internal_encoding: option sets the String encoding to the internal encoding
+fails:IO#read with internal encoding specified by internal_encoding: option reads bytes when passed a size
+fails:IO#read with internal encoding specified by internal_encoding: option returns a String in ASCII-8BIT when passed a size
+fails:IO#read with internal encoding specified by internal_encoding: option does not change the buffer's encoding when passed a limit
+fails:IO#read with internal encoding specified by internal_encoding: option trucates the buffer but does not change the buffer's encoding when no data remains
+fails:IO#read with internal encoding specified by internal_encoding: option when passed nil for limit sets the buffer to a transcoded String
+fails:IO#read with internal encoding specified by internal_encoding: option when passed nil for limit sets the buffer's encoding to the internal encoding
+fails:IO#read with internal encoding specified by encoding: option returns a transcoded String
+fails:IO#read with internal encoding specified by encoding: option sets the String encoding to the internal encoding
+fails:IO#read with internal encoding specified by encoding: option reads bytes when passed a size
+fails:IO#read with internal encoding specified by encoding: option returns a String in ASCII-8BIT when passed a size
+fails:IO#read with internal encoding specified by encoding: option does not change the buffer's encoding when passed a limit
+fails:IO#read with internal encoding specified by encoding: option trucates the buffer but does not change the buffer's encoding when no data remains
+fails:IO#read with internal encoding specified by encoding: option when passed nil for limit sets the buffer to a transcoded String
+fails:IO#read with internal encoding specified by encoding: option when passed nil for limit sets the buffer's encoding to the internal encoding

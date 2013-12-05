@@ -1,0 +1,4 @@
+unstable(JRUBY-4171,linux,intermittent failure):IO.popen writes to a write-only pipe
+fails:IO.popen starts returns a forked process if the command is -
+fails(JRUBY-5663):IO.popen with a leading Array parameter uses a trailing Hash in the Array for spawn-like settings
+fails:IO.popen does not throw an exception if child exited and has been waited for

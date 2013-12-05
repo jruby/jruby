@@ -1,1 +1,0 @@
-fails:Fixnum#** can raise -1 to a Bignum safely

@@ -38,7 +38,7 @@ describe "IO#each_byte" do
     it "returns an Enumerator when passed no block" do
       enum = @io.each_byte
       enum.should be_an_instance_of(enumerator_class)
-      enum.each.first(5).should == [86, 111, 105, 99, 105]
+      enum.first(5).should == [86, 111, 105, 99, 105]
     end
   end
 end

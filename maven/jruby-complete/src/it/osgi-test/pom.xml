@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>@project.groupId@</groupId>
+    <artifactId>jruby-osgi-test</artifactId>
+    <version>@project.version@</version>
+    <name>JRuby OSGI Test</name>
+
+    <properties>
+        <exam.version>3.0.3</exam.version>
+        <url.version>1.5.2</url.version>
+        <logback.version>1.0.13</logback.version>
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-container-forked</artifactId>
+            <version>${exam.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-junit4</artifactId>
+            <version>${exam.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-link-mvn</artifactId>
+            <version>${exam.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-aether</artifactId>
+            <version>${url.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>jruby-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>felix2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>org.apache.felix.framework</artifactId>
+                    <version>2.0.5</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>felix4</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>org.apache.felix.framework</artifactId>
+                    <version>4.2.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
+    <build>
+      <plugins>    
+	<plugin>
+	  <artifactId>maven-compiler-plugin</artifactId>
+	  <version>3.1</version>
+	  <configuration>
+	    <source>1.6</source>
+	    <target>1.6</target>
+	  </configuration>
+	</plugin>
+	  <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+		<id>copy jruby complete jar</id>
+		<phase>process-resources</phase>
+		<goals>
+		  <goal>copy</goal>
+		</goals>
+		<configuration>
+		  <artifactItems>
+                    <artifactItem>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>jruby-complete</artifactId>
+                      <version>${project.version}</version>
+                      <type>jar</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <destFileName>jruby-complete.jar</destFileName>
+                    </artifactItem>
+		  </artifactItems>
+		</configuration>
+              </execution>
+            </executions>
+	  </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${base.java.version}</source>
+                    <target>${base.javac.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+              <artifactId>maven-site-plugin</artifactId>
+              <configuration>
+                <skip>true</skip>
+                <skipDeploy>true</skipDeploy>
+              </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

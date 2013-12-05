@@ -10,7 +10,7 @@ describe "Logger#new" do
 
   after :each do
     @log_file.close unless @log_file.closed?
-    File.unlink(@file_path) if File.exists?(@file_path)
+    rm_r @file_path
   end
 
    it "creates a new logger object" do
@@ -51,14 +51,13 @@ describe "Logger#new" do
 
     # first line will be a comment so we'll have to skip it.
     f = File.open(path)
-    f1 = File.open(path + ".0")
+    f1 = File.open("#{path}.0")
     LoggerSpecs::strip_date(f1.readlines.last).should == "WARN -- : foo\n"
     LoggerSpecs::strip_date(f.readlines.last).should == "WARN -- : bar\n"
 
     l.close
     f.close
     f1.close
-    File.unlink(path)
-    File.unlink(path + ".0")
+    rm_r path, "#{path}.0"
   end
 end

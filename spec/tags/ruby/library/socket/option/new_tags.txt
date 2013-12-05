@@ -1,0 +1,4 @@
+fails:Socket::Option.new should accept symbols
+fails:Socket::Option.new should raise error on unknown family
+fails:Socket::Option.new should raise error on unknown level
+fails:Socket::Option.new should raise error on unknown option name

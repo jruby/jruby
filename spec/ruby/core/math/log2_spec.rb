@@ -55,6 +55,10 @@ ruby_version_is "1.9" do
       lambda { Math.log2("1.0") }.should raise_error(TypeError)
     end
 
+    it "returns NaN given NaN" do
+      Math.log2(nan_value).nan?.should be_true
+    end
+
     it "raises a TypeError if the argument is nil" do
       lambda { Math.log2(nil) }.should raise_error(TypeError)
     end

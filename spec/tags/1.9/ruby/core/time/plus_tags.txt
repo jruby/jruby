@@ -1,3 +1,0 @@
-fails:Time#+ adds a negative Float
-fails:Time#+ returns a time with the same fixed offset as self
-fails:Time#+ maintains subseconds precision

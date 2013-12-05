@@ -1,1 +1,0 @@
-fails:Socket#accept_nonblock raises Errno::EAGAIN if the connection is not accepted yet

@@ -5,13 +5,11 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
     assert_nothing_raised {
       require 'jruby.rb'
       require 'jruby/ext.rb'
-      require 'iconv.so'
       require 'nkf.so'
       require 'stringio.so'
       require 'strscan.so'
       require 'zlib.so'
       require 'enumerator.so'
-      require 'readline.so'
       require 'thread.so'
       require 'digest.so'
       require 'digest.rb'

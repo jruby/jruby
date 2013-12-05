@@ -26,7 +26,7 @@ if [ -z "$JAVA_VM" ]; then
 fi
 
 # get the absolute path of the executable
-SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
 
 # resolve symlinks
 while [ -h $SELF_PATH ]; do
@@ -263,7 +263,7 @@ do
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
         fi 
-        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
+        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;
@@ -280,10 +280,12 @@ do
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
-     # Special pass --1.9 along so when processing cygwin we don't think it is
-     # a file (this is fairly gross that we special case this -- my bash-fu
-     # is weak)
-     --1.9) mode=--1.9 ;;
+     # warn but ignore
+     --1.8) echo "warning: --1.8 ignored" ;;
+     # warn but ignore
+     --1.9) echo "warning: --1.9 ignored" ;;
+     # warn but ignore
+     --2.0) echo "warning: --1.9 ignored" ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -307,17 +309,7 @@ set -- "${ruby_args[@]}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 
-JFFI_BOOT=""
-if [ -d "$JRUBY_HOME/lib/native/" ]; then
-  for d in $JRUBY_HOME/lib/native/*`uname -s`; do
-    if [ -z "$JFFI_BOOT" ]; then
-      JFFI_BOOT="$d"
-    else
-      JFFI_BOOT="$JFFI_BOOT:$d"
-    fi
-  done
-fi
-JFFI_OPTS="-Djffi.boot.library.path=$JFFI_BOOT"
+JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
@@ -351,7 +343,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  if [ $java_class = $JAVA_CLASS_NGSERVER -a -n ${JRUBY_OPTS} ]; then
+  if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
     echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
     JRUBY_OPTS=''
   fi

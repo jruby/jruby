@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# Run from your JRuby home directory....More smarts needed here.
+#
+# For 1.8 parser:
+# PATH=$PATH:<path to jay executable> bin/generate_parser DefaultRubyParser
+#
+# For 1.9 parser:
+# PATH=$PATH:<path to jay executable> bin/generate_parser Ruby19Parser Ruby19
+#
+# jay is available from https://github.com/jruby/jay
+
+###### Change these to tastes ######
+JAY=jay
+RUBY=/usr/bin/ruby
+PARSER_BASE=Ripper19Parser
+YYTABLE_PREFIX=
+DEBUG=true
+###### Do not change below ######
+
+if [ "$1" != "" ]; then
+  PARSER_BASE=$1
+  shift
+fi
+
+if [ "$1" != "" ]; then
+  YYTABLE_PREFIX=$1
+fi
+
+if [ "$DEBUG" != "" ]; then
+  DEBUG_FLAG=-t
+  # Nonesense...my script-fu is weak
+  DEBUG_STRIP="xdyhbk"
+else
+  DEBUG_FLAG=
+  DEBUG_STRIP="^//t"
+fi
+
+echo "Generating Parser '$PARSER_BASE' w/ YYTable prefix of '$YYTABLE_PREFIX'"
+
+PARSER_DIR=ext/ripper/src/main/java/org/jruby/ext/ripper
+BACKUP_DIR=../../../../../../../../..
+
+pushd $PARSER_DIR
+
+# Generate grammar as intermediate file
+$JAY $DEBUG_FLAG $PARSER_BASE.y < skeleton.parser | grep -v $DEBUG_STRIP >$PARSER_BASE.out
+
+# Patch file to get around Java static initialization issues plus extract
+# a bunch of stuff to seperate file (yytables).
+$RUBY $BACKUP_DIR/bin/patch_parser.rb $PARSER_BASE.out $YYTABLE_PREFIX > $PARSER_BASE.out2
+$RUBY $BACKUP_DIR/bin/optimize_parser.rb $PARSER_BASE.out2 $YYTABLE_PREFIX > $PARSER_BASE.java
+rm -f $PARSER_BASE.out $PARSER_BASE.out2
+
+popd

@@ -29,6 +29,10 @@ module HashSpecs
     end
   end
 
+  class KeyWithPrivateHash
+    private :hash
+  end
+
   def self.empty_frozen_hash
     @empty ||= new_hash
     @empty.freeze

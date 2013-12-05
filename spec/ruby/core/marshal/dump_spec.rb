@@ -1,3 +1,4 @@
+# -*- encoding: US-ASCII -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
 
@@ -61,6 +62,19 @@ describe "Marshal.dump" do
         Marshal.dump("\u2192".encode("utf-8").to_sym).should == "\x04\bI:\b\xE2\x86\x92\x06:\x06ET"
       end
     end
+  end
+
+  it "dumps an extended_object" do
+    Marshal.dump(Object.new.extend(Meths)).should == "\x04\be:\nMethso:\vObject\x00"
+  end
+  
+  it "dumps an object that has had an ivar added and removed as though the ivar never was set" do
+    obj = Object.new
+    initial = Marshal.dump(obj)
+    obj.instance_variable_set(:@ivar, 1)
+    Marshal.dump(obj).should == "\004\bo:\vObject\006:\n@ivari\006"
+    obj.send :remove_instance_variable, :@ivar
+    Marshal.dump(obj).should == initial
   end
 
   describe "with an object responding to #marshal_dump" do
@@ -188,17 +202,21 @@ describe "Marshal.dump" do
       Marshal.dump(encode(UserString.new.extend(Meths), "binary")).should == "\004\be:\nMethsC:\017UserString\"\000"
     end
 
-    ruby_version_is "1.9" do
+    with_feature :encoding do
       it "dumps a US-ASCII String" do
-        Marshal.dump("".encode("us-ascii")).should == "\x04\bI\"\x00\x06:\x06EF"
+        str = "abc".force_encoding("us-ascii")
+        Marshal.dump(str).should == "\x04\bI\"\babc\x06:\x06EF"
       end
 
       it "dumps a UTF-8 String" do
-        Marshal.dump("".encode("utf-8")).should == "\x04\bI\"\x00\x06:\x06ET"
+        str = "\x6d\xc3\xb6\x68\x72\x65".force_encoding("utf-8")
+        Marshal.dump(str).should == "\x04\bI\"\vm\xC3\xB6hre\x06:\x06ET"
       end
 
       it "dumps a String in another encoding" do
-        Marshal.dump("".encode("utf-16le")).should == "\x04\bI\"\x00\x06:\rencoding\"\rUTF-16LE"
+        str = "\x6d\x00\xf6\x00\x68\x00\x72\x00\x65\x00".force_encoding("utf-16le")
+        result = "\x04\bI\"\x0Fm\x00\xF6\x00h\x00r\x00e\x00\x06:\rencoding\"\rUTF-16LE"
+        Marshal.dump(str).should == result
       end
 
       it "dumps multiple strings using symlinks for the :E (encoding) symbol" do

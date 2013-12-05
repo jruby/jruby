@@ -60,5 +60,16 @@ with_feature :encoding do
     it "returns false for a non-empty String with non-ASCII-compatible encoding" do
       "\x78\x00".force_encoding("UTF-16LE").ascii_only?.should be_false
     end
+
+    it "returns false when interpolating non ascii strings" do
+      base = "EU currency is"
+      base.force_encoding(Encoding::US_ASCII)
+      euro = "\u20AC"
+      interp = "#{base} #{euro}"
+      euro.ascii_only?.should be_false
+      base.ascii_only?.should be_true
+      interp.ascii_only?.should be_false
+    end
+
   end
 end

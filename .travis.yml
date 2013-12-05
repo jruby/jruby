@@ -2,12 +2,26 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
-# disable cext
-env: JAVA_OPTS="-server -Djruby.cext.enabled=false"
+
 jdk:
   - oraclejdk7
-#  - openjdk6
-script: "ant test-extended"
+  - oraclejdk8
+  - openjdk6
+
+env:
+  matrix:
+    - TARGET='test-extended'
+    - TARGET='spec:ci_interpreted_travis'
+    - TARGET='spec:ci_interpreted_ir_travis'
+    - TARGET='spec:ir'
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: TARGET='spec:ci_interpreted_ir_travis'
+    - jdk: oraclejdk8
+
+script: "ant $TARGET"
 install: /bin/true
 notifications:
   irc:
@@ -16,4 +30,11 @@ notifications:
     on_success: change
     on_failure: always
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})" 
+      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+
+  # update jruby-head installed on Travis CI
+  webhooks:
+    urls:
+      - "https://rubies.travis-ci.org/rebuild/jruby-head"
+    on_success: always
+    on_failure: never

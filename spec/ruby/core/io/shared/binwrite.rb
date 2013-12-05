@@ -28,7 +28,7 @@ describe :io_binwrite, :shared => true do
       IO.send(@method, fn, "test")
       File.exist?(fn).should be_true
     ensure
-      rm_r(fn)
+      rm_r fn
     end
   end
 
@@ -39,7 +39,7 @@ describe :io_binwrite, :shared => true do
       IO.send(@method, fn, "test", 0)
       File.exist?(fn).should be_true
     ensure
-      rm_r(fn)
+      rm_r fn
     end
   end
 

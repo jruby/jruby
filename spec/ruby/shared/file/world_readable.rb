@@ -8,7 +8,7 @@ describe :file_world_readable, :shared => true do
   end
 
   after(:each) do
-    File.unlink(@file) if File.exists?(@file)
+    rm_r @file
   end
 
   # These will surely fail on Windows.

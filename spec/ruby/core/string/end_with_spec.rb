@@ -8,7 +8,16 @@ ruby_version_is '1.8.7' do
       s = "hello"
       s.end_with?('o').should be_true
       s.end_with?('llo').should be_true
+    end
+
+    it 'returns false if the end does not match' do
+      s = 'hello'
       s.end_with?('ll').should be_false
+    end
+
+    it "returns true if other is empty" do
+      s = 'hello'
+      s.end_with?('').should be_true
     end
 
     it "returns true only if any ending match" do

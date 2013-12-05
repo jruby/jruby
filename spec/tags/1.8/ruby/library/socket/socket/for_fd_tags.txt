@@ -1,1 +1,0 @@
-fails(JRUBY-4819):Socket.for_fd given a file descriptor adopts that descriptor into a new Socket object

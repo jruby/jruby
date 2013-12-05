@@ -20,5 +20,14 @@ describe "CApiTimeSpecs" do
         @s.TIMET2NUM.should be_kind_of(Integer)
       end
     end
+
+    describe "rb_time_nano_new" do
+      it "creates a Time from the sec and usec" do
+        time = @s.rb_time_nano_new(1232141421, 1413123123)
+        time.to_i.should == 1232141422
+        time.nsec.should == 413123123
+      end
+    end
+
   end
 end

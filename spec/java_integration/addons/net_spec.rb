@@ -11,7 +11,7 @@ describe java.net.URL do
     contents = java.net.URL.new(@url).open do |io|
       io.read
     end
-    contents.should == File.read(__FILE__)
+    expect(contents).to eq(File.read(__FILE__))
   end
 
   it "can used with 'open-uri' and passed to #open and yield an IO" do
@@ -19,6 +19,6 @@ describe java.net.URL do
     contents = open(java.net.URL.new(@url)) do |io|
       io.read
     end
-    contents.should == File.read(__FILE__)
+    expect(contents).to eq(File.read(__FILE__))
   end
 end

@@ -1,0 +1,4 @@
+fails:Encoding::Converter#primitive_convert uses the destination byte offset to determine where to write the result in the destination buffer
+fails:Encoding::Converter#primitive_convert returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified
+fails:Encoding::Converter#primitive_convert returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true
+fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte size

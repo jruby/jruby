@@ -167,11 +167,7 @@ class TestIO < Test::Unit::TestCase
 
     f = File.open(@file)
     @to_close << f
-    if RUBY_VERSION =~ /1\.9/
-      assert_raises(TypeError) { io = IO.open(f.fileno, "r", :gratuitous) }
-    else
-      assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
-    end
+    assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
     io = IO.open(f.fileno, "r")
     @to_close << io
     assert_equal(f.fileno, io.fileno)
@@ -266,18 +262,9 @@ class TestIO < Test::Unit::TestCase
 
   # JRUBY-1894
   def test_getc_255
-     File.open(@file, "wb") do |file|
-       file.putc(255)
-     end
-     if RUBY_VERSION =~ /1\.9/
-       File.open(@file, "rb") do |file|
-         assert_equal("\xFF", file.getc)
-       end
-     else
-       File.open(@file, "rb") do |file|
-         assert_equal(255, file.getc)
-       end
-     end
+    File.open(@file, "wb") do |file|
+      file.putc(255)
+    end
   end
 
   # JRUBY-2202
@@ -292,11 +279,7 @@ class TestIO < Test::Unit::TestCase
       # it checks that JRuby doesn't break.
       assert_equal(0, file.pos)
 
-      if RUBY_VERSION =~ /1\.9/
-        assert_equal("d", file.getc)
-      else
-        assert_equal(100, file.getc)
-      end
+      assert_equal("d", file.getc)
      end
   end
 
@@ -304,19 +287,11 @@ class TestIO < Test::Unit::TestCase
   def test_ungetc_nonempty_file
     File.open(@file, "w+") { |file| file.puts("HELLO") }
     File.open(@file) do |file|
-      if RUBY_VERSION =~ /1\.9/
-        assert_equal("H", file.getc)
-      else
-        assert_equal(72, file.getc)
-      end
+      assert_equal("H", file.getc)
       assert_equal(1, file.pos)
       file.ungetc(100)
       assert_equal(0, file.pos)
-      if RUBY_VERSION =~ /1\.9/
-        assert_equal("d", file.getc)
-      else
-        assert_equal(100, file.getc)
-      end
+      assert_equal("d", file.getc)
       assert_equal(1, file.pos)
      end
   end
@@ -432,20 +407,6 @@ class TestIO < Test::Unit::TestCase
     assert(a)
   end
 
-  #JRUBY-2145
-  if (!WINDOWS && !(RUBY_VERSION =~ /1\.9/))
-    def test_copy_dev_null
-      require 'fileutils'
-      begin
-        FileUtils.cp(@devnull, 'somefile')
-        assert(File.exists?('somefile'))
-        assert_equal(0, File.size('somefile'))
-      ensure
-        File.delete('somefile') rescue nil
-      end
-    end
-  end
-
   if (WINDOWS)
     #JRUBY-2158
     def test_null_open_windows
@@ -469,7 +430,7 @@ class TestIO < Test::Unit::TestCase
                    "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NOCTTY", "NONBLOCK",
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
                    "WRONLY"]
-    constants = constants.map(&:to_sym) if RUBY_VERSION =~ /1\.9/
+    constants = constants.map(&:to_sym)
     constants.each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
   end
 
@@ -578,5 +539,12 @@ class TestIO < Test::Unit::TestCase
     io.close
     closed_io_count = JRuby.runtime.fileno_int_map_size
     assert_equal(starting_count, closed_io_count)
+  end
+
+  # JRUBY-1222
+  def test_stringio_gets_utf8
+    @stringio = StringIO.new("®\r\n®\r\n")
+    assert_equal "®\r\n", @stringio.gets("\r\n")
+    assert_equal "®\r\n", @stringio.gets("\r\n")
   end
 end

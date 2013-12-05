@@ -1,30 +1,45 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe "String#chop" do
-  it "returns a new string with the last character removed" do
-    "hello\n".chop.should == "hello"
-    "hello\x00".chop.should == "hello"
-    "hello".chop.should == "hell"
-
-    ori_str = encode("", "utf-8")
-    256.times { |i| ori_str << i }
-
-    str = ori_str
-    256.times do |i|
-      str = str.chop
-      str.should == ori_str[0, 255 - i]
-    end
+  it "removes the final character" do
+    "abc".chop.should == "ab"
   end
 
-  it "removes both characters if the string ends with \\r\\n" do
-    "hello\r\n".chop.should == "hello"
-    "hello\r\n\r\n".chop.should == "hello\r\n"
-    "hello\n\r".chop.should == "hello\n"
-    "hello\n\n".chop.should == "hello\n"
-    "hello\r\r".chop.should == "hello\r"
+  it "removes the final carriage return" do
+    "abc\r".chop.should == "abc"
+  end
 
+  it "removes the final newline" do
+    "abc\n".chop.should == "abc"
+  end
+
+  it "removes the final carriage return, newline" do
+    "abc\r\n".chop.should == "abc"
+  end
+
+  it "removes the carrige return, newline if they are the only characters" do
     "\r\n".chop.should == ""
+  end
+
+  it "does not remove more than the final carriage return, newline" do
+    "abc\r\n\r\n".chop.should == "abc\r\n"
+  end
+
+  with_feature :encoding do
+    it "removes a multi-byte character" do
+      "あれ".chop.should == "あ"
+    end
+
+    it "removes the final carriage return, newline from a multibyte String" do
+      "あれ\r\n".chop.should == "あれ"
+    end
+
+    it "removes the final carriage return, newline from a non-ASCII String" do
+      str = "abc\r\n".encode "utf-32be"
+      str.chop.should == "abc".encode("utf-32be")
+    end
   end
 
   it "returns an empty string when applied to an empty string" do
@@ -50,29 +65,56 @@ describe "String#chop" do
 
   it "returns subclass instances when called on a subclass" do
     StringSpecs::MyString.new("hello\n").chop.should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("hello").chop.should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("").chop.should be_kind_of(StringSpecs::MyString)
   end
 end
 
 describe "String#chop!" do
-  it "behaves just like chop, but in-place" do
-    ["hello\n", "hello\r\n", "hello", ""].each do |base|
-      str = base.dup
-      str.chop!
+  it "removes the final character" do
+    "abc".chop!.should == "ab"
+  end
 
-      str.should == base.chop
+  it "removes the final carriage return" do
+    "abc\r".chop!.should == "abc"
+  end
+
+  it "removes the final newline" do
+    "abc\n".chop!.should == "abc"
+  end
+
+  it "removes the final carriage return, newline" do
+    "abc\r\n".chop!.should == "abc"
+  end
+
+  it "removes the carrige return, newline if they are the only characters" do
+    "\r\n".chop!.should == ""
+  end
+
+  it "does not remove more than the final carriage return, newline" do
+    "abc\r\n\r\n".chop!.should == "abc\r\n"
+  end
+
+  with_feature :encoding do
+    it "removes a multi-byte character" do
+      "あれ".chop!.should == "あ"
+    end
+
+    it "removes the final carriage return, newline from a multibyte String" do
+      "あれ\r\n".chop!.should == "あれ"
+    end
+
+    it "removes the final carriage return, newline from a non-ASCII String" do
+      str = "abc\r\n".encode "utf-32be"
+      str.chop!.should == "abc".encode("utf-32be")
     end
   end
 
   it "returns self if modifications were made" do
-    ["hello", "hello\r\n"].each do |s|
-      s.chop!.should equal(s)
-    end
+    str = "hello"
+    str.chop!.should equal(str)
   end
 
   it "returns nil when called on an empty string" do
-    "".chop!.should == nil
+    "".chop!.should be_nil
   end
 
   ruby_version_is ""..."1.9" do

@@ -49,7 +49,7 @@ describe "Float#round" do
     it "returns self for exceptional values when passed a non-negative precision" do
       Float::INFINITY.round(2).should == Float::INFINITY
       (-Float::INFINITY).round(2).should == -Float::INFINITY
-      Float::NAN.round(2) == Float::NAN
+      Float::NAN.round(2).should be_nan
     end
 
     ruby_bug "redmine:5227",  "1.9.2" do

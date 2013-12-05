@@ -1,0 +1,8 @@
+fails:BasicSocket#setsockopt using constants sets the socket linger to 0
+fails:BasicSocket#setsockopt using constants sets the socket linger to some positive value
+fails:BasicSocket#setsockopt using constants sets the socket option Socket::SO_OOBINLINE
+fails:BasicSocket#setsockopt using constants sets the socket option Socket::SO_SNDBUF
+fails:BasicSocket#setsockopt using strings without prefix sets the socket linger to 0
+fails:BasicSocket#setsockopt using strings without prefix sets the socket linger to some positive value
+fails:BasicSocket#setsockopt using strings without prefix sets the socket option Socket::SO_OOBINLINE
+fails:BasicSocket#setsockopt using strings without prefix sets the socket option Socket::SO_SNDBUF

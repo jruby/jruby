@@ -15,7 +15,7 @@ describe "YAML.dump" do
   end
 
   it "returns a string containing dumped YAML when no io provided" do
-    YAML.dump( :locked ).should == "--- :locked\n"
+    YAML.dump( :locked ).should match_yaml("--- :locked\n")
   end
 
   it "returns the same string that #to_yaml on objects" do
@@ -23,14 +23,14 @@ describe "YAML.dump" do
   end
 
   it "dumps strings into YAML strings" do
-    YAML.dump("str").should == "--- str\n"
+    YAML.dump("str").should match_yaml("--- str\n")
   end
 
   it "dumps hashes into YAML key-values" do
-    YAML.dump({ "a" => "b" }).should ==  "--- \na: b\n"
+    YAML.dump({ "a" => "b" }).should match_yaml("--- \na: b\n")
   end
 
   it "dumps Arrays into YAML collection" do
-    YAML.dump(["a", "b", "c"]).should == "--- \n- a\n- b\n- c\n"
+    YAML.dump(["a", "b", "c"]).should match_yaml("--- \n- a\n- b\n- c\n")
   end
 end

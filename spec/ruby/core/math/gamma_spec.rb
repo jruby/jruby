@@ -51,13 +51,27 @@ ruby_version_is "1.9" do
       Math.gamma(-0.00001).should be_close(-100000.577225, TOLERANCE)
     end
 
-    it "raises Math::DomainError given -1" do
-      lambda { Math.gamma(-1) }.should raise_error(Math::DomainError)
+    ruby_version_is ""..."1.9" do
+      it "raises Errno::EDOM given -1" do
+        lambda { Math.gamma(-1) }.should raise_error(Errno::EDOM)
+      end
+    end
+
+    ruby_version_is "1.9" do
+      it "raises Math::DomainError given -1" do
+        lambda { Math.gamma(-1) }.should raise_error(Math::DomainError)
+      end
     end
 
     # See http://redmine.ruby-lang.org/issues/show/2189
     it "returns +infinity given +infinity" do
-      Math.gamma(Float::INFINITY).should == Float::INFINITY
+      Math.gamma(infinity_value).infinite?.should == 1
+    end
+
+    ruby_version_is ""..."1.9" do
+      it "raises Errno::EDOM given negative infinity" do
+        lambda { Math.gamma(-infinity_value) }.should raise_error(Errno::EDOM)
+      end
     end
 
     it "raises Math::DomainError given negative infinity" do

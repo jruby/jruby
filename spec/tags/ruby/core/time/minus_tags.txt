@@ -1,0 +1,4 @@
+fails:Time#- maintains precision
+fails:Time#- maintains microseconds precision
+fails:Time#- maintains nanoseconds precision
+fails:Time#- maintains subseconds precision

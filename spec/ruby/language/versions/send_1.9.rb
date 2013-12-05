@@ -88,6 +88,11 @@ describe "Invoking a method" do
     specs.fooM4(0,*a,3).should == [0,1,2,3]
   end
 
+  it "does not expand final array arguments after a splat expansion" do
+    a = [1, 2]
+    specs.fooM3(*a, [3, 4]).should == [1, 2, [3, 4]]
+  end
+
   it "accepts final explicit literal Hash arguments after the splat" do
     a = [1, 2]
     specs.fooM0RQ1(*a, { :a => 1 }).should == [[1, 2], { :a => 1 }]

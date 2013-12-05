@@ -1,2 +1,0 @@
-fails(JRUBY-3459):Thread#status describes a dying running thread
-fails(JRUBY-3459):Thread#status reports aborting on a killed thread

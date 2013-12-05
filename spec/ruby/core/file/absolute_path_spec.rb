@@ -24,7 +24,7 @@ ruby_version_is "1.9" do
     it "does not expand '~user' to a home directory." do
       path = File.dirname(@abs)
       Dir.chdir(path) do
-        File.absolute_path('~user').should == File.join(path, '~user') 
+        File.absolute_path('~user').should == File.join(path, '~user')
       end
     end
 

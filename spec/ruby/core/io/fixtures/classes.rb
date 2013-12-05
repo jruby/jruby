@@ -4,6 +4,10 @@ module IOSpecs
   class SubIO < IO
   end
 
+  def self.collector
+    Proc.new { |x| ScratchPad << x }
+  end
+
   def self.lines
     [ "Voici la ligne une.\n",
       "Qui \303\250 la linea due.\n",
@@ -14,6 +18,56 @@ module IOSpecs
       "\n",
       "Est\303\241 aqui a linha cinco.\n",
       "Here is line six.\n" ]
+  end
+
+  def self.lines_limit
+    [ "Voici la l",
+      "igne une.\n",
+      "Qui è la ",
+      "linea due.",
+      "\n",
+      "\n",
+      "\n",
+      "Aquí está",
+      " la línea",
+      " tres.\n",
+      "Ist hier L",
+      "inie vier.",
+      "\n",
+      "\n",
+      "Está aqui",
+      " a linha c",
+      "inco.\n",
+      "Here is li",
+      "ne six.\n" ]
+  end
+
+  def self.lines_space_separator_limit
+    [ "Voici ",
+      "la ",
+      "ligne ",
+      "une.\nQui ",
+      "è ",
+      "la ",
+      "linea ",
+      "due.\n\n\nAqu",
+      "í ",
+      "está ",
+      "la ",
+      "línea ",
+      "tres.\nIst ",
+      "hier ",
+      "Linie ",
+      "vier.\n\nEst",
+      "á ",
+      "aqui ",
+      "a ",
+      "linha ",
+      "cinco.\nHer",
+      "e ",
+      "is ",
+      "line ",
+      "six.\n" ]
   end
 
   def self.lines_r_separator
@@ -67,6 +121,15 @@ module IOSpecs
     io.close
     io
   end
+  
+  # Creates a pipe-based IO fixture containing the specified
+  # contents
+  def self.pipe_fixture(content)
+    source, sink = IO.pipe
+    sink.write content
+    sink.close
+    source
+  end
 
   # Defines +method+ on +obj+ using the provided +block+. This
   # special helper is needed for e.g. IO.open specs to avoid
@@ -82,6 +145,26 @@ module IOSpecs
 
     def self.from
       @from
+    end
+  end
+
+  class CopyStreamRead
+    def initialize(io)
+      @io = io
+    end
+
+    def read(size, buf=nil)
+      @io.read size, buf
+    end
+  end
+
+  class CopyStreamReadPartial
+    def initialize(io)
+      @io = io
+    end
+
+    def readpartial(size, buf=nil)
+      @io.readpartial size, buf
     end
   end
 end

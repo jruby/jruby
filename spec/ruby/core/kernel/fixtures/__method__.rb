@@ -21,5 +21,10 @@ module KernelSpecs
     def from_eval
       eval "__method__"
     end
+
+    @@method = __method__
+    def from_class_body
+      @@method
+    end
   end
 end

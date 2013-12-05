@@ -57,23 +57,45 @@ describe :method_equal, :shared => true do
       @m_foo.send(@method, m2).should be_true
     end
 
-    it "returns true for methods defined using the same block/proc" do
-      class MethodSpecs::Methods
-        p = Proc.new { :cool }
-        define_method :proc1, p
-        define_method :proc2, p
+    ruby_version_is ""..."2.0" do
+      it "returns true for methods defined using the same block/proc" do
+        class MethodSpecs::Methods
+          p = Proc.new { :cool }
+          define_method :proc1, p
+          define_method :proc2, p
 
-        define_method :block1, &p
-        define_method :block2, &p
+          define_method :block1, &p
+          define_method :block2, &p
+        end
+        proc1 = @m.method :proc1
+        proc2 = @m.method :proc2
+        block1 = @m.method :proc1
+        block2 = @m.method :proc2
+
+        proc1.send(@method, proc2).should be_true
+        block1.send(@method, block2).should be_true
+        proc1.send(@method, block1).should be_true
       end
-      proc1 = @m.method :proc1
-      proc2 = @m.method :proc2
-      block1 = @m.method :proc1
-      block2 = @m.method :proc2
 
-      proc1.send(@method, proc2).should be_true
-      block1.send(@method, block2).should be_true
-      proc1.send(@method, block1).should be_true
+      it "returns true for methods defined using equivalent blocks" do
+        class MethodSpecs::Methods
+          p1 = Proc.new { :cool }
+          p2 = Proc.new { :cool }
+          define_method :proc1, p1
+          define_method :proc2, p2
+
+          define_method :block1, &p1
+          define_method :block2, &p2
+        end
+        proc1 = @m.method :proc1
+        proc2 = @m.method :proc2
+        block1 = @m.method :proc1
+        block2 = @m.method :proc2
+
+        proc1.send(@method, proc2).should be_true
+        block1.send(@method, block2).should be_true
+        proc1.send(@method, block1).should be_true
+      end
     end
 
     describe 'missing methods' do

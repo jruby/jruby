@@ -20,6 +20,18 @@ ruby_version_is "1.9.3" do
       (@l * @u).should == (@p * @a)
     end
 
+    ruby_bug "#", "1.9.3" do
+      it "returns the right values for rectangular matrices" do
+        [
+          Matrix[[7, 8, 9], [14, 46, 51]],
+          Matrix[[4, 11], [5, 8], [3, 4]],
+        ].each do |a|
+          l, u, p = Matrix::LUPDecomposition.new(a).to_a
+          (l * u).should == (p * a)
+        end
+      end
+    end
+
     it "has other properties implied by the specs of #l, #u and #p"
   end
 end

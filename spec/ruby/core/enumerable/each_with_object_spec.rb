@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Enumerable#each_with_object" do
-  ruby_version_is '1.9.2' do
+  ruby_version_is '1.9' do
     before :each do
       @values = [2, 5, 3, 6, 1, 4]
       @enum = EnumerableSpecs::Numerous.new(*@values)

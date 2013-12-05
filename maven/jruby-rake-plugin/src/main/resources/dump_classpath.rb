@@ -4,7 +4,7 @@ require 'jruby/util'
 # Calculate relative basedir
 require 'pathname'
 rb_path = Pathname.new(maven["classpath_rb"]).expand_path
-basedir = Pathname.new(maven["basedir"]).relative_path_from(rb_path).to_s
+basedir = Pathname.new(maven["basedir"].gsub("\\", "/")).relative_path_from(rb_path).to_s
 
 # Substitute HOME and BASEDIR in the classpath
 maven["classpath"] = maven["classpath"].gsub(maven["basedir"], '#{BASEDIR}')

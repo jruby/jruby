@@ -1,1 +1,0 @@
-fails(JRUBY-5656):String#unpack with directive 'w' ignores NULL bytes between directives

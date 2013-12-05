@@ -130,7 +130,7 @@ module FFI
       def enclosing_module
         begin
           mod = self.name.split("::")[0..-2].inject(Object) { |obj, c| obj.const_get(c) }
-          mod.respond_to?(:find_type) ? mod : nil
+          (mod < FFI::Library || mod < FFI::Struct || mod.respond_to?(:find_type)) ? mod : nil
         rescue Exception => ex
           nil
         end

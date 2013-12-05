@@ -1,0 +1,2 @@
+fails:File.join respects the given separator if only one part has a boundary separator
+fails:File.join does not treat \ as a separator on non-Windows

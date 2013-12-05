@@ -1,1 +1,0 @@
-fails:OpenStruct#initialize_copy generates the same methods

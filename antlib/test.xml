@@ -36,30 +36,23 @@
         </copy>
     </target>
 
-    <target name="test" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted-short,
-    test-rake-targets"
-            description="Runs unit tests.">
-    </target>
+    <target name="test" depends="test-extended"/>
 
-    <target name="test-debug" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted-short-debug,
-    test-rake-targets"
-            description="Runs unit tests, connecting to port 5001 via dt_socket">
-    </target>
-
-    <target name="test-extended" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-interpreted,
-    run-junit-compiled,
-    run-junit-embed,
-    test-rake-targets"
-            description="Runs unit tests.">
+    <target name="test-extended">
+        <!-- First, ensure we're bootstrapped -->
+        <exec executable="mvn">
+            <arg line="-q"/>
+            <arg line="-Pbootstrap"/>
+            <arg line="package"/>
+        </exec>
+        
+        <!-- Then run Ruby tests from Rake -->
+        <java classname="org.jruby.Main" fork="true" failonerror="true">
+            <classpath refid="test.class.path"/>
+            <jvmarg line="${java.opts}"/>
+            <jvmarg line="-Djruby.home=${basedir}"/>
+            <arg line="-S rake test:extended"/>
+        </java>
     </target>
 
     <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
@@ -75,7 +68,7 @@
 
     <target name="test-all" depends="
       copy-test-files,
-      install-gems,
+      bootstrap,
       test-security-manager,
       run-junit-interpreted,
       run-junit-embed,
@@ -139,7 +132,6 @@
         <pathelement path="${java.class.path}"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
         <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
         <pathelement location="${test.dir}"/>
     </path>
 
@@ -300,16 +292,16 @@
         <test-security-manager-in compat.mode="--1.9"/>
     </target>
 
-    <target name="test-rake-targets" depends="init">
+    <target name="spec-ci-interpreted" depends="init">
         <java classname="org.jruby.Main" fork="true" failonerror="true">
             <classpath refid="test.class.path"/>
             <jvmarg line="${java.opts}"/>
             <jvmarg line="-Djruby.home=${basedir}"/>
-            <arg line="-S rake test:rake_targets"/>
+            <arg line="-S rake spec:ci_interpreted_19 spec:ci_interpreted_18"/>
         </java>
     </target>
 
-    <target name="test-jar-complete" depends="init,unzip-native-libs,jar-jruby-complete"
+    <target name="test-jar-complete" depends="init,jar-jruby-complete"
             description="Do some sanity checks on the complete jar.">
         <java jar="lib/jruby-complete.jar" fork="true" failonerror="true">
             <arg line="-v test/test_jar_complete.rb"/>

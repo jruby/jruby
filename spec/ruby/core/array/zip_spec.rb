@@ -50,6 +50,6 @@ describe "Array#zip" do
   end
 
   it "does not return subclass instance on Array subclasses" do
-    ArraySpecs::MyArray[1, 2, 3].zip(["a", "b"]).should be_kind_of(Array)
+    ArraySpecs::MyArray[1, 2, 3].zip(["a", "b"]).should be_an_instance_of(Array)
   end
 end

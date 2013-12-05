@@ -6,7 +6,7 @@ describe "UNIXSocket#path" do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
 
       @server = UNIXServer.open(@path)
       @client = UNIXSocket.open(@path)
@@ -15,7 +15,7 @@ describe "UNIXSocket#path" do
     after :each do
       @client.close
       @server.close
-      File.unlink(@path) if File.exists?(@path)
+      rm_r @path
     end
 
     it "returns the path of the socket if it's a server" do

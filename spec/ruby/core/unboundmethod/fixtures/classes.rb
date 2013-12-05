@@ -60,6 +60,11 @@ module UnboundMethodSpecs
 
   class Child1 < Parent; end
   class Child2 < Parent; end
+  class Child3 < Parent
+    class << self
+      alias_method :another_class_method, :class_method
+    end
+  end
 
   class A
     def baz(a, b)

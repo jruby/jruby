@@ -100,6 +100,16 @@ describe "IO.pipe" do
       end
     end
 
+    it "sets the internal encoding to nil if the same as the external " do
+      Encoding.default_external = Encoding::UTF_8
+      Encoding.default_internal = Encoding::UTF_8
+
+      IO.pipe do |r, w|
+        r.external_encoding.should == Encoding::UTF_8
+        r.internal_encoding.should be_nil
+      end
+    end
+
     it "sets the external encoding of the read end when passed an Encoding argument" do
       IO.pipe(Encoding::UTF_8) do |r, w|
         r.external_encoding.should == Encoding::UTF_8

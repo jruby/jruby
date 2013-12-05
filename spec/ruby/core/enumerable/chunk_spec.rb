@@ -40,5 +40,41 @@ ruby_version_is "1.9" do
       ret[3].last.should == [1]
       ret[4].last.should == [9]
     end
+
+    it "sets a 2-element Array if the block returned :_alone" do
+      ret = EnumerableSpecs::Numerous.new(5,5,2,3,4,5,7,1,9).chunk {|e| e <= 3 && :_alone }.to_a
+      ret.should == [
+        [false,   [5, 5]],
+        [:_alone, [2]],
+        [:_alone, [3]],
+        [false,   [4, 5, 7]],
+        [:_alone, [1]],
+        [false,   [9]]
+      ]
+    end
+
+    it "rejects 2-element Arrays if the block returned nil" do
+      ret = EnumerableSpecs::Numerous.new(5,5,2,3,4,5,7,1,9).chunk {|e| e <= 3 && nil }.to_a
+      ret.should == [
+        [false, [5, 5]],
+        [false, [4, 5, 7]],
+        [false, [9]]
+      ]
+    end
+
+    it "rejects 2-element Arrays if the block returned :_separator" do
+      ret = EnumerableSpecs::Numerous.new(5,5,2,3,4,5,7,1,9).chunk {|e| e <= 3 && :_separator }.to_a
+      ret.should == [
+        [false, [5, 5]],
+        [false, [4, 5, 7]],
+        [false, [9]]
+      ]
+    end
+
+    it "raises an RuntimeError if the block returned a Symbol that is undefined but reserved format (first character is an underscore)" do
+      lambda {
+        EnumerableSpecs::Numerous.new(5,5,2,3,4,5,7,1,9).chunk {|e| e <= 3 && :_singleton }.to_a
+      }.should raise_error(RuntimeError)
+    end
   end
 end

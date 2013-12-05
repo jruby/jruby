@@ -79,21 +79,21 @@ describe "Array#sort" do
     a = Array.new(25)
     (0...25).each {|i| a[i] = ArraySpecs::UFOSceptic.new }
 
-    a.sort { -1 }.should be_kind_of(Array)
+    a.sort { -1 }.should be_an_instance_of(Array)
   end
 
   it "does not call #<=> on elements when invoked with a block even if Array is large (Rubinius #412)" do
     a = Array.new(1500)
     (0...1500).each {|i| a[i] = ArraySpecs::UFOSceptic.new }
 
-    a.sort { -1 }.should be_kind_of(Array)
+    a.sort { -1 }.should be_an_instance_of(Array)
   end
 
   it "completes when supplied a block that always returns the same result" do
     a = [2, 3, 5, 1, 4]
-    a.sort {  1 }.should be_kind_of(Array)
-    a.sort {  0 }.should be_kind_of(Array)
-    a.sort { -1 }.should be_kind_of(Array)
+    a.sort {  1 }.should be_an_instance_of(Array)
+    a.sort {  0 }.should be_an_instance_of(Array)
+    a.sort { -1 }.should be_an_instance_of(Array)
   end
 
   it "does not freezes self during being sorted" do
@@ -161,14 +161,14 @@ describe "Array#sort" do
   ruby_version_is "" ... "1.9.3" do
     it "returns subclass instance on Array subclasses" do
       ary = ArraySpecs::MyArray[1, 2, 3]
-      ary.sort.should be_kind_of(ArraySpecs::MyArray)
+      ary.sort.should be_an_instance_of(ArraySpecs::MyArray)
     end
   end
 
   ruby_version_is "1.9.3" do
     it "does not return subclass instance on Array subclasses" do
       ary = ArraySpecs::MyArray[1, 2, 3]
-      ary.sort.should be_kind_of(Array)
+      ary.sort.should be_an_instance_of(Array)
     end
   end
 end
@@ -219,21 +219,21 @@ describe "Array#sort!" do
     a = Array.new(25)
     (0...25).each {|i| a[i] = ArraySpecs::UFOSceptic.new }
 
-    a.sort! { -1 }.should be_kind_of(Array)
+    a.sort! { -1 }.should be_an_instance_of(Array)
   end
 
   it "does not call #<=> on elements when invoked with a block even if Array is large (Rubinius #412)" do
     a = Array.new(1500)
     (0...1500).each {|i| a[i] = ArraySpecs::UFOSceptic.new }
 
-    a.sort! { -1 }.should be_kind_of(Array)
+    a.sort! { -1 }.should be_an_instance_of(Array)
   end
 
   it "completes when supplied a block that always returns the same result" do
     a = [2, 3, 5, 1, 4]
-    a.sort!{  1 }.should be_kind_of(Array)
-    a.sort!{  0 }.should be_kind_of(Array)
-    a.sort!{ -1 }.should be_kind_of(Array)
+    a.sort!{  1 }.should be_an_instance_of(Array)
+    a.sort!{  0 }.should be_an_instance_of(Array)
+    a.sort!{ -1 }.should be_an_instance_of(Array)
   end
 
   ruby_version_is '' ... '1.9' do

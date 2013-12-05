@@ -1,0 +1,3 @@
+fails:Method#== missing methods returns true for the same method missing
+fails:Method#== returns true if a method was defined using the other one
+fails:Method#== returns true for methods defined using equivalent blocks

@@ -119,6 +119,10 @@ describe "An instance method with a default argument" do
 end
 
 describe "A singleton method definition" do
+  after :all do
+    Object.__send__(:remove_class_variable, :@@a)
+  end
+
   it "can be declared for a local variable" do
     a = "hi"
     def a.foo

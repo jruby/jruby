@@ -36,9 +36,9 @@ describe "Array#-" do
   end
 
   it "does not return subclass instance for Array subclasses" do
-    (ArraySpecs::MyArray[1, 2, 3] - []).should be_kind_of(Array)
-    (ArraySpecs::MyArray[1, 2, 3] - ArraySpecs::MyArray[]).should be_kind_of(Array)
-    ([1, 2, 3] - ArraySpecs::MyArray[]).should be_kind_of(Array)
+    (ArraySpecs::MyArray[1, 2, 3] - []).should be_an_instance_of(Array)
+    (ArraySpecs::MyArray[1, 2, 3] - ArraySpecs::MyArray[]).should be_an_instance_of(Array)
+    ([1, 2, 3] - ArraySpecs::MyArray[]).should be_an_instance_of(Array)
   end
 
   it "does not call to_ary on array subclasses" do

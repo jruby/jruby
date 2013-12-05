@@ -1,0 +1,15 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+
+
+String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
+String expected = "hello world";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "openssl loaded";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}

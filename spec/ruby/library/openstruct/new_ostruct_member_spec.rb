@@ -9,13 +9,13 @@ describe "OpenStruct#new_ostruct_member when passed [method_name]" do
 
   it "creates an attribute reader method for the passed method_name" do
     @os.respond_to?(:age).should be_false
-    @os.new_ostruct_member(:age)
+    @os.send :new_ostruct_member, :age
     @os.method(:age).call.should == 20
   end
 
   it "creates an attribute writer method for the passed method_name" do
     @os.respond_to?(:age=).should be_false
-    @os.new_ostruct_member(:age)
+    @os.send :new_ostruct_member, :age
     @os.method(:age=).call(42).should == 42
     @os.age.should == 42
   end
@@ -25,7 +25,7 @@ describe "OpenStruct#new_ostruct_member when passed [method_name]" do
       10
     end
 
-    @os.new_ostruct_member(:age)
+    @os.send :new_ostruct_member, :age
     @os.age.should == 10
     @os.respond_to?(:age=).should be_false
   end

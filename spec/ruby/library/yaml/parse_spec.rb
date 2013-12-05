@@ -13,6 +13,10 @@ describe "YAML#parse" do
   end
 
   it "returns the value from the object" do
-    YAML.parse(@string_yaml).value.should == "foo"
+    if YAML.to_s == "Psych"
+      YAML.parse(@string_yaml).to_ruby.should == "foo"
+    else
+      YAML.parse(@string_yaml).value.should == "foo"
+    end
   end
 end
