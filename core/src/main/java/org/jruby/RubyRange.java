@@ -670,6 +670,14 @@ public class RubyRange extends RubyObject {
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
     }
 
+    @JRubyMethod
+    public IRubyObject size(ThreadContext context) {
+        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
+            return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
+        }
+        return context.nil;
+    }
+
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
