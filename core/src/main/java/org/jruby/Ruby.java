@@ -852,7 +852,7 @@ public final class Ruby {
         assert scriptNode != null : "scriptNode is not null";
         assert scriptNode instanceof RootNode : "scriptNode is not a RootNode";
 
-        return runInterpreter(((RootNode) scriptNode).getBodyNode());
+        return runInterpreter(scriptNode);
     }
 
     public Parser getParser() {
