@@ -147,11 +147,28 @@ public class Interpreter {
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation(false);
-//        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext();
-        runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
-        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
-        runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
+
+        IRubyObject rv = null;
+        try {
+            DynamicScope s = rootNode.getScope();
+            context.pushScope(s);
+
+            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
+            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
+            // Since the same static scope (the scope within which the eval string showed up)
+            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
+            // forget about it.  We need to set this right before we are ready to grow the
+            // dynamic scope local var space.
+            ((IRStaticScope)evalScript.getStaticScope()).setIRScope(evalScript);
+            s.growIfNeeded();
+
+            runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
+            rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
+            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
+        } finally {
+            context.popScope();
+        }
         return rv;
     }
 

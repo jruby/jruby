@@ -428,6 +428,10 @@ public abstract class IRScope {
         return false;
     }
 
+    public boolean isBeginEndBlock() {
+        return false;
+    }
+
     public Label getNewLabel(String prefix) {
         return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }

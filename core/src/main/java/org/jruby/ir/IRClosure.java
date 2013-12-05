@@ -40,6 +40,7 @@ public class IRClosure extends IRScope {
     // for-loop body closures are special in that they dont really define a new variable scope.
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
     private boolean isForLoopBody;
+    private boolean isBeginEndBlock;
 
     // Block parameters
     private List<Operand> blockArgs;
@@ -103,6 +104,14 @@ public class IRClosure extends IRScope {
             s = s.getLexicalParent();
         }
         this.nestingDepth = n;
+    }
+
+    public void setBeginEndBlock() {
+        this.isBeginEndBlock = true;
+    }
+
+    public boolean isBeginEndBlock() {
+        return isBeginEndBlock;
     }
 
     public void setParameterList(String[] parameterList) {

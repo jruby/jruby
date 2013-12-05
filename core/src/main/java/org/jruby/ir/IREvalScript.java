@@ -61,6 +61,7 @@ public class IREvalScript extends IRClosure {
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
 
@@ -68,6 +69,7 @@ public class IREvalScript extends IRClosure {
     @Override
     public void recordEndBlock(IRClosure endBlockClosure) {
         if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
+        endBlockClosure.setBeginEndBlock();
         endBlocks.add(endBlockClosure);
     }
 
@@ -84,24 +86,9 @@ public class IREvalScript extends IRClosure {
             LOG.info("Graph:\n" + cfg().toStringGraph());
             LOG.info("CFG:\n" + cfg().toStringInstrs());
         }
-        try {
-            context.pushScope(evalScope);
 
-            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
-            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
-            // Since the same static scope (the scope within which the eval string showed up)
-            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
-            // forget about it.  We need to set this right before we are ready to grow the
-            // dynamic scope local var space.
-            ((IRStaticScope)getStaticScope()).setIRScope(this);
-            evalScope.growIfNeeded();
-
-            // FIXME: Do not push new empty arg array in every time
-            return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
-        }
-        finally {
-            context.popScope();
-        }
+        // FIXME: Do not push new empty arg array in every time
+        return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
     }
 
     @Override
