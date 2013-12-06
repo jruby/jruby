@@ -52,6 +52,7 @@ import org.jruby.util.ConvertDouble;
 
 import java.math.BigInteger;
 
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.util.Numeric.f_abs;
@@ -775,7 +776,7 @@ public class RubyNumeric extends RubyObject {
         if (block.isGiven()) {
             return stepCommon(context, arg0, RubyFixnum.one(context.runtime), block);
         } else {
-            return enumeratorizeWithSize(context, this, "step", new IRubyObject[] { arg0 }, stepSize(context, this, arg0, RubyFixnum.one(context.runtime)));
+            return enumeratorizeWithSize(context, this, "step", new IRubyObject[] { arg0 }, stepSizeFn(context, this, arg0, RubyFixnum.one(context.runtime)));
         }
     }
 
@@ -784,7 +785,7 @@ public class RubyNumeric extends RubyObject {
         if (block.isGiven()) {
             return stepCommon(context, to, step, block);
         } else {
-            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{to, step}, stepSize(context, this, to, step));
+            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{to, step}, stepSizeFn(context, this, to, step));
         }
     }
 
@@ -918,8 +919,13 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    public static RubyNumeric stepSize(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step) {
-        return intervalStepSize(context, from, to, step, false);
+    private SizeFn stepSizeFn(final ThreadContext context, final IRubyObject from, final IRubyObject to, final IRubyObject step) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return intervalStepSize(context, from, to, step, false);
+            }
+        };
     }
 
     /**

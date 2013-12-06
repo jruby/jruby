@@ -276,7 +276,7 @@ public class RubyFixnum extends RubyInteger {
             }
             return this;
         } else {
-            return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSize(context.runtime));
+            return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
         }
     }
 
