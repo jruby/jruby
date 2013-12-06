@@ -49,7 +49,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_gcd;
@@ -134,7 +133,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "upto", to);
+            return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
         }
     }
 
@@ -174,6 +173,15 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    private static SizeFn uptoSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
+            }
+        };
+    }
+
     /** int_downto
      * 
      */
@@ -188,7 +196,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "downto", to);
+            return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
         }
     }
 
@@ -226,6 +234,15 @@ public abstract class RubyInteger extends RubyNumeric {
             block.yield(context, i);
             i = i.callMethod(context, "-", one);
         }
+    }
+
+    private static SizeFn downToSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
+            }
+        };
     }
 
     @JRubyMethod
