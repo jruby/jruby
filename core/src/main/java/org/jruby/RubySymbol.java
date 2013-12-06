@@ -302,7 +302,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         Ruby runtime = context.runtime;
         
         return !(other instanceof RubySymbol) ? runtime.getNil() :
-                newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime));
+                newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime));
     }
 
     @JRubyMethod
