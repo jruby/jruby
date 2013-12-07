@@ -80,6 +80,7 @@ import org.jruby.util.string.JavaCrypt;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
+import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
@@ -1057,15 +1058,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyString) {
             return runtime.newFixnum(op_cmp((RubyString)other));
         }
-        // deal with case when "other" is not a string
-        if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
-            IRubyObject result = invokedynamic(context, other, OP_CMP, this);
-            if (result.isNil()) return result;
-            if (result instanceof RubyFixnum) {
-                return RubyFixnum.newFixnum(runtime, -((RubyFixnum)result).getLongValue());
-            } else {
-                return RubyFixnum.zero(runtime).callMethod(context, "-", result);
-            }
+        if (other.respondsTo("to_str")) {
+            IRubyObject tmp = other.callMethod(context, "to_str");
+            if (tmp instanceof RubyString)
+              return runtime.newFixnum(op_cmp((RubyString)tmp));
+        } else {
+            return invcmp(context, this, other);
         }
         return runtime.getNil();
     }
