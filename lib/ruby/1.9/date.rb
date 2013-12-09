@@ -1404,7 +1404,12 @@ class Date
     when Numeric
       ajd <=> other
     when Date
-      @dt.compareTo(other.dt)
+      rs = @dt.compareTo(other.dt)
+      if rs == 0 && @sub_millis != other.sub_millis
+        -1
+      else
+        rs
+      end
     else
       begin
         l, r = other.coerce(self)
