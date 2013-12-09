@@ -146,6 +146,8 @@ class TestDate < Test::Unit::TestCase
     d2 = DateTime.new(2013, 12, 6, 0, 0, Rational(2, 10000))
     # d1 is 0.0001s earlier than d2
     assert_equal(-1, d1 <=> d2)
+    assert_equal(0, d1 <=> d1)
+    assert_equal(1, d2 <=> d1)
   end
 
 end
