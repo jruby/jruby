@@ -51,8 +51,11 @@ public class TracePoint extends RubyObject {
         for (int i = 0; i < _events.length; i++) {
             IRubyObject _event = _events[i];
             if (_event instanceof RubySymbol || _event instanceof RubyString) {
-                String eventName = _event.asJavaString();
-                RubyEvent event = RubyEvent.valueOf(eventName);
+                String eventName = _event.asJavaString().toUpperCase();
+                RubyEvent event = null;
+                try {
+                    event = RubyEvent.valueOf(eventName);
+                } catch (IllegalArgumentException iae) {}
                 
                 if (event == null) throw runtime.newArgumentError("unknown event: " + eventName);
                 
