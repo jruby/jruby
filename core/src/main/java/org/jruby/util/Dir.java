@@ -40,6 +40,7 @@ import org.jruby.RubyFile;
 
 import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
+import java.io.IOException;
 
 /**
  * This class exists as a counterpart to the dir.c file in 
@@ -764,7 +765,7 @@ public class Dir {
                                 } else {
                                     st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 }
-                                if(st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
+                                if(!isResolvedSymlink(st) && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                     int t = buf.getRealSize();
                                     buf.append(SLASH);
                                     buf.append(DOUBLE_STAR);
@@ -911,5 +912,22 @@ public class Dir {
 
     private static String newStringFromUTF8(byte[] buf) {
         return RubyEncoding.decodeUTF8(buf);
+    }
+    
+    private static boolean isResolvedSymlink(File st) {
+        try {
+            File canon;
+            if (st.getParent() == null) {
+                canon = st;
+            } else {
+                File canonDir;
+                canonDir = st.getParentFile().getCanonicalFile();
+
+                canon = new File(canonDir, st.getName());
+            }
+            return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
