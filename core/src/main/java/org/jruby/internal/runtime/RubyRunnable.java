@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.JumpException;
@@ -92,10 +93,11 @@ public class RubyRunnable implements ThreadedRunnable {
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
             // Call the thread's code
+            RubyModule frameClass = proc.getBlock().getFrame().getKlazz();
             try {
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, context.getFrameKlazz());
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass);
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, context.getFrameKlazz());
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass);
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
                 if (runtime.is1_9()) {
