@@ -6,10 +6,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr {
     private IRScope declaringScope;
@@ -21,15 +17,14 @@ public class RecordEndBlockInstr extends Instr {
         this.declaringScope = declaringScope;
         this.endBlockClosure = endBlockClosure;
     }
+    
+    public IRClosure getEndBlockClosure() {
+        return endBlockClosure;
+    }
 
     @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + endBlockClosure.getName() + ")"; 
     }
 
     @Override

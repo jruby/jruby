@@ -32,14 +32,17 @@ public class Match2Instr extends Instr implements ResultInstr {
         this.arg = arg;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { receiver, arg };
+    public Operand getArg() {
+        return arg;
+    }
+    
+    public Operand getReceiver() {
+        return receiver;
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + receiver + ", " + arg + ")";
+    public Operand[] getOperands() {
+        return new Operand[] { receiver, arg };
     }
 
     @Override
@@ -48,10 +51,12 @@ public class Match2Instr extends Instr implements ResultInstr {
         arg = arg.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

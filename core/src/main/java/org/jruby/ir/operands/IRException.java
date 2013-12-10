@@ -12,6 +12,8 @@ public class IRException extends Operand {
     private String exceptionType;
 
     protected IRException(String exceptionType) {
+        super(OperandType.IR_EXCEPTION);
+        
         this.exceptionType = exceptionType;
     }
 
@@ -34,17 +36,6 @@ public class IRException extends Operand {
     @Override
     public boolean canCopyPropagate() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder("LocalJumpError:");
-        if (this == NEXT_LocalJumpError) result.append("NEXT");
-        else if (this == BREAK_LocalJumpError) result.append("BREAK");
-        else if (this == RETURN_LocalJumpError) result.append("RETURN");
-        else if (this == REDO_LocalJumpError) result.append("REDO");
-        else if (this == RETRY_LocalJumpError) result.append("RETRY");
-        return result.toString();
     }
 
     public RuntimeException getException(Ruby runtime) {

@@ -24,6 +24,10 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
         super(Operation.MASGN_OPT, result, array, index);
         this.minArgsLength = minArgsLength;
     }
+    
+    public int getMinArgsLength() {
+        return minArgsLength;
+    }
 
     @Override
     public String toString() {

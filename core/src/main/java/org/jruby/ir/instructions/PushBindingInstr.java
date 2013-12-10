@@ -13,6 +13,10 @@ public class PushBindingInstr extends Instr {
         super(Operation.PUSH_BINDING);
         this.scope = scope;
     }
+    
+    public IRScope getScope() {
+        return scope;
+    }
 
     @Override
     public Operand[] getOperands() {
@@ -23,11 +27,6 @@ public class PushBindingInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
         return new PushBindingInstr(ii.getInlineHostScope());
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + scope.getName() + ")";
     }
 
     @Override

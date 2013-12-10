@@ -55,14 +55,6 @@ public class BreakInstr extends Instr {
         return new Operand[] { returnValue };
     }
 
-    public IRScope getScopeToReturnTo() {
-        return scopeToReturnTo;
-    }
-
-    public Operand getReturnValue() {
-        return returnValue;
-    }
-
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);

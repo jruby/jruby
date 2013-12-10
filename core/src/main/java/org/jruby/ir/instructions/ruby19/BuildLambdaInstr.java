@@ -32,9 +32,21 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         this.position = position;
     }
 
+
+    private IRClosure getLambdaBody() {
+        return ((WrappedIRClosure) operands[0]).getClosure();
+    }
+    
+    public String getLambdaBodyName() {
+        return getLambdaBody().getName();
+    }
     @Override
     public Operand[] getOperands() {
         return operands;
+    }
+    
+    public ISourcePosition getPosition() {
+        return position;
     }
 
     public Variable getResult() {
@@ -55,10 +67,6 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         for (int i = 0; i < operands.length; i++) {
             operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
         }
-    }
-
-    private IRClosure getLambdaBody() {
-        return ((WrappedIRClosure) operands[0]).getClosure();
     }
 
     @Override

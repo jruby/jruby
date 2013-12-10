@@ -85,8 +85,6 @@ public class IRClosure extends IRScope {
 
         // increase nesting depth if needed after isForLoopBody value is set
         if (!isForLoopBody) this.nestingDepth++; 
-
-        this.nestingDepth = n;
     }
 
     // Used by IREvalScript

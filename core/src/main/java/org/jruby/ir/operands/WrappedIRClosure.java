@@ -16,6 +16,8 @@ public class WrappedIRClosure extends Operand {
     private final IRClosure closure;
 
     public WrappedIRClosure(IRClosure scope) {
+        super(OperandType.WRAPPED_IR_CLOSURE);
+        
         this.closure = scope;
     }
 
@@ -31,11 +33,6 @@ public class WrappedIRClosure extends Operand {
     @Override
     public boolean canCopyPropagate() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "WrappedIRClosure:<" + closure.getName() + ">";
     }
 
     @Override

@@ -12,7 +12,7 @@ public class MethAddr extends Reference {
     public static final MethAddr UNKNOWN_SUPER_TARGET  = new MethAddr("-unknown-super-target-");
 
     public MethAddr(String name) {
-        super(name);
+        super(OperandType.METH_ADDR, name);
     }
 
     @Override
@@ -33,10 +33,5 @@ public class MethAddr extends Reference {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.MethAddr(this);
-    }
-
-    @Override
-    public String toString() {
-        return "'" + getName() + "'";
     }
 }

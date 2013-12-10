@@ -28,6 +28,10 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     public ReceiveExceptionInstr(Variable result) {
         this(result, true);
     }
+    
+    public boolean isCheckType() {
+        return checkType;
+    }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
@@ -39,11 +43,6 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
 
     public void updateResult(Variable v) {
         this.result = v;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + checkType +  ")"; 
     }
 
     @Override

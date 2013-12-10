@@ -32,6 +32,14 @@ public class CompoundArray extends Operand {
         this.a2 = a2;
         this.isArgsPush = isArgsPush;
     }
+    
+    public Operand getA1() {
+        return a1;
+    }
+    
+    public Operand getA2() {
+        return a2;
+    }
 
     public boolean hasKnownValue() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 

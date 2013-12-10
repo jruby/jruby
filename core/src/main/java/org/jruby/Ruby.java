@@ -73,7 +73,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.persistence.IRReadingContext;
+import org.jruby.ir.persistence.read.IRReadingContext;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.*;

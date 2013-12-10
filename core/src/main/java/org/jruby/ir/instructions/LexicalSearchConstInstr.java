@@ -41,6 +41,14 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         this.constName = constName;
         this.result = result;
     }
+    
+    public Operand getDefiningScope() {
+        return definingScope;
+    }
+    
+    public String getConstName() {
+        return constName;
+    }
 
     @Override
     public Operand[] getOperands() {
@@ -52,10 +60,12 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         definingScope = definingScope.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -63,11 +73,6 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + definingScope + ", " + constName  + ")";
     }
 
     private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {

@@ -288,41 +288,6 @@ public abstract class CallBase extends Instr implements Specializeable {
         return true;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        
-        builder.append(super.toString()).append("(");
-        builder.append(receiver);
-        if(needToPersistCallType()) {
-            builder.append(", ").append(callType);
-        }
-        if(callType == CallType.SUPER) {
-            SuperInstrType type;
-            if(this instanceof InstanceSuperInstr) {
-                type = SuperInstrType.INSTANCE;
-            } else if (this instanceof ClassSuperInstr) {
-                type = SuperInstrType.CLASS;
-            } else {
-                type = SuperInstrType.UNRESOLVED;
-            }
-            builder.append(", ").append(type);
-        }
-        if(needToPersistMethAddr()) {
-            builder.append(", ").append(methAddr);
-        }
-        builder.append(receiver);
-        if(needToPersistCallArgs()) {
-            builder.append(", ").append(Arrays.toString(getCallArgs()));
-        }
-        if(closure != null) {
-            builder.append(", ").append(closure);
-        }
-        builder.append(")");
-        
-        return builder.toString(); 
-    }
-
     protected static boolean containsSplat(Operand[] arguments) {
         for (int i = 0; i < arguments.length; i++) {
             if (arguments[i] instanceof Splat) return true;

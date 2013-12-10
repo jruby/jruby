@@ -28,7 +28,7 @@ public class ModuleVersionGuardInstr extends Instr {
     private final RubyModule module;
 
     /** The object whose metaclass token has to be verified*/
-    private Operand candidateObj;
+    private Operand candidateObject;
 
     /** Where to jump if the version assumption fails? */
     private Label failurePathLabel;
@@ -37,41 +37,49 @@ public class ModuleVersionGuardInstr extends Instr {
         super(Operation.MODULE_GUARD);
         this.module = module;
         this.expectedVersion = expectedVersion;
-        this.candidateObj = candidateObj;
+        this.candidateObject = candidateObj;
         this.failurePathLabel = failurePathLabel;
     }
 
     public Label getFailurePathLabel() {
         return failurePathLabel;
     }
+    
+    // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
+    public RubyModule getModule() {
+        return module;
+    }
+    
+    public Operand getCandidateObject() { 
+        return candidateObject;
+    }
+    
+    public int getExpectedVersion() {
+        return expectedVersion;
+    }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { candidateObj };
+        return new Operand[] { candidateObject };
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        candidateObj = candidateObj.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + candidateObj + ", " + expectedVersion + ", " + module.getName() + ", " + failurePathLabel + ")";
+        candidateObject = candidateObject.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), failurePathLabel);
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), failurePathLabel);
     }
 
     private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currDynScope, temp);
+        IRubyObject receiver = (IRubyObject) candidateObject.retrieve(context, self, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
         //
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()

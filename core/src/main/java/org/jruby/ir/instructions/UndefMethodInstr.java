@@ -23,15 +23,14 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
         this.result = result;
         this.methodName = methodName;
     }
+    
+    public Operand getMethodName() {
+        return methodName;
+    }
 
     @Override
     public Operand[] getOperands() {
         return new Operand[] { methodName };
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + methodName + ")";
     }
 
     @Override

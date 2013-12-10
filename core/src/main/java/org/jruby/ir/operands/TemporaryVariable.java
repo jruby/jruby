@@ -15,12 +15,16 @@ public class TemporaryVariable extends Variable {
     String name;
 
     public TemporaryVariable(int offset) {
+        super(OperandType.TEMPORARY_VARIABLE);
+        
         this.offset = offset;
         this.name = getPrefix() + offset;
     }
 
 	 // Used for temporary variables like %current_module, %_arg_array
     public TemporaryVariable(String name, int offset) {
+        super(OperandType.TEMPORARY_VARIABLE);
+
         this.offset = offset;
         this.name = name;
     }
@@ -50,11 +54,6 @@ public class TemporaryVariable extends Variable {
 
     protected String getPrefix() {
         return "%v_";
-    }
-
-    @Override
-    public String toString() {
-        return getName();
     }
 
     @Override

@@ -56,9 +56,4 @@ public class AttrAssignInstr extends NoResultCallInstr {
     public void visit(IRVisitor visitor) {
         visitor.AttrAssignInstr(this);
     }
-
-    @Override
-    protected boolean needToPersistCallType() {
-        return false;
-    } 
 }

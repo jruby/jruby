@@ -25,6 +25,14 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
         this(result, array, -1, -1, index);
     }
 
+    public int getPreArgsCount() {
+        return preArgsCount;
+    }
+    
+    public int getPostArgsCount() {
+        return postArgsCount;
+    }
+    
     @Override
     public String toString() {
         return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";

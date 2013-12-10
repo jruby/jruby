@@ -7,7 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Symbol extends Reference {
     public Symbol(String name) {
-        super(name);
+        super(OperandType.SYMBOL, name);
     }
 
     @Override
@@ -18,11 +18,6 @@ public class Symbol extends Reference {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return context.runtime.newSymbol(getName());
-    }
-
-    @Override
-    public String toString() {
-        return ":'" + getName() + "'";
     }
 
     @Override

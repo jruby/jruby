@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable extends Reference {
     public GlobalVariable(String name) {
-        super(name);
+        super(OperandType.GLOBAL_VARIABLE, name);
     }
 
     public int compareTo(Object arg0) {

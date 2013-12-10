@@ -9,11 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.List;
 
 public class ObjectClass extends Operand {
-    public ObjectClass() { }
-
-    @Override
-    public String toString() {
-        return "<Class:Object>";
+    public ObjectClass() { 
+        super(OperandType.OBJECT_CLASS);
     }
 
     @Override

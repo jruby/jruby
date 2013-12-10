@@ -32,6 +32,14 @@ public class Match3Instr extends Instr implements ResultInstr {
         this.receiver = receiver;
         this.arg = arg;
     }
+    
+    public Operand getArg() {
+        return arg;
+    }
+    
+    public Operand getReceiver() {
+        return receiver;
+    }
 
     @Override
     public Operand[] getOperands() {

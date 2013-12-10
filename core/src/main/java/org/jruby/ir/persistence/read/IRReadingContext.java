@@ -1,4 +1,4 @@
-package org.jruby.ir.persistence;
+package org.jruby.ir.persistence.read;
 
 public enum IRReadingContext {
     INSTANCE;

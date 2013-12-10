@@ -17,6 +17,8 @@ public class ScopeModule extends Operand {
     private final IRScope scope;
 
     public ScopeModule(IRScope scope) {
+        super(OperandType.SCOPE_MODULE);
+        
         this.scope = scope;
     }
 
@@ -37,11 +39,6 @@ public class ScopeModule extends Operand {
 
     public IRScope getScope() {
         return scope;
-    }
-
-    @Override
-    public String toString() {
-        return "module<" + scope.getName() + ">";
     }
 
     @Override

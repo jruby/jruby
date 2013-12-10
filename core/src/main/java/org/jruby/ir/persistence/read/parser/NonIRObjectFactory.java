@@ -1,4 +1,4 @@
-package org.jruby.ir.persistence.parser;
+package org.jruby.ir.persistence.read.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,10 +46,11 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.IRException;
+import org.jruby.ir.instructions.specialized.SpecializedInstType;
+import org.jruby.ir.operands.OperandType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
-import org.jruby.parser.IRStaticScopeType;
+import org.jruby.parser.StaticScope.Type;
 import org.jruby.runtime.CallType;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -61,6 +62,14 @@ public enum NonIRObjectFactory {
         return Operation.valueOf(name.toUpperCase());
     }
     
+    public OperandType createOperandType(String name) {
+        return OperandType.valueOf(name.toUpperCase());
+    }
+    
+    public SpecializedInstType createSpecilizedInstrType(String specializedInstName) {
+        return SpecializedInstType.valueOf(specializedInstName);
+    }
+    
     public IRScopeType createScopeType(String type) {
         return IRScopeType.valueOf(type);        
     }
@@ -69,35 +78,8 @@ public enum NonIRObjectFactory {
         return new SimpleSourcePosition(fileName, line);
     }
     
-    public IRStaticScopeType createStaticScopeType(String type) {
-        return IRStaticScopeType.valueOf(type);        
-    }
-    
-    public boolean createBoolean(String booleanStringValue) {
-        return Boolean.parseBoolean(booleanStringValue);
-    }
-    
-    public Integer createInteger(String value) {
-        return Integer.valueOf(value);
-    }
-    
-    public IRException createIRException(String type) {
-        Reason reason = Reason.valueOf(type.toUpperCase());
-        switch (reason) {
-        case BREAK:
-            return IRException.BREAK_LocalJumpError;
-        case NEXT:
-            return IRException.NEXT_LocalJumpError;
-        case REDO:
-            return IRException.REDO_LocalJumpError;
-        case RETRY:
-            return IRException.RETRY_LocalJumpError;
-        case RETURN:
-            return IRException.RETURN_LocalJumpError;
-        default:
-            // what is that?
-            return null;
-        }
+    public Type createStaticScopeType(String type) {
+        return Type.valueOf(type);        
     }
     
     public Encoding createEncoding(String name) {
@@ -233,6 +215,14 @@ public enum NonIRObjectFactory {
 
     public CallType createCallType(String callTypeString) {
         return CallType.valueOf(callTypeString);
+    }
+    
+    public Reason createReason(String reasonString) {
+        return Reason.valueOf(reasonString.toUpperCase());
+    }
+
+    public KCode createKcode(String kcodeName) {
+        return KCode.valueOf(kcodeName);
     }
 
 }
