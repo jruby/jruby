@@ -23,7 +23,7 @@ namespace :maven do
   end
 
   desc "Deploy release and bump version"
-  task :prepare_release do
+  task :deploy_release do
     system "mvn clean deploy -Psonatype-oss-release,release
     system "mvn versions:set"
   end
