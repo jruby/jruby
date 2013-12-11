@@ -6,9 +6,6 @@ import org.jruby.ir.operands.Operand;
 
 
 public class IRToStringTranslator {
-    
-    private IRToStringTranslator(){}
-    
     public static String translate(IRScope irScope) {
         IRScopeStringExtractor stringExtractor = IRScopeStringExtractor.createToplevelInstance();
         return stringExtractor.extract(irScope);
@@ -35,5 +32,4 @@ public class IRToStringTranslator {
         IRInstrStringExtractor stringExtractor = IRInstrStringExtractor.createInstance(builder);
         stringExtractor.produceString(instr);
     }
-    
 }

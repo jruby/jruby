@@ -1,13 +1,9 @@
 package org.jruby.ir.persistence.persist.string;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jcodings.Encoding;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
@@ -84,48 +80,40 @@ class IROperandStringExtractor extends IRVisitor {
  // Operands
 
     // Operands without parameters
-    public void Nil(Nil nil) {}
-    public void ObjectClass(ObjectClass objectclass) {}
-    public void Self(Self self) {}
-    public void StandardError(StandardError standarderror) {}
-    public void UndefinedValue(UndefinedValue undefinedvalue) {}
-    public void UnexecutableNil(UnexecutableNil unexecutablenil) {}
+    @Override public void Nil(Nil nil) {}
+    @Override public void ObjectClass(ObjectClass objectclass) {}
+    @Override public void Self(Self self) {}
+    @Override public void StandardError(StandardError standarderror) {}
+    @Override public void UndefinedValue(UndefinedValue undefinedvalue) {}
+    @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {}
     
     // Operands that have arrays as parameters
     
     // If we simply pass array directly to appendParameters
     //  than it will be unwrapped
     //  we want to pass single parameters which type is Operand[]
-    public void Array(Array array) {
-        Operand[] elts = array.getElts();        
-        
-        stringProducer.appendParameters(new Object[] { elts });
+    @Override public void Array(Array array) {
+        stringProducer.appendParameters(new Object[] { array.getElts() });
     }
     
-    public void BacktickString(BacktickString backtickstring) {
-        List<Operand> pieces = backtickstring.pieces;
-        
-        stringProducer.appendParameters(new Object[] { pieces.toArray() });
+    @Override public void BacktickString(BacktickString backtickstring) {
+        stringProducer.appendParameters(new Object[] { backtickstring.pieces.toArray() });
     }
 
-    public void CompoundString(CompoundString compoundstring) {
-        List<Operand> pieces = compoundstring.getPieces();
-        Encoding encoding = compoundstring.getEncoding();
-        
+    @Override public void CompoundString(CompoundString compoundstring) {
         // No need to wrap pieces array here,
         // 2 parameters are passed,
         // so appendParameters is able to figure out that there are 2 parameters
-        stringProducer.appendParameters(pieces.toArray(), encoding);
+        stringProducer.appendParameters(compoundstring.getPieces().toArray(), compoundstring.getEncoding());
     }
 
-    public void Hash(Hash hash) {
+    @Override public void Hash(Hash hash) {
         List<Operand[]> keyValuePairArrays = Collections.emptyList();
         if (!hash.isBlank()) {
             List<KeyValuePair> pairs = hash.pairs;
             keyValuePairArrays = new ArrayList<Operand[]>(pairs.size());
             for (KeyValuePair keyValuePair : pairs) {
-                Operand[] keyValuePairArray = { keyValuePair.getKey(), keyValuePair.getValue() };
-                keyValuePairArrays.add(keyValuePairArray);
+                keyValuePairArrays.add(new Operand[] { keyValuePair.getKey(), keyValuePair.getValue() });
             }
         }        
         stringProducer.appendParameters(new Object[] { keyValuePairArrays.toArray() });
@@ -133,10 +121,8 @@ class IROperandStringExtractor extends IRVisitor {
 
     // Operands that takes another operands as parameters    
     
-    public void AsString(AsString asstring) {
-        Operand source = asstring.getSource();
-        
-        stringProducer.appendParameters(source);
+    @Override public void AsString(AsString asstring) {
+        stringProducer.appendParameters(asstring.getSource());
     }
     
     @Override public void CompoundArray(CompoundArray op) {
@@ -151,15 +137,11 @@ class IROperandStringExtractor extends IRVisitor {
         stringProducer.appendParameters(op.getReceiver(), op.getMethodNameOperand());
     }
 
-    public void Range(Range range) {
-        Operand begin = range.getBegin();
-        Operand end = range.getEnd();
-        boolean exclusive = range.isExclusive();
-        
-        stringProducer.appendParameters(begin, end, exclusive);
+    @Override public void Range(Range range) {
+        stringProducer.appendParameters(range.getBegin(), range.getEnd(), range.isExclusive());
     }
 
-    public void Regexp(Regexp regexp) {
+    @Override public void Regexp(Regexp regexp) {
         Operand regexpOperand = regexp.getRegexp();
         RegexpOptions options = regexp.options;
         KCode kCode = options.getKCode();
@@ -168,64 +150,46 @@ class IROperandStringExtractor extends IRVisitor {
         stringProducer.appendParameters(regexpOperand, kCode, kcodeDefault);
     }
 
-    public void Splat(Splat splat) {
-        Operand array = splat.getArray();
-        
-        stringProducer.appendParameters(array);
+    @Override public void Splat(Splat splat) {
+        stringProducer.appendParameters(splat.getArray());
     }
 
-    public void SValue(SValue svalue) {
-        Operand array = svalue.getArray();
-        
-        stringProducer.appendParameters(array);
+    @Override public void SValue(SValue svalue) {
+        stringProducer.appendParameters(svalue.getArray());
     }
     
     // Operands that takes IRScope as parameter
     //  actually, all we need to persist is name of scope, by IRPersisterHelper will deal with this
-    public void CurrentScope(CurrentScope currentscope) {
-        IRScope scope = currentscope.getScope();
-        
-        stringProducer.appendParameters(scope);
+    @Override public void CurrentScope(CurrentScope currentscope) {
+        stringProducer.appendParameters(currentscope.getScope());
     }
 
-    public void ScopeModule(ScopeModule scopemodule) {
-        IRScope scope = scopemodule.getScope();
-        
-        stringProducer.appendParameters(scope);
+    @Override public void ScopeModule(ScopeModule scopemodule) {
+        stringProducer.appendParameters(scopemodule.getScope());
     }
 
-    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) {
-        IRClosure closure = wrappedirclosure.getClosure();
-        
-        stringProducer.appendParameters(closure);
+    @Override public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) {
+        stringProducer.appendParameters(wrappedirclosure.getClosure());
     }
     
     // Parameters that takes string(or char) as parameters
-    public void Backref(Backref backref) {
-        char type = backref.type;
-        
-        stringProducer.appendParameters(type);
+    @Override public void Backref(Backref backref) {
+        stringProducer.appendParameters(backref.type);
     }
 
-    public void StringLiteral(StringLiteral stringliteral) {
-        String string = stringliteral.string;
-        
-        stringProducer.appendParameters(string);
+    @Override public void StringLiteral(StringLiteral stringliteral) {
+        stringProducer.appendParameters(stringliteral.string);
     }
 
-    public void Symbol(Symbol symbol) {
-        String name = symbol.getName();
-        
-        stringProducer.appendParameters(name);
+    @Override public void Symbol(Symbol symbol) {
+        stringProducer.appendParameters(symbol.getName());
     }
 
-    public void GlobalVariable(GlobalVariable globalvariable) {        
-        String name = globalvariable.getName();
-        
-        stringProducer.appendParameters(name);
+    @Override public void GlobalVariable(GlobalVariable variable) {        
+        stringProducer.appendParameters(variable.getName());
     }
 
-    public void IRException(IRException irexception) {
+    @Override public void IRException(IRException irexception) {
         String type = null;
         
         if (irexception == IRException.NEXT_LocalJumpError) type = "NEXT";
@@ -241,77 +205,58 @@ class IROperandStringExtractor extends IRVisitor {
         stringProducer.appendParameters(type);
     }
 
-    public void Label(Label label) {
-        String labelValue = label.label;
-        
-        stringProducer.appendParameters(labelValue);
+    @Override public void Label(Label label) {
+        stringProducer.appendParameters(label.label);
     }
 
-    public void MethAddr(MethAddr methaddr) {
-        String name = methaddr.getName();
-        
-        stringProducer.appendParameters(name);
+    @Override public void MethAddr(MethAddr methaddr) {
+        stringProducer.appendParameters(methaddr.getName());
     }
 
     // Operands that takes java objects from standard library(or primitive types) as parameters
     //  exception for string types 
-    public void Bignum(Bignum bignum) {
-        BigInteger value = bignum.value;
-        
-        stringProducer.appendParameters(value);
+    @Override public void Bignum(Bignum bignum) {
+        stringProducer.appendParameters(bignum.value);
     }
 
-    public void BooleanLiteral(BooleanLiteral booleanliteral) {
-        boolean bool = booleanliteral.isTrue();
-        
-        stringProducer.appendParameters(bool);
+    @Override public void BooleanLiteral(BooleanLiteral bool) {
+        stringProducer.appendParameters(bool.isTrue());
     }
 
-    public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) {
-        commonForLocalVariables(closurelocalvariable);
+    @Override public void ClosureLocalVariable(ClosureLocalVariable variable) {
+        commonForLocalVariables(variable);
     }
 
-    public void LocalVariable(LocalVariable localvariable) {
-        commonForLocalVariables(localvariable);
+    @Override public void LocalVariable(LocalVariable variable) {
+        commonForLocalVariables(variable);
     }
     
-    private void commonForLocalVariables(LocalVariable localVariable) {
-        String name = localVariable.getName();
-        int scopeDepth = localVariable.getScopeDepth();
-        
-        stringProducer.appendParameters(name, scopeDepth);
+    private void commonForLocalVariables(LocalVariable variable) {
+        stringProducer.appendParameters(variable.getName(), variable.getScopeDepth());
     }
 
-    public void Fixnum(Fixnum fixnum) {
-        Long value = fixnum.value;
-        
-        stringProducer.appendParameters(value);
+    @Override public void Fixnum(Fixnum fixnum) {
+        stringProducer.appendParameters(fixnum.value);
     }
 
-    public void Float(org.jruby.ir.operands.Float flote) {
-        Double value = flote.value;
-        
-        stringProducer.appendParameters(value);
+    @Override public void Float(org.jruby.ir.operands.Float flote) {
+        stringProducer.appendParameters(flote.value);
     }   
 
-    public void NthRef(NthRef nthref) {
-        int matchNumber = nthref.matchNumber;
-        
-        stringProducer.appendParameters(matchNumber);
+    @Override public void NthRef(NthRef nthref) {
+        stringProducer.appendParameters(nthref.matchNumber);
     }
 
-    public void TemporaryVariable(TemporaryVariable temporaryvariable) {
-        commonForTemproraryVariable(temporaryvariable);
+    @Override public void TemporaryVariable(TemporaryVariable variable) {
+        commonForTemproraryVariable(variable);
+    }
+    
+    @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) {
+        commonForTemproraryVariable(variable);
     }
 
-    public void TemporaryClosureVariable(TemporaryClosureVariable temporaryclosurevariable) {
-        commonForTemproraryVariable(temporaryclosurevariable);
-    }
-
-    private void commonForTemproraryVariable(TemporaryVariable temporaryVariable) {
-        String name = temporaryVariable.getName();
-        
-        stringProducer.appendParameters(name);
+    private void commonForTemproraryVariable(TemporaryVariable variable) {
+        stringProducer.appendParameters(variable.getName());
     }
 
 }

@@ -98,15 +98,11 @@ public class ParametersIterator {
     }
 
     public boolean nextBoolean() {
-        String booleanString = nextString();
-        
-        return Boolean.parseBoolean(booleanString);
+        return Boolean.parseBoolean(nextString());
     }
     
     public int nextInt() {
-        String integerString = nextString();
-        
-        return Integer.parseInt(integerString); 
+        return Integer.parseInt(nextString()); 
     }
     
     public Object next() {

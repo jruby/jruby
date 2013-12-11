@@ -599,10 +599,8 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(instr.getDefiningScope(), instr.getConstName());
     }
 
-    public void LineNumberInstr(LineNumberInstr linenumberinstr) {
-        int lineNumber = linenumberinstr.lineNumber;
-        
-        stringProducer.appendParameters(lineNumber);
+    @Override public void LineNumberInstr(LineNumberInstr instr) {
+        stringProducer.appendParameters(instr.lineNumber);
     }
 
     @Override public void LoadLocalVarInstr(LoadLocalVarInstr instr) {
@@ -663,26 +661,20 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(required, opt, rest, numArgs);
     }
 
-    public void ReceiveExceptionInstr(ReceiveExceptionInstr receiveexceptioninstr) {
-        boolean checkType = receiveexceptioninstr.isCheckType();
-        
-        stringProducer.appendParameters(checkType);
+    @Override public void ReceiveExceptionInstr(ReceiveExceptionInstr instr) {
+        stringProducer.appendParameters(instr.isCheckType());
     }
 
-    public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr receiveprereqdarginstr) {
-        int argIndex = receiveprereqdarginstr.getArgIndex();
-        
-        stringProducer.appendParameters(argIndex);
+    @Override public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
+        stringProducer.appendParameters(instr.getArgIndex());
     }
 
     @Override public void RecordEndBlockInstr(RecordEndBlockInstr instr) {
         stringProducer.appendParameters(instr.getEndBlockClosure());
     }
 
-    public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) {
-        Operand[] args = rescueeqqinstr.getOperands();
-        
-        stringProducer.appendParameters(args[0], args[1]);
+    @Override public void RescueEQQInstr(RescueEQQInstr instr) {
+        stringProducer.appendParameters(instr.getArg1(), instr.getArg2());
     }
 
     @Override public void ReturnInstr(ReturnInstr returninstr) {

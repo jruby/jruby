@@ -39,12 +39,9 @@ public abstract class AbstractIRStringBuilder<T> {
         builder.append(PARAMETER_LIST_START_MARKER);
 
         for (int i = 0; i < parameters.length; i++) {
-            if (i != 0) {
-                builder.append(PARAMETER_SEPARATOR);
-            }
+            if (i != 0) builder.append(PARAMETER_SEPARATOR);
 
-            Object parameter = parameters[i];
-            appendParameter(parameter);
+            appendParameter(parameters[i]);
         }
 
         builder.append(PARAMETER_LIST_END_MARKER);
