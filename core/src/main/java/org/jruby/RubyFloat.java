@@ -59,6 +59,7 @@ import java.util.Locale;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import static org.jruby.RubyNumeric.dbl2num;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -843,14 +844,21 @@ public class RubyFloat extends RubyNumeric {
             if (digits <= 0) throw getRuntime().newFloatDomainError("NaN");
             return this;
         }
+
+        double binexp;
+        // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
+        if (value == 0) {
+            binexp = 0;
+        } else {
+            binexp = Math.ceil(Math.log(value)/Math.log(2));
+        }
         
         // MRI flo_round logic to deal with huge precision numbers.
-        double binexp = Math.ceil(Math.log(value)/Math.log(2));
         if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
             return RubyFloat.newFloat(context.runtime, number);
         }
         if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
-            return RubyFixnum.zero(context.runtime);
+            return dbl2num(context.runtime, (long) 0);
         }
         
         if (Double.isInfinite(magnifier)) {

@@ -98,11 +98,10 @@ public class RubyMarshal {
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            boolean[] taintUntrust = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
+            boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
             RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray()));
             
-            if (taintUntrust[0]) result.setTaint(true);
-            if (taintUntrust[1]) result.setUntrusted(true);
+            if (taint) result.setTaint(true);
 
             return result;
         } catch (IOException ioe) {
@@ -129,23 +128,20 @@ public class RubyMarshal {
         try {
             InputStream rawInput;
             boolean tainted;
-            boolean untrusted;
             IRubyObject v = in.checkStringType();
             
             if (!v.isNil()) {
                 tainted = in.isTaint();
-                untrusted = in.isUntrusted();
                 ByteList bytes = ((RubyString) v).getByteList();
                 rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else if (in.respondsTo("getc") && in.respondsTo("read")) {
                 tainted = true;
-                untrusted = true;
                 rawInput = inputStream(context, in);
             } else {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, proc, tainted, untrusted).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
         } catch (EOFException e) {
             if (in.respondsTo("to_str")) throw runtime.newArgumentError("marshal data too short");
 
@@ -160,10 +156,10 @@ public class RubyMarshal {
         return new IOInputStream(in);
     }
 
-    private static boolean[] dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput,
+    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput,
             int depthLimit) throws IOException {
         MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
         output.dumpObject(object);
-        return new boolean[] {output.isTainted(), output.isUntrusted()};
+        return output.isTainted();
     }
 }

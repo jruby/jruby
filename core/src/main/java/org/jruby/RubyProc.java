@@ -222,32 +222,47 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     /**
-     * Transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
+     * For Type.LAMBDA, ensures that the args have the correct arity.
+     *
+     * For others, transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
      */
-    public static IRubyObject[] prepareProcArgs(ThreadContext context, Arity arity, IRubyObject[] args) {
+    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, Arity arity, IRubyObject[] args) {
+        if (arity == null) {
+            return args;
+        }
+
+        if (args == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        if (type == Block.Type.LAMBDA) {
+            arity.checkArity(context.runtime, args.length);
+            return args;
+        }
+
         boolean isFixed = arity.isFixed();
         int required = arity.required();
         int actual = args.length;
-        
+
         // for procs and blocks, single array passed to multi-arg must be spread
-        if (arity != Arity.ONE_ARGUMENT &&  required != 0 && 
+        if (arity != Arity.ONE_ARGUMENT &&  required != 0 &&
                 (isFixed || arity != Arity.OPTIONAL) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
             args = args[0].convertToArray().toJavaArray();
             actual = args.length;
         }
-        
+
         // fixed arity > 0 with mismatch needs a new args array
         if (isFixed && required > 0 && required != actual) {
-            
+
             IRubyObject[] newArgs = Arrays.copyOf(args, required);
-            
+
             // pad with nil
             if (required > actual) {
                 Helpers.fillNil(newArgs, actual, required, context.runtime);
             }
-            
+
             args = newArgs;
         }
 
@@ -256,12 +271,9 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        if (isLambda()) {
-            block.arity().checkArity(context.runtime, args.length);
-        }
-        if (isProc()) args = prepareProcArgs(context, block.arity(), args);
+        IRubyObject[] preppedArgs = prepareArgs(context, type, block.arity(), args);
 
-        return call(context, args, null, blockCallArg);
+        return call(context, preppedArgs, null, blockCallArg);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {

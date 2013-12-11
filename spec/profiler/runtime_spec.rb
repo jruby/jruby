@@ -27,6 +27,10 @@ describe Java::OrgJruby::Ruby do
       check_passed_spec @runtime.evalScriptlet("RSpec::Core::Runner.run([ 'spec/profiler/profile_data_spec.rb' ], ERR_IO, OUT_IO)")
     end
 
+    it "should pass profiler_basics_spec" do
+      check_passed_spec @runtime.evalScriptlet("RSpec::Core::Runner.run([ 'spec/profiler/profiler_basics_spec.rb' ], ERR_IO, OUT_IO)")
+    end
+
     it "should pass graph_profile_printer_spec" do
       check_passed_spec @runtime.evalScriptlet("RSpec::Core::Runner.run([ 'spec/profiler/graph_profile_printer_spec.rb' ], ERR_IO, OUT_IO)")
     end

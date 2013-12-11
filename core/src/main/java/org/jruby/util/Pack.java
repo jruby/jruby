@@ -1930,16 +1930,7 @@ public class Pack {
     @SuppressWarnings("fallthrough")
     public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
         RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor19());
-        pack = (RubyString) pack.infectBy(formatString);
-
-        for (IRubyObject element : list.toJavaArray()) {
-            if (element.isUntrusted()) {
-                pack = (RubyString) pack.untrust(context);
-                break;
-            }
-        }
-
-        return pack;
+        return (RubyString) pack.infectBy(formatString);
     }
 
     private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {

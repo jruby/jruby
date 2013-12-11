@@ -71,19 +71,13 @@ public class UnmarshalStream extends InputStream {
     private final IRubyObject proc;
     private final InputStream inputStream;
     private final boolean taint;
-    private final boolean untrust;
 
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
-        this(runtime, in, proc, taint, false);
-    }
-    
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
         this.inputStream = in;
         this.taint = taint;
-        this.untrust = untrust;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -141,7 +135,6 @@ public class UnmarshalStream extends InputStream {
         }
 
         result.setTaint(taint);
-        result.setUntrusted(untrust);
 
         return result;
     }
@@ -477,5 +470,10 @@ public class UnmarshalStream extends InputStream {
 
     public int read() throws IOException {
         return inputStream.read();
+    }
+
+    @Deprecated
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
+        this(runtime, in, proc, taint);
     }
 }

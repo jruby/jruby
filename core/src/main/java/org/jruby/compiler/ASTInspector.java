@@ -393,6 +393,7 @@ public class ASTInspector {
         case DEFSNODE:
             setFlag(node, METHOD);
             setFlag(node, FRAME_VISIBILITY);
+            setFlag(node, SCOPE_AWARE);
             break;
         case DEFINEDNODE:
             switch (((DefinedNode)node).getExpressionNode().getNodeType()) {

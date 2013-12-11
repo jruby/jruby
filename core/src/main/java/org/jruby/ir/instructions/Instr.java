@@ -34,6 +34,7 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
+    private int ipc;
     private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
@@ -42,6 +43,7 @@ public abstract class Instr {
     private boolean hasUnusedResult;
 
     public Instr(Operation operation) {
+        this.ipc = -1;
         this.operation = operation;
     }
 
@@ -54,6 +56,10 @@ public abstract class Instr {
     public Operation getOperation() {
         return operation;
     }
+
+    public int getIPC() { return ipc; }
+
+    public void setIPC(int ipc) { this.ipc = ipc; }
 
     // Does this instruction have side effects as a result of its operation
     // This information is used in optimization phases to impact dead code elimination
@@ -144,8 +150,9 @@ public abstract class Instr {
     /**
      * Clone the instruction for use in an inlining context (either when a scope is inlined into
      * another scope, or when a block has to be cloned because its associated call belongs to
-     * an inlined scope).  This requires renaming variables and labels to eliminate naming
-     * conflicts.
+     * an inlined scope). This might renaming variables and labels to eliminate naming conflicts.
+     *
+     * The implementation might vary on the cloning mode.
      *
      * @param inlinerInfo This object manages renaming of variables and labels, handles
      *                    args and return values.
@@ -153,43 +160,6 @@ public abstract class Instr {
      */
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         throw new RuntimeException("cloneForInlining: Not implemented for: " + this.getOperation());
-    }
-
-    /**
-     * Clone the instruction (present in a method/closure) so it can be inlined into another scope.
-     * This requires renaming variables and labels to eliminate naming conflicts.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handles
-     *                    args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return cloneForInlining(ii);
-    }
-
-    /**
-     * Clone the instruction (present in a closure) so it can be inlined into another scope.
-     * This requires renaming variables and labels to eliminate naming conflicts.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handles
-     *                    args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return cloneForInlinedScope(ii);
-    }
-
-    /**
-     * Clone the instruction so it can be used in a cloned block which is present in a scope that itself
-     * or an ancestor scope (in the case of nested blocks) is being inlined.  This requires renaming
-     * variables to eliminate naming conflicts. Labels need not be renamed.
-     *
-     * @param inlinerInfo This object manages renaming of variables and labels, handling
-     *                    scope args and return values.
-     * @return a new instruction that can be used in the target scope.
-     */
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return cloneForInlining(ii);
     }
 
     /**

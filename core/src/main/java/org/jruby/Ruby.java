@@ -65,6 +65,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.jruby.JRubyConfigLibrary;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
@@ -132,15 +133,11 @@ import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.embed.Extension;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.ext.fiber.ThreadFiberLibrary;
 import org.jruby.ext.tracepoint.TracePoint;
@@ -233,9 +230,7 @@ public final class Ruby {
     }
 
     void reinitialize(boolean reinitCore) {
-        this.is1_9              = config.getCompatVersion().is1_9();
-        this.is2_0              = config.getCompatVersion().is2_0();
-        this.doNotReverseLookupEnabled = is1_9;
+        this.doNotReverseLookupEnabled = true;
 
         if (config.getCompileMode() == CompileMode.OFFIR ||
                 config.getCompileMode() == CompileMode.FORCEIR) {
@@ -862,7 +857,7 @@ public final class Ruby {
         assert scriptNode != null : "scriptNode is not null";
         assert scriptNode instanceof RootNode : "scriptNode is not a RootNode";
 
-        return runInterpreter(((RootNode) scriptNode).getBodyNode());
+        return runInterpreter(scriptNode);
     }
 
     public Parser getParser() {
@@ -960,6 +955,7 @@ public final class Ruby {
      * instances of the new class.
      * @return The new class
      */
+    @Extension
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
         return defineClassUnder(name, superClass, allocator, objectClass);
     }
@@ -993,6 +989,7 @@ public final class Ruby {
      * @param parent The namespace under which to define the new class
      * @return The new class
      */
+    @Extension
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
         return defineClassUnder(name, superClass, allocator, parent, null);
     }
@@ -1045,6 +1042,7 @@ public final class Ruby {
      * @param name The name of the new module
      * @returns The new module
      */
+    @Extension
     public RubyModule defineModule(String name) {
         return defineModuleUnder(name, objectClass);
     }
@@ -1058,6 +1056,7 @@ public final class Ruby {
      * module
      * @returns The new module
      */
+    @Extension
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
         IRubyObject moduleObj = parent.getConstantAt(name);
         
@@ -1626,7 +1625,6 @@ public final class Ruby {
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
         addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
         addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.ext.jruby.JRubyTypeLibrary");
-        addLazyBuiltin("iconv.jar", "iconv", "org.jruby.ext.iconv.IConvLibrary");
         addLazyBuiltin("nkf.jar", "nkf", "org.jruby.ext.nkf.NKFLibrary");
         addLazyBuiltin("stringio.jar", "stringio", "org.jruby.ext.stringio.StringIOLibrary");
         addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
@@ -1648,6 +1646,7 @@ public final class Ruby {
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.ext.jruby.JRubySerializationLibrary");
+        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.FFIService");
         addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
@@ -1685,7 +1684,6 @@ public final class Ruby {
         
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel21.rb", false);
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
@@ -1905,6 +1903,20 @@ public final class Ruby {
     }
     void setYielder(RubyClass yielderClass) {
         this.yielderClass = yielderClass;
+    }
+
+    public RubyClass getGenerator() {
+        return generatorClass;
+    }
+    public void setGenerator(RubyClass generatorClass) {
+        this.generatorClass = generatorClass;
+    }
+
+    public RubyClass getFiber() {
+        return fiberClass;
+    }
+    public void setFiber(RubyClass fiberClass) {
+        this.fiberClass = fiberClass;
     }
 
     public RubyClass getString() {
@@ -3947,7 +3959,6 @@ public final class Ruby {
         }
         if(list == null || list.isNil()) {
             list = RubyHash.newHash(this);
-            list.setUntrusted(true);
             hash.put(sym, (RubyHash)list);
         }
         return list;
@@ -3979,7 +3990,6 @@ public final class Ruby {
             if(!(pair_list instanceof RubyHash)) {
                 IRubyObject other_paired_obj = pair_list;
                 pair_list = RubyHash.newHash(this);
-                pair_list.setUntrusted(true);
                 ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
                 ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
             }
@@ -4176,18 +4186,8 @@ public final class Ruby {
         return config;
     }
 
-    @Deprecated
-    public boolean is1_8() {
-        return false;
-    }
-
-    @Deprecated
-    public boolean is1_9() {
-        return is1_9;
-    }
-
     public boolean is2_0() {
-        return is2_0;
+        return true;
     }
 
     /** GET_VM_STATE_VERSION */
@@ -4494,6 +4494,14 @@ public final class Ruby {
         return staticScopeFactory;
     }
 
+    public FFI getFFI() {
+        return ffi;
+    }
+
+    public void setFFI(FFI ffi) {
+        this.ffi = ffi;
+    }
+
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
         return definedMessages.get(definedMessage);
     }
@@ -4553,6 +4561,16 @@ public final class Ruby {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
+    @Deprecated
+    public boolean is1_8() {
+        return false;
+    }
+
+    @Deprecated
+    public boolean is1_9() {
+        return true;
+    }
+
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
             16    /* default initial capacity */,
@@ -4568,7 +4586,7 @@ public final class Ruby {
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private final List<EventHook> eventHooks = new Vector<EventHook>();
+    private final List<EventHook> eventHooks = new CopyOnWriteArrayList<EventHook>();
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
@@ -4602,7 +4620,7 @@ public final class Ruby {
     private RubyClass
            basicObjectClass, objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
-            complexClass, rationalClass, enumeratorClass, yielderClass,
+            complexClass, rationalClass, enumeratorClass, yielderClass, fiberClass, generatorClass,
             arrayClass, hashClass, rangeClass, stringClass, encodingClass, converterClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
@@ -4644,8 +4662,6 @@ public final class Ruby {
     private final long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
-    private boolean is1_9;
-    private boolean is2_0;
 
     private InputStream in;
     private PrintStream out;
@@ -4803,6 +4819,8 @@ public final class Ruby {
     private RubySymbol recursiveKey;
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
+    private FFI ffi;
+    
     private JavaProxyClassFactory javaProxyClassFactory;
 
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);

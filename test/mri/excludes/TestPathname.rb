@@ -1,5 +1,7 @@
+exclude :test_binwrite, "needs investigation"
 exclude :test_find, "needs investigation"
 exclude :test_lchmod, "fails on Travis, maybe on Linux in general?"
 exclude :test_open, "needs investigation"
 exclude :test_realdirpath, "needs investigation"
 exclude :test_realpath, "needs investigation"
+exclude :test_write, "needs investigation"

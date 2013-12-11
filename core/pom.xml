@@ -45,7 +45,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.0.0</version>
+      <version>2.1.1-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -145,12 +145,6 @@
       <version>${ant.version}</version>
       <type>jar</type>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jay-yydebug</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>bsf</groupId>
@@ -480,15 +474,17 @@
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
-          <testFailureIgnore>true</testFailureIgnore>
           <argLine>-Xmx${jruby.test.memory}</argLine>
           <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
           <argLine>-Dfile.encoding=UTF-8</argLine>
-          <argLine>-Djruby.compile.mode=OFF</argLine>
+          <argLine>-Djava.awt.headless=true</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
           </includes>
+          <additionalClasspathElements>
+              <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
+          </additionalClasspathElements>
         </configuration>
       </plugin>
     </plugins>
@@ -686,7 +682,7 @@
                 <configuration>
                   <tasks>
                     <exec executable="/bin/sh" osfamily="unix">
-                      <arg line="-c 'test -f &quot;${jruby.basedir}/bin/jruby&quot; || cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
+                      <arg line="-c 'cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
                     </exec>
                     <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
                   </tasks>

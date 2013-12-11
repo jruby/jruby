@@ -76,6 +76,7 @@ import org.jruby.ast.NextNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
@@ -128,7 +129,7 @@ public class Ruby20Parser implements RubyParser {
 
     public Ruby20Parser(ParserSupport19 support) {
         this.support = support;
-        lexer = new RubyYaccLexer(false);
+        lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
         support.setLexer(lexer);
     }
@@ -137,7 +138,7 @@ public class Ruby20Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 141 "-"
+					// line 142 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1410,16 +1411,13 @@ public class Ruby20Parser implements RubyParser {
     "none_block_pass :",
     };
 
-  /** debugging support, requires the package <tt>jay.yydebug</tt>.
-      Set to <tt>null</tt> to suppress debugging messages.
-    */
-  protected jay.yydebug.yyDebug yydebug;
+  protected org.jruby.parser.YYDebug yydebug;
 
   /** index-checked interface to {@link #yyNames}.
       @param token single character or <tt>%token</tt> value.
       @return token name or <tt>[illegal]</tt> or <tt>[unknown]</tt>.
     */
-  public static final String yyName (int token) {
+  public static String yyName (int token) {
     if (token < 0 || token > yyNames.length) return "[illegal]";
     String name;
     if ((name = yyNames[token]) != null) return name;
@@ -1464,7 +1462,7 @@ public class Ruby20Parser implements RubyParser {
     */
   public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
 				throws java.io.IOException {
-    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
+    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
     return yyparse(yyLex);
   }
 
@@ -1962,10 +1960,14 @@ states[399] = new ParserState() {
                     if (((Node)yyVals[-1+yyTop]) instanceof YieldNode) {
                         throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "block given to yield");
                     }
-                    if (((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
+                    if (((Node)yyVals[-1+yyTop]) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
+                      yyVal = ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    } else {
+                        yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    }
                     ((Node)yyVal).setPosition(((Node)yyVals[-1+yyTop]).getPosition());
     return yyVal;
   }
@@ -4621,7 +4623,7 @@ states[523] = new ParserState() {
   }
 };
 }
-					// line 2206 "Ruby20Parser.y"
+					// line 2215 "Ruby20Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4635,23 +4637,9 @@ states[523] = new ParserState() {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getDefaultEncoding());
 
-        Object debugger = null;
-        if (configuration.isDebug()) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-                // ignore, no debugger present
-            } catch (InstantiationException ie) {
-                // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-                // ignore, no debugger present
-            }
-        }
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();
     }
 }
-					// line 8679 "-"
+					// line 8667 "-"

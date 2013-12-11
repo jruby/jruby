@@ -31,23 +31,23 @@ public class CheckArityInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        if (ii.canMapArgsStatically()) {
-            // Since we know arity at a callsite, arity check passes or we have an ArgumentError
-            int numArgs = ii.getArgsCount();
-            if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-            }
+    public Instr cloneForInlining(InlinerInfo ii) {
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new CheckArityInstr(required, opt, rest);
+            default:
+                if (ii.canMapArgsStatically()) {
+                    // Since we know arity at a callsite, arity check passes or we have an ArgumentError
+                    int numArgs = ii.getArgsCount();
+                    if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+                        return new RaiseArgumentErrorInstr(required, opt, rest, rest);
+                    }
 
-            return null;
-        } else {
-            return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
+                    return null;
+                } else {
+                    return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
+                }
         }
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new CheckArityInstr(required, opt, rest);
     }
 
     public void checkArity(Ruby runtime, int numArgs) {

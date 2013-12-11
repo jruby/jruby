@@ -69,13 +69,8 @@ public class ModuleVersionGuardInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), failurePathLabel);
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
     private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

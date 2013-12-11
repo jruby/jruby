@@ -34,32 +34,30 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.util.Numeric.f_abs;
-import static org.jruby.util.Numeric.f_arg;
-import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_negative_p;
-
-import java.math.BigInteger;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.ConvertDouble;
-import org.jruby.util.ConvertBytes;
-
-import static org.jruby.runtime.Helpers.invokedynamic;
-
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
+import org.jruby.util.ConvertDouble;
+
+import java.math.BigInteger;
+
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negative_p;
 
 /**
  * Base class for all numerical types in ruby.
@@ -552,7 +550,7 @@ public class RubyNumeric extends RubyObject {
     /** num_imaginary
      *
      */
-    @JRubyMethod(name = "i", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "i")
     public IRubyObject num_imaginary(ThreadContext context) {
         return RubyComplex.newComplexRaw(context.runtime, RubyFixnum.zero(context.runtime), this);
     }
@@ -589,7 +587,6 @@ public class RubyNumeric extends RubyObject {
     /** num_quo (1.8)
      * quo and fdiv in 1.8 just invokes "/"
      */
-    @JRubyMethod(name = {"quo", "fdiv"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
@@ -597,7 +594,7 @@ public class RubyNumeric extends RubyObject {
     /** num_quo (1.9)
     *
     */
-    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "quo")
     public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
         return RubyRational.newRationalRaw(context.runtime, this).callMethod(context, "/", other);
     }
@@ -693,7 +690,7 @@ public class RubyNumeric extends RubyObject {
     /** num_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
     }
@@ -709,7 +706,7 @@ public class RubyNumeric extends RubyObject {
     /** num_real_p
     *
     */
-    @JRubyMethod(name = "real?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "real?")
     public IRubyObject scalar_p() {
         return getRuntime().getTrue();
     }
@@ -775,12 +772,20 @@ public class RubyNumeric extends RubyObject {
 
     @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? stepCommon(context, arg0, RubyFixnum.one(context.runtime), block) : enumeratorize(context.runtime, this, "step", arg0);
+        if (block.isGiven()) {
+            return stepCommon(context, arg0, RubyFixnum.one(context.runtime), block);
+        } else {
+            return enumeratorizeWithSize(context, this, "step", new IRubyObject[] { arg0 }, stepSize(context, this, arg0, RubyFixnum.one(context.runtime)));
+        }
     }
 
     @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        return block.isGiven() ? stepCommon(context, to, step, block) : enumeratorize(context.runtime, this, "step", new IRubyObject[] {to, step});
+        if (block.isGiven()) {
+            return stepCommon(context, to, step, block);
+        } else {
+            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{to, step}, stepSize(context, this, to, step));
+        }
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
@@ -847,20 +852,19 @@ public class RubyNumeric extends RubyObject {
         double end = num2dbl(to);
         double unit = num2dbl(step);
 
-        // TODO: remove
         if (unit == 0) throw runtime.newArgumentError("step cannot be 0");
 
-        double n = (end - beg)/unit;
-        double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
+        double n = floatStepSize(beg, end, unit, excl);
 
         if (Double.isInfinite(unit)) {
             if (unit > 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
         } else {
-            if (err > 0.5) err = 0.5;            
-            n = Math.floor(n + err);
-            if (!excl) n++;
             for (long i = 0; i < n; i++){
-                block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
+                double d = i * unit + beg;
+                if (unit >= 0 ? end < d : d < end) {
+                    d = end;
+                }
+                block.yield(context, RubyFloat.newFloat(runtime, d));
             }
         }
     }
@@ -876,6 +880,84 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
+    public static RubyNumeric intervalStepSize(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean excludeLast) {
+        Ruby runtime = context.runtime;
+        if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
+            long diff = ((RubyFixnum) step).getLongValue();
+            long delta = ((RubyFixnum) to).getLongValue() - ((RubyFixnum) from).getLongValue();
+
+            if (excludeLast) {
+                delta += (diff > 0 ? -1 : +1);
+            }
+
+            if (diff == 0) {
+                return RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
+            }
+
+            long result = delta / diff;
+            return new RubyFixnum(runtime, result >= 0 ? result + 1 : 0);
+        } else if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
+            double n = floatStepSize(from.convertToFloat().getDoubleValue(), to.convertToFloat().getDoubleValue(), step.convertToFloat().getDoubleValue(), excludeLast);
+
+            if (Double.isInfinite(n)) {
+                return runtime.newFloat(n);
+            }
+            return runtime.newFixnum((long) n);
+        } else {
+            String cmpString = step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue() ? ">" : "<";
+            if (from.callMethod(context, cmpString, to).isTrue()) {
+                return RubyFixnum.zero(runtime);
+            }
+
+            IRubyObject diff = to.callMethod(context, "-", from);
+            IRubyObject result = diff.callMethod(context, "div", step);
+            if (!excludeLast || from.callMethod(context, "+", result.callMethod(context, "*", step)).callMethod(context, cmpString, to).isTrue()) {
+                result = result.callMethod(context, "+", RubyFixnum.newFixnum(runtime, 1));
+            }
+            return (RubyNumeric) result;
+        }
+    }
+
+    public static RubyNumeric stepSize(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step) {
+        return intervalStepSize(context, from, to, step, false);
+    }
+
+    /**
+     * Returns the number of unit-sized steps between the given beg and end.
+     *
+     * NOTE: the returned value is either Double.POSITIVE_INFINITY, or a rounded value appropriate to be cast to a long
+     */
+    public static double floatStepSize(double beg, double end, double unit, boolean excludeLast) {
+        double n = (end - beg)/unit;
+        double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
+
+        if (Double.isInfinite(unit)) {
+            if (unit > 0) {
+                return beg <= end ? 1 : 0;
+            } else {
+                return end <= beg ? 1 : 0;
+            }
+        }
+
+        if (err > 0.5) err = 0.5;
+        if (excludeLast) {
+            if (n <= 0) {
+                return 0;
+            }
+            if (n < 1) {
+                n = 0;
+            } else {
+                n = Math.floor(n - err);
+            }
+        } else {
+            if (n < 0) {
+                return 0;
+            }
+            n = Math.floor(n + err);
+        }
+        return n + 1;
+    }
+
     /** num_equal, doesn't override RubyObject.op_equal
      *
      */
@@ -889,7 +971,7 @@ public class RubyNumeric extends RubyObject {
     /** num_numerator
      * 
      */
-    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
         return RubyRational.newRationalConvert(context, this).callMethod(context, "numerator");
     }
@@ -897,7 +979,7 @@ public class RubyNumeric extends RubyObject {
     /** num_denominator
      * 
      */
-    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
         return RubyRational.newRationalConvert(context, this).callMethod(context, "denominator");
     }
@@ -905,7 +987,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_to_c
      * 
      */
-    @JRubyMethod(name = "to_c", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_c")
     public IRubyObject to_c(ThreadContext context) {
         return RubyComplex.newComplexCanonicalize(context, this);
     }
@@ -913,7 +995,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_real
      * 
      */
-    @JRubyMethod(name = "real", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "real")
     public IRubyObject real(ThreadContext context) {
         return this;
     }
@@ -921,7 +1003,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_image
      * 
      */
-    @JRubyMethod(name = {"imaginary", "imag"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"imaginary", "imag"})
     public IRubyObject image(ThreadContext context) {
         return RubyFixnum.zero(context.runtime);
     }
@@ -929,7 +1011,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_abs2
      * 
      */
-    @JRubyMethod(name = "abs2", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "abs2")
     public IRubyObject abs2(ThreadContext context) {
         return f_mul(context, this, this);
     }
@@ -937,7 +1019,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_arg
      * 
      */
-    @JRubyMethod(name = {"arg", "angle", "phase"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
         double value = this.getDoubleValue();
         if (Double.isNaN(value)) {
@@ -953,7 +1035,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_rect
      * 
      */
-    @JRubyMethod(name = {"rectangular", "rect"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"rectangular", "rect"})
     public IRubyObject rect(ThreadContext context) {
         return context.runtime.newArray(this, RubyFixnum.zero(context.runtime));
     }    
@@ -961,7 +1043,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_polar
      * 
      */
-    @JRubyMethod(name = "polar", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "polar")
     public IRubyObject polar(ThreadContext context) {
         return context.runtime.newArray(f_abs(context, this), f_arg(context, this));
     }    
@@ -969,7 +1051,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_real
      * 
      */
-    @JRubyMethod(name = {"conjugate", "conj"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"conjugate", "conj"})
     public IRubyObject conjugate(ThreadContext context) {
         return this;
     }

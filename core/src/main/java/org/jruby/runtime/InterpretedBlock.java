@@ -33,7 +33,9 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -308,14 +310,15 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         }
     }
 
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    @Override
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return yield(context, value, binding, type, Block.NULL_BLOCK);
 
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+            RubyModule klass, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -326,8 +329,9 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
         try {
             if (!noargblock) {
-                value = alreadyArray ? assigner.convertIfAlreadyArray(runtime, value) :
-                    assigner.convertToArray(runtime, value);
+                IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+                RubyArray argArray = context.runtime.newArrayNoCopyLight(preppedArgs);
+                IRubyObject value = assigner.convertIfAlreadyArray(runtime, argArray);
 
                 assigner.assignArray(runtime, context, self, value, block);
             }
@@ -366,15 +370,15 @@ public class InterpretedBlock extends ContextAwareBlockBody {
      * Yield to this block, usually passed to the current call.
      * 
      * @param context represents the current thread-specific data
-     * @param value The value to yield, either a single value or an array of values
+     * @param args The args for yield
      * @param self The current self
      * @param klass
-     * @param alreadyArray do we need an array or should we assume it already is one?
      * @return result of block invocation
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type) {
-        return yield(context, value, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
+    @Override
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+            RubyModule klass, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
     
     private IRubyObject evalBlockBody(ThreadContext context, Binding binding, IRubyObject self) {

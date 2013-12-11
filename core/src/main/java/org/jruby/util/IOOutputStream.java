@@ -29,6 +29,8 @@ package org.jruby.util;
 
 import java.io.OutputStream;
 import java.io.IOException;
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
@@ -51,13 +53,14 @@ public class IOOutputStream extends OutputStream {
     private final OutputStream out;
     private final CallSite writeAdapter;
     private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final Encoding encoding;
 
     /**
      * Creates a new OutputStream with the object provided.
      *
      * @param io the ruby object
      */
-    public IOOutputStream(final IRubyObject io, boolean checkAppend, boolean verifyCanWrite) {
+    public IOOutputStream(final IRubyObject io, Encoding encoding, boolean checkAppend, boolean verifyCanWrite) {
         this.io = io;
         CallSite writeSite = MethodIndex.getFunctionalCallSite("write");
         if (io.respondsTo("write")) {
@@ -71,7 +74,12 @@ public class IOOutputStream extends OutputStream {
             writeAdapter = writeSite;
         }
         this.out = io instanceof RubyIO && !((RubyIO)io).isClosed() && ((RubyIO)io).isBuiltin("write") ? ((RubyIO) io).getOutStream() : null;
+        this.encoding = encoding;
     }
+    
+    public IOOutputStream(final IRubyObject io, boolean checkAppend, boolean verifyCanWrite) {
+        this(io, ASCIIEncoding.INSTANCE, checkAppend, verifyCanWrite);
+    }    
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -81,13 +89,18 @@ public class IOOutputStream extends OutputStream {
     public IOOutputStream(final IRubyObject io) {
         this(io, true, true);
     }
+    
+    public IOOutputStream(final IRubyObject io, Encoding encoding) {
+        this(io, encoding, true, true);
+    }    
 
+    @Override
     public void write(final int bite) throws IOException {
         if (out != null) {
             out.write(bite);
         } else {
             writeAdapter.call(io.getRuntime().getCurrentContext(), io, io,
-                    RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+                    RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite}, encoding, false)));
         }
     }
 
@@ -101,7 +114,7 @@ public class IOOutputStream extends OutputStream {
         if (out != null) {
             out.write(b, off, len);
         } else {
-            writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
+            writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, encoding, false)));
         }
     }
     

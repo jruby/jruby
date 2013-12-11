@@ -90,10 +90,17 @@ public class OSEnvironment {
         }
 
         for (Map.Entry<Object, Object> entry : entrySet) {
-            String value = (String)entry.getValue();
-            String key = (String)entry.getKey();
+            Object tmp = entry.getKey();
+            
+            if (!(tmp instanceof String)) continue; // Java devs can stuff non-string objects into env
+            String key = (String) tmp;
+            
+            if (Platform.IS_WINDOWS && key.startsWith("=")) continue;
+            
+            tmp = entry.getValue();
+            if (!(tmp instanceof String)) continue; // Java devs can stuff non-string objects into env
 
-            addRubyKeyValuePair(runtime, envs, key, value, encoding);
+            addRubyKeyValuePair(runtime, envs, key, (String) tmp, encoding);
         }
 
         return envs;

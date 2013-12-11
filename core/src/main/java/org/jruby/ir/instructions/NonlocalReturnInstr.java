@@ -26,16 +26,18 @@ public class NonlocalReturnInstr extends ReturnBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
-    }
-
-    @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        if (ii.getInlineHostScope() == methodToReturnFrom) {
-            // Convert to a regular return instruction
-            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii));
-        } else {
-            return cloneForInlining(ii);
+        switch (ii.getCloneMode()) {
+            case CLOSURE_INLINE:
+                if (ii.getInlineHostScope() == methodToReturnFrom) {
+                    // Treat like inlining of a regular method-return
+                    Variable v = ii.getCallResultVariable();
+                    return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+                }
+                // fall through
+            case NORMAL_CLONE:
+                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
+            default:
+                return super.cloneForInlining(ii);
         }
     }
 

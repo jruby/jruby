@@ -9,11 +9,47 @@ class TestISeq < Test::Unit::TestCase
     assert_normal_exit('p RubyVM::InstructionSequence.compile("1", "mac", "", 0).to_a', bug5894)
   end
 
+  def lines src
+    body = RubyVM::InstructionSequence.new(src).to_a[13]
+    lines = body.find_all{|e| e.kind_of? Fixnum}
+  end
+
+  def test_to_a_lines
+    src = <<-EOS
+    p __LINE__ # 1
+    p __LINE__ # 2
+               # 3
+    p __LINE__ # 4
+    EOS
+    assert_equal [1, 2, 4], lines(src)
+
+    src = <<-EOS
+               # 1
+    p __LINE__ # 2
+               # 3
+    p __LINE__ # 4
+               # 5
+    EOS
+    assert_equal [2, 4], lines(src)
+
+    src = <<-EOS
+    1 # should be optimized out
+    2 # should be optimized out
+    p __LINE__ # 3
+    p __LINE__ # 4
+    5 # should be optimized out
+    6 # should be optimized out
+    p __LINE__ # 7
+    8 # should be optimized out
+    9
+    EOS
+    assert_equal [3, 4, 7, 9], lines(src)
+  end
+
   def test_unsupport_type
     ary = RubyVM::InstructionSequence.compile("p").to_a
     ary[9] = :foobar
-    e = assert_raise(TypeError) {RubyVM::InstructionSequence.load(ary)}
-    assert_match(/:foobar/, e.message)
+    assert_raise_with_message(TypeError, /:foobar/) {RubyVM::InstructionSequence.load(ary)}
   end if defined?(RubyVM::InstructionSequence.load)
 
   def test_disasm_encoding

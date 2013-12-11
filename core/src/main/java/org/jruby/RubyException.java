@@ -78,6 +78,9 @@ public class RubyException extends RubyObject {
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length == 1) message = args[0];
+
+        IRubyObject errinfo = getRuntime().getCurrentContext().getErrorInfo();
+        if (!errinfo.isNil()) cause = errinfo;
         return this;
     }
 
@@ -188,6 +191,13 @@ public class RubyException extends RubyObject {
         }
         // fall back on default logic
         return ((RubyClass)recv).op_eqq(context, other);
+    }
+
+    @JRubyMethod(name = "cause")
+    public IRubyObject cause(ThreadContext context) {
+        IRubyObject nil = context.nil;
+        if (cause != nil) return cause;
+        return nil;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -369,6 +379,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
+    private IRubyObject cause = getRuntime().getNil();
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

@@ -323,7 +323,7 @@ public class PsychEmitter extends RubyObject {
         Encoding encoding = PsychLibrary.YAMLEncoding.values()[(int)_encoding.convertToInteger().getLongValue()].encoding;
         Charset charset = context.runtime.getEncodingService().charsetForEncoding(encoding);
 
-        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io), charset), options);
+        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io, encoding), charset), options);
     }
 
     Emitter emitter;

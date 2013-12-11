@@ -28,6 +28,7 @@
 package org.jruby.test;
 
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
@@ -44,7 +45,6 @@ public class TestMethodFactories extends TestRubyBase {
         RubyModule mod = runtime.defineModule("Wombat" + hashCode());
 
         mod.defineAnnotatedMethods(MyBoundClass.class);
-
     }
 
     public void testReflectionMethodFactory() {
@@ -53,6 +53,15 @@ public class TestMethodFactories extends TestRubyBase {
         mod.defineAnnotatedMethods(MyBoundClass.class);
 
         confirmMethods(mod);
+    }
+
+    // #1194: ClassFormatError with Nokogiri 1.6.0
+    public void testVersionedMethods() {
+        RubyModule mod = runtime.defineModule("GH1194");
+
+        mod.defineAnnotatedMethods(VersionedMethods.class);
+
+        assertNotNull(mod.searchMethod("method"));
     }
 
     private void confirmMethods(RubyModule mod) {
@@ -74,6 +83,17 @@ public class TestMethodFactories extends TestRubyBase {
         @JRubyMethod(required = 4)
         public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
             return self.getRuntime().getTrue();
+        }
+    }
+
+    public static class VersionedMethods {
+        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
+        public static IRubyObject method18(IRubyObject self) {
+            return self;
+        }
+        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_9)
+        public static IRubyObject method19(IRubyObject self) {
+            return self;
         }
     }
 }

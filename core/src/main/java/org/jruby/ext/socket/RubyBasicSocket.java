@@ -105,12 +105,12 @@ public class RubyBasicSocket extends RubyIO {
         doNotReverseLookup = true;
     }
 
-    @JRubyMethod(name = "do_not_reverse_lookup", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
         return context.runtime.newBoolean(doNotReverseLookup);
     }
 
-    @JRubyMethod(name = "do_not_reverse_lookup=", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "do_not_reverse_lookup=")
     public IRubyObject set_do_not_reverse_lookup19(ThreadContext context, IRubyObject flag) {
         doNotReverseLookup = flag.isTrue();
         return do_not_reverse_lookup19(context);
@@ -312,12 +312,12 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    @JRubyMethod(name = "getpeereid", compat = CompatVersion.RUBY1_9, notImplemented = true)
+    @JRubyMethod(name = "getpeereid", notImplemented = true)
     public IRubyObject getpeereid(ThreadContext context) {
         throw context.runtime.newNotImplementedError("getpeereid not implemented");
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject local_address(ThreadContext context) {
         try {
             InetSocketAddress address = getSocketAddress();
@@ -333,7 +333,7 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject remote_address(ThreadContext context) {
         try {
             InetSocketAddress address = getRemoteSocket();
@@ -419,22 +419,22 @@ public class RubyBasicSocket extends RubyIO {
         return context.nil;
     }
 
-    @JRubyMethod(rest = true, notImplemented = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject sendmsg(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("sendmsg is not implemented");
     }
 
-    @JRubyMethod(rest = true, notImplemented = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject sendmsg_nonblock(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("sendmsg_nonblock is not implemented");
     }
 
-    @JRubyMethod(rest = true, notImplemented = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject readmsg(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("readmsg is not implemented");
     }
 
-    @JRubyMethod(rest = true, notImplemented = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject readmsg_nonblock(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("readmsg_nonblock is not implemented");
     }

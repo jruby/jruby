@@ -73,6 +73,7 @@ import org.jruby.ast.NextNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
@@ -125,7 +126,7 @@ public class Ruby20Parser implements RubyParser {
 
     public Ruby20Parser(ParserSupport19 support) {
         this.support = support;
-        lexer = new RubyYaccLexer(false);
+        lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
         support.setLexer(lexer);
     }
@@ -1494,15 +1495,23 @@ do_block        : kDO_BLOCK {
                     support.popCurrentScope();
                 }
 
+  // JRUBY-2326 and GH #305 both end up hitting this production whereas in
+  // MRI these do not.  I have never isolated the cause but I can work around
+  // the individual reported problems with a few extra conditionals in this
+  // first production
 block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     if ($1 instanceof YieldNode) {
                         throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, $1.getPosition(), lexer.getCurrentLine(), "block given to yield");
                     }
-                    if ($<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
+                    if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    $$ = $<BlockAcceptingNode>1.setIterNode($2);
+                    if ($1 instanceof NonLocalControlFlowNode) {
+                      $$ = ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
+                    } else {
+                        $$ = $<BlockAcceptingNode>1.setIterNode($2);
+                    }
                     $<Node>$.setPosition($1.getPosition());
                 }
                 | block_call dot_or_colon operation2 opt_paren_args {
@@ -2216,21 +2225,7 @@ none_block_pass : /* none */ {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getDefaultEncoding());
 
-        Object debugger = null;
-        if (configuration.isDebug()) {
-            try {
-                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                debugger = yyDebugAdapterClass.newInstance();
-            } catch (IllegalAccessException iae) {
-                // ignore, no debugger present
-            } catch (InstantiationException ie) {
-                // ignore, no debugger present
-            } catch (ClassNotFoundException cnfe) {
-                // ignore, no debugger present
-            }
-        }
-        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-        yyparse(lexer, debugger);
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();
     }

@@ -28,14 +28,12 @@ This will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* Install `rake`, `rspec`, `jruby-launcher`, and a few other gems for running tests
+* Install the jruby-launcher gem to provide a native 'jruby' executable.
 
-The environment is now suitable for hacking JRuby and running all test
-targets via Rake.
+The environment is now suitable for running Ruby applications.
 
 Bootstrapping only needs to be done once at first entry into a JRuby
-source dump or if you would like to ensure you're bootstrapped with
-updated gems.
+source dump or if you are updating JRuby from a git repository.
 
 Running JRuby
 -------------
@@ -74,19 +72,34 @@ The `-S` flag will run any script installed in JRuby's bin dir by RubyGems.
 This can be a simple way to ensure you're running the JRuby (or Ruby) version
 you think you are.
 
-Testing
--------
+Developing and Testing
+----------------------
 
 JRuby employs a large suite of tests, so there are many ways you can
 verify that JRuby is still fully functional.
 
-### Day to Day
+### Bootstrapping
 
-For normal day-to-day testing, we recommend running the Ruby 1.9 tests
+In order to prepare JRuby for testing, you must bootstrap the dev
+environment. This will do the following:
+
+* Install rspec, rake, minitest, minitest-excludes, and dependencies
+ needed to run integration tests.
+
+```
+mvn -Pbootstrap
+```
+
+This only needs to be run once to install these gems or if you update
+one of the gems to a newer version or clean out all installed gems.
+
+### Day to Day Testing
+
+For normal day-to-day testing, we recommend running the Ruby (MRI) tests
 via the following rake command:
 
 ```
-rake test:mri19
+rake test:mri
 ```
 
 This is a reasonably good suite that does not take too long to run. For
@@ -117,6 +130,19 @@ jruby --1.8 spec/mspec/bin/mspec ci
 The complete CI test suite will take anywhere from 20 to 45 minutes to
 complete, but provides the most accurate indication of the stability of
 your local JRuby source.
+
+Clean Build
+-----------
+
+To clean the build it is important to use the same profile for the clean as what you want to build. the best way to clean build something is, i.e. jruby-jars
+
+```
+mvn clean install -Pjruby-jars
+```
+
+this first cleans everything and then starts the new build in one go !
+
+NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar** !
 
 Distribution Packages
 ---------------------

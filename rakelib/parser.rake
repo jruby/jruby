@@ -8,6 +8,7 @@ end
 
 
 namespace :parse do
+  desc "Generate Java Signature Parsing Grammer"
   task :generate_java_signature_parser do
     jflex 'core/src/main/java/org/jruby/lexer/JavaSignatureLexer.flex'
     jay 'JavaSignatureParser', 'signature_skeleton.parser'

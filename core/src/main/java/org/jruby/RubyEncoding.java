@@ -26,6 +26,7 @@
 package org.jruby;
 
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -49,10 +50,12 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
     public static final Charset UTF8 = Charset.forName("UTF-8");
+    public static final Charset UTF16 = Charset.forName("UTF-16");
     public static final Charset ISO = Charset.forName("ISO-8859-1");
     public static final ByteList LOCALE = ByteList.create("locale");
     public static final ByteList EXTERNAL = ByteList.create("external");
@@ -181,6 +184,50 @@ public class RubyEncoding extends RubyObject {
 
     public static byte[] encodeUTF8(String str) {
         return getUTF8Coder().encode(str);
+    }
+
+    private static final int CHAR_ARRAY_BASE;
+    private static final int BYTE_ARRAY_BASE;
+    private static final Field VALUE_FIELD;
+    private static final long VALUE_FIELD_OFFSET;
+    static {
+        Field valueField = null;
+        try {
+            valueField = String.class.getDeclaredField("value");
+        } catch (Exception e) {
+        }
+        VALUE_FIELD = valueField;
+        long valueFieldOffset = -1;
+        try {
+            valueFieldOffset = UnsafeHolder.U.objectFieldOffset(VALUE_FIELD);
+        } catch (Exception e) {
+        }
+        VALUE_FIELD_OFFSET = valueFieldOffset;
+        int charArrayBase = -1;
+        try {
+            charArrayBase = UnsafeHolder.U.arrayBaseOffset(char[].class);
+        } catch (Exception e) {
+        }
+        CHAR_ARRAY_BASE = charArrayBase;
+        int byteArrayBase = -1;
+        try {
+            byteArrayBase = UnsafeHolder.U.arrayBaseOffset(byte[].class);
+        } catch (Exception e) {
+        }
+        BYTE_ARRAY_BASE = byteArrayBase;
+    }
+
+    public static byte[] encodeUTF16(String str) {
+        if (VALUE_FIELD_OFFSET == -1) return encode(str, UTF16);
+        char[] chars = (char[]) UnsafeHolder.U.getObject(str, VALUE_FIELD_OFFSET);
+        int length = chars.length * 2;
+        byte[] bytes = new byte[length];
+        UnsafeHolder.U.copyMemory(chars, CHAR_ARRAY_BASE, bytes, BYTE_ARRAY_BASE, length);
+        return bytes;
+    }
+
+    public static byte[] encodeUTF16(CharSequence str) {
+        return encodeUTF16(str.toString());
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {

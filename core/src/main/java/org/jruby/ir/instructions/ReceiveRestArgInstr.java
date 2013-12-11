@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
@@ -26,21 +26,23 @@ public class ReceiveRestArgInstr extends ReceiveArgBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        if (ii.canMapArgsStatically()) {
-            // FIXME: Check this
-            return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
-        } else {
-            return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (numUsedArgs - argIndex), argIndex);
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new ReceiveRestArgInstr(ii.getRenamedVariable(result), numUsedArgs, argIndex);
+            default:
+                if (ii.canMapArgsStatically()) {
+                    // FIXME: Check this
+                    return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
+                } else {
+                    return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (numUsedArgs - argIndex), argIndex);
+                }
         }
     }
 
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceiveRestArgInstr(ii.getRenamedVariable(result), numUsedArgs, argIndex);
-    }
-
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];
-    public IRubyObject receiveRestArg(Ruby runtime, IRubyObject[] parameters, int kwArgLoss) {
+
+    @Override
+    public IRubyObject receiveArg(ThreadContext context, int kwArgLoss, IRubyObject[] parameters) {
         IRubyObject[] args;
         int numAvailableArgs = parameters.length - numUsedArgs - kwArgLoss;
         if (numAvailableArgs <= 0) {
@@ -50,7 +52,7 @@ public class ReceiveRestArgInstr extends ReceiveArgBase {
             System.arraycopy(parameters, argIndex, args, 0, numAvailableArgs);
         }
 
-        return runtime.newArray(args);
+        return context.runtime.newArray(args);
     }
 
     @Override

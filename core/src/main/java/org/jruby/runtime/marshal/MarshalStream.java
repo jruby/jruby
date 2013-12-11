@@ -73,8 +73,7 @@ public class MarshalStream extends FilterOutputStream {
     private final MarshalCache cache;
     private final int depthLimit;
     private boolean tainted = false;
-    private boolean untrusted = false;
-    
+
     private int depth = 0;
 
     private final static char TYPE_IVAR = 'I';
@@ -103,7 +102,6 @@ public class MarshalStream extends FilterOutputStream {
         }
 
         tainted |= value.isTaint();
-        untrusted |= value.isUntrusted();
 
         writeAndRegister(value);
 
@@ -523,7 +521,8 @@ public class MarshalStream extends FilterOutputStream {
         return tainted;
     }
 
+    @Deprecated
     public boolean isUntrusted() {
-        return untrusted;
+        return tainted;
     }
 }

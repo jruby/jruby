@@ -476,7 +476,7 @@ public class Main {
 
     private void doShowVersion() {
         if (config.isShowVersion()) {
-            config.getOutput().println(OutputStrings.getVersionString(config.getCompatVersion()));
+            config.getOutput().println(OutputStrings.getVersionString());
         }
     }
 

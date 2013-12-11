@@ -456,18 +456,17 @@ public class Bootstrap {
 //            if (mh != null) System.out.println("binding to native: " + site.name);
         }
 
-        if (mh == null) {
-            // attempt IR direct binding
-            if (method instanceof CompiledIRMethod) {
-                mh = (MethodHandle)((CompiledIRMethod)method).getHandle();
+        // attempt IR direct binding
+        if (mh == null && method instanceof CompiledIRMethod) {
+            // SSS FIXME: What about frame/scope/visibility?
+            mh = (MethodHandle)((CompiledIRMethod)method).getHandle();
 
-                if (!block) {
-                    mh = MethodHandles.insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
-                }
-
-                mh = MethodHandles.insertArguments(mh, 1, ((CompiledIRMethod)method).getStaticScope());
-//                System.out.println("binding IR compiled direct: " + site.name);
+            if (!block) {
+                mh = MethodHandles.insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
             }
+
+            mh = MethodHandles.insertArguments(mh, 1, ((CompiledIRMethod)method).getStaticScope());
+//                System.out.println("binding IR compiled direct: " + site.name);
         }
 //        System.out.println(site.name);
 //        System.out.println("before: " + mh);

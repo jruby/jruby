@@ -227,35 +227,56 @@ public abstract class CallBase extends Instr implements Specializeable {
         // and use it at a later point.
         if (closure != null) return true;
 
+        /* -------------------------------------------------------------
+         * SSS FIXME: What about aliased accesses to these same methods?
+         * See problem snippet below
+         *
+         * [subbu@earth ~/jruby] cat /tmp/pgm.rb
+         * class Module
+         *   class << self
+         *     alias_method :foobar, :nesting
+         *   end
+         * end
+         *
+         * module X
+         *   puts "X. Nesting is: #{Module.foobar}"
+         * end
+         *
+         * module Y
+         *   puts "Y. Nesting is: #{Module.nesting}"
+         * end
+         *
+         * [subbu@earth ~/jruby] jruby -X-CIR -Xir.passes=OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,LinearizeCFG /tmp/pgm.rb
+         * X. Nesting is: []
+         * Y. Nesting is: [Y]
+         * [subbu@earth ~/jruby] jruby -X-CIR -Xir.passes=LinearizeCFG /tmp/pgm.rb
+         * X. Nesting is: [X]
+         * Y. Nesting is: [Y]
+         * ------------------------------------------------------------- */
+
         String mname = getMethodAddr().getName();
-        if (mname.equals("lambda")) {
-            return true;
-/**
- * SSS: Not required currently.  You cannot Proc.new without passing it a closure
- * which means it will be captured by the check earlier.
- *
-        } else if (mname.equals("new")) {
-            Operand object = getReceiver();
-
-            // SSS FIXME: This check is incorrect -- something has gone
-            // wrong with the numerous fixes to IR code since this check was written.
-            //
-            // Unknown receiver -- could be Proc!!
-            if (!(object instanceof CurrentScope)) return true;
-
-            IRScope c = ((CurrentScope) object).getScope();
-            if (c != null && c instanceof IRClassBody && c.getName().equals("Proc")) return true;
-**/
-        } else if (mname.equals("binding")) {
+        if (mname.equals("lambda") ||
+            mname.equals("binding") ||
+            mname.equals("nesting") ||
+            mname.equals("local_variables"))
+        {
             return true;
         } else if (mname.equals("send") || mname.equals("__send__")) {
             Operand[] args = getCallArgs();
             if (args.length >= 1) {
                 Operand meth = args[0];
-                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be "binding"
+                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
 
                 String name = ((StringLiteral) meth).string;
-                if (name.equals("binding")) return true;
+                if (name.equals("send") ||
+                    name.equals("__send__") ||
+                    name.equals("lambda") ||
+                    name.equals("binding") ||
+                    name.equals("nesting") ||
+                    name.equals("local_variables"))
+                {
+                    return true;
+                }
             }
         }
 

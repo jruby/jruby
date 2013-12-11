@@ -36,23 +36,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Binding;
-import org.jruby.runtime.Block.Type;
-import static org.jruby.util.StringSupport.codeLength;
-import static org.jruby.util.StringSupport.codePoint;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -66,6 +59,12 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.jruby.util.StringSupport.codeLength;
+import static org.jruby.util.StringSupport.codePoint;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
@@ -101,6 +100,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 PerlHash.hash(symbolHashSeedK0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
+        setFrozen(true);
     }
 
     private RubySymbol(Ruby runtime, String internedSymbol) {
@@ -302,7 +302,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         Ruby runtime = context.runtime;
         
         return !(other instanceof RubySymbol) ? runtime.getNil() :
-                newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime));
+                newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime));
     }
 
     @JRubyMethod
@@ -388,12 +388,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
-                    RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
-                RubyArray array = aValue && value instanceof RubyArray ?
-                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
-
-                return yieldInner(context, array, block);
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+                    RubyModule klass, Binding binding, Block.Type type, Block block) {
+                RubyProc.prepareArgs(context, type, block.arity(), args);
+                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
             }
 
             @Override
@@ -403,16 +401,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             }
             
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
             }
 
             @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-                RubyArray array = aValue && value instanceof RubyArray ?
-                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
-
-                return yieldInner(context, array, Block.NULL_BLOCK);
+            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type) {
+                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
             }
 
             @Override

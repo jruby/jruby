@@ -73,8 +73,6 @@ public class VariableTableManager {
     
     /** a lazy accessor for object_id */
     private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
-    /** a lazy accessor for C ext handle */
-    private final VariableAccessorField cextHandleVariableAccessorField = new VariableAccessorField("cext");
     /** a lazy accessor for FFI handle */
     private final VariableAccessorField ffiHandleVariableAccessorField = new VariableAccessorField("ffi");
     /** a lazy accessor for object group */
@@ -235,33 +233,6 @@ public class VariableTableManager {
     }
 
     /**
-     * Retrieve the lazy accessor (VariableAccessorField) for C ext handle.
-     * 
-     * @return the lazy accessor for C ext handle
-     */
-    public VariableAccessorField getNativeHandleAccessorField() {
-        return cextHandleVariableAccessorField;
-    }
-
-    /**
-     * Retrieve the read accessor for C ext handle.
-     * 
-     * @return the read accessor for C ext handle
-     */
-    public VariableAccessor getNativeHandleAccessorForRead() {
-        return cextHandleVariableAccessorField.getVariableAccessorForRead();
-    }
-
-    /**
-     * Retrieve the write accessor for C ext handle.
-     * 
-     * @return the write accessor for C ext handle
-     */
-    public VariableAccessor getNativeHandleAccessorForWrite() {
-        return cextHandleVariableAccessorField.getVariableAccessorForWrite(this);
-    }
-
-    /**
      * Retrieve the lazy accessor (VariableAccessorField) for FFI handle.
      * 
      * @return the lazy accessor for FFI handle
@@ -313,30 +284,6 @@ public class VariableTableManager {
      */
     public VariableAccessor getObjectGroupAccessorForWrite() {
         return objectGroupVariableAccessorField.getVariableAccessorForWrite(this);
-    }
-    
-    /**
-     * Retrieve the C ext handle for the given object.
-     * 
-     * @param self the object
-     * @return the object's C ext handle
-     */
-    public final Object getNativeHandle(RubyBasicObject self) {
-        return getNativeHandleAccessorForRead().get(self);
-    }
-
-    /**
-     * Set the C ext handle for the given object.
-     * 
-     * @param self the object
-     * @param value the object's C ext handle
-     */
-    public final void setNativeHandle(RubyBasicObject self, Object value) {
-        int index = getNativeHandleAccessorForRead().getIndex();
-        if(index == -1) {
-            return;
-        }
-        setVariableInternal(realClass, self, index, value);
     }
 
     /**

@@ -48,6 +48,7 @@ public class IRScriptBody extends IRScope {
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
 
@@ -55,6 +56,7 @@ public class IRScriptBody extends IRScope {
     @Override
     public void recordEndBlock(IRClosure endBlockClosure) {
         if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
+        endBlockClosure.setBeginEndBlock();
         endBlocks.add(endBlockClosure);
     }
 

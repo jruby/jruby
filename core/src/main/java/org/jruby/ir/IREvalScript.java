@@ -61,6 +61,7 @@ public class IREvalScript extends IRClosure {
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
 
@@ -68,6 +69,7 @@ public class IREvalScript extends IRClosure {
     @Override
     public void recordEndBlock(IRClosure endBlockClosure) {
         if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
+        endBlockClosure.setBeginEndBlock();
         endBlocks.add(endBlockClosure);
     }
 
@@ -81,26 +83,12 @@ public class IREvalScript extends IRClosure {
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block, String backtraceName) {
         if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("CFG:\n" + cfg());
+            LOG.info("Graph:\n" + cfg().toStringGraph());
+            LOG.info("CFG:\n" + cfg().toStringInstrs());
         }
-        try {
-            context.pushScope(evalScope);
 
-            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
-            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
-            // Since the same static scope (the scope within which the eval string showed up)
-            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
-            // forget about it.  We need to set this right before we are ready to grow the
-            // dynamic scope local var space.
-            ((IRStaticScope)getStaticScope()).setIRScope(this);
-            evalScope.growIfNeeded();
-
-            // FIXME: Do not push new empty arg array in every time
-            return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
-        }
-        finally {
-            context.popScope();
-        }
+        // FIXME: Do not push new empty arg array in every time
+        return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
     }
 
     @Override
@@ -108,8 +96,18 @@ public class IREvalScript extends IRClosure {
         // Look in the nearest non-eval scope's shared eval scope vars first.
         // If you dont find anything there, look in the nearest non-eval scope's regular vars.
         LocalVariable lvar = nearestNonEvalScope.evalScopeVars.getVariable(name);
-        if ((lvar != null) || scopeDepth == 0) return lvar;
+        if (lvar != null || scopeDepth == 0) return lvar;
         else return nearestNonEvalScope.findExistingLocalVariable(name, scopeDepth-nearestNonEvalScopeDepth-1);
+    }
+
+    @Override
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
+        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
+        // Create a copy of the variable usable at the right depth
+        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
+
+        return lvar;
     }
 
     @Override

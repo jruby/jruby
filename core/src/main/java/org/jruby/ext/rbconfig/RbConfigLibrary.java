@@ -30,28 +30,27 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.rbconfig;
 
+import jnr.posix.util.Platform;
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
+import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jruby.CompatVersion;
-
-import org.jruby.Ruby;
-import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
-import jnr.posix.util.Platform;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.load.Library;
-import org.jruby.util.NormalizedFile;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.anno.JRubyModule;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -218,7 +217,7 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts;
-        versionParts = Constants.RUBY1_9_VERSION.split("\\.");
+        versionParts = Constants.RUBY_VERSION.split("\\.");
         
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);
@@ -465,7 +464,7 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    @JRubyMethod(name = "ruby", module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "ruby", module = true)
     public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");

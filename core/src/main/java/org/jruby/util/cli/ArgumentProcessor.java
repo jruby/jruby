@@ -513,10 +513,10 @@ public class ArgumentProcessor {
             // try cwd first
             fullName = JRubyFile.create(config.getCurrentDirectory(), scriptName);
             if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
+                logScriptResolutionSuccess(fullName.getAbsolutePath());
                 return scriptName;
+            } else {
+                logScriptResolutionFailure(config.getCurrentDirectory());
             }
         } catch (Exception e) {
             // keep going, try bin/#{scriptName}
@@ -524,10 +524,10 @@ public class ArgumentProcessor {
         try {
             fullName = JRubyFile.create(config.getJRubyHome(), "bin/" + scriptName);
             if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
+                logScriptResolutionSuccess(fullName.getAbsolutePath());
                 return fullName.getAbsolutePath();
+            } else {
+                logScriptResolutionFailure(config.getJRubyHome() + "/bin");
             }
         } catch (Exception e) {
             // keep going, try PATH
@@ -543,17 +543,16 @@ public class ArgumentProcessor {
                 for (int i = 0; i < paths.length; i++) {
                     fullName = JRubyFile.create(new File(paths[i]).getAbsolutePath(), scriptName);
                     if (fullName.exists() && fullName.isFile()) {
-                        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                            config.getError().println("Found: " + fullName.getAbsolutePath());
-                        }
+                        logScriptResolutionSuccess(fullName.getAbsolutePath());
                         return fullName.getAbsolutePath();
                     }
                 }
+                logScriptResolutionFailure("PATH=" + path);
             }
         } catch (Exception e) {
             // will fall back to JRuby::Commands
         }
-        if (config.isDebug()) {
+        if (config.isDebug() || RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("warning: could not resolve -S script on filesystem: " + scriptName);
         }
         return null;
@@ -581,5 +580,16 @@ public class ArgumentProcessor {
         }
         return null;
     }
-    
+
+    private void logScriptResolutionSuccess(String path) {
+        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+            config.getError().println("Found: " + path);
+        }
+    }
+
+    private void logScriptResolutionFailure(String path) {
+        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+            config.getError().println("Searched: " + path);
+        }
+    }
 }

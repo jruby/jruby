@@ -186,7 +186,7 @@ public class RubyDir extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true, meta = true)
+    @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         List<ByteList> dirs;
@@ -703,10 +703,15 @@ public class RubyDir extends RubyObject {
         return newPos;
     }
 
-    @JRubyMethod(name = "path")
+    @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
         return path.strDup(context.runtime);
     }
+    
+    @JRubyMethod
+    public IRubyObject to_path(ThreadContext context) {
+        return path(context);
+    }    
 
     /** Returns the next entry from this directory. */
     @JRubyMethod(name = "read")

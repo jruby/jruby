@@ -36,6 +36,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
+        // FIXME: Is it necessary to clone a yield instruction in a method
+        // that is being inlined, i.e. in METHOD_INLINE clone mode?
+        // Fix BasicBlock.java:cloneForInlining!!
         return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
 

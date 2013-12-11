@@ -32,16 +32,20 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
-        // operand type that converts the static code block to a proc which is a closure.
-        if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
-        else return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceiveClosureInstr(ii.getRenamedVariable(result));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new ReceiveClosureInstr(ii.getRenamedVariable(result));
+            case METHOD_INLINE:
+            case CLOSURE_INLINE:
+                // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
+                // operand type that converts the static code block to a proc which is a closure.
+                if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
+                else return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
+            default:
+                // Should not get here
+                return super.cloneForInlining(ii);
+        }
     }
 
     @Override

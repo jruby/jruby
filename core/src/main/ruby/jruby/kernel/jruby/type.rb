@@ -32,5 +32,12 @@ module JRuby
     def self.is_array?(obj)
       coerce_to(obj, Array, :to_ary) if obj.respond_to? :to_ary
     end
+
+    def self.convert_to_str(obj)
+      unless obj.respond_to? :to_str
+        raise TypeError, "cannot convert #{obj.class} into String"
+      end
+      obj = obj.to_str
+    end
   end
 end

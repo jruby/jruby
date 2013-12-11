@@ -107,6 +107,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
             }
             return runtime.newBoolean(false);
         } else {
+            // SSS FIXME: Why are we returning 'excType'? Shouldn't this be a boolean?
             return isUndefExc ? excType : runtime.newBoolean(exceptionHandled(context, excType, excObj));
         }
     }

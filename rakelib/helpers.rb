@@ -8,7 +8,8 @@ def load_build_properties_into_constants
 
     # build const name
     name, value = line.split("=", 2)
-    name.gsub!(".", "_").upcase!
+    name.gsub!(".", "_")
+    name.upcase!
     constant_names << name
     Object.const_set(name.to_sym, value)
   end

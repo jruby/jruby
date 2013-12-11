@@ -288,13 +288,12 @@ class TestSH < Test::Unit::TestCase
   end
 
   def test_strftime
-    # EREGON: depending on MRI buffer sizes, not useful
-    #assert_raise(Errno::ERANGE) do
-    #  Date.today.strftime('%100000z')
-    #end
-    #assert_raise(Errno::ERANGE) do
-    #  Date.new(1 << 10000).strftime('%Y')
-    #end
+    assert_raise(Errno::ERANGE) do
+      Date.today.strftime('%100000z')
+    end
+    assert_raise(Errno::ERANGE) do
+      Date.new(1 << 10000).strftime('%Y')
+    end
     assert_equal('-3786825600', Date.new(1850).strftime('%s'))
     assert_equal('-3786825600000', Date.new(1850).strftime('%Q'))
   end
@@ -468,13 +467,64 @@ class TestSH < Test::Unit::TestCase
   def test_period2
     cm_period0 = 71149239
     cm_period = 0xfffffff.div(cm_period0) * cm_period0
-    # EREGON: too big to be handled by Joda-Time
-    #period2_iter(-cm_period * (1 << 64) - 3, -cm_period * (1 << 64) + 3)
+    period2_iter(-cm_period * (1 << 64) - 3, -cm_period * (1 << 64) + 3)
     period2_iter(-cm_period - 3, -cm_period + 3)
     period2_iter(0 - 3, 0 + 3)
     period2_iter(+cm_period - 3, +cm_period + 3)
-    # EREGON: too big to be handled by Joda-Time
-    #period2_iter(+cm_period * (1 << 64) - 3, +cm_period * (1 << 64) + 3)
+    period2_iter(+cm_period * (1 << 64) - 3, +cm_period * (1 << 64) + 3)
+  end
+
+  def test_different_alignments
+    assert_equal(0, Date.jd(0) <=> Date.civil(-4713, 11, 24, Date::GREGORIAN))
+    assert_equal(0, Date.jd(213447717) <=> Date.civil(579687, 11, 24))
+    assert_equal(0, Date.jd(-213447717) <=> Date.civil(-589113, 11, 24, Date::GREGORIAN))
+
+    assert_equal(0, Date.jd(0) <=> DateTime.civil(-4713, 11, 24, 0, 0, 0, 0, Date::GREGORIAN))
+    assert_equal(0, Date.jd(213447717) <=> DateTime.civil(579687, 11, 24))
+    assert_equal(0, Date.jd(-213447717) <=> DateTime.civil(-589113, 11, 24, 0, 0, 0, 0, Date::GREGORIAN))
+
+    assert(Date.jd(0) == Date.civil(-4713, 11, 24, Date::GREGORIAN))
+    assert(Date.jd(213447717) == Date.civil(579687, 11, 24))
+    assert(Date.jd(-213447717) == Date.civil(-589113, 11, 24, Date::GREGORIAN))
+
+    assert(Date.jd(0) == DateTime.civil(-4713, 11, 24, 0, 0, 0, 0, Date::GREGORIAN))
+    assert(Date.jd(213447717) == DateTime.civil(579687, 11, 24))
+    assert(Date.jd(-213447717) == DateTime.civil(-589113, 11, 24, 0, 0, 0, 0, Date::GREGORIAN))
+
+    assert(Date.jd(0) === Date.civil(-4713, 11, 24, Date::GREGORIAN))
+    assert(Date.jd(213447717) === Date.civil(579687, 11, 24))
+    assert(Date.jd(-213447717) === Date.civil(-589113, 11, 24, Date::GREGORIAN))
+
+    assert(Date.jd(0) === DateTime.civil(-4713, 11, 24, 12, 0, 0, 0, Date::GREGORIAN))
+    assert(Date.jd(213447717) === DateTime.civil(579687, 11, 24, 12))
+    assert(Date.jd(-213447717) === DateTime.civil(-589113, 11, 24, 12, 0, 0, 0, Date::GREGORIAN))
+
+    a = Date.jd(0)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    assert_equal(0, a <=> b)
+
+    a = Date.civil(-4712, 1, 1, Date::JULIAN)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    a.jd; b.jd
+    assert_equal(0, a <=> b)
+
+    a = Date.jd(0)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    assert(a == b)
+
+    a = Date.civil(-4712, 1, 1, Date::JULIAN)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    a.jd; b.jd
+    assert(a == b)
+
+    a = Date.jd(0)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    assert(a === b)
+
+    a = Date.civil(-4712, 1, 1, Date::JULIAN)
+    b = Date.civil(-4713, 11, 24, Date::GREGORIAN)
+    a.jd; b.jd
+    assert(a === b)
   end
 
   def test_marshal14

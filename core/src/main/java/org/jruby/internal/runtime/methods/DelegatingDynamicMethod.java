@@ -35,6 +35,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.MethodData;
 
 public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
@@ -175,6 +176,61 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public Arity getArity() {
         return delegate.getArity();
+    }
+
+    @Override
+    public String getName() {
+        return delegate.getName();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setName(String name) {
+        delegate.setName(name);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean isNotImplemented() {
+        return delegate.isNotImplemented();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setNotImplemented(boolean setNotImplemented) {
+        delegate.setNotImplemented(setNotImplemented);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public MethodData getMethodData() {
+        return delegate.getMethodData();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setHandle(Object handle) {
+        delegate.setHandle(handle);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Object getHandle() {
+        return delegate.getHandle();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
+        delegate.setNativeCall(args, block, nativeCall);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public NativeCall getNativeCall(int args, boolean block) {
+        return delegate.getNativeCall(args, block);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
+        delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public DynamicMethod dup() {
+        return new ProfilingDynamicMethod(delegate.dup());
     }
 
     @Override

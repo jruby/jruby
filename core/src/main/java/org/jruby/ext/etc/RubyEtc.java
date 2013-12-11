@@ -407,8 +407,7 @@ public class RubyEtc {
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
     
@@ -424,8 +423,7 @@ public class RubyEtc {
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
     

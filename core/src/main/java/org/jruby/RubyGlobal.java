@@ -117,7 +117,7 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
 
-        IRubyObject description = runtime.newString(OutputStrings.getVersionString(runtime.getInstanceConfig().getCompatVersion())).freeze(context);
+        IRubyObject description = runtime.newString(OutputStrings.getVersionString()).freeze(context);
         runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
 
         IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString()).freeze(context);

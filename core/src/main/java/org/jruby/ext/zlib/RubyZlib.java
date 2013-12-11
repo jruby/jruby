@@ -223,12 +223,12 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(ext.getValue());
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    @JRubyMethod(required = 1, optional = 1, compat = RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1)
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
         return JZlibDeflate.s_deflate(recv, args);
     }

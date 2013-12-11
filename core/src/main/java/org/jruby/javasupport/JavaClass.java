@@ -741,8 +741,16 @@ public class JavaClass extends JavaObject {
 
         // set the Java class name and package
         proxy.setBaseName(javaClass.getSimpleName());
-        proxy.setParent(Java.getJavaPackageModule(getRuntime(), javaClass.getPackage()));
-        
+
+        // set parent to either package module or outer class
+        RubyModule parent;
+        if (javaClass.getEnclosingClass() != null) {
+            parent = Java.getProxyClass(getRuntime(), javaClass.getEnclosingClass());
+        } else {
+            parent = Java.getJavaPackageModule(getRuntime(), javaClass.getPackage());
+        }
+        proxy.setParent(parent);
+
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
         // when JI is overhauled (and proxy extenders are deprecated).

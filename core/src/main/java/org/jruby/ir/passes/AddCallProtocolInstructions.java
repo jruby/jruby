@@ -18,6 +18,7 @@ import org.jruby.ir.instructions.PushFrameInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
@@ -41,48 +42,55 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
-        StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
-
-        boolean scopeHasLocalVarStores      = false;
-        boolean scopeHasUnrescuedExceptions = false;
-
-        CFG        cfg = scope.cfg();
-        BasicBlock geb = cfg.getGlobalEnsureBB();
-
-        if (slvpp != null) {
-            scopeHasLocalVarStores      = slvpp.scopeHasLocalVarStores();
-            scopeHasUnrescuedExceptions = slvpp.scopeHasUnrescuedExceptions();
-        } else {
-            // We dont require local-var load/stores to have been run.
-            // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-            scopeHasLocalVarStores      = true;
-            scopeHasUnrescuedExceptions = false;
-            for (BasicBlock bb: cfg.getBasicBlocks()) {
-                // SSS FIXME: This is highly conservative.  If the bb has an exception raising instr.
-                // and if we dont have a rescuer, only then do we have unrescued exceptions.
-                if (cfg.getRescuerBBFor(bb) == null) {
-                    scopeHasUnrescuedExceptions = true;
-                    break;
-                }
-            }
-        }
-
-        BasicBlock entryBB = cfg.getEntryBB();
-
         // SSS FIXME: Right now, we always add push/pop frame instrs -- in the future, we may skip them
         // for certain scopes.
         //
         // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
-        if ((scope instanceof IRMethod) || (scope instanceof IRScriptBody) || (scope instanceof IRModuleBody)) {
-            if (scope.bindingHasEscaped() || scope.usesBackrefOrLastline() || scopeHasLocalVarStores || scopeHasUnrescuedExceptions) {
+        if (scope instanceof IRMethod || scope instanceof IRScriptBody || scope instanceof IRModuleBody) {
+            StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+
+            boolean scopeHasLocalVarStores      = false;
+            boolean scopeHasUnrescuedExceptions = false;
+            boolean bindingHasEscaped           = scope.bindingHasEscaped();
+
+            CFG        cfg = scope.cfg();
+            BasicBlock geb = cfg.getGlobalEnsureBB();
+
+            if (slvpp != null && bindingHasEscaped) {
+                scopeHasLocalVarStores      = slvpp.scopeHasLocalVarStores();
+                scopeHasUnrescuedExceptions = slvpp.scopeHasUnrescuedExceptions();
+            } else {
+                // We dont require local-var load/stores to have been run.
+                // If it is not run, we go conservative and add push/pop binding instrs. everywhere
+                scopeHasLocalVarStores      = bindingHasEscaped;
+                scopeHasUnrescuedExceptions = false;
+                for (BasicBlock bb: cfg.getBasicBlocks()) {
+                    // SSS FIXME: This is highly conservative.  If the bb has an exception raising instr.
+                    // and if we dont have a rescuer, only then do we have unrescued exceptions.
+                    if (cfg.getRescuerBBFor(bb) == null) {
+                        scopeHasUnrescuedExceptions = true;
+                        break;
+                    }
+                }
+            }
+
+            // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
+            // 1. I think we need a different check for frames -- it is NOT scopeHasUnrescuedExceptions
+            //    We need scope.requiresFrame() to push/pop frames
+            // 2. Plus bindingHasEscaped check in IRScope is missing some other check since we should
+            //    jsut be able to check (bindingHasEscaped || scopeHasVarStores) to push/pop bindings.
+            // We need scopeHasUnrescuedExceptions to add GEB for popping frame/binding on exit from unrescued exceptions
+            BasicBlock entryBB = cfg.getEntryBB();
+            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores;
+            if (scope.usesBackrefOrLastline() || requireBinding || scopeHasUnrescuedExceptions) {
                 // Push
                 entryBB.addInstr(new PushFrameInstr());
-                entryBB.addInstr(new PushBindingInstr(scope));
+                if (requireBinding) entryBB.addInstr(new PushBindingInstr(scope));
 
-                // Allocate GEB if necessary for popping binding
-                if (geb == null && (scopeHasLocalVarStores || scopeHasUnrescuedExceptions)) {
+                // Allocate GEB if necessary for popping
+                if (geb == null && scopeHasUnrescuedExceptions) {
                     Variable exc = scope.getNewTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label(Label.GLOBAL_ENSURE_BLOCK));
                     geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
@@ -99,23 +107,23 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if ((bb != exitBB) && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
                             // Add before the break/return
                             instrs.previous();
-                            instrs.add(new PopBindingInstr());
+                            if (requireBinding) instrs.add(new PopBindingInstr());
                             instrs.add(new PopFrameInstr());
                             break;
                         }
                     }
 
-                    if ((bb == exitBB) && !bb.isEmpty()) {
+                    if (bb == exitBB && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
-                        instrs.add(new PopBindingInstr());
+                        if (requireBinding) instrs.add(new PopBindingInstr());
                         instrs.add(new PopFrameInstr());
                     }
 
-                    if (bb == geb) {
+                    if (bb == geb && scopeHasUnrescuedExceptions) {
                         // Add before throw-exception-instr which would be the last instr
                         instrs.previous();
-                        instrs.add(new PopBindingInstr());
+                        if (requireBinding) instrs.add(new PopBindingInstr());
                         instrs.add(new PopFrameInstr());
                     }
                 }
@@ -125,11 +133,15 @@ public class AddCallProtocolInstructions extends CompilerPass {
             scope.setExplicitCallProtocolFlag(true);
         }
 
+        // FIXME: Useless for now
         // Run on all nested closures.
         for (IRClosure c: scope.getClosures()) execute(c);
 
         // Mark as done
         addedInstrs = true;
+
+        // LVA information is no longer valid after the pass
+        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
 
         return null;
     }

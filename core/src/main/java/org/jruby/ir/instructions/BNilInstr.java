@@ -15,13 +15,8 @@ public class BNilInstr extends BranchInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BNilInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BNilInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
     public void visit(IRVisitor visitor) {

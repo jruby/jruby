@@ -1255,10 +1255,7 @@ public class Ripper19Parser extends RipperParser {
     "none_block_pass :",
     };
 
-  /** debugging support, requires the package <tt>jay.yydebug</tt>.
-      Set to <tt>null</tt> to suppress debugging messages.
-    */
-  protected jay.yydebug.yyDebug yydebug;
+  protected org.jruby.parser.YYDebug yydebug;
 
   /** index-checked interface to {@link #yyNames}.
       @param token single character or <tt>%token</tt> value.
@@ -1309,7 +1306,7 @@ public class Ripper19Parser extends RipperParser {
     */
   public Object yyparse (RipperLexer yyLex, Object ayydebug)
 				throws java.io.IOException {
-    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
+    this.yydebug = (org.jruby.parser.YYDebug)ayydebug;
     return yyparse(yyLex);
   }
 
@@ -3989,4 +3986,4 @@ states[267] = new RipperParserState() {
 }
 					// line 1758 "Ripper19Parser.y"
 }
-					// line 7942 "-"
+					// line 7939 "-"

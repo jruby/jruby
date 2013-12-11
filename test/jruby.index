@@ -53,6 +53,7 @@ test_primitive_to_java
 test_process
 test_proc_visibility
 test_parsing
+test_pathname_dup
 test_random
 test_rbconfig
 test_require_once
@@ -102,3 +103,4 @@ test_jar_file
 test_jruby_synchronized
 test_instantiating_interfaces
 test_openssl
+test_tempfile_cleanup

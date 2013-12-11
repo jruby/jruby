@@ -29,9 +29,6 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
-import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -171,8 +168,31 @@ public class JVMVisitor extends IRVisitor {
     public void emit(IRMethod method) {
         String name = emitScope(method, method.getName(), method.getCallArgs().length);
 
+        // Emit code for all nested closures
+        for (IRClosure c: method.getClosures()) {
+            emit(c);
+        }
+
         // push a method handle for binding purposes
         jvm.method().pushHandle(jvm.clsData().clsName, name, method.getStaticScope().getRequiredArgs());
+    }
+
+    public void emit(IRClosure closure) {
+        /* Compile the closure like a method */
+        String name = closure.getName() + "__" + closure.getLexicalParent().getName();
+
+        name = emitScope(closure, name, closure.getBlockArgs().length);
+
+        /* .. Build a CompiledIRBlockBody object here ... */
+        /* .. and bind that with the "method" emitted ... */
+
+        // Emit code for all nested closures
+        for (IRClosure c: closure.getClosures()) {
+            emit(c);
+        }
+
+        // push a method handle for binding purposes
+        jvm.method().pushHandle(jvm.clsData().clsName, name, closure.getStaticScope().getRequiredArgs());
     }
 
     public void emit(IRModuleBody method) {
@@ -636,21 +656,6 @@ public class JVMVisitor extends IRVisitor {
 
         // store
         jvmStoreLocal(definemoduleinstr.getResult());
-    }
-
-    @Override
-    public void EnsureRubyArrayInstr(EnsureRubyArrayInstr ensurerubyarrayinstr) {
-        visit(ensurerubyarrayinstr.getObject());
-        jvm.method().adapter.dup();
-        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
-        jvm.method().adapter.instance_of("org/jruby/RubyArray");
-        jvm.method().adapter.iftrue(after);
-        jvm.method().adapter.swap();
-        jvm.method().loadRuntime();
-        jvm.method().adapter.ldc(false);
-        jvm.method().invokeStatic(Type.getType(ArgsUtil.class), Method.getMethod("org.jruby.RubyArray convertToRubyArray(org.jruby.Ruby, org.jruby.runtime.builtin.IRubyObject, boolean)"));
-        jvm.method().adapter.label(after);
-        jvmStoreLocal(ensurerubyarrayinstr.getResult());
     }
 
     @Override

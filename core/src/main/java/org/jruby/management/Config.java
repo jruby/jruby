@@ -4,6 +4,7 @@ import java.lang.ref.SoftReference;
 
 import java.util.Arrays;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.OutputStrings;
@@ -16,7 +17,7 @@ public class Config implements ConfigMBean {
     }
     
     public String getVersionString() {
-        return OutputStrings.getVersionString(ruby.get().getInstanceConfig().getCompatVersion());
+        return OutputStrings.getVersionString();
     }
 
     public String getCopyrightString() {
@@ -53,10 +54,6 @@ public class Config implements ConfigMBean {
 
     public boolean isRunRubyInProcess() {
         return ruby.get().getInstanceConfig().isRunRubyInProcess();
-    }
-
-    public String getCompatVersion() {
-        return ruby.get().getInstanceConfig().getCompatVersion().name();
     }
 
     public String getCurrentDirectory() {
@@ -157,5 +154,10 @@ public class Config implements ConfigMBean {
     
     public String getExcludedMethods() {
         return ruby.get().getInstanceConfig().getExcludedMethods().toString();
+    }
+
+    @Deprecated
+    public String getCompatVersion() {
+        return CompatVersion.RUBY2_1.name();
     }
 }

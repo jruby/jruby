@@ -5,16 +5,21 @@ before_script:
 
 jdk:
   - oraclejdk7
+  - oraclejdk8
   - openjdk6
 
 env:
-  # disable cext
-  global:
-    - JAVA_OPTS="-server -Djruby.cext.enabled=false"
   matrix:
     - TARGET='test-extended'
-    - TARGET='spec:ci_interpreted_via_env'
+    - TARGET='spec:ci_interpreted_travis'
+    - TARGET='spec:ci_interpreted_ir_travis'
     - TARGET='spec:ir'
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: TARGET='spec:ci_interpreted_ir_travis'
+    - jdk: oraclejdk8
 
 script: "ant $TARGET"
 install: /bin/true

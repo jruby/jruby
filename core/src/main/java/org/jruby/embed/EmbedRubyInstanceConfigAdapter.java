@@ -166,23 +166,8 @@ public interface EmbedRubyInstanceConfigAdapter {
      */
     public void setRunRubyInProcess(boolean inprocess);
 
-    /**
-     * Returns a Ruby version currently chosen, which is one of CompatVersion.RUBY1_8,
-     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
-     * CompatVersion.RUBY1_8.
-     * 
-     * @return a Ruby version
-     */
     public CompatVersion getCompatVersion();
 
-    /**
-     * Changes a Ruby version to be evaluated into one of CompatVersion.RUBY1_8,
-     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
-     * CompatVersion.RUBY1_8.
-     * 
-     * @param version a Ruby version
-     */
-    @Deprecated
     public void setCompatVersion(CompatVersion version);
 
     /**

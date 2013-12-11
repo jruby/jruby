@@ -13,6 +13,7 @@ import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
@@ -28,7 +29,12 @@ public class BasicBlock implements ExplicitVertexID {
         label         = l;
         cfg           = c;
         id            = c.getNextBBID();
-        instrs        = new ArrayList<Instr>();
+        isRescueEntry = false;
+        initInstrs();
+    }
+
+    private void initInstrs() {
+        instrs = new ArrayList<Instr>();
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
             IRManager irManager = cfg.getScope().getManager();
             InstructionsListener listener = irManager.getInstructionsListener();
@@ -36,8 +42,7 @@ public class BasicBlock implements ExplicitVertexID {
                 instrs = new InstructionsListenerDecorator(instrs, listener);
             }
         }
-        instrsArray   = null;
-        isRescueEntry = false;
+        instrsArray = null;
     }
 
     @Override
@@ -47,6 +52,11 @@ public class BasicBlock implements ExplicitVertexID {
 
     public Label getLabel() {
         return label;
+    }
+
+    @Override
+    public int hashCode() {
+        return label.hashCode();
     }
 
     public void markRescueEntryBB() {
@@ -98,11 +108,11 @@ public class BasicBlock implements ExplicitVertexID {
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
-            if (i == splitPoint) found = true;
+            if (i.getIPC() == splitPoint.getIPC()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                if (includeSplitPointInstr || i != splitPoint) newBB.addInstr(i);
+                if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
             } else {
                 idx++;
             }
@@ -121,35 +131,43 @@ public class BasicBlock implements ExplicitVertexID {
         this.instrs.addAll(foodBB.instrs);
     }
 
-    public BasicBlock cloneForInlinedMethod(InlinerInfo ii) {
-        IRScope hostScope = ii.getInlineHostScope();
-        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
-        for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlinedScope(ii);
-            if (clonedInstr != null) {
-                clonedBB.addInstr(clonedInstr);
-                if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
-                if (clonedInstr instanceof CallBase) {
-                    CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) hostScope.addClosure(((WrappedIRClosure)block).getClosure());
+    public void cloneInstrs(InlinerInfo ii) {
+        if (!isEmpty()) {
+            List<Instr> oldInstrs = instrs;
+            initInstrs();
+
+            for (Instr i: oldInstrs) {
+                Instr clonedInstr = i.cloneForInlining(ii);
+                if (clonedInstr == null)  {
+                    System.out.println("i: " + i);
+                    System.out.println("clonedInstr: " + clonedInstr);
+                } else {
+                    clonedInstr.setIPC(i.getIPC());
+                    if (clonedInstr instanceof CallBase) {
+                        CallBase call = (CallBase)clonedInstr;
+                        Operand block = call.getClosureArg(null);
+                        if (block instanceof WrappedIRClosure) cfg.getScope().addClosure(((WrappedIRClosure)block).getClosure());
+                    }
+                    instrs.add(clonedInstr);
                 }
             }
         }
 
-        return clonedBB;
+        // Rename the label as well!
+        this.label = ii.getRenamedLabel(this.label);
     }
 
-    public BasicBlock cloneForInlinedClosure(InlinerInfo ii) {
-        // Update cfg for this bb
+    public BasicBlock cloneForInlining(InlinerInfo ii) {
         IRScope hostScope = ii.getInlineHostScope();
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
 
-        // Process instructions
         for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlinedClosure(ii);
+            Instr clonedInstr = i.cloneForInlining(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
+                if (clonedInstr instanceof YieldInstr && ii.getCloneMode() != CloneMode.NORMAL_CLONE) {
+                    ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+                }
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);

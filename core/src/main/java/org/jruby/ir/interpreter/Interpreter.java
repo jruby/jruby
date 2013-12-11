@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
@@ -33,18 +34,16 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
@@ -159,11 +158,28 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation(false);
-//        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext();
-        runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
-        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
-        runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
+
+        IRubyObject rv = null;
+        try {
+            DynamicScope s = rootNode.getScope();
+            context.pushScope(s);
+
+            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
+            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
+            // Since the same static scope (the scope within which the eval string showed up)
+            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
+            // forget about it.  We need to set this right before we are ready to grow the
+            // dynamic scope local var space.
+            ((IRStaticScope)evalScript.getStaticScope()).setIRScope(evalScript);
+            s.growIfNeeded();
+
+            runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
+            rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
+            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
+        } finally {
+            context.popScope();
+        }
         return rv;
     }
 
@@ -181,7 +197,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
             b.prepareForInterpretation(false);
-            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(context, self, context.getCurrentScope(), temp);
+            Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
     }
@@ -351,7 +367,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             if (inlineCall) {
                 noInlining = false;
                 long start = new java.util.Date().getTime();
-                hs.inlineMethod(tgtMethod, implClass, classToken, null, call);
+                hs.inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
                 inlinedScopes.add(hs);
                 long end = new java.util.Date().getTime();
                 // System.out.println("Inlined " + tgtMethod + " in " + hs +
@@ -365,7 +381,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         for (IRScope x: inlinedScopes) {
-            // update version count for 'hs'
+            // Update version count for inlined scopes
             scopeVersionMap.put(x, versionCount);
             // System.out.println("Updating version of " + x + " to " + versionCount);
             //System.out.println("--- pre-inline-instrs ---");
@@ -374,11 +390,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             //System.out.println(x.getCFG().toStringInstrs());
         }
 
-        // reset
+        // Reset
         codeModificationsCount = 0;
         callProfile = new HashMap<Long, CallSiteProfile>();
 
-        // Every 1M thread polls, discard stats by reallocating the thread-poll count map
+        // Every 1M thread polls, discard stats
         if (globalThreadPollCount % 1000000 == 0)  {
             globalThreadPollCount = 0;
         }
@@ -525,35 +541,46 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case RECV_PRE_REQD_ARG:
             int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
             result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_CLOSURE:
             result = (block == Block.NULL_BLOCK) ? context.nil : context.runtime.newProc(Block.Type.PROC, block);
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_OPT_ARG:
             result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount);
-            break;
+            // For blocks, missing arg translates to nil
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         case RECV_POST_REQD_ARG:
             result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, kwArgHashCount);
             // For blocks, missing arg translates to nil
-            result = result == null ? context.nil : result;
-            break;
-        case RECV_REST_ARG:
-            result = ((ReceiveRestArgInstr)instr).receiveRestArg(context.runtime, args, kwArgHashCount);
-            break;
-        case RECV_KW_ARG:
-            result = ((ReceiveKeywordArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
-            break;
-        case RECV_KW_REST_ARG:
-            result = ((ReceiveKeywordRestArgInstr)instr).receiveKWArg(context, kwArgHashCount, args);
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
+            return;
         case RECV_EXCEPTION: {
             ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
+            // FIXME: HACK for now .. make semantics explicit rather
+            // than piggybacking on top of the checkType field
+            //
+            // Unrescuable:
+            //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
+            //    These cannot be rescued -- only run ensure blocks
+            //
+            // Others:
+            //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
+            //    These can be rescued -- run rescue blocks
+            if (rei.checkType && (exception instanceof Unrescuable)) {
+                Helpers.throwException((Throwable)exception);
+            }
             result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
-            break;
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         }
+        default:
+            result = ((ReceiveArgBase)instr).receiveArg(context, kwArgHashCount, args);
+            setResult(temp, currDynScope, instr.getResult(), result);
+            return;
         }
-
-        setResult(temp, currDynScope, instr.getResult(), result);
     }
 
     private static void processCall(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
@@ -605,12 +632,56 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, IRubyObject self, Block block, RubyModule implClass, Visibility visibility, boolean profile)
+    {
+        switch(operation) {
+        case PUSH_FRAME: {
+            context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+            context.setCurrentVisibility(visibility);
+            break;
+        }
+        case POP_FRAME:
+            context.popFrame();
+            context.popRubyClass();
+            break;
+        case POP_BINDING:
+            context.popScope();
+            break;
+        case THREAD_POLL:
+            if (profile) {
+                // SSS: Not being used currently
+                // tpCount.count++;
+                globalThreadPollCount++;
+
+                // 20K is arbitrary
+                // Every 20K profile counts, spit out profile stats
+                if (globalThreadPollCount % 20000 == 0) {
+                    analyzeProfile();
+                    // outputProfileStats();
+                }
+            }
+            context.callThreadPoll();
+            break;
+        case CHECK_ARITY:
+            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs);
+            break;
+        case LINE_NUM:
+            context.setLine(((LineNumberInstr)instr).lineNumber);
+            break;
+        case RECORD_END_BLOCK:
+            ((RecordEndBlockInstr)instr).interpret();
+            break;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = scope.getInstrsForInterpretation();
 
         // The base IR may not have been processed yet
         if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
+
+        Map<Integer, Integer> rescueMap = scope.getRescueMap();
 
         int      numTempVars    = scope.getTemporaryVariableSize();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
@@ -669,52 +740,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
                 case BOOK_KEEPING_OP: {
-                    switch(operation) {
-                    case PUSH_FRAME: {
-                        context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
-                        context.setCurrentVisibility(visibility);
-                        break;
-                    }
-                    case PUSH_BINDING: {
+                    if (operation == Operation.PUSH_BINDING) {
                         // SSS NOTE: Method scopes only!
                         //
                         // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
-                        break;
-                    }
-                    case CHECK_ARITY:
-                        ((CheckArityInstr)instr).checkArity(context.runtime, args.length);
-                        break;
-                    case POP_FRAME:
-                        context.popFrame();
-                        context.popRubyClass();
-                        break;
-                    case POP_BINDING:
-                        context.popScope();
-                        break;
-                    case THREAD_POLL:
-                        if (profile) {
-                            // SSS: Not being used currently
-                            // tpCount.count++;
-                            globalThreadPollCount++;
-
-                            // 20K is arbitrary
-                            // Every 20K profile counts, spit out profile stats
-                            if (globalThreadPollCount % 20000 == 0) {
-                                analyzeProfile();
-                                // outputProfileStats();
-                            }
-                        }
-                        context.callThreadPoll();
-                        break;
-                    case LINE_NUM:
-                        context.setLine(((LineNumberInstr)instr).lineNumber);
-                        break;
-                    case RECORD_END_BLOCK:
-                        ((RecordEndBlockInstr)instr).interpret();
-                        break;
+                    } else {
+                        processBookKeepingOp(context, instr, operation, scope, args.length, self, block, implClass, visibility, profile);
                     }
                     break;
                 }
@@ -781,17 +815,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 }
                 }
             } catch (Throwable t) {
-                // Unrescuable:
-                //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
-                //    These cannot be rescued -- only run ensure blocks
-                //
-                // Others:
-                //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
-                //    These can be rescued -- run rescue blocks
-
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                ipc = (t instanceof Unrescuable) ? scope.getEnsurerPC(instr) : scope.getRescuerPC(instr);
-                if (debug) LOG.info("ipc for rescuer/ensurer: " + ipc);
+                ipc = rescueMap.get(instr.getIPC());
+                if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {
                     Helpers.throwException((Throwable)t);

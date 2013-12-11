@@ -25,8 +25,8 @@ import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ruby20.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
+import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -35,8 +35,10 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
+import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -127,6 +129,7 @@ public abstract class IRScope implements ParseResult {
 
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
+    private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
@@ -378,6 +381,10 @@ public abstract class IRScope implements ParseResult {
         return lexicalChildren;
     }
 
+    public void initNestedClosures() {
+        this.nestedClosures = new ArrayList<IRClosure>();
+    }
+
     public void addClosure(IRClosure c) {
         nestedClosures.add(c);
     }
@@ -420,6 +427,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean isForLoopBody() {
+        return false;
+    }
+
+    public boolean isBeginEndBlock() {
         return false;
     }
 
@@ -613,13 +624,6 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private void setupLabelPCs(HashMap<Label, Integer> labelIPCMap) {
-        for (BasicBlock b: linearizedBBList) {
-            Label l = b.getLabel();
-            l.setTargetPC(labelIPCMap.get(l));
-        }
-    }
-
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
@@ -641,7 +645,9 @@ public abstract class IRScope implements ParseResult {
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
-            labelIPCMap.put(b.getLabel(), ipc);
+            Label l = b.getLabel();
+            labelIPCMap.put(l, ipc);
+            l.setTargetPC(ipc);
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
@@ -654,16 +660,27 @@ public abstract class IRScope implements ParseResult {
 
                 if (!(instr instanceof ReceiveSelfInstr)) {
                     newInstrs.add(instr);
+                    instr.setIPC(ipc);
                     ipc++;
                 }
             }
         }
 
-        // Set up label PCs
-        setupLabelPCs(labelIPCMap);
+        // System.out.println("SCOPE: " + getName());
+        // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+
+        // Set up rescue map
+        this.rescueMap = new HashMap<Integer, Integer>();
+        for (BasicBlock b : linearizedBBList) {
+            BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
+            int rescuerPC = (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
+            for (Instr i : b.getInstrs()) {
+                rescueMap.put(i.getIPC(), rescuerPC);
+            }
+        }
 
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
@@ -683,6 +700,19 @@ public abstract class IRScope implements ParseResult {
         CompilerPassScheduler scheduler = getManager().schedulePasses();
         for (CompilerPass pass: scheduler) {
             pass.run(this);
+        }
+
+        // For methods with unescaped bindings, inline the binding
+        // by converting local var loads/store to tmp var loads/stores
+        if (this instanceof IRMethod && !this.bindingHasEscaped()) {
+            CompilerPass pass = new DeadCodeElimination();
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
+            pass = new AddLocalVarLoadStoreInstructions();
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
         }
     }
 
@@ -746,6 +776,7 @@ public abstract class IRScope implements ParseResult {
             for (Instr i : b.getInstrs()) {
                 if (!(i instanceof ReceiveSelfInstr)) {
                     newInstrs.add(i);
+                    i.setIPC(ipc);
                     ipc++;
                 }
             }
@@ -757,20 +788,8 @@ public abstract class IRScope implements ParseResult {
     private List<Object[]> buildJVMExceptionTable() {
         List<Object[]> etEntries = new ArrayList<Object[]>();
         for (BasicBlock b: linearizedBBList) {
-            // We need handlers for:
-            // - Unrescuable    (handled by ensures),
-            // - Throwable      (handled by rescues)
-            // in that order since Throwable < Unrescuable
             BasicBlock rBB = cfg().getRescuerBBFor(b);
-            BasicBlock eBB = cfg().getEnsurerBBFor(b);
-            if ((eBB != null) && (rBB == eBB || rBB == null)) {
-                // 1. same rescue and ensure handler ==> just spit out one entry with a Throwable class
-                // 2. only ensure handler            ==> just spit out one entry with a Throwable class
-
-                etEntries.add(new Object[] {b.getLabel(), eBB.getLabel(), Throwable.class});
-            } else if (rBB != null) {
-                // Unrescuable comes before Throwable
-                if (eBB != null) etEntries.add(new Object[] {b.getLabel(), eBB.getLabel(), Unrescuable.class});
+            if (rBB != null) {
                 etEntries.add(new Object[] {b.getLabel(), rBB.getLabel(), Throwable.class});
             }
         }
@@ -1004,6 +1023,10 @@ public abstract class IRScope implements ParseResult {
         hasUnusedImplicitBlockArg = true;
     }
 
+    public LocalVariable lookupExistingLVar(String name) {
+        return localVars.getVariable(name);
+    }
+
     public LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.getVariable(name);
     }
@@ -1158,40 +1181,8 @@ public abstract class IRScope implements ParseResult {
         return linearizedBBList;
     }
 
-    // SSS FIXME: Extremely inefficient
-    public int getRescuerPC(Instr excInstr) {
-        depends(cfg());
-
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
-                    return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for rescuer ipc for " + excInstr);
-        return -1;
-    }
-
-    // SSS FIXME: Extremely inefficient
-    public int getEnsurerPC(Instr excInstr) {
-        depends(cfg());
-
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock ensurerBB = cfg.getEnsurerBBFor(b);
-                    return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for ensurer ipc for " + excInstr);
-        return -1;
+    public Map<Integer, Integer> getRescueMap() {
+        return this.rescueMap;
     }
 
     public List<BasicBlock> linearization() {
@@ -1265,15 +1256,16 @@ public abstract class IRScope implements ParseResult {
         hasNonlocalReturns = false;
         canReceiveBreaks = false;
         canReceiveNonlocalReturns = false;
+        rescueMap = null;
 
         // Reset dataflow problems state
         resetDFProblemsState();
     }
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
+    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         // Inline
         depends(cfg());
-        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
+        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();
@@ -1283,7 +1275,6 @@ public abstract class IRScope implements ParseResult {
             pass.run(this);
         }
     }
-
 
     public void buildCFG(List<Instr> instrList) {
         CFG newBuild = new CFG(this);

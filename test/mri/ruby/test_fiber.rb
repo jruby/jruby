@@ -33,20 +33,22 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_many_fibers
-    max = 10000
+    max = 10_000
     assert_equal(max, max.times{
       Fiber.new{}
     })
+    GC.start # force collect created fibers
     assert_equal(max,
       max.times{|i|
         Fiber.new{
         }.resume
       }
     )
+    GC.start # force collect created fibers
   end
 
   def test_many_fibers_with_threads
-    assert_normal_exit %q{
+    assert_normal_exit <<-SRC, timeout: 60
       max = 1000
       @cnt = 0
       (1..100).map{|ti|
@@ -60,7 +62,7 @@ class TestFiber < Test::Unit::TestCase
       }.each{|t|
         t.join
       }
-    }
+    SRC
   end
 
   def test_error
@@ -217,10 +219,7 @@ class TestFiber < Test::Unit::TestCase
   def test_no_valid_cfp
     bug5083 = '[ruby-dev:44208]'
     assert_equal([], Fiber.new(&Module.method(:nesting)).resume)
-    error = assert_raise(RuntimeError) do
-      Fiber.new(&Module.method(:undef_method)).resume(:to_s)
-    end
-    assert_equal("Can't call on top of Fiber or Thread", error.message, bug5083)
+    assert_instance_of(Class, Fiber.new(&Class.new.method(:undef_method)).resume(:to_s))
   end
 
   def test_prohibit_resume_transfered_fiber
@@ -248,12 +247,13 @@ class TestFiber < Test::Unit::TestCase
 
   def test_fork_from_fiber
     begin
-      Process.fork{}
+      pid = Process.fork{}
     rescue NotImplementedError
       return
+    else
+      Process.wait(pid)
     end
     bug5700 = '[ruby-core:41456]'
-    pid = nil
     assert_nothing_raised(bug5700) do
       Fiber.new{ pid = fork {} }.resume
     end

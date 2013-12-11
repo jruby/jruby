@@ -164,6 +164,21 @@ class TestGemConfigFile < Gem::TestCase
     assert_equal 2048, @cfg.bulk_threshold
   end
 
+  def test_api_keys
+    assert_nil @cfg.instance_variable_get :@api_keys
+
+    temp_cred = File.join Gem.user_home, '.gem', 'credentials'
+    FileUtils.mkdir File.dirname(temp_cred)
+    File.open temp_cred, 'w', 0600 do |fp|
+      fp.puts ':rubygems_api_key: 701229f217cdf23b1344c7b4b54ca97'
+    end
+
+    util_config_file
+
+    assert_equal({:rubygems => '701229f217cdf23b1344c7b4b54ca97'},
+                 @cfg.api_keys)
+  end
+
   def test_check_credentials_permissions
     skip 'chmod not supported' if win_platform?
 
@@ -185,6 +200,10 @@ ERROR:  Your gem push credentials file located at:
 \t#{@cfg.credentials_path}
 
 has file permissions of 0644 but 0600 is required.
+
+To fix this error run:
+
+\tchmod 0600 #{@cfg.credentials_path}
 
 You should reset your credentials at:
 
@@ -411,6 +430,14 @@ if you believe they were disclosed to a third party.
     end
     util_config_file
     assert_equal('/home/me/certs', @cfg.ssl_ca_cert)
+  end
+
+  def test_load_ssl_client_cert_from_config
+    File.open @temp_conf, 'w' do |fp|
+      fp.puts ":ssl_client_cert: /home/me/mine.pem"
+    end
+    util_config_file
+    assert_equal('/home/me/mine.pem', @cfg.ssl_client_cert)
   end
 
   def util_config_file(args = @cfg_args)

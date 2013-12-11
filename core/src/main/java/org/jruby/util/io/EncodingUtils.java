@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -1015,5 +1016,115 @@ public class EncodingUtils {
         if (runtime.getDefaultExternalEncoding() != null) return runtime.getDefaultExternalEncoding();
         
         return runtime.getEncodingService().getLocaleEncoding();
+    }
+
+    // rb_str_buf_cat
+    public static void  rbStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
+        if (ptr.length() == 0) return;
+        // negative length check here, we shouldn't need
+        strBufCat(runtime, str, ptr);
+    }
+
+    // str_buf_cat
+    public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
+        int total, off = -1;
+
+        // termlen is not relevant since we have no termination sequence
+
+        // missing: if ptr string is inside str, off = ptr start minus str start
+
+        str.modify();
+        if (ptr.length() == 0) return;
+
+        // much logic is missing here, since we don't manually manage the ByteList buffer
+
+        total = str.size() + ptr.length();
+        str.getByteList().ensure(total);
+        str.getByteList().append(ptr);
+    }
+
+    // rb_enc_str_buf_cat
+    public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
+        encCrStrBufCat(runtime, str, ptr,
+                enc, StringSupport.CR_UNKNOWN, null);
+    }
+
+    // rb_enc_cr_str_buf_cat
+    public static void encCrStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+        Encoding strEnc = str.getEncoding();
+        Encoding resEnc;
+        int str_cr, res_cr;
+        boolean incompatible = false;
+
+        str_cr = str.size() > 0 ? str.getCodeRange() : StringSupport.CR_7BIT;
+
+        if (strEnc == ptrEnc) {
+            if (str_cr == StringSupport.CR_UNKNOWN) {
+                ptr_cr = StringSupport.CR_UNKNOWN;
+            } else if (ptr_cr == StringSupport.CR_UNKNOWN) {
+                ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptr);
+            }
+        } else {
+            if (!strEnc.isAsciiCompatible() || !ptrEnc.isAsciiCompatible()) {
+                if (ptr.getRealSize() == 0) {
+                    return;
+                }
+                if (str.size() == 0) {
+                    rbStrBufCat(runtime, str, ptr);
+                    str.setEncodingAndCodeRange(ptrEnc, ptr_cr);
+                    return;
+                }
+                incompatible = true;
+            }
+            if (!incompatible) {
+                if (ptr_cr == StringSupport.CR_UNKNOWN) {
+                    ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptr);
+                }
+                if (str_cr == StringSupport.CR_UNKNOWN) {
+                    if (strEnc == ASCIIEncoding.INSTANCE || ptr_cr != StringSupport.CR_7BIT) {
+                        str_cr = str.scanForCodeRange();
+                    }
+                }
+            }
+        }
+        if (ptr_cr_ret != null) {
+            ptr_cr_ret[0] = ptr_cr;
+        }
+
+        if (incompatible ||
+                (strEnc != ptrEnc &&
+                str_cr != StringSupport.CR_7BIT &&
+                ptr_cr != StringSupport.CR_7BIT)) {
+            throw runtime.newEncodingCompatibilityError("incompatible encodings: " + strEnc + " and " + ptrEnc);
+        }
+
+        if (str_cr == StringSupport.CR_UNKNOWN) {
+            resEnc = strEnc;
+            res_cr = StringSupport.CR_UNKNOWN;
+        } else if (str_cr == StringSupport.CR_7BIT) {
+            if (ptr_cr == StringSupport.CR_7BIT) {
+                resEnc = strEnc;
+                res_cr = StringSupport.CR_7BIT;
+            } else {
+                resEnc = ptrEnc;
+                res_cr = ptr_cr;
+            }
+        } else if (str_cr == StringSupport.CR_VALID) {
+            resEnc = strEnc;
+            if (ptr_cr == StringSupport.CR_7BIT || ptr_cr == StringSupport.CR_VALID) {
+                res_cr = str_cr;
+            } else {
+                res_cr = ptr_cr;
+            }
+        } else { // str_cr must be BROKEN at this point
+            resEnc = strEnc;
+            res_cr = str_cr;
+            if (0 < ptr.getRealSize()) res_cr = StringSupport.CR_UNKNOWN;
+        }
+
+        // MRI checks for len < 0 here, but I don't think that's possible for us
+
+        strBufCat(runtime, str, ptr);
+        str.setEncodingAndCodeRange(resEnc, res_cr);
     }
 }

@@ -29,17 +29,7 @@ public class Self extends LocalVariable {
     }
 
     @Override
-    public LocalVariable clone() {
-        return this;
-    }
-
-    @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        return ii.getSelfValue(this);
-    }
-
-    @Override
-    public Variable cloneForCloningClosure(InlinerInfo ii) {
+    public Variable clone(InlinerInfo ii) {
         return this;
     }
 

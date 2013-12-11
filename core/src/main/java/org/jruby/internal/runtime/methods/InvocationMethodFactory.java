@@ -84,9 +84,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private static final Logger LOG = LoggerFactory.getLogger("InvocationMethodFactory");
 
     private static final boolean DEBUG = false;
+
+    /** The class used for the super class of compiled Ruby method handles. */
+    private final static Class COMPILED_SUPER_CLASS = CompiledMethod.class;
     
     /** The pathname of the super class for compiled Ruby method handles. */ 
-    private final static String COMPILED_SUPER_CLASS = p(CompiledMethod.class);
+    private final static String COMPILED_SUPER_CLASS_NAME = p(COMPILED_SUPER_CLASS);
+
+    /** The class used for the super class of compiled Ruby block handles. */
+    private static final Class<CompiledBlockCallback> COMPILED_BLOCK_SUPER_CLASS = CompiledBlockCallback.class;
+
+    /** The pathname of the super class for compiled Ruby block handles. */
+    private static final String COMPILED_BLOCK_SUPER_CLASS_NAME = p(COMPILED_BLOCK_SUPER_CLASS);
+
+    /** The interface used for compiled Ruby 1.9+ block handles. */
+    public static final Class<CompiledBlockCallback19> COMPILED_BLOCK_19_INTERFACE = CompiledBlockCallback19.class;
+
+    /** The pathname of the interface for compiled Ruby block handles. */
+    public static final String COMPILED_BLOCK_19_INTERFACE_NAME = p(COMPILED_BLOCK_19_INTERFACE);
     
     /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
@@ -250,49 +265,54 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String invokerPath = getCompiledCallbackName(typePath, javaName);
+        Class generatedClass = null;
+        boolean tryLoad = false;
+
         try {
-            Class generatedClass = tryClass(invokerPath, scriptClass);
+            byte[] invokerBytes = getCompiledMethodOffline(
+                    rubyName,
+                    javaName,
+                    typePath,
+                    invokerPath,
+                    arity,
+                    scope,
+                    callConfig,
+                    position.getFile(),
+                    position.getStartLine());
+            generatedClass = endCallWithBytes(invokerBytes, invokerPath);
+        } catch (LinkageError le) {
+            tryLoad = true;
+        } catch (SecurityException se) {
+            tryLoad = true;
+        }
+
+        if (tryLoad) {
+            // failed to define a new class, try loading existing
+            generatedClass = tryClass(invokerPath, scriptClass, COMPILED_SUPER_CLASS);
             if (generatedClass == null) {
-                synchronized (syncObject) {
-                    // try again in case someone else loaded it under us
-                    generatedClass = tryClass(invokerPath, scriptClass);
-                    if (generatedClass == null) {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("no generated handle in classloader for: {}", invokerPath);
-                        }
-                        byte[] invokerBytes = getCompiledMethodOffline(
-                                rubyName,
-                                javaName,
-                                typePath,
-                                invokerPath,
-                                arity,
-                                scope,
-                                callConfig,
-                                position.getFile(),
-                                position.getStartLine());
-                        generatedClass = endCallWithBytes(invokerBytes, invokerPath);
-                    }
-                }
-            } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                LOG.debug("found generated handle in classloader: {}", invokerPath);
+                throw implementationClass.getRuntime().newLoadError("failed to generate or load invoker for " + invokerPath);
             }
+        }
 
-            CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
-            compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
-
-            Class[] params;
-            if (arity.isFixed() && scope.getRequiredArgs() < 4) {
-                params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
-            } else {
-                params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
-            }
-            compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
-
-            return compiledMethod;
-        } catch(Exception e) {
+        CompiledMethod compiledMethod;
+        try {
+            compiledMethod = (CompiledMethod)generatedClass.newInstance();
+        } catch (Exception e) {
             e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
+
+        compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+
+        Class[] params;
+        if (arity.isFixed() && scope.getRequiredArgs() < 4) {
+            params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+        } else {
+            params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
+        }
+        compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
+
+        return compiledMethod;
     }
 
     /**
@@ -304,7 +324,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public byte[] getCompiledMethodOffline(
             String RubyName, String method, String className, String invokerPath, Arity arity,
             StaticScope scope, CallConfiguration callConfig, String filename, int line) {
-        String sup = COMPILED_SUPER_CLASS;
+        String sup = COMPILED_SUPER_CLASS_NAME;
         ClassWriter cw;
         cw = createCompiledCtor(invokerPath, invokerPath, sup);
         SkinnyMethodAdapter mv = null;
@@ -415,32 +435,37 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         mv.start();
 
-        // save off callNumber
-        mv.aload(1);
-        mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+        boolean heapScoped = callConfig.scoping() != Scoping.None;
+        boolean framed = callConfig.framing() != Framing.None;
+
+        // save off callNumber if framed or scoped, for non-local returns
         int callNumberIndex = -1;
-        if (specificArity) {
-            switch (scope.getRequiredArgs()) {
-            case -1:
-                callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
-                break;
-            case 0:
+        if (framed || heapScoped) {
+            mv.aload(1);
+            mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+            if (specificArity) {
+                switch (scope.getRequiredArgs()) {
+                case -1:
+                    callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
+                    break;
+                case 0:
+                    callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+                    break;
+                default:
+                    callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                }
+            } else {
                 callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
-                break;
-            default:
-                callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
             }
-        } else {
-            callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+            mv.istore(callNumberIndex);
         }
-        mv.istore(callNumberIndex);
 
         // invoke pre method stuff
         if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
             if (specificArity) {
-                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true, callConfig);
+                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS_NAME, scope.getRequiredArgs(), true, callConfig);
             } else {
-                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true, callConfig);
+                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS_NAME, -1, true, callConfig);
             }
         }
 
@@ -468,7 +493,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
             mv.istore(traceBoolIndex);
             // tracing pre
-            invokeTraceCompiledPre(mv, COMPILED_SUPER_CLASS, traceBoolIndex, filename, line);
+            invokeTraceCompiledPre(mv, COMPILED_SUPER_CLASS_NAME, traceBoolIndex, filename, line);
         }
 
         Label tryBegin = new Label();
@@ -478,9 +503,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label doRedoFinally = new Label();
         Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
-
-        boolean heapScoped = callConfig.scoping() != Scoping.None;
-        boolean framed = callConfig.framing() != Framing.None;
 
         if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
         if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
@@ -514,10 +536,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // normal exit, perform finally and return
         {
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS_NAME, traceBoolIndex);
             }
             if (!callConfig.isNoop()) {
-                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS_NAME, callConfig);
             }
             mv.visitInsn(ARETURN);
         }
@@ -531,15 +553,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.aload(1);
                 mv.swap();
                 mv.iload(callNumberIndex);
-                mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class, int.class));
+                mv.invokevirtual(COMPILED_SUPER_CLASS_NAME, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class, int.class));
                 mv.label(doReturnFinally);
 
                 // finally
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS_NAME, traceBoolIndex);
                 }
                 if (!callConfig.isNoop()) {
-                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS_NAME, callConfig);
                 }
 
                 // return result if we're still good
@@ -562,10 +584,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 // finally
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS_NAME, traceBoolIndex);
                 }
                 if (!callConfig.isNoop()) {
-                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS_NAME, callConfig);
                 }
 
                 // throw redo error if we're still good
@@ -579,10 +601,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             //call post method stuff (exception raised)
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS_NAME, traceBoolIndex);
             }
             if (!callConfig.isNoop()) {
-                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS_NAME, callConfig);
             }
 
             // rethrow exception
@@ -806,41 +828,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
         String generatedClassPath = generatedClassName.replace('.', '/');
 
-        Class c = tryClass(generatedClassName, desc1.getDeclaringClass());
+        DescriptorInfo info = new DescriptorInfo(descs);
+
+        Class superclass = determineSuperclass(info);
+
+        Class c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
         if (c == null) {
             synchronized (syncObject) {
                 // try again
-                c = tryClass(generatedClassName, desc1.getDeclaringClass());
+                c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
                 if (c == null) {
-                    DescriptorInfo info = new DescriptorInfo(descs);
                     if (DEBUG) out.println("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
-                    Class superClass = null;
-                    if (info.getMin() == -1) {
-                        // normal all-rest method
-                        if (info.isBlock()) {
-                            superClass = JavaMethod.JavaMethodNBlock.class;
-                        } else {
-                            superClass = JavaMethod.JavaMethodN.class;
-                        }
-                    } else {
-                        if (info.isRest()) {
-                            if (info.isBlock()) {
-                                superClass = JavaMethod.BLOCK_REST_METHODS[info.getMin()][info.getMax()];
-                            } else {
-                                superClass = JavaMethod.REST_METHODS[info.getMin()][info.getMax()];
-                            }
-                        } else {
-                            if (info.isBlock()) {
-                                superClass = JavaMethod.BLOCK_METHODS[info.getMin()][info.getMax()];
-                            } else {
-                                superClass = JavaMethod.METHODS[info.getMin()][info.getMax()];
-                            }
-                        }
-                    }
-
-                    if (superClass == null) throw new RuntimeException("invalid multi combination");
-                    String superClassString = p(superClass);
+                    String superClassString = p(superclass);
                     
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
@@ -852,6 +852,35 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
 
         return c;
+    }
+
+    private Class determineSuperclass(DescriptorInfo info) {
+        Class superClass;
+        if (info.getMin() == -1) {
+            // normal all-rest method
+            if (info.isBlock()) {
+                superClass = JavaMethod.JavaMethodNBlock.class;
+            } else {
+                superClass = JavaMethod.JavaMethodN.class;
+            }
+        } else {
+            if (info.isRest()) {
+                if (info.isBlock()) {
+                    superClass = JavaMethod.BLOCK_REST_METHODS[info.getMin()][info.getMax()];
+                } else {
+                    superClass = JavaMethod.REST_METHODS[info.getMin()][info.getMax()];
+                }
+            } else {
+                if (info.isBlock()) {
+                    superClass = JavaMethod.BLOCK_METHODS[info.getMin()][info.getMax()];
+                } else {
+                    superClass = JavaMethod.METHODS[info.getMin()][info.getMax()];
+                }
+            }
+        }
+
+        if (superClass == null) throw new RuntimeException("invalid multi combination");
+        return superClass;
     }
 
     /**
@@ -895,10 +924,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String typePathString = p(typeClass);
         String mname = getBlockCallbackName(typePathString, method);
         try {
-            Class c = tryBlockCallbackClass(mname);
+            Class c = tryBlockCallbackClass(mname, COMPILED_BLOCK_SUPER_CLASS);
             if (c == null) {
                 synchronized (syncObject) {
-                    c = tryBlockCallbackClass(mname);
+                    c = tryBlockCallbackClass(mname, COMPILED_BLOCK_SUPER_CLASS);
                     if (c == null) {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                             LOG.debug("no generated handle in classloader for: {}", mname);
@@ -956,10 +985,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String typePathString = p(typeClass);
         String mname = getBlockCallbackName(typePathString, method);
         try {
-            Class c = tryBlockCallback19Class(mname);
+            Class c = tryBlockCallback19Class(mname, COMPILED_BLOCK_19_INTERFACE);
             if (c == null) {
                 synchronized (syncObject) {
-                    c = tryBlockCallback19Class(mname);
+                    c = tryBlockCallback19Class(mname, COMPILED_BLOCK_19_INTERFACE);
                     if (c == null) {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                             LOG.debug("no generated handle in classloader for: {}", mname);
@@ -1029,7 +1058,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private ClassWriter createBlockCtor(String namePath, String classname) {
         String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(CompiledBlockCallback.class), null);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, COMPILED_BLOCK_SUPER_CLASS_NAME, null);
         cw.visitSource(namePath, null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
@@ -1048,7 +1077,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private ClassWriter createBlockCtor19(String namePath, String classname) {
         String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {p(CompiledBlockCallback19.class)});
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {COMPILED_BLOCK_19_INTERFACE_NAME});
         cw.visitSource(namePath, null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
@@ -1348,8 +1377,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-    private Class tryClass(String name, Class targetClass) {
-        Class c = null;
+
+    private Class tryClass(String name, Class targetClass, Class expectedSuperclass) {
+        Class c;
         try {
             if (classLoader == null) {
                 c = Class.forName(name, true, classLoader);
@@ -1361,49 +1391,47 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             return null;
         }
 
-        try {
-            // For JRUBY-5038, try getting call method to ensure classloaders are lining up right
-            // If this fails, it usually means we loaded an invoker from a higher-up classloader
-            c.getMethod("call", new Class[]{ThreadContext.class, IRubyObject.class, RubyModule.class,
-            String.class, IRubyObject[].class, Block.class});
-            
+        // For JRUBY-5038, ensure loaded class has superclass from same classloader as current JRuby
+        if (c.getSuperclass() == expectedSuperclass) {
             if (seenUndefinedClasses && !haveWarnedUser) {
                 haveWarnedUser = true;
                 System.err.println("WARNING: while creating new bindings for " + targetClass + ",\n" +
                         "found an existing binding; you may want to run a clean build.");
             }
-            
+
             return c;
-        } catch(Exception e) {
-            e.printStackTrace();
+        } else {
             seenUndefinedClasses = true;
             return null;
         }
     }
 
-    private Class tryBlockCallbackClass(String name) {
+    private Class tryBlockCallbackClass(String name, Class expectedSuperclass) {
         try {
             Class c = classLoader.loadClass(name);
 
-            // For JRUBY-5038, try getting a method to ensure classloaders are lining up right
-            // If this fails, it usually means we loaded an invoker from a higher-up classloader
-            c.getMethod("call", ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
-
-            return c;
+            // For JRUBY-5038, ensure loaded class has superclass from same classloader as current JRuby
+            if (c.getSuperclass() == expectedSuperclass) {
+                return c;
+            } else {
+                return null;
+            }
         } catch (Exception e) {
             return null;
         }
     }
 
-    private Class tryBlockCallback19Class(String name) {
+    private Class tryBlockCallback19Class(String name, Class expectedInterface) {
         try {
             Class c = classLoader.loadClass(name);
 
-            // For JRUBY-5038, try getting a method to ensure classloaders are lining up right
-            // If this fails, it usually means we loaded an invoker from a higher-up classloader
-            c.getMethod("call", ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-
-            return c;
+            // For JRUBY-5038, ensure loaded class has superclass from same classloader as current JRuby
+            Class<?>[] interfaces = c.getInterfaces();
+            if (interfaces.length == 1 && interfaces[0] == expectedInterface) {
+                return c;
+            } else {
+                return null;
+            }
         } catch (Exception e) {
             return null;
         }

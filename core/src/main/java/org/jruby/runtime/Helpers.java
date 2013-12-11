@@ -551,13 +551,15 @@ public class Helpers {
      * invoking.
      */
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        checkSuperDisabledOrOutOfMethod(context);
-        RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
+    }
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
+        checkSuperDisabledOrOutOfMethod(context, klass, name);
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
-        
+
         if (method.isUndefined()) {
             return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
         }
@@ -1124,12 +1126,15 @@ public class Helpers {
     }
     
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {
-        if (context.getFrameKlazz() == null) {
-            String name = context.getFrameName();
+        checkSuperDisabledOrOutOfMethod(context, context.getFrameKlazz(), context.getFrameName());
+    }
+
+    public static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule klass, String name) {
+        if (klass == null) {
             if (name != null) {
                 throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
             } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
             }
         }
     }
@@ -1795,9 +1800,52 @@ public class Helpers {
                 return runtime.newArray(value);
             }
         }
-        return (RubyArray)tmp;
+        RubyArray arr = (RubyArray) tmp;
+        
+        return arr.aryDup19();
     }
 
+    public static RubyArray asArray18(ThreadContext context, IRubyObject value) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = value.checkArrayType();
+
+        if (tmp.isNil()) {
+            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
+            // remove this hack too.
+
+            if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+                IRubyObject avalue = value.callMethod(context, "to_a");
+                if (!(avalue instanceof RubyArray)) {
+                    if (avalue.isNil()) {
+                        return runtime.newArray(value);
+                    } else {
+                        throw runtime.newTypeError("`to_a' did not return Array");
+                    }
+                }
+                return (RubyArray)avalue;
+            } else {
+                return runtime.newArray(value);
+            }
+        }
+        
+        return (RubyArray) tmp;
+    }
+    
+    // mri: rb_Array
+    // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
+    public static RubyArray asArray(ThreadContext context, IRubyObject value) {
+        RubyClass array = context.runtime.getArray();
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_ary");
+        
+        if (tmp.isNil()) {
+            tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_a");
+
+            if (tmp.isNil()) return context.runtime.newEmptyArray();
+        }
+        
+        return (RubyArray) tmp; // converters will guarantee it is RubyArray or raise.
+    }
+    
     public static IRubyObject aryToAry(IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
@@ -1918,15 +1966,15 @@ public class Helpers {
     
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
-        return argsCatToArgumentsCommon(args, ary, cat);
+        return argsCatToArgumentsCommon(args, ary);
     }
     
     public static IRubyObject[] argsCatToArguments19(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments19(cat);
-        return argsCatToArgumentsCommon(args, ary, cat);
+        return argsCatToArgumentsCommon(args, ary);
     }
     
-    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary, IRubyObject cat) {
+    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary) {
         if (ary.length > 0) {
             IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
@@ -2145,7 +2193,7 @@ public class Helpers {
         }
     }
 
-    private static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
+    public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + receiver.getMetaClass().getBaseName());
         }

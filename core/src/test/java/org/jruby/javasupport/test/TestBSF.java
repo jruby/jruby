@@ -105,7 +105,7 @@ public class TestBSF extends RubyTestCase {
         assertEquals(3, ((Number) array[2]).longValue());
         
         List subList = list.subList(0, 2);
-        assertEquals(3, subList.size());
+        assertEquals(2, subList.size());
         
         //subList.clear();
         // Sublist is supposed to share same backing store as list...TODO in RubyArray.

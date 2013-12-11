@@ -71,3 +71,7 @@ dependency-reduced-pom.xml
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
 install/updates.xml
+
+# IntelliJ project files
+.idea
+*.iml

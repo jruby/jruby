@@ -84,10 +84,9 @@ class TestMarshal < Test::Unit::TestCase
   def test_too_long_string
     data = Marshal.dump(C.new("a".force_encoding("ascii-8bit")))
     data[-2, 1] = "\003\377\377\377"
-    e = assert_raise(ArgumentError, "[ruby-dev:32054]") {
+    assert_raise_with_message(ArgumentError, "marshal data too short", "[ruby-dev:32054]") {
       Marshal.load(data)
     }
-    assert_equal("marshal data too short", e.message)
   end
 
 
@@ -187,80 +186,55 @@ class TestMarshal < Test::Unit::TestCase
     end
   end
 
-  def test_taint_and_untrust
+  def test_taint
     x = Object.new
     x.taint
-    x.untrust
     s = Marshal.dump(x)
     assert_equal(true, s.tainted?)
-    assert_equal(true, s.untrusted?)
     y = Marshal.load(s)
     assert_equal(true, y.tainted?)
-    assert_equal(true, y.untrusted?)
   end
 
-  def test_taint_and_untrust_each_object
+  def test_taint_each_object
     x = Object.new
     obj = [[x]]
 
     # clean object causes crean stream
     assert_equal(false, obj.tainted?)
-    assert_equal(false, obj.untrusted?)
     assert_equal(false, obj.first.tainted?)
-    assert_equal(false, obj.first.untrusted?)
     assert_equal(false, obj.first.first.tainted?)
-    assert_equal(false, obj.first.first.untrusted?)
     s = Marshal.dump(obj)
     assert_equal(false, s.tainted?)
-    assert_equal(false, s.untrusted?)
 
-    # tainted/untrusted object causes tainted/untrusted stream
+    # tainted object causes tainted stream
     x.taint
-    x.untrust
     assert_equal(false, obj.tainted?)
-    assert_equal(false, obj.untrusted?)
     assert_equal(false, obj.first.tainted?)
-    assert_equal(false, obj.first.untrusted?)
     assert_equal(true, obj.first.first.tainted?)
-    assert_equal(true, obj.first.first.untrusted?)
     t = Marshal.dump(obj)
     assert_equal(true, t.tainted?)
-    assert_equal(true, t.untrusted?)
 
     # clean stream causes clean objects
     assert_equal(false, s.tainted?)
-    assert_equal(false, s.untrusted?)
     y = Marshal.load(s)
     assert_equal(false, y.tainted?)
-    assert_equal(false, y.untrusted?)
     assert_equal(false, y.first.tainted?)
-    assert_equal(false, y.first.untrusted?)
     assert_equal(false, y.first.first.tainted?)
-    assert_equal(false, y.first.first.untrusted?)
 
-    # tainted/untrusted stream causes tainted/untrusted objects
+    # tainted stream causes tainted objects
     assert_equal(true, t.tainted?)
-    assert_equal(true, t.untrusted?)
     y = Marshal.load(t)
     assert_equal(true, y.tainted?)
-    assert_equal(true, y.untrusted?)
     assert_equal(true, y.first.tainted?)
-    assert_equal(true, y.first.untrusted?)
     assert_equal(true, y.first.first.tainted?)
-    assert_equal(true, y.first.first.untrusted?)
 
     # same tests by different senario
     s.taint
-    s.untrust
     assert_equal(true, s.tainted?)
-    assert_equal(true, s.untrusted?)
     y = Marshal.load(s)
     assert_equal(true, y.tainted?)
-    assert_equal(true, y.untrusted?)
     assert_equal(true, y.first.tainted?)
-    assert_equal(true, y.first.untrusted?)
     assert_equal(true, y.first.first.tainted?)
-    assert_equal(true, y.first.first.untrusted?)
   end
 
   def test_symbol2
@@ -333,11 +307,10 @@ class TestMarshal < Test::Unit::TestCase
     assert_equal(c, Marshal.load(Marshal.dump(c)), bug2109)
 
     assert_nothing_raised(ArgumentError, '[ruby-dev:40386]') do
-      re = Tempfile.open("marshal_regexp") do |f|
+      re = Tempfile.create("marshal_regexp") do |f|
         f.binmode.write("\x04\bI/\x00\x00\x06:\rencoding\"\rUS-ASCII")
-        f.close
-        re2 = Marshal.load(f.open.binmode)
-        f.close(true)
+        f.rewind
+        re2 = Marshal.load(f)
         re2
       end
       assert_equal(//, re)
@@ -512,11 +485,9 @@ class TestMarshal < Test::Unit::TestCase
     bug7325 = '[ruby-core:49198]'
     for c in [TestClass, TestModule]
       assert(!c.tainted?)
-      assert(!c.untrusted?)
-      c2 = Marshal.load(Marshal.dump(c).taint.untrust)
+      c2 = Marshal.load(Marshal.dump(c).taint)
       assert_same(c, c2)
       assert(!c.tainted?, bug7325)
-      assert(!c.untrusted?, bug7325)
     end
   end
 
@@ -537,6 +508,68 @@ class TestMarshal < Test::Unit::TestCase
 
     assert_equal(obj, loaded, bug7627)
     assert_nil(loaded.foo, bug7627)
+  end
+
+  class LoadData
+    attr_reader :data
+    def initialize(data)
+      @data = data
+    end
+    alias marshal_dump data
+    alias marshal_load initialize
+  end
+
+  class Bug8276 < LoadData
+    def initialize(*)
+      super
+      freeze
+    end
+    alias marshal_load initialize
+  end
+
+  class FrozenData < LoadData
+    def marshal_load(data)
+      super
+      data.instance_variables.each do |iv|
+        instance_variable_set(iv, data.instance_variable_get(iv))
+      end
+      freeze
+    end
+  end
+
+  def test_marshal_dump_excess_encoding
+    bug8276 = '[ruby-core:54334] [Bug #8276]'
+    t = Bug8276.new(bug8276)
+    s = Marshal.dump(t)
+    assert_nothing_raised(RuntimeError, bug8276) {s = Marshal.load(s)}
+    assert_equal(t.data, s.data, bug8276)
+  end
+
+  def test_marshal_dump_ivar
+    s = "data with ivar"
+    s.instance_variable_set(:@t, 42)
+    t = Bug8276.new(s)
+    s = Marshal.dump(t)
+    assert_raise(RuntimeError) {Marshal.load(s)}
+  end
+
+  def test_marshal_load_ivar
+    s = "data with ivar"
+    s.instance_variable_set(:@t, 42)
+    hook = ->(v) {
+      if LoadData === v
+        assert_send([v, :instance_variable_defined?, :@t], v.class.name)
+        assert_equal(42, v.instance_variable_get(:@t), v.class.name)
+      end
+      v
+    }
+    [LoadData, FrozenData].each do |klass|
+      t = klass.new(s)
+      d = Marshal.dump(t)
+      v = assert_nothing_raised(RuntimeError) {break Marshal.load(d, hook)}
+      assert_send([v, :instance_variable_defined?, :@t], klass.name)
+      assert_equal(42, v.instance_variable_get(:@t), klass.name)
+    end
   end
 
   def test_class_ivar

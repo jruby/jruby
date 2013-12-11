@@ -19,7 +19,11 @@ public enum RubyEvent {
     THREAD_BEGIN   ("thread-begin", 1),
     THREAD_END ("thread-end", 1),
     RAISE    ("raise", 1),
-    COVERAGE ("coverage", 1);
+    COVERAGE ("coverage", 1),
+    // A_CALL is CALL + B_CALL + C_CALL
+    A_CALL   ("a-call", 1),
+    // A_RETURN is RETURN + B_RETURN + C_RETURN
+    A_RETURN ("a-return", 1);
 
     private final String event_name;
     private final int line_number_offset;

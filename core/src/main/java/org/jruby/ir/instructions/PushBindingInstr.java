@@ -25,8 +25,16 @@ public class PushBindingInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // The frame will now be allocated in the caller's scope
-        return new PushBindingInstr(ii.getInlineHostScope());
+        switch (ii.getCloneMode()) {
+            case CLOSURE_INLINE:
+            case METHOD_INLINE:
+                // FIXME: Is this correct??
+                // Why do we need to push a scope?
+                // PopBinding doesn't seem to be popping on inlining
+                return new PushBindingInstr(ii.getInlineHostScope());
+            default:
+                return new PushBindingInstr(scope);
+        }
     }
 
     @Override

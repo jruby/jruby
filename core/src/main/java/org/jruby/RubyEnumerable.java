@@ -47,14 +47,12 @@ import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
@@ -121,30 +119,30 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
     public static IRubyObject count18(ThreadContext context, IRubyObject self, final Block block) {
-        if (!block.isGiven() && self.respondsTo("size")) {
-            return self.callMethod(context, "size");
-        }
-
         return count(context, self, block);
     }
 
-    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
+        return countCommon(context, self, block, block.arity());
+    }
+
+    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
         
         if (block.isGiven()) {
-            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.OPTIONAL) {
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    if (block.yield(context, arg).isTrue()) result[0]++; 
+            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", block.arity()) {
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    if (block.yield(context, packedArg).isTrue()) result[0]++;
                     return runtime.getNil();
                 }
             });
         } else {
             each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.NO_ARGUMENTS) {
-                public IRubyObject yield(ThreadContext context, IRubyObject unusedValue) {
+                public IRubyObject yield(ThreadContext context, IRubyObject[] unusedValue) {
                     result[0]++;
                     return runtime.getNil();
                 }
@@ -153,12 +151,11 @@ public class RubyEnumerable {
         return RubyFixnum.newFixnum(runtime, result[0]);
     }
 
-    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
     public static IRubyObject count18(ThreadContext context, IRubyObject self, final IRubyObject methodArg, final Block block) {
         return count(context, self, methodArg, block);
     }
 
-    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final IRubyObject methodArg, final Block block) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
@@ -166,8 +163,9 @@ public class RubyEnumerable {
         if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
         
         each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Arity.ONE_REQUIRED) {
-            public IRubyObject yield(ThreadContext context, IRubyObject blockArg) {
-                if (blockArg.equals(methodArg)) result[0]++;
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                IRubyObject packedArg = packEnumValues(context.runtime, args);
+                if (packedArg.equals(methodArg)) result[0]++;
                 
                 return runtime.getNil();
             }
@@ -179,7 +177,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorize(context.runtime, self, "cycle");
+            return enumeratorizeWithSize(context, self, "cycle", cycleSize(context, self, null));
         }
         
         return cycleCommon(context, self, -1, block);
@@ -189,7 +187,7 @@ public class RubyEnumerable {
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (arg.isNil()) return cycle(context, self, block);
         if (!block.isGiven()) {
-            return enumeratorize(context.runtime, self, "cycle", arg);
+            return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, cycleSize(context, self, arg));
         }
 
         long times = RubyNumeric.num2long(arg);
@@ -208,9 +206,10 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         each(context, self, new JavaInternalBlockBody(runtime, Arity.OPTIONAL) {
-            public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                synchronized (result) { result.append(arg); }
-                block.yield(context, arg);
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                IRubyObject packedArg = packEnumValues(context.runtime, args);
+                synchronized (result) { result.append(packedArg); }
+                block.yield(context, packedArg);
                 return runtime.getNil();            
             }
         });
@@ -227,6 +226,31 @@ public class RubyEnumerable {
         return runtime.getNil();
     }
 
+    private static IRubyObject cycleSize(ThreadContext context, IRubyObject self, IRubyObject cycleArg) {
+        Ruby runtime = context.runtime;
+        IRubyObject n = runtime.getNil();
+        IRubyObject size = enumSize(context, self);
+
+        if (size == null || size.isNil()) {
+            return runtime.getNil();
+        }
+
+        if (cycleArg != null) {
+            n = cycleArg;
+        }
+
+        if (n.isNil()) {
+            return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
+        }
+
+        long multiple = RubyNumeric.num2long(n);
+        if (multiple <= 0) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        return size.callMethod(context, "*", RubyFixnum.newFixnum(runtime, multiple));
+    }
+
     @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, Block block) {
         final Ruby runtime = context.runtime;
@@ -240,9 +264,10 @@ public class RubyEnumerable {
         try {
             each(context, self, new JavaInternalBlockBody(runtime, Arity.ONE_REQUIRED) {
                 long i = len; // Atomic ?
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     synchronized (result) {
-                        result.append(arg);
+                        IRubyObject packedArg = packEnumValues(context.runtime, args);
+                        result.append(packedArg);
                         if (--i == 0) throw JumpException.SPECIAL_JUMP; 
                     }
                     
@@ -254,8 +279,8 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod
-    public static IRubyObject take_while(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod(name = "take_while")
+    public static IRubyObject take_while19(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
             return enumeratorize(context.runtime, self, "take_while");
         }
@@ -264,10 +289,16 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Arity.OPTIONAL) {
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    if (!block.yield(context, arg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                    synchronized (result) { result.append(arg); }
+            callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blk) {
+                    // note the we do not want to call the block with packed args, since to match MRI behavior,
+                    // the block's test is against the raw args (using block.arity() rather than the Arity.OPTIONAL
+                    // we pass to callEach)
+                    if (!block.call(context, args).isTrue()) {
+                        throw JumpException.SPECIAL_JUMP;
+                    }
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    synchronized (result) { result.append(packedArg); }
                     return runtime.getNil();
                 }
             });
@@ -287,13 +318,14 @@ public class RubyEnumerable {
         try {
             each(context, self, new JavaInternalBlockBody(runtime, Arity.NO_ARGUMENTS) {
                 long i = len; // Atomic ?
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
                     synchronized (result) {
                         if (i == 0) {
                             // While iterating over an RubyEnumerator, "arg"
                             // gets overwritten by the new value, leading to JRUBY-6892.
                             // So call .dup() whenever appropriate.
-                            result.append(arg.isImmediate() ? arg : arg.dup());
+                            result.append(packedArg.isImmediate() ? packedArg : packedArg.dup());
                         } else {
                             --i;
                         }
@@ -318,9 +350,10 @@ public class RubyEnumerable {
         try {
             each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#drop_while", Arity.OPTIONAL) {
                 boolean memo = false;
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    if (!memo && !block.yield(context, arg).isTrue()) memo = true;
-                    if (memo) synchronized (result) { result.append(arg); }
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    if (!memo && !block.yield(context, packedArg).isTrue()) memo = true;
+                    if (memo) synchronized (result) { result.append(packedArg); }
                     return runtime.getNil();
                 }
             });
@@ -335,8 +368,9 @@ public class RubyEnumerable {
 
         try {
             each(context, self, new JavaInternalBlockBody(context.runtime, context, null, Arity.ONE_REQUIRED) {
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    holder[0] = arg;
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    holder[0] = packedArg;
                     throw JumpException.SPECIAL_JUMP;
                 }
             });
@@ -357,8 +391,9 @@ public class RubyEnumerable {
         try {
             each(context, self, new JavaInternalBlockBody(runtime, context, null, Arity.ONE_REQUIRED) {
                 private int iter = RubyNumeric.fix2int(num);                
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                    result.append(arg);
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
+                    result.append(packedArg);
                     if (iter-- == 1) throw JumpException.SPECIAL_JUMP;
                     return runtime.getNil();                
                 }
@@ -368,24 +403,15 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
-        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(runtime, result));
-        return result;
+        return to_a19(context, self);
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
-        Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
-        return result;
+        return to_a19(context, self, args);
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
         RubyArray result = runtime.newArray();
@@ -394,7 +420,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"to_a", "entries"}, rest = true)
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         RubyArray result = runtime.newArray();
@@ -415,10 +441,15 @@ public class RubyEnumerable {
         return result;
     }
 
-    public static IRubyObject sort_byCommon(final ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod
+    public static IRubyObject sort_by(final ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final ThreadContext localContext = context; // MUST NOT be used across threads
         IRubyObject[][] valuesAndCriteria;
+
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, self, "sort_by", enumSize(context, self));
+        }
 
         if (self instanceof RubyArray) {
             RubyArray selfArray = (RubyArray) self;
@@ -426,10 +457,11 @@ public class RubyEnumerable {
 
             each(context, self, new JavaInternalBlockBody(runtime, Arity.OPTIONAL) {
                 AtomicInteger i = new AtomicInteger(0);
-                public IRubyObject yield(ThreadContext context, IRubyObject arg) {
+                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    IRubyObject packedArg = packEnumValues(context.runtime, args);
                     IRubyObject[] myVandC = valuesAndCriteriaArray[i.getAndIncrement()];
-                    myVandC[0] = arg;
-                    myVandC[1] = block.yield(context, arg);
+                    myVandC[0] = packedArg;
+                    myVandC[1] = block.yield(context, packedArg);
                     return runtime.getNil();
                 }
             });
@@ -465,11 +497,6 @@ public class RubyEnumerable {
         }
 
         return runtime.newArrayNoCopy(dstArray);
-    }
-
-    @JRubyMethod
-    public static IRubyObject sort_by(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? sort_byCommon(context, self, block) : enumeratorize(context.runtime, self, "sort_by");
     }
 
     @JRubyMethod
@@ -573,12 +600,11 @@ public class RubyEnumerable {
             enumeratorize(context.runtime, self, "find", ifnone);
     }
 
-    @JRubyMethod(name = "find_index", compat = RUBY1_8)
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final Block block) {
-        return find_index(context, self, block, Arity.OPTIONAL);
+        return find_index19(context, self, block);
     }
 
-    @JRubyMethod(name = "find_index", compat = RUBY1_9)
+    @JRubyMethod(name = "find_index")
     public static IRubyObject find_index19(ThreadContext context, IRubyObject self, final Block block) {
         return find_index(context, self, block, block.arity());
     }
@@ -592,12 +618,11 @@ public class RubyEnumerable {
             enumeratorize(context.runtime, self, "find_index");
     }
 
-    @JRubyMethod(name = "find_index", compat = RUBY1_9)
+    @JRubyMethod(name = "find_index")
     public static IRubyObject find_index19(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         return find_index(context, self, cond, block);
     }
 
-    @JRubyMethod(name = "find_index", compat = RUBY1_8)
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         final Ruby runtime = context.runtime;
 
@@ -647,9 +672,13 @@ public class RubyEnumerable {
         return runtime.getNil();
     }
 
-    public static IRubyObject selectCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject selectCommon(ThreadContext context, IRubyObject self, final Block block, String methodName) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
+
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, self, methodName, enumSize(context, self));
+        }
 
         callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -668,17 +697,22 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject select(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? selectCommon(context, self, block) : enumeratorize(context.runtime, self, "select");
+        return selectCommon(context, self, block, "select");
     }
 
     @JRubyMethod
     public static IRubyObject find_all(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? selectCommon(context, self, block) : enumeratorize(context.runtime, self, "find_all");
+        return selectCommon(context, self, block, "find_all");
     }
 
-    public static IRubyObject rejectCommon(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod
+    public static IRubyObject reject(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
+
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, self, "reject", enumSize(context, self));
+        }
 
         callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -695,39 +729,12 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod
-    public static IRubyObject reject(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? rejectCommon(context, self, block) : enumeratorize(context.runtime, self, "reject");
-    }
-
-    @JRubyMethod(name = {"collect", "map"}, compat = CompatVersion.RUBY1_8)
-    public static IRubyObject collect(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = context.runtime;
-        final RubyArray result = runtime.newArray();
-
-        if (block.isGiven()) {
-            callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(runtime, largs);
-                    IRubyObject value = block.yield(ctx, larg);
-                    synchronized (result) {
-                        result.append(value);
-                    }
-                    return runtime.getNil();
-                }
-            });
-        } else {
-            callEach(runtime, context, self, Arity.ONE_ARGUMENT, new AppendBlockCallback(runtime, result));
-        }
-        return result;
-    }
-
-    @JRubyMethod(name = {"collect"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"collect"})
     public static IRubyObject collect19(ThreadContext context, IRubyObject self, final Block block) {
         return collectCommon19(context, self, block, "collect");
     }
 
-    @JRubyMethod(name = {"map"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"map"})
     public static IRubyObject map19(ThreadContext context, IRubyObject self, final Block block) {
         return collectCommon19(context, self, block, "map");
     }
@@ -759,7 +766,7 @@ public class RubyEnumerable {
             });
             return result;
         } else {
-            return enumeratorize(runtime, self, methodName);
+            return enumeratorizeWithSize(context, self, methodName, enumSize(context, self));
         }
     }
 
@@ -769,12 +776,12 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"flat_map"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"flat_map"})
     public static IRubyObject flat_map19(ThreadContext context, IRubyObject self, final Block block) {
         return flatMapCommon19(context, self, block, "flat_map");
     }
 
-    @JRubyMethod(name = {"collect_concat"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"collect_concat"})
     public static IRubyObject collect_concat19(ThreadContext context, IRubyObject self, final Block block) {
         return flatMapCommon19(context, self, block, "collect_concat");
     }
@@ -801,7 +808,7 @@ public class RubyEnumerable {
             });
             return ary;
         } else {
-            return enumeratorize(runtime, self, methodName);
+            return enumeratorizeWithSize(context, self, methodName, enumSize(context, self));
         }
     }
 
@@ -853,10 +860,15 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    public static IRubyObject partitionCommon(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod
+    public static IRubyObject partition(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final RubyArray arr_true = runtime.newArray();
         final RubyArray arr_false = runtime.newArray();
+
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, self, "partition", enumSize(context, self));
+        }
 
         callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -876,11 +888,6 @@ public class RubyEnumerable {
         });
 
         return runtime.newArray(arr_true, arr_false);
-    }
-
-    @JRubyMethod(name = "partition")
-    public static IRubyObject partition(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? partitionCommon(context, self, block) : enumeratorize(context.runtime, self, "partition");
     }
 
     static class EachWithIndex implements BlockCallback {
@@ -930,21 +937,20 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         RubyEnumerable.callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                block.call(ctx, new IRubyObject[]{runtime.newArray(packEnumValues(runtime, largs), arg)});
+                block.call(ctx, new IRubyObject[]{ packEnumValues(runtime, largs), arg });
                 return runtime.getNil();
             }
         });
         return arg;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
-        return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.runtime, self, "each_with_index");
+        return each_with_index19(context, self, IRubyObject.NULL_ARRAY, block);
     }
 
-    @JRubyMethod(name = "each_with_index", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_with_index", rest = true)
     public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each_with_indexCommon19(context, self, block, args) : enumeratorize(context.runtime, self, "each_with_index", args);
+        return block.isGiven() ? each_with_indexCommon19(context, self, block, args) : enumeratorizeWithSize(context, self, "each_with_index", args, enumSize(context, self));
     }
 
     @JRubyMethod
@@ -952,19 +958,19 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.runtime, self, "enum_with_index");
     }
 
-    @JRubyMethod(required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
-        return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorize(context.runtime, self, "each_with_object", arg);
+        return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSize(context, self));
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
         return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorize(context.runtime, self, "with_object", arg);
     }
 
-    @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true)
     public static IRubyObject each_entry(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
-        return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorize(context.runtime, self, "each_entry", args);
+        return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorizeWithSize(context, self, "each_entry", args, enumSize(context, self));
     }
 
     public static IRubyObject each_entryCommon(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
@@ -985,7 +991,7 @@ public class RubyEnumerable {
 
         RubyEnumerable.callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                result[0].append(packEnumValues(runtime,largs));
+                result[0].append(packEnumValues(runtime, largs));
                 if (result[0].size() == size) {
                     block.yield(ctx, result[0]);
                     result[0] = runtime.newArray(size);
@@ -1040,13 +1046,13 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject reverse_each(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a(context, self), block) :
-            enumeratorize(context.runtime, self, "reverse_each");
+            enumeratorizeWithSize(context, self, "reverse_each", enumSize(context, self));
     }
 
     @JRubyMethod(rest = true)
     public static IRubyObject reverse_each(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a(context, self, args), block) :
-            enumeratorize(context.runtime, self, "reverse_each", args);
+            enumeratorizeWithSize(context, self, "reverse_each", args, enumSize(context, self));
     }
 
     private static IRubyObject reverse_eachInternal(ThreadContext context, IRubyObject self, IRubyObject obj, Block block) { 
@@ -1116,7 +1122,7 @@ public class RubyEnumerable {
     public static IRubyObject max_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (!block.isGiven()) return enumeratorize(runtime, self, "max_by");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "max_by", enumSize(context, self));
 
         final IRubyObject result[] = new IRubyObject[] { runtime.getNil() };
         final ThreadContext localContext = context;
@@ -1177,7 +1183,7 @@ public class RubyEnumerable {
     public static IRubyObject min_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (!block.isGiven()) return enumeratorize(runtime, self, "min_by");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "min_by", enumSize(context, self));
 
         final IRubyObject result[] = new IRubyObject[] { runtime.getNil() };
         final ThreadContext localContext = context;
@@ -1258,7 +1264,7 @@ public class RubyEnumerable {
     public static IRubyObject minmax_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (!block.isGiven()) return enumeratorize(runtime, self, "minmax_by");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "minmax_by", enumSize(context, self));
 
         final IRubyObject result[] = new IRubyObject[] { runtime.getNil(), runtime.getNil() };
         final ThreadContext localContext = context;
@@ -1289,12 +1295,11 @@ public class RubyEnumerable {
         return runtime.newArrayNoCopy(result);
     }
 
-    @JRubyMethod(name = "none?", compat = RUBY1_8)
     public static IRubyObject none_p(ThreadContext context, IRubyObject self, final Block block) {
-        return none_p(context, self, block, Arity.OPTIONAL);
+        return none_p19(context, self, block);
     }
 
-    @JRubyMethod(name = "none?", compat = RUBY1_9)
+    @JRubyMethod(name = "none?")
     public static IRubyObject none_p19(ThreadContext context, IRubyObject self, final Block block) {
         return none_p(context, self, block, block.arity());
     }
@@ -1309,9 +1314,9 @@ public class RubyEnumerable {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "none?");
                         IRubyObject larg = packEnumValues(runtime, largs);
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP; 
+                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return runtime.getNil();
-                        
+
                     }
                 });
             } else {
@@ -1330,12 +1335,11 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "one?", compat = RUBY1_8)
     public static IRubyObject one_p(ThreadContext context, IRubyObject self, final Block block) {
-        return one_p(context, self, block, Arity.OPTIONAL);
+        return one_p19(context, self, block);
     }
 
-    @JRubyMethod(name = "one?", compat = RUBY1_9)
+    @JRubyMethod(name = "one?")
     public static IRubyObject one_p19(ThreadContext context, IRubyObject self, final Block block) {
         return one_p(context, self, block, block.arity());
     }
@@ -1383,19 +1387,18 @@ public class RubyEnumerable {
         return result[0] ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "all?", compat = RUBY1_8)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
-        return all_pCommon(context, self, block, Arity.OPTIONAL);
+        return all_p19(context, self, block);
     }
 
-    @JRubyMethod(name = "all?", compat = RUBY1_9)
+    @JRubyMethod(name = "all?")
     public static IRubyObject all_p19(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
+
         return all_pCommon(context, self, block, block.arity());
     }
 
     public static IRubyObject all_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
-
         final Ruby runtime = context.runtime;
         final ThreadContext localContext = context;
 
@@ -1433,25 +1436,26 @@ public class RubyEnumerable {
     @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
-        
-        return any_pCommon(context, self, block);
+        return any_pCommon(context, self, block, block.arity());
     }
     
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
         final Ruby runtime = context.runtime;
 
         try {
             if (block.isGiven()) {
                 each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", block.arity()) {
-                    public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                        if (block.yield(context, arg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                        IRubyObject packedArg = packEnumValues(context.runtime, args);
+                        if (block.yield(context, packedArg).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return runtime.getNil();
                     }
                 });
             } else {
                 each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Arity.ONE_REQUIRED) {
-                    public IRubyObject yield(ThreadContext context, IRubyObject arg) {
-                        if (arg.isTrue()) throw JumpException.SPECIAL_JUMP;
+                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                        IRubyObject packedArg = packEnumValues(context.runtime, args);
+                        if (packedArg.isTrue()) throw JumpException.SPECIAL_JUMP;
                         return runtime.getNil();
                     }
                 });
@@ -1463,12 +1467,11 @@ public class RubyEnumerable {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        return zipCommon(context, self, args, block);
+        return zip19(context, self, args, block);
     }
     
-    @JRubyMethod(name = "zip", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "zip", rest = true)
     public static IRubyObject zip19(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
         return zipCommon19(context, self, args, block);
     }
@@ -1672,7 +1675,7 @@ public class RubyEnumerable {
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         
-        if (!block.isGiven()) return enumeratorize(runtime, self, "group_by");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "group_by", enumSize(context, self));
         
         final RubyHash result = new RubyHash(runtime);
 
@@ -1709,12 +1712,12 @@ public class RubyEnumerable {
         }
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final Block block) {
         return chunk(context, self, context.nil, block);
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final IRubyObject initialState, final Block block) {
         if(!block.isGiven()) {
             throw context.runtime.newArgumentError("no block given");
@@ -1731,8 +1734,15 @@ public class RubyEnumerable {
         return enumerator;
     }
 
+    /**
+     * Returns an Enumerator size for the given object if possible, null otherwise
+     */
+    private static IRubyObject enumSize(ThreadContext context, IRubyObject self) {
+        return self.checkCallMethod(context, "size");
+    }
+
     static class ChunkArg {
-        public IRubyObject categorize;
+        public RubyProc categorize;
         public IRubyObject state;
         public IRubyObject prev_value;
         public IRubyObject prev_elts;
@@ -1753,7 +1763,7 @@ public class RubyEnumerable {
             IRubyObject args = packEnumValues(runtime, largs);
             final ChunkArg arg = new ChunkArg();
             IRubyObject enumerable = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_enumerable");
-            arg.categorize = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
+            arg.categorize = (RubyProc)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
             arg.state = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_initial_state");
             arg.prev_value = runtime.getNil();
             arg.prev_elts = runtime.getNil();
@@ -1766,22 +1776,28 @@ public class RubyEnumerable {
             final IRubyObject alone = runtime.newSymbol("_alone");
             final IRubyObject separator = runtime.newSymbol("_separator");
 
-            callEach(runtime, context, enumerable, Arity.ONE_ARGUMENT, new BlockCallback() {
+            callEach(runtime, context, enumerable, Arity.OPTIONAL, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject i = packEnumValues(runtime, largs);
+                        IRubyObject packedArgs = packEnumValues(runtime, largs);
                         IRubyObject v;
                         if(arg.state.isNil()) {
-                            v = arg.categorize.callMethod(ctx, "call", i);
+                            if (arg.categorize.getBlock().arity().getValue() == 1) {
+                                // if chunk's categorize block has arity one, we pass it the packed args
+                                v = arg.categorize.callMethod(ctx, "call", packedArgs);
+                            } else {
+                                // else we let it spread the args as it sees fit for its arity
+                                v = arg.categorize.callMethod(ctx, "call", largs);
+                            }
                         } else {
-                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{i, arg.state});  
+                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{packedArgs, arg.state});
                         }
-                        
+
                         if(v == alone) {
                             if(!arg.prev_value.isNil()) {
                                 arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
                                 arg.prev_value = arg.prev_elts = runtime.getNil();
                             }
-                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(i)));
+                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(packedArgs)));
                         } else if(v.isNil() || v == separator) {
                             if(!arg.prev_value.isNil()) {
                                 arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
@@ -1792,14 +1808,14 @@ public class RubyEnumerable {
                         } else {
                             if(arg.prev_value.isNil()) {
                                 arg.prev_value = v;
-                                arg.prev_elts = runtime.newArray(i);
+                                arg.prev_elts = runtime.newArray(packedArgs);
                             } else {
                                 if(arg.prev_value.equals(v)) {
-                                    ((RubyArray)arg.prev_elts).append(i);
+                                    ((RubyArray)arg.prev_elts).append(packedArgs);
                                 } else {
                                     arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
                                     arg.prev_value = v;
-                                    arg.prev_elts = runtime.newArray(i);
+                                    arg.prev_elts = runtime.newArray(packedArgs);
                                 }
                             }
                         }

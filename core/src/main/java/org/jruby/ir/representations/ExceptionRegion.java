@@ -6,7 +6,6 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ExceptionRegion {
-    private Label ensureBlockLabel; // Label of the ensure block
     private Label firstRescueBlockLabel; // Label of the first rescue block
 
     private List<BasicBlock> exclusiveBBs;  // Basic blocks exclusively contained within this region
@@ -15,9 +14,8 @@ public class ExceptionRegion {
     private BasicBlock endBB;         // Last BB of the rescued region
     private BasicBlock firstRescueBB; // First BB of the first rescue block of this region
 
-    public ExceptionRegion(Label firstRescueBlockLabel, Label ensureBlockLabel, BasicBlock startBB) {
+    public ExceptionRegion(Label firstRescueBlockLabel, BasicBlock startBB) {
         this.firstRescueBlockLabel = firstRescueBlockLabel;
-        this.ensureBlockLabel = ensureBlockLabel;
         this.startBB = startBB;
         exclusiveBBs = new ArrayList<BasicBlock>();
         nestedRegions = new ArrayList<ExceptionRegion>();
@@ -25,10 +23,6 @@ public class ExceptionRegion {
 
     public void setEndBB(BasicBlock bb) {
         endBB = bb;
-    }
-
-    public Label getEnsureBlockLabel() {
-        return ensureBlockLabel;
     }
 
     public BasicBlock getStartBB() {
@@ -80,7 +74,6 @@ public class ExceptionRegion {
 
     public ExceptionRegion cloneForInlining(InlinerInfo ii) {
         ExceptionRegion newR = new ExceptionRegion(ii.getRenamedLabel(firstRescueBlockLabel),
-            ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel),
             ii.getRenamedBB(this.startBB));
         newR.endBB = ii.getRenamedBB(endBB);
         newR.firstRescueBB = ii.getRenamedBB(firstRescueBB);
@@ -114,13 +107,6 @@ public class ExceptionRegion {
 
         buf.append("Rescuer: ");
         buf.append(firstRescueBlockLabel);
-        buf.append("\n");
-
-        if (ensureBlockLabel != null) {
-            buf.append("Ensurer: ");
-            buf.append(ensureBlockLabel);
-            buf.append("\n");
-        }
         buf.append("\n");
 
         for (ExceptionRegion er: nestedRegions) {

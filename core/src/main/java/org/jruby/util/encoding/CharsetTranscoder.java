@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.encoding;
 
+import org.jcodings.specific.ISO8859_16Encoding;
 import org.jruby.util.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -399,12 +400,15 @@ public class CharsetTranscoder extends Transcoder {
     private void createTranscoder(Encoding inEncoding, Encoding outEncoding, CodingActions actions, boolean is7BitASCII) {
         // MRI does not allow ASCII-8BIT bytes > 127 to transcode to text-based
         // encodings, so for transcoding purposes we treat it as US-ASCII. We
-        // also set the "invalid" action to "undef" option, since Java's decode
-        // logic throws "invalid" errors for high-byte US-ASCII rather than
-        // "undefined mapping" errors.
+        // also set the "invalid" action to "undef" option, and set a flag
+        // indicatine this is a binary to character conversion, since Java's
+        // decode logic throws "invalid" errors for high-byte US-ASCII rather
+        // than "undefined mapping" errors.
+        boolean binaryToCharacter = false;
         if (inEncoding == ASCIIEncoding.INSTANCE && outEncoding != ASCIIEncoding.INSTANCE) {
             inEncoding = USASCIIEncoding.INSTANCE;
             actions.onMalformedInput = actions.onUnmappableCharacter;
+            binaryToCharacter = true;
         }
         
         Charset inCharset = transcodeCharsetFor(runtime, inEncoding.getName(), inEncoding, is7BitASCII);
@@ -412,7 +416,8 @@ public class CharsetTranscoder extends Transcoder {
         
         this.transcoder = new TranscoderEngine(
                 inCharset,
-                outCharset);
+                outCharset,
+                binaryToCharacter);
     }
     
     public class TranscoderEngine {
@@ -424,12 +429,14 @@ public class CharsetTranscoder extends Transcoder {
         public boolean didDecode;
         public boolean didEncode;
         
-        public TranscoderEngine(Charset inCharset, Charset outCharset) {
+        public TranscoderEngine(Charset inCharset, Charset outCharset, boolean binaryToCharacter) {
             this.encoder = outCharset.newEncoder();
             this.decoder = inCharset.newDecoder();
             
             // TODO: dynamic buffer size?
             this.tmpChars = CharBuffer.allocate(1024);
+
+            this.binaryToCharacter = binaryToCharacter;
         }
         
         public float averageByteRatio() {
@@ -501,7 +508,7 @@ public class CharsetTranscoder extends Transcoder {
                         if (onMalformedInput == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
                             state.inBytes.get(errorBytes);
-                            return result = new RubyCoderResult(stringFromCoderResult(coderResult, ecflags), inEncoding, outEncoding, errorBytes, null);
+                            return result = new RubyCoderResult(stringFromCoderResult(coderResult, ecflags, binaryToCharacter), inEncoding, outEncoding, errorBytes, null);
                         }
 
                         // transfer to out and skip bad byte
@@ -517,7 +524,7 @@ public class CharsetTranscoder extends Transcoder {
                         if (onUnmappableCharacter == CodingErrorAction.REPORT) {
                             byte[] errorBytes = new byte[coderResult.length()];
                             state.inBytes.get(errorBytes);
-                            return result = new RubyCoderResult(stringFromCoderResult(coderResult, ecflags), inEncoding, outEncoding, errorBytes, null);
+                            return result = new RubyCoderResult(stringFromCoderResult(coderResult, ecflags, binaryToCharacter), inEncoding, outEncoding, errorBytes, null);
                         }
 
                         // transfer to out and skip bad byte
@@ -607,7 +614,7 @@ public class CharsetTranscoder extends Transcoder {
     
         private boolean growBuffer(TranscoderState state, int flags) {
             if (!state.growable) {
-                result = new RubyCoderResult(stringFromCoderResult(CoderResult.OVERFLOW, flags), inEncoding, outEncoding, null, null);
+                result = new RubyCoderResult(stringFromCoderResult(CoderResult.OVERFLOW, flags, false), inEncoding, outEncoding, null, null);
                 return false;
             }
 
@@ -643,7 +650,7 @@ public class CharsetTranscoder extends Transcoder {
                     char badChar = inChars.get();
 
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPORT) {
-                        result = new RubyCoderResult(stringFromCoderResult(coderResult, flags), inEncoding, outEncoding, Character.toString(badChar).getBytes(decoder.charset()), null);
+                        result = new RubyCoderResult(stringFromCoderResult(coderResult, flags, false), inEncoding, outEncoding, Character.toString(badChar).getBytes(decoder.charset()), null);
                         return false;
                     }
 
@@ -814,13 +821,13 @@ public class CharsetTranscoder extends Transcoder {
         XMLAttrCharacterTranslator['\"'] = "&quot;";
     }
     
-    public static String stringFromCoderResult(CoderResult coderResult, int flags) {
+    public static String stringFromCoderResult(CoderResult coderResult, int flags, boolean binaryToCharacter) {
         if (coderResult == null) return "finished";
         
         if (coderResult.isError()) {
-            if (coderResult.isMalformed()) {
+            if (coderResult.isMalformed() && !binaryToCharacter) {
                 return "invalid_byte_sequence";
-            } else if (coderResult.isUnmappable()) {
+            } else if (coderResult.isUnmappable() || binaryToCharacter) {
                 return "undefined_conversion";
             } else {
                 return "finished";
@@ -1009,7 +1016,10 @@ public class CharsetTranscoder extends Transcoder {
         } catch (Exception e) {}
         
         if (from == null) {
+            // special cases
             if (is7Bit) return Charset.forName("US-ASCII");
+
+            if (encoding == ISO8859_16Encoding.INSTANCE) return ISO_8859_16.INSTANCE;
             
             throw runtime.newConverterNotFoundError("code converter not found for " + encoding.toString());
         }

@@ -510,7 +510,7 @@ public class RubyMath {
         return erf19(null, recv, x);
     }
 
-    @JRubyMethod(name = "erf", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "erf", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erf19(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
 

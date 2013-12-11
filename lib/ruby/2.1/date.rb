@@ -1404,7 +1404,13 @@ class Date
     when Numeric
       ajd <=> other
     when Date
-      @dt.compareTo(other.dt)
+      # The method compareTo doesn't compare the sub milliseconds so after compare the two dates
+      # then we have to compare the sub milliseconds to make sure that both are exactly equal.
+      rs = @dt.compareTo(other.dt)
+      return rs if rs != 0
+      return -1 if rs == 0 && @sub_millis < other.sub_millis
+      return 0  if rs == 0 && @sub_millis == other.sub_millis
+      return 1  if rs == 0 && @sub_millis > other.sub_millis
     else
       begin
         l, r = other.coerce(self)

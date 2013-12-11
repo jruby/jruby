@@ -103,7 +103,7 @@ public class OutputStrings {
         return sb.toString();
     }
 
-    public static String getVersionString(CompatVersion compatVersion) {
+    public static String getVersionString() {
         String ver;
         String patchDelimeter = "p";
         int patchlevel;
@@ -111,7 +111,6 @@ public class OutputStrings {
         ver = Constants.RUBY_VERSION;
         patchlevel = Constants.RUBY_PATCHLEVEL;
         // TODO: add patchlevel once 2.1 is released
-//        versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
         versionString = String.format("%s", ver);
 
         String fullVersion = String.format(

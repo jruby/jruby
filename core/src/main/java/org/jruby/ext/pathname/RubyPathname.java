@@ -30,7 +30,6 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -53,8 +52,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyPathname extends RubyObject {
     private RubyString path;
     
-    private static final String TO_PATH_METHOD = "to_path";
-
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
                 PATHNAME_ALLOCATOR);
@@ -87,7 +84,7 @@ public class RubyPathname extends RubyObject {
     }
 
     static interface ReturnValueMapper {
-        IRubyObject map(ThreadContext context, IRubyObject value);
+        IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value);
     }
 
     static interface AddArg {
@@ -96,22 +93,22 @@ public class RubyPathname extends RubyObject {
 
     private static final ReturnValueMapper IDENTITY_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
             return value;
         }
     };
 
     private static final ReturnValueMapper SINGLE_PATH_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
-            return newInstance(context, value);
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
+            return newInstance(context, klazz, value);
         }
     };
 
     private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = new ReturnValueMapper() {
         @Override
-        public IRubyObject map(ThreadContext context, IRubyObject value) {
-            return mapToPathnames(context, value);
+        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
+            return mapToPathnames(context, klazz, value);
         }
     };
 
@@ -139,7 +136,7 @@ public class RubyPathname extends RubyObject {
                         String name, IRubyObject[] args, Block block) {
                     RubyPathname self = (RubyPathname) _self;
                     args = addArg.addArg(args, self.path);
-                    return mapper.map(context, klass.callMethod(context, name, args, block));
+                    return mapper.map(context, (RubyClass) clazz, klass.callMethod(context, name, args, block));
                 }
             });
         }
@@ -195,9 +192,8 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        String toPath = TO_PATH_METHOD;
-        if (path.respondsTo(toPath)) {
-            path = path.callMethod(context, toPath);
+        if (path.respondsTo("to_path")) {
+            path = path.callMethod(context, "to_path");
         }
 
         RubyString str = path.convertToString();
@@ -208,16 +204,18 @@ public class RubyPathname extends RubyObject {
         infectBy(str);
         this.path = (RubyString) str.dup();
         // TODO: remove (either direct bridge to field or all native)
-        setInstanceVariable("@path", path);
+        setInstanceVariable("@path", this.path);
         return this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
-    public IRubyObject to_str(ThreadContext context) {
-        return path;
+    @JRubyMethod
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
+        super.initialize_copy(pathname);
+        initialize(context, pathname);
+        return this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path;
     }
@@ -360,7 +358,7 @@ public class RubyPathname extends RubyObject {
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
             Block block) {
         // TODO: yield block while iterating
-        RubyArray files = mapToPathnames(context,
+        RubyArray files = mapToPathnames(context, (RubyClass) recv,
                 context.runtime.getDir().callMethod(context, "glob", args));
         if (block.isGiven()) {
             files.each(context, block);
@@ -390,7 +388,7 @@ public class RubyPathname extends RubyObject {
 
     /* Mix of File and Dir */
 
-    @JRubyMethod
+    @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
         try {
             return context.runtime.getDir().callMethod(context, "unlink", path);
@@ -424,11 +422,11 @@ public class RubyPathname extends RubyObject {
         return ary;
     }
 
-    private static RubyArray mapToPathnames(ThreadContext context, IRubyObject ary) {
+    private static RubyArray mapToPathnames(ThreadContext context, RubyClass clazz, IRubyObject ary) {
         RubyArray paths = ary.convertToArray();
         for (int i = 0; i < paths.size(); i++) {
             RubyString path = paths.eltOk(i).convertToString();
-            paths.store(i, newInstance(context, path));
+            paths.store(i, newInstance(context, clazz, path));
         }
         return paths;
     }

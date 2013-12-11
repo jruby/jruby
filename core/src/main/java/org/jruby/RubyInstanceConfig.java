@@ -55,13 +55,11 @@ import java.util.regex.Pattern;
 
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
-import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.load.LoadService19;
 import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.util.ClassCache;
 import org.jruby.util.InputStreamMarkCursor;
@@ -83,8 +81,6 @@ public class RubyInstanceConfig {
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
-        compatVersion = CompatVersion.RUBY2_1;
-
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;
             jitLogging = false;
@@ -103,21 +99,7 @@ public class RubyInstanceConfig {
             
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
             runRubyInProcess = Options.LAUNCH_INPROC.load();
-            
-            String jitModeProperty = Options.COMPILE_MODE.load();
-
-            if (jitModeProperty.equals("OFF")) {
-                compileMode = CompileMode.OFF;
-            } else if (jitModeProperty.equals("OFFIR")) {
-                compileMode = CompileMode.OFFIR;
-            } else if (jitModeProperty.equals("JIT")) {
-                compileMode = CompileMode.JIT;
-            } else if (jitModeProperty.equals("FORCE")) {
-                compileMode = CompileMode.FORCE;
-            } else {
-                error.print(Options.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
-                compileMode = CompileMode.JIT;
-            }
+            compileMode = Options.COMPILE_MODE.load();
             
             jitLogging = Options.JIT_LOGGING.load();
             jitDumping = Options.JIT_DUMPING.load();
@@ -141,7 +123,6 @@ public class RubyInstanceConfig {
     
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
-        compatVersion = parentConfig.compatVersion;
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
         jitDumping = parentConfig.jitDumping;
@@ -472,11 +453,7 @@ public class RubyInstanceConfig {
     }
 
     public ASTCompiler newCompiler() {
-        if (getCompatVersion() == CompatVersion.RUBY1_8) {
-            return new ASTCompiler();
-        } else {
-            return new ASTCompiler19();
-        }
+        return new ASTCompiler();
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -621,16 +598,11 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    /**
-     * @see Options.COMPAT_VERSION
-     */
+    @Deprecated
     public CompatVersion getCompatVersion() {
-        return compatVersion;
+        return CompatVersion.RUBY2_1;
     }
 
-    /**
-     * @see Options.COMPAT_VERSION
-     */
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
@@ -1201,8 +1173,7 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * Set whether native code is enabled for this config. Disabling it also
-     * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
+     * Set whether native code is enabled for this config.
      * 
      * @see Options.NATIVE_ENABLED
      * 
@@ -1221,28 +1192,6 @@ public class RubyInstanceConfig {
      */
     public boolean isNativeEnabled() {
         return _nativeEnabled;
-    }
-    
-    /**
-     * Set whether C extensions are enabled for this config.
-     * 
-     * @see Options.CEXT_ENABLED
-     * 
-     * @param b new value indicating whether native code is enabled
-     */
-    public void setCextEnabled(boolean b) {
-        _cextEnabled = b;
-    }
-    
-    /**
-     * Get whether C extensions are enabled for this config.
-     * 
-     * @see Options.CEXT_ENABLED
-     * 
-     * @return true if C extensions are enabled; false otherwise.
-     */
-    public boolean isCextEnabled() {
-        return _cextEnabled;
     }
     
     /**
@@ -1375,6 +1324,20 @@ public class RubyInstanceConfig {
     public boolean getIPv4Preferred() {
         return preferIPv4;
     }
+
+    /**
+     * get whether uppercase package names will be honored
+     */
+    public boolean getAllowUppercasePackageNames() {
+        return allowUppercasePackageNames;
+    }
+
+    /**
+     * set whether uppercase package names will be honored
+     */
+    public void setAllowUppercasePackageNames(boolean allow) {
+        allowUppercasePackageNames = allow;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1411,7 +1374,6 @@ public class RubyInstanceConfig {
     private int jitThreshold;
     private int jitMax;
     private int jitMaxSize;
-    private CompatVersion compatVersion;
 
     private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
     private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
@@ -1467,11 +1429,6 @@ public class RubyInstanceConfig {
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
-    
-    /**
-     * Whether C extensions are enabled for this configuration.
-     */
-    private boolean _cextEnabled = CEXT_ENABLED;
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
@@ -1489,6 +1446,8 @@ public class RubyInstanceConfig {
     private boolean loadGemfile = Options.CLI_LOAD_GEMFILE.load();
 
     private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
+
+    private boolean allowUppercasePackageNames = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
@@ -1501,7 +1460,7 @@ public class RubyInstanceConfig {
 
         LoadServiceCreator DEFAULT = new LoadServiceCreator() {
                 public LoadService create(Ruby runtime) {
-                    return new LoadService19(runtime);
+                    return new LoadService(runtime);
                 }
             };
     }
@@ -1613,7 +1572,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
      */
-    public static final boolean POOLING_ENABLED = Options.THREADPOOL_ENABLED.load();
+    public static final boolean POOLING_ENABLED = false;
 
     /**
      * Maximum thread pool size (integer, default Integer.MAX_VALUE).
@@ -1671,14 +1630,8 @@ public class RubyInstanceConfig {
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
-    /**
-     * Indicates the global default for whether C extensions are enabled.
-     * Default is the value of RubyInstanceConfig.NATIVE_ENABLED. This value
-     * is used to default new runtime configurations.
-     *
-     * Set with the <tt>jruby.cext.enabled</tt> system property.
-     */
-    public final static boolean CEXT_ENABLED = Options.CEXT_ENABLED.load();
+    @Deprecated
+    public final static boolean CEXT_ENABLED = false;
 
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
@@ -1751,6 +1704,7 @@ public class RubyInstanceConfig {
      * In Java integration, allow upper case name for a Java package;
      * e.g., com.example.UpperCase.Class
      */
+    @Deprecated
     public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
@@ -1866,7 +1820,7 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public String getVersionString() {
-        return OutputStrings.getVersionString(compatVersion);
+        return OutputStrings.getVersionString();
     }
 
     @Deprecated
@@ -1952,6 +1906,15 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public boolean isBenchmarking() {
+        return false;
+    }
+
+    @Deprecated
+    public void setCextEnabled(boolean b) {
+    }
+
+    @Deprecated
+    public boolean isCextEnabled() {
         return false;
     }
 }

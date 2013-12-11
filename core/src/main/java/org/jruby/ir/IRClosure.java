@@ -27,7 +27,6 @@ import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
-import org.jruby.runtime.InterpretedIRBlockBody19;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -41,6 +40,7 @@ public class IRClosure extends IRScope {
     // for-loop body closures are special in that they dont really define a new variable scope.
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
     private boolean isForLoopBody;
+    private boolean isBeginEndBlock;
 
     // Block parameters
     private List<Operand> blockArgs;
@@ -58,17 +58,12 @@ public class IRClosure extends IRScope {
         setName("_CLOSURE_CLONE_" + closureId);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
-        this.isForLoopBody = c.isForLoopBody;
-        this.argumentType = c.argumentType;
-        this.arity = c.arity;
-        
-        this.body = (c.body instanceof InterpretedIRBlockBody19) ? new InterpretedIRBlockBody19(this, arity, argumentType)
-                                                                 : new InterpretedIRBlockBody(this, arity, argumentType);
+        this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
         this.addedGEBForUncaughtBreaks = false;
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
-            int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_8) {
+            int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
@@ -78,8 +73,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = is1_8 ? new InterpretedIRBlockBody(this, arity, argumentType)
-                              : new InterpretedIRBlockBody19(this, arity, argumentType);
+            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         }
 
@@ -107,6 +101,14 @@ public class IRClosure extends IRScope {
             s = s.getLexicalParent();
         }
         this.nestingDepth = n;
+    }
+
+    public void setBeginEndBlock() {
+        this.isBeginEndBlock = true;
+    }
+
+    public boolean isBeginEndBlock() {
+        return isBeginEndBlock;
     }
 
     public void setParameterList(String[] parameterList) {
@@ -220,10 +222,41 @@ public class IRClosure extends IRScope {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 
-        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
-        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
-        // Create a copy of the variable usable at the right depth
-        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
+        // AST doesn't seem to be implementing shadowing properly and sometimes
+        // has the wrong depths which screws up variable access. So, we implement
+        // shadowing here by searching for an existing local var from depth 0 and upwards.
+        //
+        // Check scope depths for 'a' in the closure in the following snippet:
+        //
+        //   "a = 1; foo(1) { |(a)| a }"
+        //
+        // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
+        LocalVariable lvar = null;
+        IRScope scope = this;
+        int d = -1;
+
+        // 'scope' can be null because scopeDepth can exceed the
+        // lexical scope nesting depth when AST has this information
+        // incorrect, as above.
+        while (scope != null && lvar == null && d < scopeDepth) {
+            // skip for-loop bodies
+            while (scope.isForLoopBody()) scope = scope.getLexicalParent();
+
+            // lookup
+            lvar = scope.lookupExistingLVar(name);
+
+            // walk up
+            d++;
+            scope = scope.getLexicalParent();
+        }
+
+        if (lvar == null) {
+            // Create a new var at requested depth
+            lvar = getNewLocalVariable(name, scopeDepth);
+        } else {
+            // Create a copy of the variable usable at the right depth
+            if (lvar.getScopeDepth() != d) lvar = lvar.cloneForDepth(d);
+        }
 
         return lvar;
     }
@@ -262,17 +295,21 @@ public class IRClosure extends IRScope {
         return blockVar;
     }
 
-    public IRClosure cloneForClonedInstr(InlinerInfo ii) {
+    public IRClosure cloneForInlining(InlinerInfo ii) {
+        // FIXME: This is buggy! Is this not dependent on clone-mode??
         IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
+        CFG clonedCFG = new CFG(clonedClosure);
+        clonedClosure.setCFG(clonedCFG);
+
         clonedClosure.isForLoopBody = this.isForLoopBody;
         clonedClosure.nestingDepth  = this.nestingDepth;
         clonedClosure.parameterList = this.parameterList;
 
         // Create a new inliner info object
-        ii = ii.cloneForCloningClosure(clonedClosure);
+        InlinerInfo clonedII = ii.cloneForCloningClosure(clonedClosure);
 
-        // clone the cfg, and all instructions
-        clonedClosure.setCFG(getCFG().cloneForCloningClosure(clonedClosure, ii));
+        // Clone the cfg and all instructions
+        clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
 
         return clonedClosure;
     }    
@@ -305,7 +342,7 @@ public class IRClosure extends IRScope {
 
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionInstr)instrs.get(0)).getResult();
-            instrs.set(instrs.size(), new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+            instrs.set(instrs.size()-1, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
         }
 
         // Update scope

@@ -69,20 +69,7 @@ public class SValue extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         Object val = array.retrieve(context, self, currDynScope, temp);
 
-        if (context.runtime.is1_9()) {
-            return (val instanceof RubyArray) ? val : context.runtime.getNil();
-        } else {
-            if (val instanceof RubyArray) {
-                int n = ((RubyArray) val).getLength();
-
-                if (n == 0) return context.nil;
-                if (n == 1) return ((RubyArray) val).entry(0);
-
-                return val;
-            }
-
-            return context.nil;
-        }
+        return (val instanceof RubyArray) ? val : context.runtime.getNil();
     }
 
     @Override

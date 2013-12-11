@@ -16,24 +16,25 @@
         <include>LICENSE*</include>
         <include>COPYING*</include>
         <include>lib/**/*</include>
-        <include>bin/ast</include>
-        <include>bin/gem</include>
-        <include>bin/irb</include>
-        <include>bin/jgem</include>
-        <include>bin/jirb</include>
-        <include>bin/jirb_swing</include>
+        <include>bin/ast*</include>
+        <include>bin/gem*</include>
+        <include>bin/irb*</include>
+        <include>bin/jgem*</include>
+        <include>bin/jirb*</include>
         <include>bin/jruby*</include>
-        <include>bin/rake</include>
-        <include>bin/ri</include>
-        <include>bin/rdoc</include>
-        <include>bin/testrb</include>
-        <include>bin/*.bat</include>
+        <include>bin/rake*</include>
+        <include>bin/ri*</include>
+        <include>bin/rdoc*</include>
+        <include>bin/testrb*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
         <include>tool/nailgun/**/*.c</include>
       </includes>
       <excludes>
+        <exclude>bin/jruby</exclude>
+        <exclude>bin/jruby*_*</exclude>
+        <exclude>bin/jruby*-*</exclude>
         <exclude>**/*.ac</exclude>
         <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
@@ -43,13 +44,21 @@
       </excludes>
     </fileSet>
     <fileSet>
+      <directory>${project.basedir}/src/main/resources</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>   
+	<include>bin/jruby</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>   
-	<include>lib/ruby/gems/shared/gems/rake-${rake.version}/**/*</include>
+	<include>lib/ruby/gems/shared/gems/rake-${rake.version}/bin/r*</include>
+	<include>lib/ruby/gems/shared/gems/rdoc-${rdoc.version}/bin/r*</include>
         <include>lib/ruby/gems/shared/specifications/rake-${rake.version}.gemspec</include>
-	<include>lib/ruby/gems/shared/cache/rake-${rake.version}.gem</include>
-	<include>lib/ruby/gems/shared/doc</include>
+	<include>lib/ruby/gems/shared/specifications/rdoc-${rdoc.version}.gemspec</include>
+	<include>lib/ruby/gems/shared/specifications/json-${json.version}-java.gemspec</include>
       </includes>
     </fileSet>
   </fileSets>

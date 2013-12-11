@@ -3,9 +3,9 @@ package org.jruby.ir.passes;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.jruby.ir.IRScope;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * A mechanism for executing code against an IRScope or transforming the
@@ -40,7 +40,7 @@ public abstract class CompilerPass {
 
     /**
      * The data that this pass is responsible for will get invalidated so that
-     * if this pass is then execute()d it will generate new pass data.  Note
+     * if this pass is then executed it will generate new pass data.  Note
      * that some data will destructively manipulate dependent compiler pass
      * data.  In that case, the pass may wipe more than just it's data.  In
      * that case an execute() should still rebuild everything fine because all
@@ -106,17 +106,17 @@ public abstract class CompilerPass {
         try {
             return (CompilerPass) passClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         } catch (IllegalArgumentException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         } catch (InvocationTargetException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         } catch (NoSuchMethodException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         } catch (SecurityException ex) {
-            Logger.getLogger(CompilerPass.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
         }
 
         return null;

@@ -57,8 +57,6 @@ public class StringTerm extends StrTerm {
     }
 
     protected ByteList createByteList(RubyYaccLexer lexer) {
-        if (lexer.isOneEight()) return new ByteList();
-
         return new ByteList(new byte[]{}, lexer.getEncoding());
     }
 
@@ -230,24 +228,22 @@ public class StringTerm extends StrTerm {
                     break;
 
                 case 'u':
-                    if (!lexer.isOneEight()) {
-                        if (!expand) {
-                            buffer.append('\\');
-                            break;
-                        }
-
-                        if (regexp) {
-                            lexer.readUTFEscapeRegexpLiteral(buffer);
-                        } else {
-                            lexer.readUTFEscape(buffer, true, symbol);
-                        }
-
-                        if (hasNonAscii && buffer.getEncoding() != encoding) {
-                            mixedEscape(lexer, buffer.getEncoding(), encoding);
-                        }
-
-                        continue;
+                    if (!expand) {
+                        buffer.append('\\');
+                        break;
                     }
+
+                    if (regexp) {
+                        lexer.readUTFEscapeRegexpLiteral(buffer);
+                    } else {
+                        lexer.readUTFEscape(buffer, true, symbol);
+                    }
+
+                    if (hasNonAscii && buffer.getEncoding() != encoding) {
+                        mixedEscape(lexer, buffer.getEncoding(), encoding);
+                    }
+
+                    continue;
                 default:
                     if (regexp) {
                         src.unread(c);
@@ -268,7 +264,7 @@ public class StringTerm extends StrTerm {
                         buffer.append('\\');
                     }
                 }
-            } else if (!lexer.isOneEight() && !Encoding.isAscii((byte) c)) {
+            } else if (!Encoding.isAscii((byte) c)) {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
@@ -281,16 +277,14 @@ public class StringTerm extends StrTerm {
                 break;
             }
 
-            if (!lexer.isOneEight()) {
-                // Hmm did they change this?
-/*                if (c == '\0' && symbol) {
-                    throw new SyntaxException(PID.NUL_IN_SYMBOL, lexer.getPosition(),
-                            src.getCurrentLine(), "symbol cannot contain '\\0'");
-                } else*/ if ((c & 0x80) != 0) {
-                    hasNonAscii = true;
-                    if (buffer.getEncoding() != encoding) {
-                        mixedEscape(lexer, buffer.getEncoding(), encoding);
-                    }
+            // Hmm did they change this?
+/*          if (c == '\0' && symbol) {
+                throw new SyntaxException(PID.NUL_IN_SYMBOL, lexer.getPosition(),
+                        src.getCurrentLine(), "symbol cannot contain '\\0'");
+            } else*/ if ((c & 0x80) != 0) {
+                hasNonAscii = true;
+                if (buffer.getEncoding() != encoding) {
+                    mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
             }
             buffer.append(c);
@@ -384,7 +378,7 @@ public class StringTerm extends StrTerm {
             throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
                     src.getCurrentLine(), "Invalid escape character syntax");
         default:
-            if (!lexer.isOneEight() && !Encoding.isAscii((byte) c)) {
+            if (!Encoding.isAscii((byte) c)) {
                 addNonAsciiToBuffer(c, src, encoding, lexer, buffer);
             } else {
                 if (c != '\\' || c != end) buffer.append('\\');

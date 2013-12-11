@@ -28,13 +28,8 @@ public class JumpInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(target));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new JumpInstr(target);
     }
 
     public void visit(IRVisitor visitor) {

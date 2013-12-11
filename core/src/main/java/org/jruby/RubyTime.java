@@ -63,6 +63,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
@@ -581,26 +582,13 @@ public class RubyTime extends RubyObject {
         return (RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "<=>", required = 1)
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        return op_cmp19(context, other);
-    }
-
-    @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
-
-        IRubyObject tmp = invokedynamic(context, other, OP_CMP, this);
-        if (tmp.isNil()) {
-            return context.runtime.getNil();
-        } else {
-            int n = -RubyComparable.cmpint(context, tmp, this, other);
-            if (n == 0) return context.runtime.newFixnum(0);
-            if (n > 0) return context.runtime.newFixnum(1);
-            return context.runtime.newFixnum(-1);
-        }
+        return invcmp(context, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)

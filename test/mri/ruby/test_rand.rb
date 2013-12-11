@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestRand < Test::Unit::TestCase
   def assert_random_int(ws, m, init = 0)
@@ -436,6 +437,7 @@ END
   end
 
   def test_rand_reseed_on_fork
+    GC.start
     bug5661 = '[ruby-core:41209]'
 
     assert_fork_status(1, bug5661) {Random.rand(4)}
@@ -503,15 +505,23 @@ END
     end
   end
 
-  def test_marshal_load_insecure
-    r = Random.new(0)
-    d = r.__send__(:marshal_dump)
-    l = proc do
-      $SAFE = 4
-      r.__send__(:marshal_load, d)
+  def test_random_ulong_limited
+    def (gen = Object.new).rand(*) 1 end
+    assert_equal([2], (1..100).map {[1,2,3].sample(random: gen)}.uniq)
+
+    def (gen = Object.new).rand(*) 100 end
+    assert_raise_with_message(RangeError, /big 100\z/) {[1,2,3].sample(random: gen)}
+
+    bug7903 = '[ruby-dev:47061] [Bug #7903]'
+    def (gen = Object.new).rand(*) -1 end
+    assert_raise_with_message(RangeError, /small -1\z/, bug7903) {[1,2,3].sample(random: gen)}
+
+    bug7935 = '[ruby-core:52779] [Bug #7935]'
+    class << (gen = Object.new)
+      def rand(limit) @limit = limit; 0 end
+      attr_reader :limit
     end
-    assert_raise(SecurityError, '[Bug #6540]') do
-      l.call
-    end
+    [1, 2].sample(1, random: gen)
+    assert_equal(2, gen.limit, bug7935)
   end
 end

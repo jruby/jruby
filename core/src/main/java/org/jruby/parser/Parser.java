@@ -40,7 +40,6 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
-import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
@@ -107,7 +106,7 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = RubyParserPool.getInstance().borrowParser(configuration.getVersion());
+        RubyParser parser = new Ruby20Parser();
         RubyParserResult result = null;
         parser.setWarnings(runtime.getWarnings());
         try {
@@ -140,9 +139,7 @@ public class Parser {
 
                     throw runtime.newSyntaxError(buffer.toString());
             }
-        } finally {
-            RubyParserPool.getInstance().returnParser(parser);
-        }
+        } 
         
         // If variables were added then we may need to grow the dynamic scope to match the static
         // one.

@@ -66,7 +66,8 @@ mri/ruby/test_parse
 mri/ruby/test_path
 mri/ruby/test_pipe
 mri/ruby/test_primitive
-mri/ruby/test_proc
+# TODO 2.1 parser
+#mri/ruby/test_proc
 # hangs when run with other tests
 #mri/ruby/test_process
 mri/ruby/test_rand
@@ -74,20 +75,23 @@ mri/ruby/test_range
 mri/ruby/test_rational
 mri/ruby/test_rational2
 mri/ruby/test_readpartial
-mri/ruby/test_regexp
+# TODO 2.1 parser? new regexp option?
+#mri/ruby/test_regexp
 mri/ruby/test_require
 mri/ruby/test_rubyoptions
 mri/ruby/test_settracefunc
 mri/ruby/test_signal
 mri/ruby/test_sleep
 mri/ruby/test_sprintf
-mri/ruby/test_sprintf_comb
+# TODO defines many tests programmatically with unusual names
+#mri/ruby/test_sprintf_comb
 mri/ruby/test_string
 mri/ruby/test_stringchar
 mri/ruby/test_struct
 mri/ruby/test_super
 mri/ruby/test_symbol
-mri/ruby/test_syntax
+# TODO 2.1 parser
+#mri/ruby/test_syntax
 mri/ruby/test_system
 mri/ruby/test_thread
 mri/ruby/test_time
@@ -184,10 +188,6 @@ mri/fileutils/test_dryrun
 mri/fileutils/test_fileutils
 mri/fileutils/test_nowrite
 mri/fileutils/test_verbose
-
-mri/iconv/test_basic
-mri/iconv/test_option
-mri/iconv/test_partial
 
 mri/json/test_json
 mri/json/test_json_addition

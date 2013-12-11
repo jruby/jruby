@@ -29,6 +29,7 @@
  */
 package org.jruby.embed.bsf;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -77,11 +78,11 @@ public class JRubyEngineTest {
 
     @Before
     public void setUp() throws FileNotFoundException {
-        basedir = System.getProperty("user.dir");
+        basedir = new File(System.getProperty("user.dir")).getParent();
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
-        System.setProperty("org.jruby.embed.class.path", basedir + "/test");
+        System.setProperty("org.jruby.embed.class.path", basedir + "/core/src/test/ruby");
 
-        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -181,7 +182,7 @@ public class JRubyEngineTest {
         String partone =
                 "def partone\n" +
                   "impression = \"Sooooo Gooood!\"\n" +
-                  "f = File.new(\"" + basedir + "/target/bsfeval.txt\", \"w\")\n" +
+                  "f = File.new(\"" + basedir + "/core/target/bsfeval.txt\", \"w\")\n" +
                   "begin\n" +
                     "f.puts impression\n" +
                   "ensure\n" +
@@ -191,7 +192,7 @@ public class JRubyEngineTest {
                 "partone";
         String parttwo =
                 "def parttwo\n" +
-                  "f = File.open \"" + basedir + "/target/bsfeval.txt\"\n" +
+                  "f = File.open \"" + basedir + "/core/target/bsfeval.txt\"\n" +
                   "begin\n" +
                     "comment = f.gets\n" +
                     "return comment\n" +
@@ -320,7 +321,7 @@ public class JRubyEngineTest {
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = (JRubyEngine) manager.loadScriptingEngine("jruby");
-        Object receiver = instance.eval("org/jruby/embed/ruby/radioactive_decay.rb", 0, 0, PathType.CLASSPATH);
+        Object receiver = instance.eval(basedir + "/core/src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb", 0, 0, PathType.ABSOLUTE);
         String method = "amount_after_years";
         Object[] args = new Object[2];
         args[0] = 10.0; args[1] = 1000;
@@ -337,15 +338,8 @@ public class JRubyEngineTest {
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = (JRubyEngine) manager.loadScriptingEngine("jruby");
-        Object result = instance.eval("org/jruby/embed/ruby/block-param-scope.rb", 0, 0, PathType.CLASSPATH);
-        String expResult = "cat";
-        assertEquals(expResult, ((String)result).trim());
-
-        // Ruby 1.9 mode is somehow broken in 1.5.0dev
-        BSFManager.registerScriptingEngine("jruby19", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
-        instance = (JRubyEngine) manager.loadScriptingEngine("jruby19");
-        result = instance.eval("org/jruby/embed/ruby/block-param-scope.rb", 0, 0, PathType.CLASSPATH);
-        expResult = "bear";
+        Object result = instance.eval(basedir + "/core/src/test/ruby/org/jruby/embed/ruby/block-param-scope.rb", 0, 0, PathType.ABSOLUTE);
+        String expResult = "bear";
         assertEquals(expResult, ((String)result).trim());
     }
 

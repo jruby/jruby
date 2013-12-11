@@ -41,7 +41,7 @@ describe "JRuby's compiler" do
   include CompilerTestUtils
 
   StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler19
+  ASTCompiler = org.jruby.compiler.ASTCompiler
   ASTInspector = org.jruby.compiler.ASTInspector
   Block = org.jruby.runtime.Block
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -452,6 +452,7 @@ ary
     expect(result).to  eq([nil, 1])
   end
 
+
   it "does not break String#to_r and to_c" do
     # This is structured to cause a "dummy" scope because of the String constant
     # This caused to_r and to_c to fail since that scope always returns nil
@@ -523,6 +524,21 @@ ary
     $~ = nil
     obj.blank?.should == false
     $~.should be_nil
+  end
+
+  # GH-1239
+  it "properly scopes singleton method definitions in a compiled body" do
+    cls = compile_and_run(<<-EOS)
+      class GH1239
+        def self.define; def bar; end; end
+        def self.remove; remove_method :bar; end
+      end
+      GH1239
+    EOS
+
+    cls.define
+    expect(cls.methods).not_to be_include :bar
+    expect{cls.remove}.not_to raise_error
   end
   
   it "does a bunch of other stuff" do
