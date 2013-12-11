@@ -115,9 +115,11 @@ public class LocalOptimizationPass extends CompilerPass {
             if (res != null && val != null) {
                 if (!res.equals(val)) {
                     recordSimplification(res, val, valueMap, simplificationMap);
-                } else if (!i.hasSideEffects()) {
+                }
+
+                if (!i.hasSideEffects()) {
                     if (i instanceof CopyInstr) {
-                        if (i.canBeDeleted(s)) {
+                        if (res.equals(val) && i.canBeDeleted(s)) {
                             i.markDead();
                             instrs.remove();
                         }
@@ -132,7 +134,7 @@ public class LocalOptimizationPass extends CompilerPass {
             }
 
             // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
-            if ((res != null) && !res.equals(val)) {
+            if (res != null && !res.equals(val)) {
                 List<Variable> simplifiedVars = simplificationMap.get(res);
                 if (simplifiedVars != null) {
                     for (Variable v: simplifiedVars) {

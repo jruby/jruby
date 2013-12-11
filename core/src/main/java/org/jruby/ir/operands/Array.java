@@ -67,11 +67,10 @@ public class Array extends Operand {
         return new Array(newElts);
     }
 
+/**
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        // FIXME: This appears to be unhooked and Nil.NIL is a problem for it atm
-        /*
-        if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : Nil.NIL;
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray, Nil nil) {
+        if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : nil;
 
         if (argIndex < elts.length) {
             Operand[] newElts = new Operand[elts.length - argIndex];
@@ -81,10 +80,8 @@ public class Array extends Operand {
         }
 
         return new Array();
-        *
-        */
-        return null;
     }
+**/
 
     public Operand toArray() {
         return this;

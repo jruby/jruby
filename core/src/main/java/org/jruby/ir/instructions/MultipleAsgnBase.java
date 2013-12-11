@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
@@ -50,16 +51,5 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         array = array.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
-        return super.simplifyAndGetResult(scope, valueMap);
-        // SSS FIXME!  This is buggy code for 1.9 mode
-/*
-        simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
-        return val.fetchCompileTimeArrayElement(index);
-*/
     }
 }

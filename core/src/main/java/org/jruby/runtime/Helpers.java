@@ -2926,18 +2926,22 @@ public class Helpers {
         }
     }
 
-    public static IRubyObject irReqdArgMultipleAsgn(ThreadContext context, RubyArray rubyArray, int preArgsCount, int index, int postArgsCount) {
-        int n = rubyArray.getLength();
+    public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {
         if (preArgsCount == -1) {
-            return rubyArray.entry(index);
+            return index < n ? index : -1;
         } else {
             int remaining = n - preArgsCount;
             if (remaining <= index) {
-                return context.nil;
+                return -1;
             } else {
-                return (remaining > postArgsCount) ? rubyArray.entry(n - postArgsCount + index) : rubyArray.entry(preArgsCount + index);
+                return (remaining > postArgsCount) ? n - postArgsCount + index : preArgsCount + index;
             }
         }
+    }
+
+    public static IRubyObject irReqdArgMultipleAsgn(ThreadContext context, RubyArray rubyArray, int preArgsCount, int index, int postArgsCount) {
+        int i = irReqdArgMultipleAsgnIndex(rubyArray.getLength(), preArgsCount, index, postArgsCount);
+        return i == -1 ? context.nil : rubyArray.entry(i);
     }
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {

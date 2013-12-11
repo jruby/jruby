@@ -50,15 +50,6 @@ public class Range extends Operand {
     }
 
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        if (!hasKnownValue()) return null;
-
-        // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
-        // So for now, return null!
-        return null;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newBegin = begin.getSimplifiedOperand(valueMap, force);
         Operand newEnd = end.getSimplifiedOperand(valueMap, force);

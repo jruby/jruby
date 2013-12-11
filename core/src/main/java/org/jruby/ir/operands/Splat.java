@@ -48,11 +48,6 @@ public class Splat extends Operand {
         return (newArray == array) ? this : new Splat(newArray);
     }
 
-    @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        return array.fetchCompileTimeArrayElement(argIndex, getSubArray);
-    }
-
     /** Append the list of variables used in this operand to the input list */
     @Override
     public void addUsedVariables(List<Variable> l) {
