@@ -17,10 +17,6 @@ public class PersistedIRParserLogic {
     private final IRScopeFactory scopeBuilder;
     private final IRInstructionFactory instrFactory;
     private final IROperandFactory operandFactory;
-    
-    private static final NonIRObjectFactory NON_IR_OBJECT_FACTORY = NonIRObjectFactory.INSTANCE;
-    private static final DummyInstrFactory DUMMY_INSTR_FACTORY = DummyInstrFactory.INSTANCE;
-    
     private final IRParsingContext context;
 
     PersistedIRParserLogic(IRParsingContext context) {
@@ -38,7 +34,7 @@ public class PersistedIRParserLogic {
     }
     
     IRScope createScope(String typeString, List<Object> parameters) {
-        final IRScopeType type = NON_IR_OBJECT_FACTORY.createScopeType(typeString);
+        final IRScopeType type = NonIRObjectFactory.createScopeType(typeString);
         final IRScope irScope = scopeBuilder.createScope(type, parameters);
         
         context.addToScopes(irScope);
@@ -112,7 +108,7 @@ public class PersistedIRParserLogic {
     }
     
     InstrWithParams createInstrWithParams(String name, List<Object> params) {
-        InstrWithParams dummy = DUMMY_INSTR_FACTORY.createInstrWithParam(name, params);
+        InstrWithParams dummy = DummyInstrFactory.createInstrWithParam(name, params);
         return dummy;
     }
     

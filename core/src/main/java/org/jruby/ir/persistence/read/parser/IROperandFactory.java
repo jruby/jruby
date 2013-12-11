@@ -61,7 +61,7 @@ public class IROperandFactory {
     }
     
     public Operand createOperandWithoutParameters(final String operandName) {
-        final OperandType operandType = NonIRObjectFactory.INSTANCE.createOperandType(operandName);
+        final OperandType operandType = NonIRObjectFactory.createOperandType(operandName);
         
         switch (operandType) {
         case NIL:
@@ -109,7 +109,7 @@ public class IROperandFactory {
     
     public Operand createOperandWithParameters(final String operandName, final List<Object> parameters) {
         
-        final OperandType operandType = NonIRObjectFactory.INSTANCE.createOperandType(operandName);
+        final OperandType operandType = NonIRObjectFactory.createOperandType(operandName);
         
         final ParametersIterator parametersIterator = new ParametersIterator(context, parameters);
         
@@ -212,14 +212,8 @@ public class IROperandFactory {
     private BooleanLiteral createBooleanLiteral(final ParametersIterator parametersIterator) {
         final IRManager irManager = context.getIRManager();
         final boolean isTrue = parametersIterator.nextBoolean();
-        
-        BooleanLiteral booleanLiteral = null;
-        if(isTrue) {
-            booleanLiteral = irManager.getTrue();
-        } else {
-            booleanLiteral = irManager.getFalse();
-        }
-        return booleanLiteral;
+
+        return isTrue ? irManager.getTrue() : irManager.getFalse();
     }
     
     private CompoundArray createCompoundArray(final ParametersIterator parametersIterator) {
@@ -234,7 +228,7 @@ public class IROperandFactory {
         final List<Operand> pieces = parametersIterator.nextOperandList();
         
         final String encodingName = parametersIterator.nextString();
-        final Encoding encoding = NonIRObjectFactory.INSTANCE.createEncoding(encodingName);
+        final Encoding encoding = NonIRObjectFactory.createEncoding(encodingName);
         
         return new CompoundString(pieces, encoding);
     }
@@ -292,7 +286,7 @@ public class IROperandFactory {
     
     private IRException createIRException(final ParametersIterator parametersIterator) {
         final String reasonString = parametersIterator.nextString();        
-        final Reason reason = NonIRObjectFactory.INSTANCE.createReason(reasonString);
+        final Reason reason = NonIRObjectFactory.createReason(reasonString);
         
         switch (reason) {
         case BREAK:
@@ -390,7 +384,7 @@ public class IROperandFactory {
         final Operand regexp = parametersIterator.nextOperand();        
         final String kcodeName = parametersIterator.nextString();
         final boolean isKCodeDefault = parametersIterator.nextBoolean();        
-        final KCode kcode = NonIRObjectFactory.INSTANCE.createKcode(kcodeName);
+        final KCode kcode = NonIRObjectFactory.createKcode(kcodeName);
         
         final RegexpOptions options = new RegexpOptions(kcode, isKCodeDefault);
         

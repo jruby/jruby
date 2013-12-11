@@ -55,34 +55,32 @@ import org.jruby.runtime.CallType;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
-public enum NonIRObjectFactory {
-    INSTANCE;
-    
-    public Operation createOperation(String name) {
+public class NonIRObjectFactory {
+    public static Operation createOperation(String name) {
         return Operation.valueOf(name.toUpperCase());
     }
     
-    public OperandType createOperandType(String name) {
+    public static OperandType createOperandType(String name) {
         return OperandType.valueOf(name.toUpperCase());
     }
     
-    public SpecializedInstType createSpecilizedInstrType(String specializedInstName) {
+    public static SpecializedInstType createSpecilizedInstrType(String specializedInstName) {
         return SpecializedInstType.valueOf(specializedInstName);
     }
     
-    public IRScopeType createScopeType(String type) {
+    public static IRScopeType createScopeType(String type) {
         return IRScopeType.valueOf(type);        
     }
     
-    public ISourcePosition createSourcePosition(String fileName, int line) {
+    public static ISourcePosition createSourcePosition(String fileName, int line) {
         return new SimpleSourcePosition(fileName, line);
     }
     
-    public Type createStaticScopeType(String type) {
+    public static Type createStaticScopeType(String type) {
         return Type.valueOf(type);        
     }
     
-    public Encoding createEncoding(String name) {
+    public static Encoding createEncoding(String name) {
         if(name == null) {
             return null;
         } else if (ASCIIEncoding.INSTANCE.toString().equals(name)) {
@@ -173,7 +171,7 @@ public enum NonIRObjectFactory {
      * ignorecase)?(, java)?(, kcodeDefault)?(, literal)?(, multiline)?(,
      * once)?)
      */
-    public RegexpOptions createRegexpOptions(String kcodeString, String[] options) {
+    public static RegexpOptions createRegexpOptions(String kcodeString, String[] options) {
         KCode kCode = KCode.valueOf(kcodeString);
 
         if (options != null) {
@@ -213,15 +211,15 @@ public enum NonIRObjectFactory {
         }
     }
 
-    public CallType createCallType(String callTypeString) {
+    public static CallType createCallType(String callTypeString) {
         return CallType.valueOf(callTypeString);
     }
     
-    public Reason createReason(String reasonString) {
+    public static Reason createReason(String reasonString) {
         return Reason.valueOf(reasonString.toUpperCase());
     }
 
-    public KCode createKcode(String kcodeName) {
+    public static KCode createKcode(String kcodeName) {
         return KCode.valueOf(kcodeName);
     }
 

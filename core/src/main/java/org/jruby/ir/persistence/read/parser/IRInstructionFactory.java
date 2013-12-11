@@ -133,7 +133,7 @@ public class IRInstructionFactory {
     }
 
     public Instr createInstrWithoutParams(final String operationName) {
-        final Operation operation = NonIRObjectFactory.INSTANCE.createOperation(operationName);
+        final Operation operation = NonIRObjectFactory.createOperation(operationName);
         switch (operation) {
         case EXC_REGION_END:
             return createExceptionRegionEndMarker();
@@ -302,7 +302,7 @@ public class IRInstructionFactory {
     private AttrAssignInstr createSpecializedAttrAssign(final ParametersIterator paramsIterator,
             final Operand receiver, final MethAddr methAddr, final Operand[] args) {
         final String specializedInstName = paramsIterator.nextString();
-        final SpecializedInstType specializedInstType = NonIRObjectFactory.INSTANCE.createSpecilizedInstrType(specializedInstName);
+        final SpecializedInstType specializedInstType = NonIRObjectFactory.createSpecilizedInstrType(specializedInstName);
         
         final AttrAssignInstr attrAssignInstr = new AttrAssignInstr(receiver, methAddr, args);
         
@@ -424,7 +424,7 @@ public class IRInstructionFactory {
     private NoResultCallInstr createNoResultCall(Operation operation, final ParametersIterator paramsIterator) {
         final Operand receiver = paramsIterator.nextOperand();
         final String callTypeString = paramsIterator.nextString();
-        final CallType callType = NonIRObjectFactory.INSTANCE.createCallType(callTypeString);
+        final CallType callType = NonIRObjectFactory.createCallType(callTypeString);
         final MethAddr methAddr = (MethAddr) paramsIterator.next();
         final Operand[] args = paramsIterator.nextOperandArray();
         final Object parameter = paramsIterator.next();
@@ -500,7 +500,7 @@ public class IRInstructionFactory {
     }
 
     public Instr createReturnInstrWithNoParams(final Variable result, final String operationName) {
-        final Operation operation = NonIRObjectFactory.INSTANCE.createOperation(operationName);
+        final Operation operation = NonIRObjectFactory.createOperation(operationName);
         switch (operation) {
         case BACKREF_IS_MATCH_DATA:
             return createBackrefIsMatchData(result);
@@ -660,7 +660,7 @@ public class IRInstructionFactory {
 
     private GetEncodingInstr createGetEncoding(final Variable result, final ParametersIterator paramsIterator) {
         final String encodingName = paramsIterator.nextString();
-        final Encoding encoding = NonIRObjectFactory.INSTANCE.createEncoding(encodingName);
+        final Encoding encoding = NonIRObjectFactory.createEncoding(encodingName);
 
         return new GetEncodingInstr(result, encoding);
     }
@@ -886,7 +886,7 @@ public class IRInstructionFactory {
         final WrappedIRClosure lambdaBody = new WrappedIRClosure(null, (IRClosure) paramsIterator.nextScope());
         final String fileName = paramsIterator.nextString();
         final int line = paramsIterator.nextInt();
-        final ISourcePosition possition = NonIRObjectFactory.INSTANCE.createSourcePosition(fileName, line);
+        final ISourcePosition possition = NonIRObjectFactory.createSourcePosition(fileName, line);
 
         return new BuildLambdaInstr(result, lambdaBody, possition);
     }

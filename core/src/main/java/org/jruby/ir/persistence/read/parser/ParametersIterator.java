@@ -8,13 +8,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Operand;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
-import org.jruby.parser.StaticScope.Type;
 import org.jruby.parser.StaticScope;
 
 public class ParametersIterator {
-    
-    private IRParsingContext context;
-    private Iterator<Object> parametersIterator;
+    private final IRParsingContext context;
+    private final Iterator<Object> parametersIterator;
     
     public ParametersIterator(IRParsingContext context, List<Object> parameters) {
         this.context = context;
@@ -50,7 +48,7 @@ public class ParametersIterator {
     
     public IRStaticScope nextStaticScope(IRScope lexicalParent) {
         String typeString = nextString();
-        StaticScope.Type type = NonIRObjectFactory.INSTANCE.createStaticScopeType(typeString);
+        StaticScope.Type type = NonIRObjectFactory.createStaticScopeType(typeString);
         
         List<Object> namesList = nextList();
         String[] names = new String[namesList.size()];
@@ -83,7 +81,7 @@ public class ParametersIterator {
     
     public Operand[] nextOperandArray() {
         List<Operand> argsList = nextOperandList();
-        Operand[] args = null;
+        Operand[] args;
         if (argsList != null) {
             args = new Operand[argsList.size()];
             argsList.toArray(args);
