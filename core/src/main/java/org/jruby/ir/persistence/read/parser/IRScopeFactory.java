@@ -74,7 +74,7 @@ public class IRScopeFactory {
         
         final Arity arity = Arity.createArity(arityInt);
         
-        return new IRClosure(manager, lexicalParent, isForLoopBody, lineNumber, staticScope, arity, argumentType, runtime.is1_9());
+        return new IRClosure(manager, lexicalParent, isForLoopBody, lineNumber, staticScope, arity, argumentType);
     }
 }
 

@@ -448,8 +448,9 @@ public class IROperandFactory {
 
     private WrappedIRClosure createWrappedIRClosure(final ParametersIterator parametersIterator) {
         final IRClosure closure = (IRClosure) parametersIterator.nextScope();
-        
-        return new WrappedIRClosure(closure);
+
+        // FIXME: Unlikely this is correct
+        return new WrappedIRClosure(context.getCurrentScope().getNewTemporaryVariable(), closure);
     }
 
 }

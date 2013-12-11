@@ -15,6 +15,7 @@ import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.BuildLambdaInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -27,9 +28,9 @@ import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
+import org.jruby.ir.instructions.GetEncodingInstr;
 import org.jruby.ir.instructions.GVarAliasInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.ir.instructions.GetClassVariableInstr;
@@ -68,6 +69,7 @@ import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
+import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
@@ -100,9 +102,6 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
-import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
@@ -120,6 +119,7 @@ import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.read.parser.dummy.InstrWithParams;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallType;
@@ -403,12 +403,7 @@ public class IRInstructionFactory {
         final Label end = (Label) paramsIterator.next();
         final Label firstRescueBlockLabel = (Label) paramsIterator.next();
         
-        Label ensureBlockLabel = null;
-        if(paramsIterator.hasNext()) {
-            ensureBlockLabel = (Label) paramsIterator.next();
-        }
-        
-        return new ExceptionRegionStartMarkerInstr(begin, end, ensureBlockLabel, firstRescueBlockLabel);
+        return new ExceptionRegionStartMarkerInstr(begin, end, firstRescueBlockLabel);
     }
 
     private GVarAliasInstr createGvarAlias(final ParametersIterator paramsIterator) {
@@ -556,8 +551,6 @@ public class IRInstructionFactory {
         switch (operation) {
         case COPY:
             return createCopy(result, paramsIterator);
-        case ENSURE_RUBY_ARRAY:
-            return createEnsureRubyArray(result, paramsIterator);
         case GET_ENCODING:
             return createGetEncoding(result, paramsIterator);
         case GET_GLOBAL_VAR:
@@ -663,12 +656,6 @@ public class IRInstructionFactory {
         final Operand s = paramsIterator.nextOperand();
         
         return new CopyInstr(result, s);
-    }
-
-    private EnsureRubyArrayInstr createEnsureRubyArray(final Variable result, final ParametersIterator paramsIterator) {
-        final Operand s = paramsIterator.nextOperand();
-
-        return new EnsureRubyArrayInstr(result, s);
     }
 
     private GetEncodingInstr createGetEncoding(final Variable result, final ParametersIterator paramsIterator) {
@@ -895,7 +882,8 @@ public class IRInstructionFactory {
     }
     
     private BuildLambdaInstr createBuildLambda(final Variable result, final ParametersIterator paramsIterator) {
-        final IRClosure lambdaBody = (IRClosure) paramsIterator.nextScope();
+        // FIXME: This is passing null variable which is wrong...
+        final WrappedIRClosure lambdaBody = new WrappedIRClosure(null, (IRClosure) paramsIterator.nextScope());
         final String fileName = paramsIterator.nextString();
         final int line = paramsIterator.nextInt();
         final ISourcePosition possition = NonIRObjectFactory.INSTANCE.createSourcePosition(fileName, line);

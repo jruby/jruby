@@ -20,6 +20,7 @@ import org.jruby.ir.instructions.BUndefInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.BuildLambdaInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
@@ -33,12 +34,12 @@ import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GVarAliasInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.ir.instructions.GetClassVariableInstr;
+import org.jruby.ir.instructions.GetEncodingInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.GetInstr;
@@ -75,6 +76,7 @@ import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
+import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
@@ -107,9 +109,6 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
-import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
@@ -552,12 +551,6 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(newIRModuleBody, container);
     }
 
-    public void EnsureRubyArrayInstr(EnsureRubyArrayInstr ensurerubyarrayinstr) {
-        Operand object = ensurerubyarrayinstr.getObject();
-        
-        stringProducer.appendParameters(object);
-    }
-
     public void EQQInstr(EQQInstr eqqinstr) {
         Operand args[] = eqqinstr.getOperands();
         
@@ -569,9 +562,8 @@ class IRInstrStringExtractor extends IRVisitor {
         Label begin =  exceptionregionstartmarkerinstr.begin;
         Label end =  exceptionregionstartmarkerinstr.end;
         Label firstRescueBlockLabel =  exceptionregionstartmarkerinstr.firstRescueBlockLabel;
-        Label ensureBlockLabel = exceptionregionstartmarkerinstr.ensureBlockLabel;
         
-        stringProducer.appendParameters(begin, end, firstRescueBlockLabel, ensureBlockLabel);
+        stringProducer.appendParameters(begin, end, firstRescueBlockLabel);
     }
 
     @Override public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {

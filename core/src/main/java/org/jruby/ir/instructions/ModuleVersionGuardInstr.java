@@ -9,9 +9,6 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
@@ -70,7 +67,7 @@ public class ModuleVersionGuardInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
     private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
