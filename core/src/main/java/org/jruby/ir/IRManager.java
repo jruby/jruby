@@ -157,4 +157,19 @@ public class IRManager {
     public String getMetaClassName() {
         return "<DUMMY_MC:" + dummyMetaClassCount++ + ">";
     }
+
+    /*
+    * FIXME: Hack during a point in execution we need to store current file we are running so that
+    * we can retrieve that name later for a filename for saving persisted IR.
+    */
+    private final ThreadLocal<String> fileNameLocal = new ThreadLocal<String>();
+
+
+    public void setFileName(String fileName) {
+        fileNameLocal.set(fileName);
+    }
+    
+    public String getFileName() {
+        return fileNameLocal.get();
+    }    
 }

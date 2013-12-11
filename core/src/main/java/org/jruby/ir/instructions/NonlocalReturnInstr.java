@@ -18,6 +18,10 @@ public class NonlocalReturnInstr extends ReturnBase {
     public NonlocalReturnInstr(Operand returnValue) {
         this(returnValue, null);
     }
+    
+    public String getMethodToReturnFrom() {
+        return methodToReturnFrom.getName();
+    }
 
     @Override
     public String toString() {

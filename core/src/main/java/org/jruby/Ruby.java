@@ -74,7 +74,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.persistence.read.IRReadingContext;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.*;
@@ -499,9 +498,7 @@ public final class Ruby {
         }
         
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        if(RubyInstanceConfig.IR_PERSISTENCE) { 
-            IRReadingContext.INSTANCE.setFileName(filename);
-        }
+        if(RubyInstanceConfig.IR_PERSISTENCE) getIRManager().setFileName(filename);
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -2548,7 +2545,7 @@ public final class Ruby {
 
         try {
             // Get IR from .ir file
-            InputStream irIn = new FileInputStream(IRFileExpert.INSTANCE.getIRFileInIntendedPlace(file));
+            InputStream irIn = new FileInputStream(IRFileExpert.getIRFileInIntendedPlace(file));
 
             return IRReader.read(irIn, this);
         } catch (Exception e) {
@@ -2573,7 +2570,7 @@ public final class Ruby {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
         
         try {
-            File irFile = IRFileExpert.INSTANCE.getIRFileInIntendedPlace(file);
+            File irFile = IRFileExpert.getIRFileInIntendedPlace(file);
             InputStream irIn = new FileInputStream(irFile);
 
             return IRReader.read(irIn, this);
@@ -2751,9 +2748,8 @@ public final class Ruby {
                 ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
             }
             
-            if (RubyInstanceConfig.IR_PERSISTENCE) { 
-                IRReadingContext.INSTANCE.setFileName(scriptName);
-            }
+            // Save filename away as side-effect (in TL) so persister can know later 
+            if (RubyInstanceConfig.IR_PERSISTENCE) getIRManager().setFileName(scriptName);
 
             runInterpreter(context, parseResult, self);
         } catch (JumpException.ReturnJump rj) {

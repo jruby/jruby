@@ -59,6 +59,7 @@ import org.jruby.ir.instructions.MethodLookupInstr;
 import org.jruby.ir.instructions.ModuleVersionGuardInstr;
 import org.jruby.ir.instructions.MultipleAsgnBase;
 import org.jruby.ir.instructions.NoResultCallInstr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
@@ -85,6 +86,7 @@ import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
@@ -384,6 +386,12 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(label);
     }
 
+    
+    @Override public void NonlocalReturnInstr(NonlocalReturnInstr instr) {
+        stringProducer.appendParameters(instr.getMethodToReturnFrom());
+    }
+    
+
     // Put instructions
 
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) {
@@ -430,6 +438,11 @@ class IRInstrStringExtractor extends IRVisitor {
         parameters.add(instr.getPostArgsCount());
         
         stringProducer.appendParameters(parameters.toArray());
+    }
+    
+    
+    @Override public void RuntimeHelperCall(RuntimeHelperCall instr) {
+        stringProducer.appendParameters(instr.getHelperMethod(), instr.getArgs());
     }
 
     private List<Object> getCommonParametersForMultipleAsgnBase(MultipleAsgnBase multipleAsgnBase) {

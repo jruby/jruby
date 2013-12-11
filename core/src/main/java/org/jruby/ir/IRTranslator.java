@@ -28,7 +28,7 @@ public abstract class IRTranslator<R, S> {
                 RootNode rootNode = (RootNode) parseResult;
                 if (isIRPersistenceRequired()) {
                     producedIRScope = produceIrScope(runtime, rootNode, false);
-                    IRPersister.persist(producedIRScope);
+                    IRPersister.persist(runtime.getIRManager(), producedIRScope);
                     result = translationSpecificLogic(runtime, producedIRScope, specificObject);
                 } else {
                     producedIRScope = produceIrScope(runtime, rootNode, false);

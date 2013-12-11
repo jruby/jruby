@@ -2,17 +2,14 @@ package org.jruby.ir.persistence.util;
 
 import java.io.File;
 
-public enum IRFileExpert {
-    INSTANCE;
-
+public class IRFileExpert {
     private static final String IR_FILE_EXTENSION = ".ir";
     private static final String IR_FOLDER = "ir";
     private static final String EXTENSION_SEPARATOR = ".";
 
     private static final File IR_ROOT_FOLDER = new File(System.getProperty("user.home"), IR_FOLDER);
 
-    public File getIRFileInIntendedPlace(String fileName) {
-        
+    public static File getIRFileInIntendedPlace(String fileName) {
         fileName = fileName.replaceAll("file:", "");
         File rbFile = new File(fileName);
         fileName = rbFile.getAbsolutePath();
@@ -33,12 +30,6 @@ public enum IRFileExpert {
             fileNameWithoutExtension = fileName;
         }
 
-        String irFileName = fileNameWithoutExtension + IR_FILE_EXTENSION;
-
-        File file = new File(irFolder, irFileName);
-
-        return file;
-        
+        return new File(irFolder, fileNameWithoutExtension + IR_FILE_EXTENSION);
     }
-
 }
