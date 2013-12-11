@@ -602,5 +602,18 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal 5, 'hello'.each_char.size
     assert_equal 5, 'hello'.each_codepoint.size
   end
+
+  def test_stop_iteration
+    en = 2.times
+    en.next
+    en.next
+
+    assert_raise(StopIteration) { en.peek }
+
+    e = 2.times
+    e.next
+    e.next
+    assert_raise(StopIteration) { e.peek }
+  end
 end
 
