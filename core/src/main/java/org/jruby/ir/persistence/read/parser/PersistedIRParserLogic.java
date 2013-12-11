@@ -12,9 +12,6 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.read.parser.dummy.DummyInstrFactory;
 import org.jruby.ir.persistence.read.parser.dummy.InstrWithParams;
 
-import beaver.Symbol;
-
-
 public class PersistedIRParserLogic {
     
     private final IRScopeFactory scopeBuilder;
@@ -34,22 +31,22 @@ public class PersistedIRParserLogic {
         operandFactory = new IROperandFactory(context);
     }
     
-    Symbol getToplevelScope() {
+    IRScope getToplevelScope() {
         final IRScope scope = context.getToplevelScope();
         
-        return new Symbol(scope);
+        return scope;
     }
     
-    Symbol createScope(String typeString, List<Object> parameters) {
+    IRScope createScope(String typeString, List<Object> parameters) {
         final IRScopeType type = NON_IR_OBJECT_FACTORY.createScopeType(typeString);
         final IRScope irScope = scopeBuilder.createScope(type, parameters);
         
         context.addToScopes(irScope);
         
-        return new Symbol(irScope);
+        return irScope;
     }
     
-    Symbol addToScope(IRScope scope, List<Instr> instrs) {
+    IRScope addToScope(IRScope scope, List<Instr> instrs) {
         // we need to iterate throw scopes
         // because IRScope#addInst has obvious side effect and for that reason
         // so we can't just use IRScope#getInsts and assign it to instrs 
@@ -57,88 +54,89 @@ public class PersistedIRParserLogic {
             scope.addInstr(instr);
         }
         
-        return new Symbol(scope);
+        return scope;
     }
     
-    Symbol enterScope(String name) {
+    IRScope enterScope(String name) {
         final IRScope scope = context.getScopeByName(name);
         context.setCurrentScope(scope);
-        return new Symbol(scope);
+        return scope;
     }
     
-    Symbol addFirstInstruction(Instr i) {
+    List<Object> addFirstInstruction(Instr i) {
         final List<Object> lst = new ArrayList<Object>();
         lst.add(i);
-        return new Symbol(lst);
+        return lst;
     }
     
-    Symbol addFollowingInstructions(List<Instr> lst, Instr i, Symbol _symbol_lst) {
+    Object addFollowingInstructions(List<Instr> lst, Instr i, Object _symbol_lst) {
         lst.add(i);
         return _symbol_lst;
     }
     
-    Symbol markAsDeadIfNeeded(Symbol instrSymbol, Object marker) {
+    Object markAsDeadIfNeeded(Instr instrObject, Object marker) {
+        // FIXME: This was symbol in beaver picking up deadness and then getting its instr from symbol and marking it
+        // I am just pretending the instr to be marked is here.
         if(marker != null) {
-            Instr currentInstr =  (Instr) instrSymbol.value;
-            currentInstr.markDead();
+            instrObject.markDead();
         }
-        return instrSymbol;
+        return instrObject;
     }
     
-    Symbol createInstrWithoutParams(String operationName) {
+    Instr createInstrWithoutParams(String operationName) {
         Instr instr = instrFactory.createInstrWithoutParams(operationName);
-        return new Symbol(instr);
+        return instr;
     }
     
-    Symbol createInstrWithParams(InstrWithParams dummy) {
+    Instr createInstrWithParams(InstrWithParams dummy) {
         Instr instr = instrFactory.createInstrWithParams(dummy);
-        return new Symbol(instr);
+        return instr;
     }
     
-    Symbol markHasUnusedResultIfNeeded(Symbol instrSymbol, Object marker) {
+    Object markHasUnusedResultIfNeeded(Instr instrObject, Object marker) {
+        //FIXME: See markAsDead...same thing done here.
         if(marker != null) {
-            Instr currentInstr =  (Instr) instrSymbol.value;
-            currentInstr.markUnusedResult();
+            instrObject.markUnusedResult();
         }
-        return instrSymbol;
+        return instrObject;
     }
     
-    Symbol createReturnInstrWithNoParams(Operand result, String operationName) {
+    Instr createReturnInstrWithNoParams(Operand result, String operationName) {
         Instr instr = instrFactory.createReturnInstrWithNoParams((Variable) result, operationName);
-        return new Symbol(instr);
+        return instr;
     }
     
-    Symbol createReturnInstrWithParams(Operand result, InstrWithParams dummy) {
+    Instr createReturnInstrWithParams(Operand result, InstrWithParams dummy) {
         Instr instr = instrFactory.createReturnInstrWithParams((Variable) result, dummy);
-        return new Symbol(instr);
+        return instr;
     }
     
-    Symbol createInstrWithParams(String name, List<Object> params) {
+    InstrWithParams createInstrWithParams(String name, List<Object> params) {
         InstrWithParams dummy = DUMMY_INSTR_FACTORY.createInstrWithParam(name, params);
-        return new Symbol(dummy);
+        return dummy;
     }
     
-    Symbol createNull() {
-        return new Symbol(null);
+    Object createNull() {
+        return null;
     }
     
-    Symbol createList(List<Object> params) {        
+    List<Object> createList(List<Object> params) {        
         if(params == null) {
             params = Collections.emptyList();
         }
-        return new Symbol(params);
+        return params;
     }
     
-    Symbol createOperandWithoutParameters(String operandName) {
+    Operand createOperandWithoutParameters(String operandName) {
         Operand operand = operandFactory.createOperandWithoutParameters(operandName);
         
-        return new Symbol(operand);
+        return operand;
     }
     
-    Symbol createOperandWithParameters(String operandName, List<Object> params) {
+    Operand createOperandWithParameters(String operandName, List<Object> params) {
         Operand operand = operandFactory.createOperandWithParameters(operandName, params);
         
-        return new Symbol(operand);
+        return operand;
     }
 }
 

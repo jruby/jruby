@@ -1,67 +1,55 @@
 package org.jruby.ir.persistence.read.lexer;
 
-import beaver.Symbol;
-import beaver.Scanner;
-
-import org.jruby.ir.persistence.read.parser.PersistedIRParser.Terminals;
+import org.jruby.ir.persistence.read.parser.PersistedIRParser;
+import org.jruby.parser.ParserSyntaxException;
 
 /**
 * Scanner for persisted IR
 */
 %%
 
-%class PersistedIRScanner
-%extends Scanner
 %public
-
-%function nextToken
-%type Symbol
-%yylexthrow Scanner.Exception
-%eofval{
-	return new Symbol(Terminals.EOF, "end-of-file");
-%eofval}
-
+%class PersistedIRScanner
+%standalone
 %unicode
-
 %line
 %column
+%yylexthrow ParserSyntaxException
+%eofval{
+return PersistedIRParser.EOF;
+%eofval}
 
 %{
+
+        boolean stringResult = false;
         StringBuilder string = new StringBuilder();
 
-        private Symbol token (short id) {
-	        return new Symbol(id, yyline + 1, yycolumn + 1, yylength(), yytext());
-        }
-
-        private Symbol token (short id, Object value) {
-	        return new Symbol(id, yyline + 1, yycolumn + 1, yylength(), value);
-        }
-        
-        private void appendToString() {
-                string.append( yytext() );
-        }
-    
-        private Symbol finishStringAs(short id) {
-                yybegin(YYINITIAL); 
+        public Object value() {
+            if (stringResult) {
+                stringResult = false;
                 String value = string.toString();
                 string.setLength(0);
-                return token(id, value);
+                return value;
+            }
+
+            return yytext();
+        }
+
+        private void appendToString() {
+            string.append(yytext());
+        }
+
+        public static PersistedIRScanner create(java.io.InputStream stream) {
+            return new PersistedIRScanner(stream);
         }
 
 %}
 
 LineTerminator = \r|\n|\r\n
 WhiteSpace = [ \t\f]
-
-/* Identifiers */
 Identifier = [:jletter:][:jletterdigit:]*
-
-/* Boolean */
 BooleanLiteral = (true|false)
-
-/* Numbers */
 FixnumLiteral = 0 | [+-]?[1-9][0-9]*
-
 FloatLiteral = [+-]?{FLit} {Exponent}?
 
 /* Float elements */
@@ -76,49 +64,42 @@ StringCharacter = [^\"\\]
 %%
 
 <YYINITIAL> {
-    /* String literal */
-    \"                                           { yybegin(STRING); }                                                       
+    \"                 { stringResult = true; yybegin(STRING); } 
     
-    
-    {WhiteSpace}                                 { /* ignore */ }
-    
-    {LineTerminator}                             { return token(Terminals.EOLN); }
-    
-    {FixnumLiteral}                              { return token(Terminals.FIXNUM); }
-    
-    {FloatLiteral}                               { return token(Terminals.FLOAT); }
-    
-    "="                                          { return token(Terminals.EQ); }
-    
-    {BooleanLiteral}                             { return token(Terminals.BOOLEAN); }
-    
-    "null"                                       { return token(Terminals.NULL); }
+    {WhiteSpace}       { /* ignore */ }
+    {LineTerminator}   { return PersistedIRParser.EOLN; }
+    {FixnumLiteral}    { return PersistedIRParser.FIXNUM; }
+    {FloatLiteral}     { return PersistedIRParser.FLOAT; }
+    "="                { return PersistedIRParser.EQ; }
+    {BooleanLiteral}   { return PersistedIRParser.BOOLEAN; }
+    "null"             { return PersistedIRParser.NULL; }
     
     /* Markers that are common for all instructions */
-    "[DEAD]"                                     { return token(Terminals.DEAD_INSTR_MARKER); }
-    "[DEAD-RESULT]"                              { return token(Terminals.DEAD_RESULT_INSTR_MARKER); }
+    "[DEAD]"           { return PersistedIRParser.DEAD_INSTR_MARKER; }
+    "[DEAD-RESULT]"    { return PersistedIRParser.DEAD_RESULT_INSTR_MARKER; }
     
-    {Identifier}                                 { return token(Terminals.ID); }
+    {Identifier}       { return PersistedIRParser.ID; }
     
     /* separators */
-    "["                                          { return token(Terminals.LBRACK); }
-    "]"                                          { return token(Terminals.RBRACK); }
-    "("                                          { return token(Terminals.LPAREN); }
-    ")"                                          { return token(Terminals.RPAREN); }
-    "{"                                          { return token(Terminals.LBRACE); }
-    "}"                                          { return token(Terminals.RBRACE); }
-    "<"                                          { return token(Terminals.LT); }
-    ">"                                          { return token(Terminals.GT); }
-    ","                                          { return token(Terminals.COMMA); }
+    "["                { return PersistedIRParser.LBRACK; }
+    "]"                { return PersistedIRParser.RBRACK; }
+    "("                { return PersistedIRParser.LPAREN; }
+    ")"                { return PersistedIRParser.RPAREN; }
+    "{"                { return PersistedIRParser.LBRACE; }
+    "}"                { return PersistedIRParser.RBRACE; }
+    "<"                { return PersistedIRParser.LT; }
+    ">"                { return PersistedIRParser.GT; }
+    ","                { return PersistedIRParser.COMMA; }
 }
 
 <STRING> {
-    \"                                           { return finishStringAs(Terminals.STRING); }
-    \\\"                                         { string.append('\"'); }
-    \\                                           { string.append('\\'); }
+    \"                 { yybegin(YYINITIAL); return PersistedIRParser.STRING; }
 
-    {StringCharacter}+                           { appendToString(); }
+    \\\"               { string.append('\"'); }
+    \\                 { string.append('\\'); }
+
+    {StringCharacter}+ { appendToString(); }
 }
 
 /* error fallback */
-.|\n                                             { throw new Scanner.Exception(yyline + 1, yycolumn + 1, "unrecognized character '" + yytext() + "'"); }
+.|\n                   { throw new ParserSyntaxException("" + (yyline + 1) + ", " + (yycolumn + 1) + " unrecognized character '" + yytext() + "'"); }

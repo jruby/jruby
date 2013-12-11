@@ -123,6 +123,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -148,6 +149,7 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.ir.persistence.read.IRReader;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.

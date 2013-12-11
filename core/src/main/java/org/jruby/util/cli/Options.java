@@ -105,7 +105,6 @@ public class Options {
     public static final Option<Boolean> IR_PERSISTENCE       = bool(IR, "ir.persistence", false, "Persist generation of JRuby IR.");
     public static final Option<Boolean> IR_VISUALIZER        = bool(IR, "ir.visualizer", false, "Visualization of JRuby IR.");
     public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", "Specify comma delimeted list of passes to run.");
-    public static final Option<Boolean> IR_PERSISTENCE       = bool(IR, "ir.persistence", false, "Persist generated JRuby IR.");
     public static final Option<Boolean> IR_READING       = bool(IR, "ir.reading", false, "Read JRuby IR file."); 
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
     

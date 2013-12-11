@@ -530,7 +530,8 @@ public class IRInstructionFactory {
     }
 
     private BlockGivenInstr createBlockGiven(final Variable result) {
-        return new BlockGivenInstr(result);
+        // FIXME: This changed
+        return null; //new BlockGivenInstr(result);
     }
 
     private GetBackrefInstr createGetBackref(final Variable result) {
