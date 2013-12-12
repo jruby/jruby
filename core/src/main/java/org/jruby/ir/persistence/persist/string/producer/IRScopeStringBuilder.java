@@ -2,7 +2,6 @@ package org.jruby.ir.persistence.persist.string.producer;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 import org.jruby.parser.StaticScope;
@@ -33,13 +32,13 @@ public class IRScopeStringBuilder extends AbstractIRStringBuilder<IRScope> {
     }    
     
     public void appendScopeInfo(IRScope irScope) {
-        IRScopeType scopeType = irScope.getScopeType();
-        builder.append(scopeType);
+        builder.append(irScope.getScopeType());
         
         String name = irScope.getName();
         int lineNumber = irScope.getLineNumber();
         IRScope lexicalParent = irScope.getLexicalParent();
         StaticScope staticScope = irScope.getStaticScope();
+        
         if (irScope instanceof IRClosure) {
             IRClosure irClosure = (IRClosure) irScope;
             

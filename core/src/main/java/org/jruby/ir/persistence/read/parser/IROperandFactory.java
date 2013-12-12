@@ -367,9 +367,7 @@ public class IROperandFactory {
     }
     
     private NthRef createNthRef(final ParametersIterator parametersIterator) {
-        final int matchNumber = parametersIterator.nextInt();
-        
-        return new NthRef(matchNumber);
+        return new NthRef(parametersIterator.nextInt());
     }
     
     private Range createRange(final ParametersIterator parametersIterator) {
@@ -416,9 +414,7 @@ public class IROperandFactory {
     }
     
     private Symbol createSymbol(final ParametersIterator parametersIterator) {
-        final String name = parametersIterator.nextString();
-        
-        return new Symbol(name);
+        return new Symbol(parametersIterator.nextString());
     }
     
     private Variable createTemporaryVariable(final ParametersIterator parametersIterator) {

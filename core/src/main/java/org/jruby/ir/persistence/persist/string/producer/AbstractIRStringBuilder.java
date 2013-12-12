@@ -4,7 +4,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.StaticScope.Type;
 
 public abstract class AbstractIRStringBuilder<T> {
     
@@ -93,16 +92,13 @@ public abstract class AbstractIRStringBuilder<T> {
         builder.append(parameter);
     }
     
-    private void appendArrayParameter(Object[] array) {
+    private void appendArrayParameter(Object[] parameters) {
         builder.append(ARRAY_START_MARKER);
         
-        for (int i = 0; i < array.length; i++) {
-            if(i != 0) {
-                builder.append(PARAMETER_SEPARATOR);
-            }
+        for (int i = 0; i < parameters.length; i++) {
+            if (i != 0) builder.append(PARAMETER_SEPARATOR);
             
-            Object parameter = array[i];
-            appendParameter(parameter);
+            appendParameter(parameters[i]);
         }
         
         builder.append(ARRAY_END_MARKER);
@@ -113,15 +109,11 @@ public abstract class AbstractIRStringBuilder<T> {
     }
     
     private void appendStaticScopeParameter(IRStaticScope staticScope) {
-        Type type = staticScope.getType();
-        String[] variables = staticScope.getVariables();
-        int requiredArgs = staticScope.getRequiredArgs();
-        
-        appendOtherParameter(type);
+        appendOtherParameter(staticScope.getType());
         builder.append(PARAMETER_SEPARATOR);
-        appendArrayParameter(variables);
+        appendArrayParameter(staticScope.getVariables());
         builder.append(PARAMETER_SEPARATOR);
-        appendParameterWithoutModifications(requiredArgs);
+        appendParameterWithoutModifications(staticScope.getRequiredArgs());
     }
 
     private void appendOtherParameter(Object parameter) {

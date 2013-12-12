@@ -4,7 +4,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.persistence.persist.string.producer.IRScopeStringBuilder;
 
 class IRScopeStringExtractor {
-    
     private final IRScopeStringBuilder stringProducer;
     
     private IRScopeStringExtractor(IRScopeStringBuilder stringProducer) {
@@ -13,8 +12,7 @@ class IRScopeStringExtractor {
     
     // Static factory that is used in translator
     static IRScopeStringExtractor createToplevelInstance() {
-        IRScopeStringBuilder stringProducer = new IRScopeStringBuilder(null);
-        return new IRScopeStringExtractor(stringProducer);
+        return new IRScopeStringExtractor(new IRScopeStringBuilder(null));
     }
 
     String extract(IRScope irScope) {

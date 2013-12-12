@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence.persist.string.producer;
 
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryVariable;
 
 public class IROperandStringBuilder extends AbstractIRStringBuilder<Operand> {
     private static final String PARAMETER_LIST_START_MARKER = "{";
@@ -27,7 +28,9 @@ public class IROperandStringBuilder extends AbstractIRStringBuilder<Operand> {
     }
 
     public void appendOperandType(Operand operand) {
+        if (!(operand instanceof TemporaryVariable)) {
         builder.append(operand.getOperandType());
+        }
     }
 }
 

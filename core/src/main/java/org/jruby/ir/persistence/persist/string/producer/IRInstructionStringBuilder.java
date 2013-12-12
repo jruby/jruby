@@ -2,7 +2,6 @@ package org.jruby.ir.persistence.persist.string.producer;
 
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.operands.Variable;
 
 public class IRInstructionStringBuilder extends AbstractIRStringBuilder<Instr> {
     private static final String PARAMETER_LIST_START_MARKER = "(";
@@ -34,20 +33,16 @@ public class IRInstructionStringBuilder extends AbstractIRStringBuilder<Instr> {
     }
 
     public void appendPrefix(Instr instr) {
-        if (instr instanceof ResultInstr) {
-            Variable result = ((ResultInstr) instr).getResult();
-            builder.append(result).append(EQUAL);
+        if (instr instanceof ResultInstr) {  // '%v_2 ='
+            builder.append(((ResultInstr) instr).getResult()).append(EQUAL);
         }
-        builder.append(instr.getOperation());
+        
+        builder.append(instr.getOperation()); // 'copy' Note: Not really a prefix in my mind
     }
 
     public void appendMarkers(Instr instr) {
-        if (instr.hasUnusedResult()) {
-            builder.append(HAS_UNUSED_RESULT_MARKER);
-        }
-        if (instr.isDead()) {
-            builder.append(DEAD_MARKER);
-        }
+        if (instr.hasUnusedResult()) builder.append(HAS_UNUSED_RESULT_MARKER);
+        if (instr.isDead()) builder.append(DEAD_MARKER);
     }
 }
 
