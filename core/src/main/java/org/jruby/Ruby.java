@@ -2544,7 +2544,7 @@ public final class Ruby {
 
         try {
             // Get IR from .ir file
-            InputStream irIn = new FileInputStream(IRFileExpert.getIRFileInIntendedPlace(file));
+            InputStream irIn = new FileInputStream(IRFileExpert.getIRPersistedFile(file));
 
             return IRReader.read(irIn, this);
         } catch (Exception e) {
@@ -2569,7 +2569,7 @@ public final class Ruby {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
         
         try {
-            File irFile = IRFileExpert.getIRFileInIntendedPlace(file);
+            File irFile = IRFileExpert.getIRPersistedFile(file);
             InputStream irIn = new FileInputStream(irFile);
 
             return IRReader.read(irIn, this);

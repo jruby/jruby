@@ -51,20 +51,6 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
             return null;
         }
     }
- 
-    @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
-        if (val instanceof Array) {
-            Array a = (Array)val;
-            int n = a.size();
-            int i = Helpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
-            return i == -1 ? scope.getManager().getNil() : a.get(i);
-        } else {
-            return null;
-        }
-    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

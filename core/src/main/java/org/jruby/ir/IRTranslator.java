@@ -26,7 +26,7 @@ public abstract class IRTranslator<R, S> {
 
             if (RubyInstanceConfig.IR_PERSISTENCE) {
                 try {
-                    FileIO.writeToFile(IRFileExpert.getIRFileInIntendedPlace(scope.getFileName()), 
+                    FileIO.writeToFile(IRFileExpert.getIRPersistedFile(scope.getFileName()), 
                             IRToStringTranslator.translate(scope));
                 } catch (IOException ex) {
                     ex.printStackTrace(); // FIXME: Handle errors better

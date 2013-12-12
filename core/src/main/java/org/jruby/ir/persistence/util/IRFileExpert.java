@@ -1,35 +1,27 @@
 package org.jruby.ir.persistence.util;
 
 import java.io.File;
+import org.jruby.platform.Platform;
 
 public class IRFileExpert {
     private static final String IR_FILE_EXTENSION = ".ir";
-    private static final String IR_FOLDER = "ir";
+    private static final String IR_FOLDER = Platform.IS_WINDOWS ? "ir" : ".ir";
     private static final String EXTENSION_SEPARATOR = ".";
-
     private static final File IR_ROOT_FOLDER = new File(System.getProperty("user.home"), IR_FOLDER);
 
-    public static File getIRFileInIntendedPlace(String fileName) {
-        fileName = fileName.replaceAll("file:", "");
-        File rbFile = new File(fileName);
-        fileName = rbFile.getAbsolutePath();
+    public static File getIRPersistedFile(String fileName) {
+        // from storage folder we save all files as absolute paths within that dir.
+        String path = new File(fileName.replaceAll("file:", "")).getAbsolutePath();
 
-        int startOfFileName = fileName.lastIndexOf(File.separator) + 1;
-        File irFolder = IR_ROOT_FOLDER;
-        if (startOfFileName > 0) {
-            String fileFolderPath = fileName.substring(0, startOfFileName);
-            irFolder = new File(irFolder, fileFolderPath);
-        }
-        irFolder.mkdirs();
+        int fileNameIndex = path.lastIndexOf(File.separator) + 1;
+        File folder = fileNameIndex < 0 ? IR_ROOT_FOLDER : 
+                new File(IR_ROOT_FOLDER, path.substring(0, fileNameIndex));
 
-        int endOfFileName = fileName.lastIndexOf(EXTENSION_SEPARATOR);
-        String fileNameWithoutExtension;
-        if (endOfFileName > 0) {
-            fileNameWithoutExtension = fileName.substring(startOfFileName, endOfFileName);
-        } else {
-            fileNameWithoutExtension = fileName;
-        }
+        folder.mkdirs();
 
-        return new File(irFolder, fileNameWithoutExtension + IR_FILE_EXTENSION);
+        int extensionIndex = path.lastIndexOf(EXTENSION_SEPARATOR);
+        String bareFilename = extensionIndex < 0 ? path : path.substring(fileNameIndex, extensionIndex);
+
+        return new File(folder, bareFilename + IR_FILE_EXTENSION);
     }
 }
