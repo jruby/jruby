@@ -27,7 +27,7 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
 
         return buf.toString();
     }
-
+    
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

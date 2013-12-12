@@ -27,14 +27,21 @@ public class CompoundArray extends Operand {
     }
 
     public CompoundArray(Operand a1, Operand a2, boolean isArgsPush) {
+        super(OperandType.COMPOUND_ARRAY);
         this.a1 = a1;
         this.a2 = a2;
         this.isArgsPush = isArgsPush;
     }
+    
+    public Operand getA1() {
+        return a1;
+    }
+    
+    public Operand getA2() {
+        return a2;
+    }
 
     public boolean hasKnownValue() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
-
-    public String toString() { return (isArgsPush ? "ArgsPush:[" : "ArgsCat:[") + a1 + ", " + a2 + "]"; }
 
     public Operand getAppendingArg() { return a1; }
 
@@ -97,5 +104,10 @@ public class CompoundArray extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.CompoundArray(this);
+    }
+
+    @Override
+    public String toString() {
+        return (isArgsPush ? "ArgsPush:[" : "ArgsCat:[") + a1 + ", " + a2 + "]";
     }
 }

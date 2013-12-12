@@ -156,5 +156,5 @@ public class IRManager {
 
     public String getMetaClassName() {
         return "<DUMMY_MC:" + dummyMetaClassCount++ + ">";
-    }
+    }  
 }

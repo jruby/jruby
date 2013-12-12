@@ -17,6 +17,8 @@ public class WrappedIRClosure extends Operand {
     private final IRClosure closure;
 
     public WrappedIRClosure(Variable self, IRClosure closure) {
+        super(OperandType.WRAPPED_IR_CLOSURE);
+
         this.self = self;
         this.closure = closure;
     }
@@ -39,7 +41,7 @@ public class WrappedIRClosure extends Operand {
     public String toString() {
         return self + ":" + closure.toString();
     }
-
+    
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
         return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));

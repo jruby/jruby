@@ -1756,6 +1756,8 @@ public class RubyInstanceConfig {
     public static boolean IR_DEBUG = Options.IR_DEBUG.load();
     public static boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
+    public static boolean IR_PERSISTENCE = Options.IR_PERSISTENCE.load();
+    public static boolean IR_READING = Options.IR_READING.load(); 
     public static boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();

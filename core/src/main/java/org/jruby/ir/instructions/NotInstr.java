@@ -27,23 +27,30 @@ public class NotInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    public Operand getArg() {
+        return arg;
+    }
+    
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{arg};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
-
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         arg = arg.getSimplifiedOperand(valueMap, force);
     }
-
+    
     @Override
     public String toString() {
         return super.toString() + "(" + arg + ")";

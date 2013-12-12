@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
+import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -12,6 +13,15 @@ import java.util.Map;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
+    private final OperandType type;
+
+    public Operand(OperandType type) {
+        this.type = type;        
+    }
+
+    public final OperandType getOperandType() {
+        return type;
+    }
 
     /**
      * Do we know the value of this operand at compile-time?

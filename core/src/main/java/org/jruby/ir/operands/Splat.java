@@ -18,17 +18,19 @@ public class Splat extends Operand {
     final private Operand array;
 
     public Splat(Operand array) {
+        super(OperandType.SPLAT);
+        
         this.array = array;
     }
+    
+    @Override
+    public String toString() {
+        return "*" + array;
+    }    
 
     @Override
     public boolean hasKnownValue() {
         return false; /*_array.isConstant();*/
-    }
-
-    @Override
-    public String toString() {
-        return "*" + array;
     }
 
     public Operand getArray() {

@@ -17,6 +17,8 @@ public class ScopeModule extends Operand {
     private final IRScope scope;
 
     public ScopeModule(IRScope scope) {
+        super(OperandType.SCOPE_MODULE);
+        
         this.scope = scope;
     }
 

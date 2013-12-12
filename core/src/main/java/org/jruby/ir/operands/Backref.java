@@ -14,7 +14,7 @@ public class Backref extends Reference {
     final public char type;
 
     public Backref(char t) {
-        super("$" + t);
+        super(OperandType.BACKREF, "$" + t);
         type = t;
     }
 
@@ -40,7 +40,7 @@ public class Backref extends Reference {
     public void visit(IRVisitor visitor) {
         visitor.Backref(this);
     }
-
+    
     @Override
     public String toString() {
         return "$" + "'" + type + "'";

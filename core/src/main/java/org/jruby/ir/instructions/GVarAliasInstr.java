@@ -21,15 +21,23 @@ public class GVarAliasInstr extends Instr {
         this.newName = newName;
         this.oldName = oldName;
     }
+    
+    public Operand getNewName() {
+        return newName;
+    }
+    
+    public Operand getOldName() {
+        return oldName;
+    }
+    
+    @Override
+    public String toString() {
+        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
+    }
 
     @Override
     public Operand[] getOperands() {
         return new Operand[] { newName, oldName };
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
     }
 
     @Override

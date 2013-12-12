@@ -35,25 +35,36 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
         this.object = object;
         this.result = result;
     }
+    
+    public Operand getObject() {
+        return object;
+    }
+    
+    public Operand getStartingScope() {
+        return startingScope;
+    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetClassVarContainerModuleInstr(ii.getRenamedVariable(result), startingScope.cloneForInlining(ii), object == null ? null : object.cloneForInlining(ii));
     }
-
+    
     @Override
     public String toString() {
         return super.toString() + "(" + startingScope + ", " + object + ")";
-    }
+    }    
 
+    @Override
     public Operand[] getOperands() {
         return object == null ? new Operand[] {startingScope} : new Operand[] {startingScope, object};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

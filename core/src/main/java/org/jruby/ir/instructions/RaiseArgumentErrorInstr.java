@@ -24,15 +24,31 @@ public class RaiseArgumentErrorInstr extends Instr {
         this.rest = rest;
         this.numArgs = numArgs;
     }
-
+    
     @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
+    }
+    
+    public int getNumArgs() {
+        return numArgs;
+    }
+    
+    public int getOpt() {
+        return opt;
     }
 
     @Override
     public String toString() {
         return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+    }
+    
+    public int getRequired() {
+        return required;
+    }
+    
+    public int getRest() {
+        return rest;
     }
 
     @Override

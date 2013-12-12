@@ -8,9 +8,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Self extends LocalVariable {
     public static final Self SELF = new Self();
+    private static final String NAME = "%self";
 
     private Self() {
-        super("%self", 0, 0);
+        super(OperandType.SELF, NAME, 0, 0);
     }
 
     public boolean isSelf() {

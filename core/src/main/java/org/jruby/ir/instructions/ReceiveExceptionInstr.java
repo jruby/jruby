@@ -28,6 +28,10 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     public ReceiveExceptionInstr(Variable result) {
         this(result, true);
     }
+    
+    public boolean isCheckType() {
+        return checkType;
+    }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
@@ -37,13 +41,14 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
         return result;
     }
 
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + (!checkType ? " [no-typecheck]" : "");
+    }
+
+    @Override
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

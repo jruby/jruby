@@ -29,7 +29,9 @@ import java.util.List;
 public class UndefinedValue extends Operand implements IRubyObject {
     public static final UndefinedValue UNDEFINED = new UndefinedValue();
 
-    private UndefinedValue() {}
+    private UndefinedValue() {
+        super(OperandType.UNDEFINED_VALUE);
+    }
 
     @Override
     public void addUsedVariables(List<org.jruby.ir.operands.Variable> l) {

@@ -49,7 +49,6 @@ import org.joda.time.DateTimeZone;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.IRubyWarnings.ID;
@@ -72,11 +71,10 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.IRBuilder;
+import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.*;
 import org.jruby.runtime.Helpers;
@@ -125,10 +123,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
@@ -147,7 +145,7 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.util.cli.Options;
+import org.jruby.ir.persistence.read.IRReader;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -499,28 +497,35 @@ public final class Ruby {
             return;
         }
         
-        Node scriptNode = parseFromMain(inputStream, filename);
+        ParseResult parseResult = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
             try {inputStream.close();} catch (IOException ioe) {}
         }
+        
+        if (parseResult instanceof RootNode) {
+            RootNode scriptNode = (RootNode) parseResult;        
 
-        ThreadContext context = getCurrentContext();
+            ThreadContext context = getCurrentContext();
 
-        String oldFile = context.getFile();
-        int oldLine = context.getLine();
-        try {
-            context.setFileAndLine(scriptNode.getPosition());
+            String oldFile = context.getFile();
+            int oldLine = context.getLine();
+            try {
+                context.setFileAndLine(scriptNode.getPosition());
 
-            if (config.isAssumePrinting() || config.isAssumeLoop()) {
-                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
-                        config.isSplit());
-            } else {
-                runNormally(scriptNode);
+                if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                    runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
+                            config.isSplit());
+                } else {
+                    runNormally(scriptNode);
+                }
+            } finally {
+                context.setFileAndLine(oldFile, oldLine);
             }
-        } finally {
-            context.setFileAndLine(oldFile, oldLine);
+        } else {
+            // TODO: Only interpreter supported so far
+            runInterpreter(parseResult);
         }
     }
 
@@ -542,6 +547,12 @@ public final class Ruby {
             return parseFileFromMain(inputStream, filename, getCurrentContext().getCurrentScope());
         }
     }
+    
+    public ParseResult parseFromMain(String fileName, InputStream in) {
+        if (config.isInlineScript()) return parseInline(in, fileName, getCurrentContext().getCurrentScope());
+
+        return parseFileFromMain(fileName, in, getCurrentContext().getCurrentScope());
+    }    
 
     /**
      * Run the given script with a "while gets; end" loop wrapped around it.
@@ -718,36 +729,7 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            final IRScope scope = IRBuilder.createIRBuilder(this, getIRManager()).buildRoot((RootNode) node);
-            final Class compiled = JVMVisitor.compile(this, scope, classLoader);
-            final StaticScope staticScope = scope.getStaticScope();
-            staticScope.setModule(getTopSelf().getMetaClass());
-            return new AbstractScript() {
-                @Override
-                public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-                    try {
-                        return (IRubyObject)compiled.getMethod("__script__0", ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf(), block);
-                    } catch (InvocationTargetException ite) {
-                        if (ite.getCause() instanceof JumpException) {
-                            throw (JumpException)ite.getCause();
-                        } else {
-                            throw new RuntimeException(ite);
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                    try {
-                        Helpers.preLoadCommon(context, staticScope, false);
-                        return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                    } finally {
-                        Helpers.postLoad(context);
-                    }
-                }
-            };
+            Compiler.getInstance().execute(this, node, classLoader); 
         }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
@@ -825,13 +807,28 @@ public final class Ruby {
             return (IRubyObject) rj.getValue();
         }
     }
+    
+    public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
+       try {
+           if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+               return Interpreter.getInstance().execute(this, parseResult, self);
+           } else {
+               assert parseResult instanceof RootNode;
+
+               return ASTInterpreter.INTERPRET_ROOT(this, context, (RootNode) parseResult, getTopSelf(), Block.NULL_BLOCK);
+           }
+       } catch (JumpException.ReturnJump rj) {
+           return (IRubyObject) rj.getValue();
+       }
+   }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
 
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
-                return Interpreter.interpret(this, rootNode, self);
+                // FIXME: retrieve from IRManager unless lifus does it later
+                return Interpreter.getInstance().execute(this, rootNode, self);
             } else {
                 return ASTInterpreter.INTERPRET_ROOT(this, context, rootNode, getTopSelf(), Block.NULL_BLOCK);
             }
@@ -843,6 +840,10 @@ public final class Ruby {
     public IRubyObject runInterpreter(Node scriptNode) {
         return runInterpreter(getCurrentContext(), scriptNode, getTopSelf());
     }
+    
+    public IRubyObject runInterpreter(ParseResult parseResult) {
+        return runInterpreter(getCurrentContext(), parseResult, getTopSelf());
+    }    
 
     /**
      * This is used for the "gets" loop, and we bypass 'load' to use an
@@ -2518,25 +2519,78 @@ public final class Ruby {
     public void defineReadonlyVariable(String name, IRubyObject value, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
         globalVariables.defineReadonly(name, new ValueAccessor(value), scope);
     }
-
-    public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
-        if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(this,
-                lineNumber, false, false, true, config));
-    }
-
-    public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
-        if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(this,
-                0, false, false, true, true, config));
-    }
     
+    // Obsolete parseFile function 
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
         return parseFile(in, file, scope, 0);
     }
 
+    // Modern variant of parsFile function above
+    public ParseResult parseFile(String file, InputStream in, DynamicScope scope) {
+       return parseFile(file, in, scope, 0);
+    }
+
+    // Obsolete parseFile function      
+    public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
+        addLoadParseToStats();
+        return parseFileAndGetAST(in, file, scope, lineNumber, false);
+    }
+
+    // Modern variant of parseFile function above
+    public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
+        addLoadParseToStats();
+
+        if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
+
+        try {
+            // Get IR from .ir file
+            InputStream irIn = new FileInputStream(IRFileExpert.getIRFileInIntendedPlace(file));
+
+            return IRReader.read(irIn, this);
+        } catch (Exception e) {
+            System.out.println(e);
+
+            // If something gone wrong with ir -
+            return parseFileAndGetAST(in, file, scope, lineNumber, false);
+        }
+    }
+
+    // Obsolete parseFileFromMain function
+    public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
+        addLoadParseToStats();
+
+        return parseFileFromMainAndGetAST(in, file, scope);
+    }
+
+    // Modern variant of parseFileFromMain function above
+    public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
+        addLoadParseToStats();
+
+        if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
+        
+        try {
+            File irFile = IRFileExpert.getIRFileInIntendedPlace(file);
+            InputStream irIn = new FileInputStream(irFile);
+
+            return IRReader.read(irIn, this);
+        } catch (Exception e) {
+            System.out.println(e);
+
+            return parseFileFromMainAndGetAST(in, file, scope);
+        }
+    }
+
+     private Node parseFileFromMainAndGetAST(InputStream in, String file, DynamicScope scope) {
+         return parseFileAndGetAST(in, file, scope, 0, true);
+     }
+
+     private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
+         return parser.parse(file, in, scope, new ParserConfiguration(this,
+                 lineNumber, false, false, true, isFromMain, config));
+     }
+
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
-        if (parserStats != null) parserStats.addEvalParse();
+        addEvalParseToStats();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
         parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
@@ -2544,7 +2598,7 @@ public final class Ruby {
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        if (parserStats != null) parserStats.addEvalParse();
+        addEvalParseToStats();
         return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this,
                 lineNumber, false, false, false, false, config));
     }
@@ -2557,14 +2611,14 @@ public final class Ruby {
     }
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
-        if (parserStats != null) parserStats.addEvalParse();
+        addEvalParseToStats();
         return parser.parse(file, content, scope, new ParserConfiguration(this,
                 lineNumber, false, false, false, config));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        if (parserStats != null) parserStats.addJRubyModuleParse();
+        addEvalParseToStats();
         return parser.parse(file, content, scope, new ParserConfiguration(this,
                 lineNumber, extraPositionInformation, false, true, config));
     }
@@ -2686,13 +2740,14 @@ public final class Ruby {
         try {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
             context.preNodeEval(objectClass, self, scriptName);
+            ParseResult parseResult = parseFile(scriptName, in, null);
 
-            Node node = parseFile(in, scriptName, null);
             if (wrap) {
                 // toss an anonymous module into the search path
-                ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
+                ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
             }
-            runInterpreter(context, node, self);
+            
+            runInterpreter(context, parseResult, self);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
@@ -4480,6 +4535,19 @@ public final class Ruby {
     public void secure(int level) {
     }
 
+    // Parser stats methods
+    private void addLoadParseToStats() {
+        if (parserStats != null) parserStats.addLoadParse();
+    }
+
+    private void addEvalParseToStats() {
+        if (parserStats != null) parserStats.addEvalParse();
+    }
+
+    private void addJRubyModuleParseToStats() {
+        if (parserStats != null) parserStats.addJRubyModuleParse();
+    }
+   
     @Deprecated
     public CallbackFactory callbackFactory(Class<?> type) {
         throw new RuntimeException("callback-style handles are no longer supported in JRuby");

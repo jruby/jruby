@@ -14,7 +14,7 @@ public class NthRef extends Reference {
     final public int matchNumber;
 
     public NthRef(int matchNumber) {
-        super("$" + matchNumber);
+        super(OperandType.NTH_REF, "$" + matchNumber);
         this.matchNumber = matchNumber;
     }
 

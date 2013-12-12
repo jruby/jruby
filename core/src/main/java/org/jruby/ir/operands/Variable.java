@@ -9,6 +9,10 @@ public abstract class Variable extends Operand implements Comparable {
     public final static String BLOCK          = "%block";
     public final static String CURRENT_SCOPE  = "%current_scope";
     public final static String CURRENT_MODULE = "%current_module";
+    
+    public Variable(OperandType type) {
+        super(type);
+    }
 
     public abstract String getName();
 

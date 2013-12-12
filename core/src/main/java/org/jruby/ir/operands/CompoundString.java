@@ -26,12 +26,21 @@ public class CompoundString extends Operand {
     final private Encoding encoding;
 
     public CompoundString(List<Operand> pieces, Encoding encoding) {
+        super(OperandType.COMPOUND_STRING);
         this.pieces = pieces;
         this.encoding = encoding;
     }
 
     public CompoundString(List<Operand> pieces) {
         this(pieces, null);
+    }
+
+    public List<Operand> getPieces() {
+       return pieces;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
 
     @Override
@@ -43,11 +52,6 @@ public class CompoundString extends Operand {
         }
 
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 
     @Override
@@ -131,5 +135,10 @@ public class CompoundString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.CompoundString(this);
+    }
+
+    @Override
+    public String toString() {
+        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 }

@@ -47,7 +47,8 @@ public class IRClosure extends IRScope {
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
-
+    private Arity arity;
+    private int argumentType; 
     public boolean addedGEBForUncaughtBreaks;
 
     /** Used by cloning code */
@@ -66,6 +67,8 @@ public class IRClosure extends IRScope {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
+        this.argumentType = argumentType;
+        this.arity = arity;
 
         if (getManager().isDryRun()) {
             this.body = null;
@@ -74,14 +77,8 @@ public class IRClosure extends IRScope {
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         }
 
-        // set nesting depth -- after isForLoopBody value is set
-        int n = 0;
-        IRScope s = this;
-        while (s instanceof IRClosure) {
-            if (!s.isForLoopBody()) n++;
-            s = s.getLexicalParent();
-        }
-        this.nestingDepth = n;
+        // increase nesting depth if needed after isForLoopBody value is set
+        if (!isForLoopBody) this.nestingDepth++; 
     }
 
     // Used by IREvalScript
@@ -98,7 +95,7 @@ public class IRClosure extends IRScope {
 
         // set nesting depth
         int n = 0;
-        IRScope s = this;
+        IRScope s = this.getLexicalParent();
         while (s instanceof IRClosure) {
             if (!s.isForLoopBody()) n++;
             s = s.getLexicalParent();
@@ -148,9 +145,10 @@ public class IRClosure extends IRScope {
         return getNewLabel("CL" + closureId + "_LBL");
     }
 
-    public String getScopeName() {
-        return "Closure";
-    }
+    @Override
+    public IRScopeType getScopeType() {
+        return IRScopeType.CLOSURE;
+    } 
 
     @Override
     public boolean isForLoopBody() {
@@ -314,7 +312,7 @@ public class IRClosure extends IRScope {
         clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
 
         return clonedClosure;
-    }
+    }    
 
     // Add a global-ensure-block to catch uncaught breaks
     // This is usually required only if this closure is being
@@ -351,5 +349,20 @@ public class IRClosure extends IRScope {
         addedGEBForUncaughtBreaks = true;
 
         return true;
+    }
+    
+    @Override
+    public void setName(String name) {
+        // We can distinguish closures only with parent scope name 
+        String fullName = getLexicalParent().getName() + name;
+        super.setName(fullName);
+    }
+    
+    public Arity getArity() {
+        return arity;
+    }
+
+    public int getArgumentType() {
+        return argumentType;
     }
 }

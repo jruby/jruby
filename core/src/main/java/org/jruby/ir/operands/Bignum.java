@@ -30,6 +30,7 @@ public class Bignum extends ImmutableLiteral {
     final public BigInteger value;
 
     public Bignum(BigInteger value) {
+        super(OperandType.BIGNUM);
         this.value = value;
     }
 
@@ -39,12 +40,12 @@ public class Bignum extends ImmutableLiteral {
     }
 
     @Override
-    public String toString() {
-        return "Bignum:" + value;
+    public void visit(IRVisitor visitor) {
+        visitor.Bignum(this);
     }
 
     @Override
-    public void visit(IRVisitor visitor) {
-        visitor.Bignum(this);
+    public String toString() {
+        return "Bignum:" + value;
     }
 }

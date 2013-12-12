@@ -29,7 +29,11 @@ public class StoreLocalVarInstr extends Instr {
         this.value = value;
         this.scope = scope;
     }
-
+    
+    public IRScope getScope() {
+        return scope;
+    }
+    
     public Operand[] getOperands() {
         return new Operand[]{value};
     }
@@ -39,13 +43,12 @@ public class StoreLocalVarInstr extends Instr {
         value = value.getSimplifiedOperand(valueMap, force);
     }
 
-    public LocalVariable getLocalVar() {
-        return lvar;
-    }
-
-    @Override
     public String toString() {
         return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";
+    }
+    
+    public LocalVariable getLocalVar() {
+        return lvar;
     }
 
     @Override
@@ -65,7 +68,7 @@ public class StoreLocalVarInstr extends Instr {
     public void visit(IRVisitor visitor) {
         visitor.StoreLocalVarInstr(this);
     }
-
+    
     public Operand getValue() {
         return value;
     }

@@ -31,10 +31,14 @@ public class DefineClassMethodInstr extends Instr {
         this.method = method;
     }
 
+    public Operand getContainer() {
+        return container;
+    }
+    
     @Override
     public String toString() {
         return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
-    }
+    }    
 
     public IRMethod getMethod() {
         return method;

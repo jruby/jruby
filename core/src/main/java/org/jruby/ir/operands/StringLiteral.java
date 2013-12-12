@@ -25,13 +25,22 @@ public class StringLiteral extends Operand {
     final public String   string;
 
     public StringLiteral(ByteList val) {
+        super(OperandType.STRING_LITERAL);
+        
         bytelist = val;
         string = Helpers.byteListToString(bytelist);
     }
 
     public StringLiteral(String s) {
-        bytelist = ByteList.create(s); string = s;
+        this(s, ByteList.create(s));
     }
+    
+    private StringLiteral(String string, ByteList byteList ) {
+        super(OperandType.STRING_LITERAL);
+
+        this.bytelist = byteList;
+        this.string = string;
+     }
 
     @Override
     public boolean hasKnownValue() {
@@ -44,13 +53,13 @@ public class StringLiteral extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        return this;
+    public String toString() {
+        return "\"" + string + "\"";
     }
 
     @Override
-    public String toString() {
-        return "\"" + string + "\"";
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
     }
 
     @Override

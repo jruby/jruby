@@ -28,6 +28,10 @@ public class RestoreErrorInfoInstr extends Instr {
 
         this.arg = arg;
     }
+    
+    public Operand getArg() {
+        return arg;
+    }
 
     @Override
     public Operand[] getOperands() {

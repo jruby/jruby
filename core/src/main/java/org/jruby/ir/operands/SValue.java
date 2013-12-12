@@ -24,7 +24,13 @@ public class SValue extends Operand {
     final private Operand array;
 
     public SValue(Operand array) {
+        super(OperandType.SVALUE);
+        
         this.array = array;
+    }
+    
+    public Operand getArray() {
+        return array;
     }
 
     @Override
@@ -42,7 +48,7 @@ public class SValue extends Operand {
         Operand newArray = array.getSimplifiedOperand(valueMap, force);
         if (newArray instanceof Array) {
             Array a = (Array) newArray;
-            return (a.elts.length == 1) ? a.elts[0] : a;
+            return (a.getElts().length == 1) ? a.getElts()[0] : a;
         } else {
             return (newArray == array) ? this : new SValue(newArray);
         }

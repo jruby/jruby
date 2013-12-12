@@ -25,6 +25,10 @@ import java.util.List;
  */
 public abstract class ImmutableLiteral extends Operand {
     private Object cachedObject = null;
+    
+    public ImmutableLiteral(OperandType type) {
+       super(type);
+   }
 
     @Override
     public boolean hasKnownValue() {

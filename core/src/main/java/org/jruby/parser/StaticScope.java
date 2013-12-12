@@ -29,6 +29,7 @@
 package org.jruby.parser;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -412,18 +413,8 @@ public abstract class StaticScope implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("[");
-            
-        for (int i = 0; i < variableNames.length - 1; i++) {
-            buf.append(variableNames[i]).append(", ");
-        }
-        if (variableNames.length > 0) {
-            buf.append(variableNames[variableNames.length - 1]);
-        }
-        buf.append("]");
-        buf.append(", cref = ").append(cref);
-            
-        return buf.toString();
+        // FIXME: Do we need to persist cref as well?            
+        return Arrays.toString(variableNames); 
     }
 
     public abstract Type getType();

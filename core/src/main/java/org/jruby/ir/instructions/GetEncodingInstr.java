@@ -22,6 +22,10 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
         this.encoding = encoding;
     }
 
+    public Encoding getEncoding() {
+        return encoding;
+    }
+    
     @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;

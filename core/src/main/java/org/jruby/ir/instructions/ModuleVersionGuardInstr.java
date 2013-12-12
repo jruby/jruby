@@ -9,9 +9,6 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
@@ -44,6 +41,19 @@ public class ModuleVersionGuardInstr extends Instr {
     public Label getFailurePathLabel() {
         return failurePathLabel;
     }
+    
+    // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
+    public RubyModule getModule() {
+        return module;
+    }
+    
+    public Operand getCandidateObject() { 
+        return candidateObj;
+    }
+    
+    public int getExpectedVersion() {
+        return expectedVersion;
+    }
 
     @Override
     public Operand[] getOperands() {
@@ -54,11 +64,11 @@ public class ModuleVersionGuardInstr extends Instr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         candidateObj = candidateObj.getSimplifiedOperand(valueMap, force);
     }
-
+    
     @Override
     public String toString() {
         return super.toString() + "(" + candidateObj + ", " + expectedVersion + "[" + module.getName() + "], " + failurePathLabel + ")";
-    }
+    }    
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

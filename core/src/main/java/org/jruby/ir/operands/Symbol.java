@@ -7,7 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Symbol extends Reference {
     public Symbol(String name) {
-        super(name);
+        super(OperandType.SYMBOL, name);
     }
 
     @Override

@@ -15,11 +15,11 @@ import java.util.Map;
 // Further down the line, this array operand could get converted to calls
 // that actually build a Ruby object
 public class Array extends Operand {
-    final public Operand[] elts;
+    private final Operand[] elts;
 
     // SSS FIXME: Do we create a special-case for zero-length arrays?
     public Array() {
-        elts = new Operand[0];
+        this(new Operand[0]);
     }
 
     public Array(List<Operand> elts) {
@@ -27,6 +27,8 @@ public class Array extends Operand {
     }
 
     public Array(Operand[] elts) {
+        super(OperandType.ARRAY);
+        
         this.elts = elts == null ? new Operand[0] : elts;
     }
 
@@ -66,22 +68,6 @@ public class Array extends Operand {
 
         return new Array(newElts);
     }
-
-/**
-    @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray, Nil nil) {
-        if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : nil;
-
-        if (argIndex < elts.length) {
-            Operand[] newElts = new Operand[elts.length - argIndex];
-            System.arraycopy(elts, argIndex, newElts, 0, newElts.length);
-
-            return new Array(newElts);
-        }
-
-        return new Array();
-    }
-**/
 
     public Operand toArray() {
         return this;

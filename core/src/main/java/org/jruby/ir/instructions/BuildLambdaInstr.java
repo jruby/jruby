@@ -29,10 +29,17 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         this.operands = new Operand[] { lambdaBody };
         this.position = position;
     }
-
+    
+    public String getLambdaBodyName() {
+        return getLambdaBody().getName();
+    }
     @Override
     public Operand[] getOperands() {
         return operands;
+    }
+    
+    public ISourcePosition getPosition() {
+        return position;
     }
 
     public Variable getResult() {
@@ -59,7 +66,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     private IRClosure getLambdaBody() {
         return ((WrappedIRClosure) operands[0]).getClosure();
     }
-
+    
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?

@@ -23,6 +23,10 @@ public class ThrowExceptionInstr extends Instr {
         super(Operation.THROW);
         this.exceptionArg = exception;
     }
+    
+    public Operand getExceptionArg() {
+        return exceptionArg;
+    }
 
     public Operand[] getOperands() {
         return new Operand[]{ exceptionArg };

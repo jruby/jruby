@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.jruby.ParseResult;
+import org.jruby.RubyInstanceConfig;
 
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
@@ -74,7 +76,7 @@ import org.jruby.util.log.LoggerFactory;
  *
  * and so on ...
  */
-public abstract class IRScope {
+public abstract class IRScope implements ParseResult {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
     private static Integer globalScopeCount = 0;
@@ -345,7 +347,7 @@ public abstract class IRScope {
     }
 
     private final void setupLexicalContainment() {
-        if (manager.isDryRun()) {
+        if (manager.isDryRun() || RubyInstanceConfig.IR_PERSISTENCE) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
@@ -513,7 +515,7 @@ public abstract class IRScope {
         return name;
     }
 
-    public void setName(String name) { // This is for IRClosure ;(
+    public void setName(String name) { // This is for IRClosure and IRMethod ;(
         this.name = name;
     }
 
@@ -920,11 +922,11 @@ public abstract class IRScope {
         flagsComputed = true;
     }
 
-    public abstract String getScopeName();
+    public abstract IRScopeType getScopeType();
 
     @Override
     public String toString() {
-        return getScopeName() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
+        return getScopeType() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
     }
 
     public String toStringInstrs() {
@@ -944,20 +946,6 @@ public abstract class IRScope {
             for (IRClosure c: nestedClosures)
                 b.append(c.toStringBody());
             b.append("------------------------------------------------\n");
-        }
-
-        return b.toString();
-    }
-
-    public String toPersistableString() {
-        StringBuilder b = new StringBuilder();
-
-        b.append("Scope:<");
-        b.append(name);
-        b.append(">");
-        for (Instr instr : instrList) {
-            b.append("\n");
-            b.append(instr);
         }
 
         return b.toString();

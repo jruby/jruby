@@ -23,18 +23,24 @@ public class Regexp extends Operand {
     private RubyRegexp rubyRegexp;
 
     public Regexp(Operand regexp, RegexpOptions options) {
+        super(OperandType.REGEXP);
+        
         this.regexp = regexp;
         this.options = options;
     }
-
-    @Override
-    public boolean hasKnownValue() {
-        return regexp.hasKnownValue();
+    
+    public Operand getRegexp() {
+        return regexp;
     }
 
     @Override
     public String toString() {
         return "RE:|" + regexp + "|" + options;
+    }
+
+    @Override
+    public boolean hasKnownValue() {
+        return regexp.hasKnownValue();
     }
 
     @Override

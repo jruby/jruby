@@ -12,6 +12,8 @@ public class IRException extends Operand {
     private String exceptionType;
 
     protected IRException(String exceptionType) {
+        super(OperandType.IR_EXCEPTION);
+        
         this.exceptionType = exceptionType;
     }
 
@@ -36,17 +38,6 @@ public class IRException extends Operand {
         return true;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder("LocalJumpError:");
-        if (this == NEXT_LocalJumpError) result.append("NEXT");
-        else if (this == BREAK_LocalJumpError) result.append("BREAK");
-        else if (this == RETURN_LocalJumpError) result.append("RETURN");
-        else if (this == REDO_LocalJumpError) result.append("REDO");
-        else if (this == RETRY_LocalJumpError) result.append("RETRY");
-        return result.toString();
-    }
-
     public RuntimeException getException(Ruby runtime) {
         if (this == NEXT_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, null, "unexpected next");
         else if (this == BREAK_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, null, "unexpected break");
@@ -59,5 +50,16 @@ public class IRException extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.IRException(this);
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder("LocalJumpError:");
+        if (this == NEXT_LocalJumpError) result.append("NEXT");
+        else if (this == BREAK_LocalJumpError) result.append("BREAK");
+        else if (this == RETURN_LocalJumpError) result.append("RETURN");
+        else if (this == REDO_LocalJumpError) result.append("REDO");
+        else if (this == RETRY_LocalJumpError) result.append("RETRY");
+        return result.toString();
     }
 }

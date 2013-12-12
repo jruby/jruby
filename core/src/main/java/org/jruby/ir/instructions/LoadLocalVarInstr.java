@@ -32,6 +32,10 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
         this.result = result;
         this.scope = scope;
     }
+    
+    public IRScope getScope() {
+        return scope;
+    }
 
     public Operand[] getOperands() {
         return Instr.EMPTY_OPERANDS;
@@ -46,7 +50,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
     }
 
     public String toString() {
-        return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")";
+        return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")"; 
     }
 
     @Override

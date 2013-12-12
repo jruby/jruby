@@ -41,11 +41,11 @@ public class YieldInstr extends Instr implements ResultInstr {
         // Fix BasicBlock.java:cloneForInlining!!
         return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
-
+    
     public Operand getBlockArg() {
         return blockArg;
     }
-
+    
     public Operand getYieldArg() {
         return yieldArg;
     }
@@ -53,6 +53,10 @@ public class YieldInstr extends Instr implements ResultInstr {
     @Override
     public String toString() {
         return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
+    }
+    
+    public boolean isUnwrapArray() {
+        return unwrapArray;
     }
 
     // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
