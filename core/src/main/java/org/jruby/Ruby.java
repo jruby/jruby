@@ -498,7 +498,6 @@ public final class Ruby {
         }
         
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        if(RubyInstanceConfig.IR_PERSISTENCE) getIRManager().setFileName(filename);
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -2748,9 +2747,6 @@ public final class Ruby {
                 ((RootNode) parseResult).getStaticScope().setModule(RubyModule.newModule(this));
             }
             
-            // Save filename away as side-effect (in TL) so persister can know later 
-            if (RubyInstanceConfig.IR_PERSISTENCE) getIRManager().setFileName(scriptName);
-
             runInterpreter(context, parseResult, self);
         } catch (JumpException.ReturnJump rj) {
             return;

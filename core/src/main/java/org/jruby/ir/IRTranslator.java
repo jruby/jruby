@@ -2,6 +2,8 @@ package org.jruby.ir;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -22,61 +24,36 @@ import org.jruby.ir.persistence.util.IRFileExpert;
  */
 public abstract class IRTranslator<R, S> {
 
-    public R performTranslation(Ruby runtime, ParseResult parseResult, S specificObject) {
-        R result = null;
-        try {
+    public R performTranslation(Ruby runtime, ParseResult reset, S specificObject) {
+        IRScope scope = null;
+        
+        if (reset instanceof IRScope) { // Already have it (likely from read from persistent store).
+            scope = (IRScope) reset;
+        } else if (reset instanceof RootNode) { // Need to perform create IR from AST
+            scope = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) reset);
 
-            IRScope producedIRScope = null;
-            if (parseResult instanceof RootNode) {                
-                
-                RootNode rootNode = (RootNode) parseResult;
-                if (isIRPersistenceRequired()) {
-                    producedIRScope = produceIrScope(runtime, rootNode, false);
-                    persist(runtime.getIRManager(), producedIRScope);
-                    result = translationSpecificLogic(runtime, producedIRScope, specificObject);
-                } else {
-                    producedIRScope = produceIrScope(runtime, rootNode, false);
-                    result = translationSpecificLogic(runtime, producedIRScope, specificObject);
-                }                
-                
-            } else if (parseResult instanceof IRScope){
-                producedIRScope = (IRScope) parseResult;
-                result = translationSpecificLogic(runtime, producedIRScope, specificObject);
-                
-            } else {
-                throw new IllegalArgumentException();
-                
+            if (RubyInstanceConfig.IR_PERSISTENCE) {
+                try {
+                    persist(scope);
+                } catch (IRPersistenceException ex) {
+                    ex.printStackTrace(); // FIXME: Handle errors better
+                    return null;
+                }
             }
-
-        } catch (IRPersistenceException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
-        return result;
+
+        // Execute the IR.
+        return translationSpecificLogic(runtime, scope, specificObject);                
     }
 
-    protected abstract R translationSpecificLogic(Ruby runtime, IRScope producedIrScope,
-            S specificObject);
+    protected abstract R translationSpecificLogic(Ruby runtime, IRScope producedIrScope, S specificObject);
 
-    private static boolean isIRPersistenceRequired() {
-        return RubyInstanceConfig.IR_PERSISTENCE;
-    }
-
-    private IRScope produceIrScope(Ruby runtime, RootNode rootNode, boolean isDryRun) {
-        IRManager irManager = runtime.getIRManager();
-        irManager.setDryRun(isDryRun);
-        IRBuilder irBuilder = IRBuilder.createIRBuilder(runtime, irManager);
-
-        final IRScope irScope = irBuilder.buildRoot(rootNode);
-        return irScope;
-    }
     
-    private void persist(IRManager manager, IRScope irScopeToPersist) throws IRPersistenceException {
+    private void persist(IRScope scope) throws IRPersistenceException {
         try {
-            String stringRepresentationOfIR = IRToStringTranslator.translate(irScopeToPersist);
-            File irFile = IRFileExpert.getIRFileInIntendedPlace(manager.getFileName());
+            File irFile = IRFileExpert.getIRFileInIntendedPlace(scope.getFileName());
             
-            FileIO.writeToFile(irFile, stringRepresentationOfIR);
+            FileIO.writeToFile(irFile, IRToStringTranslator.translate(scope));
         } catch (IOException e) { // We do not want to brake current run, so catch even unchecked exceptions
             throw new IRPersistenceException(e);
         }
