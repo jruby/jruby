@@ -729,7 +729,7 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            Compiler.getInstance().performTranslation(this, node, classLoader); 
+            Compiler.getInstance().execute(this, node, classLoader); 
         }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
@@ -811,7 +811,7 @@ public final class Ruby {
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
-               return Interpreter.getInstance().performTranslation(this, parseResult, self);
+               return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
                assert parseResult instanceof RootNode;
 
@@ -828,7 +828,7 @@ public final class Ruby {
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
-                return Interpreter.getInstance().performTranslation(this, rootNode, self);
+                return Interpreter.getInstance().execute(this, rootNode, self);
             } else {
                 return ASTInterpreter.INTERPRET_ROOT(this, context, rootNode, getTopSelf(), Block.NULL_BLOCK);
             }

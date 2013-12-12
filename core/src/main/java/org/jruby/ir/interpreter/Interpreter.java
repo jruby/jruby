@@ -151,9 +151,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
-        // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
-        IRBuilder.setRubyVersion("1.9");
-
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
@@ -203,10 +200,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
     
     @Override
-    protected IRubyObject translationSpecificLogic(Ruby runtime, IRScope irScope,
-            IRubyObject self) {
-        IRScriptBody root = (IRScriptBody) irScope;    
-        IRBuilder.setRubyVersion("1.9");
+    protected IRubyObject execute(Ruby runtime, IRScope scope, IRubyObject self) {
+        IRScriptBody root = (IRScriptBody) scope;    
 
         // FIXME: Removed as part of merge...likely broken at this point in merge.
     //    IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
