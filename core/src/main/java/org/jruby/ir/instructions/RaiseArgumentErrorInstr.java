@@ -25,12 +25,22 @@ public class RaiseArgumentErrorInstr extends Instr {
         this.numArgs = numArgs;
     }
     
+    @Override
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
+    }
+    
     public int getNumArgs() {
         return numArgs;
     }
     
     public int getOpt() {
         return opt;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
     }
     
     public int getRequired() {
@@ -39,11 +49,6 @@ public class RaiseArgumentErrorInstr extends Instr {
     
     public int getRest() {
         return rest;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
     }
 
     @Override

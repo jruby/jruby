@@ -20,6 +20,11 @@ public class ReceiveOptArgInstr extends ReceiveArgBase {
         this.numUsedArgs = numUsedArgs;
     }
     
+    @Override
+    public String toString() {
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + "," + argOffset + "," + argIndex + ")";
+    }
+
     public int getArgOffset() {
         return argOffset;
     }

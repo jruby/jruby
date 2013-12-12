@@ -34,6 +34,11 @@ public class Regexp extends Operand {
     }
 
     @Override
+    public String toString() {
+        return "RE:|" + regexp + "|" + options;
+    }
+
+    @Override
     public boolean hasKnownValue() {
         return regexp.hasKnownValue();
     }

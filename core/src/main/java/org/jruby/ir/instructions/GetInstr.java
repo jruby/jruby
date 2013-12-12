@@ -44,7 +44,7 @@ public abstract class GetInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + source + ", " + ref + ")";
+        return super.toString() + "(" + source + (ref == null ? "" : ", " + ref) + ")";
     }
 
     @Override

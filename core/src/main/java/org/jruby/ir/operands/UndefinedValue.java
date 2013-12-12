@@ -393,6 +393,11 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public void setVariable(int index, Object value) { throw undefinedOperation(); }
 
     @Override
+    public String toString() {
+        return "%undefined";
+    }
+
+    @Override
     public void visit(IRVisitor visitor) {
         visitor.UndefinedValue(this);
     }

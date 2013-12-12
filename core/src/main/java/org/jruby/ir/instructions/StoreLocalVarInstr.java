@@ -34,10 +34,6 @@ public class StoreLocalVarInstr extends Instr {
         return scope;
     }
     
-    public Operand getValue() {
-        return value;
-    }
-    
     public Operand[] getOperands() {
         return new Operand[]{value};
     }
@@ -47,6 +43,10 @@ public class StoreLocalVarInstr extends Instr {
         value = value.getSimplifiedOperand(valueMap, force);
     }
 
+    public String toString() {
+        return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";
+    }
+    
     public LocalVariable getLocalVar() {
         return lvar;
     }
@@ -67,5 +67,9 @@ public class StoreLocalVarInstr extends Instr {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.StoreLocalVarInstr(this);
+    }
+    
+    public Operand getValue() {
+        return value;
     }
 }

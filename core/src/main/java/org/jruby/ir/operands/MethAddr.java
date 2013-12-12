@@ -14,6 +14,11 @@ public class MethAddr extends Reference {
     public MethAddr(String name) {
         super(OperandType.METH_ADDR, name);
     }
+    
+    @Override
+    public String toString() {
+        return "'" + getName() + "'";
+    }
 
     @Override
     public boolean canCopyPropagate() {

@@ -42,6 +42,11 @@ public class ScopeModule extends Operand {
     }
 
     @Override
+    public String toString() {
+        return "module<" + scope.getName() + ">";
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         StaticScope staticScope = scope.getStaticScope();
         return staticScope != null ? staticScope.getModule() : context.runtime.getClass(scope.getName());

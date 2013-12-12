@@ -33,9 +33,4 @@ public class GetGlobalVariableInstr extends GetInstr {
     public void visit(IRVisitor visitor) {
         visitor.GetGlobalVariableInstr(this);
     }
-    
-    @Override
-    public String toString() {
-        return getResult() + " = " + getOperation() + "(" + getSource() + ")";
-    } 
 }

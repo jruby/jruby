@@ -308,8 +308,8 @@ public class IROperandFactory {
         final String labelName = parametersIterator.nextString();
         
         // Special case of label
-        if(Label.GLOBAL_ENSURE_BLOCK.equals(labelName)) {
-            return new Label(Label.GLOBAL_ENSURE_BLOCK);
+        if("_GLOBAL_ENSURE_BLOCK".equals(labelName)) {
+            return new Label("_GLOBAL_ENSURE_BLOCK");
         }
         
         // Check if this label was already created

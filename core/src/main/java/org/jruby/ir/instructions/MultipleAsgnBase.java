@@ -12,12 +12,12 @@ import java.util.Map;
 // - Regular multiple/parallel assignments: x,y,*z = ...
 // - When blocks are inlined, all receive* instructions get
 //   converted into multiple-assign instructions
-public abstract class MultipleAsgnBase extends Instr implements ResultInstr {
+public class MultipleAsgnBase extends Instr implements ResultInstr {
     protected Variable result;
     protected Operand array;
     protected final int index;
 
-    protected MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
+    public MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
         super(op);
 
         assert result != null : "MultipleAsgnBase result is null";
@@ -50,16 +50,5 @@ public abstract class MultipleAsgnBase extends Instr implements ResultInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         array = array.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
-        return super.simplifyAndGetResult(scope, valueMap);
-        // SSS FIXME!  This is buggy code for 1.9 mode
-/*
-        simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
-        return val.fetchCompileTimeArrayElement(index);
-*/
     }
 }

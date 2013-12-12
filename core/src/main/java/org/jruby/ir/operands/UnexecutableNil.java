@@ -19,6 +19,11 @@ public class UnexecutableNil extends Nil {
     }
 
     @Override
+    public String toString() {
+        return "nil(unexecutable)";
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }

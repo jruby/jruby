@@ -65,7 +65,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + constName + ", " + startingScope + ", " + noPrivateConsts + ")";
+        return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
     public Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

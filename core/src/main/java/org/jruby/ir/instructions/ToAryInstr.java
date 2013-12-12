@@ -46,6 +46,15 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
+    public boolean canBeDeleted(IRScope s) {
+        // This is an instruction that can be safely deleted
+        // since it is inserted by JRuby to facilitate other operations
+        // and has no real side effects. Currently, this has been marked
+        // as side-effecting in Operation.java. FIXME: Revisit that!
+        return true;
+    }
+
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         array = array.getSimplifiedOperand(valueMap, force);
     }
@@ -53,7 +62,8 @@ public class ToAryInstr extends Instr implements ResultInstr {
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        return dontToAryArrays.isTrue() && (array.getValue(valueMap) instanceof Array) ? array : null;
+        Operand a = array.getValue(valueMap);
+        return a instanceof Array ? a : null;
     }
 
     public Variable getResult() {
@@ -72,7 +82,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + array + ", " + dontToAryArrays + ")"; 
+        return super.toString() + "(" + array + ", dont_to_ary_arrays: " + dontToAryArrays + ")";
     }
 
     @Override

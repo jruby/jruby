@@ -48,4 +48,9 @@ public class AsString extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);
     }
+    
+    @Override
+    public String toString() {
+        return "#{" + source + "}";
+    }
 }

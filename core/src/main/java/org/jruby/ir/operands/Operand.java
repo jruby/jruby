@@ -75,11 +75,6 @@ public abstract class Operand {
         return this;
     }
 
-    // if (getSubArray) is false, returns the 'index' element of the array, else returns the subarray starting at that element
-    public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) {
-        return null;
-    }
-
     /** Append the list of variables used in this operand to the input list -- force every operand
      *  to implement this because a missing implementation can cause bad failures.
      */
@@ -94,10 +89,5 @@ public abstract class Operand {
 
     public void visit(IRVisitor visitor) {
         throw new RuntimeException("operand " + this.getClass().getSimpleName() + " has no visit logic.");
-    }
-    
-    @Override
-    public String toString() {
-        return IRToStringTranslator.translate(this);
     }
 }

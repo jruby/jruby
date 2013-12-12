@@ -49,4 +49,9 @@ public class ClosureLocalVariable extends LocalVariable {
     public void visit(IRVisitor visitor) {
         visitor.ClosureLocalVariable(this);
     }
+
+    @Override
+    public String toString() {
+        return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
+    }
 }

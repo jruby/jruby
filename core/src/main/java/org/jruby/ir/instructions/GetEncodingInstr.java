@@ -33,7 +33,7 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + encoding.toString() + ")";
+        return super.toString() + "(" + encoding + ")";
     }
 
     public Variable getResult() {

@@ -49,4 +49,9 @@ public class DynamicSymbol extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.DynamicSymbol(this);
     }
+    
+    @Override
+    public String toString() {
+        return ":" + symbolName.toString();
+    }    
 }

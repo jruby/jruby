@@ -40,19 +40,16 @@ public class Range extends Operand {
         return exclusive;
     }
 
+    @Override
+    public String toString() {
+        return begin + (exclusive ? ".." : "...") + end;
+    }
+    
+
 // ---------- These methods below are used during compile-time optimizations -------
     @Override
     public boolean hasKnownValue() {
         return begin.hasKnownValue() && end.hasKnownValue();
-    }
-
-    @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        if (!hasKnownValue()) return null;
-
-        // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
-        // So for now, return null!
-        return null;
     }
 
     @Override

@@ -29,6 +29,11 @@ public class GVarAliasInstr extends Instr {
     public Operand getOldName() {
         return oldName;
     }
+    
+    @Override
+    public String toString() {
+        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
+    }
 
     @Override
     public Operand[] getOperands() {

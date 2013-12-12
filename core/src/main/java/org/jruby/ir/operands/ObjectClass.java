@@ -14,6 +14,11 @@ public class ObjectClass extends Operand {
     }
 
     @Override
+    public String toString() {
+        return "<Class:Object>";
+    }
+    
+    @Override
     public boolean canCopyPropagate() {
         return true;
     }

@@ -45,6 +45,12 @@ public class LocalVariable extends Variable {
     }
 
     @Override
+    public String toString() {
+        return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
+    }
+    
+
+    @Override
     public int hashCode() {
         return name.hashCode();
     }

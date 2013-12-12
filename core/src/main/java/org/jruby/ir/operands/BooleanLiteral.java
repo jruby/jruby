@@ -7,7 +7,7 @@ public class BooleanLiteral extends ImmutableLiteral {
     private final boolean truthy;
 
     public BooleanLiteral(boolean truthy) {
-        super(OperandType.BIGNUM);
+        super(OperandType.BOOLEAN_LITERAL);
         
         this.truthy = truthy;
     }
@@ -28,5 +28,10 @@ public class BooleanLiteral extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.BooleanLiteral(this);
+    }
+
+    @Override
+    public String toString() {
+        return isTrue() ? "true" : "false";
     }
 }

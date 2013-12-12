@@ -27,6 +27,11 @@ public class PopBindingInstr extends Instr {
     }
 
     @Override
+    public String toString() {
+        return "" + getOperation();
+    }
+
+    @Override
     public void visit(IRVisitor visitor) {
         visitor.PopBindingInstr(this);
     }

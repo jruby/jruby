@@ -18,6 +18,16 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
         this.firstRescueBlockLabel = firstRescueBlockLabel;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder(super.toString());
+
+        buf.append("(").append(begin).append(", ").append(end).append(", rescue[").append(firstRescueBlockLabel).append("]");
+        buf.append(")");
+
+        return buf.toString();
+    }
+    
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

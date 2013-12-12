@@ -52,7 +52,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + returnAddr + ")"; 
+        return "" + result + " = " + returnAddr; 
     }
 
     @Override

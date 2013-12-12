@@ -39,6 +39,11 @@ public class MethodHandle extends Operand {
         return receiver;
     }
 
+    @Override
+    public String toString() {
+        return "<" + receiver + "." + methodName + ">";
+    }
+    
     public Operand getMethodNameOperand() {
         return methodName;
     }

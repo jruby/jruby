@@ -25,7 +25,7 @@ public class ModuleVersionGuardInstr extends Instr {
     private final RubyModule module;
 
     /** The object whose metaclass token has to be verified*/
-    private Operand candidateObject;
+    private Operand candidateObj;
 
     /** Where to jump if the version assumption fails? */
     private Label failurePathLabel;
@@ -34,7 +34,7 @@ public class ModuleVersionGuardInstr extends Instr {
         super(Operation.MODULE_GUARD);
         this.module = module;
         this.expectedVersion = expectedVersion;
-        this.candidateObject = candidateObj;
+        this.candidateObj = candidateObj;
         this.failurePathLabel = failurePathLabel;
     }
 
@@ -48,7 +48,7 @@ public class ModuleVersionGuardInstr extends Instr {
     }
     
     public Operand getCandidateObject() { 
-        return candidateObject;
+        return candidateObj;
     }
     
     public int getExpectedVersion() {
@@ -57,21 +57,26 @@ public class ModuleVersionGuardInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { candidateObject };
+        return new Operand[] { candidateObj };
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        candidateObject = candidateObject.getSimplifiedOperand(valueMap, force);
+        candidateObj = candidateObj.getSimplifiedOperand(valueMap, force);
     }
+    
+    @Override
+    public String toString() {
+        return super.toString() + "(" + candidateObj + ", " + expectedVersion + "[" + module.getName() + "], " + failurePathLabel + ")";
+    }    
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObject.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
     private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject receiver = (IRubyObject) candidateObject.retrieve(context, self, currDynScope, temp);
+        IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
         //
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()

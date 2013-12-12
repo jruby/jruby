@@ -21,6 +21,11 @@ public class Symbol extends Reference {
     }
 
     @Override
+    public String toString() {
+        return ":'" + getName() + "'";
+    }
+
+    @Override
     public void visit(IRVisitor visitor) {
         visitor.Symbol(this);
     }

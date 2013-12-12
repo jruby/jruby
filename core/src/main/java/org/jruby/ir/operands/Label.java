@@ -8,9 +8,6 @@ import java.util.List;
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
-    
-    public static final String GLOBAL_ENSURE_BLOCK = "_GLOBAL_ENSURE_BLOCK";
-
     public final String label;
 
     // This is the PC (program counter == array index) for the label target -- this field is used during interpretation
@@ -23,6 +20,11 @@ public class Label extends Operand {
         super(OperandType.LABEL);
 
         label = l;
+    }
+    
+    @Override
+    public String toString() {
+        return label + ":" + targetPC;
     }
 
     @Override

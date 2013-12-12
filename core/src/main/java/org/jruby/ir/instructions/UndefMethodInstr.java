@@ -29,6 +29,11 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     }
 
     @Override
+    public String toString() {
+        return super.toString() + "(" + methodName + ")";
+    }
+    
+    @Override
     public Operand[] getOperands() {
         return new Operand[] { methodName };
     }

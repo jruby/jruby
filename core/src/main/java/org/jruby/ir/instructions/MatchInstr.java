@@ -26,14 +26,19 @@ public class MatchInstr extends Instr implements ResultInstr {
         this.receiver = receiver;
     }
     
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { receiver };
+    }
+    
     public Operand getReceiver() {
         return receiver;
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { receiver };
-    }
+    public String toString() {
+        return super.toString() + "(" + receiver + ")";
+    }    
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {

@@ -54,7 +54,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return new Operand[] { definingScope };
     }
-
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         definingScope = definingScope.getSimplifiedOperand(valueMap, force);
@@ -64,12 +64,17 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-
+    
+    @Override
+    public String toString() {
+        return super.toString() + "(" + definingScope + ", " + constName  + ")";
+    }
+    
     @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
-
+    
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);

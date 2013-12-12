@@ -94,4 +94,21 @@ public class Hash extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.Hash(this);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+        if (!isBlank()) {
+            int pairCount = pairs.size();
+            for (int i = 0; i < pairCount; i++) {
+                if (i > 0) {
+                    builder.append(", ");
+                }
+                builder.append(pairs.get(i));
+            }
+        }
+        builder.append("}");
+        return builder.toString();
+    }
 }

@@ -46,7 +46,7 @@ public class Array extends Operand {
 
     @Override
     public String toString() {
-        return "Array:" + java.util.Arrays.toString(elts); 
+        return "Array:" + (isBlank() ? "[]" : java.util.Arrays.toString(elts));
     }
 
 // ---------- These methods below are used during compile-time optimizations -------
@@ -67,25 +67,6 @@ public class Array extends Operand {
         }
 
         return new Array(newElts);
-    }
-
-    @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        // FIXME: This appears to be unhooked and Nil.NIL is a problem for it atm
-        /*
-        if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : Nil.NIL;
-
-        if (argIndex < elts.length) {
-            Operand[] newElts = new Operand[elts.length - argIndex];
-            System.arraycopy(elts, argIndex, newElts, 0, newElts.length);
-
-            return new Array(newElts);
-        }
-
-        return new Array();
-        *
-        */
-        return null;
     }
 
     public Operand toArray() {

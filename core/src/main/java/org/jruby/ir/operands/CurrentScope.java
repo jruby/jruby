@@ -45,4 +45,9 @@ public class CurrentScope extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.CurrentScope(this);
     }
+    
+    @Override
+    public String toString() {
+        return "scope<" + scope.getName() + ">";
+    }
 }

@@ -38,6 +38,11 @@ public class WrappedIRClosure extends Operand {
     }
 
     @Override
+    public String toString() {
+        return self + ":" + closure.toString();
+    }
+    
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) {
         return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));
     }

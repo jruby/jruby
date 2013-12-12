@@ -25,7 +25,10 @@ public class StringLiteral extends Operand {
     final public String   string;
 
     public StringLiteral(ByteList val) {
-        this(val.toString(), val);
+        super(OperandType.STRING_LITERAL);
+        
+        bytelist = val;
+        string = Helpers.byteListToString(bytelist);
     }
 
     public StringLiteral(String s) {
@@ -47,6 +50,11 @@ public class StringLiteral extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
+    }
+
+    @Override
+    public String toString() {
+        return "\"" + string + "\"";
     }
 
     @Override

@@ -16,4 +16,9 @@ public class KeyValuePair {
     public Operand getValue() {
         return value;
     }
+    
+    @Override
+    public String toString() {
+        return key + "=>" + value;
+    }
 }

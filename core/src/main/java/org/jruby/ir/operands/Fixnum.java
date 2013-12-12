@@ -74,4 +74,9 @@ public class Fixnum extends ImmutableLiteral {
     public long getValue() {
         return value;
     }
+    
+    @Override
+    public String toString() {
+        return "Fixnum:" + value;
+    }
 }

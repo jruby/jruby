@@ -29,11 +29,6 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         this.operands = new Operand[] { lambdaBody };
         this.position = position;
     }
-
-
-    private IRClosure getLambdaBody() {
-        return ((WrappedIRClosure) operands[0]).getClosure();
-    }
     
     public String getLambdaBodyName() {
         return getLambdaBody().getName();
@@ -68,6 +63,10 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         }
     }
 
+    private IRClosure getLambdaBody() {
+        return ((WrappedIRClosure) operands[0]).getClosure();
+    }
+    
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
@@ -87,9 +86,4 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     public void visit(IRVisitor visitor) {
         visitor.BuildLambdaInstr(this);
     }
-    
-    @Override
-    public String toString() {
-        return super.toString() + "(" + getLambdaBody().getName() + ", " + position.getFile() + ", " + position.getLine() + ")";
-    } 
 }

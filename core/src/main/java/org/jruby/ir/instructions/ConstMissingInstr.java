@@ -54,7 +54,7 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
 
     @Override
     public String toString() {
-        return result + " = " + getOperation()  + "(" + receiver + ", " + missingConst  + ")"; 
+        return super.toString() + "(" + receiver + "," + missingConst  + ")";
     }
 
     @Override

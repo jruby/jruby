@@ -105,4 +105,9 @@ public class CompoundArray extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.CompoundArray(this);
     }
+
+    @Override
+    public String toString() {
+        return (isArgsPush ? "ArgsPush:[" : "ArgsCat:[") + a1 + ", " + a2 + "]";
+    }
 }

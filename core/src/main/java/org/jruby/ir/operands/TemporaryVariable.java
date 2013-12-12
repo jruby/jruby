@@ -52,6 +52,11 @@ public class TemporaryVariable extends Variable {
         return name.compareTo(((TemporaryVariable) other).name);
     }
 
+    @Override
+    public String toString() {
+        return getName();
+    }
+
     protected String getPrefix() {
         return "%v_";
     }

@@ -43,4 +43,9 @@ public class Bignum extends ImmutableLiteral {
     public void visit(IRVisitor visitor) {
         visitor.Bignum(this);
     }
+
+    @Override
+    public String toString() {
+        return "Bignum:" + value;
+    }
 }

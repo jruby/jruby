@@ -69,7 +69,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + currentModule + ", " + constName + ", " + noPrivateConsts + ")";
+        return super.toString() + "(" + currentModule + ", " + constName  + ")";
     }
 
     private Object cache(Ruby runtime, RubyModule module) {

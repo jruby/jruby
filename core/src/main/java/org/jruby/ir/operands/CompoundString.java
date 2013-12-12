@@ -136,4 +136,9 @@ public class CompoundString extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.CompoundString(this);
     }
+
+    @Override
+    public String toString() {
+        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
+    }
 }

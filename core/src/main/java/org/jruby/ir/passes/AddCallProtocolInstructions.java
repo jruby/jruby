@@ -92,7 +92,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 // Allocate GEB if necessary for popping
                 if (geb == null && scopeHasUnrescuedExceptions) {
                     Variable exc = scope.getNewTemporaryVariable();
-                    geb = new BasicBlock(cfg, new Label(Label.GLOBAL_ENSURE_BLOCK));
+                    geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
                     geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);
