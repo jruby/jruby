@@ -7,8 +7,6 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.parser.StaticScope;
 
-// FIXME: I am using ordinal's for enums but I might defer this to IRPersistedFile.
-
 /**
  *  Write IR data out to persistent store.  IRReader is capable of re-reading this
  * information back into live IR data again.  This class knows the logical order of how
@@ -35,10 +33,11 @@ public class IRWriter {
     
     // {operation, [operands]}*
     private static void persistScopeInstrs(IRPersistedFile file, IRScope scope) {
+        // record offset so when scopes are persisted they know where their instructions are located.
         file.addScopeInstructionOffset(scope);
         
         for (Instr instr : scope.getInstrs()) {
-            file.write(instr.getOperation().ordinal());
+            file.write(instr.getOperation());
             file.write(instr.getOperands());
         }        
     }
@@ -58,7 +57,7 @@ public class IRWriter {
     // other scopes: {type,name,linenumber,lexical_parent_name, lexical_parent_line,{static_scope}, instrs_offset}
     // for non-for scopes is_for,arity, and arg_type will be 0.
     private static void persistScopeHeader(IRPersistedFile file, IRScope scope) {
-        file.write(scope.getScopeType().ordinal()); // type is enum of kind of scope
+        file.write(scope.getScopeType()); // type is enum of kind of scope
         file.write(scope.getName());
         file.write(scope.getLineNumber());
 
@@ -81,7 +80,7 @@ public class IRWriter {
 
     // {type,[variables],required_args}
     private static void persistStaticScope(IRPersistedFile file, StaticScope staticScope) {
-        file.write(staticScope.getType().ordinal());
+        file.write(staticScope.getType());
         file.write(staticScope.getVariables());
         file.write(staticScope.getRequiredArgs());
     }

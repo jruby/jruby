@@ -65,6 +65,9 @@ public class IRPersistedFile {
     
     public void write(Operand[] operands) {
     }
+    
+    public void write(IRPersistableEnum scopeType) {
+    }
 
     void commit() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
