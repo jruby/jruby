@@ -16,7 +16,7 @@ import org.jruby.parser.StaticScope;
 public class IRWriter {
     public static int NULL = -1;
     
-    public static void persist(IRPersistedFile file, IRScriptBody script) throws IOException {
+    public static void persist(IRPersistedFile file, IRScope script) throws IOException {
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
         persistScopeHeaders(file, script);      // recursive dump of all defined scope headers
         
@@ -27,7 +27,7 @@ public class IRWriter {
         persistScopeInstrs(file, parent);
         
         for (IRScope scope: parent.getLexicalScopes()) {
-            persistScopeInstrs(file, scope);
+            persistScopeInstructions(file, scope);
         }
     }
     
