@@ -1734,8 +1734,9 @@ public class RubyInstanceConfig {
     public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
     public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
     public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
+    public static final boolean INVOKEDYNAMIC_FFI = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FFI.load();
     public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
-    
+
     public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
     
     private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;

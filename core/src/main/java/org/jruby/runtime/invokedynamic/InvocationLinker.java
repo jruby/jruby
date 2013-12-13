@@ -603,6 +603,10 @@ public class InvocationLinker {
 
         @Override
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            if (!RubyInstanceConfig.INVOKEDYNAMIC_FFI) {
+                throw new IndirectBindingException("direct FFI dispatch not enabled");
+            }
+
             if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
                 // if frame/scope required, can't dispatch direct
                 if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
