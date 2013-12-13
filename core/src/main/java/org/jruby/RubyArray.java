@@ -3553,11 +3553,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), true, block) : enumeratorize(context.runtime, this, "repeated_permutation", num);
     }
 
-    @JRubyMethod(name = "repeated_permutation")
-    public IRubyObject repeated_permutation(ThreadContext context, Block block) {
-        return block.isGiven() ? permutationCommon(context, realLength, true, block) : enumeratorize(context.runtime, this, "repeated_permutation");
-    }
-
     private IRubyObject permutationCommon(ThreadContext context, int r, boolean repeat, Block block) {
         if (r == 0) {
             block.yield(context, newEmptyArray(context.runtime));
