@@ -1015,11 +1015,6 @@ public class RubyEnumerable {
         return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.runtime, self, "each_slice", arg);
     }
 
-    @JRubyMethod(name = "enum_slice")
-    public static IRubyObject enum_slice19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.runtime, self, "enum_slice", arg);
-    }
-
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         final int size = (int)RubyNumeric.num2long(arg);
         final Ruby runtime = context.runtime;
@@ -1042,11 +1037,6 @@ public class RubyEnumerable {
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.runtime, self, "each_cons", arg);
-    }
-
-    @JRubyMethod(name = "enum_cons")
-    public static IRubyObject enum_cons19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.runtime, self, "enum_cons", arg);
     }
 
     @JRubyMethod
