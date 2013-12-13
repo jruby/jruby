@@ -2540,7 +2540,7 @@ public final class Ruby {
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
         addLoadParseToStats();
 
-        if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
+        if (!RubyInstanceConfig.IR_READING) return parseFileAndGetAST(in, file, scope, lineNumber, false);
 
         try {
             // Get IR from .ir file
