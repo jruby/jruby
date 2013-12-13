@@ -366,8 +366,8 @@ public class RubyEnumerator extends RubyObject {
         return block.isGiven() ? RubyEnumerable.each_slice(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
     }
 
-    @JRubyMethod(name = "enum_slice")
-    public IRubyObject enum_slice19(ThreadContext context, IRubyObject arg, final Block block) {
+    @JRubyMethod(name = "enum_slice", compat = RUBY1_8)
+    public IRubyObject enum_slice(ThreadContext context, IRubyObject arg, final Block block) {
         return block.isGiven() ? RubyEnumerable.each_slice(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "enum_slice", arg);
     }
 
@@ -376,8 +376,8 @@ public class RubyEnumerator extends RubyObject {
         return block.isGiven() ? RubyEnumerable.each_cons(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
     }
 
-    @JRubyMethod(name = "enum_cons")
-    public IRubyObject enum_cons19(ThreadContext context, IRubyObject arg, final Block block) {
+    @JRubyMethod(name = "enum_cons", compat = RUBY1_8)
+    public IRubyObject enum_cons(ThreadContext context, IRubyObject arg, final Block block) {
         return block.isGiven() ? RubyEnumerable.each_cons(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "enum_cons", arg);
     }
     
