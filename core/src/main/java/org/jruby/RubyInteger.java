@@ -54,6 +54,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
+import static org.jruby.RubyEnumerator.SizeFn;
 
 /** Implementation of the Integer class.
  *
@@ -242,18 +243,24 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorizeWithSize(context, this, "times", timesSize(context.runtime));
+            return enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
         }
     }
 
-    protected RubyInteger timesSize(Ruby runtime) {
-        RubyFixnum zero = RubyFixnum.zero(runtime);
-        if ((this instanceof RubyFixnum && getLongValue() < 0)
-                || this.callMethod("<", zero).isTrue()) {
-            return zero;
-        }
+    protected SizeFn timesSizeFn(final Ruby runtime) {
+        final RubyInteger self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                RubyFixnum zero = RubyFixnum.zero(runtime);
+                if ((self instanceof RubyFixnum && getLongValue() < 0)
+                        || self.callMethod("<", zero).isTrue()) {
+                    return zero;
+                }
 
-        return this;
+                return self;
+            }
+        };
     }
 
     /** int_succ
