@@ -6,8 +6,14 @@
 
 package org.jruby.ir.persistence;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Operand;
 import static org.jruby.ir.persistence.IRWriter.NULL;
@@ -18,8 +24,13 @@ import static org.jruby.ir.persistence.IRWriter.NULL;
  * Represents a file which is persisted to storage. 
  */
 public class IRPersistedFile {
-    private Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
+    private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
     private int offset = 0;
+    private FileOutputStream io;
+    
+    public IRPersistedFile(File file) throws FileNotFoundException {
+        io = new FileOutputStream(file);
+    }
     
     /**
      * Record current offset as the beginning of specified scopes list of instructions.
@@ -55,21 +66,38 @@ public class IRPersistedFile {
     }
     
     public void write(boolean value) {
+        write(Boolean.toString(value));
     }
     
     public void write(int value) {
+        write(Integer.toString(value));
     }
 
-    public void write(String variableEncode) {
+    public void write(String value) {
+        try {
+            byte[] bytes = value.getBytes();
+            io.write(bytes);
+            offset +=  bytes.length;
+        } catch (IOException e) {
+            // error handling
+        }
     }
     
     public void write(Operand[] operands) {
+        for (Operand operand: operands) {
+            write(operand.toString());
+        }
     }
     
     public void write(IRPersistableEnum scopeType) {
+        write(scopeType.toString());
     }
 
     void commit() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            io.close();
+        } catch (IOException ex) {
+            Logger.getLogger(IRPersistedFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

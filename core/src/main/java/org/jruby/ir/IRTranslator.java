@@ -5,8 +5,10 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
-import org.jruby.ir.persistence.util.FileIO;
+import org.jruby.ir.persistence.IRPersistedFile;
+import org.jruby.ir.persistence.IRWriter;
+//import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
+//import org.jruby.ir.persistence.util.FileIO;
 import org.jruby.ir.persistence.util.IRFileExpert;
 
 /**
@@ -26,8 +28,9 @@ public abstract class IRTranslator<R, S> {
 
             if (RubyInstanceConfig.IR_PERSISTENCE) {
                 try {
-                    FileIO.writeToFile(IRFileExpert.getIRPersistedFile(scope.getFileName()), 
-                            IRToStringTranslator.translate(scope));
+                    IRWriter.persist(new IRPersistedFile(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
+//                    FileIO.writeToFile(IRFileExpert.getIRPersistedFile(scope.getFileName()), 
+//                            IRToStringTranslator.translate(scope));
                 } catch (IOException ex) {
                     ex.printStackTrace(); // FIXME: Handle errors better
                     return null;
