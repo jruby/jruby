@@ -11,10 +11,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import static org.jruby.ir.persistence.IRWriter.NULL;
 
@@ -77,20 +79,28 @@ public class IRPersistedFile {
         try {
             byte[] bytes = value.getBytes();
             io.write(bytes);
-            offset +=  bytes.length;
+            offset += bytes.length;
+            io.write(',');
+            offset += 1;
         } catch (IOException e) {
             // error handling
         }
     }
     
     public void write(Operand[] operands) {
+        write(operands.length);
         for (Operand operand: operands) {
             write(operand.toString());
         }
     }
     
+    public void write(Instr instr) {
+        write(instr.getOperation());
+        write(instr.getOperands());
+    }
+    
     public void write(IRPersistableEnum scopeType) {
-        write(scopeType.toString());
+        write(((Enum) scopeType).ordinal());
     }
 
     void commit() {

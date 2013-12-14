@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence;
 
 import java.io.IOException;
+import java.util.List;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -36,9 +37,11 @@ public class IRWriter {
         // record offset so when scopes are persisted they know where their instructions are located.
         file.addScopeInstructionOffset(scope);
         
-        for (Instr instr : scope.getInstrs()) {
-            file.write(instr.getOperation());
-            file.write(instr.getOperands());
+        List<Instr> instrs = scope.getInstrs();
+
+        file.write(instrs.size());
+        for (Instr instr: instrs) {
+            file.write(instr);
         }        
     }
     
