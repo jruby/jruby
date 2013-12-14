@@ -290,10 +290,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BEQInstr(BEQInstr beqInstr) {
-        Operand[] args = beqInstr.getOperands();
         jvm.method().loadLocal(0);
-        visit(args[0]);
-        visit(args[1]);
+        visit(beqInstr.getArg1());
+        visit(beqInstr.getArg2());
         jvm.method().invokeHelper("BEQ", boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         jvm.method().adapter.iftrue(getJVMLabel(beqInstr.getJumpTarget()));
     }
@@ -316,10 +315,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BNEInstr(BNEInstr bneinstr) {
-        Operand[] args = bneinstr.getOperands();
         jvm.method().loadLocal(0);
-        visit(args[0]);
-        visit(args[1]);
+        visit(bneinstr.getArg1());
+        visit(bneinstr.getArg2());
         jvm.method().invokeHelper("BNE", boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         jvm.method().adapter.iftrue(getJVMLabel(bneinstr.getJumpTarget()));
     }
@@ -840,7 +838,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void NotInstr(NotInstr instr) {
-        visit(instr.getOperands()[0]);
+        visit(instr.getArg());
         // SSS FIXME: Does this really require a helper rather than being inlined?
         jvm.method().invokeHelper("irNot", IRubyObject.class, ThreadContext.class, IRubyObject.class);
     }

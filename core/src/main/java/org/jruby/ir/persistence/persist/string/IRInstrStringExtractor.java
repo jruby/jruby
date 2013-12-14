@@ -564,10 +564,8 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(newIRModuleBody, container);
     }
 
-    public void EQQInstr(EQQInstr eqqinstr) {
-        Operand args[] = eqqinstr.getOperands();
-        
-        stringProducer.appendParameters(args[0], args[1]);
+    @Override public void EQQInstr(EQQInstr eqqinstr) {
+        stringProducer.appendParameters(eqqinstr.getArg1(), eqqinstr.getArg2());
     }
 
     public void ExceptionRegionStartMarkerInstr(

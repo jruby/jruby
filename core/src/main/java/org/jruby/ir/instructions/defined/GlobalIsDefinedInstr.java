@@ -40,7 +40,7 @@ public class GlobalIsDefinedInstr extends DefinedInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         return new GlobalIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo),
-                (StringLiteral) getOperands()[0].cloneForInlining(inlinerInfo));
+                (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
 
     @Override
