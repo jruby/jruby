@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
@@ -21,6 +22,11 @@ public class NonlocalReturnInstr extends ReturnBase {
     
     public String getMethodToReturnFrom() {
         return methodToReturnFrom.getName();
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { returnValue, new ScopeModule(methodToReturnFrom) };
     }
 
     @Override

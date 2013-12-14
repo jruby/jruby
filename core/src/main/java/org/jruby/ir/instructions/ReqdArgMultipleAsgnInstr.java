@@ -7,6 +7,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -32,6 +33,11 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
 
     public int getPreArgsCount() { return preArgsCount; }
     public int getPostArgsCount() { return postArgsCount; }
+    
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
+    }    
 
     @Override
     public String toString() {

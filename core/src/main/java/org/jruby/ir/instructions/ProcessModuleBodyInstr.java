@@ -27,14 +27,17 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr {
 		  this.moduleBody = moduleBody;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{moduleBody};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

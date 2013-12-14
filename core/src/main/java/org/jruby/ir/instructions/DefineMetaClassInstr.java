@@ -17,9 +17,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
 public class DefineMetaClassInstr extends Instr implements ResultInstr {
-    private IRModuleBody metaClassBody;
+    private final IRModuleBody metaClassBody;
     private Operand object;
     private Variable result;
 
@@ -33,14 +34,17 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{object};
+        return new Operand[]{object, new ScopeModule(metaClassBody)};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

@@ -17,6 +17,11 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
         this.end = end;
         this.firstRescueBlockLabel = firstRescueBlockLabel;
     }
+    
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { begin, end, firstRescueBlockLabel };
+    }    
 
     @Override
     public String toString() {
@@ -26,10 +31,6 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
         buf.append(")");
 
         return buf.toString();
-    }
-    
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
     }
 
     @Override

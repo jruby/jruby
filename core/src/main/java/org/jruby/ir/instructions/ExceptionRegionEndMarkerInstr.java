@@ -9,6 +9,7 @@ public class ExceptionRegionEndMarkerInstr extends Instr {
         super(Operation.EXC_REGION_END);
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

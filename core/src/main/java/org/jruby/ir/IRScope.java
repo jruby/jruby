@@ -704,6 +704,7 @@ public abstract class IRScope implements ParseResult {
 
         // For methods with unescaped bindings, inline the binding
         // by converting local var loads/store to tmp var loads/stores
+        /*
         if (this instanceof IRMethod && !this.bindingHasEscaped()) {
             CompilerPass pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
@@ -713,7 +714,7 @@ public abstract class IRScope implements ParseResult {
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
             }
-        }
+        }*/
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */

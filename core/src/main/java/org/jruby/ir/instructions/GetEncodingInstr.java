@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
@@ -28,7 +29,7 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
     
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new StringLiteral(encoding.toString()) };
     }
 
     @Override

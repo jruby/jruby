@@ -3,7 +3,9 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class LineNumberInstr extends Instr {
@@ -16,8 +18,9 @@ public class LineNumberInstr extends Instr {
         this.lineNumber = lineNumber;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new ScopeModule(scope), new Fixnum(lineNumber) };
     }
 
     @Override

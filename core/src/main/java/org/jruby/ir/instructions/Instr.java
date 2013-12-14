@@ -170,10 +170,6 @@ public abstract class Instr {
      * to simplify
      */
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        if (getOperands() != EMPTY_OPERANDS) {
-            System.out.println("simplifyOperands: Missing implementation for: " + this.getOperation());
-            throw new RuntimeException("simplifyOperands: Missing implementation for: " + this.getOperation());
-        }
     }
 
     /**

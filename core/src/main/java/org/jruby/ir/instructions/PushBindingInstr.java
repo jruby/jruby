@@ -4,10 +4,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class PushBindingInstr extends Instr {
-    private IRScope scope;   // Scope for which frame is needed
+    private final IRScope scope;   // Scope for which frame is needed
 
     public PushBindingInstr(IRScope scope) {
         super(Operation.PUSH_BINDING);
@@ -20,7 +21,7 @@ public class PushBindingInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new ScopeModule(scope) };
     }
 
     @Override

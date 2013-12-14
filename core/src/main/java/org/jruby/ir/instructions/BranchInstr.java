@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Operand;
 import java.util.Map;
 
 public abstract class BranchInstr extends Instr {
-    private Label target;
+    private final Label target;
     private Operand arg1;
     private Operand arg2;
 
@@ -18,8 +18,9 @@ public abstract class BranchInstr extends Instr {
         this.arg2 = v2;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return arg2 == null ? new Operand[]{arg1} : new Operand[]{arg1, arg2};
+        return arg2 == null ? new Operand[]{target, arg1} : new Operand[]{target, arg1, arg2};
     }
 
     public Operand getArg1() {

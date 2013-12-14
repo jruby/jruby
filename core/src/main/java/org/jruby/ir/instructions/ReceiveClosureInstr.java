@@ -19,14 +19,17 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

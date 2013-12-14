@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -28,6 +29,11 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
     public int getMinArgsLength() {
         return minArgsLength;
     }
+    
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { getArrayArg(), new Fixnum(getIndex()), new Fixnum(minArgsLength) };
+    }    
 
     @Override
     public String toString() {

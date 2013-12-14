@@ -15,6 +15,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
+import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.StringLiteral;
 
 // Const search:
 // - looks up lexical scopes
@@ -22,8 +24,8 @@ import java.util.Map;
 // - then invokes const_missing if inheritance search fails
 public class SearchConstInstr extends Instr implements ResultInstr {
     private Operand  startingScope;
-    private String   constName;
-    private boolean  noPrivateConsts;
+    private final String   constName;
+    private final boolean  noPrivateConsts;
     private Variable result;
 
     // Constant caching
@@ -42,8 +44,9 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         this.noPrivateConsts = noPrivateConsts;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[] { startingScope };
+        return new Operand[] { new StringLiteral(constName), startingScope, new BooleanLiteral(noPrivateConsts) };
     }
 
     @Override
@@ -51,14 +54,17 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         startingScope = startingScope.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new SearchConstInstr(ii.getRenamedVariable(result), constName, startingScope.cloneForInlining(ii), noPrivateConsts);
     }

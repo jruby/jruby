@@ -34,10 +34,12 @@ public class GetErrorInfoInstr extends Instr implements ResultInstr {
         return EMPTY_OPERANDS;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         result = v;
     }

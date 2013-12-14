@@ -25,6 +25,7 @@ public class JumpIndirectInstr extends Instr {
         return target;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{target};
     }

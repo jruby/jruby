@@ -17,7 +17,7 @@ public class PutConstInstr extends PutInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PutConstInstr(operands[TARGET].cloneForInlining(ii), ref, operands[VALUE].cloneForInlining(ii));
+        return new PutConstInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
     }
 
     @Override

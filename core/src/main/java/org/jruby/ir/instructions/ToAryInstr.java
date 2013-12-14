@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -42,7 +41,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { array };
+        return new Operand[] { array, dontToAryArrays };
     }
 
     @Override
@@ -66,10 +65,12 @@ public class ToAryInstr extends Instr implements ResultInstr {
         return a instanceof Array ? a : null;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

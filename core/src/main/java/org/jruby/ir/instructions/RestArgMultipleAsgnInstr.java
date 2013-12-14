@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -31,6 +32,11 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
     
     public int getPostArgsCount() {
         return postArgsCount;
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
     }
     
     @Override

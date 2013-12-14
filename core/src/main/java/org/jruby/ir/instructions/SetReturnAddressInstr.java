@@ -17,22 +17,24 @@ import java.util.Map;
 //    v = LBL_..
 // Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
 public class SetReturnAddressInstr extends Instr implements ResultInstr {
-    private Label returnAddr;
+    private final Label returnAddr;
     private Variable result;
 
-    public SetReturnAddressInstr(Variable result, Label l) {
+    public SetReturnAddressInstr(Variable result, Label returnAddr) {
         super(Operation.SET_RETADDR);
 
         assert result != null: "SetReturnAddressInstr result is null";
 
-        this.returnAddr = l;
+        this.returnAddr = returnAddr;
         this.result = result;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -41,6 +43,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
         return (Label) returnAddr;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{returnAddr};
     }

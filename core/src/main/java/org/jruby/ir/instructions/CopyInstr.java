@@ -26,14 +26,17 @@ public class CopyInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{arg};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

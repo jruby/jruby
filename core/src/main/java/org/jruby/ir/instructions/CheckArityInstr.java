@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.Arity;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
@@ -22,7 +23,7 @@ public class CheckArityInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest) };
     }
 
     @Override

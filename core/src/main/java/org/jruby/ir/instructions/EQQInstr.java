@@ -38,14 +38,17 @@ public class EQQInstr extends Instr implements ResultInstr {
         return arg2;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{arg1, arg2};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

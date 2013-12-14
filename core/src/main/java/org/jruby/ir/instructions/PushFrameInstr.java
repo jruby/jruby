@@ -10,6 +10,7 @@ public class PushFrameInstr extends Instr {
         super(Operation.PUSH_FRAME);
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

@@ -1,12 +1,11 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
 
 // These instructions show up in three contexts:
 // - To assign args in parenthesized units: |.., (a,b,c), .. |
@@ -28,14 +27,16 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
         this.index = index;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{array};
+        return new Operand[]{array, new Fixnum(index) };
     }
 
     public Operand getArrayArg() {
         return array;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
@@ -44,6 +45,7 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
         return index;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

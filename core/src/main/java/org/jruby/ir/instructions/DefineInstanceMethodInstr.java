@@ -19,6 +19,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
 public class DefineInstanceMethodInstr extends Instr {
     private Operand container;
@@ -33,6 +34,17 @@ public class DefineInstanceMethodInstr extends Instr {
     public Operand getContainer() {
         return container;
     }
+    
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[]{container, new ScopeModule(method) };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        container = container.getSimplifiedOperand(valueMap, force);
+    }    
     
     @Override
     public String toString() {
@@ -92,15 +104,6 @@ public class DefineInstanceMethodInstr extends Instr {
             clazz.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
         return null;
-    }
-
-    public Operand[] getOperands() {
-        return new Operand[]{container};
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        container = container.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

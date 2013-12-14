@@ -2,6 +2,8 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -18,6 +20,11 @@ public class ReceiveOptArgInstr extends ReceiveArgBase {
         super(Operation.RECV_OPT_ARG, result, optArgIndex);
         this.argOffset = argOffset;
         this.numUsedArgs = numUsedArgs;
+    }
+     
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argOffset), new Fixnum(argIndex) };
     }
     
     @Override

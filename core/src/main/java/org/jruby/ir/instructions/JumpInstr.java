@@ -15,7 +15,7 @@ public class JumpInstr extends Instr {
     }
 
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { target };
     }
 
     @Override

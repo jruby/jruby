@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
@@ -17,6 +18,11 @@ public class GetGlobalVariableInstr extends GetInstr {
     
     public GetGlobalVariableInstr(Variable dest, GlobalVariable gvar) {
         super(Operation.GET_GLOBAL_VAR, dest, gvar, null); 
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { getSource() };
     }
 
     @Override

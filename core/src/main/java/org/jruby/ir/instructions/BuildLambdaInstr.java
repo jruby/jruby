@@ -15,37 +15,41 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.StringLiteral;
 
 public class BuildLambdaInstr extends Instr implements ResultInstr {
     /** The position for the block */
     private final ISourcePosition position;
     private Variable result;
-    private Operand[] operands;
+    private final WrappedIRClosure lambdaBody;
 
     public BuildLambdaInstr(Variable lambda, WrappedIRClosure lambdaBody, ISourcePosition position) {
         super(Operation.LAMBDA);
 
         this.result = lambda;
-        this.operands = new Operand[] { lambdaBody };
+        this.lambdaBody = lambdaBody;
         this.position = position;
     }
     
     public String getLambdaBodyName() {
-        return getLambdaBody().getName();
+        return getLambdaBody().getClosure().getName();
     }
     @Override
     public Operand[] getOperands() {
-        return operands;
+        return new Operand[] { lambdaBody, new StringLiteral(position.getFile()), new Fixnum(position.getLine()) };
     }
     
     public ISourcePosition getPosition() {
         return position;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -53,18 +57,19 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: This is buggy. The lambda body might have to be cloned depending on cloning context.
-        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), (WrappedIRClosure)operands[0], position);
+        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        Operand[] operands = getOperands();
         for (int i = 0; i < operands.length; i++) {
             operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
         }
     }
 
-    private IRClosure getLambdaBody() {
-        return ((WrappedIRClosure) operands[0]).getClosure();
+    private WrappedIRClosure getLambdaBody() {
+        return lambdaBody;
     }
     
     @Override
@@ -72,13 +77,13 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
         //
         // JRUBY-5686: do this before executing so first time sets cref module
-        getLambdaBody().getStaticScope().determineModule();
+        getLambdaBody().getClosure().getStaticScope().determineModule();
 
-        IRClosure body = getLambdaBody();
+        IRClosure body = getLambdaBody().getClosure();
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
         return RubyProc.newProc(context.runtime,
-                (Block) (body == null ? context.runtime.getIRManager().getNil() : operands[0]).retrieve(context, self, currDynScope, temp),
+                (Block) (body == null ? context.runtime.getIRManager().getNil() : getLambdaBody()).retrieve(context, self, currDynScope, temp),
                 Block.Type.LAMBDA, position);
     }
 

@@ -65,7 +65,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     public Operand[] getOperands() {
-        return buildAllArgs(getMethodAddr(), receiver, arguments, closure);
+        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, arguments, closure);
     }
 
     public MethAddr getMethodAddr() {
@@ -324,22 +324,24 @@ public abstract class CallBase extends Instr implements Specializeable {
         return false;
     }
 
-    private static Operand[] buildAllArgs(Operand methAddr, Operand receiver, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
+    private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver, 
+            Operand[] callArgs, Operand closure) {
+        Operand[] allArgs = new Operand[callArgs.length + 3 + ((closure != null) ? 1 : 0)];
 
         assert methAddr != null : "METHADDR is null";
         assert receiver != null : "RECEIVER is null";
 
 
-        allArgs[0] = methAddr;
-        allArgs[1] = receiver;
+        allArgs[0] = callType;
+        allArgs[1] = methAddr;
+        allArgs[2] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
 
-            allArgs[i + 2] = callArgs[i];
+            allArgs[i + 3] = callArgs[i];
         }
 
-        if (closure != null) allArgs[callArgs.length + 2] = closure;
+        if (closure != null) allArgs[callArgs.length + 3] = closure;
 
         return allArgs;
     }

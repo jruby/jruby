@@ -16,6 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
+import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -52,7 +53,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { definingScope };
+        return new Operand[] { definingScope, new StringLiteral(constName) };
     }
     
     @Override

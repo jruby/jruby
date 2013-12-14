@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 public class ConstMissingInstr extends CallInstr implements ResultInstr {
-    private String missingConst;
+    private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
         super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, new MethAddr("const_missing"), currentModule, new Operand[]{new Symbol(missingConst)}, null);
@@ -30,19 +30,16 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { receiver };
-    }
-
-    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         receiver = receiver.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

@@ -15,6 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.StringLiteral;
 
 public class RuntimeHelperCall extends Instr implements ResultInstr {
     Variable  result;
@@ -38,13 +39,18 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
     
     @Override
     public Operand[] getOperands() {
-        return args;
+        Operand[] operands = new Operand[args.length + 1];
+        operands[0] = new StringLiteral(helperMethod);
+        System.arraycopy(args, 0, operands, 1, args.length);
+        return operands;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

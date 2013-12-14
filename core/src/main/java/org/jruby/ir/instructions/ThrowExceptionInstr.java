@@ -28,6 +28,7 @@ public class ThrowExceptionInstr extends Instr {
         return exceptionArg;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{ exceptionArg };
     }

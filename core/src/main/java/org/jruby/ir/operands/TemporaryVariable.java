@@ -21,7 +21,7 @@ public class TemporaryVariable extends Variable {
         this.name = getPrefix() + offset;
     }
 
-	 // Used for temporary variables like %current_module, %_arg_array
+    // Used for temporary variables like %current_module, %_arg_array
     public TemporaryVariable(String name, int offset) {
         super(OperandType.TEMPORARY_VARIABLE);
 

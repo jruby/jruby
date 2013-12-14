@@ -10,6 +10,7 @@ public class PopFrameInstr extends Instr {
         super(Operation.POP_FRAME);
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

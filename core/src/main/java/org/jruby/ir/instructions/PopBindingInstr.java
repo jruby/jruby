@@ -10,6 +10,7 @@ public class PopBindingInstr extends Instr {
         super(Operation.POP_BINDING);
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

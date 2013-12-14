@@ -6,6 +6,7 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -15,13 +16,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class LoadLocalVarInstr extends Instr implements ResultInstr {
-    private IRScope scope;
+    private final IRScope scope;
     private TemporaryVariable result;
 
     /** This is the variable that is being loaded from the scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
-    private LocalVariable lvar;
+    private final LocalVariable lvar;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryVariable result, LocalVariable lvar) {
         super(Operation.BINDING_LOAD);
@@ -37,18 +38,22 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
         return scope;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return Instr.EMPTY_OPERANDS;
+        return new Operand[] { new ScopeModule(scope), lvar };
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = (TemporaryVariable)v;
     }
 
+    @Override
     public String toString() {
         return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")"; 
     }

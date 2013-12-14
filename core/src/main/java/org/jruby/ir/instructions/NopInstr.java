@@ -17,6 +17,7 @@ public class NopInstr extends Instr {
         this.markDead();
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }

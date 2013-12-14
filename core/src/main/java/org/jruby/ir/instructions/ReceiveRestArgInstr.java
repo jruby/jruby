@@ -2,6 +2,8 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.ThreadContext;
@@ -23,7 +25,12 @@ public class ReceiveRestArgInstr extends ReceiveArgBase {
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ", " + argIndex + ")";
     }
-
+    
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argIndex) };
+    }
+    
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {

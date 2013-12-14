@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
 // NOTE: breaks that jump out of while/until loops would have
 // been transformed by the IR building into an ordinary jump.
@@ -46,8 +47,9 @@ public class BreakInstr extends Instr {
         return returnValue;
     }     
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[] { returnValue };
+        return new Operand[] { new ScopeModule(scopeToReturnTo), returnValue };
     }
 
     @Override

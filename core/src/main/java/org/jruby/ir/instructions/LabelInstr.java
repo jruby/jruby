@@ -14,8 +14,9 @@ public class LabelInstr extends Instr {
         this.label = label;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { label };
     }
 
     @Override

@@ -26,10 +26,12 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
         this.blockArg = block;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{blockArg};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
@@ -43,6 +45,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
         blockArg = blockArg.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

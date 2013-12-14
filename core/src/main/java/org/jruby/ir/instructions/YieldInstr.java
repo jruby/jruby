@@ -16,6 +16,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.BooleanLiteral;
 
 public class YieldInstr extends Instr implements ResultInstr {
     public final boolean unwrapArray;
@@ -60,14 +61,17 @@ public class YieldInstr extends Instr implements ResultInstr {
     }
 
     // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
+    @Override
     public Operand[] getOperands() {
-        return new Operand[] {blockArg, yieldArg};
+        return new Operand[] {blockArg, yieldArg, new BooleanLiteral(unwrapArray) };
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

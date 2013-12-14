@@ -11,6 +11,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.StringLiteral;
 
 /**
  * This instruction will be generated whenever speculative optimizations are performed
@@ -28,7 +30,7 @@ public class ModuleVersionGuardInstr extends Instr {
     private Operand candidateObj;
 
     /** Where to jump if the version assumption fails? */
-    private Label failurePathLabel;
+    private final Label failurePathLabel;
 
     public ModuleVersionGuardInstr(RubyModule module, int expectedVersion, Operand candidateObj, Label failurePathLabel) {
         super(Operation.MODULE_GUARD);
@@ -57,7 +59,7 @@ public class ModuleVersionGuardInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { candidateObj };
+        return new Operand[] { new StringLiteral(module.getName()), new Fixnum(expectedVersion), candidateObj, failurePathLabel };
     }
 
     @Override
