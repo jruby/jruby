@@ -19,9 +19,10 @@ public class IRFileExpert {
                 new File(IR_ROOT_FOLDER, path.substring(0, fileNameIndex + 1));
 
         folder.mkdirs();
-
+        
         int extensionIndex = path.lastIndexOf(EXTENSION_SEPARATOR);
-        String bareFilename = extensionIndex == -1 ? path : path.substring(fileNameIndex, extensionIndex);
+        String bareFilename = extensionIndex == -1 || extensionIndex < fileNameIndex ? 
+                path.substring(fileNameIndex+1) : path.substring(fileNameIndex, extensionIndex);
 
         return new File(folder, bareFilename + IR_FILE_EXTENSION);
     }
