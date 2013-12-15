@@ -36,8 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -56,6 +54,8 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,6 +67,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.RubyNumeric.intervalStepSize;
 
 import org.jruby.runtime.invokedynamic.MethodNames;
 
@@ -446,7 +448,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "each")
     public IRubyObject each19(final ThreadContext context, final Block block) {
         Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "each");
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
 
         if (begin instanceof RubyTime) {
             throw runtime.newTypeError("can't iterate from Time");
@@ -498,13 +500,13 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon19(context, RubyFixnum.one(context.runtime), block) : enumeratorize(context.runtime, this, "step");
+        return block.isGiven() ? stepCommon19(context, RubyFixnum.one(context.runtime), block) : enumeratorizeWithSize(context, this, "step", stepSizeFn(context));
     }
 
     @JRubyMethod(name = "step")
     public IRubyObject step19(final ThreadContext context, IRubyObject step, final Block block) {
         Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "step", step);
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "step", new IRubyObject[] { step }, stepSizeFn(context));
 
         if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
         IRubyObject zero = RubyFixnum.zero(runtime);
@@ -547,6 +549,50 @@ public class RubyRange extends RubyObject {
             i++;
             beg = begin.callMethod(context, "+", RubyFixnum.newFixnum(runtime, i).callMethod(context, "*", step));
         }
+    }
+
+    private SizeFn enumSizeFn(final ThreadContext context) {
+        final RubyRange self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return self.size(context);
+            }
+        };
+    }
+
+    private SizeFn stepSizeFn(final ThreadContext context) {
+        final RubyRange self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                Ruby runtime = context.runtime;
+                IRubyObject begin = self.begin;
+                IRubyObject end = self.end;
+                IRubyObject step;
+
+                if (args != null && args.length > 0) {
+                    step = args[0];
+                    if (!(step instanceof RubyNumeric)) {
+                        step.convertToInteger();
+                    }
+                } else {
+                    step = RubyFixnum.one(runtime);
+                }
+
+                if (step.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
+                    throw runtime.newArgumentError("step can't be negative");
+                } else if (!step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue()) {
+                    throw runtime.newArgumentError("step can't be 0");
+                }
+
+                if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
+                    return intervalStepSize(context, begin, end, step, self.isExclusive);
+                }
+
+                return runtime.getNil();
+            }
+        };
     }
 
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
