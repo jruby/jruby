@@ -3433,7 +3433,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "combination")
     public IRubyObject combination(ThreadContext context, IRubyObject num, Block block) {
         Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "combination", num);
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "combination", new IRubyObject[]{num}, combinationSize(context));
 
         int n = RubyNumeric.num2int(num);
 
@@ -3465,10 +3465,39 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return this;
     }
 
+    private SizeFn combinationSize(final ThreadContext context) {
+        final RubyArray self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                long n = self.realLength;
+                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #combination ensures arg[0] is numeric
+                long k = ((RubyNumeric) args[0]).getLongValue();
+
+                return binomialCoefficient(context, k, n);
+            }
+        };
+    }
+
+    private IRubyObject binomialCoefficient(ThreadContext context, long comb, long size) {
+        Ruby runtime = context.runtime;
+        if (comb > size - comb) {
+            comb = size - comb;
+        }
+
+        if (comb < 0) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        IRubyObject r = descendingFactorial(context, size, comb);
+        IRubyObject v = descendingFactorial(context, comb, comb);
+        return r.callMethod(context, "/", v);
+    }
+
     @JRubyMethod(name = "repeated_combination")
     public IRubyObject repeatedCombination(ThreadContext context, IRubyObject num, Block block) {
         Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "repeated_combination", num);
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "repeated_combination", new IRubyObject[] { num }, repeatedCombinationSize(context));
 
         int n = RubyNumeric.num2int(num);
         int myRealLength = realLength;
@@ -3513,6 +3542,24 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
     }
 
+    private SizeFn repeatedCombinationSize(final ThreadContext context) {
+        final RubyArray self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                long n = self.realLength;
+                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_combination ensures arg[0] is numeric
+                long k = ((RubyNumeric) args[0]).getLongValue();
+
+                if (k == 0) {
+                    return RubyFixnum.one(context.runtime);
+                }
+
+                return binomialCoefficient(context, k, n + k - 1);
+            }
+        };
+    }
+
     private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, boolean repeat, RubyArray values, Block block) {
         for (int i = 0; i < n; i++) {
             if (repeat || !used[i]) {
@@ -3540,17 +3587,38 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
-        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), false, block) : enumeratorize(context.runtime, this, "permutation", num);
+        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), false, block) : enumeratorizeWithSize(context, this, "permutation", new IRubyObject[] { num }, permutationSize(context));
     }
 
     @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, Block block) {
-        return block.isGiven() ? permutationCommon(context, realLength, false, block) : enumeratorize(context.runtime, this, "permutation");
+        return block.isGiven() ? permutationCommon(context, realLength, false, block) : enumeratorizeWithSize(context, this, "permutation", permutationSize(context));
     }
 
     @JRubyMethod(name = "repeated_permutation")
     public IRubyObject repeated_permutation(ThreadContext context, IRubyObject num, Block block) {
-        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), true, block) : enumeratorize(context.runtime, this, "repeated_permutation", num);
+        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), true, block) : enumeratorizeWithSize(context, this, "repeated_permutation", new IRubyObject[]{num}, repeatedPermutationSize(context));
+    }
+
+    private SizeFn repeatedPermutationSize(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        final RubyArray self = this;
+
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                RubyFixnum n = self.length();
+                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_permutation ensures arg[0] is numeric
+                long k = ((RubyNumeric) args[0]).getLongValue();
+
+                if (k < 0) {
+                    return RubyFixnum.zero(runtime);
+                }
+
+                RubyFixnum v = RubyFixnum.newFixnum(runtime, k);
+                return n.callMethod(context, "**", v);
+            }
+        };
     }
 
     private IRubyObject permutationCommon(ThreadContext context, int r, boolean repeat, Block block) {
@@ -3569,6 +3637,37 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     makeShared(begin, n, getMetaClass()), block);
         }
         return this;
+    }
+
+    private SizeFn permutationSize(final ThreadContext context) {
+        final RubyArray self = this;
+
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                long n = self.realLength;
+                long k;
+
+                if (args != null && args.length > 0) {
+                    assert args[0] instanceof RubyNumeric; // #permutation ensures arg[0] is numeric
+                    k = ((RubyNumeric) args[0]).getLongValue();
+                } else {
+                    k = n;
+                }
+
+                return descendingFactorial(context, n, k);
+            }
+        };
+    }
+
+    private IRubyObject descendingFactorial(ThreadContext context, long from, long howMany) {
+        Ruby runtime = context.runtime;
+        IRubyObject cnt = howMany >= 0 ? RubyFixnum.one(runtime) : RubyFixnum.zero(runtime);
+        while (howMany-- > 0) {
+            RubyFixnum v = RubyFixnum.newFixnum(runtime, from--);
+            cnt = cnt.callMethod(context, "*", v);
+        }
+        return cnt;
     }
 
     @Deprecated
