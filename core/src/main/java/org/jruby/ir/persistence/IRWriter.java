@@ -11,20 +11,23 @@ import org.jruby.parser.StaticScope;
 /**
  *  Write IR data out to persistent store.  IRReader is capable of re-reading this
  * information back into live IR data again.  This class knows the logical order of how
- * information will be written out but the IRPersistedFile actually knows how to encode that
+ * information will be written out but the IRWriterEncoder actually knows how to encode that
  * information.
  */
 public class IRWriter {
     public static int NULL = -1;
     
-    public static void persist(IRPersistedFile file, IRScope script) throws IOException {
+    public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
-        persistScopeHeaders(file, script);      // recursive dump of all defined scope headers
         
-        file.commit(); // persist file to disk.
+        file.startEncodingScopeHeaders(script);
+        persistScopeHeaders(file, script);      // recursive dump of all defined scope headers
+        file.endEncodingScopeHeaders(script);
+        
+        file.commit();
     }
     
-    private static void persistScopeInstructions(IRPersistedFile file, IRScope parent) {
+    private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
         persistScopeInstrs(file, parent);
         
         for (IRScope scope: parent.getLexicalScopes()) {
@@ -33,21 +36,21 @@ public class IRWriter {
     }
     
     // {operation, [operands]}*
-    private static void persistScopeInstrs(IRPersistedFile file, IRScope scope) {
-        // record offset so when scopes are persisted they know where their instructions are located.
-        file.addScopeInstructionOffset(scope);
+    private static void persistScopeInstrs(IRWriterEncoder file, IRScope scope) {
+        file.startEncodingScopeInstrs(scope);
         
         List<Instr> instrs = scope.getInstrs();
 
-        file.write(instrs.size());
         for (Instr instr: instrs) {
-            file.write(instr);
-        }        
+            file.encode(instr);
+        }
+        
+        file.endEncodingScopeInstrs(scope);
     }
     
     // recursive dump of all scopes.  Each scope records offset into persisted file where there
     // instructions reside.  That is extra logic here in currentInstrIndex + instrsLocations
-    private static void persistScopeHeaders(IRPersistedFile file, IRScope parent) {
+    private static void persistScopeHeaders(IRWriterEncoder file, IRScope parent) {
         persistScopeHeader(file, parent);
 
         for (IRScope scope: parent.getLexicalScopes()) {
@@ -59,32 +62,33 @@ public class IRWriter {
     // closure scopes: {type,name,linenumber,lexical_parent_name, lexical_parent_line,is_for,arity,arg_type,{static_scope},instrs_offset}
     // other scopes: {type,name,linenumber,lexical_parent_name, lexical_parent_line,{static_scope}, instrs_offset}
     // for non-for scopes is_for,arity, and arg_type will be 0.
-    private static void persistScopeHeader(IRPersistedFile file, IRScope scope) {
-        file.write(scope.getScopeType()); // type is enum of kind of scope
-        file.write(scope.getName());
-        file.write(scope.getLineNumber());
+    private static void persistScopeHeader(IRWriterEncoder file, IRScope scope) {
+        file.startEncodingScopeHeader(scope);
+        file.encode(scope.getScopeType()); // type is enum of kind of scope
+        file.encode(scope.getName());
+        file.encode(scope.getLineNumber());
 
         if (!(scope instanceof IRScriptBody)) {
-            file.write(scope.getLexicalParent().getName());
-            file.write(scope.getLexicalParent().getLineNumber());
+            file.encode(scope.getLexicalParent().getName());
+            file.encode(scope.getLexicalParent().getLineNumber());
         }
 
         if (scope instanceof IRClosure) {
             IRClosure closure = (IRClosure) scope;
 
-            file.write(closure.isForLoopBody());
-            file.write(closure.getArity().getValue());
-            file.write(closure.getArgumentType());
+            file.encode(closure.isForLoopBody());
+            file.encode(closure.getArity().getValue());
+            file.encode(closure.getArgumentType());
         }
 
         persistStaticScope(file, scope.getStaticScope());
-        file.write(file.getScopeInstructionOffset(scope));
+        file.endEncodingScopeHeader(scope);
     }
 
     // {type,[variables],required_args}
-    private static void persistStaticScope(IRPersistedFile file, StaticScope staticScope) {
-        file.write(staticScope.getType());
-        file.write(staticScope.getVariables());
-        file.write(staticScope.getRequiredArgs());
+    private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
+        file.encode(staticScope.getType());
+        file.encode(staticScope.getVariables());
+        file.encode(staticScope.getRequiredArgs());
     }
 }

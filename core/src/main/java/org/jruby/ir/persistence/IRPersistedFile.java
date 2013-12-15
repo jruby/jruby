@@ -16,7 +16,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import static org.jruby.ir.persistence.IRWriter.NULL;
 
@@ -25,11 +24,10 @@ import static org.jruby.ir.persistence.IRWriter.NULL;
 /**
  * Represents a file which is persisted to storage. 
  */
-public class IRPersistedFile {
-    private final Map<Operand, Integer> counts = new HashMap<Operand, Integer>();
+public class IRPersistedFile implements IRWriterEncoder {
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
     private int offset = 0;
-    private FileOutputStream io;
+    private final FileOutputStream io;
     
     public IRPersistedFile(File file) throws FileNotFoundException {
         io = new FileOutputStream(file);
@@ -56,27 +54,31 @@ public class IRPersistedFile {
         return offset;
     }
     
-    public void write(String[] values) {
+    @Override
+    public void encode(String[] values) {
         if (values == null) {
-            write(NULL);
+            encode(NULL);
             return;
         }
         
-        write(values.length);
+        encode(values.length);
         for (String value : values) {
-            write(value);
+            encode(value);
         }
     }
     
-    public void write(boolean value) {
-        write(Boolean.toString(value));
+    @Override
+    public void encode(boolean value) {
+        encode(Boolean.toString(value));
     }
     
-    public void write(int value) {
-        write(Integer.toString(value));
+    @Override
+    public void encode(int value) {
+        encode(Integer.toString(value));
     }
 
-    public void write(String value) {
+    @Override
+    public void encode(String value) {
         try {
             byte[] bytes = value.getBytes();
             io.write(bytes);
@@ -88,43 +90,59 @@ public class IRPersistedFile {
         }
     }
     
-    public void write(Operand[] operands) {
-        write(operands.length);
+    public void encode(Operand[] operands) {
+        encode(operands.length);
         for (Operand operand: operands) {
-            increment(operand);
-            write(operand.toString());
+            encode(operand.toString());
         }
     }
     
-    public void write(Instr instr) {
-        write(instr.getOperation());
-        write(instr.getOperands());
+    public void encode(Instr instr) {
+        encode(instr.getOperation());
+        encode(instr.getOperands());
     }
     
-    public void write(IRPersistableEnum scopeType) {
-        write(((Enum) scopeType).toString());
+    public void encode(IRPersistableEnum scopeType) {
+        encode(((Enum) scopeType).toString());
     }
 
-    void commit() {
-        write("\n");
-        for (Operand operand : counts.keySet()) {
-            if (!(operand instanceof Fixnum)) {
-            write(operand.getClass().getName());
-            write(operand.toString());
-            write(counts.get(operand));
-            write("\n");
-            }
-        }
+    @Override
+    public void commit() {
         try {
             io.close();
         } catch (IOException ex) {
             Logger.getLogger(IRPersistedFile.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    private void increment(Operand operand) {
-        Integer count = counts.get(operand);
-        if (count == null) count = new Integer(0);
-        
-        counts.put(operand, count + 1);
+
+    @Override
+    public void encode(long value) {
+    }
+
+    @Override
+    public void startEncodingScopeHeader(IRScope scope) {
+    }
+
+    @Override
+    public void endEncodingScopeHeader(IRScope scope) {
+        encode(getScopeInstructionOffset(scope)); // Write out offset to where this scopes instrs are
+    }
+
+    @Override
+    public void startEncodingScopeInstrs(IRScope scope) {
+        addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
+        encode(scope.getInstrs().size()); // Allows us to right-size when reconstructing instr list.
+    }
+
+    @Override
+    public void endEncodingScopeInstrs(IRScope scope) {
+    }
+
+    @Override
+    public void startEncodingScopeHeaders(IRScope script) {
+    }
+
+    @Override
+    public void endEncodingScopeHeaders(IRScope script) {
     }
 }
