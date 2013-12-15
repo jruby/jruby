@@ -615,7 +615,7 @@ public class RubyEnumerator extends RubyObject {
             
             peekTake();
             
-            return lastValue;
+            return returnValue(lastValue);
         }
         
         private void ensureStarted() {

@@ -373,5 +373,14 @@ class TestEnumerator < Test::Unit::TestCase
 
     assert_raise(LocalJumpError) { Enumerator::Yielder.new }
   end
+
+  def test_peek_for_enumerator_objects
+    e = 2.times
+    assert_equal(0, e.peek)
+    e.next
+    assert_equal(1, e.peek)
+    e.next
+    assert_raise(StopIteration) { e.peek }
+  end
 end
 
