@@ -33,6 +33,16 @@ public class ScopeModule extends Operand {
     }
 
     @Override
+    public int hashCode() {
+        return scope.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof ScopeModule && scope.equals(((ScopeModule) other).scope);
+    }
+
+    @Override
     public boolean canCopyPropagate() {
         return true;
     }

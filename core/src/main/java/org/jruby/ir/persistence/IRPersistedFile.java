@@ -11,12 +11,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import static org.jruby.ir.persistence.IRWriter.NULL;
 
@@ -26,6 +26,7 @@ import static org.jruby.ir.persistence.IRWriter.NULL;
  * Represents a file which is persisted to storage. 
  */
 public class IRPersistedFile {
+    private final Map<Operand, Integer> counts = new HashMap<Operand, Integer>();
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
     private int offset = 0;
     private FileOutputStream io;
@@ -90,6 +91,7 @@ public class IRPersistedFile {
     public void write(Operand[] operands) {
         write(operands.length);
         for (Operand operand: operands) {
+            increment(operand);
             write(operand.toString());
         }
     }
@@ -100,14 +102,29 @@ public class IRPersistedFile {
     }
     
     public void write(IRPersistableEnum scopeType) {
-        write(((Enum) scopeType).ordinal());
+        write(((Enum) scopeType).toString());
     }
 
     void commit() {
+        write("\n");
+        for (Operand operand : counts.keySet()) {
+            if (!(operand instanceof Fixnum)) {
+            write(operand.getClass().getName());
+            write(operand.toString());
+            write(counts.get(operand));
+            write("\n");
+            }
+        }
         try {
             io.close();
         } catch (IOException ex) {
             Logger.getLogger(IRPersistedFile.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    private void increment(Operand operand) {
+        Integer count = counts.get(operand);
+        if (count == null) count = new Integer(0);
+        
+        counts.put(operand, count + 1);
     }
 }

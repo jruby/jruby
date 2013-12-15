@@ -34,6 +34,11 @@ public class MethAddr extends Reference {
     public boolean equals(Object o) {
         return (o instanceof MethAddr) && ((MethAddr)o).getName().equals(getName());
     }
+    
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }    
 
     @Override
     public void visit(IRVisitor visitor) {

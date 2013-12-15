@@ -35,6 +35,16 @@ public class CurrentScope extends Operand {
     public boolean canCopyPropagate() {
         return true;
     }
+    
+    @Override
+    public int hashCode() {
+        return scope.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof CurrentScope && scope.equals(((CurrentScope) other).scope);
+    }    
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {

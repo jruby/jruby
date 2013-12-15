@@ -24,6 +24,16 @@ public class BooleanLiteral extends ImmutableLiteral {
     public boolean isFalse() {
         return !truthy;
     }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof BooleanLiteral && truthy == ((BooleanLiteral) other).truthy;
+    }    
+
+    @Override
+    public int hashCode() {
+        return 41 * 7 + (this.truthy ? 1 : 0);
+    }
 
     @Override
     public void visit(IRVisitor visitor) {

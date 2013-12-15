@@ -42,6 +42,16 @@ public class Fixnum extends ImmutableLiteral {
         return context.runtime.newFixnum(value);
     }
 
+    @Override
+    public int hashCode() {
+        return 47 * 7 + (int) (this.value ^ (this.value >>> 32));
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Fixnum && value == ((Fixnum) other).value;
+    }
+
 // ---------- These methods below are used during compile-time optimizations -------
 
     public Operand computeValue(String methodName, Operand arg) {

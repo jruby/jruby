@@ -53,6 +53,16 @@ public class StringLiteral extends Operand {
     }
 
     @Override
+    public int hashCode() {
+        return bytelist.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof StringLiteral && bytelist.equals(((StringLiteral) other).bytelist);
+    }
+
+    @Override
     public String toString() {
         return "\"" + string + "\"";
     }
