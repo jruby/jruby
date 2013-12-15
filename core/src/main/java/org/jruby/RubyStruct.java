@@ -51,10 +51,11 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.RubyEnumerator.SizeFn;
 
 /**
  * @author  jpetersen
@@ -441,7 +442,11 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyArray select(ThreadContext context, Block block) {
+    public IRubyObject select(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "select", enumSizeFn());
+        }
+
         RubyArray array = RubyArray.newArray(context.runtime);
         
         for (int i = 0; i < values.length; i++) {
@@ -451,6 +456,16 @@ public class RubyStruct extends RubyObject {
         }
         
         return array;
+    }
+
+    private SizeFn enumSizeFn() {
+        final RubyStruct self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return self.size();
+            }
+        };
     }
 
     public IRubyObject set(IRubyObject value, int index) {
@@ -593,7 +608,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return block.isGiven() ? eachInternal(context, block) : enumeratorize(context.runtime, this, "each");
+        return block.isGiven() ? eachInternal(context, block) : enumeratorizeWithSize(context, this, "each", enumSizeFn());
     }
 
     public IRubyObject each_pairInternal(ThreadContext context, Block block) {
@@ -608,7 +623,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairInternal(context, block) : enumeratorize(context.runtime, this, "each_pair");
+        return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
     }
 
     @JRubyMethod(name = "[]", required = 1)
