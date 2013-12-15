@@ -323,9 +323,9 @@ public class UnmarshalStream extends InputStream {
         int c = readSignedByte();
         if (c == 0) {
             return 0;
-        } else if (5 < c && c < 128) {
+        } else if (4 < c && c < 128) {
             return c - 5;
-        } else if (-129 < c && c < -5) {
+        } else if (-129 < c && c < -4) {
             return c + 5;
         }
         long result;
