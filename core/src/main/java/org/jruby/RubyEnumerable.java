@@ -1012,7 +1012,29 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.runtime, self, "each_slice", arg);
+        return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorizeWithSize(context, self, "each_slice", new IRubyObject[]{arg}, eachSliceSizeFn(context, self));
+    }
+
+    private static SizeFn eachSliceSizeFn(final ThreadContext context, final IRubyObject self) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                Ruby runtime = context.runtime;
+                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
+                long sliceSize = ((RubyNumeric) args[0]).getLongValue();
+                if (sliceSize <= 0) {
+                    throw runtime.newArgumentError("invalid slice size");
+                }
+
+                IRubyObject size = enumSizeFn(context, self).size(args);
+                if (size == null || size.isNil()) {
+                    return runtime.getNil();
+                }
+
+                IRubyObject n = size.callMethod(context, "+", RubyFixnum.newFixnum(runtime, sliceSize - 1));
+                return n.callMethod(context, "/", RubyFixnum.newFixnum(runtime, sliceSize));
+            }
+        };
     }
 
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
