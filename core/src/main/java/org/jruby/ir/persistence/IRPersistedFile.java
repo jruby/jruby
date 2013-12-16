@@ -10,14 +10,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
-import static org.jruby.ir.persistence.IRWriter.NULL;
+import org.jruby.ir.operands.OperandType;
 
 // FIXME: Make into a base class at some point to play with different formats
 
@@ -25,19 +25,35 @@ import static org.jruby.ir.persistence.IRWriter.NULL;
  * Represents a file which is persisted to storage. 
  */
 public class IRPersistedFile implements IRWriterEncoder {
+    public final static int TWO_MEGS = 1024 * 1024 * 2;
+    public final static int PRIMITIVE_BASE = OperandType.values().length; // OPERANDS and base data is 1 byte
+    public final static byte STRING = (byte) (PRIMITIVE_BASE + 1);
+    public final static byte INT = (byte) (PRIMITIVE_BASE + 2);
+    public final static byte TRUE = (byte) (PRIMITIVE_BASE + 3);
+    public final static byte FALSE = (byte) (PRIMITIVE_BASE + 4);
+    public final static byte ARRAY = (byte) (PRIMITIVE_BASE + 5);
+    public final static byte NULL = (byte) (PRIMITIVE_BASE + 6);
+    public final static byte INSTR = (byte) (PRIMITIVE_BASE + 7); // INSTRs 2 bytes
+    public final static byte LONG = (byte) (PRIMITIVE_BASE + 8);
+    private static final int VERSION = 0;
+    
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
-    private int offset = 0;
-    private final FileOutputStream io;
+    // FIXME: Allocate direct and use one per thread?
+    private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
+    private final File file;
+    
+    int headersOffset = -1;
+    int poolOffset = -1;
     
     public IRPersistedFile(File file) throws FileNotFoundException {
-        io = new FileOutputStream(file);
+        this.file = file;
     }
     
     /**
      * Record current offset as the beginning of specified scopes list of instructions.
      */
     public void addScopeInstructionOffset(IRScope scope) {
-        scopeInstructionOffsets.put(scope, offset());
+        scopeInstructionOffsets.put(scope, buf.position());
     }
     
     /**
@@ -47,76 +63,72 @@ public class IRPersistedFile implements IRWriterEncoder {
         return scopeInstructionOffsets.get(scope);
     }
     
-    /**
-     * Where are we within this persisted unit at the moment.
-     */
-    public int offset() {
-        return offset;
-    }
-    
+    // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
+    // encoding null.
     @Override
     public void encode(String[] values) {
+        buf.put(ARRAY);
+        buf.put(STRING);
         if (values == null) {
-            encode(NULL);
+            buf.putInt(0);
             return;
         }
         
-        encode(values.length);
+        buf.putInt(values.length);
         for (String value : values) {
-            encode(value);
+            buf.putInt(value.length());
+            buf.put(value.getBytes());
         }
     }
     
     @Override
     public void encode(boolean value) {
-        encode(Boolean.toString(value));
+        buf.put(value ? TRUE : FALSE);
     }
     
     @Override
     public void encode(int value) {
-        encode(Integer.toString(value));
+        buf.put(INT);
+        buf.putInt(value);
     }
 
     @Override
     public void encode(String value) {
-        try {
-            byte[] bytes = value.getBytes();
-            io.write(bytes);
-            offset += bytes.length;
-            io.write(',');
-            offset += 1;
-        } catch (IOException e) {
-            // error handling
-        }
+        buf.put(STRING);
+        buf.putInt((byte) value.length());
+        buf.put(value.getBytes());
     }
     
     public void encode(Operand[] operands) {
-        encode(operands.length);
+        buf.put((byte) operands.length);
         for (Operand operand: operands) {
-            encode(operand.toString());
+            encode(operand);
         }
     }
     
+    @Override
+    public void encode(Operand operand) {
+        buf.put((byte) operand.getOperandType().ordinal());
+        OperandEncoderMap.encode(this, operand);
+    }
+    
+    @Override
     public void encode(Instr instr) {
         encode(instr.getOperation());
+        if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
+
         encode(instr.getOperands());
     }
     
-    public void encode(IRPersistableEnum scopeType) {
-        encode(((Enum) scopeType).toString());
-    }
-
     @Override
-    public void commit() {
-        try {
-            io.close();
-        } catch (IOException ex) {
-            Logger.getLogger(IRPersistedFile.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public void encode(IRPersistableEnum scopeType) {
+        encode((byte) ((Enum) scopeType).ordinal());
     }
 
     @Override
     public void encode(long value) {
+        buf.put(LONG);
+        buf.putLong(value);
     }
 
     @Override
@@ -140,9 +152,30 @@ public class IRPersistedFile implements IRWriterEncoder {
 
     @Override
     public void startEncodingScopeHeaders(IRScope script) {
+        headersOffset = buf.position();
     }
 
     @Override
     public void endEncodingScopeHeaders(IRScope script) {
     }
+    
+    @Override
+    public void startEncoding(IRScope script) {
+    }
+
+    @Override
+    public void endEncoding(IRScope script) {
+        FileOutputStream fos = null;
+        
+        try {
+            fos = new FileOutputStream(file);
+            fos.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
+            fos.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
+            buf.flip();
+            fos.getChannel().write(buf);
+            fos.close();            
+        } catch (IOException e) {
+            try { if (fos != null) fos.close(); } catch (IOException e1) {}
+        }
+    }   
 }

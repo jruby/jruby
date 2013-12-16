@@ -40,6 +40,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(Operand operand) {
+    }
+
+    @Override
     public void encode(boolean value) {
     }
 
@@ -49,10 +53,6 @@ public class IRWriterAnalzer implements IRWriterEncoder {
 
     @Override
     public void encode(long value) {
-    }
-
-    @Override
-    public void commit() {
     }
 
     @Override
@@ -78,6 +78,14 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     @Override
     public void endEncodingScopeHeaders(IRScope script) {
     }
+    
+    @Override
+    public void startEncoding(IRScope script) {
+    }
+
+    @Override
+    public void endEncoding(IRScope script) {
+    }    
 
     private void increment(Operand operand) {
         Integer count = operandCounts.get(operand);

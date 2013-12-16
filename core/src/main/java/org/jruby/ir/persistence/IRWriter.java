@@ -18,13 +18,14 @@ public class IRWriter {
     public static int NULL = -1;
     
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
+        file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
         
         file.startEncodingScopeHeaders(script);
         persistScopeHeaders(file, script);      // recursive dump of all defined scope headers
         file.endEncodingScopeHeaders(script);
         
-        file.commit();
+        file.endEncoding(script);
     }
     
     private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
