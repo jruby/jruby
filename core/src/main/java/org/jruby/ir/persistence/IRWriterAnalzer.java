@@ -9,8 +9,12 @@ package org.jruby.ir.persistence;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.OperandType;
+import org.jruby.parser.StaticScope;
 
 /**
  *
@@ -36,7 +40,19 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     }    
 
     @Override
-    public void encode(IRPersistableEnum value) {
+    public void encode(IRScopeType value) {
+    }
+
+    @Override
+    public void encode(StaticScope.Type value) {
+    }
+
+    @Override
+    public void encode(Operation value) {
+    }
+
+    @Override
+    public void encode(OperandType value) {
     }
 
     @Override

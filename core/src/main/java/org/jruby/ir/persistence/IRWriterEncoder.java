@@ -1,8 +1,12 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.OperandType;
+import org.jruby.parser.StaticScope.Type;
 
 /**
  * Names are tough to find.  Encodes values destined to be written to a persisted space.
@@ -15,8 +19,11 @@ public interface IRWriterEncoder {
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);
-    public void encode(IRPersistableEnum value);
+    public void encode(IRScopeType value);
+    public void encode(Type value);
+    public void encode(Operation value);
     public void encode(Operand value);
+    public void encode(OperandType value);
     public void encode(boolean value);
     public void encode(int value);
     public void encode(long value);

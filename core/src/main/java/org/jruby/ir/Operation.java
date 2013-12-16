@@ -2,8 +2,6 @@ package org.jruby.ir;
 
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
 
-import org.jruby.ir.persistence.IRPersistableEnum;
-
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
     final static int f_has_side_effect     = 0x0001;
@@ -22,7 +20,7 @@ class OpFlags {
     final static int f_is_book_keeping_op  = 0x4000;
 }
 
-public enum Operation implements IRPersistableEnum {
+public enum Operation {
 /* Mark a *non-control-flow* instruction as side-effecting if its compuation is not referentially
  * transparent.  In other words, mark it side-effecting if the following is true:
  *

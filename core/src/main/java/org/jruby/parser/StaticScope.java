@@ -35,7 +35,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
-import org.jruby.ir.persistence.IRPersistableEnum;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
@@ -80,7 +79,7 @@ public abstract class StaticScope implements Serializable {
     
     private DynamicScope dummyScope;
 
-    public enum Type implements IRPersistableEnum {
+    public enum Type {
         LOCAL,
         BLOCK,
         EVAL

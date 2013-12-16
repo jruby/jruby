@@ -14,11 +14,14 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.parser.StaticScope;
 
 // FIXME: Make into a base class at some point to play with different formats
 
@@ -118,11 +121,26 @@ public class IRPersistedFile implements IRWriterEncoder {
             encode(operand);
         }
     }
-    
+
     @Override
-    public void encode(IRPersistableEnum scopeType) {
-        encode((byte) ((Enum) scopeType).ordinal());
+    public void encode(IRScopeType value) {
+        buf.put((byte) value.ordinal());
     }
+
+    @Override
+    public void encode(StaticScope.Type value) {
+        buf.put((byte) value.ordinal());
+    }
+
+    @Override
+    public void encode(Operation value) {
+        buf.put((byte) value.ordinal());
+    }
+
+    @Override
+    public void encode(OperandType value) {
+        buf.put((byte) value.ordinal());
+    }    
 
     @Override
     public void encode(long value) {
@@ -176,5 +194,5 @@ public class IRPersistedFile implements IRWriterEncoder {
         } catch (IOException e) {
             try { if (fos != null) fos.close(); } catch (IOException e1) {}
         }
-    }   
+    }
 }

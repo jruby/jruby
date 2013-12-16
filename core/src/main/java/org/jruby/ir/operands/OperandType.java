@@ -5,9 +5,7 @@
  */
 package org.jruby.ir.operands;
 
-import org.jruby.ir.persistence.IRPersistableEnum;
-
-public enum OperandType implements IRPersistableEnum {
+public enum OperandType {
 
     ARRAY,
     AS_STRING,
