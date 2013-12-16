@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
@@ -99,13 +100,6 @@ public class IRPersistedFile implements IRWriterEncoder {
         buf.put(value.getBytes());
     }
     
-    public void encode(Operand[] operands) {
-        buf.put((byte) operands.length);
-        for (Operand operand: operands) {
-            encode(operand);
-        }
-    }
-    
     @Override
     public void encode(Operand operand) {
         buf.put((byte) operand.getOperandType().ordinal());
@@ -117,7 +111,12 @@ public class IRPersistedFile implements IRWriterEncoder {
         encode(instr.getOperation());
         if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
 
-        encode(instr.getOperands());
+        Operand[] operands = instr.getOperands();
+        if (!(instr instanceof FixedArityInstr)) buf.put((byte) operands.length);    
+
+        for (Operand operand: operands) {
+            encode(operand);
+        }
     }
     
     @Override

@@ -8,7 +8,7 @@ import java.util.Map;
 import org.jruby.ir.operands.StringLiteral;
 
 // Represents result = source.ref or result = source where source is not a stack variable
-public abstract class GetInstr extends Instr implements ResultInstr {
+public abstract class GetInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand source;
     private final String  ref;
     private Variable result;

@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 import org.jruby.ir.operands.ScopeModule;
 
-public class StoreLocalVarInstr extends Instr {
+public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     private final IRScope scope;
     private Operand value;
 

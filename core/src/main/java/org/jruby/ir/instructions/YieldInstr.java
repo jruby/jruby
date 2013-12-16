@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 import org.jruby.ir.operands.BooleanLiteral;
 
-public class YieldInstr extends Instr implements ResultInstr {
+public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     public final boolean unwrapArray;
     private Operand blockArg;
     private Operand yieldArg;

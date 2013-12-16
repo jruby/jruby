@@ -12,7 +12,7 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.Map;
 
-public class CopyInstr extends Instr implements ResultInstr {
+public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
     private Operand arg;
     private Variable result;
 

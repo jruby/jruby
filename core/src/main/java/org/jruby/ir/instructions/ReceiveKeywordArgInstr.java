@@ -12,7 +12,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 
-public class ReceiveKeywordArgInstr extends ReceiveArgBase {
+public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final int numUsedArgs;
 
     public ReceiveKeywordArgInstr(Variable result, int numUsedArgs) {

@@ -15,7 +15,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class LoadLocalVarInstr extends Instr implements ResultInstr {
+public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRScope scope;
     private TemporaryVariable result;
 

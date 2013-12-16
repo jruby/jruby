@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 
-public class ExceptionRegionStartMarkerInstr extends Instr {
+public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
     final public Label begin;
     final public Label end;
     final public Label firstRescueBlockLabel;

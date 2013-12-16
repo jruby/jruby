@@ -21,7 +21,7 @@ import java.util.Map;
  * A candidate static IRMethod is also passed in.
  */
 // SSS FIXME: Split into 2 different instrs?
-public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr {
+public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand  startingScope;
     private Operand  object;
     private Variable result;

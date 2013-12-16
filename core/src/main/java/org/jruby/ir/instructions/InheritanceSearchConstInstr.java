@@ -23,7 +23,7 @@ import org.jruby.ir.operands.StringLiteral;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
+public class InheritanceSearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
     Operand  currentModule;
     String   constName;
     private Variable result;

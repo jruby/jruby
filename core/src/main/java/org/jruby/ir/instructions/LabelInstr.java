@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 
-public class LabelInstr extends Instr {
+public class LabelInstr extends Instr implements FixedArityInstr {
     public final Label label;
 
     public LabelInstr(Label label) {

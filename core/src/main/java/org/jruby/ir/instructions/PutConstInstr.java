@@ -10,7 +10,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutConstInstr extends PutInstr {
+public class PutConstInstr extends PutInstr implements FixedArityInstr {
     public PutConstInstr(Operand scopeOrObj, String constName, Operand val) {
         super(Operation.PUT_CONST, scopeOrObj, constName, val);
     }

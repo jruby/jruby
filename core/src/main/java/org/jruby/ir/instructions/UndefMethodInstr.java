@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class UndefMethodInstr extends Instr implements ResultInstr {
+public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand methodName;
 

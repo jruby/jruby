@@ -10,7 +10,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutFieldInstr extends PutInstr {
+public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     public PutFieldInstr(Operand obj, String fieldName, Operand value) {
         super(Operation.PUT_FIELD, obj, fieldName, value);
     }

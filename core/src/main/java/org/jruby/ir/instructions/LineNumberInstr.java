@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class LineNumberInstr extends Instr {
+public class LineNumberInstr extends Instr implements FixedArityInstr {
     public final int lineNumber;
     public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 

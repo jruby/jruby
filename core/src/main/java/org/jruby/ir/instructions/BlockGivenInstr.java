@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BlockGivenInstr extends Instr implements ResultInstr {
+public class BlockGivenInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand blockArg;
 

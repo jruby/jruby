@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class RecordEndBlockInstr extends Instr {
+public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
     private final IRClosure endBlockClosure;
 

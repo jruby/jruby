@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ReceiveSelfInstr extends Instr implements ResultInstr {
+public class ReceiveSelfInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 
     // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?

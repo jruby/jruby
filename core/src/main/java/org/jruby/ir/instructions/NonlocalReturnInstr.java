@@ -8,7 +8,7 @@ import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class NonlocalReturnInstr extends ReturnBase {
+public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final IRMethod methodToReturnFrom;
 
     public NonlocalReturnInstr(Operand returnValue, IRMethod methodToReturnFrom) {

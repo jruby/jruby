@@ -22,7 +22,7 @@ import org.jruby.ir.operands.ScopeModule;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
-public class DefineClassMethodInstr extends Instr {
+public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     private Operand container;
     private final IRMethod method;
 

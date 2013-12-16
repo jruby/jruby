@@ -16,7 +16,7 @@ import java.util.Map;
 // This is of the form:
 //    v = LBL_..
 // Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
-public class SetReturnAddressInstr extends Instr implements ResultInstr {
+public class SetReturnAddressInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final Label returnAddr;
     private Variable result;
 

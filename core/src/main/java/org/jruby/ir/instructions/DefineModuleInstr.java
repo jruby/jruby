@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 import org.jruby.ir.operands.ScopeModule;
 
-public class DefineModuleInstr extends Instr implements ResultInstr {
+public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRModuleBody newIRModuleBody;
     private Operand container;
     private Variable result;

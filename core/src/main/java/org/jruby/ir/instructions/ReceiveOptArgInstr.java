@@ -9,7 +9,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReceiveOptArgInstr extends ReceiveArgBase {
+public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInstr {
     /** Starting offset into the args array*/
     public final int argOffset;
 

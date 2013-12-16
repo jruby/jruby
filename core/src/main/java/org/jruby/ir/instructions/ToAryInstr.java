@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends Instr implements ResultInstr {
+public class ToAryInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private final BooleanLiteral dontToAryArrays;
     private Operand array;

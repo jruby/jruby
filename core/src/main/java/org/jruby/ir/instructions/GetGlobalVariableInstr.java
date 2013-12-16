@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetGlobalVariableInstr extends GetInstr {
+public class GetGlobalVariableInstr extends GetInstr  implements FixedArityInstr {
     public GetGlobalVariableInstr(Variable dest, String gvarName) {
         this(dest, new GlobalVariable(gvarName));
     }

@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ConstMissingInstr extends CallInstr implements ResultInstr {
+public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedArityInstr {
     private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {

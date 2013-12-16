@@ -9,7 +9,7 @@ import org.jruby.RubyHash;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 
-public class ReceiveKeywordRestArgInstr extends ReceiveArgBase {
+public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final int numUsedArgs;
 
     public ReceiveKeywordRestArgInstr(Variable result, int numUsedArgs) {

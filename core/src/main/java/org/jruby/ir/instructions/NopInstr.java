@@ -9,7 +9,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class NopInstr extends Instr {
+public class NopInstr extends Instr implements FixedArityInstr {
     public static NopInstr NOP = new NopInstr();
 
     private NopInstr() {

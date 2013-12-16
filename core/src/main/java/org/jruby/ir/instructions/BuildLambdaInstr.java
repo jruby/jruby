@@ -18,7 +18,7 @@ import java.util.Map;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.StringLiteral;
 
-public class BuildLambdaInstr extends Instr implements ResultInstr {
+public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr {
     /** The position for the block */
     private final ISourcePosition position;
     private Variable result;

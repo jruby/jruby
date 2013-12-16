@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutClassVariableInstr extends PutInstr {
+public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
     public PutClassVariableInstr(Operand scope, String varName, Operand value) {
         super(Operation.PUT_CVAR, scope, varName, value);
     }

@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ReceiveExceptionInstr extends Instr implements ResultInstr {
+public class ReceiveExceptionInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 
     /** If true, the implementation (compiler/interpreter) may have to check the type

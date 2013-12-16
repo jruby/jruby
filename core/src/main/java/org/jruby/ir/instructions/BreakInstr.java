@@ -29,7 +29,7 @@ import org.jruby.ir.operands.ScopeModule;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BreakInstr extends Instr {
+public class BreakInstr extends Instr implements FixedArityInstr {
     private final IRScope scopeToReturnTo;
     private Operand returnValue;
 

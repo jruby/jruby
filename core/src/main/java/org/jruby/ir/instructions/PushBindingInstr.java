@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class PushBindingInstr extends Instr {
+public class PushBindingInstr extends Instr implements FixedArityInstr {
     private final IRScope scope;   // Scope for which frame is needed
 
     public PushBindingInstr(IRScope scope) {

@@ -8,7 +8,7 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 /*
  * Assign Argument passed into scope/method to a result variable
  */
-public class ReceivePreReqdArgInstr extends ReceiveArgBase {
+public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public ReceivePreReqdArgInstr(Variable result, int argIndex) {
         super(Operation.RECV_PRE_REQD_ARG, result, argIndex);
     }

@@ -21,7 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 import org.jruby.ir.operands.ScopeModule;
 
-public class DefineInstanceMethodInstr extends Instr {
+public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr {
     private Operand container;
     private final IRMethod method;
 
