@@ -46,7 +46,7 @@ public class DataFlowConstants {
         public LatticeTop() {
             super(OperandType.LATTICE_TOP);
         }
-        
+
         @Override
         public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */
@@ -66,7 +66,7 @@ public class DataFlowConstants {
         public Anything() {
             super(OperandType.ANYTHING);
         }
-        
+
         @Override
         public void addUsedVariables(List<Variable> l) {
             /* Nothing to do */

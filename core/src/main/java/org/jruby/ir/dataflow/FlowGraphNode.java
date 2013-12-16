@@ -53,7 +53,7 @@ public abstract class FlowGraphNode {
     }
 
     /**
-     * After meet has been performed, do some more logic.
+     * After meet has been performed, do some more work, if required.
      */
     public void finalizeSolnForNode() {
     }
@@ -103,9 +103,11 @@ public abstract class FlowGraphNode {
 
         finalizeSolnForNode();
 
+        // Apply transfer function (analysis-specific) based on new facts after computing MEET
+        boolean changed = applyTransferFunction();
+
        // If the solution has changed, add "dsts" to the work list.
        // No duplicates please which is why we have bbset.
-        boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
                 for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {

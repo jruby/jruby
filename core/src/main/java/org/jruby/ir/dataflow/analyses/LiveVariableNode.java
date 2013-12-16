@@ -39,6 +39,14 @@ public class LiveVariableNode extends FlowGraphNode {
     }
 
     public void buildDataFlowVars(Instr i) {
+        // FIXME: We could potentially have used a Set<Variable> to represent live variables
+        // rather than use a BitSet. BitSet operations (meet/set/get) could be more
+        // efficient. However, given that we have to getDFVar(..) for every variable
+        // in every instruction when analysing it before accessing the BitSet, unsure
+        // if the bitset really buys us anything!
+        //
+        // StoreLocalVarPlacement and LoadLocalVarPlacement analyses use
+        // Set<LocalVariable> rather than BitSets.
         if (i instanceof ResultInstr) addDFVar(((ResultInstr) i).getResult());
 
         for (Variable x: i.getUsedVariables()) {
@@ -347,7 +355,7 @@ public class LiveVariableNode extends FlowGraphNode {
         return out;
     }
 
-    private BitSet in;         // Variables live at entry of this node
-    private BitSet out;        // Variables live at exit of node
+    private BitSet in;      // Variables live at entry of this node
+    private BitSet out;     // Variables live at exit of node
     private int setSize;    // Size of the "this.in" and "this.out" bit sets
 }
