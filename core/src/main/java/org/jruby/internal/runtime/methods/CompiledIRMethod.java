@@ -15,7 +15,7 @@ import org.jruby.util.log.LoggerFactory;
 import java.lang.invoke.MethodHandle;
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends DynamicMethod implements PositionAware {
+public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2 {
     private static final Logger LOG = LoggerFactory.getLogger("CompiledIRMethod");
 
     private final MethodHandle method;
@@ -24,9 +24,9 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
     private final int line;
     private final StaticScope scope;
     private Arity arity;
-    boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
-    public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope, Visibility visibility, RubyModule implementationClass) {
+    public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
+                            Visibility visibility, RubyModule implementationClass, String parameterDesc) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
         this.name = name;
@@ -34,6 +34,23 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
         this.line = line;
         this.scope = scope;
         this.arity = calculateArity();
+
+        setParameterDesc(parameterDesc);
+
+        setHandle(method);
+    }
+
+    public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
+                            Visibility visibility, RubyModule implementationClass, String[] parameterList) {
+        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
+        this.method = method;
+        this.name = name;
+        this.file = file;
+        this.line = line;
+        this.scope = scope;
+        this.arity = calculateArity();
+
+        setParameterList(parameterList);
 
         setHandle(method);
     }
@@ -177,7 +194,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
 
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass);
+        return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass, getParameterList());
     }
 
     public String getFile() {

@@ -1,6 +1,7 @@
 package org.jruby.runtime;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
 import java.nio.charset.Charset;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -42,6 +43,7 @@ import org.jruby.util.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import org.jcodings.Encoding;
@@ -293,22 +295,36 @@ public class Helpers {
             int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.runtime;
-        
+
         RubyModule containingClass = context.getRubyClass();
         Visibility visibility = context.getCurrentVisibility();
-        
-        performNormalMethodChecks(containingClass, runtime, rubyName);
-        
+
+        visibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
+
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(
                 factory, javaName,
                 rubyName, containingClass, new SimpleSourcePosition(filename, line), arity, scope, visibility, scriptObject,
                 callConfig,
                 parameterDesc);
-        
-        addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
-        
-        return runtime.newSymbol(rubyName);
+
+        return addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
+    }
+
+    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+                                  String filename, int line, String parameterDesc) {
+        Ruby runtime = context.runtime;
+
+        RubyModule containingClass = context.getRubyClass();
+        Visibility visibility = context.getCurrentVisibility();
+
+        visibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
+
+        StaticScope scope = decodeScope(context, parentScope, scopeDesc);
+
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, visibility, containingClass, parameterDesc);
+
+        return addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
     }
     
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -1985,7 +2001,7 @@ public class Helpers {
         return args;
     }
 
-    public static void addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         containingClass.addMethod(name, method);
 
         RubySymbol sym = runtime.fastNewSymbol(name);
@@ -1994,6 +2010,8 @@ public class Helpers {
         }
 
         callNormalMethodHook(containingClass, context, sym);
+
+        return sym;
     }
 
     private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
@@ -2178,19 +2196,24 @@ public class Helpers {
         return scope;
     }
 
-    private static void performNormalMethodChecks(RubyModule containingClass, Ruby runtime, String name) throws RaiseException {
-
-        if (containingClass == runtime.getDummy()) {
+    public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz, String name, Visibility visibility) throws RaiseException {
+        if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
         }
 
-        if (containingClass == runtime.getObject() && name.equals("initialize")) {
+        if (clazz == runtime.getObject() && "initialize".equals(name)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
         }
 
-        if (name.equals("__id__") || name.equals("__send__")) {
+        if ("__id__".equals(name) || "__send__".equals(name)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem");
         }
+
+        if ("initialize".equals(name) || "initialize_copy".equals(name) || visibility == Visibility.MODULE_FUNCTION) {
+            visibility = Visibility.PRIVATE;
+        }
+
+        return visibility;
     }
 
     public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
@@ -2696,6 +2719,21 @@ public class Helpers {
         }
 
         if (!added) builder.append("NONE");
+
+        return builder.toString();
+    }
+
+    public static String encodeParameterList(List<String[]> args) {
+        if (args.size() == 0) return "NONE";
+
+        StringBuilder builder = new StringBuilder();
+
+        boolean added = false;
+        for (String[] desc : args) {
+            if (added) builder.append(';');
+            builder.append(desc[0]).append(desc[1]);
+            added = true;
+        }
 
         return builder.toString();
     }

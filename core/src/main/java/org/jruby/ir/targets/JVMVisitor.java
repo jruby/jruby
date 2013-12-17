@@ -77,6 +77,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.JRubyClassLoader;
 
+import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyRange;
@@ -520,39 +521,21 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter;
+        List<String[]> parameters = method.getArgDesc();
 
-        // preamble for addMethod below
-        a.aload(0);
-        a.invokevirtual(p(ThreadContext.class), "getRubyClass", "()Lorg/jruby/RubyModule;");
-        a.ldc(method.getName());
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
+        a.aload(0); // ThreadContext
         emit(method); // handle
-
-        // add'l args for CompiledIRMethod constructor
         a.ldc(method.getName());
-        a.ldc(method.getFileName());
-        a.ldc(method.getLineNumber());
-
-        a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
-
-        a.aload(0);
-        a.invokevirtual(p(ThreadContext.class), "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
-        a.aload(0);
-        a.invokevirtual(p(ThreadContext.class), "getRubyClass", "()Lorg/jruby/RubyModule;");
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;)V");
+        a.ldc(method.getFileName());
+        a.ldc(method.getLineNumber());
+        a.ldc(Helpers.encodeParameterList(parameters));
 
         // add method
-        a.invokevirtual(p(RubyModule.class), "addMethod", "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
+        a.invokevirtual(p(Helpers.class), "defCompiledIRMethod",
+                sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
+                        StaticScope.class, String.class, String.class, int.class, String.class));
     }
 
     @Override
