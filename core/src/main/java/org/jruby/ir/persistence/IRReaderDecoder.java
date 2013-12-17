@@ -27,6 +27,8 @@ public interface IRReaderDecoder {
     public Operand decodeOperand();
     public OperandType decodeOperandType();
     public boolean decodeBoolean();
+    public byte decodeByte();
+    public char decodeChar();
     public int decodeInt();
     public long decodeLong();
     public double decodeDouble();

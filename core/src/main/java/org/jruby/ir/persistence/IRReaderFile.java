@@ -98,6 +98,16 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         
         throw new IllegalArgumentException("Value (" + ((int) value) + ") is not a boolean.");
     }
+    
+    @Override 
+    public byte decodeByte() {
+        return buf.get();
+    }
+    
+    @Override 
+    public char decodeChar() {
+        return buf.getChar();
+    }
 
     @Override
     public int decodeInt() {

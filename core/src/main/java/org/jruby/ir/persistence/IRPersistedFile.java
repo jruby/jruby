@@ -88,6 +88,11 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     }
     
     @Override
+    public void encode(char value) {
+        buf.putChar(value);
+    }    
+    
+    @Override
     public void encode(int value) {
         //FIXME: Use bit math
         // We can write 7 bits of ints as a single byte and if 8th is set we end
