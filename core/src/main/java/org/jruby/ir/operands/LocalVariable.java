@@ -34,6 +34,10 @@ public class LocalVariable extends Variable {
     public int getScopeDepth() {
         return scopeDepth;
     }
+    
+    public int getOffset() {
+        return offset;
+    }
 
     public int getLocation() {
         return offset;

@@ -64,6 +64,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(byte value) {
+    }
+    
+    @Override
     public void encode(int value) {
     }
 

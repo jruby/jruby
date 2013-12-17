@@ -54,7 +54,7 @@ class OperandEncoderMap extends IRVisitor {
     }
     // FIXME: Potentially some of these values should not need to have their type prefixed.
     public void encode(Operand operand) {
-        encoder.encode(operand.getOperandType());
+        encoder.encode((byte) operand.getOperandType().ordinal());
         operand.visit(this);
     }
     
@@ -142,6 +142,7 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void LocalVariable(LocalVariable variable) {
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
+        encoder.encode(variable.getOffset());
     }
     
     @Override public void MethAddr(MethAddr methaddr) { encoder.encode(methaddr.getName()); }

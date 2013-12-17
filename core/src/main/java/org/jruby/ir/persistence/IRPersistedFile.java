@@ -28,21 +28,7 @@ import org.jruby.parser.StaticScope;
 /**
  * Represents a file which is persisted to storage. 
  */
-public class IRPersistedFile implements IRWriterEncoder {
-    public final static int TWO_MEGS = 1024 * 1024 * 2;
-    
-    // Operands and primitive values can be mixed together
-    public final static int PRIMITIVE_BASE = OperandType.values().length; // OPERANDS and base data is 1 byte
-    public final static byte STRING = (byte) (PRIMITIVE_BASE + 1);
-    public final static byte INT = (byte) (PRIMITIVE_BASE + 2);
-    public final static byte TRUE = (byte) (PRIMITIVE_BASE + 3);
-    public final static byte FALSE = (byte) (PRIMITIVE_BASE + 4);
-    public final static byte ARRAY = (byte) (PRIMITIVE_BASE + 5);
-    public final static byte NULL = (byte) (PRIMITIVE_BASE + 6);
-    public final static byte INSTR = (byte) (PRIMITIVE_BASE + 7); // INSTRs 2 bytes
-    public final static byte LONG = (byte) (PRIMITIVE_BASE + 8);
-    public final static byte FLOAT = (byte) (PRIMITIVE_BASE + 9);
-    public final static byte DOUBLE = (byte) (PRIMITIVE_BASE + 10);
+public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
     
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
@@ -80,13 +66,13 @@ public class IRPersistedFile implements IRWriterEncoder {
         buf.put(ARRAY);
         buf.put(STRING);
         if (values == null) {
-            buf.putInt(0);
+            encode((int) 0);
             return;
         }
         
-        buf.putInt(values.length);
+        encode(values.length);
         for (String value : values) {
-            buf.putInt(value.length());
+            encode(value.length());
             buf.put(value.getBytes());
         }
     }
@@ -97,9 +83,21 @@ public class IRPersistedFile implements IRWriterEncoder {
     }
     
     @Override
+    public void encode(byte value) {
+        buf.put(value);
+    }
+    
+    @Override
     public void encode(int value) {
-        buf.put(INT);
-        buf.putInt(value);
+        //FIXME: Use bit math
+        // We can write 7 bits of ints as a single byte and if 8th is set we end
+        // using first byte to indicate full precision int.
+        if (value >= 0 && value <= 128) {
+            buf.put((byte) value);
+        } else {
+            buf.put(INT);
+            buf.putInt(value);
+        }
     }
     
     @Override
@@ -117,13 +115,12 @@ public class IRPersistedFile implements IRWriterEncoder {
     @Override
     public void encode(String value) {
         buf.put(STRING);
-        buf.putInt((byte) value.length());
+        encode(value.length());
         buf.put(value.getBytes());
     }
     
     @Override
     public void encode(Operand operand) {
-        buf.put((byte) operand.getOperandType().ordinal());
         operandEncoder.encode(operand);
     }
     
@@ -142,28 +139,32 @@ public class IRPersistedFile implements IRWriterEncoder {
 
     @Override
     public void encode(IRScopeType value) {
-        buf.put((byte) value.ordinal());
+        encode((byte) value.ordinal());
     }
 
     @Override
     public void encode(StaticScope.Type value) {
-        buf.put((byte) value.ordinal());
+        encode((byte) value.ordinal());
     }
 
     @Override
     public void encode(Operation value) {
-        buf.put((byte) value.ordinal());
+        encode((byte) value.ordinal());
     }
 
     @Override
     public void encode(OperandType value) {
-        buf.put((byte) value.ordinal());
+        encode((byte) value.ordinal());
     }    
 
     @Override
     public void encode(long value) {
-        buf.put(LONG);
-        buf.putLong(value);
+        if (value >= 0 && value <= 128) {
+            encode((byte) value);
+        } else {        
+            buf.put(LONG);
+            buf.putLong(value);
+        }
     }
 
     @Override

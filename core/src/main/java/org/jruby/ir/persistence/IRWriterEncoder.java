@@ -25,6 +25,7 @@ public interface IRWriterEncoder {
     public void encode(Operand value);
     public void encode(OperandType value);
     public void encode(boolean value);
+    public void encode(byte value);
     public void encode(int value);
     public void encode(long value);
     public void encode(double value);
