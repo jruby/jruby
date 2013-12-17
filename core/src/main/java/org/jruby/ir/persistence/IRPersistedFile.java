@@ -135,7 +135,7 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
         if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
 
         Operand[] operands = instr.getOperands();
-        if (!(instr instanceof FixedArityInstr)) buf.put((byte) operands.length);    
+        if (!(instr instanceof FixedArityInstr)) encode(operands.length);
 
         for (Operand operand: operands) {
             encode(operand);
