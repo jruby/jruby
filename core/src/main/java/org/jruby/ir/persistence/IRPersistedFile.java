@@ -30,6 +30,8 @@ import org.jruby.parser.StaticScope;
  */
 public class IRPersistedFile implements IRWriterEncoder {
     public final static int TWO_MEGS = 1024 * 1024 * 2;
+    
+    // Operands and primitive values can be mixed together
     public final static int PRIMITIVE_BASE = OperandType.values().length; // OPERANDS and base data is 1 byte
     public final static byte STRING = (byte) (PRIMITIVE_BASE + 1);
     public final static byte INT = (byte) (PRIMITIVE_BASE + 2);
@@ -39,18 +41,22 @@ public class IRPersistedFile implements IRWriterEncoder {
     public final static byte NULL = (byte) (PRIMITIVE_BASE + 6);
     public final static byte INSTR = (byte) (PRIMITIVE_BASE + 7); // INSTRs 2 bytes
     public final static byte LONG = (byte) (PRIMITIVE_BASE + 8);
+    public final static byte FLOAT = (byte) (PRIMITIVE_BASE + 9);
+    public final static byte DOUBLE = (byte) (PRIMITIVE_BASE + 10);
     private static final int VERSION = 0;
     
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
+    private final OperandEncoderMap operandEncoder;
     
     int headersOffset = -1;
     int poolOffset = -1;
     
     public IRPersistedFile(File file) throws FileNotFoundException {
         this.file = file;
+        this.operandEncoder = new OperandEncoderMap(this);
     }
     
     /**
@@ -95,6 +101,18 @@ public class IRPersistedFile implements IRWriterEncoder {
         buf.put(INT);
         buf.putInt(value);
     }
+    
+    @Override
+    public void encode(float value) {
+        buf.put(FLOAT);
+        buf.putFloat(value);
+    }
+    
+    @Override
+    public void encode(double value) {
+        buf.put(DOUBLE);
+        buf.putDouble(value);
+    }    
 
     @Override
     public void encode(String value) {
@@ -106,7 +124,7 @@ public class IRPersistedFile implements IRWriterEncoder {
     @Override
     public void encode(Operand operand) {
         buf.put((byte) operand.getOperandType().ordinal());
-        OperandEncoderMap.encode(this, operand);
+        operandEncoder.encode(operand);
     }
     
     @Override

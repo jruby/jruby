@@ -27,6 +27,8 @@ public interface IRWriterEncoder {
     public void encode(boolean value);
     public void encode(int value);
     public void encode(long value);
+    public void encode(double value);
+    public void encode(float value);
 
     // Demarcate sections in encoded file methods
 

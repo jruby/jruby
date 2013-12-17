@@ -70,6 +70,14 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     @Override
     public void encode(long value) {
     }
+    
+    @Override
+    public void encode(float value) {
+    }
+    
+    @Override
+    public void encode(double value) {
+    }    
 
     @Override
     public void startEncodingScopeHeader(IRScope scope) {
