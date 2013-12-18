@@ -100,7 +100,7 @@ class OperandEncoderMap extends IRVisitor {
         Encoding encoding = compoundstring.getEncoding();
         
         if (encoding == null) {
-            encoder.encode(IRPersistedFile.NULL);
+            encoder.encode("");
         } else {
             encoder.encode(encoding.toString());
         }
@@ -113,10 +113,7 @@ class OperandEncoderMap extends IRVisitor {
     }
     
     // FIXME: Can't I determine this instead of persisting it?
-    @Override public void CurrentScope(CurrentScope scope) {
-        encoder.encode(scope.getScope().getName());
-        encoder.encode(scope.getScope().getLineNumber());
-    }
+    @Override public void CurrentScope(CurrentScope scope) { encoder.encode(scope.getScope()); }
     
     //@Override public void DynamicSymbol(DynamicSymbol dsym) { encode(dsym.getSymbolName()); }
     @Override public void DynamicSymbol(DynamicSymbol dsym) {  }
@@ -172,10 +169,7 @@ class OperandEncoderMap extends IRVisitor {
         encoder.encode(options.isKcodeDefault());
     }
     
-    @Override public void ScopeModule(ScopeModule scope) {
-        encoder.encode(scope.getScope().getName());
-        encoder.encode(scope.getScope().getLineNumber());
-    }
+    @Override public void ScopeModule(ScopeModule scope) { encoder.encode(scope.getScope()); }
     
     @Override public void Self(Self self) {} // No data
     
@@ -198,8 +192,5 @@ class OperandEncoderMap extends IRVisitor {
     
     @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {} // No data
     
-    @Override public void WrappedIRClosure(WrappedIRClosure scope) { 
-        encoder.encode(scope.getClosure().getName());
-        encoder.encode(scope.getClosure().getLineNumber());
-    }
+    @Override public void WrappedIRClosure(WrappedIRClosure scope) { encoder.encode(scope.getClosure()); }
 }

@@ -19,6 +19,7 @@ public interface IRWriterEncoder {
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);
+    public void encode(IRScope scope);
     public void encode(IRScopeType value);
     public void encode(Type value);
     public void encode(Operation value);

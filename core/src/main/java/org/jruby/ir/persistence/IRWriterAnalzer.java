@@ -21,6 +21,9 @@ import org.jruby.parser.StaticScope;
  * @author enebo
  */
 public class IRWriterAnalzer implements IRWriterEncoder {
+    private int currentOffsetId = 0;
+    private final Map<IRScope, Integer> offsetIds = new HashMap<IRScope, Integer>();
+    
     // Figure out most commonly used operands for eventual creation of an operand pool
     private final Map<Operand, Integer> operandCounts = new HashMap<Operand, Integer>();
 
@@ -39,6 +42,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     public void encode(String[] values) {
     }    
 
+    @Override
+    public void encode(IRScope value) {
+    }
+    
     @Override
     public void encode(IRScopeType value) {
     }
@@ -97,6 +104,7 @@ public class IRWriterAnalzer implements IRWriterEncoder {
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
+        offsetIds.put(scope, currentOffsetId++);
     }
 
     @Override
@@ -124,5 +132,9 @@ public class IRWriterAnalzer implements IRWriterEncoder {
         if (count == null) count = new Integer(0);
         
         operandCounts.put(operand, count + 1);
+    }
+
+    public int getScopeID(IRScope value) {
+        return offsetIds.get(value);
     }
 }

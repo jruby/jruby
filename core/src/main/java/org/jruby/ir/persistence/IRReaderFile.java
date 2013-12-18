@@ -11,9 +11,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRManager;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
@@ -84,7 +87,19 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public Operand decodeOperand() {
         return operandDecoderMap.decode(decodeOperandType());
     }
-
+    
+    @Override
+    public List<Operand> decodeOperandList() {
+        int size = decodeInt();
+        List<Operand> list = new ArrayList<Operand>(size);
+        
+        for (int i = 0; i < size; i++) {
+            list.add(decodeOperand());
+        }
+        
+        return list;
+    }
+    
     @Override
     public OperandType decodeOperandType() {
         return operandDecoderMap.decodeOperandType((int) buf.get());
@@ -132,5 +147,10 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public void seek(int headersOffset) {
         buf.position(headersOffset);
+    }
+
+    @Override
+    public IRScope decodeScope() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

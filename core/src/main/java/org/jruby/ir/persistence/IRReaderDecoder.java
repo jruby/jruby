@@ -6,6 +6,8 @@
 
 package org.jruby.ir.persistence;
 
+import java.util.List;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
@@ -25,6 +27,7 @@ public interface IRReaderDecoder {
     public StaticScope.Type decodeStaticScopeType();
     public Operation decodeOperation();
     public Operand decodeOperand();
+    public List<Operand> decodeOperandList();
     public OperandType decodeOperandType();
     public boolean decodeBoolean();
     public byte decodeByte();
@@ -35,4 +38,6 @@ public interface IRReaderDecoder {
     public float decodeFloat();
 
     public void seek(int headersOffset);
+
+    public IRScope decodeScope();
 }

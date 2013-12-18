@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -30,12 +32,13 @@ import org.jruby.parser.StaticScope;
  */
 public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
-    
+
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
     private final OperandEncoderMap operandEncoder;
+    private final IRWriterAnalzer analyzer;
     
     int headersOffset = -1;
     int poolOffset = -1;
@@ -43,6 +46,7 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     public IRPersistedFile(File file) throws FileNotFoundException {
         this.file = file;
         this.operandEncoder = new OperandEncoderMap(this);
+        this.analyzer = new IRWriterAnalzer();
     }
     
     /**
@@ -141,7 +145,12 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
             encode(operand);
         }
     }
-
+    
+    @Override
+    public void encode(IRScope value) {
+        encode((int) analyzer.getScopeID(value));
+    }
+    
     @Override
     public void encode(IRScopeType value) {
         encode((byte) value.ordinal());
@@ -202,6 +211,11 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     
     @Override
     public void startEncoding(IRScope script) {
+        try {
+            IRWriter.persist(analyzer, script);
+        } catch (IOException ex) {
+            // No IO so no exception possible for analyzer.
+        }
     }
 
     @Override
