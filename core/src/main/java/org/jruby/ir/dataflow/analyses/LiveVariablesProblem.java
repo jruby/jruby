@@ -12,7 +12,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowVar;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -69,7 +68,21 @@ public class LiveVariablesProblem extends DataFlowProblem {
             localVars.add((LocalVariable) v);
         }
     }
-
+    
+    /**
+     * Add all local variables of interest from the provided bitset.
+     */
+    public Set<LocalVariable> addLiveLocalVars(Set<LocalVariable> list, BitSet living) {
+        for (int j = 0; j < living.size(); j++) {
+            if (!living.get(j)) continue;
+            
+            Variable v = getVariable(j);
+            if (v instanceof LocalVariable) list.add((LocalVariable) v);
+        }
+        
+        return list;
+    }
+    
     /**
      * Get variables that are live on entry to the cfg.
      * This is the case for closures which access variables from the parent scope.

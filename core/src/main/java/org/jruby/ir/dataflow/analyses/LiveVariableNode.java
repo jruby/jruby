@@ -124,14 +124,8 @@ public class LiveVariableNode extends FlowGraphNode {
                         cl.setDataFlowSolution(cl_lvp.getName(), cl_lvp);
                     }
 
-                    // Collect live local variables at this point.
-                    Set<LocalVariable> liveVars = new HashSet<LocalVariable>();
-                    for (int j = 0; j < living.size(); j++) {
-                        if (living.get(j)) {
-                            Variable v = lvp.getVariable(j);
-                            if (v instanceof LocalVariable) liveVars.add((LocalVariable)v);
-                        }
-                    }
+                    // Add all living local variables.
+                    Set<LocalVariable> liveVars = lvp.addLiveLocalVars(new HashSet<LocalVariable>(), living);
 
                     // Collect variables live on entry of the closure -- they could all be live on exit as well (conservative, but safe).
                     //
@@ -154,15 +148,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // have a control-flow edge from this call to that block.  Since we dont want to add a
                     // control-flow edge from pretty much every call to the rescuer/exit BB, we are handling it
                     // implicitly here.
-                    if (c.canRaiseException()) {
-                        BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-                        for (int k = 0; k < etOut.size(); k++) {
-                            if (etOut.get(k)) {
-                                Variable v = lvp.getVariable(k);
-                                if (v instanceof LocalVariable) liveVars.add((LocalVariable)v);
-                            }
-                        }
-                    }
+                    if (c.canRaiseException()) lvp.addLiveLocalVars(liveVars, ((LiveVariableNode) getExceptionTargetNode()).out);
 
                     // Run LVA on the closure to propagate current LVA state through the closure
                     // SSS FIXME: Think through this .. Is there any way out of having
