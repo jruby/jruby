@@ -56,6 +56,7 @@ import org.jruby.util.io.Sockaddr;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -67,6 +68,8 @@ import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 /**
@@ -239,6 +242,21 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
         return SocketUtils.gethostname(context);
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
+        ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
+        try {
+            Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
+            while (en.hasMoreElements()) {
+                NetworkInterface ni = en.nextElement();
+                list.add(context.runtime.newString(ni.getName()));
+            }
+        } catch (SocketException ex) {
+            
+        }
+        return context.runtime.newArray(list);
     }
 
     @JRubyMethod(required = 1, rest = true, meta = true)
