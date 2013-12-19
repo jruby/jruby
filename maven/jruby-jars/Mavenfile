@@ -2,7 +2,7 @@
 
 gemspec :include_jars => true
 
-model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT')
+model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT').sub( /-SNAPSHOT-SNAPSHOT/, '-SNAPSHOT' )
 inherit "org.jruby:jruby-artifacts:#{model.version}"
 
 name "JRuby Jars Gem"
@@ -20,7 +20,8 @@ plugin( :clean, '2.5' ) do
 end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readonly' => true )
+            'tesla.dump.readonly' => true,
+            'jruby.home' => '${basedir}/../../' )
 
 plugin 'de.saumya.mojo:gem-maven-plugin' do
   execute_goals :id => 'default-push', :skip => true
@@ -31,7 +32,8 @@ execute 'rename gem file', :package do |ctx|
   require 'fileutils'
   gem = File.join( ctx.project.build.directory,
                    ctx.project.build.final_name + ".gem" )
-  FileUtils.mv( gem.sub( /-SNAPSHOT/, '.SNAPSHOT' ), gem ) if gem.match /-SNAPSHOT/
+  source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
+  FileUtils.mv( source, gem ) if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
 
 end
 # vim: syntax=Ruby
