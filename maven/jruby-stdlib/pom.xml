@@ -56,6 +56,10 @@
         <includes>
           <include>gems/rake-${rake.version}/**/*</include>
           <include>specifications/rake-${rake.version}.gemspec</include>
+          <include>gems/rdoc-${rdoc.version}/**/*</include>
+          <include>specifications/rdoc-${rdoc.version}.gemspec</include>
+          <include>gems/json-${json.version}*/**/*</include>
+          <include>specifications/json-${json.version}*.gemspec</include>
         </includes>
       </resource>
       <resource>
