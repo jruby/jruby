@@ -37,6 +37,16 @@ namespace :test do
     Rake::Task["test:rake_targets"].invoke
   end
 
+  task :dist do
+    # run builds and test for dist artifacts
+    sh 'mvn -Pdist clean install' or fail 'mvn -Pdist failed'
+    sh 'mvn -Pcomplete clean install' or fail 'mvn -Pcomplete failed'
+    sh 'mvn -Pmain clean install' or fail 'mvn -Pmain failed'
+    sh 'mvn -Pjruby-jars clean install' or fail 'mvn -Pjruby-jars failed'
+    sh 'mvn -Pgems clean install' or fail 'mvn -Pgems failed'
+    sh 'mvn -Pall clean install' or fail 'mvn -Pall failed'
+  end
+
   desc "Run tracing tests"
   task :tracing do
     Rake::TestTask.new('test:tracing') do |t|
