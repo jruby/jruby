@@ -997,6 +997,20 @@ public class RubyInstanceConfig {
     public String getExternalEncoding() {
         return externalEncoding;
     }
+
+    /**
+     * @see Options.CLI_ENCODING_SOURCE
+     */
+    public void setSourceEncoding(String sourceEncoding) {
+        this.sourceEncoding = sourceEncoding;
+    }
+
+    /**
+     * @see Options.CLI_ENCODING_SOURCE
+     */
+    public String getSourceEncoding() {
+        return sourceEncoding;
+    }
     
     /**
      * @see Options.CLI_RECORD_SEPARATOR
@@ -1377,7 +1391,8 @@ public class RubyInstanceConfig {
 
     private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
     private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
-		
+    private String sourceEncoding = Options.CLI_ENCODING_SOURCE.load();
+
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     

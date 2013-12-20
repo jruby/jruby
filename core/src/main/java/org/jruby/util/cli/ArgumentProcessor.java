@@ -233,7 +233,17 @@ public class ArgumentProcessor {
                     // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
                     // processing.
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
+
                     config.setKCode(KCode.create(null, eArg));
+
+                    // source encoding
+                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+
+                    // set external encoding if not already specified
+                    if (config.getExternalEncoding() == null) {
+                        config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                    }
+
                     break;
                 case 'l':
                     config.setProcessLineEnds(true);
