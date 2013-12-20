@@ -729,7 +729,7 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            Compiler.getInstance().execute(this, node, classLoader); 
+            return Compiler.getInstance().execute(this, node, classLoader);
         }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);

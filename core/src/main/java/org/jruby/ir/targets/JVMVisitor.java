@@ -513,6 +513,7 @@ public class JVMVisitor extends IRVisitor {
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         IRMethod method = defineinstancemethodinstr.getMethod();
         StaticScope scope = method.getStaticScope();
+
         if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
             throw new RuntimeException("can't compile variable method: " + this);
         }
@@ -533,9 +534,11 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(Helpers.encodeParameterList(parameters));
 
         // add method
-        a.invokevirtual(p(Helpers.class), "defCompiledIRMethod",
+        a.invokestatic(p(Helpers.class), "defCompiledIRMethod",
                 sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
                         StaticScope.class, String.class, String.class, int.class, String.class));
+
+        a.pop();
     }
 
     @Override
