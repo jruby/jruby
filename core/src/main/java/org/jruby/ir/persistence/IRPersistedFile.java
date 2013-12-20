@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -203,6 +201,7 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void startEncodingScopeHeaders(IRScope script) {
         headersOffset = buf.position();
+        encode(analyzer.getScopeCount());
     }
 
     @Override

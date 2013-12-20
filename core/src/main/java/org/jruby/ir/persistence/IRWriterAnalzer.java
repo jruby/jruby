@@ -137,4 +137,8 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     public int getScopeID(IRScope value) {
         return offsetIds.get(value);
     }
+
+    public int getScopeCount() {
+        return offsetIds.size();
+    }
 }
