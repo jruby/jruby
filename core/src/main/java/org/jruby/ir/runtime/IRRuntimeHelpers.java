@@ -1,6 +1,9 @@
 package org.jruby.ir.runtime;
 
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.parser.StaticScope;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
@@ -9,9 +12,14 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.lang.invoke.MethodHandle;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -149,5 +157,24 @@ public class IRRuntimeHelpers {
             // Propagate
             throw bj;
         }
+    }
+
+    /**
+     * Logic shared by both interpreter and JIT. Ensure both sides are happy with any changes made here.
+     */
+    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+                                  String filename, int line, String parameterDesc) {
+        Ruby runtime = context.runtime;
+
+        RubyModule containingClass = context.getRubyClass();
+        Visibility visibility = context.getCurrentVisibility();
+
+        visibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
+
+        StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, visibility, containingClass, parameterDesc);
+
+        return Helpers.addInstanceMethod(containingClass, rubyName, method, visibility, context, runtime);
     }
 };
