@@ -2553,14 +2553,22 @@ public final class Ruby {
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(this,
-                lineNumber, false, false, true, config));
+        ParserConfiguration parserConfig =
+                new ParserConfiguration(this, lineNumber, false, false, true, config);
+        if (is1_9) {
+            setupSourceEncoding(parserConfig);
+        }
+        return parser.parse(file, in, scope, parserConfig);
     }
 
     public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(this,
-                0, false, false, true, true, config));
+        ParserConfiguration parserConfig =
+                new ParserConfiguration(this, 0, false, false, true, true, config);
+        if (is1_9) {
+            setupSourceEncoding(parserConfig);
+        }
+        return parser.parse(file, in, scope, parserConfig);
     }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
@@ -2571,8 +2579,21 @@ public final class Ruby {
         if (parserStats != null) parserStats.addEvalParse();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        if (is1_9) parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        if (is1_9) {
+            setupSourceEncoding(parserConfig);
+        }
         return parser.parse(file, in, scope, parserConfig);
+    }
+
+    private void setupSourceEncoding(ParserConfiguration parserConfig) {
+        if (config.getSourceEncoding() != null) {
+            if (config.isVerbose()) {
+                config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
+            }
+            parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
+        } else {
+            parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        }
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
