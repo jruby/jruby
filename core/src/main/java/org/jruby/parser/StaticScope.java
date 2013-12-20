@@ -80,9 +80,11 @@ public abstract class StaticScope implements Serializable {
     private DynamicScope dummyScope;
 
     public enum Type {
-        LOCAL,
-        BLOCK,
-        EVAL
+        LOCAL, BLOCK, EVAL;
+
+        public static Type fromOrdinal(int value) {
+            return value < 0 || value >= values().length ? null : values()[value];
+        }        
     }
 
     /**

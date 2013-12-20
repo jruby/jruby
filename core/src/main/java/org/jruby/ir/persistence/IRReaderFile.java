@@ -70,12 +70,12 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public IRScopeType decodeIRScopeType() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return IRScopeType.fromOrdinal(decodeInt());
     }
 
     @Override
     public StaticScope.Type decodeStaticScopeType() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return StaticScope.Type.fromOrdinal(decodeInt());
     }
 
     @Override
