@@ -56,6 +56,7 @@ import org.jruby.util.io.Sockaddr;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -70,7 +71,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
+import org.jruby.RubyArray;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -246,17 +250,22 @@ public class RubySocket extends RubyBasicSocket {
     
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
-        ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
+        RubyArray list = RubyArray.newArray(context.runtime);
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
             while (en.hasMoreElements()) {
                 NetworkInterface ni = en.nextElement();
-                list.add(context.runtime.newString(ni.getName()));
+                List<InterfaceAddress> listIa = ni.getInterfaceAddresses();
+                Iterator<InterfaceAddress> it = listIa.iterator();
+                while (it.hasNext()) {
+                    InterfaceAddress ia = it.next();
+                    list.append(new Ifaddr(context.runtime, context.runtime.getClass("Socket::Ifaddr"), ni, ia));
+                }
             }
         } catch (SocketException ex) {
-            
+
         }
-        return context.runtime.newArray(list);
+        return list;
     }
 
     @JRubyMethod(required = 1, rest = true, meta = true)
