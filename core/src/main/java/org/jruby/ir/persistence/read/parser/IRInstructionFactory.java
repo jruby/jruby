@@ -221,7 +221,9 @@ public class IRInstructionFactory {
             return createGvarAlias(paramsIterator);
         case CALL:
         case CONST_MISSING:
-        case SUPER:
+        case CLASS_SUPER:
+        case INSTANCE_SUPER:
+        case UNRESOLVED_SUPER:
         case ZSUPER:
             return createNoResultCall(operation, paramsIterator);
         case PUT_GLOBAL_VAR:
@@ -630,7 +632,9 @@ public class IRInstructionFactory {
             return createRescueEQQ(result, paramsIterator);
         case MASGN_REST:
             return createRestArgMultileAsgn(result, paramsIterator);
-        case SUPER:
+        case CLASS_SUPER:
+        case INSTANCE_SUPER:
+        case UNRESOLVED_SUPER:
             return createSuperInstr(result, paramsIterator);
         case SEARCH_CONST:
             return createSearchConst(result, paramsIterator);

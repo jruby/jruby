@@ -89,6 +89,18 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     }
     
     @Override
+    public Operand[] decodeOperandArray() {
+        int size = decodeInt();
+        Operand[] list = new Operand[size];
+        
+        for (int i = 0; i < size; i++) {
+            list[i] = decodeOperand();
+        }
+        
+        return list;
+    }
+    
+    @Override
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
         List<Operand> list = new ArrayList<Operand>(size);
