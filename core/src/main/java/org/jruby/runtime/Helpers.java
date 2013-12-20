@@ -1,7 +1,6 @@
 package org.jruby.runtime;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.invoke.MethodHandle;
 import java.nio.charset.Charset;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -311,22 +310,6 @@ public class Helpers {
         return addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
     }
 
-    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
-                                  String filename, int line, String parameterDesc) {
-        Ruby runtime = context.runtime;
-
-        RubyModule containingClass = context.getRubyClass();
-        Visibility visibility = context.getCurrentVisibility();
-
-        visibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
-
-        StaticScope scope = decodeScope(context, parentScope, scopeDesc);
-
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, visibility, containingClass, parameterDesc);
-
-        return addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
-    }
-    
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
             int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
