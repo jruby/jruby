@@ -16,6 +16,7 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
@@ -534,7 +535,7 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(Helpers.encodeParameterList(parameters));
 
         // add method
-        a.invokestatic(p(Helpers.class), "defCompiledIRMethod",
+        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
                 sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
                         StaticScope.class, String.class, String.class, int.class, String.class));
 

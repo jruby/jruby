@@ -2585,16 +2585,29 @@ public final class Ruby {
      }
 
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
-         return parser.parse(file, in, scope, new ParserConfiguration(this,
-                 lineNumber, false, false, true, isFromMain, config));
+         ParserConfiguration parserConfig =
+                 new ParserConfiguration(this, lineNumber, false, false, true, isFromMain, config);
+         setupSourceEncoding(parserConfig);
+         return parser.parse(file, in, scope, parserConfig);
      }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         addEvalParseToStats();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        setupSourceEncoding(parserConfig);
         return parser.parse(file, in, scope, parserConfig);
+    }
+
+    private void setupSourceEncoding(ParserConfiguration parserConfig) {
+        if (config.getSourceEncoding() != null) {
+            if (config.isVerbose()) {
+                config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
+            }
+            parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
+        } else {
+            parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        }
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
