@@ -262,8 +262,8 @@ public class RubySocket extends RubyBasicSocket {
                     list.append(new Ifaddr(context.runtime, context.runtime.getClass("Socket::Ifaddr"), ni, ia));
                 }
             }
-        } catch (SocketException ex) {
-
+        } catch (Exception ex) {
+            throw SocketUtils.sockerr(context.runtime, "getifaddrs: " + ex.toString());
         }
         return list;
     }
