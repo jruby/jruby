@@ -54,46 +54,37 @@
         <directory>${gem.home}</directory>
         <targetPath>${jruby.complete.gems}</targetPath>
         <includes>
-          <include>gems/rake-${rake.version}/**/*</include>
-          <include>specifications/rake-${rake.version}.gemspec</include>
-          <include>gems/rdoc-${rdoc.version}/**/*</include>
-          <include>specifications/rdoc-${rdoc.version}.gemspec</include>
-          <include>gems/json-${json.version}*/**/*</include>
-          <include>specifications/json-${json.version}*.gemspec</include>
+	  <include>gems/rake-${rake.version}/bin/r*</include>
+	  <include>gems/rdoc-${rdoc.version}/bin/r*</include>
+          <include>specifications/default/*.gemspec</include>
         </includes>
       </resource>
       <resource>
         <directory>${jruby.basedir}</directory>
         <targetPath>${jruby.complete.home}</targetPath>
         <includes>
-          <include>bin/jruby</include>
-          <include>bin/*jruby*</include>
-          <include>bin/*gem*</include>
-          <include>bin/*ri*</include>
-          <include>bin/*rdoc*</include>
-          <include>bin/*irb*</include>
-          <include>bin/generate_yaml_index.rb</include>
-          <include>bin/testrb</include>
           <include>bin/ast*</include>
-          <include>bin/spec.bat</include>
-          <include>bin/rake</include>
-          <include>bin/rake.bat</include>
-        </includes>
-      </resource>
-      <resource>
-        <directory>${jruby.basedir}</directory>
-        <targetPath>${jruby.complete.home}</targetPath>
-        <includes>
+          <include>bin/gem*</include>
+          <include>bin/irb*</include>
+          <include>bin/jgem*</include>
+          <include>bin/jirb*</include>
+          <include>bin/jruby*</include>
+          <include>bin/rake*</include>
+          <include>bin/ri*</include>
+          <include>bin/rdoc*</include>
+          <include>bin/testrb*</include>
           <include>lib/ruby/1.8/**</include>
           <include>lib/ruby/1.9/**</include>
           <include>lib/ruby/2.0/**</include>
           <include>lib/ruby/shared/**</include>
         </includes>
-	<!--
-        <excludes>
-          <exclude>lib/**/bc*.jar</exclude>
-        </excludes>
-	-->
+	<excludes>
+          <exclude>bin/jruby</exclude>
+          <exclude>bin/jruby*_*</exclude>
+          <exclude>bin/jruby*-*</exclude>
+          <exclude>**/.*</exclude>
+          <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
+	</excludes>
       </resource>
     </resources>
 
@@ -103,6 +94,41 @@
 	<configuration>
 	  <skipSource>true</skipSource>
 	</configuration>
+      </plugin>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
+        <executions>
+          <execution>
+            <id>fix shebang on gem bin files and add *.bat files</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <script>
+		puts 'fix the gem stub files'
+		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
+		  content = File.read( f )
+		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
+")
+		  File.open( f, "w" ) { |file| file.print( new_content ) }
+		end
+	
+		puts 'generate the missing bat files'
+		RbConfig::CONFIG['bindir'] = File.join( '${jruby.basedir}', 'bin' )
+		require '${jruby.basedir}/core/src/main/ruby/jruby/commands.rb'
+		JRuby::Commands.generate_bat_stubs
+
+		puts 'copy jruby.bash to jruby'
+		require 'fileutils'
+		FileUtils.cp( File.join( '${jruby.complete.home}', 'bin', 'jruby.bash' ), File.join( '${jruby.complete.home}', 'bin', 'jruby' ) )
+		
+	      </script>
+	    </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

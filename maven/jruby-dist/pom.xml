@@ -11,27 +11,38 @@
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
 
-    <properties>
-      <jruby.basedir>${basedir}/../..</jruby.basedir>
-      <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    </properties>
+  <properties>
+    <jruby.basedir>${basedir}/../..</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+  </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+	    <id>unpack jruby-stdlib</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+	      <stripVersion>true</stripVersion>
+              <artifactItems>
+                <artifactItem>
+		  <groupId>org.jruby</groupId>
+		  <artifactId>jruby-stdlib-complete</artifactId>
+		  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4</version>
@@ -49,36 +60,6 @@
 	    </goals>
 	  </execution>
 	</executions>
-      </plugin>
-      <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-        <executions>
-          <execution>
-            <id>fix shebang on gem bin files and add *.bat files</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-	      <script>
-		# get the stub files fixed
-		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
-		  content = File.read( f )
-		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
-")
-		  File.open( f, "w" ) { |file| file.print( new_content ) }
-		end
-		
-		# generate the missing bat files
-		RbConfig::CONFIG['bindir'] = '${jruby.basedir}/bin'
-		require '${jruby.basedir}/core/src/main/ruby/jruby/commands.rb'
-		JRuby::Commands.generate_bat_stubs
-	      </script>
-	    </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>

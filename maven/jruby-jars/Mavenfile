@@ -23,7 +23,7 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
             'jruby.home' => '${basedir}/../../' )
 
-plugin 'de.saumya.mojo:gem-maven-plugin' do
+jruby_plugin :gem do
   execute_goals :id => 'default-push', :skip => true
 end
 
@@ -35,5 +35,15 @@ execute 'rename gem file', :package do |ctx|
   source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
   FileUtils.mv( source, gem ) if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
 
+end
+
+plugin( :invoker,
+        :projectsDirectory => 'src/it',
+        :cloneProjectsTo => '${project.build.directory}/it',
+        :postBuildHookScript => 'verify.bsh',
+        :streamLogs => true ) do
+  execute_goals( :install, :run )
+#  :settingsFile => '${basedir}/src/it/settings.xml', 
+#  :localRepositoryPath => '${project.build.directory}/local-repo' )
 end
 # vim: syntax=Ruby

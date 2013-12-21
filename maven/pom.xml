@@ -65,6 +65,7 @@
       <id>dist</id>
       <modules>
         <module>jruby-stdlib</module>
+        <module>jruby-stdlib-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
