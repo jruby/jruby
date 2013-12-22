@@ -724,7 +724,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             ByteList bytes = string.getByteList();
             RubySymbol symbol = null;
             String name = bytes.toString();
-            int hash = name.hashCode();
+            int hash = bytes.hashCode();
             SymbolEntry[] table = symbolTable;
             
             // TODO: perform a lookup here without locking the table
@@ -791,9 +791,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         
         // backwards-compatibility, but threadsafe now
         public RubySymbol lookup(String name) {
-            int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
             ByteList bytes = symbolBytesFromString(runtime, name);
+            int hash = bytes.hashCode();
             RubyString string = RubyString.newStringShared(runtime, bytes);
             SymbolEntry entry = findEntry(string, hash, symbolTable);
             if (entry != null)
