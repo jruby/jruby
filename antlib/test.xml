@@ -56,8 +56,11 @@
     </target>
 
     <target name="test-dist">
-	<!-- First, ensure we hava lib/jruby.jar -->
+        <!-- First, ensure we're bootstrapped -->
         <exec executable="mvn">
+            <arg line="-q"/>
+            <arg line="-Pbootstrap"/>
+            <arg line="package"/>
         </exec>
 
         <java classname="org.jruby.Main" fork="true" failonerror="true">
