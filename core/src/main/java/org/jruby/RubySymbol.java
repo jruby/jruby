@@ -748,13 +748,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
-                int index;                
+                int index = hash & (table.length - 1);
                 int potentialNewSize = size + 1;
                 
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
-                for (SymbolEntry e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
+                for (SymbolEntry e = table[index]; e != null; e = e.next) {
                     if (hash == e.hash && name.equals(e.name)) return e.symbol;
                 }
                 String internedName = name.intern();
@@ -784,9 +784,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         // backwards-compatibility, but threadsafe now
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
-            SymbolEntry[] table;
+            SymbolEntry[] table = symbolTable;
+            int index = hash & (table.length - 1);
             
-            for (SymbolEntry e = (table = symbolTable)[hash & (table.length - 1)]; e != null; e = e.next) {
+            for (SymbolEntry e = table[index]; e != null; e = e.next) {
                 if (hash == e.hash && name.equals(e.name)) return e.symbol;
             }
 
