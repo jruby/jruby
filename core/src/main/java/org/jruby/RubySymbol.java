@@ -728,7 +728,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             SymbolEntry[] table = symbolTable;
             
             // TODO: perform a lookup here without locking the table
-
+            
             if (symbol == null) {
                 symbol = createSymbol(name, string, bytes, hash, table);
             }
@@ -736,7 +736,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return symbol;
         }
         
-        public SymbolEntry findEntry(String name, RubyString string, int hash, SymbolEntry[] table)
+        public SymbolEntry findEntry(RubyString string, int hash, SymbolEntry[] table)
         {
             int index = hash & (table.length - 1);
             for (SymbolEntry e = table[index]; e != null; e = e.next) {
@@ -760,7 +760,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
-                SymbolEntry entry = findEntry(name, string, hash, table);
+                SymbolEntry entry = findEntry(string, hash, table);
                 if (entry != null) { return entry.symbol; }
                 
                 String internedName = name.intern();
@@ -795,7 +795,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             SymbolEntry[] table = symbolTable;
             ByteList bytes = symbolBytesFromString(runtime, name);
             RubyString string = RubyString.newStringShared(runtime, bytes);
-            SymbolEntry entry = findEntry(name, string, hash, symbolTable);
+            SymbolEntry entry = findEntry(string, hash, symbolTable);
             if (entry != null)
             {
                 return entry.symbol;
