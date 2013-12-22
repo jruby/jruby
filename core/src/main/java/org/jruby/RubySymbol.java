@@ -787,7 +787,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         
         // backwards-compatibility, but threadsafe now
         public RubySymbol lookup(String name) {
-            SymbolEntry[] table = symbolTable;
             ByteList bytes = symbolBytesFromString(runtime, name);
             RubyString string = RubyString.newStringShared(runtime, bytes);
             SymbolEntry entry = findEntry(string, symbolTable);
