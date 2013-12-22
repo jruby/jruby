@@ -4,14 +4,6 @@
   <version>1</version>
   <modelVersion>4.0.0</modelVersion>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby</artifactId>
-      <version>@project.version@</version>
-      <type>pom</type>
-    </dependency>
-  </dependencies>
   <properties>
     <jruby.home>${project.build.directory}/jruby-@project.version@/</jruby.home>
   </properties>
