@@ -717,6 +717,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
+            return getSymbol(RubyString.newStringShared(runtime, bytes));
+        }
+        
+        public RubySymbol getSymbol(RubyString string) {
+            ByteList bytes = string.getByteList();
             RubySymbol symbol = null;
             String name = bytes.toString();
             int hash = name.hashCode();
