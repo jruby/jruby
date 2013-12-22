@@ -719,15 +719,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
         
         public RubySymbol getSymbol(RubyString string) {
-            ByteList bytes = string.getByteList();
-            String name = bytes.toString();
-            int hash = bytes.hashCode();
             SymbolEntry[] table = symbolTable;
             
             SymbolEntry entry = findEntry(string, table);
             if (entry != null) { return entry.symbol; }
                 
-            return createSymbol(name, string, bytes, hash, table);
+            return createSymbol(string, table);
         }
         
         public SymbolEntry findEntry(RubyString string, SymbolEntry[] table)
@@ -746,7 +743,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return getSymbol(internedName);
         }
 
-        private RubySymbol createSymbol(String name, RubyString string, ByteList value, int hash, SymbolEntry[] table) {
+        private RubySymbol createSymbol(RubyString string, SymbolEntry[] table) {
+            ByteList bytes = string.getByteList();
+            String name = bytes.toString();
+            int hash = bytes.hashCode();
+
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -764,7 +765,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 
                 int index = hash & (table.length - 1);
 
-                RubySymbol symbol = new RubySymbol(runtime, internedName, value);
+                RubySymbol symbol = new RubySymbol(runtime, internedName, bytes);
                 table[index] = new SymbolEntry(hash, symbol, string, table[index]);
                 size = potentialNewSize;
                 // write-volatile
