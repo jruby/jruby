@@ -727,12 +727,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
             
-            for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
-                if (isSymbolMatch(name, hash, e)) {
-                    symbol = e.symbol;
-                    break;
-                }
-            }
+            // TODO: perform a lookup here without locking the table
 
             if (symbol == null) {
                 symbol = createSymbol(name, string, bytes, hash, table);
@@ -747,10 +742,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {
             return table[hash & (table.length - 1)];
-        }
-
-        private static boolean isSymbolMatch(String name, int hash, SymbolEntry entry) {
-            return hash == entry.hash && name.equals(entry.name);
         }
 
         private RubySymbol createSymbol(String name, RubyString string, ByteList value, int hash, SymbolEntry[] table) {
