@@ -740,7 +740,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         {
             int index = hash & (table.length - 1);
             for (SymbolEntry e = table[index]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
+                if (hash == e.hash && e.string.eql(string)) {
                     return e;
                 }
             }
