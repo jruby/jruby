@@ -751,11 +751,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 
                 SymbolEntry[] table = potentialNewSize > threshold ? rehash() : symbolTable;
 
+                // this must be done BEFORE findEntry in case another thread is modifying
+                // the given string
+                string = (RubyString)string.dup();
+
                 // try lookup again under lock
                 SymbolEntry entry = findEntry(string, table);
                 if (entry != null) { return entry.symbol; }
-                
-                string = normalizeString(string);
+
+                normalizeString(string);
                 ByteList bytes = string.getByteList();
                 String name = bytes.toString();
                 String internedName = name.intern();
@@ -771,13 +775,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             }
         }
         
-        private RubyString normalizeString(RubyString string) {
-            string = (RubyString)string.dup();
+        private void normalizeString(RubyString string) {
             if (string.isAsciiOnly() && string.getEncoding() != USASCIIEncoding.INSTANCE)
             {
                 string.setEncoding(USASCIIEncoding.INSTANCE);
             }
-            return string;
         }
         
         // backwards-compatibility, but threadsafe now
