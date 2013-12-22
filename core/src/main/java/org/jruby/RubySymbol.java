@@ -681,7 +681,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
-        private final ConcurrentHashMap<ByteList, RubySymbol> bytelistTable = new ConcurrentHashMap<ByteList, RubySymbol>(100, 0.75f, Runtime.getRuntime().availableProcessors());
         private int size;
         private int threshold;
         private final float loadFactor;
@@ -723,9 +722,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
-            RubySymbol symbol = bytelistTable.get(bytes);
-            if (symbol != null) return symbol;
-
+            RubySymbol symbol = null;
             String name = bytes.toString();
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
@@ -741,8 +738,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 symbol = createSymbol(name, bytes, hash, table);
             }
             
-            bytelistTable.put(bytes, symbol);
-
             return symbol;
         }
 
