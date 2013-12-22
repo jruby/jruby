@@ -700,12 +700,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             final int hash;
             final String name;
             final RubySymbol symbol;
+            final RubyString string;
             final SymbolEntry next;
             
-            SymbolEntry(int hash, String name, RubySymbol symbol, SymbolEntry next) {
+            SymbolEntry(int hash, String name, RubySymbol symbol, RubyString string, SymbolEntry next) {
                 this.hash = hash;
                 this.name = name;
                 this.symbol = symbol;
+                this.string = string;
                 this.next = next;
             }
         }
@@ -767,8 +769,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                     if (hash == e.hash && name.equals(e.name)) return e.symbol;
                 }
                 String internedName = name.intern();
+                
+                RubyString string = RubyString.newStringShared(runtime, value);
+                string = normalizeString(string);
+                
                 RubySymbol symbol = new RubySymbol(runtime, internedName, value);
-                table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
+                table[index] = new SymbolEntry(hash, internedName, symbol, string, table[index]);
                 size = potentialNewSize;
                 // write-volatile
                 symbolTable = table;
@@ -776,6 +782,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             } finally {
                 lock.unlock();
             }
+        }
+        
+        private RubyString normalizeString(RubyString string) {
+            string = (RubyString)string.dup();
+            if (string.isAsciiOnly() && string.getEncoding() != USASCIIEncoding.INSTANCE)
+            {
+                string.setEncoding(USASCIIEncoding.INSTANCE);
+            }
+            return string;
         }
         
         // backwards-compatibility, but threadsafe now
@@ -863,7 +878,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                         for (SymbolEntry p = e; p != lastRun; p = p.next) {
                             int k = p.hash & sizeMask;
                             SymbolEntry n = newTable[k];
-                            newTable[k] = new SymbolEntry(p.hash, p.name, p.symbol, n);
+                            newTable[k] = new SymbolEntry(p.hash, p.name, p.symbol, p.string, n);
                         }
                     }
                 }
