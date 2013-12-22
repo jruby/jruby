@@ -56,6 +56,10 @@
     </target>
 
     <target name="test-dist">
+	<!-- First, ensure we hava lib/jruby.jar -->
+        <exec executable="mvn">
+        </exec>
+
         <java classname="org.jruby.Main" fork="true" failonerror="true">
             <classpath refid="test.class.path"/>
             <jvmarg line="${java.opts}"/>
