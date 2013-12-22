@@ -28,7 +28,7 @@ import org.jruby.parser.StaticScope;
 /**
  * Represents a file which is persisted to storage. 
  */
-public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
+public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
 
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
@@ -41,7 +41,7 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     int headersOffset = -1;
     int poolOffset = -1;
     
-    public IRPersistedFile(File file) throws FileNotFoundException {
+    public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
         this.operandEncoder = new OperandEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
@@ -51,7 +51,11 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
      * Record current offset as the beginning of specified scopes list of instructions.
      */
     public void addScopeInstructionOffset(IRScope scope) {
-        scopeInstructionOffsets.put(scope, buf.position());
+        scopeInstructionOffsets.put(scope, offset());
+    }
+    
+    private int offset() {
+        return buf.position() + PROLOGUE_LENGTH;
     }
     
     /**
@@ -65,8 +69,8 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     // encoding null.
     @Override
     public void encode(String[] values) {
-        buf.put(ARRAY);
-        buf.put(STRING);
+  //      buf.put(ARRAY);
+//        buf.put(STRING);
         if (values == null) {
             encode((int) 0);
             return;
@@ -102,26 +106,36 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
         if (value >= 0 && value <= 128) {
             buf.put((byte) value);
         } else {
-            buf.put(INT);
+            buf.put(FULL);
             buf.putInt(value);
         }
     }
     
     @Override
+    public void encode(long value) {
+        if (value >= 0 && value <= 128) {
+            encode((byte) value);
+        } else {        
+            buf.put(FULL);
+            buf.putLong(value);
+        }
+    }    
+    
+    @Override
     public void encode(float value) {
-        buf.put(FLOAT);
+//        buf.put(FLOAT);
         buf.putFloat(value);
     }
     
     @Override
     public void encode(double value) {
-        buf.put(DOUBLE);
+//        buf.put(DOUBLE);
         buf.putDouble(value);
     }    
 
     @Override
     public void encode(String value) {
-        buf.put(STRING);
+//        buf.put(STRING);
         encode(value.length());
         buf.put(value.getBytes());
     }
@@ -167,16 +181,6 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void encode(OperandType value) {
         encode((byte) value.ordinal());
-    }    
-
-    @Override
-    public void encode(long value) {
-        if (value >= 0 && value <= 128) {
-            encode((byte) value);
-        } else {        
-            buf.put(LONG);
-            buf.putLong(value);
-        }
     }
 
     @Override
@@ -200,7 +204,7 @@ public class IRPersistedFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void startEncodingScopeHeaders(IRScope script) {
-        headersOffset = buf.position();
+        headersOffset = offset();
         encode(analyzer.getScopeCount());
     }
 

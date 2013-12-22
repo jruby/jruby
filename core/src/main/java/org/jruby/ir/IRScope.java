@@ -11,7 +11,6 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 
 import org.jruby.RubyModule;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
@@ -39,6 +38,7 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.persistence.IRReaderFile;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -141,6 +141,9 @@ public abstract class IRScope implements ParseResult {
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
     List<IRScope> lexicalChildren;
+    
+    private int instructionsOffsetInfoPersistenceBuffer = -1;
+    private IRReaderFile persistenceStore = null;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;

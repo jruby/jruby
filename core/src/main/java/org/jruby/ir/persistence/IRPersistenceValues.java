@@ -27,5 +27,7 @@ interface IRPersistenceValues {
     public final static byte LONG = (byte) (PRIMITIVE_BASE + 8);
     public final static byte FLOAT = (byte) (PRIMITIVE_BASE + 9);
     public final static byte DOUBLE = (byte) (PRIMITIVE_BASE + 10);    
-    public final static byte INT = (byte) 255;
+    public final static byte FULL = (byte) 255;
+    
+    public final static int PROLOGUE_LENGTH = 2 * 4; // 2 ints at front
 }

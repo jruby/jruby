@@ -32,10 +32,18 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
+    private final List<IRScope> scopes = new ArrayList<IRScope>();
 
     public IRReaderFile(IRManager manager, File file) {
         try {
-            buf = new FileInputStream(file).getChannel().map(FileChannel.MapMode.READ_ONLY, 0, TWO_MEGS);
+            byte[] bytes = new byte[(int)file.length()];
+            System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            FileInputStream fis = new FileInputStream(file);
+            FileChannel fc = fis.getChannel();
+            fc.read(buffer);
+            fis.close();
+            buf = ByteBuffer.wrap(bytes);
         } catch (IOException ex) {
             Logger.getLogger(IRReaderFile.class.getName()).log(Level.SEVERE, null, ex);
             
@@ -47,15 +55,20 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     
     @Override
     public String decodeString() {
-        int strLength = buf.getInt();
+        int strLength = decodeInt();
         byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
         buf.get(bytes);
         return new String(bytes);
     }
+    
+    @Override
+    public void addScope(IRScope scope) {
+        scopes.add(scope);
+    }
 
     @Override
     public String[] decodeStringArray() {
-        int arrayLength = buf.getInt();
+        int arrayLength = decodeInt();
         String[] array = new String[arrayLength];
         for (int i = 0; i < arrayLength; i++) {
             array[i] = decodeString();
@@ -138,12 +151,19 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public int decodeInt() {
+        byte b = buf.get();
+        return b == FULL ? buf.getInt() : (int) b;
+    }
+    
+    @Override
+    public int decodeIntRaw() {
         return buf.getInt();
     }
 
     @Override
     public long decodeLong() {
-        return buf.getLong();
+        byte b = buf.get();
+        return b == FULL ? buf.getLong() : (int) b;
     }
 
     @Override
@@ -157,12 +177,12 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public IRScope decodeScope() {
+        return scopes.get(decodeInt());
+    }
+    
+    @Override
     public void seek(int headersOffset) {
         buf.position(headersOffset);
-    }
-
-    @Override
-    public IRScope decodeScope() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    }    
 }

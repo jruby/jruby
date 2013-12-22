@@ -34,10 +34,12 @@ public interface IRReaderDecoder {
     public byte decodeByte();
     public char decodeChar();
     public int decodeInt();
+    public int decodeIntRaw();
     public long decodeLong();
     public double decodeDouble();
     public float decodeFloat();
 
+    public void addScope(IRScope scope);
     public void seek(int headersOffset);
 
     public IRScope decodeScope();

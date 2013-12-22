@@ -145,7 +145,9 @@ import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.ir.persistence.read.IRReader;
+import org.jruby.ir.persistence.IRReader;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRReaderFile;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -2544,14 +2546,13 @@ public final class Ruby {
 
         try {
             // Get IR from .ir file
-            InputStream irIn = new FileInputStream(IRFileExpert.getIRPersistedFile(file));
-
-            return IRReader.read(irIn, this);
+            return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
         } catch (Exception e) {
             System.out.println(e);
-
+            e.printStackTrace();
             // If something gone wrong with ir -
-            return parseFileAndGetAST(in, file, scope, lineNumber, false);
+//            return parseFileAndGetAST(in, file, scope, lineNumber, false);
+            return null;
         }
     }
 
@@ -2569,14 +2570,12 @@ public final class Ruby {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
         
         try {
-            File irFile = IRFileExpert.getIRPersistedFile(file);
-            InputStream irIn = new FileInputStream(irFile);
-
-            return IRReader.read(irIn, this);
+            return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
         } catch (Exception e) {
             System.out.println(e);
-
-            return parseFileFromMainAndGetAST(in, file, scope);
+            e.printStackTrace();
+//            return parseFileFromMainAndGetAST(in, file, scope);
+            return null;
         }
     }
 
