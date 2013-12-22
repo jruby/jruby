@@ -734,8 +734,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return symbol;
         }
         
-        public SymbolEntry findEntry(RubyString string, int hash, SymbolEntry[] table)
+        public SymbolEntry findEntry(RubyString string, SymbolEntry[] table)
         {
+            int hash = string.getByteList().hashCode(); 
             int index = hash & (table.length - 1);
             for (SymbolEntry e = table[index]; e != null; e = e.next) {
                 if (hash == e.hash && e.string.eql(string)) {
@@ -758,7 +759,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
-                SymbolEntry entry = findEntry(string, hash, table);
+                SymbolEntry entry = findEntry(string, table);
                 if (entry != null) { return entry.symbol; }
                 
                 String internedName = name.intern();
@@ -791,9 +792,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         public RubySymbol lookup(String name) {
             SymbolEntry[] table = symbolTable;
             ByteList bytes = symbolBytesFromString(runtime, name);
-            int hash = bytes.hashCode();
             RubyString string = RubyString.newStringShared(runtime, bytes);
-            SymbolEntry entry = findEntry(string, hash, symbolTable);
+            SymbolEntry entry = findEntry(string, symbolTable);
             if (entry != null) { return entry.symbol; }
             return null;
         }
