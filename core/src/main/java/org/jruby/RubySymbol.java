@@ -735,32 +735,40 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             
             return symbol;
         }
+        
+        public SymbolEntry findEntry(String name, RubyString string, int hash, SymbolEntry[] table)
+        {
+            int index = hash & (table.length - 1);
+            for (SymbolEntry e = table[index]; e != null; e = e.next) {
+                if (hash == e.hash && name.equals(e.name)) {
+                    return e;
+                }
+            }
+            return null;
+        }
 
         public RubySymbol fastGetSymbol(String internedName) {
             return getSymbol(internedName);
-        }
-
-        private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {
-            return table[hash & (table.length - 1)];
         }
 
         private RubySymbol createSymbol(String name, RubyString string, ByteList value, int hash, SymbolEntry[] table) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
-                int index = hash & (table.length - 1);
                 int potentialNewSize = size + 1;
                 
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
-                for (SymbolEntry e = table[index]; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) return e.symbol;
-                }
+                SymbolEntry entry = findEntry(name, string, hash, table);
+                if (entry != null) { return entry.symbol; }
+                
                 String internedName = name.intern();
                 
                 string = normalizeString(string);
                 
+                int index = hash & (table.length - 1);
+
                 RubySymbol symbol = new RubySymbol(runtime, internedName, value);
                 table[index] = new SymbolEntry(hash, internedName, symbol, string, table[index]);
                 size = potentialNewSize;
@@ -785,15 +793,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
-            int index = hash & (table.length - 1);
-            
-            for (SymbolEntry e = table[index]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) return e.symbol;
+            ByteList bytes = symbolBytesFromString(runtime, name);
+            RubyString string = RubyString.newStringShared(runtime, bytes);
+            SymbolEntry entry = findEntry(name, string, hash, symbolTable);
+            if (entry != null)
+            {
+                return entry.symbol;
             }
-
             return null;
         }
-        
+
         public RubySymbol lookup(long id) {
             SymbolEntry[] table = symbolTable;
             
