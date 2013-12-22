@@ -9,4 +9,14 @@ describe "symbol table" do
     expect(sym2.encoding).to eq Encoding.find("US-ASCII")
     expect(sym1).to_not eq sym2
   end
+  
+  it "sets the encoding to US-ASCII for ASCII-only symbols" do
+    symbols = [
+      :c0787780,
+      "c97cac6c".force_encoding("UTF-8").to_sym,
+      "338c7c6f".force_encoding("ISO-8859-1").to_sym,
+      "db5bcb2c".force_encoding("ASCII-8BIT").to_sym,
+    ]
+    symbols.map(&:encoding).should == [Encoding.find("US-ASCII")] * symbols.size
+  end
 end if defined?(Encoding)
