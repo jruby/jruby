@@ -702,7 +702,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             final RubyString string;
             final SymbolEntry next;
             
-            SymbolEntry(int hash, String name, RubySymbol symbol, RubyString string, SymbolEntry next) {
+            SymbolEntry(int hash, RubySymbol symbol, RubyString string, SymbolEntry next) {
                 this.hash = hash;
                 this.symbol = symbol;
                 this.string = string;
@@ -768,7 +768,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 int index = hash & (table.length - 1);
 
                 RubySymbol symbol = new RubySymbol(runtime, internedName, value);
-                table[index] = new SymbolEntry(hash, internedName, symbol, string, table[index]);
+                table[index] = new SymbolEntry(hash, symbol, string, table[index]);
                 size = potentialNewSize;
                 // write-volatile
                 symbolTable = table;
@@ -871,7 +871,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                         for (SymbolEntry p = e; p != lastRun; p = p.next) {
                             int k = p.hash & sizeMask;
                             SymbolEntry n = newTable[k];
-                            newTable[k] = new SymbolEntry(p.hash, null, p.symbol, p.string, n);
+                            newTable[k] = new SymbolEntry(p.hash, p.symbol, p.string, n);
                         }
                     }
                 }
