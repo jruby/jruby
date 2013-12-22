@@ -796,10 +796,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             int hash = bytes.hashCode();
             RubyString string = RubyString.newStringShared(runtime, bytes);
             SymbolEntry entry = findEntry(string, hash, symbolTable);
-            if (entry != null)
-            {
-                return entry.symbol;
-            }
+            if (entry != null) { return entry.symbol; }
             return null;
         }
 
