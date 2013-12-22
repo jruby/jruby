@@ -742,13 +742,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
-            SymbolEntry[] table = symbolTable;
-            
-            for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
-                if (isSymbolMatch(internedName, e)) return e.symbol;
-            }
-            
-            return fastCreateSymbol(internedName, table);
+            return getSymbol(internedName);
         }
 
         private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {
@@ -778,31 +772,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 }
                 String internedName = name.intern();
                 RubySymbol symbol = new RubySymbol(runtime, internedName, value);
-                table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
-                size = potentialNewSize;
-                // write-volatile
-                symbolTable = table;
-                return symbol;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private RubySymbol fastCreateSymbol(String internedName, SymbolEntry[] table) {
-            ReentrantLock lock;
-            (lock = tableLock).lock();
-            try {
-                int index;
-                int hash;
-                int potentialNewSize = size + 1;
-                
-                table = potentialNewSize > threshold ? rehash() : symbolTable;
-
-                // try lookup again under lock
-                for (SymbolEntry e = table[index = (hash = internedName.hashCode()) & (table.length - 1)]; e != null; e = e.next) {
-                    if (internedName == e.name) return e.symbol;
-                }
-                RubySymbol symbol = new RubySymbol(runtime, internedName);
                 table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
                 size = potentialNewSize;
                 // write-volatile
