@@ -753,10 +753,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return hash == entry.hash && name.equals(entry.name);
         }
 
-        private static boolean isSymbolMatch(String internedName, SymbolEntry entry) {
-            return internedName == entry.name;
-        }
-
         private RubySymbol createSymbol(String name, ByteList value, int hash, SymbolEntry[] table) {
             ReentrantLock lock;
             (lock = tableLock).lock();
