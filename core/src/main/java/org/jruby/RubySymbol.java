@@ -748,8 +748,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             String name = bytes.toString();
             int hash = bytes.hashCode();
 
-            ReentrantLock lock;
-            (lock = tableLock).lock();
+            ReentrantLock lock = tableLock;
+            lock.lock();
             try {
                 int potentialNewSize = size + 1;
                 
