@@ -724,7 +724,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             SymbolEntry entry = findEntry(string, table);
             if (entry != null) { return entry.symbol; }
                 
-            return getSymbolWithLock(string, table);
+            return getSymbolWithLock(string);
         }
         
         public SymbolEntry findEntry(RubyString string, SymbolEntry[] table)
@@ -743,13 +743,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return getSymbol(internedName);
         }
 
-        private RubySymbol getSymbolWithLock(RubyString string, SymbolEntry[] table) {
+        private RubySymbol getSymbolWithLock(RubyString string) {
             ReentrantLock lock = tableLock;
             lock.lock();
             try {
                 int potentialNewSize = size + 1;
                 
-                table = potentialNewSize > threshold ? rehash() : symbolTable;
+                SymbolEntry[] table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
                 SymbolEntry entry = findEntry(string, table);
