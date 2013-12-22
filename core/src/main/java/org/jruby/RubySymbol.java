@@ -698,14 +698,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         // statistically affect only a small percentage (< 20%) of entries for a given rehash.
         static class SymbolEntry {
             final int hash;
-            final String name;
             final RubySymbol symbol;
             final RubyString string;
             final SymbolEntry next;
             
             SymbolEntry(int hash, String name, RubySymbol symbol, RubyString string, SymbolEntry next) {
                 this.hash = hash;
-                this.name = name;
                 this.symbol = symbol;
                 this.string = string;
                 this.next = next;
@@ -873,7 +871,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                         for (SymbolEntry p = e; p != lastRun; p = p.next) {
                             int k = p.hash & sizeMask;
                             SymbolEntry n = newTable[k];
-                            newTable[k] = new SymbolEntry(p.hash, p.name, p.symbol, p.string, n);
+                            newTable[k] = new SymbolEntry(p.hash, null, p.symbol, p.string, n);
                         }
                     }
                 }
