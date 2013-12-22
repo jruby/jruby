@@ -765,8 +765,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 RubySymbol symbol = new RubySymbol(runtime, internedName, bytes);
                 table[index] = new SymbolEntry(hash, symbol, string, table[index]);
                 size = potentialNewSize;
-                // write-volatile
-                symbolTable = table;
                 return symbol;
             } finally {
                 lock.unlock();
