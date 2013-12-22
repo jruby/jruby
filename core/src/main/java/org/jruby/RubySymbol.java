@@ -744,10 +744,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
 
         private RubySymbol getSymbolWithLock(RubyString string, SymbolEntry[] table) {
-            ByteList bytes = string.getByteList();
-            String name = bytes.toString();
-            int hash = bytes.hashCode();
-
             ReentrantLock lock = tableLock;
             lock.lock();
             try {
@@ -759,10 +755,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 SymbolEntry entry = findEntry(string, table);
                 if (entry != null) { return entry.symbol; }
                 
-                String internedName = name.intern();
-                
                 string = normalizeString(string);
-                
+                ByteList bytes = string.getByteList();
+                String name = bytes.toString();
+                String internedName = name.intern();
+                int hash = bytes.hashCode();
                 int index = hash & (table.length - 1);
 
                 RubySymbol symbol = new RubySymbol(runtime, internedName, bytes);
