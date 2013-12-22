@@ -724,7 +724,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             SymbolEntry entry = findEntry(string, table);
             if (entry != null) { return entry.symbol; }
                 
-            return createSymbol(string, table);
+            return getSymbolWithLock(string, table);
         }
         
         public SymbolEntry findEntry(RubyString string, SymbolEntry[] table)
@@ -743,7 +743,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             return getSymbol(internedName);
         }
 
-        private RubySymbol createSymbol(RubyString string, SymbolEntry[] table) {
+        private RubySymbol getSymbolWithLock(RubyString string, SymbolEntry[] table) {
             ByteList bytes = string.getByteList();
             String name = bytes.toString();
             int hash = bytes.hashCode();
