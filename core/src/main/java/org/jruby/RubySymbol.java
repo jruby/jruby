@@ -713,14 +713,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         }
 
         public RubySymbol getSymbol(String name) {
-            int hash = name.hashCode();
-            SymbolEntry[] table = symbolTable;
-            
-            for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
-                if (isSymbolMatch(name, hash, e)) return e.symbol;
-            }
-            
-            return createSymbol(name, symbolBytesFromString(runtime, name), hash, table);
+            return getSymbol(symbolBytesFromString(runtime, name));
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
