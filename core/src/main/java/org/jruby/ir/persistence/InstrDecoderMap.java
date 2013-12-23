@@ -27,6 +27,7 @@ import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineClassInstr;
 import org.jruby.ir.instructions.DefineClassMethodInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
@@ -130,15 +131,15 @@ class InstrDecoderMap implements IRPersistenceValues {
     public Instr decode(Operation operation) {
         try {
         switch(operation) {
-            case ALIAS: return new AliasInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
+            case ALIAS: return new AliasInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
-            case BACKREF_IS_MATCH_DATA: return new BackrefIsMatchDataInstr((Variable) d.decodeOperand());
+            case BACKREF_IS_MATCH_DATA: return new BackrefIsMatchDataInstr(d.decodeVariable());
             case BEQ: return BEQInstr.create(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeScope(), (TemporaryVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
-            case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
-            case BLOCK_GIVEN: return new BlockGivenInstr((Variable) d.decodeOperand(), d.decodeOperand());
+            case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeOperandAsIRScope(), (TemporaryVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
+            case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeOperandAsIRScope(), (LocalVariable) d.decodeOperand());
+            case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeScope());
+            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeOperandAsIRScope());
             case B_FALSE: return new BFalseInstr(d.decodeOperand(), (Label) d.decodeOperand());
             case B_NIL: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
             case B_TRUE: return new BTrueInstr(d.decodeOperand(), (Label) d.decodeOperand());
@@ -146,85 +147,85 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case CLASS_VAR_IS_DEFINED: return new ClassVarIsDefinedInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
-            case CONST_MISSING: return new ConstMissingInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
+            case CLASS_VAR_IS_DEFINED: return new ClassVarIsDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case CONST_MISSING: return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case COPY: return decodeCopy();
-            case DEFINED_CONSTANT_OR_METHOD:         return new GetDefinedConstantOrMethodInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case DEF_CLASS: return new DefineClassInstr(((Variable) d.decodeOperand()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
-            case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
-            case DEF_INST_METH: return new DefineInstanceMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
-            case DEF_META_CLASS: return new DefineInstanceMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
-            case DEF_MODULE: return new DefineModuleInstr((Variable) d.decodeOperand(), (IRModuleBody) d.decodeScope(), d.decodeOperand());
-            case EQQ: return new EQQInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
+            case DEFINED_CONSTANT_OR_METHOD:         return new GetDefinedConstantOrMethodInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeOperandAsIRScope(), d.decodeOperand(), d.decodeOperand());
+            case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeOperandAsIRScope());
+            case DEF_INST_METH: return new DefineInstanceMethodInstr(d.decodeOperand(), (IRMethod) d.decodeOperandAsIRScope());
+            case DEF_META_CLASS: return new DefineMetaClassInstr(d.decodeVariable(), d.decodeOperand(), (IRModuleBody) d.decodeOperandAsIRScope());
+            case DEF_MODULE: return new DefineModuleInstr(d.decodeVariable(), (IRModuleBody) d.decodeOperandAsIRScope(), d.decodeOperand());
+            case EQQ: return new EQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case EXC_REGION_END: return new ExceptionRegionEndMarkerInstr();
             case EXC_REGION_START: return new ExceptionRegionStartMarkerInstr((Label) d.decodeOperand(), (Label) d.decodeOperand(), (Label) d.decodeOperand());
-            case GET_BACKREF: return new GetBackrefInstr((Variable) d.decodeOperand());
-            case GET_CVAR: return new GetClassVariableInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
+            case GET_BACKREF: return new GetBackrefInstr(d.decodeVariable());
+            case GET_CVAR: return new GetClassVariableInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
                 // FIXME: Encoding load is likely wrong here but likely will work :)
-            case GET_ENCODING: return new GetEncodingInstr((Variable) d.decodeOperand(), Encoding.load(d.decodeString()));
-            case GET_ERROR_INFO: return new GetErrorInfoInstr((Variable) d.decodeOperand());
-            case GET_FIELD: return new GetFieldInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
-            case GET_GLOBAL_VAR: return new GetGlobalVariableInstr((Variable) d.decodeOperand(), d.decodeString());
-            case GLOBAL_IS_DEFINED: return new GlobalIsDefinedInstr((Variable) d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case GET_ENCODING: return new GetEncodingInstr(d.decodeVariable(), Encoding.load(d.decodeString()));
+            case GET_ERROR_INFO: return new GetErrorInfoInstr(d.decodeVariable());
+            case GET_FIELD: return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+            case GET_GLOBAL_VAR: return new GetGlobalVariableInstr(d.decodeVariable(), d.decodeString());
+            case GLOBAL_IS_DEFINED: return new GlobalIsDefinedInstr(d.decodeVariable(), (StringLiteral) d.decodeOperand());
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
-            case HAS_INSTANCE_VAR: return new HasInstanceVarInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
-            case IS_METHOD_BOUND: return new IsMethodBoundInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case HAS_INSTANCE_VAR: return new HasInstanceVarInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+            case IS_METHOD_BOUND: return new IsMethodBoundInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
-            case JUMP_INDIRECT: return new JumpIndirectInstr((Variable) d.decodeOperand());
+            case JUMP_INDIRECT: return new JumpIndirectInstr(d.decodeVariable());
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
-            case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
+            case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case LINE_NUM: return decodeLineNumber();
-            case MASGN_OPT: return new OptArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
-            case MASGN_REQD: return new ReqdArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case MASGN_REST: return new RestArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case MATCH: return new MatchInstr((Variable) d.decodeOperand(), d.decodeOperand());
-            case MATCH2: return new Match2Instr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
-            case MATCH3: return new Match3Instr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
-            case METHOD_DEFINED: return new MethodDefinedInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case METHOD_IS_PUBLIC: return new MethodIsPublicInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case METHOD_LOOKUP: return new MethodLookupInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
-            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
+            case MASGN_OPT: return new OptArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
+            case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case MASGN_REST: return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case MATCH: return new MatchInstr(d.decodeVariable(), d.decodeOperand());
+            case MATCH2: return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case METHOD_DEFINED: return new MethodDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case METHOD_IS_PUBLIC: return new MethodIsPublicInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
+            case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), (IRMethod) d.decodeOperandAsIRScope());
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
-            case NOT: return new NotInstr((Variable) d.decodeOperand(), d.decodeOperand());
+            case NOT: return new NotInstr(d.decodeVariable(), d.decodeOperand());
             case POP_BINDING: return new PopBindingInstr();
             case POP_FRAME: return new PopFrameInstr();
-            case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr((Variable) d.decodeOperand(), d.decodeOperand());
-            case PUSH_BINDING: return new PushBindingInstr(d.decodeScope());
+            case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
+            case PUSH_BINDING: return new PushBindingInstr(d.decodeOperandAsIRScope());
             case PUSH_FRAME: return new PushFrameInstr();
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_GLOBAL_VAR: return new PutGlobalVarInstr(d.decodeString(), d.decodeOperand());
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (IRClosure) d.decodeScope());
-            case RECV_CLOSURE: return new ReceiveClosureInstr((Variable) d.decodeOperand());
-            case RECV_EXCEPTION: return new ReceiveExceptionInstr((Variable) d.decodeOperand(), d.decodeBoolean());
-            case RECV_KW_ARG: return new ReceiveKeywordArgInstr((Variable) d.decodeOperand(), d.decodeInt());
-            case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr((Variable) d.decodeOperand(), d.decodeInt());
-            case RECV_OPT_ARG: return new ReceivePostReqdArgInstr((Variable) d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr((Variable) d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr((Variable) d.decodeOperand(), d.decodeInt());
-            case RECV_REST_ARG: return new ReceiveRestArgInstr((Variable) d.decodeOperand(), d.decodeInt(), d.decodeInt());
-            case RECV_SELF: return new ReceiveSelfInstr((Variable) d.decodeOperand());
-            case RESCUE_EQQ: return new RescueEQQInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
+            case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeOperandAsIRScope(), (IRClosure) d.decodeOperandAsIRScope());
+            case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
+            case RECV_EXCEPTION: return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
+            case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeInt());
+            case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
+            case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
+            case RECV_REST_ARG: return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt());
+            case RECV_SELF: return new ReceiveSelfInstr(d.decodeVariable());
+            case RESCUE_EQQ: return new RescueEQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case RESTORE_ERROR_INFO: return new RestoreErrorInfoInstr(d.decodeOperand());
             case RETURN: return new ReturnInstr(d.decodeOperand());
-            case SEARCH_CONST: return new SearchConstInstr((Variable) d.decodeOperand(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
-            case SET_RETADDR: return new SetReturnAddressInstr((Variable) d.decodeOperand(), (Label) d.decodeOperand());
-            case CLASS_SUPER: return new ClassSuperInstr((Variable) d.decodeOperand(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
-            case INSTANCE_SUPER: return new InstanceSuperInstr((Variable) d.decodeOperand(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
-            case UNRESOLVED_SUPER: return new UnresolvedSuperInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
-            case SUPER_METHOD_BOUND: return new SuperMethodBoundInstr((Variable) d.decodeOperand(), d.decodeOperand());
+            case SEARCH_CONST: return new SearchConstInstr(d.decodeVariable(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
+            case SET_RETADDR: return new SetReturnAddressInstr(d.decodeVariable(), (Label) d.decodeOperand());
+            case CLASS_SUPER: return new ClassSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
+            case INSTANCE_SUPER: return new InstanceSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
+            case UNRESOLVED_SUPER: return new UnresolvedSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
+            case SUPER_METHOD_BOUND: return new SuperMethodBoundInstr(d.decodeVariable(), d.decodeOperand());
             case THREAD_POLL: return new ThreadPollInstr(d.decodeBoolean());
             case THROW: return new ThrowExceptionInstr(d.decodeOperand());
-            case TO_ARY: return new ToAryInstr((Variable) d.decodeOperand(), d.decodeOperand(), (BooleanLiteral) d.decodeOperand());
-            case UNDEF_METHOD: return new UndefMethodInstr((Variable) d.decodeOperand(), d.decodeOperand());
-            case YIELD: return new YieldInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case ZSUPER: return new ZSuperInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
+            case TO_ARY: return new ToAryInstr(d.decodeVariable(), d.decodeOperand(), (BooleanLiteral) d.decodeOperand());
+            case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
+            case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case ZSUPER: return new ZSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
         }
         } catch (Exception e) {
             e.printStackTrace();
@@ -249,7 +250,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeCall() {
         System.out.println("decoding call");
-        Variable result = (Variable) d.decodeOperand();
+        Variable result = d.decodeVariable();
         System.out.println("decoding call, result:  "+ result);
         Fixnum callTypeOrdinal = (Fixnum) d.decodeOperand();
         System.out.println("decoding call, result:  "+ callTypeOrdinal);
@@ -271,7 +272,7 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeLambda() {
-        Variable v = (Variable) d.decodeOperand();
+        Variable v = d.decodeVariable();
         WrappedIRClosure c = (WrappedIRClosure) d.decodeOperand();
         StringLiteral l = (StringLiteral) d.decodeOperand();
         Fixnum f = (Fixnum) d.decodeOperand();
@@ -290,7 +291,7 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeCopy() {
-        Variable variable = (Variable) d.decodeOperand();
+        Variable variable = d.decodeVariable();
         System.out.println("VARIABLE: " + variable);
         Operand value = d.decodeOperand();
         System.out.println("VALUE: " + value);

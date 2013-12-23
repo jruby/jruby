@@ -22,6 +22,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.ir.operands.ScopeModule;
+import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -117,6 +120,18 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operand decodeOperand() {
         return operandDecoderMap.decode(decodeOperandType());
+    }
+
+    @Override
+    public IRScope decodeOperandAsIRScope() {
+        Operand operand = decodeOperand();
+        
+        return ((ScopeModule) operand).getScope();
+    }
+    
+    @Override
+    public Variable decodeVariable() {
+        return (Variable) decodeOperand();
     }
     
     @Override
