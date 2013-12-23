@@ -23,7 +23,7 @@
                 <artifactItem>
 		  <groupId>org.jruby</groupId>
 		  <artifactId>jruby-dist</artifactId>
-		  <version>1.7.10-SNAPSHOT</version>
+		  <version>@project.version@</version>
                   <type>zip</type>
                   <classifier>bin</classifier>
                   <overWrite>false</overWrite>
