@@ -74,7 +74,7 @@ class SocketTest < Test::Unit::TestCase
   def test_getifaddrs
     list = Socket.getifaddrs
     list.each do |ifaddr|
-      [ :name, :addr, :broadaddr, :ifindex, :flags, :netmask, :dstaddr].each do |method|
+      [ :name, :addr, :broadaddr, :ifindex, :netmask].each do |method|
         assert_respond_to(ifaddr, method)
       end
     end
