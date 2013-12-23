@@ -118,12 +118,14 @@
       <version>${json.version}</version>
       <type>gem</type>
     </dependency>
+<!--
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
       <version>${rdoc.version}</version>
       <type>gem</type>
     </dependency>
+-->
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
