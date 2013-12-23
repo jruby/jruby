@@ -22,7 +22,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     /** The position for the block */
     private final ISourcePosition position;
     private Variable result;
-    private final WrappedIRClosure lambdaBody;
+    private WrappedIRClosure lambdaBody;
 
     public BuildLambdaInstr(Variable lambda, WrappedIRClosure lambdaBody, ISourcePosition position) {
         super(Operation.LAMBDA);
@@ -62,10 +62,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        Operand[] operands = getOperands();
-        for (int i = 0; i < operands.length; i++) {
-            operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
-        }
+        lambdaBody = (WrappedIRClosure) lambdaBody.getSimplifiedOperand(valueMap, force);
     }
 
     private WrappedIRClosure getLambdaBody() {
