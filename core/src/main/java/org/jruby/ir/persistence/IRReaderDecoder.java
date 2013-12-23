@@ -13,6 +13,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -38,6 +39,8 @@ public interface IRReaderDecoder {
     public long decodeLong();
     public double decodeDouble();
     public float decodeFloat();
+    
+    public List<Instr> decodeInstructionsAt(int offset);
 
     public void addScope(IRScope scope);
     public void seek(int headersOffset);

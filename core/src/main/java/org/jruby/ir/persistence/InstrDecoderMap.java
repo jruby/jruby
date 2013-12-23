@@ -6,6 +6,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
@@ -105,6 +106,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -117,8 +119,6 @@ import org.jruby.runtime.CallType;
  * @author enebo
  */
 class InstrDecoderMap implements IRPersistenceValues {
-    private static final Operation[] operations = Operation.values();
-    
     private final IRReaderDecoder d;
     private final IRManager manager;
 
@@ -128,6 +128,7 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     public Instr decode(Operation operation) {
+        try {
         switch(operation) {
             case ALIAS: return new AliasInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
@@ -148,7 +149,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CLASS_VAR_IS_DEFINED: return new ClassVarIsDefinedInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
             case CONST_MISSING: return new ConstMissingInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
-            case COPY: return new CopyInstr((Variable) d.decodeOperand(), d.decodeOperand());
+            case COPY: return decodeCopy();
             case DEFINED_CONSTANT_OR_METHOD:         return new GetDefinedConstantOrMethodInstr((Variable) d.decodeOperand(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case DEF_CLASS: return new DefineClassInstr(((Variable) d.decodeOperand()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
@@ -175,7 +176,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeString());
-            case LINE_NUM: return new LineNumberInstr(d.decodeScope(), d.decodeInt());
+            case LINE_NUM: return decodeLineNumber();
             case MASGN_OPT: return new OptArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
             case MASGN_REQD: return new ReqdArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case MASGN_REST: return new RestArgMultipleAsgnInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
@@ -225,14 +226,11 @@ class InstrDecoderMap implements IRPersistenceValues {
             case YIELD: return new YieldInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case ZSUPER: return new ZSuperInstr((Variable) d.decodeOperand(), d.decodeOperand(), d.decodeOperand());
         }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
         return null;
-    }
-
-    public Operation decodeOperationType(int ordinal) {
-        if (ordinal >= operations.length) throw new IllegalArgumentException("Invalid Operation Type: " + ordinal);
-        
-        return operations[ordinal];
     }
 
     private Instr decodeAttrAssignInstr() {
@@ -250,12 +248,24 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeCall() {
+        System.out.println("decoding call");
         Variable result = (Variable) d.decodeOperand();
+        System.out.println("decoding call, result:  "+ result);
         Fixnum callTypeOrdinal = (Fixnum) d.decodeOperand();
+        System.out.println("decoding call, result:  "+ callTypeOrdinal);
         MethAddr methAddr = (MethAddr) d.decodeOperand();
+        System.out.println("decoding call, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
-        Operand[] args = d.decodeOperandArray();
-        Operand closure = d.decodeOperand();
+        Fixnum argsCount = (Fixnum) d.decodeOperand();
+        boolean hasClosureArg = argsCount.value < 0;
+        int argsLength = Math.abs((int) argsCount.value);
+        Operand[] args = new Operand[argsLength];
+        
+        for (int i = 0; i < argsLength; i++) {
+            args[i] = d.decodeOperand();
+        }
+        
+        Operand closure = hasClosureArg ? d.decodeOperand() : null;
         
         return CallInstr.create(CallType.fromOrdinal((int) callTypeOrdinal.value), result, methAddr, receiver, args, closure);
     }
@@ -277,5 +287,22 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = d.decodeOperand();
         
         return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal((int) callTypeOrdinal.value), methAddr, receiver, args, closure);        
+    }
+
+    private Instr decodeCopy() {
+        Variable variable = (Variable) d.decodeOperand();
+        System.out.println("VARIABLE: " + variable);
+        Operand value = d.decodeOperand();
+        System.out.println("VALUE: " + value);
+        
+        return new CopyInstr(variable, value);
+    }
+
+    private Instr decodeLineNumber() {
+        ScopeModule scope = (ScopeModule) d.decodeOperand();
+        System.out.println("IR Scope " + scope);
+        int lineNumber = (int) ((Fixnum)d.decodeOperand()).value;
+        System.out.println("On Line Number " + lineNumber);
+        return new LineNumberInstr(scope.getScope(), lineNumber);
     }
  }

@@ -182,11 +182,18 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void SValue(SValue svalue) { encode(svalue.getArray()); }
     
     @Override public void Symbol(Symbol symbol) { encoder.encode(symbol.getName()); }
+
+    // FIXME: There are two forms of constructors for both temp vars and they are not clear what there actual
+    // requirements are (prefix/offset/name question).
+    @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) {
+        encoder.encode(variable.getName());
+        encoder.encode(variable.offset);
+    }
     
-    // FIXME: This will require weird string parsing when decoding this on way back in.
-    @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) { encoder.encode(variable.getName());}
-    
-    @Override public void TemporaryVariable(TemporaryVariable variable) { encoder.encode(variable.getName()); }
+    @Override public void TemporaryVariable(TemporaryVariable variable) { 
+        encoder.encode(variable.getName()); 
+        encoder.encode(variable.offset); 
+    }
     
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
     

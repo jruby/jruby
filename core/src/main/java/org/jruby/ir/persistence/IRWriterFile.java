@@ -29,6 +29,7 @@ import org.jruby.parser.StaticScope;
  * Represents a file which is persisted to storage. 
  */
 public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
+    private static final boolean DEBUG = false;
     private static final int VERSION = 0;
 
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
@@ -63,24 +64,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
      */
     public int getScopeInstructionOffset(IRScope scope) {
         return scopeInstructionOffsets.get(scope);
-    }
-    
-    // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
-    // encoding null.
-    @Override
-    public void encode(String[] values) {
-  //      buf.put(ARRAY);
-//        buf.put(STRING);
-        if (values == null) {
-            encode((int) 0);
-            return;
-        }
-        
-        encode(values.length);
-        for (String value : values) {
-            encode(value.length());
-            buf.put(value.getBytes());
-        }
     }
     
     @Override
@@ -140,6 +123,22 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
         buf.put(value.getBytes());
     }
     
+    // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
+    // encoding null.
+    @Override
+    public void encode(String[] values) {
+        if (values == null) {
+            encode((int) 0);
+            return;
+        }
+        
+        encode(values.length);
+        for (String value : values) {
+            encode(value.length());
+            buf.put(value.getBytes());
+        }
+    }    
+    
     @Override
     public void encode(Operand operand) {
         operandEncoder.encode(operand);
@@ -148,12 +147,14 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void encode(Instr instr) {
         encode(instr.getOperation());
+        if (DEBUG) System.out.println("ENCODING : " + instr);
         if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
 
         Operand[] operands = instr.getOperands();
-        if (!(instr instanceof FixedArityInstr)) encode(operands.length);
+//        if (!(instr instanceof FixedArityInstr)) encode(operands.length);
 
         for (Operand operand: operands) {
+            if (DEBUG) System.out.println("ENCODING OPER: " + operand);
             encode(operand);
         }
     }

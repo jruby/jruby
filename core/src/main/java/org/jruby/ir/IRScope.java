@@ -38,7 +38,7 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
-import org.jruby.ir.persistence.IRReaderFile;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -143,7 +143,7 @@ public abstract class IRScope implements ParseResult {
     List<IRScope> lexicalChildren;
     
     private int instructionsOffsetInfoPersistenceBuffer = -1;
-    private IRReaderFile persistenceStore = null;
+    private IRReaderDecoder persistenceStore = null;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -721,6 +721,10 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        if (persistenceStore != null) {
+            instrList = persistenceStore.decodeInstructionsAt(instructionsOffsetInfoPersistenceBuffer);
+        }
+        
         if (isLambda) {
             // Add a global ensure block to catch uncaught breaks
             // and throw a LocalJumpError.
@@ -743,6 +747,10 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
+        if (persistenceStore != null) {
+            instrList = persistenceStore.decodeInstructionsAt(instructionsOffsetInfoPersistenceBuffer);
+        }
+        
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
@@ -1358,5 +1366,10 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
+    }
+    
+    public void savePersistenceInfo(int offset, IRReaderDecoder file) {
+        instructionsOffsetInfoPersistenceBuffer = offset;
+        persistenceStore = file;
     }
 }

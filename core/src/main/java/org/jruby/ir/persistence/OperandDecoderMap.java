@@ -38,6 +38,7 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
@@ -50,8 +51,6 @@ import org.jruby.util.RegexpOptions;
  * 
  */
 class OperandDecoderMap {
-    private static final OperandType[] operands = OperandType.values();
-    
     private final IRReaderDecoder decoder;
     private final IRManager manager;
     
@@ -59,14 +58,10 @@ class OperandDecoderMap {
         this.manager = manager;
         this.decoder = decoder;
     }
-
-    public OperandType decodeOperandType(int ordinal) {
-        if (ordinal >= operands.length) throw new IllegalArgumentException("Invalid Operation Type: " + ordinal);
-        
-        return operands[ordinal];
-    }
     
     public Operand decode(OperandType type) {
+        System.out.println("Decoding operand " + type);
+
         switch (type) {
             case ARRAY: return new Array(decoder.decodeOperandList());
             case AS_STRING: return new AsString(decoder.decodeOperand());
@@ -100,6 +95,7 @@ class OperandDecoderMap {
             case SVALUE: return new SValue(decoder.decodeOperand());
             case SYMBOL: return new Symbol(decoder.decodeString());
             case TEMPORARY_VARIABLE: return new TemporaryVariable(decoder.decodeString(), decoder.decodeInt());
+            case TEMPORARY_CLOSURE_VARIABLE: return new TemporaryClosureVariable(decoder.decodeString(), decoder.decodeInt());
             case UNDEFINED_VALUE: return UndefinedValue.UNDEFINED;
             case UNEXECUTABLE_NIL: return U_NIL;
             case WRAPPED_IR_CLOSURE: return new WrappedIRClosure((Variable) decoder.decodeOperand(), (IRClosure) decoder.decodeScope());

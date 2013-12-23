@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
@@ -65,7 +64,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     public Operand[] getOperands() {
-        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, arguments, closure);
+        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, new Fixnum(arguments.length * (closure == null ? 1 : -1)), arguments, closure);
     }
 
     public MethAddr getMethodAddr() {
@@ -324,9 +323,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         return false;
     }
 
+    private final static int REQUIRED_OPERANDS = 4;
     private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver, 
-            Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + 3 + ((closure != null) ? 1 : 0)];
+            Fixnum argsCount, Operand[] callArgs, Operand closure) {
+        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + ((closure != null) ? 1 : 0)];
 
         assert methAddr != null : "METHADDR is null";
         assert receiver != null : "RECEIVER is null";
@@ -335,13 +335,14 @@ public abstract class CallBase extends Instr implements Specializeable {
         allArgs[0] = callType;
         allArgs[1] = methAddr;
         allArgs[2] = receiver;
+        allArgs[3] = argsCount;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
 
-            allArgs[i + 3] = callArgs[i];
+            allArgs[i + REQUIRED_OPERANDS] = callArgs[i];
         }
 
-        if (closure != null) allArgs[callArgs.length + 3] = closure;
+        if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
 
         return allArgs;
     }

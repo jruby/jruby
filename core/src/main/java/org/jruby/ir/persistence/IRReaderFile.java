@@ -29,6 +29,8 @@ import org.jruby.parser.StaticScope;
  * @author enebo
  */
 public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
+    private static final boolean DEBUG = true;
+    
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
@@ -77,6 +79,20 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public List<Instr> decodeInstructionsAt(int offset) {
+        buf.position(offset);
+        int numberOfInstructions = decodeInt();
+        if (DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
+        List<Instr> instrs = new ArrayList(numberOfInstructions);
+        
+        for (int i = 0; i < numberOfInstructions; i++) {
+            instrs.add(decodeInstr());
+        }
+        
+        return instrs;
+    }
+
+    @Override
     public Instr decodeInstr() {
         return instrDecoderMap.decode(decodeOperation());
     }
@@ -93,7 +109,9 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public Operation decodeOperation() {
-        return instrDecoderMap.decodeOperationType((int) buf.get());
+        Operation operation = Operation.fromOrdinal(decodeInt());
+        if (DEBUG) System.out.println("INSTR OP: " + operation);
+        return operation;
     }
 
     @Override
@@ -116,9 +134,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
+        System.out.println("OPERAND LIST of size: " + size);
         List<Operand> list = new ArrayList<Operand>(size);
         
         for (int i = 0; i < size; i++) {
+            System.out.println("OPERAND #" + i);
             list.add(decodeOperand());
         }
         
@@ -127,7 +147,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     
     @Override
     public OperandType decodeOperandType() {
-        return operandDecoderMap.decodeOperandType((int) buf.get());
+        return OperandType.fromOrdinal((int) buf.get());
     }
 
     @Override

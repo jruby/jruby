@@ -37,7 +37,8 @@ public enum OperandType {
     STRING_LITERAL,
     SVALUE,
     SYMBOL,
-    TEMPORARY_VARIABLE, // Also applicable for ClosureTemporaryVariable
+    TEMPORARY_VARIABLE,
+    TEMPORARY_CLOSURE_VARIABLE,
     UNDEFINED_VALUE,
     UNEXECUTABLE_NIL,
     WRAPPED_IR_CLOSURE,
@@ -51,9 +52,13 @@ public enum OperandType {
     ATTRIBUTE
     ;
     
+    @Override
     public String toString() {
         return name().toLowerCase();
     };
-
+    
+    public static OperandType fromOrdinal(int value) {
+        return value < 0 || value >= values().length ? null : values()[value];
+    }     
 }
 
