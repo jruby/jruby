@@ -2,6 +2,7 @@ package org.jruby.ir.dataflow;
 
 import java.util.BitSet;
 import java.util.List;
+import java.util.ListIterator;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
@@ -21,26 +22,6 @@ public abstract class FlowGraphNode {
     }
 
     /**
-     * Initialize this data flow node to compute the new solution
-     * This is done before iteratively calling the MEET operator.
-     */
-    public abstract void initSolnForNode();
-
-    /**
-     * "MEET" current solution of "IN/OUT" with "OUT/IN(pred)", where "pred"
-     * is a predecessor of the current node!  The choice of "IN/OUT" is
-     * determined by the direction of data flow.
-     */
-    public abstract void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred);
-
-    /** Compute "OUT/IN" for the current node!  The choice of "IN/OUT" is
-     * determined by the direction of data flow.  OUT/IN = transfer-function
-     * (facts at start/end of node, instructions of current node processed in
-     * fwd/reverse dirn)
-     */
-    public abstract boolean applyTransferFunction();
-
-    /**
      * Builds the data-flow variables (or facts) for a particular instruction.
      */
     public abstract void buildDataFlowVars(Instr i);
@@ -49,14 +30,40 @@ public abstract class FlowGraphNode {
      * Initialize this data flow node for solving the current problem
      * This is done after building dataflow variables for the problem.
      */
-    public void init() {
-    }
+    public void init() { }
 
     /**
-     * After meet has been performed, do some more work, if required.
+     * Initialize this data flow node to compute the new solution
+     * This is done before iteratively calling the MEET operator.
      */
-    public void finalizeSolnForNode() {
-    }
+    public abstract void applyPreMeetHandler();
+
+    /**
+     * "MEET" current solution of "IN/OUT" with "OUT/IN(pred)", where "pred"
+     * is a predecessor of the current node!  The choice of "IN/OUT" is
+     * determined by the direction of data flow.
+     */
+    public abstract void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred);
+
+    /**
+     * Any setting up of state/initialization before applying transfer function
+     */
+    public void initSolution() { }
+
+    /**
+     * Apply transfer function to the instruction
+     */
+    public abstract void applyTransferFunction(Instr i);
+
+    /**
+     * Did dataflow solution for this node change from last time?
+     */
+    public abstract boolean solutionChanged();
+
+    /**
+     * Any required cleanup of state after applying transfer function
+     */
+    public void finalizeSolution() { }
 
     public BasicBlock getBB() {
         return basicBlock;
@@ -81,43 +88,71 @@ public abstract class FlowGraphNode {
     }
 
     public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet) {
+        if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BIDIRECTIONAL) {
+            throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
+        }
+
         // System.out.println("----- processing bb " + basicBlock.getID() + " -----");
         bbSet.clear(basicBlock.getID());
 
         // Compute meet over all "sources" and compute "destination" basic blocks that should then be processed.
         // sources & targets depends on direction of the data flow problem
-        initSolnForNode();
-        if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
+        applyPreMeetHandler();
+
+        boolean isForwardProblem = problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD;
+        if (isForwardProblem) {
             for (Edge e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
                 BasicBlock b = (BasicBlock)e.getSource().getData();
                 compute_MEET(e, b, problem.getFlowGraphNode(b));
             }
-        } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
+
+            // Initialize computation
+            initSolution();
+
+            // Apply transfer function (analysis-specific) based on new facts after computing MEET
+            for (Instr i : basicBlock.getInstrs()) {
+                // System.out.println("TF: Processing: " + i);
+                applyTransferFunction(i);
+            }
+
+           // If the solution has changed, add "dsts" to the work list.
+           // No duplicates please which is why we have bbset.
+            if (solutionChanged()) {
+                for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
+                    processDestBB(workList, bbSet, b);
+                }
+            }
+
+            // Any post-computation cleanup
+            finalizeSolution();
+        } else {
             for (Edge e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
                 BasicBlock b = (BasicBlock)e.getDestination().getData();
                 compute_MEET(e, b, problem.getFlowGraphNode(b));
             }
-        } else {
-            throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
-        }
 
-        finalizeSolnForNode();
+            // Initialize computation
+            initSolution();
 
-        // Apply transfer function (analysis-specific) based on new facts after computing MEET
-        boolean changed = applyTransferFunction();
+            // Apply transfer function (analysis-specific) based on new facts after computing MEET
+            List<Instr> instrs = basicBlock.getInstrs();
+            ListIterator<Instr> it = instrs.listIterator(instrs.size());
+            while (it.hasPrevious()) {
+                Instr i = it.previous();
+                // System.out.println("TF: Processing: " + i);
+                applyTransferFunction(i);
+            }
 
-       // If the solution has changed, add "dsts" to the work list.
-       // No duplicates please which is why we have bbset.
-        if (changed) {
-            if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
-                    processDestBB(workList, bbSet, b);
-                }
-            } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
+           // If the solution has changed, add "dsts" to the work list.
+           // No duplicates please which is why we have bbset.
+            if (solutionChanged()) {
                 for (BasicBlock b: problem.getScope().cfg().getIncomingSources(basicBlock)) {
                     processDestBB(workList, bbSet, b);
                 }
             }
+
+            // Any post-computation cleanup
+            finalizeSolution();
         }
     }
 
@@ -130,13 +165,8 @@ public abstract class FlowGraphNode {
         return problem.getFlowGraphNode(rescuer == null ? problem.getScope().cfg().getExitBB() : rescuer);
     }
 
-    public FlowGraphNode getNonExitBBExceptionTargetNode() {
-        // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
-        return rescuer == null ? null : problem.getFlowGraphNode(rescuer);
-    }
-
 /* --------- protected fields/methods below --------- */
     protected DataFlowProblem problem;   // Dataflow problem with which this node is associated
-    protected BasicBlock basicBlock;          // CFG node for which this node contains info.
-    private   BasicBlock rescuer;   // Basicblock that protects any exceptions raised in this node
+    protected BasicBlock basicBlock;     // CFG node for which this node contains info.
+    private   BasicBlock rescuer;        // Basicblock that protects any exceptions raised in this node
 }
