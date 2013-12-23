@@ -98,10 +98,11 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject flags(ThreadContext context) {
-        throw SocketUtils.sockerr(context.runtime, "flags not implemented yet");
+        // not implemented yet
+        return context.nil;
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
     public IRubyObject netmask(ThreadContext context) throws UnknownHostException {
         if (netmask == null) {
             return context.nil;
@@ -111,7 +112,8 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject dstaddr(ThreadContext context) {
-        throw SocketUtils.sockerr(context.runtime, "dstaddr not implemented yet");
+        // not implemented yet
+        return context.nil;
     }
 
     private void setNetmask(InterfaceAddress it) throws Exception {
@@ -122,6 +124,7 @@ public class Ifaddr extends RubyObject {
 
         } else if ((it.getNetworkPrefixLength() != 0 && address instanceof Inet6Address)) {
             String subnet = ipAddress() + "/" + it.getNetworkPrefixLength();
+            // not implemented yet
         }
     }
 
@@ -175,8 +178,8 @@ public class Ifaddr extends RubyObject {
         }
         return "";
     }
-    
-    private String getBroadcastAsString(){
+
+    private String getBroadcastAsString() {
         if (broadcast == null) {
             return "";
         }
