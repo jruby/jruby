@@ -186,7 +186,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     
     @Override
     public OperandType decodeOperandType() {
-        return OperandType.fromOrdinal((int) buf.get());
+        return OperandType.fromCoded(decodeByte());
     }
 
     @Override

@@ -10,7 +10,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNilInstr extends BranchInstr  implements FixedArityInstr {
-    protected BNilInstr(Operand v, Label jmpTarget) {
+    public BNilInstr(Operand v, Label jmpTarget) {
         super(Operation.B_NIL, v, null, jmpTarget);
     }
 

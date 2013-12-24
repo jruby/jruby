@@ -43,14 +43,9 @@ public enum OperandType {
     UNDEFINED_VALUE((byte) 'u'),
     UNEXECUTABLE_NIL((byte) 'n'),
     WRAPPED_IR_CLOSURE((byte) 'w'),
-    
-    // Data flow constants
-    LATTICE_BOTTOM((byte) '#'),
-    LATTICE_TOP((byte) '#'),
-    ANYTHING((byte) '#'),
     ;
     
-    private byte coded;
+    private final byte coded;
     
     OperandType(byte coded) {
         this.coded = coded;
@@ -64,6 +59,15 @@ public enum OperandType {
     public String toString() {
         return name().toLowerCase();
     };
+    
+    // FIXME: Slowwww
+    public static OperandType fromCoded(byte coded) {
+        for (OperandType value: values()) {
+            if (value.coded == coded) return value;
+        }
+        
+        return null;
+    }
     
     public static OperandType fromOrdinal(int value) {
         return value < 0 || value >= values().length ? null : values()[value];

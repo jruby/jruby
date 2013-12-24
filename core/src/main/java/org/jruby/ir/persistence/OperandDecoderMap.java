@@ -78,7 +78,7 @@ class OperandDecoderMap {
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
-            case LABEL: return new Label(d.decodeString());
+            case LABEL: return decodeLabel();
             case LOCAL_VARIABLE: return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
             case METHOD_HANDLE: return new MethodHandle(d.decodeOperand(), d.decodeOperand());
             case METH_ADDR: return new MethAddr(d.decodeString());
@@ -122,6 +122,37 @@ class OperandDecoderMap {
         
         return new Hash(pairs);
     }
+    
+    private Operand decodeLabel() {
+        final String labelName = d.decodeString();
+        
+        // Special case of label
+        if ("_GLOBAL_ENSURE_BLOCK".equals(labelName)) return new Label("_GLOBAL_ENSURE_BLOCK");
+        
+        // Check if this label was already created
+        // Important! Program would not be interpreted correctly
+        // if new name will be created every time
+        if (d.getVars().containsKey(labelName)) return d.getVars().get(labelName);
+
+        
+        // FIXME? Warning! This code is relies on current realization of IRScope#getNewLable
+        // which constructs name in format '${prefix}_\d+'
+        // so '_\d+' is removed here and newly recreated label will have the same name
+        // with one that was persisted
+        final int lastIndexOfPrefix = labelName.lastIndexOf("_");
+        final int lastIndexNotFound = -1;
+        String prefix = labelName;
+        if(lastIndexOfPrefix != lastIndexNotFound) {
+            prefix = labelName.substring(0, lastIndexOfPrefix);
+        }
+        
+        Label newLabel = d.getCurrentScope().getNewLabel(prefix);
+        
+        // Add to context for future reuse
+        d.getVars().put(labelName, newLabel);
+        
+        return newLabel;
+    }    
 
     private Regexp decodeRegexp() {
         Operand regexp = d.decodeOperand();

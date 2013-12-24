@@ -12,6 +12,7 @@ import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
 import org.jruby.ir.instructions.BFalseInstr;
 import org.jruby.ir.instructions.BNEInstr;
+import org.jruby.ir.instructions.BNilInstr;
 import org.jruby.ir.instructions.BTrueInstr;
 import org.jruby.ir.instructions.BUndefInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
@@ -139,10 +140,10 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
             case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeOperandAsIRScope());
-            case B_FALSE: return new BFalseInstr(d.decodeOperand(), (Label) d.decodeOperand());
-            case B_NIL: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case B_TRUE: return new BTrueInstr(d.decodeOperand(), (Label) d.decodeOperand());
-            case B_UNDEF: return new BUndefInstr(d.decodeOperand(), (Label) d.decodeOperand());
+            case B_FALSE: return createBFalse();
+            case B_NIL: return createBNil();
+            case B_TRUE: return createBTrue();
+            case B_UNDEF: return createBUndef();
             case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt());
@@ -310,8 +311,30 @@ class InstrDecoderMap implements IRPersistenceValues {
         Variable result = d.decodeVariable();
         String constName = d.decodeOperandAsString();
         Operand startScope = d.decodeOperand();
-        boolean noPrivateConst = d.decodeBoolean();
+        BooleanLiteral noPrivateConst = (BooleanLiteral) d.decodeOperand();
         
-        return new SearchConstInstr(result, constName, startScope, noPrivateConst);
+        return new SearchConstInstr(result, constName, startScope, noPrivateConst.isTrue());
+    }
+
+//    FIXME: Get rid of variable getOperands logic from common class in jumps so we can properly
+    // return these in same order as constructor
+    private Instr createBFalse() { // Order of getOperands is opposite of constructor
+        Label label = (Label) d.decodeOperand();
+        return new BFalseInstr(d.decodeOperand(), label);
+    }
+    
+    private Instr createBTrue() { // Order of getOperands is opposite of constructor
+        Label label = (Label) d.decodeOperand();
+        return new BTrueInstr(d.decodeOperand(), label);
+    }
+
+    private Instr createBNil() {
+        Label label = (Label) d.decodeOperand();
+        return new BNilInstr(d.decodeOperand(), label);
+    }
+
+    private Instr createBUndef() {
+        Label label = (Label) d.decodeOperand();
+        return new BUndefInstr(d.decodeOperand(), label);        
     }
  }

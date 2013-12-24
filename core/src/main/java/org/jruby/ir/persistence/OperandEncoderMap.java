@@ -54,7 +54,7 @@ class OperandEncoderMap extends IRVisitor {
     }
     // FIXME: Potentially some of these values should not need to have their type prefixed.
     public void encode(Operand operand) {
-        encoder.encode((byte) operand.getOperandType().ordinal());
+        encoder.encode(operand.getOperandType().getCoded());
         operand.visit(this);
     }
     
