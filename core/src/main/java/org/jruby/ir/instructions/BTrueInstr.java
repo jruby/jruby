@@ -9,9 +9,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BTrueInstr extends BranchInstr implements FixedArityInstr {
+public class BTrueInstr extends OneOperandBranchInstr implements FixedArityInstr {
     public BTrueInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_TRUE, v, null, jmpTarget);
+        super(Operation.B_TRUE, v, jmpTarget);
     }
 
     @Override
@@ -19,6 +19,7 @@ public class BTrueInstr extends BranchInstr implements FixedArityInstr {
         return new BTrueInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 
+    @Override
     public void visit(IRVisitor visitor) {
         visitor.BTrueInstr(this);
     }

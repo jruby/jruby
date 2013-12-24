@@ -62,6 +62,7 @@ import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.NotInstr;
+import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.PopBindingInstr;
 import org.jruby.ir.instructions.PopFrameInstr;
@@ -94,6 +95,7 @@ import org.jruby.ir.instructions.SuperInstrType;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.instructions.TwoOperandBranchInstr;
 import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
@@ -184,7 +186,7 @@ class IRInstrStringExtractor extends IRVisitor {
         commonForBranchInstrWithArg2(bneinstr);
     }
 
-    private void commonForBranchInstrWithArg2(BranchInstr branchInstr) {
+    private void commonForBranchInstrWithArg2(TwoOperandBranchInstr branchInstr) {
         Operand arg1 = branchInstr.getArg1();
         Operand arg2 = branchInstr.getArg2();
         Label jumpTarget = branchInstr.getJumpTarget();
@@ -208,7 +210,7 @@ class IRInstrStringExtractor extends IRVisitor {
         commonForBranchInstrWithoutArg2(bundefinstr);
     }
 
-    private void commonForBranchInstrWithoutArg2(BranchInstr branchInstr) {
+    private void commonForBranchInstrWithoutArg2(OneOperandBranchInstr branchInstr) {
         Operand arg1 = branchInstr.getArg1();
         Label jumpTarget = branchInstr.getJumpTarget();
         

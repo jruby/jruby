@@ -316,25 +316,19 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new SearchConstInstr(result, constName, startScope, noPrivateConst.isTrue());
     }
 
-//    FIXME: Get rid of variable getOperands logic from common class in jumps so we can properly
-    // return these in same order as constructor
-    private Instr createBFalse() { // Order of getOperands is opposite of constructor
-        Label label = (Label) d.decodeOperand();
-        return new BFalseInstr(d.decodeOperand(), label);
+    private Instr createBFalse() {
+        return new BFalseInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
     
-    private Instr createBTrue() { // Order of getOperands is opposite of constructor
-        Label label = (Label) d.decodeOperand();
-        return new BTrueInstr(d.decodeOperand(), label);
+    private Instr createBTrue() {
+        return new BTrueInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
 
     private Instr createBNil() {
-        Label label = (Label) d.decodeOperand();
-        return new BNilInstr(d.decodeOperand(), label);
+        return new BNilInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
 
     private Instr createBUndef() {
-        Label label = (Label) d.decodeOperand();
-        return new BUndefInstr(d.decodeOperand(), label);        
+        return new BNilInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
  }

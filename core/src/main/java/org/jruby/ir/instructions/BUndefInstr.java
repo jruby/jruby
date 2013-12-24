@@ -10,9 +10,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BUndefInstr extends BranchInstr  implements FixedArityInstr {
+public class BUndefInstr extends OneOperandBranchInstr  implements FixedArityInstr {
     public BUndefInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_UNDEF, v, null, jmpTarget);
+        super(Operation.B_UNDEF, v, jmpTarget);
     }
 
     @Override

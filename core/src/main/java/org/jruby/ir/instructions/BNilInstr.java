@@ -9,9 +9,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BNilInstr extends BranchInstr  implements FixedArityInstr {
+public class BNilInstr extends OneOperandBranchInstr  implements FixedArityInstr {
     public BNilInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_NIL, v, null, jmpTarget);
+        super(Operation.B_NIL, v, jmpTarget);
     }
 
     @Override

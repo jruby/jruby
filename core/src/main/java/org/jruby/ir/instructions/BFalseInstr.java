@@ -9,10 +9,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BFalseInstr extends BranchInstr implements FixedArityInstr {
+public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInstr {
     // Public only for persistence reloading
     public BFalseInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_FALSE, v, null, jmpTarget);
+        super(Operation.B_FALSE, v, jmpTarget);
     }
 
     @Override
