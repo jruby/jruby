@@ -6,7 +6,6 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
@@ -214,7 +213,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RESCUE_EQQ: return new RescueEQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case RESTORE_ERROR_INFO: return new RestoreErrorInfoInstr(d.decodeOperand());
             case RETURN: return new ReturnInstr(d.decodeOperand());
-            case SEARCH_CONST: return new SearchConstInstr(d.decodeVariable(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
+            case SEARCH_CONST: return decodeSearchConst();
             case SET_RETADDR: return new SetReturnAddressInstr(d.decodeVariable(), (Label) d.decodeOperand());
             case CLASS_SUPER: return new ClassSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
             case INSTANCE_SUPER: return new InstanceSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
@@ -249,13 +248,13 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeCall() {
-        System.out.println("decoding call");
+        if (IRReaderFile.DEBUG) System.out.println("decoding call");
         Variable result = d.decodeVariable();
-        System.out.println("decoding call, result:  "+ result);
+        if (IRReaderFile.DEBUG) System.out.println("decoding call, result:  "+ result);
         Fixnum callTypeOrdinal = (Fixnum) d.decodeOperand();
-        System.out.println("decoding call, result:  "+ callTypeOrdinal);
+        if (IRReaderFile.DEBUG) System.out.println("decoding call, result:  "+ callTypeOrdinal);
         MethAddr methAddr = (MethAddr) d.decodeOperand();
-        System.out.println("decoding call, methaddr:  "+ methAddr);
+        if (IRReaderFile.DEBUG) System.out.println("decoding call, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
         Fixnum argsCount = (Fixnum) d.decodeOperand();
         boolean hasClosureArg = argsCount.value < 0;
@@ -292,18 +291,27 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeCopy() {
         Variable variable = d.decodeVariable();
-        System.out.println("VARIABLE: " + variable);
+        if (IRReaderFile.DEBUG) System.out.println("VARIABLE: " + variable);
         Operand value = d.decodeOperand();
-        System.out.println("VALUE: " + value);
+        if (IRReaderFile.DEBUG) System.out.println("VALUE: " + value);
         
         return new CopyInstr(variable, value);
     }
 
     private Instr decodeLineNumber() {
         ScopeModule scope = (ScopeModule) d.decodeOperand();
-        System.out.println("IR Scope " + scope);
+        if (IRReaderFile.DEBUG) System.out.println("IR Scope " + scope);
         int lineNumber = (int) ((Fixnum)d.decodeOperand()).value;
-        System.out.println("On Line Number " + lineNumber);
+        if (IRReaderFile.DEBUG) System.out.println("On Line Number " + lineNumber);
         return new LineNumberInstr(scope.getScope(), lineNumber);
+    }
+
+    private Instr decodeSearchConst() {
+        Variable result = d.decodeVariable();
+        String constName = d.decodeOperandAsString();
+        Operand startScope = d.decodeOperand();
+        boolean noPrivateConst = d.decodeBoolean();
+        
+        return new SearchConstInstr(result, constName, startScope, noPrivateConst);
     }
  }

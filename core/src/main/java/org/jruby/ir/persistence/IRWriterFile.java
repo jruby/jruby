@@ -68,7 +68,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     
     @Override
     public void encode(boolean value) {
-        buf.put(value ? TRUE : FALSE);
+        buf.put((byte) (value ? TRUE : FALSE));
     }
     
     @Override

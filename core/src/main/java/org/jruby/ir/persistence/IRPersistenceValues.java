@@ -19,8 +19,8 @@ interface IRPersistenceValues {
     public final static int PRIMITIVE_BASE = OperandType.values().length; // OPERANDS and base data is 1 byte
     public final static byte STRING = (byte) (PRIMITIVE_BASE + 1);
 
-    public final static byte TRUE = (byte) (PRIMITIVE_BASE + 3);
-    public final static byte FALSE = (byte) (PRIMITIVE_BASE + 4);
+    public final static byte TRUE = (byte) 't';
+    public final static byte FALSE = (byte) 'f';
     public final static byte ARRAY = (byte) (PRIMITIVE_BASE + 5);
     public final static byte NULL = (byte) (PRIMITIVE_BASE + 6);
     public final static byte INSTR = (byte) (PRIMITIVE_BASE + 7); // INSTRs 2 bytes

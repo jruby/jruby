@@ -722,7 +722,8 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
         if (persistenceStore != null) {
-            instrList = persistenceStore.decodeInstructionsAt(instructionsOffsetInfoPersistenceBuffer);
+            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
+            computeScopeFlags();
         }
         
         if (isLambda) {
@@ -748,7 +749,7 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         if (persistenceStore != null) {
-            instrList = persistenceStore.decodeInstructionsAt(instructionsOffsetInfoPersistenceBuffer);
+            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
         }
         
         // Build CFG and run compiler passes, if necessary

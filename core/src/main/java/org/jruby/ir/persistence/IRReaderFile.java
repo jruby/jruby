@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRManager;
@@ -23,7 +25,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
@@ -32,17 +34,18 @@ import org.jruby.parser.StaticScope;
  * @author enebo
  */
 public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
-    private static final boolean DEBUG = true;
+    public static final boolean DEBUG = true;
     
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
     private final List<IRScope> scopes = new ArrayList<IRScope>();
+    private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
 
     public IRReaderFile(IRManager manager, File file) {
         try {
             byte[] bytes = new byte[(int)file.length()];
-            System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
+            if (DEBUG) System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             FileInputStream fis = new FileInputStream(file);
             FileChannel fc = fis.getChannel();
@@ -70,6 +73,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public void addScope(IRScope scope) {
         scopes.add(scope);
     }
+    
+    @Override
+    public IRScope getCurrentScope() {
+        return currentScope;
+    }
 
     @Override
     public String[] decodeStringArray() {
@@ -80,9 +88,18 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         }
         return array;
     }
+    
+    private Map<String, Operand> vars = null;
+    
+    @Override
+    public Map<String, Operand> getVars() {
+        return vars;
+    }
 
     @Override
-    public List<Instr> decodeInstructionsAt(int offset) {
+    public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
+        this.currentScope = scope;
+        vars = new HashMap<String, Operand>();
         buf.position(offset);
         int numberOfInstructions = decodeInt();
         if (DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
@@ -120,7 +137,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operand decodeOperand() {
         return operandDecoderMap.decode(decodeOperandType());
-    }
+    }      
 
     @Override
     public IRScope decodeOperandAsIRScope() {
@@ -128,6 +145,13 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         
         return ((ScopeModule) operand).getScope();
     }
+    
+    @Override
+    public String decodeOperandAsString() {
+        Operand operand = decodeOperand();
+        
+        return ((StringLiteral) operand).getString();
+    }    
     
     @Override
     public Variable decodeVariable() {
@@ -149,11 +173,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
-        System.out.println("OPERAND LIST of size: " + size);
+        if (DEBUG) System.out.println("OPERAND LIST of size: " + size);
         List<Operand> list = new ArrayList<Operand>(size);
         
         for (int i = 0; i < size; i++) {
-            System.out.println("OPERAND #" + i);
+            if (DEBUG) System.out.println("OPERAND #" + i);
             list.add(decodeOperand());
         }
         

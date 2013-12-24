@@ -113,7 +113,7 @@ class OperandEncoderMap extends IRVisitor {
     }
     
     // FIXME: Can't I determine this instead of persisting it?
-    @Override public void CurrentScope(CurrentScope scope) { encoder.encode(scope.getScope()); }
+    @Override public void CurrentScope(CurrentScope scope) {  }
     
     //@Override public void DynamicSymbol(DynamicSymbol dsym) { encode(dsym.getSymbolName()); }
     @Override public void DynamicSymbol(DynamicSymbol dsym) {  }
@@ -139,7 +139,6 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void LocalVariable(LocalVariable variable) {
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
-        encoder.encode(variable.getOffset());
     }
     
     @Override public void MethAddr(MethAddr methaddr) { encoder.encode(methaddr.getName()); }
@@ -192,7 +191,7 @@ class OperandEncoderMap extends IRVisitor {
     
     @Override public void TemporaryVariable(TemporaryVariable variable) { 
         encoder.encode(variable.getName()); 
-        encoder.encode(variable.offset); 
+//        encoder.encode(variable.offset); 
     }
     
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data

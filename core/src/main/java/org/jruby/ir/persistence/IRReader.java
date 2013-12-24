@@ -26,7 +26,7 @@ import org.jruby.runtime.Arity;
  * @author enebo
  */
 public class IRReader {
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
     public static IRScope load(IRManager manager, IRReaderDecoder file) throws IOException {
         int headersOffset = file.decodeIntRaw();
         if (DEBUG) System.out.println("header_offset = " + headersOffset);
