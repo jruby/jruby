@@ -11,9 +11,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.List;
+import java.util.Map;
 
 public class WrappedIRClosure extends Operand {
-    private Variable self;
+    private final Variable self;
     private final IRClosure closure;
 
     public WrappedIRClosure(Variable self, IRClosure closure) {
@@ -26,6 +27,10 @@ public class WrappedIRClosure extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         l.add(self);
+    }
+
+    public Variable getSelf() {
+        return self;
     }
 
     public IRClosure getClosure() {
@@ -41,7 +46,13 @@ public class WrappedIRClosure extends Operand {
     public String toString() {
         return self + ":" + closure.toString();
     }
-    
+
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        Operand newSelf = self.getSimplifiedOperand(valueMap, force);
+        return (newSelf == self) ? this : new WrappedIRClosure((Variable)newSelf, closure);
+    }
+
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
         return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));
