@@ -32,13 +32,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFile;
 
-import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
 import java.io.IOException;
 
@@ -549,16 +545,11 @@ public class Dir {
                length == 3 && beginsWithDriveLetter(base, 0, length); // Just X:/ 
     }
     
-    private static boolean isJarFilePath(byte[] bytes, int begin, int end) {
-        return end > 6 && bytes[begin] == 'f' && bytes[begin+1] == 'i' &&
-            bytes[begin+2] == 'l' && bytes[begin+3] == 'e' && bytes[begin+4] == ':';
-    }
-    
     private static boolean isAbsolutePath(byte[] path, int begin, int length) {
         return isdirsep(path[begin]) || beginsWithDriveLetter(path, begin, length);
     }
 
-    private static String[] files(File directory) {
+    private static String[] files(FileResource directory) {
         String[] files = directory.list();
         
         if (files != null) {
@@ -575,11 +566,9 @@ public class Dir {
 
     private static final class DirGlobber {
         public final ByteList link;
-        public final JarEntry jarEntry;
 
-        public DirGlobber(ByteList link, JarEntry jarEntry) {
+        public DirGlobber(ByteList link) {
             this.link = link;
-            this.jarEntry = jarEntry;
         }
     }
 
@@ -595,15 +584,16 @@ public class Dir {
 
     private static int addToResultIfExists(String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
         String fileName = newStringFromUTF8(bytes, begin, end - begin);
-        JavaSecuredFile file = cwd != null ? new JavaSecuredFile(cwd, fileName) :
-            new JavaSecuredFile(fileName);
+        FileResource file = JRubyFile.createResource(cwd, fileName);
 
         if (file.exists()) {
             boolean trailingSlash = bytes[end - 1] == '/';
 
             // On case-insenstive file systems any case string will 'exists',
             // but what does it display as if you ls/dir it?
-            if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
+            /* No idea what this is doing =/
+             
+              if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
                 try {
                     String realName = file.getCanonicalFile().getName();
 
@@ -622,7 +612,7 @@ public class Dir {
                     begin = 0;
                     end = bytes.length;
                 } catch (Exception e) {} // Failure will just use what we pass in
-            }
+            }*/
             
             return func.call(bytes, begin, end - begin, arg);
         }
@@ -630,31 +620,11 @@ public class Dir {
         return 0;
     }
 
-    private static ZipEntry getZipEntryFor(byte[] bytes, int begin, int end) {
-        int ix = end;
-        for (int i = 0; i < end; i++) {
-            if (bytes[begin + i] == '!') {
-                ix = i;
-                break;
-            }
-        }
-        if (ix == end) return null;
-
-        String fileName = newStringFromUTF8(bytes, begin + 5, ix - 5);
-        String entryName = newStringFromUTF8(bytes, begin + ix + 1, end - (ix + 1));
-        if (entryName.startsWith("/")) entryName = entryName.substring(1);
-        try {
-            return RubyFile.getDirOrFileEntry(fileName, entryName);
-        } catch (Exception e) {}
-        
-        return null;
-    }
-
     private static int glob_helper(String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
         byte[] newpath = null;
-        File st;
+        FileResource st;
         p = sub != -1 ? sub : begin;
 
         if (!has_magic(bytes, p, end, flags)) {
@@ -673,10 +643,6 @@ public class Dir {
 
             if (isAbsolutePath(bytes, begin, end)) {
                 status = addToResultIfExists(null, bytes, begin, end, flags, func, arg);
-            } else if (isJarFilePath(bytes, begin, end)) {
-                if (getZipEntryFor(bytes, begin, end) != null) {
-                    status = func.call(bytes, begin, end, arg);
-                }
             } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
                 status = addToResultIfExists(cwd, bytes, begin, end, flags, func, arg);
             }
@@ -696,48 +662,16 @@ public class Dir {
                     byte[] dir = begin == p ? new byte[]{'.'} : base; 
                     byte[] magic = extract_elem(bytes,p,end);
                     boolean recursive = false;
-                    String jar = null;
-                    JarFile jf = null;
 
-                    if(isAbsolutePath(dir, 0, dir.length)) {
-                        st = new JavaSecuredFile(newStringFromUTF8(dir));
-                    } else if(isJarFilePath(dir, 0, dir.length)) {
-                        int ix = dir.length;
-                        for(int i = 0;i<dir.length;i++) {
-                            if(dir[i] == '!') {
-                                ix = i;
-                                break;
-                            }
-                        }
+                    st = JRubyFile.createResource(cwd, newStringFromUTF8(dir));
 
-                        st = new JavaSecuredFile(newStringFromUTF8(dir, 5, ix-5));
-                        if(ix<dir.length) {
-                            jar = newStringFromUTF8(dir, ix+1, dir.length-(ix+1));
-                            try {
-                                jf = new JarFile(st);
-
-                                if (jar.startsWith("/")) jar = jar.substring(1);
-                                if (jf.getEntry(jar + "/") != null) jar = jar + "/";
-                            } catch(Exception e) {
-                                jar = null;
-                                jf = null;
-                            }
-                        }
-                    } else {
-                        st = new JavaSecuredFile(cwd, newStringFromUTF8(dir));
-                    }
-
-                    if((jf != null && ("".equals(jar) || (jf.getJarEntry(jar) != null &&
-                            jf.getJarEntry(jar).isDirectory()))) || st.isDirectory()) {
+                    if (st.isDirectory()) {
                         if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
                             int n = base.length;
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
                             buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
-                            if (jf != null) {
-                                buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize());
-                            }
                             status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
@@ -747,122 +681,47 @@ public class Dir {
                         break mainLoop;
                     }
 
-                    if(jar == null) {
-                        String[] dirp = files(st);
+                    String[] dirp = files(st);
 
-                        for(int i=0;i<dirp.length;i++) {
-                            if(recursive) {
-                                byte[] bs = getBytesInUTF8(dirp[i]);
-                                if (fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
-                                    continue;
+                    for(int i=0;i<dirp.length;i++) {
+                        if(recursive) {
+                            byte[] bs = getBytesInUTF8(dirp[i]);
+                            if (fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
+                                continue;
+                            }
+                            buf.length(0);
+                            buf.append(base);
+                            buf.append(isRoot(base) ? EMPTY : SLASH );
+                            buf.append(getBytesInUTF8(dirp[i]));
+                            st = JRubyFile.createResource(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
+                            if(!st.isSymLink() && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
+                                int t = buf.getRealSize();
+                                buf.append(SLASH);
+                                buf.append(DOUBLE_STAR);
+                                buf.append(bytes, m, end - m);
+                                status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
+                                if(status != 0) {
+                                    break;
                                 }
-                                buf.length(0);
-                                buf.append(base);
-                                buf.append(isRoot(base) ? EMPTY : SLASH );
-                                buf.append(getBytesInUTF8(dirp[i]));
-                                if (isAbsolutePath(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize())) {
-                                    st = new JavaSecuredFile(newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
-                                } else {
-                                    st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
-                                }
-                                if(!isResolvedSymlink(st) && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
-                                    int t = buf.getRealSize();
-                                    buf.append(SLASH);
-                                    buf.append(DOUBLE_STAR);
-                                    buf.append(bytes, m, end - m);
-                                    status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
-                                    if(status != 0) {
-                                        break;
-                                    }
+                            }
+                            continue;
+                        }
+                        byte[] bs = getBytesInUTF8(dirp[i]);
+                        if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
+                            buf.length(0);
+                            buf.append(base);
+                            buf.append(isRoot(base) ? EMPTY : SLASH );
+                            buf.append(getBytesInUTF8(dirp[i]));
+                            if(m == -1) {
+                                status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
+                                if(status != 0) {
+                                    break;
                                 }
                                 continue;
                             }
-                            byte[] bs = getBytesInUTF8(dirp[i]);
-                            if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
-                                buf.length(0);
-                                buf.append(base);
-                                buf.append(isRoot(base) ? EMPTY : SLASH );
-                                buf.append(getBytesInUTF8(dirp[i]));
-                                if(m == -1) {
-                                    status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
-                                    if(status != 0) {
-                                        break;
-                                    }
-                                    continue;
-                                }
-                                link.add(new DirGlobber(buf, null));
-                                buf = new ByteList(20);
-                            }
+                            link.add(new DirGlobber(buf));
+                            buf = new ByteList(20);
                         }
-                    } else {
-                        try {
-                            List<JarEntry> dirp = new ArrayList<JarEntry>();
-                            for(Enumeration<JarEntry> eje = jf.entries(); eje.hasMoreElements(); ) {
-                                JarEntry je = eje.nextElement();
-                                String name = je.getName();
-                                int ix = name.indexOf('/', jar.length());
-                                if (ix == -1 || ix == name.length()-1) {
-                                    if("/".equals(jar) || (name.startsWith(jar) && name.length()>jar.length())) {
-                                        dirp.add(je);
-                                    }
-                                }
-                            }
-                            for(JarEntry je : dirp) {
-                                String basename = (new File(je.getName())).getName();
-                                byte[] bs = getBytesInUTF8(basename);
-                                byte[] absoluteName = getBytesInUTF8(je.getName());
-                                int len = bs.length;
-                                int absoluteLen = absoluteName.length;
-
-                                if(je.isDirectory()) {
-                                    len--;
-                                    absoluteLen--;
-                                }
-
-                                if(recursive) {
-                                    if(fnmatch(STAR,0,1,bs,0,len,flags) != 0) {
-                                        continue;
-                                    }
-                                    buf.length(0);
-                                    buf.append(base, 0, base.length - jar.length());
-                                    buf.append(isRoot(base) ? EMPTY : SLASH);
-                                    buf.append(absoluteName, 0, absoluteLen);
-
-                                    if(je.isDirectory()) {
-                                        int t = buf.getRealSize();
-                                        buf.append(SLASH);
-                                        buf.append(DOUBLE_STAR);
-                                        buf.append(bytes, m, end - m);
-
-                                        buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize());
-
-                                        status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
-                                        if(status != 0) {
-                                            break;
-                                        }
-                                    }
-                                    continue;
-                                }
-
-                                if(fnmatch(magic,0,magic.length,bs,0,len,flags) == 0) {
-                                    buf.length(0);
-                                    buf.append(base, 0, base.length - jar.length());
-                                    buf.append(isRoot(base) ? EMPTY : SLASH);
-                                    buf.append(absoluteName, 0, absoluteLen);
-
-                                    buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
-                                    if(m == -1) {
-                                        status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
-                                        if(status != 0) {
-                                            break;
-                                        }
-                                        continue;
-                                    }
-                                    link.add(new DirGlobber(buf, je));
-                                    buf = new ByteList(20);
-                                }
-                            }
-                        } catch(Exception e) {}
                     }
                 } while(false);
 
@@ -870,20 +729,12 @@ public class Dir {
                     for (DirGlobber globber : link) {
                         ByteList b = globber.link;
                         if (status == 0) {
-                            if(isAbsolutePath(b.getUnsafeBytes(), b.begin(), b.getRealSize())) {
-                                st = new JavaSecuredFile(newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
-                            } else {
-                                st = new JavaSecuredFile(cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
-                            }
-                            if(st.isDirectory() || (globber.jarEntry != null && globber.jarEntry.isDirectory()) ) {
+                            st = JRubyFile.createResource(cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
+                            if(st.isDirectory()) {
                                 int len = b.getRealSize();
                                 buf.length(0);
                                 buf.append(b);
                                 buf.append(bytes, m, end - m);
-
-                                if (globber.jarEntry != null) {
-                                    buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
-                                }
                                 status = glob_helper(cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
                             }
                         }
@@ -912,22 +763,5 @@ public class Dir {
 
     private static String newStringFromUTF8(byte[] buf) {
         return RubyEncoding.decodeUTF8(buf);
-    }
-    
-    private static boolean isResolvedSymlink(File st) {
-        try {
-            File canon;
-            if (st.getParent() == null) {
-                canon = st;
-            } else {
-                File canonDir;
-                canonDir = st.getParentFile().getCanonicalFile();
-
-                canon = new File(canonDir, st.getName());
-            }
-            return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
-        } catch (IOException e) {
-            return false;
-        }
     }
 }
