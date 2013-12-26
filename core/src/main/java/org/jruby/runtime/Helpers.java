@@ -296,18 +296,17 @@ public class Helpers {
         Ruby runtime = context.runtime;
 
         RubyModule containingClass = context.getRubyClass();
-        Visibility visibility = context.getCurrentVisibility();
-
-        visibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
+        Visibility currVisibility = context.getCurrentVisibility();
+        Visibility newVisibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(
                 factory, javaName,
-                rubyName, containingClass, new SimpleSourcePosition(filename, line), arity, scope, visibility, scriptObject,
+                rubyName, containingClass, new SimpleSourcePosition(filename, line), arity, scope, newVisibility, scriptObject,
                 callConfig,
                 parameterDesc);
 
-        return addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
+        return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
