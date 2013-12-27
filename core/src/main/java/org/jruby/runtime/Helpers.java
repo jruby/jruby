@@ -3094,4 +3094,13 @@ public class Helpers {
         
         return byteList.toString();
     }
+
+    public static IRubyObject rewriteStackTraceAndThrow(Throwable t, Ruby runtime) {
+        RaiseException rewriteStackTrace = RaiseException.createNativeRaiseException(runtime, t);
+        t.setStackTrace(rewriteStackTrace.getStackTrace());
+        throwException(t);
+
+        // not reached
+        return null;
+    }
 }
