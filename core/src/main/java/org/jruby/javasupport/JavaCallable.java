@@ -45,9 +45,12 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
     protected final Class<?>[] parameterTypes;
+
+    private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
 
     public JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
         super(runtime, rubyClass);
@@ -162,14 +165,16 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     protected IRubyObject handleThrowable(Throwable t, Member target) {
+        if (REWRITE_JAVA_TRACE) {
+            Helpers.rewriteStackTraceAndThrow(t, getRuntime());
+        }
+
         Helpers.throwException(t);
         // not reached
         return getRuntime().getNil();
     }
 
     protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite, Member target) {
-        Helpers.throwException(ite.getTargetException());
-        // not reached
-        return getRuntime().getNil();
+        return handleThrowable(ite.getTargetException(), target);
     }
 }
