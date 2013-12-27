@@ -39,6 +39,7 @@ package org.jruby;
 
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
+
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
@@ -60,8 +61,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jruby.anno.AnnotationBinder;
+import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.FrameField;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -3631,12 +3632,12 @@ public class RubyModule extends RubyObject {
         }
         if (frame) {
             Set<String> frameAwareMethods = new HashSet<String>();
-            AnnotationBinder.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
+            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
             ASTInspector.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
         }
         if (scope) {
             Set<String> scopeAwareMethods = new HashSet<String>();
-            AnnotationBinder.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
+            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
             ASTInspector.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
         

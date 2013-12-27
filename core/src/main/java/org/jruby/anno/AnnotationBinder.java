@@ -229,8 +229,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     scope |= field.needsScope();
                 }
                 
-                if (frame) addMethodNamesToSet(frameAwareMethods, anno, method.getSimpleName().toString());
-                if (scope) addMethodNamesToSet(scopeAwareMethods, anno, method.getSimpleName().toString());
+                if (frame) AnnotationHelper.addMethodNamesToSet(frameAwareMethods, anno, method.getSimpleName().toString());
+                if (scope) AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -400,10 +400,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
             out.println("        populateMethod(javaMethod, " +
-                    +getArityValue(anno, actualRequired) + ", \""
+                    +AnnotationHelper.getArityValue(anno, actualRequired) + ", \""
                     + method.getSimpleName() + "\", "
                     + isStatic + ", "
-                    + "CallConfiguration." + getCallConfigNameByAnno(anno) + ", "
+                    + "CallConfiguration." + AnnotationHelper.getCallConfigNameByAnno(anno) + ", "
                     + anno.notImplemented() + ", "
                     + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
@@ -450,7 +450,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     "-1, \"" +
                     method.getSimpleName() + "\", " +
                     isStatic + ", " +
-                    "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
+                    "CallConfiguration." + AnnotationHelper.getCallConfigNameByAnno(anno) + ", " +
                     anno.notImplemented() + ", "
                     + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
@@ -556,43 +556,6 @@ public class AnnotationBinder extends AbstractProcessor {
             for (String alias : jrubyMethod.alias()) {
                 out.println("        " + classVar + ".defineAlias(\"" + alias + "\", \"" + baseName + "\");");
             }
-        }
-    }
-    
-    public static void addMethodNamesToSet(Set<String> set, JRubyMethod jrubyMethod, String simpleName) {
-        if (jrubyMethod.name().length == 0) {
-            set.add(simpleName);
-        } else {
-            set.addAll(Arrays.asList(jrubyMethod.name()));
-        }
-
-        if (jrubyMethod.alias().length > 0) {
-            set.addAll(Arrays.asList(jrubyMethod.alias()));
-        }
-    }
-
-    public static int getArityValue(JRubyMethod anno, int actualRequired) {
-        if (anno.optional() > 0 || anno.rest()) {
-            return -(actualRequired + 1);
-        }
-        return actualRequired;
-    }
-
-    public static String getCallConfigNameByAnno(JRubyMethod anno) {
-        return getCallConfigName(anno.frame(), anno.scope());
-    }
-
-    public static String getCallConfigName(boolean frame, boolean scope) {
-        if (frame) {
-            if (scope) {
-                return "FrameFullScopeFull";
-            } else {
-                return "FrameFullScopeNone";
-            }
-        } else if (scope) {
-            return "FrameNoneScopeFull";
-        } else {
-            return "FrameNoneScopeNone";
         }
     }
 }
