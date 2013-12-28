@@ -72,12 +72,14 @@ class SocketTest < Test::Unit::TestCase
   end
 
   def test_getifaddrs
-    list = Socket.getifaddrs
-    list.each do |ifaddr|
-      [ :name, :addr, :broadaddr, :ifindex, :netmask].each do |method|
-        assert_respond_to(ifaddr, method)
-      end
+    begin
+      list = Socket.getifaddrs
+    rescue NotImplementedError
+      return
     end
+    list.each {|ifaddr|
+      assert_instance_of(Socket::Ifaddr, ifaddr)
+    }
   end
 
   def test_basic_socket_reverse_lookup
