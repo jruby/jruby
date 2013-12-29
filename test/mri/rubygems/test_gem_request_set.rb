@@ -7,7 +7,7 @@ class TestGemRequestSet < Gem::TestCase
 
     Gem::RemoteFetcher.fetcher = @fetcher = Gem::FakeFetcher.new
 
-    @DR = Gem::DependencyResolver
+    @DR = Gem::Resolver
   end
 
   def test_gem
@@ -45,16 +45,91 @@ class TestGemRequestSet < Gem::TestCase
     rs = Gem::RequestSet.new
     installed = []
 
-    Tempfile.open 'gem.deps.rb' do |io|
+    open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "a"'
       io.flush
 
-      rs.install_from_gemdeps :gemdeps => io.path do |req, installer|
+      result = rs.install_from_gemdeps :gemdeps => io.path do |req, installer|
         installed << req.full_name
       end
+
+      assert_kind_of Array, result # what is supposed to be in here?
     end
 
     assert_includes installed, 'a-2'
+    assert_path_exists File.join @gemhome, 'gems', 'a-2'
+    assert_path_exists 'gem.deps.rb.lock'
+  end
+
+  def test_install_from_gemdeps_install_dir
+    spec_fetcher do |fetcher|
+      fetcher.gem 'a', 2
+    end
+
+    util_clear_gems
+    refute_path_exists File.join Gem.dir, 'gems', 'a-2'
+
+    rs = Gem::RequestSet.new
+    installed = []
+
+    open 'gem.deps.rb', 'w' do |io|
+      io.puts 'gem "a"'
+    end
+
+    options = {
+      :gemdeps     => 'gem.deps.rb',
+      :install_dir => "#{@gemhome}2",
+    }
+
+    rs.install_from_gemdeps options do |req, installer|
+      installed << req.full_name
+    end
+
+    assert_includes installed, 'a-2'
+    refute_path_exists File.join Gem.dir, 'gems', 'a-2'
+  end
+
+  def test_install_from_gemdeps_lockfile
+    spec_fetcher do |fetcher|
+      fetcher.gem 'a', 1
+      fetcher.gem 'a', 2
+      fetcher.gem 'b', 1, 'a' => '>= 0'
+      fetcher.clear
+    end
+
+    rs = Gem::RequestSet.new
+    installed = []
+
+    open 'gem.deps.rb.lock', 'w' do |io|
+      io.puts <<-LOCKFILE
+GEM
+  remote: #{@gem_repo}
+  specs:
+    a (1)
+    b (1)
+      a (~> 1.0)
+
+PLATFORMS
+  #{Gem::Platform::RUBY}
+
+DEPENDENCIES
+  b
+      LOCKFILE
+    end
+
+    open 'gem.deps.rb', 'w' do |io|
+      io.puts 'gem "b"'
+    end
+
+    rs.install_from_gemdeps :gemdeps => 'gem.deps.rb' do |req, installer|
+      installed << req.full_name
+    end
+
+    assert_includes installed, 'b-1'
+    assert_includes installed, 'a-1'
+
+    assert_path_exists File.join @gemhome, 'specifications', 'a-1.gemspec'
+    assert_path_exists File.join @gemhome, 'specifications', 'b-1.gemspec'
   end
 
   def test_load_gemdeps
@@ -69,6 +144,7 @@ class TestGemRequestSet < Gem::TestCase
 
     assert_equal [dep('a')], rs.dependencies
 
+    assert rs.git_set
     assert rs.vendor_set
   end
 
@@ -98,6 +174,48 @@ class TestGemRequestSet < Gem::TestCase
     names = res.map { |s| s.full_name }.sort
 
     assert_equal ["a-2", "b-2"], names
+  end
+
+  def test_resolve_git
+    name, _, repository, = git_gem
+
+    rs = Gem::RequestSet.new
+
+    Tempfile.open 'gem.deps.rb' do |io|
+      io.puts <<-gems_deps_rb
+        gem "#{name}", :git => "#{repository}"
+      gems_deps_rb
+
+      io.flush
+
+      rs.load_gemdeps io.path
+    end
+
+    res = rs.resolve
+    assert_equal 1, res.size
+
+    names = res.map { |s| s.full_name }.sort
+
+    assert_equal %w[a-1], names
+
+    assert_equal [@DR::BestSet, @DR::GitSet, @DR::VendorSet],
+                 rs.sets.map { |set| set.class }
+  end
+
+  def test_resolve_ignore_dependencies
+    a = util_spec "a", "2", "b" => ">= 2"
+    b = util_spec "b", "2"
+
+    rs = Gem::RequestSet.new
+    rs.gem "a"
+    rs.ignore_dependencies = true
+
+    res = rs.resolve StaticSet.new([a, b])
+    assert_equal 1, res.size
+
+    names = res.map { |s| s.full_name }.sort
+
+    assert_equal %w[a-2], names
   end
 
   def test_resolve_incompatible
@@ -142,7 +260,7 @@ class TestGemRequestSet < Gem::TestCase
 
     assert_equal ["a-1", "b-2"], names
 
-    assert_equal [@DR::IndexSet, @DR::VendorSet],
+    assert_equal [@DR::BestSet, @DR::GitSet, @DR::VendorSet],
                  rs.sets.map { |set| set.class }
   end
 
@@ -202,7 +320,9 @@ class TestGemRequestSet < Gem::TestCase
 
     rs.resolve
 
-    installed = rs.install_into @tempdir
+    installed = rs.install_into @tempdir do
+      assert_equal @tempdir, ENV['GEM_HOME']
+    end
 
     assert_path_exists File.join @tempdir, 'specifications', 'a-1.gemspec'
     assert_path_exists File.join @tempdir, 'specifications', 'b-1.gemspec'

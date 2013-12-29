@@ -24,6 +24,14 @@ class TestObjSpace < Test::Unit::TestCase
                     ObjectSpace.memsize_of(//.match("")))
   end
 
+  def test_memsize_of_root_shared_string
+    a = "hello" * 5
+    b = a.dup
+    c = nil
+    ObjectSpace.each_object(String) {|x| break c = x if x == a and x.frozen?}
+    assert_equal([0, 0, 26], [a, b, c].map {|x| ObjectSpace.memsize_of(x)})
+  end
+
   def test_argf_memsize
     size = ObjectSpace.memsize_of(ARGF)
     assert_kind_of(Integer, size)
@@ -122,6 +130,7 @@ class TestObjSpace < Test::Unit::TestCase
   end
 
   def test_trace_object_allocations
+    Class.name
     o0 = Object.new
     ObjectSpace.trace_object_allocations{
       o1 = Object.new; line1 = __LINE__; c1 = GC.count
@@ -185,63 +194,76 @@ class TestObjSpace < Test::Unit::TestCase
     assert_equal(nil, ObjectSpace.allocation_sourcefile(obj3))
   end
 
-  def test_after_gc_start_hook_with_GC_stress
-    bug8492 = '[ruby-dev:47400] [Bug #8492]: infinite after_gc_start_hook reentrance'
-    assert_nothing_raised(Timeout::Error, bug8492) do
-      assert_in_out_err(%w[-robjspace], <<-'end;', /\A[1-9]/, timeout: 2)
-        stress, GC.stress = GC.stress, false
-        count = 0
-        ObjectSpace.after_gc_start_hook = proc {count += 1}
-        begin
-          GC.stress = true
-          3.times {Object.new}
-        ensure
-          GC.stress = stress
-          ObjectSpace.after_gc_start_hook = nil
-        end
-        puts count
-      end;
-    end
+  def test_dump_flags
+    info = ObjectSpace.dump("foo".freeze)
+    assert_match /"wb_protected":true, "old":true, "marked":true/, info
+    assert_match /"fstring":true/, info
   end
 
-  def test_dump
+  def test_dump_to_default
+    line = nil
     info = nil
     ObjectSpace.trace_object_allocations do
+      line = __LINE__ + 1
       str = "hello world"
       info = ObjectSpace.dump(str)
     end
+    assert_dump_object(info, line)
+  end
 
+  def test_dump_to_io
+    line = nil
+    info = IO.pipe do |r, w|
+      th = Thread.start {r.read}
+      ObjectSpace.trace_object_allocations do
+        line = __LINE__ + 1
+        str = "hello world"
+        ObjectSpace.dump(str, output: w)
+      end
+      w.close
+      th.value
+    end
+    assert_dump_object(info, line)
+  end
+
+  def assert_dump_object(info, line)
+    loc = caller_locations(1, 1)[0]
     assert_match /"type":"STRING"/, info
     assert_match /"embedded":true, "bytesize":11, "value":"hello world", "encoding":"UTF-8"/, info
-    assert_match /"file":"#{Regexp.escape __FILE__}", "line":#{__LINE__-6}/, info
-    assert_match /"method":"test_dump"/, info
+    assert_match /"file":"#{Regexp.escape __FILE__}", "line":#{line}/, info
+    assert_match /"method":"#{loc.base_label}"/, info
   end
 
   def test_dump_all
-    entry = /"value":"TEST STRING", "encoding":"UTF-8", "file":"-", "line":4, "method":"dump_my_heap_please"/
-    assert_in_out_err(%w[-robjspace], <<-'end;', entry)
+    entry = /"bytesize":11, "value":"TEST STRING", "encoding":"UTF-8", "file":"-", "line":4, "method":"dump_my_heap_please", "generation":/
+
+    assert_in_out_err(%w[-robjspace], <<-'end;') do |output, error|
       def dump_my_heap_please
         ObjectSpace.trace_object_allocations_start
         GC.start
-        "TEST STRING".force_encoding("UTF-8")
+        str = "TEST STRING".force_encoding("UTF-8")
         ObjectSpace.dump_all(output: :stdout)
       end
 
       dump_my_heap_please
     end;
+      assert_match(entry, output.grep(/TEST STRING/).join("\n"))
+    end
 
     assert_in_out_err(%w[-robjspace], <<-'end;') do |(output), (error)|
       def dump_my_heap_please
         ObjectSpace.trace_object_allocations_start
         GC.start
-        "TEST STRING".force_encoding("UTF-8")
-        ObjectSpace.dump_all()
+        str = "TEST STRING".force_encoding("UTF-8")
+        ObjectSpace.dump_all().path
       end
 
       puts dump_my_heap_please
     end;
       skip if /is not supported/ =~ error
-      assert_match(entry, File.read(output))
+      skip error unless output
+      assert_match(entry, File.readlines(output).grep(/TEST STRING/).join("\n"))
+      File.unlink(output)
     end
   end
 end

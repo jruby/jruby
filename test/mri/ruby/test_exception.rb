@@ -477,18 +477,44 @@ end.join
     assert_raise(SystemStackError){m}
   end
 
+  def test_machine_stackoverflow
+    bug9109 = '[ruby-dev:47804] [Bug #9109]'
+    assert_separately([], <<-SRC)
+    assert_raise(SystemStackError, #{bug9109.dump}) {
+      h = {a: ->{h[:a].call}}
+      h[:a].call
+    }
+    SRC
+  rescue SystemStackError
+  end
+
   def test_cause
     msg = "[Feature #8257]"
+    cause = nil
     e = assert_raise(StandardError) {
       begin
         raise msg
       rescue => e
-        assert_nil(e.cause, msg)
+        cause = e.cause
         raise StandardError
       end
     }
+    assert_nil(cause, msg)
     cause = e.cause
     assert_instance_of(RuntimeError, cause, msg)
     assert_equal(msg, cause.message, msg)
+  end
+
+  def test_cause_reraised
+    msg = "[Feature #8257]"
+    cause = nil
+    e = assert_raise(RuntimeError) {
+      begin
+        raise msg
+      rescue => e
+        raise e
+      end
+    }
+    assert_not_same(e, e.cause, "#{msg}: should not be recursive")
   end
 end

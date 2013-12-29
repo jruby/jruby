@@ -180,6 +180,26 @@ class TestMethod < Test::Unit::TestCase
     assert_equal(Array.instance_method(:map).hash, Array.instance_method(:collect).hash)
   end
 
+  def test_owner
+    c = Class.new do
+      def foo; end
+    end
+    assert_equal(c, c.instance_method(:foo).owner)
+    c2 = Class.new(c)
+    assert_equal(c, c2.instance_method(:foo).owner)
+  end
+
+  def test_owner_missing
+    c = Class.new do
+      def respond_to_missing?(name, bool)
+        name == :foo
+      end
+    end
+    c2 = Class.new(c)
+    assert_equal(c, c.new.method(:foo).owner)
+    assert_equal(c2, c2.new.method(:foo).owner)
+  end
+
   def test_receiver_name_owner
     o = Object.new
     def o.foo; end
@@ -318,6 +338,29 @@ class TestMethod < Test::Unit::TestCase
     assert_equal(true, m.private_method_defined?(:foo))
   end
 
+  def test_define_method_in_private_scope
+    bug9005 = '[ruby-core:57747] [Bug #9005]'
+    c = Class.new
+    class << c
+      public :define_method
+    end
+    TOPLEVEL_BINDING.eval("proc{|c|c.define_method(:x) {|x|throw x}}").call(c)
+    o = c.new
+    assert_throw(bug9005) {o.x(bug9005)}
+  end
+
+  def test_singleton_define_method_in_private_scope
+    bug9141 = '[ruby-core:58497] [Bug #9141]'
+    o = Object.new
+    class << o
+      public :define_singleton_method
+    end
+    TOPLEVEL_BINDING.eval("proc{|o|o.define_singleton_method(:x) {|x|throw x}}").call(o)
+    assert_throw(bug9141) do
+      o.x(bug9141)
+    end
+  end
+
   def test_super_in_proc_from_define_method
     c1 = Class.new {
       def m
@@ -365,7 +408,7 @@ class TestMethod < Test::Unit::TestCase
     c3 = Class.new(c)
     c3.class_eval { alias bar foo }
     m3 = c3.new.method(:bar)
-    assert_equal("#<Method: #{ c3.inspect }#bar(foo)>", m3.inspect, bug7806)
+    assert_equal("#<Method: #{c3.inspect}(#{c.inspect})#bar(foo)>", m3.inspect, bug7806)
   end
 
   def test_callee_top_level
@@ -391,14 +434,16 @@ class TestMethod < Test::Unit::TestCase
   end
 
   def test_default_accessibility
-    assert T.public_instance_methods.include?(:normal_method), 'normal methods are public by default'
-    assert !T.public_instance_methods.include?(:initialize), '#initialize is private'
-    assert !T.public_instance_methods.include?(:initialize_copy), '#initialize_copy is private'
-    assert !T.public_instance_methods.include?(:initialize_clone), '#initialize_clone is private'
-    assert !T.public_instance_methods.include?(:initialize_dup), '#initialize_dup is private'
-    assert !T.public_instance_methods.include?(:respond_to_missing?), '#respond_to_missing? is private'
-    assert !M.public_instance_methods.include?(:func), 'module methods are private by default'
-    assert M.public_instance_methods.include?(:meth), 'normal methods are public by default'
+    tmethods = T.public_instance_methods
+    assert_include tmethods, :normal_method, 'normal methods are public by default'
+    assert_not_include tmethods, :initialize, '#initialize is private'
+    assert_not_include tmethods, :initialize_copy, '#initialize_copy is private'
+    assert_not_include tmethods, :initialize_clone, '#initialize_clone is private'
+    assert_not_include tmethods, :initialize_dup, '#initialize_dup is private'
+    assert_not_include tmethods, :respond_to_missing?, '#respond_to_missing? is private'
+    mmethods = M.public_instance_methods
+    assert_not_include mmethods, :func, 'module methods are private by default'
+    assert_include mmethods, :meth, 'normal methods are public by default'
   end
 
   define_method(:pm0) {||}
@@ -569,17 +614,23 @@ class TestMethod < Test::Unit::TestCase
 
   def test_alias_owner
     bug7613 = '[ruby-core:51105]'
+    bug7993 = '[Bug #7993]'
     c = Class.new {
       def foo
       end
+      prepend Module.new
+      attr_reader :zot
     }
     x = c.new
     class << x
       alias bar foo
     end
+    assert_equal(c, c.instance_method(:foo).owner)
     assert_equal(c, x.method(:foo).owner)
     assert_equal(x.singleton_class, x.method(:bar).owner)
-    assert(x.method(:foo) != x.method(:bar), bug7613)
+    assert_not_equal(x.method(:foo), x.method(:bar), bug7613)
+    assert_equal(c, x.method(:zot).owner, bug7993)
+    assert_equal(c, c.instance_method(:zot).owner, bug7993)
   end
 
   def test_included

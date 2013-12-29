@@ -473,7 +473,7 @@ class TestProcess < Test::Unit::TestCase
       # problem occur with valgrind
       #Process.wait Process.spawn(*ECHO["a"], STDOUT=>:close, STDERR=>["out", File::WRONLY|File::CREAT|File::TRUNC, 0644])
       #p File.read("out")
-      #assert(!File.read("out").empty?) # error message such as "-e:1:in `flush': Bad file descriptor (Errno::EBADF)"
+      #assert_not_empty(File.read("out")) # error message such as "-e:1:in `flush': Bad file descriptor (Errno::EBADF)"
       Process.wait Process.spawn(*ECHO["c"], STDERR=>STDOUT, STDOUT=>["out", File::WRONLY|File::CREAT|File::TRUNC, 0644])
       assert_equal("c", File.read("out").chomp)
       File.open("out", "w") {|f|
@@ -885,7 +885,7 @@ class TestProcess < Test::Unit::TestCase
       ret = system(str)
       status = $?
       assert_equal(false, ret)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       assert_equal(5, status.exitstatus)
       assert_equal("haha pid=#{status.pid} ppid=#{$$}", File.read("result"))
     }
@@ -902,7 +902,7 @@ class TestProcess < Test::Unit::TestCase
       Process.wait pid
       status = $?
       assert_equal(pid, status.pid)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       assert_equal(6, status.exitstatus)
       assert_equal("hihi pid=#{status.pid} ppid=#{$$}", File.read("result"))
     }
@@ -921,7 +921,7 @@ class TestProcess < Test::Unit::TestCase
       io.close
       status = $?
       assert_equal(pid, status.pid)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       assert_equal(7, status.exitstatus)
       assert_equal("fufu pid=#{status.pid} ppid=#{$$}", result)
     }
@@ -940,7 +940,7 @@ class TestProcess < Test::Unit::TestCase
       io.close
       status = $?
       assert_equal(pid, status.pid)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       assert_equal(7, status.exitstatus)
       assert_equal("fufumm pid=#{status.pid} ppid=#{$$}", result)
     }
@@ -966,7 +966,7 @@ class TestProcess < Test::Unit::TestCase
       Process.wait pid
       status = $?
       assert_equal(pid, status.pid)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       assert_equal(6, status.exitstatus)
       if windows?
         expected = "hehe ppid=#{status.pid}"
@@ -990,7 +990,7 @@ class TestProcess < Test::Unit::TestCase
       ret = system("#{RUBY} script1 || #{RUBY} script2")
       status = $?
       assert_equal(false, ret)
-      assert(status.exited?)
+      assert_predicate(status, :exited?)
       result1 = File.read("result1")
       result2 = File.read("result2")
       assert_match(/\Ataka pid=\d+ ppid=\d+\z/, result1)
@@ -1021,8 +1021,8 @@ class TestProcess < Test::Unit::TestCase
       pid = spawn("#{RUBY} script1 || #{RUBY} script2")
       Process.wait pid
       status = $?
-      assert(status.exited?)
-      assert(!status.success?)
+      assert_predicate(status, :exited?)
+      assert_not_predicate(status, :success?)
       result1 = File.read("result1")
       result2 = File.read("result2")
       assert_match(/\Ataku pid=\d+ ppid=\d+\z/, result1)
@@ -1035,14 +1035,14 @@ class TestProcess < Test::Unit::TestCase
         pid = spawn(bat, "foo 'bar'")
         Process.wait pid
         status = $?
-        assert(status.exited?)
-        assert(status.success?)
+        assert_predicate(status, :exited?)
+        assert_predicate(status, :success?)
         assert_equal(%["foo 'bar'"\n], File.read("out"), '[ruby-core:22960]')
         pid = spawn(%[#{bat.dump} "foo 'bar'"])
         Process.wait pid
         status = $?
-        assert(status.exited?)
-        assert(status.success?)
+        assert_predicate(status, :exited?)
+        assert_predicate(status, :success?)
         assert_equal(%["foo 'bar'"\n], File.read("out"), '[ruby-core:22960]')
       end
     }
@@ -1062,8 +1062,8 @@ class TestProcess < Test::Unit::TestCase
       result = io.read
       io.close
       status = $?
-      assert(status.exited?)
-      assert(!status.success?)
+      assert_predicate(status, :exited?)
+      assert_not_predicate(status, :success?)
       assert_match(/\Atako pid=\d+ ppid=\d+\ntika pid=\d+ ppid=\d+\n\z/, result)
       assert_not_equal(result[/\d+/].to_i, status.pid)
 
@@ -1095,8 +1095,8 @@ class TestProcess < Test::Unit::TestCase
       pid = spawn RUBY, "s"
       Process.wait pid
       status = $?
-      assert(status.exited?)
-      assert(!status.success?)
+      assert_predicate(status, :exited?)
+      assert_not_predicate(status, :success?)
       result1 = File.read("result1")
       result2 = File.read("result2")
       assert_match(/\Atiki pid=\d+ ppid=\d+\z/, result1)
@@ -1150,19 +1150,19 @@ class TestProcess < Test::Unit::TestCase
       with_stdin("f") { assert_equal(false, system([RUBY, "wsx"])) }
 
       with_stdin("t") { Process.wait spawn([RUBY, "edc"]) }
-      assert($?.success?)
+      assert_predicate($?, :success?)
       with_stdin("f") { Process.wait spawn([RUBY, "rfv"]) }
-      assert(!$?.success?)
+      assert_not_predicate($?, :success?)
 
       with_stdin("t") { IO.popen([[RUBY, "tgb"]]) {|io| assert_equal("", io.read) } }
-      assert($?.success?)
+      assert_predicate($?, :success?)
       with_stdin("f") { IO.popen([[RUBY, "yhn"]]) {|io| assert_equal("", io.read) } }
-      assert(!$?.success?)
+      assert_not_predicate($?, :success?)
 
       status = run_in_child "STDIN.reopen('t'); exec([#{RUBY.dump}, 'ujm'])"
-      assert(status.success?)
+      assert_predicate(status, :success?)
       status = run_in_child "STDIN.reopen('f'); exec([#{RUBY.dump}, 'ik,'])"
-      assert(!status.success?)
+      assert_not_predicate(status, :success?)
     }
   end
 
@@ -1186,10 +1186,15 @@ class TestProcess < Test::Unit::TestCase
     return unless Signal.list.include?("QUIT")
 
     with_tmpchdir do
-      write_file("foo", "sleep 30")
-      pid = spawn(RUBY, "foo")
-      Thread.new { sleep 1; Process.kill(:SIGQUIT, pid) }
-      Process.wait(pid)
+      write_file("foo", "puts;STDOUT.flush;sleep 30")
+      pid = nil
+      IO.pipe do |r, w|
+        pid = spawn(RUBY, "foo", out: w)
+        w.close
+        Thread.new { r.read(1); Process.kill(:SIGQUIT, pid) }
+        Process.wait(pid)
+      end
+      t = Time.now
       s = $?
       assert_equal([false, true, false],
                    [s.exited?, s.signaled?, s.stopped?],
@@ -1201,6 +1206,7 @@ class TestProcess < Test::Unit::TestCase
          s.inspect])
       assert_equal(false, s.exited?)
       assert_equal(nil, s.success?)
+      EnvUtil.diagnostic_reports("QUIT", RUBY, pid, t)
     end
   end
 
@@ -1304,22 +1310,22 @@ class TestProcess < Test::Unit::TestCase
 
   def test_uid_re_exchangeable_p
     r = Process::UID.re_exchangeable?
-    assert(true == r || false == r)
+    assert_include([true, false], r)
   end
 
   def test_gid_re_exchangeable_p
     r = Process::GID.re_exchangeable?
-    assert(true == r || false == r)
+    assert_include([true, false], r)
   end
 
   def test_uid_sid_available?
     r = Process::UID.sid_available?
-    assert(true == r || false == r)
+    assert_include([true, false], r)
   end
 
   def test_gid_sid_available?
     r = Process::GID.sid_available?
-    assert(true == r || false == r)
+    assert_include([true, false], r)
   end
 
   def test_pst_inspect
@@ -1334,10 +1340,17 @@ class TestProcess < Test::Unit::TestCase
     end
     signal_received = []
     Signal.trap(:CHLD)  { signal_received << true }
-    pid = fork { sleep 0.1; exit }
-    Thread.start { raise }
+    pid = nil
+    IO.pipe do |r, w|
+      pid = fork { r.read(1); exit }
+      Thread.start { raise }
+      w.puts
+    end
     Process.wait pid
-    sleep 0.1
+    10.times do
+      break unless signal_received.empty?
+      sleep 0.01
+    end
     assert_equal [true], signal_received, " [ruby-core:19744]"
   rescue NotImplementedError, ArgumentError
   ensure
@@ -1358,7 +1371,7 @@ class TestProcess < Test::Unit::TestCase
         system({"RUBYLIB"=>nil}, RUBY, "--disable-gems", "-e", "exit true")
         status = $?
       }
-      assert(status.success?, "[ruby-dev:38105]")
+      assert_predicate(status, :success?, "[ruby-dev:38105]")
     }
   end
 
@@ -1512,7 +1525,7 @@ class TestProcess < Test::Unit::TestCase
   def test_popen_cloexec
     return unless defined? Fcntl::FD_CLOEXEC
     IO.popen([RUBY, "-e", ""]) {|io|
-      assert(io.close_on_exec?)
+      assert_predicate(io, :close_on_exec?)
     }
   end
 
@@ -1667,6 +1680,29 @@ EOS
     assert_operator(t1, :<=, t2)
     assert_operator(t2, :<=, t3)
     assert_raise(Errno::EINVAL) { Process.clock_gettime(:foo) }
+  end
+
+  def test_clock_gettime_unit
+    t0 = Time.now.to_f
+    [
+      [:nanosecond,  1_000_000_000],
+      [:microsecond, 1_000_000],
+      [:millisecond, 1_000],
+      [:second, 1],
+      [:float_microsecond, 1_000_000.0],
+      [:float_millisecond, 1_000.0],
+      [:float_second, 1.0],
+      [nil, 1.0],
+      [:foo],
+    ].each do |unit, num|
+      unless num
+        assert_raise(ArgumentError){ Process.clock_gettime(Process::CLOCK_REALTIME, unit) }
+        next
+      end
+      t1 = Process.clock_gettime(Process::CLOCK_REALTIME, unit)
+      assert_kind_of num.integer? ? Integer : num.class, t1, [unit, num].inspect
+      assert_in_delta t0, t1/num, 1, [unit, num].inspect
+    end
   end
 
   def test_clock_gettime_constants

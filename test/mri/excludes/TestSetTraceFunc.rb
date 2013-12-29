@@ -1,5 +1,7 @@
 # These all use RubyVM for something; we should submit a patch.
 exclude :test_break, "needs investigation"
+exclude :test_a_call, "needs investigation"
+exclude :test_a_return, "needs investigation"
 exclude :test_c_call, "needs investigation"
 exclude :test_call, "needs investigation"
 exclude :test_class, "needs investigation"
