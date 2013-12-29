@@ -235,6 +235,7 @@ class CSV
     #
     def initialize(headers, fields, header_row = false)
       @header_row = header_row
+      headers.each { |h| h.freeze if h.is_a? String }
 
       # handle extra headers or fields
       @row = if headers.size > fields.size
@@ -277,7 +278,7 @@ class CSV
     # This method will return the field value by +header+ or +index+.  If a field
     # is not found, +nil+ is returned.
     #
-    # When provided, +offset+ ensures that a header match occurrs on or later
+    # When provided, +offset+ ensures that a header match occurs on or later
     # than the +offset+ index.  You can use this to find duplicate headers,
     # without resorting to hard-coding exact indices.
     #
@@ -811,7 +812,7 @@ class CSV
     #
     # Removes any column or row for which the block returns +true+.  In the
     # default mixed mode or row mode, iteration is the standard row major
-    # walking of rows.  In column mode, interation will +yield+ two element
+    # walking of rows.  In column mode, iteration will +yield+ two element
     # tuples containing the column name and an Array of values for that column.
     #
     # This method returns the table for chaining.
@@ -834,7 +835,7 @@ class CSV
 
     #
     # In the default mixed mode or row mode, iteration is the standard row major
-    # walking of rows.  In column mode, interation will +yield+ two element
+    # walking of rows.  In column mode, iteration will +yield+ two element
     # tuples containing the column name and an Array of values for that column.
     #
     # This method returns the table for chaining.
@@ -982,7 +983,7 @@ class CSV
   # attempting a conversion.  If your data cannot be transcoded to UTF-8 the
   # conversion will fail and the header will remain unchanged.
   #
-  # This Hash is intetionally left unfrozen and users should feel free to add
+  # This Hash is intentionally left unfrozen and users should feel free to add
   # values to it that can be accessed by all CSV objects.
   #
   # To add a combo field, the value should be an Array of names.  Combo fields
@@ -1132,7 +1133,7 @@ class CSV
   # append CSV rows to the String and when the block exits, the final String
   # will be returned.
   #
-  # Note that a passed String *is* modfied by this method.  Call dup() before
+  # Note that a passed String *is* modified by this method.  Call dup() before
   # passing if you need a new String.
   #
   # The +options+ parameter can be anything CSV::new() understands.  This method
@@ -1470,11 +1471,12 @@ class CSV
   # <b><tt>:skip_lines</tt></b>::         When set to an object responding to
   #                                       <tt>match</tt>, every line matching
   #                                       it is considered a comment and ignored
-  #                                       during parsing. When set to +nil+
-  #                                       no line is considered a comment.
-  #                                       If the passed object does not respond
-  #                                       to <tt>match</tt>, <tt>ArgumentError</tt>
-  #                                       is thrown.
+  #                                       during parsing. When set to a String,
+  #                                       it is first converted to a Regexp.
+  #                                       When set to +nil+ no line is considered
+  #                                       a comment. If the passed object does
+  #                                       not respond to <tt>match</tt>,
+  #                                       <tt>ArgumentError</tt> is thrown.
   #
   # See CSV::DEFAULT_OPTIONS for the default settings.
   #
@@ -1967,7 +1969,7 @@ class CSV
       else
         begin
           #
-          # remember where we were (pos() will raise an axception if @io is pipe
+          # remember where we were (pos() will raise an exception if @io is pipe
           # or not opened for reading)
           #
           saved_pos = @io.pos
@@ -2120,10 +2122,12 @@ class CSV
   # Stores the pattern of comments to skip from the provided options.
   #
   # The pattern must respond to +.match+, else ArgumentError is raised.
+  # Strings are converted to a Regexp.
   #
   # See also CSV.new
   def init_comments(options)
     @skip_lines = options.delete(:skip_lines)
+    @skip_lines = Regexp.new(@skip_lines) if @skip_lines.is_a? String
     if @skip_lines and not @skip_lines.respond_to?(:match)
       raise ArgumentError, ":skip_lines has to respond to matches"
     end
@@ -2171,7 +2175,7 @@ class CSV
           header = @use_headers && !headers ? @headers[index] : nil
           converter[field, FieldInfo.new(index, lineno, header)]
         end
-        break unless field.is_a? String  # short-curcuit pipeline for speed
+        break unless field.is_a? String  # short-circuit pipeline for speed
       end
       field  # final state of each field, converted or original
     end
@@ -2205,6 +2209,7 @@ class CSV
       # prepare converted and unconverted copies
       row      = @headers                       if row.nil?
       @headers = convert_fields(@headers, true)
+      @headers.each { |h| h.freeze if h.is_a? String }
 
       if @return_headers                                     # return headers
         return self.class::Row.new(@headers, row, true)
