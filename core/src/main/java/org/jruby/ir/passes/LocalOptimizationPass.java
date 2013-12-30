@@ -109,8 +109,7 @@ public class LocalOptimizationPass extends CompilerPass {
             // FIXME: This logic can be simplified based on the number of res != null checks only done if doesn't
             Variable res = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
 
-            // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
-            // System.out.println("AFTER: " + i);
+            // System.out.println("AFTER: " + i + "; dst = " + res + "; val = " + val);
 
             if (res != null && val != null) {
                 if (!res.equals(val)) {

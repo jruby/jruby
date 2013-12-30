@@ -1048,9 +1048,7 @@ public class IRInstructionFactory {
 
     private ToAryInstr createToAry(final Variable result, final ParametersIterator paramsIterator) {
         final Operand array = paramsIterator.nextOperand();
-        final BooleanLiteral dontToAryArrays = (BooleanLiteral) paramsIterator.next();
-
-        return new ToAryInstr(result, array, dontToAryArrays);
+        return new ToAryInstr(result, array);
     }
 
     private YieldInstr createYield(final Variable result, final ParametersIterator paramsIterator) {

@@ -2932,16 +2932,16 @@ public class Helpers {
         return context.is19 ? splatValue19(maybeAry) : splatValue(maybeAry);
     }
 
-    public static IRubyObject irToAry(ThreadContext context, IRubyObject receiver, boolean dontToAryArrays) {
-        if (dontToAryArrays && receiver instanceof RubyArray) {
-            return receiver;
+    public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyArray) {
+            return value;
         } else {
-            IRubyObject ary = Helpers.aryToAry(receiver);
+            IRubyObject ary = Helpers.aryToAry(value);
             if (ary instanceof RubyArray) {
                 return ary;
             } else {
-                String receiverType = receiver.getType().getName();
-                throw context.runtime.newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
+                String valueType = value.getType().getName();
+                throw context.runtime.newTypeError("can't convert " + valueType + " to Array (" + valueType + "#to_ary gives " + ary.getType().getName() + ")");
             }
         }
     }
