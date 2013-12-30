@@ -1204,11 +1204,11 @@ public class Java implements Library {
                     int length = nargs == null ? 0 : nargs.length;
 
                     // FIXME: wtf is this? Why would these use the class?
-                    if (methodName == "toString" && length == 0) {
+                    if (methodName.equals("toString") && length == 0) {
                         return proxy.getClass().getName();
-                    } else if (methodName == "hashCode" && length == 0) {
+                    } else if (methodName.equals("hashCode") && length == 0) {
                         return Integer.valueOf(proxy.getClass().hashCode());
-                    } else if (methodName == "equals" && length == 1) {
+                    } else if (methodName.equals("equals") && length == 1) {
                         Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
                         if (parameterTypes == null) {
                             parameterTypes = method.getParameterTypes();
