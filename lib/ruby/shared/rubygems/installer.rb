@@ -4,6 +4,7 @@
 # See LICENSE.txt for permissions.
 #++
 
+require 'rubygems/command'
 require 'rubygems/exceptions'
 require 'rubygems/package'
 require 'rubygems/ext'
@@ -32,9 +33,9 @@ class Gem::Installer
   ENV_PATHS = %w[/usr/bin/env /bin/env]
 
   ##
-  # Raised when there is an error while building extensions.
-  #
-  class ExtensionBuildError < Gem::InstallError; end
+  # Deprecated in favor of Gem::Ext::BuildError
+
+  ExtensionBuildError = Gem::Ext::BuildError # :nodoc:
 
   include Gem::UserInteraction
 
@@ -55,6 +56,11 @@ class Gem::Installer
   # The options passed when the Gem::Installer was instantiated.
 
   attr_reader :options
+
+  ##
+  # Sets the specification for .gem-less installs.
+
+  attr_writer :spec
 
   @path_warning = false
 
@@ -206,6 +212,8 @@ class Gem::Installer
   def install
     pre_install_checks
 
+    FileUtils.rm_f File.join gem_home, 'specifications', @spec.spec_name
+
     run_pre_install_hooks
 
     # Completely remove any previous gem files
@@ -345,7 +353,10 @@ class Gem::Installer
 
   def write_spec
     open spec_file, 'w' do |file|
+      spec.installed_by_version = Gem.rubygems_version
+
       file.puts spec.to_ruby_for_cache
+
       file.fsync rescue nil # for filesystems without fsync(2)
     end
   end
@@ -667,7 +678,7 @@ TEXT
   end
 
   ##
-  # Logs the build +output+ in +build_dir+, then raises ExtensionBuildError.
+  # Logs the build +output+ in +build_dir+, then raises Gem::Ext::BuildError.
   #
   # TODO:  Delete this for RubyGems 3.  It remains for API compatibility
 

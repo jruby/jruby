@@ -1,12 +1,29 @@
 require 'uri'
 require 'fileutils'
 
+##
+# A Source knows how to list and fetch gems from a RubyGems marshal index.
+#
+# There are other Source subclasses for installed gems, local gems, the
+# bundler dependency API and so-forth.
+
 class Gem::Source
-  FILES = {
+
+  include Comparable
+
+  FILES = { # :nodoc:
     :released   => 'specs',
     :latest     => 'latest_specs',
     :prerelease => 'prerelease_specs',
   }
+
+  ##
+  # The URI this source will fetch gems from.
+
+  attr_reader :uri
+
+  ##
+  # Creates a new Source which will use the index located at +uri+.
 
   def initialize(uri)
     unless uri.kind_of? URI
@@ -17,18 +34,25 @@ class Gem::Source
     @api_uri = nil
   end
 
-  attr_reader :uri
+  ##
+  # Use an SRV record on the host to look up the true endpoint for the index.
 
-  def api_uri
+  def api_uri # :nodoc:
     require 'rubygems/remote_fetcher'
     @api_uri ||= Gem::RemoteFetcher.fetcher.api_endpoint uri
   end
+
+  ##
+  # Sources are ordered by installation preference.
 
   def <=>(other)
     case other
     when Gem::Source::Installed,
          Gem::Source::Local,
-         Gem::Source::SpecificFile then
+         Gem::Source::Lock,
+         Gem::Source::SpecificFile,
+         Gem::Source::Git,
+         Gem::Source::Vendor then
       -1
     when Gem::Source then
       if !@uri
@@ -44,20 +68,29 @@ class Gem::Source
     end
   end
 
-  include Comparable
+  def == other # :nodoc:
+    self.class === other and @uri == other.uri
+  end
 
-  def ==(other)
-    case other
-    when self.class
-      @uri == other.uri
+  alias_method :eql?, :== # :nodoc:
+
+  ##
+  # Returns a Set that can fetch specifications from this source.
+
+  def dependency_resolver_set # :nodoc:
+    bundler_api_uri = api_uri + './api/v1/dependencies'
+
+    begin
+      fetcher = Gem::RemoteFetcher.fetcher
+      fetcher.fetch_path bundler_api_uri, nil, true
+    rescue Gem::RemoteFetcher::FetchError
+      Gem::Resolver::IndexSet.new self
     else
-      false
+      Gem::Resolver::APISet.new bundler_api_uri
     end
   end
 
-  alias_method :eql?, :==
-
-  def hash
+  def hash # :nodoc:
     @uri.hash
   end
 
@@ -70,16 +103,27 @@ class Gem::Source
     File.join Gem.spec_cache_dir, "#{uri.host}%#{uri.port}", File.dirname(escaped_path)
   end
 
+  ##
+  # Returns true when it is possible and safe to update the cache directory.
+
   def update_cache?
-    @update_cache ||= File.stat(Gem.user_home).uid == Process.uid
+    @update_cache ||=
+      begin
+        File.stat(Gem.user_home).uid == Process.uid
+      rescue Errno::ENOENT
+        false
+      end
   end
 
-  def fetch_spec(name)
+  ##
+  # Fetches a specification for the given +name_tuple+.
+
+  def fetch_spec name_tuple
     fetcher = Gem::RemoteFetcher.fetcher
 
-    spec_file_name = name.spec_name
+    spec_file_name = name_tuple.spec_name
 
-    uri = @uri + "#{Gem::MARSHAL_SPEC_DIR}#{spec_file_name}"
+    uri = api_uri + "#{Gem::MARSHAL_SPEC_DIR}#{spec_file_name}"
 
     cache_dir = cache_dir uri
 
@@ -123,7 +167,7 @@ class Gem::Source
     file       = FILES[type]
     fetcher    = Gem::RemoteFetcher.fetcher
     file_name  = "#{file}.#{Gem.marshal_version}"
-    spec_path  = @uri + "#{file_name}.gz"
+    spec_path  = api_uri + "#{file_name}.gz"
     cache_dir  = cache_dir spec_path
     local_file = File.join(cache_dir, file_name)
     retried    = false
@@ -145,20 +189,34 @@ class Gem::Source
     end
   end
 
+  ##
+  # Downloads +spec+ and writes it to +dir+.  See also
+  # Gem::RemoteFetcher#download.
+
   def download(spec, dir=Dir.pwd)
     fetcher = Gem::RemoteFetcher.fetcher
-    fetcher.download spec, @uri.to_s, dir
+    fetcher.download spec, api_uri.to_s, dir
   end
 
   def pretty_print q # :nodoc:
     q.group 2, '[Remote:', ']' do
       q.breakable
       q.text @uri.to_s
+
+      if api = api_uri
+        q.breakable
+        q.text 'API URI: '
+        q.text api.to_s
+      end
     end
   end
 
 end
 
+require 'rubygems/source/git'
 require 'rubygems/source/installed'
 require 'rubygems/source/specific_file'
 require 'rubygems/source/local'
+require 'rubygems/source/lock'
+require 'rubygems/source/vendor'
+
