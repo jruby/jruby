@@ -50,6 +50,7 @@ public class FailoverSwitchPointInvalidator implements Invalidator {
         
         // if we have failed too many times, set it to DUMMY and leave it
         if (failures > maxFailures) {
+            SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
             switchPoint = DUMMY;
             return;
         }
