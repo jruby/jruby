@@ -45,18 +45,29 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A method or operator call.
  */
 public final class CallNoArgNode extends CallNode {
+    private final boolean literalStringFreeze;
+    private transient RubyString literalFrozenString;
+
     // For 'b.foo'
     public CallNoArgNode(ISourcePosition position, Node receiverNode, String name) {
         super(position, receiverNode, name, null, null);
+        literalStringFreeze = receiverNode instanceof StrNode && name.equals("freeze");
     }
     
     // For 'b.foo()'.  Args are only significant in maintaining backwards compatible AST structure
     public CallNoArgNode(ISourcePosition position, Node receiverNode, Node args, String name) {
         super(position, receiverNode, name, args, null);
+        literalStringFreeze = receiverNode instanceof StrNode && name.equals("freeze");
     }
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (literalStringFreeze) {
+            if (literalFrozenString != null) return literalFrozenString;
+
+            return literalFrozenString = runtime.freezeAndDedupString((RubyString) getReceiverNode().interpret(runtime, context, self, aBlock));
+        }
+
         return callAdapter.call(context, self, getReceiverNode().interpret(runtime, context, self, aBlock));
     }
     
