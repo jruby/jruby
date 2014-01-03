@@ -2555,7 +2555,8 @@ public final class Ruby {
         if (parserStats != null) parserStats.addLoadParse();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, lineNumber, false, false, true, config);
-        if (is1_9) {
+        if (is2_0 ||
+                (is1_9 && config.getSourceEncoding() != null)) {
             setupSourceEncoding(parserConfig);
         }
         return parser.parse(file, in, scope, parserConfig);
@@ -2565,7 +2566,8 @@ public final class Ruby {
         if (parserStats != null) parserStats.addLoadParse();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, false, true, true, config);
-        if (is1_9) {
+        if (is2_0 ||
+                (is1_9 && config.getSourceEncoding() != null)) {
             setupSourceEncoding(parserConfig);
         }
         return parser.parse(file, in, scope, parserConfig);
