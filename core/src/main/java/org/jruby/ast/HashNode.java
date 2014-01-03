@@ -101,15 +101,25 @@ public class HashNode extends Node {
 
                     hash.merge_bang19(context, kwargsHash, aBlock);
                     continue;
-                } 
-                    
-                IRubyObject key = keyNode.interpret(runtime, context, self, aBlock);
+                }
+
+                IRubyObject key = null;
+                boolean preparedString = false;
+
+                if (keyNode instanceof StrNode) {
+                    // pre-freeze and dedup string keys
+                    key = ((StrNode)keyNode).getFrozenLiteralString(runtime);
+                    preparedString = true;
+                } else {
+                    key = keyNode.interpret(runtime, context, self, aBlock);
+                }
+
                 IRubyObject value = valueNode.interpret(runtime, context, self, aBlock);
 
                 if (size <= 10) {
-                    asetSmall(runtime, hash, key, value);
+                    asetSmall(runtime, hash, key, value, preparedString);
                 } else {
-                    aset(runtime, hash, key, value);
+                    aset(runtime, hash, key, value, preparedString);
                 }
             }
         } else {
@@ -119,11 +129,19 @@ public class HashNode extends Node {
         return hash;
     }
     
-    protected void aset(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
-        hash.fastASetCheckString(runtime, key, value);
+    protected void aset(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value, boolean preparedString) {
+        if (preparedString) {
+            hash.fastASet(key, value);
+        } else {
+            hash.fastASetCheckString(runtime, key, value);
+        }
     }
 
-    protected void asetSmall(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
-        hash.fastASetSmallCheckString(runtime, key, value);
+    protected void asetSmall(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value, boolean preparedString) {
+        if (preparedString) {
+            hash.fastASetSmall(key, value);
+        } else {
+            hash.fastASetSmallCheckString(runtime, key, value);
+        }
     }
 }
