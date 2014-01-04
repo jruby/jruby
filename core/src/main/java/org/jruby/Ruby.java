@@ -2553,6 +2553,12 @@ public final class Ruby {
 
             // If something gone wrong with ir -
             return parseFileAndGetAST(in, file, scope, lineNumber, false);
+        if (parserStats != null) parserStats.addLoadParse();
+        ParserConfiguration parserConfig =
+                new ParserConfiguration(this, lineNumber, false, false, true, config);
+        if (is2_0 ||
+                (is1_9 && config.getSourceEncoding() != null)) {
+            setupSourceEncoding(parserConfig);
         }
     }
 
