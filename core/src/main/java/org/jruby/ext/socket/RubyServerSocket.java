@@ -95,8 +95,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
-
+        InetSocketAddress iaddr = Sockaddr.addressFromArg(context, addr);
         doBind(context, getChannel(), iaddr, 0);
 
         return RubyFixnum.zero(context.runtime);
@@ -104,7 +103,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr, IRubyObject backlog) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
+        InetSocketAddress iaddr = Sockaddr.addressFromArg(context, addr);
 
         doBind(context, getChannel(), iaddr, RubyFixnum.fix2int(backlog));
 

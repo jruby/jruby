@@ -199,7 +199,7 @@ class Addrinfo
 
   # creates a listening socket bound to self.
   def listen(backlog=Socket::SOMAXCONN)
-    sock = Socket.new(self.pfamily, self.socktype, self.protocol)
+    sock = ServerSocket.new(self.pfamily, self.socktype, self.protocol)
     begin
       sock.ipv6only! if self.ipv6?
       sock.setsockopt(:SOCKET, :REUSEADDR, 1)
@@ -369,7 +369,7 @@ class Socket < BasicSocket
       port = nil
       ai_list.each {|ai|
         begin
-          s = Socket.new(ai.pfamily, ai.socktype, ai.protocol)
+          s = ServerSocket.new(ai.pfamily, ai.socktype, ai.protocol)
         rescue SystemCallError
           next
         end
