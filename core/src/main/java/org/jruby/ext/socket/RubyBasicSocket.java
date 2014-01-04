@@ -105,6 +105,20 @@ public class RubyBasicSocket extends RubyIO {
         doNotReverseLookup = true;
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject _klass, IRubyObject _fileno) {
+        Ruby runtime = context.runtime;
+        int fileno = (int)_fileno.convertToInteger().getLongValue();
+        RubyClass klass = (RubyClass)_klass;
+
+        ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
+
+        RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
+        basicSocket.initSocket(runtime, descriptor);
+
+        return basicSocket;
+    }
+
     @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
         return context.runtime.newBoolean(doNotReverseLookup);
