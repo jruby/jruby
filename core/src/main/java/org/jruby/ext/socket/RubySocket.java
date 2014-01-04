@@ -214,7 +214,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        InetSocketAddress iaddr = Sockaddr.addressFromArg(context, arg);
 
         doBind(context, getChannel(), iaddr);
 
@@ -573,6 +573,8 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof Addrinfo) return Sockaddr.addressFromArg(context, arg);
+
         switch (soProtocol) {
             case PF_UNIX:
             case PF_LOCAL:
