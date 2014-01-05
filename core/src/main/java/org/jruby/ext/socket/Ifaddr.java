@@ -121,10 +121,8 @@ public class Ifaddr extends RubyObject {
             String subnet = ipAddress() + "/" + it.getNetworkPrefixLength();
             SubnetUtils utils = new SubnetUtils(subnet);
             netmask = utils.getInfo().getNetmask();
-
         } else if ((it.getNetworkPrefixLength() != 0 && address instanceof Inet6Address)) {
-            String subnet = ipAddress() + "/" + it.getNetworkPrefixLength();
-            // not implemented yet
+            netmask = new SocketUtilsIPV6().getIPV6NetMask(ipAddress() + "/" + it.getNetworkPrefixLength());
         }
     }
 
@@ -174,7 +172,7 @@ public class Ifaddr extends RubyObject {
         if (address instanceof Inet4Address) {
             return address.toString().substring(1, address.toString().length());
         } else if ((address instanceof Inet6Address)) {
-            return address.toString().substring(1, address.toString().length() - 3);
+            return address.toString().substring(1, address.toString().length()).split("%")[0];
         }
         return "";
     }
