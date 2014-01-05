@@ -11,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class GVarAliasInstr extends Instr {
+public class GVarAliasInstr extends Instr implements FixedArityInstr {
     private Operand newName;
     private Operand oldName;
 

@@ -211,6 +211,18 @@ public class CodegenUtils {
         classes[times + 1] = clsTail;
         return classes;
     }
+
+    public static Class[] params(Class cls1, Class[] clsFills, int times) {
+        Class[] classes = new Class[clsFills.length * times + 1];
+        classes[0] = cls1;
+        for (int i = 0; i < times; i++) {
+            int base = i * clsFills.length + 1;
+            for (int j = 0; j < clsFills.length; j++) {
+                classes[base + j] = clsFills[j];
+            }
+        }
+        return classes;
+    }
     
     public static String getAnnotatedBindingClassName(Name javaMethodName, CharSequence typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
         return getAnnotatedBindingClassName(javaMethodName.toString(), typeName, isStatic, required, optional, multi, framed);

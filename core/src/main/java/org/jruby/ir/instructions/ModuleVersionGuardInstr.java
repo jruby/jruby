@@ -19,7 +19,7 @@ import org.jruby.ir.operands.StringLiteral;
  * based on assuming that an object's metaclass is C (as determined by the version number
  * of C -- where the version number changes every time C's class structure changes).
  */
-public class ModuleVersionGuardInstr extends Instr {
+public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     /** The token value that has been assumed */
     private final int expectedVersion;
 

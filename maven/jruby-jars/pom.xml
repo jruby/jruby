@@ -16,10 +16,10 @@ It provides a way to have other gems depend on JRuby without including (and
 freezing to) a specific jruby-complete jar version.</description>
   <url>http://github.com/jruby/jruby/tree/master/gem/jruby-jars</url>
   <properties>
+    <jruby.home>${basedir}/../../</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.home>${basedir}/../../</jruby.home>
   </properties>
   <dependencies>
     <dependency>
@@ -85,6 +85,7 @@ freezing to) a specific jruby-complete jar version.</description>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
             <id>default-push</id>
@@ -93,6 +94,23 @@ freezing to) a specific jruby-complete jar version.</description>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <postBuildHookScript>verify.bsh</postBuildHookScript>
+          <streamLogs>true</streamLogs>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
@@ -109,8 +127,8 @@ freezing to) a specific jruby-complete jar version.</description>
               <goal>execute</goal>
             </goals>
             <configuration>
-              <nativePom>Mavenfile</nativePom>
               <taskId>rename gem file</taskId>
+              <nativePom>Mavenfile</nativePom>
             </configuration>
           </execution>
         </executions>

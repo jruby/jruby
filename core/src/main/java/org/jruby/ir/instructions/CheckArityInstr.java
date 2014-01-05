@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class CheckArityInstr extends Instr {
+public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final int rest;

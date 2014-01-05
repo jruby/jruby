@@ -18,12 +18,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.instructions.FixedArityInstr;
 
 /**
  *
  * @author enebo
  */
-public class SuperMethodBoundInstr extends DefinedInstr {
+public class SuperMethodBoundInstr extends DefinedInstr implements FixedArityInstr {
    public SuperMethodBoundInstr(Variable result, Operand object) {
         super(Operation.SUPER_METHOD_BOUND, result, new Operand[] { object });
     }

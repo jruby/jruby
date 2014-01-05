@@ -5,68 +5,32 @@
   <baseDirectory>jruby-${project.version}</baseDirectory>
   <formats>
     <format>tar.gz</format>
-    <!--format>tar.bz2</format-->
     <format>zip</format>
   </formats>
   <fileSets>
+    <fileSet>
+      <directory>${project.build.directory}/META-INF/jruby.home</directory>
+      <outputDirectory>/</outputDirectory>
+    </fileSet>
     <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>LICENSE*</include>
         <include>COPYING*</include>
-        <include>lib/**/*</include>
-        <include>bin/ast*</include>
-        <include>bin/gem*</include>
-        <include>bin/irb*</include>
-        <include>bin/jgem*</include>
-        <include>bin/jirb*</include>
-        <include>bin/jruby*</include>
-        <include>bin/rake*</include>
-        <include>bin/ri*</include>
-        <include>bin/rdoc*</include>
-        <include>bin/testrb*</include>
+        <include>lib/jruby.jar</include>
+        <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
         <include>tool/nailgun/**/*.c</include>
       </includes>
       <excludes>
-        <exclude>bin/jruby</exclude>
-        <exclude>bin/jruby*_*</exclude>
-        <exclude>bin/jruby*-*</exclude>
         <exclude>**/*.ac</exclude>
         <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
         <exclude>**/style_checks.xml</exclude>
-        <exclude>lib/ruby/gems/**/*</exclude>
-        <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
       </excludes>
     </fileSet>
-    <fileSet>
-      <directory>${project.basedir}/src/main/resources</directory>
-      <outputDirectory>/</outputDirectory>
-      <includes>   
-	<include>bin/jruby</include>
-      </includes>
-    </fileSet>
-    <fileSet>
-      <directory>${project.parent.parent.basedir}</directory>
-      <outputDirectory>/</outputDirectory>
-      <includes>   
-	<include>lib/ruby/gems/shared/gems/rake-${rake.version}/bin/r*</include>
-	<include>lib/ruby/gems/shared/gems/rdoc-${rdoc.version}/bin/r*</include>
-        <include>lib/ruby/gems/shared/specifications/rake-${rake.version}.gemspec</include>
-	<include>lib/ruby/gems/shared/specifications/rdoc-${rdoc.version}.gemspec</include>
-	<include>lib/ruby/gems/shared/specifications/json-${json.version}-java.gemspec</include>
-      </includes>
-    </fileSet>
   </fileSets>
-  <files>
-    <file>
-      <source>${project.parent.parent.basedir}/bin/jruby.bash</source>
-      <outputDirectory>/bin</outputDirectory>
-      <destName>jruby</destName>
-    </file>
-  </files>
 </assembly>

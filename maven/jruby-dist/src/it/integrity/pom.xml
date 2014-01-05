@@ -1,0 +1,130 @@
+<project>
+  <groupId>org.jruby</groupId>
+  <artifactId>executables</artifactId>
+  <version>1</version>
+  <modelVersion>4.0.0</modelVersion>
+
+  <properties>
+    <jruby.home>${project.build.directory}/jruby-@project.version@/</jruby.home>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <excludes>META-INF,META-INF/*</excludes>
+              <artifactItems>
+                <artifactItem>
+		  <groupId>org.jruby</groupId>
+		  <artifactId>jruby-dist</artifactId>
+		  <version>@project.version@</version>
+                  <type>zip</type>
+                  <classifier>bin</classifier>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2</version>
+	<configuration>
+	  <executable>java</executable>
+	  <environmentVariables>
+	    <PATH>${basedir}</PATH>
+	    <HOME>${basedir}</HOME>
+	  </environmentVariables>
+	</configuration>
+	<executions>
+	  <execution>
+	    <id>gem list</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-S</argument>
+		<argument>gem</argument>
+		<argument>list</argument>
+	      </arguments>
+	    </configuration>
+	  </execution>
+	  <execution>
+	    <id>rake executable</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-S</argument>
+		<argument>rake</argument>
+		<argument>--version</argument>
+	      </arguments>
+	    </configuration>
+	  </execution>
+	  <execution>
+	    <id>rdoc executable</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-S</argument>
+		<argument>rdoc</argument>
+		<argument>--version</argument>
+	      </arguments>
+	    </configuration>
+	  </execution>
+	  <execution>
+	    <id>count installed gems</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>
+		  require 'stringio'
+		  require 'rubygems/commands/list_command'
+		  require 'rubygems/user_interaction'
+		  s = StringIO.new
+		  l = Gem::Commands::ListCommand.new
+		  l.ui= Gem::StreamUI.new( STDIN, s, STDERR, true )
+		  l.execute
+		  c = s.string.split( /\n/ ).count
+		  puts 'gems count ' + c.to_s
+		</argument>
+	      </arguments>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

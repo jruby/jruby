@@ -1,6 +1,7 @@
 exclude :test_begininclass, "needs investigation"
 exclude :test_begininmethod, "needs investigation"
 exclude :test_beginendblock, "needs investigation"
+exclude :test_callcc_at_exit, "needs investigation"
 exclude :test_endblock_raise, "needs investigation"
 exclude :test_endblockwarn, "needs investigation"
 exclude :test_nested_at_exit, "needs investigation"

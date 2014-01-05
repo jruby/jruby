@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ZSuperInstr extends UnresolvedSuperInstr {
+public class ZSuperInstr extends UnresolvedSuperInstr implements FixedArityInstr {
 	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
     public ZSuperInstr(Variable result, Operand receiver, Operand closure) {
         super(Operation.ZSUPER, result, receiver, closure);

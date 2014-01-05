@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on how many arguments have already been accounted for by parameters
  * present earlier in the list.
  */
-public class ReceivePostReqdArgInstr extends ReceiveArgBase {
+public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
     /** The method/block parameter list has these many required parameters before opt+rest args*/
     public final int preReqdArgsCount;
 

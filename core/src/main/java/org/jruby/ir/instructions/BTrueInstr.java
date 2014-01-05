@@ -9,8 +9,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BTrueInstr extends BranchInstr {
-    protected BTrueInstr(Operand v, Label jmpTarget) {
+public class BTrueInstr extends BranchInstr implements FixedArityInstr {
+    public BTrueInstr(Operand v, Label jmpTarget) {
         super(Operation.B_TRUE, v, null, jmpTarget);
     }
 

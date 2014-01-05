@@ -3,6 +3,7 @@ package org.jruby.ir.instructions.defined;
 import org.jruby.RubyMatchData;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -15,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class BackrefIsMatchDataInstr extends DefinedInstr {
+public class BackrefIsMatchDataInstr extends DefinedInstr implements FixedArityInstr {
     public BackrefIsMatchDataInstr(Variable result) {
         super(Operation.BACKREF_IS_MATCH_DATA, result, EMPTY_OPERANDS);
     }

@@ -980,7 +980,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     
     private synchronized IRubyObject status(Ruby runtime) {
         if (threadImpl.isAlive()) {
-            return RubyString.newStringShared(runtime, status.get().bytes);
+            return runtime.getThreadStatus(status.get());
         } else if (exitingException != null) {
             return runtime.getNil();
         } else {

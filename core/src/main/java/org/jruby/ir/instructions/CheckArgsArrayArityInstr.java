@@ -14,7 +14,7 @@ import java.util.Map;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.runtime.Helpers;
 
-public class CheckArgsArrayArityInstr extends Instr {
+public class CheckArgsArrayArityInstr extends Instr  implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final int rest;

@@ -16,6 +16,16 @@
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
+    <repository>
+      <id>rubygems-prereleases</id>
+      <url>http://rubygems-proxy.torquebox.org/prereleases</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
@@ -73,6 +83,56 @@
       <version>2.0.7</version>
       <type>jar</type>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>requireTest</artifactId>
+      <version>1.0</version>
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/requireTest-1.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>jruby-launcher</artifactId>
+      <version>${jruby-launcher.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rspec</artifactId>
+      <version>${rspec.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest</artifactId>
+      <version>${minitest.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest-excludes</artifactId>
+      <version>${minitest-excludes.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>${rdoc.version}-SNAPSHOT</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rake</artifactId>
+      <version>${rake.version}</version>
+      <type>gem</type>
     </dependency>
   </dependencies>
   <properties>
@@ -206,53 +266,4 @@
     	</plugins>
     </pluginManagement>
   </build>
-  <profiles>
-    <profile>
-      <id>bootstrap</id>
-      <dependencies>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>jruby-launcher</artifactId>
-          <version>${jruby-launcher.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>rake</artifactId>
-          <version>${rake.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>rspec</artifactId>
-          <version>${rspec.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>minitest</artifactId>
-          <version>${minitest.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>minitest-excludes</artifactId>
-          <version>${minitest-excludes.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>json</artifactId>
-          <version>${json.version}</version>
-          <type>gem</type>
-        </dependency>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>rdoc</artifactId>
-          <version>${rdoc.version}</version>
-          <type>gem</type>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 </project>

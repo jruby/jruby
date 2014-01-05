@@ -459,7 +459,7 @@ public class IRBuilder {
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
-        s.addInstr(new ToAryInstr(ret, ret, manager.getFalse()));
+        s.addInstr(new ToAryInstr(ret, ret)); // FIXME: SSA-violating
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
         return ret;
     }
@@ -562,7 +562,7 @@ public class IRBuilder {
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
-            s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
+            s.addInstr(new ToAryInstr(v, v)); // FIXME: SSA-violating
             buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, v);
             break;
         }
@@ -1838,7 +1838,7 @@ public class IRBuilder {
                 Variable v = s.getNewTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
-                s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
+                s.addInstr(new ToAryInstr(v, v)); // FIXME: SSA-violating
                 buildMultipleAsgn19Assignment(childNode, s, v, null);
                 break;
             }
@@ -2009,7 +2009,7 @@ public class IRBuilder {
                     v = s.getNewTemporaryVariable();
                     if (isSplat) s.addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                     else s.addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                    s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
+                    s.addInstr(new ToAryInstr(v, v)); // FIXME: SSA-violating
                     argsArray = v;
                 }
                 // Build
@@ -3432,7 +3432,7 @@ public class IRBuilder {
     public Operand buildToAry(ToAryNode node, IRScope s) {
         Operand array = build(node.getValue(), s);
         Variable result = s.getNewTemporaryVariable();
-        s.addInstr(new ToAryInstr(result, array, manager.getFalse()));
+        s.addInstr(new ToAryInstr(result, array));
         return result;
     }
 

@@ -1,5 +1,6 @@
 require 'test/unit'
 require '-test-/tracepoint'
+require_relative '../../ruby/envutil'
 
 class TestTracepointObj < Test::Unit::TestCase
   def test_not_available_from_ruby
@@ -17,13 +18,14 @@ class TestTracepointObj < Test::Unit::TestCase
       nil
     }
 
-    newobj_count, free_count, gc_start_count, gc_end_count, *newobjs = *result
+    newobj_count, free_count, gc_start_count, gc_end_mark_count, gc_end_sweep_count, *newobjs = *result
     assert_equal 2, newobj_count
     assert_equal 2, newobjs.size
     assert_equal 'foobar', newobjs[0]
     assert_equal Object, newobjs[1].class
     assert_operator free_count, :>=, 0
-    assert_operator gc_start_count, :>=, gc_end_count
+    assert_operator gc_start_count, :==, gc_end_mark_count
+    assert_operator gc_start_count, :>=, gc_end_sweep_count
   end
 
   def test_tracks_objspace_count
@@ -39,15 +41,40 @@ class TestTracepointObj < Test::Unit::TestCase
     GC.stat(stat2)
     GC.enable
 
-    newobj_count, free_count, gc_start_count, gc_end_count, *_newobjs = *result
+    newobj_count, free_count, gc_start_count, gc_end_mark_count, gc_end_sweep_count, *newobjs = *result
 
     assert_operator stat2[:total_allocated_object] - stat1[:total_allocated_object], :>=, newobj_count
     assert_operator 1_000_000, :<=, newobj_count
 
-    assert_operator stat2[:total_freed_object] + stat2[:heap_final_num] - stat1[:total_freed_object], :>=, free_count
+    assert_operator stat2[:total_freed_object] + stat2[:heap_final_slot] - stat1[:total_freed_object], :>=, free_count
     assert_operator stat2[:count] - stat1[:count], :==, gc_start_count
 
-    assert_operator gc_start_count, :>=, gc_end_count
-    assert_operator stat2[:count] - stat1[:count] - 1, :<=, gc_end_count
+    assert_operator gc_start_count, :==, gc_end_mark_count
+    assert_operator gc_start_count, :>=, gc_end_sweep_count
+    assert_operator stat2[:count] - stat1[:count] - 1, :<=, gc_end_sweep_count
   end
+
+  def test_tracepoint_specify_normal_and_internal_events
+    assert_raise(TypeError){ Bug.tracepoint_specify_normal_and_internal_events }
+  end
+
+  def test_after_gc_start_hook_with_GC_stress
+    bug8492 = '[ruby-dev:47400] [Bug #8492]: infinite after_gc_start_hook reentrance'
+    assert_nothing_raised(Timeout::Error, bug8492) do
+      assert_in_out_err(%w[-r-test-/tracepoint], <<-'end;', /\A[1-9]/, timeout: 2)
+        stress, GC.stress = GC.stress, false
+        count = 0
+        Bug.after_gc_start_hook = proc {count += 1}
+        begin
+          GC.stress = true
+          3.times {Object.new}
+        ensure
+          GC.stress = stress
+          Bug.after_gc_start_hook = nil
+        end
+        puts count
+      end;
+    end
+  end
+
 end

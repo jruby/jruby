@@ -645,9 +645,11 @@ gem 'other', version
     cache_file = File.join @gemhome, 'cache', @spec.file_name
     stub_exe   = File.join @gemhome, 'bin', 'executable'
     rakefile   = File.join gemdir, 'ext', 'a', 'Rakefile'
+    spec_file  = File.join @gemhome, 'specifications', @spec.spec_name
 
     Gem.pre_install do |installer|
       refute_path_exists cache_file, 'cache file must not exist yet'
+      refute_path_exists spec_file,  'spec file must not exist yet'
       true
     end
 
@@ -655,11 +657,13 @@ gem 'other', version
       assert_path_exists gemdir, 'gem install dir must exist'
       assert_path_exists rakefile, 'gem executable must exist'
       refute_path_exists stub_exe, 'gem executable must not exist'
+      refute_path_exists spec_file, 'spec file must not exist yet'
       true
     end
 
     Gem.post_install do |installer|
       assert_path_exists cache_file, 'cache file must exist'
+      assert_path_exists spec_file,  'spec file must exist'
     end
 
     @newspec = nil
@@ -937,7 +941,7 @@ gem 'other', version
     assert_match %r|I am a shiny gem!|, @ui.output
   end
 
-  def test_install_extension_install_dir
+  def test_install_extension_dir
     gemhome2 = "#{@gemhome}2"
 
     @spec.extensions << "extconf.rb"
@@ -1004,6 +1008,10 @@ gem 'other', version
     skip '1.9.2 and earlier mkmf.rb does not create TOUCH' if
       RUBY_VERSION < '1.9.3'
 
+    if RUBY_VERSION == "1.9.3" and RUBY_PATCHLEVEL <= 194
+      skip "TOUCH was introduced into 1.9.3 after p194"
+    end
+
     @spec.require_paths = ["."]
 
     @spec.extensions << "extconf.rb"
@@ -1038,8 +1046,14 @@ gem 'other', version
     puts '-' * 78
     puts File.read File.join(@gemhome, 'gems', 'a-2', 'Makefile')
     puts '-' * 78
-    puts File.read File.join(@gemhome, 'gems', 'a-2', 'gem_make.out')
-    puts '-' * 78
+
+    path = File.join(@gemhome, 'gems', 'a-2', 'gem_make.out')
+
+    if File.exists?(path)
+      puts File.read(path)
+      puts '-' * 78
+    end
+
     raise
   end
 

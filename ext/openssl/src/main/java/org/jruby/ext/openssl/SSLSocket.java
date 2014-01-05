@@ -482,6 +482,9 @@ public class SSLSocket extends RubyObject {
             }
             netData.clear();
             SSLEngineResult res = engine.wrap(src, netData);
+            if (res.getStatus()==SSLEngineResult.Status.CLOSED) {
+            	  throw getRuntime().newIOError("closed SSL engine");
+            }
             netData.flip();
             flushData(blocking);
             return res.bytesConsumed();

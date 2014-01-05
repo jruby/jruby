@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
     public InstanceSuperInstr(Variable result, Operand definingModule, MethAddr superMeth, Operand[] args, Operand closure) {
-        super(Operation.SUPER, CallType.SUPER, result, superMeth, definingModule, args, closure);
+        super(Operation.INSTANCE_SUPER, CallType.SUPER, result, superMeth, definingModule, args, closure);
     }
 
     public Operand getDefiningModule() {

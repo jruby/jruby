@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class PopFrameInstr extends Instr {
+public class PopFrameInstr extends Instr implements FixedArityInstr {
     public PopFrameInstr() {
         super(Operation.POP_FRAME);
     }

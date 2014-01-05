@@ -6,6 +6,7 @@ package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
@@ -19,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class IsMethodBoundInstr extends DefinedObjectNameInstr {
+public class IsMethodBoundInstr extends DefinedObjectNameInstr implements FixedArityInstr {
     public IsMethodBoundInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.IS_METHOD_BOUND, result, new Operand[] { object, name });
     }

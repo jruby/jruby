@@ -24,7 +24,7 @@ import java.util.Map;
 // have this requirement unlike case statements.
 //
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class RescueEQQInstr extends Instr implements ResultInstr {
+public class RescueEQQInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand arg1;
     private Operand arg2;
     private Variable result;

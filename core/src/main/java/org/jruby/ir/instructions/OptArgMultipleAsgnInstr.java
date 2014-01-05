@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This instruction shows only when a block is inlined.
 // Opt arg receive instructions get transformed to this.
 // This does not show up in regular Ruby code.
-public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
+public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     /** This instruction gets to pick an argument off the arry only if
      *  the array has at least these many elements */
     private final int minArgsLength;

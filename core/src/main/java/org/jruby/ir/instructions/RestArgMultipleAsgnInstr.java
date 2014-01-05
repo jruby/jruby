@@ -12,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
+public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     private final int preArgsCount;       // # of reqd args before rest-arg
     private final int postArgsCount;      // # of reqd args after rest-arg
 

@@ -17,7 +17,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase {
+public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     private final int preArgsCount;    // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)
     private final int postArgsCount;   // # of reqd args after rest-arg  (-1 if we are fetching a pre-arg)
 

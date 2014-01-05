@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.invokedynamic;
 
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.lang.invoke.*;
 
@@ -55,6 +56,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -603,6 +605,10 @@ public class InvocationLinker {
 
         @Override
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+            if (!RubyInstanceConfig.INVOKEDYNAMIC_FFI) {
+                throw new IndirectBindingException("direct FFI dispatch not enabled");
+            }
+
             if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
                 // if frame/scope required, can't dispatch direct
                 if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
@@ -679,7 +685,7 @@ public class InvocationLinker {
             // Ruby to Java
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Java method " + logMethod(method) + ": " + method.getNativeCall());
             
-            return postProcessNativeHandle(createJavaHandle(site, method), site, method, false);
+            return postProcessNativeHandle(createJavaHandle(site, method), site, method, false, Options.REWRITE_JAVA_TRACE.load());
         }
         
     }
@@ -710,7 +716,7 @@ public class InvocationLinker {
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Ruby
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true);
+            return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true, false);
         }
         
     }
@@ -739,7 +745,7 @@ public class InvocationLinker {
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Core
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, realName), site, method, true);
+            return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, realName), site, method, true, false);
         }
         
     }
@@ -794,7 +800,7 @@ public class InvocationLinker {
         return dynMethodTarget;
     }
     
-    private static MethodHandle postProcessNativeHandle(MethodHandle nativeTarget, JRubyCallSite site, DynamicMethod method, boolean checkArity) {                    
+    private static MethodHandle postProcessNativeHandle(MethodHandle nativeTarget, JRubyCallSite site, DynamicMethod method, boolean checkArity, boolean rewriteStackTrace) {
         if (nativeTarget != null) {
             nativeTarget = addOrRemoveBlock(site, nativeTarget);
             
@@ -820,6 +826,15 @@ public class InvocationLinker {
                         nativeTarget = foldArguments(nativeTarget, arityCheck);
                     }
                 }
+            }
+
+            if (rewriteStackTrace) {
+                SmartHandle rewriteHandle = SmartBinder.from(lookup(), site.signature().insertArg(0, "throwable", Throwable.class))
+                        .permute("throwable")
+                        .append("runtime", method.getImplementationClass().getRuntime())
+                        .invokeStaticQuiet(lookup(), Helpers.class, "rewriteStackTraceAndThrow");
+
+                nativeTarget = catchException(nativeTarget, Throwable.class, rewriteHandle.handle());
             }
         }
         

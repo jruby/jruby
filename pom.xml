@@ -32,7 +32,6 @@
   <modules>
     <module>ext</module>
     <module>core</module>
-    <module>test</module>
   </modules>
 
   <description>
@@ -64,7 +63,7 @@
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <minitest.version>5.0.7</minitest.version>
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <rdoc.version>4.0.1</rdoc.version>
+    <rdoc.version>4.1.0.preview.3</rdoc.version>
     <json.version>1.8.0</json.version>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <ant.version>1.9.2</ant.version>
@@ -385,6 +384,12 @@
 
   <profiles>
     <profile>
+      <id>bootstrap</id>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>gems</id>
       <modules>
         <module>maven</module>
@@ -399,6 +404,7 @@
     <profile>
       <id>main</id>
       <modules>
+	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -408,12 +414,14 @@
     <profile>
       <id>jruby-jars</id>
       <modules>
+	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
       <id>complete</id>
       <modules>
+	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -432,12 +440,14 @@
     <profile>
       <id>dist</id>
       <modules>
+	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
       <id>all</id>
       <modules>
+	<module>test</module>
         <module>docs</module>
         <module>maven</module>
       </modules>
@@ -448,20 +458,9 @@
     <profile>
       <id>release</id>
       <modules>
+	<module>test</module>
         <module>maven</module>
       </modules>
-      <build>
-        <plugins>
-	  <plugin>
-	    <artifactId>maven-release-plugin</artifactId>
-	    <configuration>
-	      <autoVersionSubmodules>true</autoVersionSubmodules>
-	      <goals>deploy</goals>
-	      <tagNameFormat>@{project.version}</tagNameFormat>
-	    </configuration>
-	  </plugin>
-	</plugins>
-      </build>
     </profile>
     <profile>
       <id>repo</id>

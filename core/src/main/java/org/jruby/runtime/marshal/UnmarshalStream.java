@@ -363,38 +363,35 @@ public class UnmarshalStream extends InputStream {
             
             IRubyObject key = unmarshalObject(false);
             
-            if (i == 0) { // first ivar provides encoding
+            if (runtime.is1_9() && object instanceof EncodingCapable) {
                 
-                if (object instanceof EncodingCapable) {
+                EncodingCapable strObj = (EncodingCapable)object;
+
+                if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
                     
-                    EncodingCapable strObj = (EncodingCapable)object;
+                    // special case for USASCII and UTF8
+                    if (unmarshalObject().isTrue()) {
+                        strObj.setEncoding(UTF8Encoding.INSTANCE);
+                    } else {
+                        strObj.setEncoding(USASCIIEncoding.INSTANCE);
+                    }
+                    continue;
+                    
+                } else if (key.asJavaString().equals("encoding")) {
+                    
+                    IRubyObject encodingNameObj = unmarshalObject(false);
+                    String encodingNameStr = encodingNameObj.asJavaString();
+                    ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
 
-                    if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
-                        
-                        // special case for USASCII and UTF8
-                        if (unmarshalObject().isTrue()) {
-                            strObj.setEncoding(UTF8Encoding.INSTANCE);
-                        } else {
-                            strObj.setEncoding(USASCIIEncoding.INSTANCE);
-                        }
-                        continue;
-                        
-                    } else if (key.asJavaString().equals("encoding")) {
-                        
-                        IRubyObject encodingNameObj = unmarshalObject(false);
-                        String encodingNameStr = encodingNameObj.asJavaString();
-                        ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
-
-                        Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
-                        if (entry == null) {
-                            throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
-                        }
-                        Encoding encoding = entry.getEncoding();
-                        strObj.setEncoding(encoding);
-                        continue;
-                        
-                    } // else fall through as normal ivar
-                }
+                    Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
+                    if (entry == null) {
+                        throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
+                    }
+                    Encoding encoding = entry.getEncoding();
+                    strObj.setEncoding(encoding);
+                    continue;
+                    
+                } // else fall through as normal ivar
             }
             
             String name = key.asJavaString();

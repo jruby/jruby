@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class MatchInstr extends Instr implements ResultInstr {
+public class MatchInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand receiver;
 

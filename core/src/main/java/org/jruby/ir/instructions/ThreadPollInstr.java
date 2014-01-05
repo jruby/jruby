@@ -6,7 +6,7 @@ import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ThreadPollInstr extends Instr {
+public class ThreadPollInstr extends Instr implements FixedArityInstr {
     public final boolean onBackEdge;
 
     public ThreadPollInstr(boolean onBackEdge) {

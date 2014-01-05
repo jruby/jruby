@@ -18,12 +18,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.instructions.FixedArityInstr;
 
 /**
  *
  * @author enebo
  */
-public class GlobalIsDefinedInstr extends DefinedInstr {
+public class GlobalIsDefinedInstr extends DefinedInstr implements FixedArityInstr {
    public GlobalIsDefinedInstr(Variable result, StringLiteral name) {
         super(Operation.GLOBAL_IS_DEFINED, result, new Operand[] { name });
     }

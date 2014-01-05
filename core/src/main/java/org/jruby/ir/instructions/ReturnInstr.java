@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ReturnInstr extends ReturnBase {
+public class ReturnInstr extends ReturnBase implements FixedArityInstr {
     public ReturnInstr(Operand returnValue) {
         super(Operation.RETURN, returnValue);
     }

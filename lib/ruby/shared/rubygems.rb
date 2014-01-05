@@ -8,7 +8,7 @@
 require 'rbconfig'
 
 module Gem
-  VERSION = '2.1.9'
+  VERSION = '2.2.0'
 end
 
 # Must be first since it unloads the prelude from 1.9.2
@@ -139,6 +139,7 @@ module Gem
     build_info
     cache
     doc
+    extensions
     gems
     specifications
   ]
@@ -158,6 +159,7 @@ module Gem
   @path_to_default_spec_map = {}
   @platforms = []
   @ruby = nil
+  @ruby_api_version = nil
   @sources = nil
 
   @post_build_hooks     ||= []
@@ -176,8 +178,8 @@ module Gem
   def self.try_activate path
     # finds the _latest_ version... regardless of loaded specs and their deps
     # if another gem had a requirement that would mean we shouldn't
-    # activate the latest version, then either it would alreaby be activated
-    # or if it was ambigious (and thus unresolved) the code in our custom
+    # activate the latest version, then either it would already be activated
+    # or if it was ambiguous (and thus unresolved) the code in our custom
     # require will try to activate the more specific version.
 
     spec = Gem::Specification.find_inactive_by_path path
@@ -210,50 +212,6 @@ module Gem
 
     request_set.resolve_current.each do |s|
       s.full_spec.activate
-    end
-  end
-
-  def self.detect_gemdeps
-    if path = ENV['RUBYGEMS_GEMDEPS']
-      path = path.dup.untaint
-
-      if path == "-"
-        here = Dir.pwd.untaint
-        start = here
-
-        begin
-          while true
-            path = GEM_DEP_FILES.find { |f| File.file?(f) }
-
-            if path
-              path = File.join here, path
-              break
-            end
-
-            Dir.chdir ".."
-
-            # If we're at a toplevel, stop.
-            return if Dir.pwd == here
-
-            here = Dir.pwd
-          end
-        ensure
-          Dir.chdir start
-        end
-      end
-
-      path.untaint
-
-      return unless File.file? path
-
-      rs = Gem::RequestSet.new
-      rs.load_gemdeps path
-
-      rs.resolve_current.map do |s|
-        sp = s.full_spec
-        sp.activate
-        sp
-      end
     end
   end
 
@@ -300,7 +258,6 @@ module Gem
   # The path where gem executables are to be installed.
 
   def self.bindir(install_dir=Gem.dir)
-    # TODO: move to Gem::Dirs
     return File.join install_dir, 'bin' unless
       install_dir.to_s == Gem.default_dir.to_s
     Gem.default_bindir
@@ -360,16 +317,21 @@ module Gem
     Zlib::Deflate.deflate data
   end
 
-  # DOC: needs doc'd or :nodoc'd
+  # Retrieve the PathSupport object that RubyGems uses to
+  # lookup files.
+
   def self.paths
     @paths ||= Gem::PathSupport.new
   end
 
-  # DOC: needs doc'd or :nodoc'd
+  # Initialize the filesystem paths to use from +env+.
+  # +env+ is a hash-like object (typically ENV) that
+  # is queried for 'GEM_HOME', 'GEM_PATH', and 'GEM_SPEC_CACHE'
+
   def self.paths=(env)
     clear_paths
     @paths = Gem::PathSupport.new env
-    Gem::Specification.dirs = @paths.path # FIX: home is at end
+    Gem::Specification.dirs = @paths.path
   end
 
   ##
@@ -378,12 +340,10 @@ module Gem
   # FIXME deprecate these once everything else has been done -ebh
 
   def self.dir
-    # TODO: raise "no"
     paths.home
   end
 
   def self.path
-    # TODO: raise "no"
     paths.path
   end
 
@@ -434,6 +394,18 @@ module Gem
     end
   ensure
     File.umask old_umask
+  end
+
+  ##
+  # The extension API version of ruby.  This includes the static vs non-static
+  # distinction as extensions cannot be shared between the two.
+
+  def self.extension_api_version # :nodoc:
+    if 'no' == RbConfig::CONFIG['ENABLE_SHARED'] then
+      "#{ruby_api_version}-static"
+    else
+      ruby_api_version
+    end
   end
 
   ##
@@ -538,42 +510,30 @@ module Gem
 
   private_class_method :find_home
 
+  # FIXME deprecate these in 3.0
+
   ##
   # Zlib::GzipReader wrapper that unzips +data+.
 
   def self.gunzip(data)
-    # TODO: move to utils
-    require 'stringio'
-    require 'zlib'
-    data = StringIO.new data
-
-    unzipped = Zlib::GzipReader.new(data).read
-    unzipped.force_encoding Encoding::BINARY if Object.const_defined? :Encoding
-    unzipped
+    require 'rubygems/util'
+    Gem::Util.gunzip data
   end
 
   ##
   # Zlib::GzipWriter wrapper that zips +data+.
 
   def self.gzip(data)
-    # TODO: move to utils
-    require 'stringio'
-    require 'zlib'
-    zipped = StringIO.new
-    zipped.set_encoding Encoding::BINARY if Object.const_defined? :Encoding
-
-    Zlib::GzipWriter.wrap zipped do |io| io.write data end
-
-    zipped.string
+    require 'rubygems/util'
+    Gem::Util.gzip data
   end
 
   ##
   # A Zlib::Inflate#inflate wrapper
 
   def self.inflate(data)
-    # TODO: move to utils
-    require 'zlib'
-    Zlib::Inflate.inflate data
+    require 'rubygems/util'
+    Gem::Util.inflate data
   end
 
   ##
@@ -608,11 +568,8 @@ module Gem
   end
 
   ##
-  # The index to insert activated gem paths into the $LOAD_PATH.
-  #
-  # Defaults to the site lib directory unless gem_prelude.rb has loaded paths,
-  # then it inserts the activated gem's paths before the gem_prelude.rb paths
-  # so you can override the gem_prelude.rb default $LOAD_PATH paths.
+  # The index to insert activated gem paths into the $LOAD_PATH. The activated
+  # gem's paths are inserted before site lib directory by default.
 
   def self.load_path_insert_index
     index = $LOAD_PATH.index ConfigMap[:sitelibdir]
@@ -679,7 +636,6 @@ module Gem
     file = $1
     lineno = $2.to_i
 
-    # TODO: it is ALWAYS joined! STUPID!
     [file, lineno]
   end
 
@@ -805,7 +761,10 @@ module Gem
   # Safely read a file in binary mode on all platforms.
 
   def self.read_binary(path)
-    File.open path, binary_mode do |f| f.read end
+    open path, 'rb+' do |f|
+      f.flock(File::LOCK_EX)
+      f.read
+    end
   end
 
   ##
@@ -820,6 +779,14 @@ module Gem
     end
 
     @ruby
+  end
+
+  ##
+  # Returns a String containing the API compatibility version of Ruby
+
+  def self.ruby_api_version
+    @ruby_api_version ||=
+      "#{ConfigMap[:MAJOR]}.#{ConfigMap[:MINOR]}.#{ConfigMap[:TEENY]}"
   end
 
   ##
@@ -952,7 +919,6 @@ module Gem
     paths = nil if paths == [nil]
     paths = paths.first if Array === Array(paths).first
     self.paths = { "GEM_HOME" => home, "GEM_PATH" => paths }
-    # TODO: self.paths = home, paths
   end
 
   ##
@@ -1025,6 +991,56 @@ module Gem
     load_plugin_files files
   end
 
+  ##
+  # Looks for gem dependency files (gem.deps.rb, Gemfile, Isolate) from the
+  # current directory up and activates the gems in the first file found.
+  #
+  # You can run this automatically when rubygems starts.  To enable, set
+  # the <code>RUBYGEMS_GEMDEPS</code> environment variable to either the path
+  # of your Gemfile or "-" to auto-discover in parent directories.
+  #
+  # NOTE: Enabling automatic discovery on multiuser systems can lead to
+  # execution of arbitrary code when used from directories outside your
+  # control.
+
+  def self.use_gemdeps
+    return unless path = ENV['RUBYGEMS_GEMDEPS']
+    path = path.dup
+
+    if path == "-" then
+      require 'rubygems/util'
+
+      Gem::Util.traverse_parents Dir.pwd do |directory|
+        dep_file = GEM_DEP_FILES.find { |f| File.file?(f) }
+
+        next unless dep_file
+
+        path = File.join directory, dep_file
+        break
+      end
+    end
+
+    path.untaint
+
+    return unless File.file? path
+
+    rs = Gem::RequestSet.new
+    rs.load_gemdeps path
+
+    rs.resolve_current.map do |s|
+      sp = s.full_spec
+      sp.activate
+      sp
+    end
+  end
+
+  class << self
+    ##
+    # TODO remove with RubyGems 3.0
+
+    alias detect_gemdeps use_gemdeps # :nodoc:
+  end
+
   # FIX: Almost everywhere else we use the `def self.` way of defining class
   # methods, and then we switch over to `class << self` here. Pick one or the
   # other.
@@ -1087,7 +1103,7 @@ module Gem
     end
 
     ##
-    # Clear default gem related varibles. It is for test
+    # Clear default gem related variables. It is for test
 
     def clear_default_specs
       @path_to_default_spec_map.clear
@@ -1147,16 +1163,18 @@ module Gem
   autoload :ConfigFile,         'rubygems/config_file'
   autoload :Dependency,         'rubygems/dependency'
   autoload :DependencyList,     'rubygems/dependency_list'
-  autoload :DependencyResolver, 'rubygems/dependency_resolver'
+  autoload :DependencyResolver, 'rubygems/resolver'
+  autoload :Installer,          'rubygems/installer'
   autoload :PathSupport,        'rubygems/path_support'
   autoload :Platform,           'rubygems/platform'
   autoload :RequestSet,         'rubygems/request_set'
   autoload :Requirement,        'rubygems/requirement'
+  autoload :Resolver,           'rubygems/resolver'
+  autoload :Source,             'rubygems/source'
   autoload :SourceList,         'rubygems/source_list'
   autoload :SpecFetcher,        'rubygems/spec_fetcher'
   autoload :Specification,      'rubygems/specification'
   autoload :Version,            'rubygems/version'
-  autoload :Source,             'rubygems/source'
 
   require "rubygems/specification"
 end
@@ -1192,4 +1210,5 @@ Gem::Specification.load_defaults
 require 'rubygems/core_ext/kernel_gem'
 require 'rubygems/core_ext/kernel_require'
 
-Gem.detect_gemdeps
+Gem.use_gemdeps
+

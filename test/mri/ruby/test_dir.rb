@@ -200,6 +200,13 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  def test_unknown_keywords
+    bug8060 = '[ruby-dev:47152] [Bug #8060]'
+    assert_raise_with_message(ArgumentError, /unknown keyword/, bug8060) do
+      Dir.open(@root, xawqij: "a") {}
+    end
+  end
+
   def test_symlink
     begin
       ["dummy", *?a..?z].each do |f|
@@ -244,15 +251,19 @@ class TestDir < Test::Unit::TestCase
 
   def test_symlinks_not_resolved
     Dir.mktmpdir do |dirname|
-      FileUtils.cd(dirname) do
-        FileUtils.mkdir_p('some-dir')
+      Dir.chdir(dirname) do
+        begin
+          File.symlink('some-dir', 'dir-symlink')
+        rescue NotImplementedError
+          return
+        end
+
+        Dir.mkdir('some-dir')
         File.write('some-dir/foo', 'some content')
-        File.symlink('some-dir', 'dir-symlink')
 
         assert_equal [ 'dir-symlink', 'some-dir' ], Dir['*'].sort
         assert_equal [ 'dir-symlink', 'some-dir', 'some-dir/foo' ], Dir['**/*'].sort
       end
     end
   end
-
 end

@@ -12,7 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Assign rest arg passed into method to a result variable
  */
-public class ReceiveRestArgInstr extends ReceiveArgBase {
+public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
     /** Number of arguments already accounted for */
     public final int numUsedArgs;
 

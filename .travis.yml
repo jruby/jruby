@@ -14,11 +14,13 @@ env:
     - TARGET='spec:ci_interpreted_travis'
     - TARGET='spec:ci_interpreted_ir_travis'
     - TARGET='spec:ir'
+    - TARGET='test-dist'
 
 matrix:
   fast_finish: true
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
+    - env: TARGET='test-dist'
     - jdk: oraclejdk8
 
 script: "ant $TARGET"

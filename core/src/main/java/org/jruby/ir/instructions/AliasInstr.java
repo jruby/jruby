@@ -23,7 +23,7 @@ import java.util.Map;
  *
  * @author enebo
  */
-public class AliasInstr extends Instr {
+public class AliasInstr extends Instr implements FixedArityInstr {
     private final Variable receiver;
     private Operand newName;
     private Operand oldName;

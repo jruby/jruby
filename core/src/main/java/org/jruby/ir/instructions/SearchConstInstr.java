@@ -22,7 +22,7 @@ import org.jruby.ir.operands.StringLiteral;
 // - looks up lexical scopes
 // - then inheritance hierarcy if lexical search fails
 // - then invokes const_missing if inheritance search fails
-public class SearchConstInstr extends Instr implements ResultInstr {
+public class SearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand  startingScope;
     private final String   constName;
     private final boolean  noPrivateConsts;

@@ -9,6 +9,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
@@ -22,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class ClassVarIsDefinedInstr extends DefinedObjectNameInstr {
+public class ClassVarIsDefinedInstr extends DefinedObjectNameInstr implements FixedArityInstr {
     public ClassVarIsDefinedInstr(Variable result, Operand module, StringLiteral name) {
         super(Operation.CLASS_VAR_IS_DEFINED, result, new Operand[] { module, name });
     }

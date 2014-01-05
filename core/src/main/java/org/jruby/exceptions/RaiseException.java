@@ -144,6 +144,7 @@ public class RaiseException extends JumpException {
         providedMessage = buildMessage(cause);
         setException(nativeException, true);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
+        setStackTrace(javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 
     /**

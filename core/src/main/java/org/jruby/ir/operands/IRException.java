@@ -9,20 +9,40 @@ import java.util.List;
 
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
-    private String exceptionType;
-
-    protected IRException(String exceptionType) {
+    private final RubyLocalJumpError.Reason type;
+    
+    protected IRException(RubyLocalJumpError.Reason type) {
         super(OperandType.IR_EXCEPTION);
         
-        this.exceptionType = exceptionType;
+        this.type = type;
+    }
+    
+    public RubyLocalJumpError.Reason getType() {
+        return type;
     }
 
-    public static final IRException RETRY_LocalJumpError = new IRException("LocalJumpError: retry outside of rescue not supported");
-    public static final IRException NEXT_LocalJumpError = new IRException("LocalJumpError: unexpected next");
-    public static final IRException BREAK_LocalJumpError = new IRException("LocalJumpError: unexpected break");
-    public static final IRException RETURN_LocalJumpError = new IRException("LocalJumpError: unexpected return");
-    public static final IRException REDO_LocalJumpError = new IRException("LocalJumpError: unexpected redo");
-
+    public static final IRException RETRY_LocalJumpError = new IRException(RubyLocalJumpError.Reason.RETRY);
+    public static final IRException NEXT_LocalJumpError = new IRException(RubyLocalJumpError.Reason.NEXT);
+    public static final IRException BREAK_LocalJumpError = new IRException(RubyLocalJumpError.Reason.BREAK);
+    public static final IRException RETURN_LocalJumpError = new IRException(RubyLocalJumpError.Reason.RETURN);
+    public static final IRException REDO_LocalJumpError = new IRException(RubyLocalJumpError.Reason.REDO);
+    
+    public static IRException getExceptionFromOrdinal(int ordinal) {
+        if (ordinal < 0 || ordinal > RubyLocalJumpError.Reason.values().length) {
+            throw new IllegalArgumentException("Invalid ordinal value for jump error: " + ordinal);
+        }
+        
+        switch(RubyLocalJumpError.Reason.values()[ordinal]) {
+            case RETRY: return RETRY_LocalJumpError;
+            case NEXT: return NEXT_LocalJumpError;
+            case BREAK: return BREAK_LocalJumpError;
+            case RETURN: return RETURN_LocalJumpError;
+            case REDO: return REDO_LocalJumpError;
+        }
+        
+        return null; // not reached.
+    }
+    
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
@@ -39,12 +59,14 @@ public class IRException extends Operand {
     }
 
     public RuntimeException getException(Ruby runtime) {
-        if (this == NEXT_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, null, "unexpected next");
-        else if (this == BREAK_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, null, "unexpected break");
-        else if (this == RETURN_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, null, "unexpected return");
-        else if (this == REDO_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, null, "unexpected redo");
-        else if (this == RETRY_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, null, "retry outside of rescue not supported");
-        else throw new RuntimeException("Unhandled case in operands/IRException.java");
+        switch (getType()) {
+            case NEXT: return runtime.newLocalJumpError(getType(), null, "unexpected next");
+            case BREAK: return runtime.newLocalJumpError(getType(), null, "unexpected break");
+            case RETURN: return runtime.newLocalJumpError(getType(), null, "unexpected return");
+            case REDO: return runtime.newLocalJumpError(getType(), null, "unexpected redo");
+            case RETRY: return runtime.newLocalJumpError(getType(), null, "retry outside of rescue not supported");
+        }
+        throw new RuntimeException("Unhandled case in operands/IRException.java");
     }
 
     @Override
@@ -54,12 +76,6 @@ public class IRException extends Operand {
     
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder("LocalJumpError:");
-        if (this == NEXT_LocalJumpError) result.append("NEXT");
-        else if (this == BREAK_LocalJumpError) result.append("BREAK");
-        else if (this == RETURN_LocalJumpError) result.append("RETURN");
-        else if (this == REDO_LocalJumpError) result.append("REDO");
-        else if (this == RETRY_LocalJumpError) result.append("RETRY");
-        return result.toString();
+        return "LocalJumpError:" + getType();
     }
 }

@@ -12,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BEQInstr extends BranchInstr {
+public class BEQInstr extends BranchInstr implements FixedArityInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof BooleanLiteral) {
             return ((BooleanLiteral) v2).isTrue() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);

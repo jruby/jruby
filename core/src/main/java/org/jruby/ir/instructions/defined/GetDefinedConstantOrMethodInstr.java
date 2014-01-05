@@ -7,6 +7,7 @@ package org.jruby.ir.instructions.defined;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
@@ -22,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
+public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr implements FixedArityInstr {
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.DEFINED_CONSTANT_OR_METHOD, result, new Operand[] { object, name });
     }

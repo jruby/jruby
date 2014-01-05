@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class PushFrameInstr extends Instr {
+public class PushFrameInstr extends Instr implements FixedArityInstr {
     public PushFrameInstr() {
         super(Operation.PUSH_FRAME);
     }

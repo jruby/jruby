@@ -1,7 +1,9 @@
 package org.jruby.ir;
 
-import org.jruby.ir.persistence.IRPersistableEnum;
-
-public enum IRScopeType implements IRPersistableEnum {
+public enum IRScopeType {
     CLOSURE, EVAL_SCRIPT, INSTANCE_METHOD, CLASS_METHOD, MODULE_BODY, CLASS_BODY, METACLASS_BODY, SCRIPT_BODY;
+    
+    public static IRScopeType fromOrdinal(int value) {
+        return value < 0 || value >= values().length ? null : values()[value];
+    }    
 } 

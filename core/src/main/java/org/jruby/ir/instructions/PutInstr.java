@@ -7,7 +7,7 @@ import java.util.Map;
 import org.jruby.ir.operands.StringLiteral;
 
 // Represents target.ref = value or target = value where target is not a stack variable
-public abstract class PutInstr extends Instr {
+public abstract class PutInstr extends Instr implements FixedArityInstr {
     private Operand target;
     private Operand value;
     protected String  ref;

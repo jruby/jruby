@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class NotInstr extends Instr implements ResultInstr {
+public class NotInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand arg;
     private Variable result;
 

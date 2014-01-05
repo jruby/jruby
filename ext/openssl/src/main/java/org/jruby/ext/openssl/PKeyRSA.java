@@ -52,6 +52,7 @@ import javax.crypto.Cipher;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyBignum;
+import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -203,7 +204,12 @@ public class PKeyRSA extends PKey {
                     passwd = pass.toString().toCharArray();
                 }
                 arg = OpenSSLImpl.to_der_if_possible(arg);
-                RubyString str = arg.convertToString();
+                RubyString str;
+                if (arg instanceof RubyFile) {
+                    str = (RubyString)((RubyFile)arg.dup()).read(getRuntime().getCurrentContext());
+                } else {
+                    str = arg.convertToString();
+                }
 
                 Object val = null;
                 KeyFactory fact = null;

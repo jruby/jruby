@@ -8,7 +8,7 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
-public class ReceiveClosureInstr extends Instr implements ResultInstr {
+public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 
     public ReceiveClosureInstr(Variable result) {

@@ -127,6 +127,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
@@ -729,7 +730,7 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            Compiler.getInstance().execute(this, node, classLoader); 
+            return Compiler.getInstance().execute(this, node, classLoader);
         }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
@@ -2585,16 +2586,29 @@ public final class Ruby {
      }
 
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
-         return parser.parse(file, in, scope, new ParserConfiguration(this,
-                 lineNumber, false, false, true, isFromMain, config));
+         ParserConfiguration parserConfig =
+                 new ParserConfiguration(this, lineNumber, false, false, true, isFromMain, config);
+         setupSourceEncoding(parserConfig);
+         return parser.parse(file, in, scope, parserConfig);
      }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         addEvalParseToStats();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        setupSourceEncoding(parserConfig);
         return parser.parse(file, in, scope, parserConfig);
+    }
+
+    private void setupSourceEncoding(ParserConfiguration parserConfig) {
+        if (config.getSourceEncoding() != null) {
+            if (config.isVerbose()) {
+                config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
+            }
+            parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
+        } else {
+            parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        }
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
@@ -4501,6 +4515,30 @@ public final class Ruby {
     public RubyString getThreadStatus(RubyThread.Status status) {
         return threadStatuses.get(status);
     }
+
+    /**
+     * Given a Ruby string, cache a frozen, duplicated copy of it, or find an
+     * existing copy already prepared. This is used to reduce in-memory
+     * duplication of pre-frozen or known-frozen strings.
+     *
+     * Note that this cache is synchronized against the Ruby instance. This
+     * could cause contention under heavy concurrent load, so a reexamination
+     * of this design might be warranted.
+     *
+     * @param string the string to freeze-dup if an equivalent does not already exist
+     * @return the freeze-duped version of the string
+     */
+    public synchronized RubyString freezeAndDedupString(RubyString string) {
+        WeakReference<RubyString> dedupedRef = dedupMap.get(string);
+        RubyString deduped;
+
+        if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
+            deduped = string.strDup(this);
+            deduped.setFrozen(true);
+            dedupMap.put(string, new WeakReference<RubyString>(deduped));
+        }
+        return deduped;
+    }
     
     private void setNetworkStack() {
         try {
@@ -4842,4 +4880,11 @@ public final class Ruby {
     }
     
     private RubyArray emptyFrozenArray;
+
+    /**
+     * A map from Ruby string data to a pre-frozen global version of that string.
+     *
+     * Access must be synchronized.
+     */
+    private WeakHashMap<RubyString, WeakReference<RubyString>> dedupMap = new WeakHashMap<RubyString, WeakReference<RubyString>>();
 }

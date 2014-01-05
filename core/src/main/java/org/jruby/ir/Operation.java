@@ -2,8 +2,6 @@ package org.jruby.ir;
 
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
 
-import org.jruby.ir.persistence.IRPersistableEnum;
-
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
     final static int f_has_side_effect     = 0x0001;
@@ -22,7 +20,7 @@ class OpFlags {
     final static int f_is_book_keeping_op  = 0x4000;
 }
 
-public enum Operation implements IRPersistableEnum {
+public enum Operation {
 /* Mark a *non-control-flow* instruction as side-effecting if its compuation is not referentially
  * transparent.  In other words, mark it side-effecting if the following is true:
  *
@@ -63,7 +61,9 @@ public enum Operation implements IRPersistableEnum {
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -120,7 +120,6 @@ public enum Operation implements IRPersistableEnum {
     // that cannot.  But, for now, this should be good enough
     PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
@@ -132,7 +131,6 @@ public enum Operation implements IRPersistableEnum {
     COPY(0),
     NOT(0), // ruby NOT operator
     BLOCK_GIVEN(0),
-    GET_OBJECT(0),
     GET_BACKREF(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
@@ -148,14 +146,12 @@ public enum Operation implements IRPersistableEnum {
     MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     SET_RETADDR(0),
     CLASS_VAR_MODULE(0),
-    IS_TRUE(0), // checks if the operand is non-null and non-false
     EQQ(0), // (FIXME: Exceptions?) a === call used in when
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     GET_ENCODING(0),
 
     /* Instructions to support defined? */
-    SET_WITHIN_DEFINED(OpFlags.f_has_side_effect),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
     BACKREF_IS_MATCH_DATA(0),
@@ -173,9 +169,7 @@ public enum Operation implements IRPersistableEnum {
     PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    METHOD_LOOKUP(0), /* for splitting calls into method-lookup and call -- unused **/
-    BOX_VALUE(0), /* primitive value boxing/unboxing -- unused */
-    UNBOX_VALUE(0); /* unused */
+    METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
 
 /* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)

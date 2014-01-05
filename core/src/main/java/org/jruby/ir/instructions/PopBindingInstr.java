@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class PopBindingInstr extends Instr {
+public class PopBindingInstr extends Instr implements FixedArityInstr {
     public PopBindingInstr() {
         super(Operation.POP_BINDING);
     }

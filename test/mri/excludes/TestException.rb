@@ -1,5 +1,6 @@
 exclude :test_catch_throw_in_require, "needs investigation"
 exclude :test_errat, "needs investigation"
+exclude :test_machine_stackoverflow, "needs investigation"
 exclude :test_nomethoderror, "needs investigation"
 exclude :test_set_backtrace, "needs investigation"
 exclude :test_systemexit_new, "needs investigation"

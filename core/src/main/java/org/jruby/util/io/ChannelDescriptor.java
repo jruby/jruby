@@ -949,16 +949,18 @@ public class ChannelDescriptor {
             }
 
             // otherwise decrement and possibly close as normal
-            int count = refCounter.decrementAndGet();
+            if (close) {
+                int count = refCounter.decrementAndGet();
 
-            if (DEBUG) LOG.info("Descriptor for fileno {} refs: {}", internalFileno, count);
+                if (DEBUG) LOG.info("Descriptor for fileno {} refs: {}", internalFileno, count);
 
-            if (count <= 0) {
-                // if we're the last referrer, close the channel
-                try {
-                    if (close) channel.close();
-                } finally {
-                    unregisterDescriptor(internalFileno);
+                if (count <= 0) {
+                    // if we're the last referrer, close the channel
+                    try {
+                        channel.close();
+                    } finally {
+                        unregisterDescriptor(internalFileno);
+                    }
                 }
             }
         }

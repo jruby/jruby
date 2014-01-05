@@ -2445,7 +2445,7 @@ public class ASTCompiler {
     }
 
     public void compileHash(Node node, BodyCompiler context, boolean expr) {
-        compileHashCommon((Hash19Node) node, context, expr);
+        compileHashCommon((HashNode) node, context, expr);
     }
 
     protected void compileHashCommon(HashNode hashNode, BodyCompiler context, boolean expr) {
@@ -2460,8 +2460,20 @@ public class ASTCompiler {
                         int index) {
                     ListNode listNode = (ListNode) sourceArray;
                     int keyIndex = index * 2;
-                    compile(listNode.get(keyIndex), context, true);
+                    Node keyNode = listNode.get(keyIndex);
+
+                    // whether to prepare string keys during aset by freezing and deduping them
+                    boolean prepare = true;
+
+                    if (keyNode instanceof StrNode) {
+                        compileFastFrozenString((StrNode) keyNode, context, true);
+                        prepare = false;
+                    } else {
+                        compile(keyNode, context, true);
+                    }
+
                     compile(listNode.get(keyIndex + 1), context, true);
+                    context.pushBoolean(prepare);
                 }
             };
 
@@ -2475,10 +2487,6 @@ public class ASTCompiler {
                 compile(nextNode, context, false);
             }
         }
-    }
-
-    protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
-        context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
 
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {
