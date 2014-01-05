@@ -338,7 +338,8 @@ public class SocketUtils {
             }
 
             for(int i = 0; i < addrs.length; i++) {
-                callback.addrinfo(addrs[i], (int)port.convertToInteger().getLongValue(), sock);
+                int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+                callback.addrinfo(addrs[i], p, sock);
             }
 
         } catch(UnknownHostException e) {
