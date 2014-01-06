@@ -29,6 +29,8 @@ public class Ifaddr extends RubyObject {
     private InetAddress address;
     private InetAddress broadcast;
     private InterfaceAddress interfaceAddress;
+    private NetworkInterface networkInterface;
+    private boolean isLink;
     private String netmask;
     private int index;
     private String flagStatus;
@@ -49,20 +51,24 @@ public class Ifaddr extends RubyObject {
         super(runtime, metaClass);
     }
 
-    public Ifaddr(Ruby runtime, RubyClass metaClass, NetworkInterface ni, InterfaceAddress it) throws Exception {
+    public Ifaddr(Ruby runtime, RubyClass metaClass, NetworkInterface ni, InterfaceAddress it, boolean isLink) throws Exception {
         super(runtime, metaClass);
-        isUp = ni.isUp();
-        name = ni.getDisplayName();
-        isLoopback = ni.isLoopback();
-        isPointToPoint = ni.isPointToPoint();
-        address = it.getAddress();
-        broadcast = it.getBroadcast();
-        interfaceAddress = it;
+        this.isUp = ni.isUp();
+        this.name = ni.getDisplayName();
+        this.isLoopback = ni.isLoopback();
+        this.isPointToPoint = ni.isPointToPoint();
+        this.networkInterface = ni;
+        this.address = it.getAddress();
 
-        setNetmask(it);
+        if (isLink == false) {
+            this.broadcast = it.getBroadcast();
+            this.interfaceAddress = it;
+            setNetmask(it);
+        }
+
+        this.isLink = isLink;
         setIndex(ni);
-        setFlags(ni);
-
+        setInspectString(ni);
     }
 
     @JRubyMethod
@@ -77,10 +83,14 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        if (address == null) {
+        if (address != null) {
+            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), address);
+        } else if (isLink == true) {
+            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), networkInterface, address, true);
+        } else {
             return context.nil;
         }
-        return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), address);
+
     }
 
     @JRubyMethod
@@ -132,7 +142,7 @@ public class Ifaddr extends RubyObject {
         index = (Integer) field.get(ni);
     }
 
-    private void setFlags(NetworkInterface nif) throws SocketException {
+    private void setInspectString(NetworkInterface nif) throws SocketException {
         flagStatus = nif.isUp() ? "UP" : "DOWN";
         if (nif.isLoopback()) {
             flagStatus += ",LOOPBACK";
@@ -157,14 +167,18 @@ public class Ifaddr extends RubyObject {
                 flagStatus += String.format("%02x", mac[i]);
             }
         }
-        if (!ipAddress().equals("")) {
-            flagStatus += " " + ipAddress();
-        }
-        if (broadcast != null) {
-            flagStatus += " broadcast=" + getBroadcastAsString();
-        }
-        if (netmask != null) {
-            flagStatus += " netmask=" + netmask;
+        if (isLink == true) {
+            flagStatus += " LINK[" + name + "]";
+        } else {
+            if (!ipAddress().equals("")) {
+                flagStatus += " " + ipAddress();
+            }
+            if (broadcast != null) {
+                flagStatus += " broadcast=" + getBroadcastAsString();
+            }
+            if (netmask != null) {
+                flagStatus += " netmask=" + netmask;
+            }
         }
     }
 
