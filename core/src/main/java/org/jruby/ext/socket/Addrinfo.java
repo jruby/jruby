@@ -19,6 +19,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import org.jruby.exceptions.RaiseException;
 
 public class Addrinfo extends RubyObject {
 
@@ -284,11 +285,17 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_address(ThreadContext context) {
+        if (interfaceLink == true) {
+            throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+        }
         return context.runtime.newString(inetAddress.getHostAddress());
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_port(ThreadContext context) {
+        if (interfaceLink ==  true) {
+             throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+       }
         return context.runtime.newFixnum(port);
     }
 
@@ -416,5 +423,5 @@ public class Addrinfo extends RubyObject {
     private Sock sock;
     private SocketType socketType;
     private String interfaceName;
-    private boolean interfaceLink = false;
+    private boolean interfaceLink;
 }
