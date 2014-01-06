@@ -38,12 +38,12 @@ public class RescueEQQInstr extends Instr implements ResultInstr, FixedArityInst
         this.arg2 = v2;
         this.result = result;
     }
-    
+
     public Operand getArg1() {
         return arg1;
     }
-    
-    public Operand getArg2() { 
+
+    public Operand getArg2() {
         return arg2;
     }
 

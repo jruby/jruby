@@ -15,7 +15,7 @@ public abstract class Operand {
     private final OperandType type;
 
     public Operand(OperandType type) {
-        this.type = type;        
+        this.type = type;
     }
 
     public final OperandType getOperandType() {

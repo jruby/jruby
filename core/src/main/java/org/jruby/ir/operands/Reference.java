@@ -11,7 +11,7 @@ public abstract class Reference extends Operand {
 
     public Reference(OperandType type, String name) {
         super(type);
-        
+
         this.name = name;
     }
 
@@ -28,7 +28,7 @@ public abstract class Reference extends Operand {
     public Operand cloneForInlining(InlinerInfo ii) {
         return this;
     }
-    
+
     @Override
     public String toString() {
         return name;

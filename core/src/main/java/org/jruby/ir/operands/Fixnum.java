@@ -46,7 +46,7 @@ public class Fixnum extends ImmutableLiteral {
     public int hashCode() {
         return 47 * 7 + (int) (this.value ^ (this.value >>> 32));
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof Fixnum && value == ((Fixnum) other).value;
@@ -84,7 +84,7 @@ public class Fixnum extends ImmutableLiteral {
     public long getValue() {
         return value;
     }
-    
+
     @Override
     public String toString() {
         return "Fixnum:" + value;

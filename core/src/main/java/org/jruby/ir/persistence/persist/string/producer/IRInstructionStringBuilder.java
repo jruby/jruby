@@ -36,7 +36,7 @@ public class IRInstructionStringBuilder extends AbstractIRStringBuilder<Instr> {
         if (instr instanceof ResultInstr) {  // '%v_2 ='
             builder.append(((ResultInstr) instr).getResult()).append(EQUAL);
         }
-        
+
         builder.append(instr.getOperation()); // 'copy' Note: Not really a prefix in my mind
     }
 

@@ -48,7 +48,7 @@ public class IRClosure extends IRScope {
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
     private Arity arity;
-    private int argumentType; 
+    private int argumentType;
     public boolean addedGEBForUncaughtBreaks;
 
     /** Used by cloning code */
@@ -78,7 +78,7 @@ public class IRClosure extends IRScope {
         }
 
         // increase nesting depth if needed after isForLoopBody value is set
-        if (!isForLoopBody) this.nestingDepth++; 
+        if (!isForLoopBody) this.nestingDepth++;
     }
 
     // Used by IREvalScript
@@ -148,7 +148,7 @@ public class IRClosure extends IRScope {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.CLOSURE;
-    } 
+    }
 
     @Override
     public boolean isForLoopBody() {
@@ -312,7 +312,7 @@ public class IRClosure extends IRScope {
         clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
 
         return clonedClosure;
-    }    
+    }
 
     // Add a global-ensure-block to catch uncaught breaks
     // This is usually required only if this closure is being
@@ -350,14 +350,14 @@ public class IRClosure extends IRScope {
 
         return true;
     }
-    
+
     @Override
     public void setName(String name) {
-        // We can distinguish closures only with parent scope name 
+        // We can distinguish closures only with parent scope name
         String fullName = getLexicalParent().getName() + name;
         super.setName(fullName);
     }
-    
+
     public Arity getArity() {
         return arity;
     }

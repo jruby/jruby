@@ -23,7 +23,7 @@ import org.jruby.parser.StaticScope;
 public class IRWriterAnalzer implements IRWriterEncoder {
     private int currentOffsetId = 0;
     private final Map<IRScope, Integer> offsetIds = new HashMap<IRScope, Integer>();
-    
+
     // Figure out most commonly used operands for eventual creation of an operand pool
     private final Map<Operand, Integer> operandCounts = new HashMap<Operand, Integer>();
 
@@ -33,19 +33,19 @@ public class IRWriterAnalzer implements IRWriterEncoder {
             increment(operand);
         }
     }
-    
+
     @Override
     public void encode(String value) {
     }
 
     @Override
     public void encode(String[] values) {
-    }    
+    }
 
     @Override
     public void encode(IRScope value) {
     }
-    
+
     @Override
     public void encode(IRScopeType value) {
     }
@@ -73,11 +73,11 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     @Override
     public void encode(byte value) {
     }
-    
+
     @Override
     public void encode(char value) {
-    }    
-    
+    }
+
     @Override
     public void encode(int value) {
     }
@@ -85,14 +85,14 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     @Override
     public void encode(long value) {
     }
-    
+
     @Override
     public void encode(float value) {
     }
-    
+
     @Override
     public void encode(double value) {
-    }    
+    }
 
     @Override
     public void startEncodingScopeHeader(IRScope scope) {
@@ -118,19 +118,19 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     @Override
     public void endEncodingScopeHeaders(IRScope script) {
     }
-    
+
     @Override
     public void startEncoding(IRScope script) {
     }
 
     @Override
     public void endEncoding(IRScope script) {
-    }    
+    }
 
     private void increment(Operand operand) {
         Integer count = operandCounts.get(operand);
         if (count == null) count = new Integer(0);
-        
+
         operandCounts.put(operand, count + 1);
     }
 

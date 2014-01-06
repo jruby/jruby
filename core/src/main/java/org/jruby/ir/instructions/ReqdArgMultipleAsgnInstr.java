@@ -33,17 +33,17 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
 
     public int getPreArgsCount() { return preArgsCount; }
     public int getPostArgsCount() { return postArgsCount; }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
-    }    
+    }
 
     @Override
     public String toString() {
         return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
     }
-    
+
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);

@@ -19,35 +19,35 @@ public class IRWriter {
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
-        
+
         file.startEncodingScopeHeaders(script);
         persistScopeHeaders(file, script);      // recursive dump of all defined scope headers
         file.endEncodingScopeHeaders(script);
-        
+
         file.endEncoding(script);
     }
-    
+
     private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
         persistScopeInstrs(file, parent);
-        
+
         for (IRScope scope: parent.getLexicalScopes()) {
             persistScopeInstructions(file, scope);
         }
     }
-    
+
     // {operation, [operands]}*
     private static void persistScopeInstrs(IRWriterEncoder file, IRScope scope) {
         file.startEncodingScopeInstrs(scope);
-        
+
         List<Instr> instrs = scope.getInstrs();
 
         for (Instr instr: instrs) {
             file.encode(instr);
         }
-        
+
         file.endEncodingScopeInstrs(scope);
     }
-    
+
     // recursive dump of all scopes.  Each scope records offset into persisted file where there
     // instructions reside.  That is extra logic here in currentInstrIndex + instrsLocations
     private static void persistScopeHeaders(IRWriterEncoder file, IRScope parent) {

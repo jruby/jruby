@@ -21,15 +21,15 @@ public class GVarAliasInstr extends Instr implements FixedArityInstr {
         this.newName = newName;
         this.oldName = oldName;
     }
-    
+
     public Operand getNewName() {
         return newName;
     }
-    
+
     public Operand getOldName() {
         return oldName;
     }
-    
+
     @Override
     public String toString() {
         return getOperation().toString() + "(" + newName + ", " + oldName + ")";

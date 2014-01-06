@@ -11,12 +11,12 @@ public class StandardError extends Operand {
     public StandardError() {
         super(OperandType.STANDARD_ERROR);
     }
-    
+
     @Override
     public String toString() {
         return "StandardError";
     }
-    
+
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */

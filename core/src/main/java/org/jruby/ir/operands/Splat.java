@@ -19,14 +19,14 @@ public class Splat extends Operand {
 
     public Splat(Operand array) {
         super(OperandType.SPLAT);
-        
+
         this.array = array;
     }
-    
+
     @Override
     public String toString() {
         return "*" + array;
-    }    
+    }
 
     @Override
     public boolean hasKnownValue() {

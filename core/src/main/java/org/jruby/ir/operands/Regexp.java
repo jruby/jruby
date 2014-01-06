@@ -24,11 +24,11 @@ public class Regexp extends Operand {
 
     public Regexp(Operand regexp, RegexpOptions options) {
         super(OperandType.REGEXP);
-        
+
         this.regexp = regexp;
         this.options = options;
     }
-    
+
     public Operand getRegexp() {
         return regexp;
     }

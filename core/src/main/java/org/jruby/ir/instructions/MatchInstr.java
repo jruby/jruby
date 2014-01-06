@@ -25,12 +25,12 @@ public class MatchInstr extends Instr implements ResultInstr, FixedArityInstr {
         this.result = result;
         this.receiver = receiver;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { receiver };
     }
-    
+
     public Operand getReceiver() {
         return receiver;
     }
@@ -38,7 +38,7 @@ public class MatchInstr extends Instr implements ResultInstr, FixedArityInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + receiver + ")";
-    }    
+    }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {

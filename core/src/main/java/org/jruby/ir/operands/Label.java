@@ -21,7 +21,7 @@ public class Label extends Operand {
 
         label = l;
     }
-    
+
     @Override
     public String toString() {
         return label + ":" + targetPC;

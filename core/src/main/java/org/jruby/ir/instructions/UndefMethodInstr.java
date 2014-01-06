@@ -23,7 +23,7 @@ public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityIn
         this.result = result;
         this.methodName = methodName;
     }
-    
+
     public Operand getMethodName() {
         return methodName;
     }
@@ -32,7 +32,7 @@ public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityIn
     public String toString() {
         return super.toString() + "(" + methodName + ")";
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { methodName };

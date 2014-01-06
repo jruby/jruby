@@ -121,7 +121,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
     private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();
-    
+
     // we do not need instances of Interpreter
     // FIXME: Should we make it real singleton and get rid of static methods?
     private Interpreter() {
@@ -198,10 +198,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             blk.yield(context, null);
         }
     }
-    
+
     @Override
     protected IRubyObject execute(Ruby runtime, IRScope scope, IRubyObject self) {
-        IRScriptBody root = (IRScriptBody) scope;    
+        IRScriptBody root = (IRScriptBody) scope;
 
         // FIXME: Removed as part of merge...likely broken at this point in merge.
     //    IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
@@ -494,7 +494,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             temp[((TemporaryVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-            
+
             currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
         }
     }

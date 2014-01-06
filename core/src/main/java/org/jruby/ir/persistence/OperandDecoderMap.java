@@ -48,17 +48,17 @@ import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 /**
- * 
+ *
  */
 class OperandDecoderMap {
     private final IRReaderDecoder d;
     private final IRManager manager;
-    
+
     public OperandDecoderMap(IRManager manager, IRReaderDecoder decoder) {
         this.manager = manager;
         this.d = decoder;
     }
-    
+
     public Operand decode(OperandType type) {
         if (IRReaderFile.DEBUG) System.out.println("Decoding operand " + type);
 
@@ -100,41 +100,41 @@ class OperandDecoderMap {
             case UNEXECUTABLE_NIL: return U_NIL;
             case WRAPPED_IR_CLOSURE: return new WrappedIRClosure(d.decodeVariable(), (IRClosure) d.decodeScope());
         }
-        
+
         return null;
     }
 
     private Operand decodeCompoundString() {
         String encodingString = d.decodeString();
-        
+
         if (encodingString.equals("")) return new CompoundString(d.decodeOperandList());
-                
+
         return new CompoundString(d.decodeOperandList(), Encoding.load(encodingString));
     }
 
     private Operand decodeHash() {
         int size = d.decodeInt();
         List<KeyValuePair> pairs = new ArrayList(size);
-        
+
         for (int i = 0; i < size; i++) {
             pairs.add(new KeyValuePair(d.decodeOperand(), d.decodeOperand()));
         }
-        
+
         return new Hash(pairs);
     }
-    
+
     private Operand decodeLabel() {
         final String labelName = d.decodeString();
-        
+
         // Special case of label
         if ("_GLOBAL_ENSURE_BLOCK".equals(labelName)) return new Label("_GLOBAL_ENSURE_BLOCK");
-        
+
         // Check if this label was already created
         // Important! Program would not be interpreted correctly
         // if new name will be created every time
         if (d.getVars().containsKey(labelName)) return d.getVars().get(labelName);
 
-        
+
         // FIXME? Warning! This code is relies on current realization of IRScope#getNewLable
         // which constructs name in format '${prefix}_\d+'
         // so '_\d+' is removed here and newly recreated label will have the same name
@@ -145,26 +145,26 @@ class OperandDecoderMap {
         if(lastIndexOfPrefix != lastIndexNotFound) {
             prefix = labelName.substring(0, lastIndexOfPrefix);
         }
-        
+
         Label newLabel = d.getCurrentScope().getNewLabel(prefix);
-        
+
         // Add to context for future reuse
         d.getVars().put(labelName, newLabel);
-        
+
         return newLabel;
-    }    
+    }
 
     private Regexp decodeRegexp() {
         Operand regexp = d.decodeOperand();
         KCode kcode = KCode.values()[d.decodeByte()];
         boolean isKCodeDefault = d.decodeBoolean();
-        
+
         return new Regexp(regexp, new RegexpOptions(kcode, isKCodeDefault));
     }
-    
+
     private Operand decodeTemporaryVariable() {
         String name = d.decodeString();
-        
+
         if (Variable.CURRENT_SCOPE.equals(name)) {
             return d.getCurrentScope().getCurrentScopeVariable();
         } else if (Variable.CURRENT_MODULE.equals(name)) {

@@ -29,7 +29,7 @@ public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
 
         this.arg = arg;
     }
-    
+
     public Operand getArg() {
         return arg;
     }

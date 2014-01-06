@@ -44,28 +44,28 @@ scopes
     =    scopes_info.scope EOLN
          scopes_instructions.instrs     {: return logic.getToplevelScope(); :}
     ;
-    
+
 scopes_info
     =    scope_info EOLN
     |    scopes_info scope_info EOLN
     ;
-    
-/* Info that is needed to recreate a scope itself, do not contain instructions */    
+
+/* Info that is needed to recreate a scope itself, do not contain instructions */
 scope_info
-    =    ID.type LT parameter_list.params GT 
+    =    ID.type LT parameter_list.params GT
                                         {: return logic.createScope(type, params); :}
     ;
-    
+
 scopes_instructions
     =    scope_instructions EOLN
     |    scopes_instructions scope_instructions EOLN
     ;
-    
+
 scope_instructions
     =    scope_descriptor.scope EOLN
          instruction_list.instrs        {: return logic.addToScope(scope, instrs); :}
     ;
-    
+
 scope_descriptor
     =    STRING.name                    {: return logic.enterScope(name); :}
     ;
@@ -75,14 +75,14 @@ instruction_list
     =    abstract_instruction.i EOLN    {: return logic.addFirstInstruction(i); :}
     |    instruction_list.lst abstract_instruction.i EOLN
                                         {: return logic.addFollowingInstructions(lst, i, _symbol_lst); :}
-                                        
+
     ;
-    
+
 abstract_instruction
     =    instruction.instr DEAD_INSTR_MARKER.marker?
                                         {: return logic.markAsDeadIfNeeded(instr, marker); :}
-    ;     
-    
+    ;
+
 instruction
     =    simple_instr
     |    abstract_result_instr
@@ -92,7 +92,7 @@ simple_instr
     =    ID.id                          {: return logic.createInstrWithoutParams(id); :}
     |    instr_with_params.instr        {: return logic.createInstrWithParams(instr); :}
     ;
-     
+
 abstract_result_instr
     =    result_instr.instr DEAD_RESULT_INSTR_MARKER.marker?
                                         {: return logic.markHasUnusedResultIfNeeded(instr, marker); :}
@@ -104,18 +104,18 @@ result_instr
     |    operand.var EQ instr_with_params.instr
                                         {: return logic.createReturnInstrWithParams(var, instr); :}
     ;
-    
+
 instr_with_params
     =    ID.id LPAREN parameter_list.list RPAREN
                                         {: return logic.createInstrWithParams(id, list); :}
     ;
 
-/* Parameters of instruction */ 
+/* Parameters of instruction */
 parameter_list
     =    param.p1
     |    parameter_list.list COMMA param.p
     ;
-    
+
 param
     =    operand
     |    FIXNUM.val
@@ -125,8 +125,8 @@ param
     |    STRING
     |    NULL                           {: return logic.createNull(); :}
     ;
-    
-list 
+
+list
     =    LBRACK parameter_list.params? RBRACK
                                         {: return logic.createList(params); :}
     ;
@@ -136,11 +136,11 @@ operand
     =  operand_without_parameters
     |  operand_with_parameters
     ;
-    
+
 operand_without_parameters
     =  ID.id                            {: return logic.createOperandWithoutParameters(id); :}
     ;
-    
+
 operand_with_parameters
     =  ID.id LBRACE parameter_list.params RBRACE
                                         {: return logic.createOperandWithParameters(id, params); :}

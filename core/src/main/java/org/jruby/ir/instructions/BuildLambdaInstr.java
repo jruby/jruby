@@ -31,7 +31,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         this.lambdaBody = lambdaBody;
         this.position = position;
     }
-    
+
     public String getLambdaBodyName() {
         return getLambdaBody().getClosure().getName();
     }
@@ -39,7 +39,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     public Operand[] getOperands() {
         return new Operand[] { lambdaBody, new StringLiteral(position.getFile()), new Fixnum(position.getLine()) };
     }
-    
+
     public ISourcePosition getPosition() {
         return position;
     }
@@ -68,7 +68,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     private WrappedIRClosure getLambdaBody() {
         return lambdaBody;
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?

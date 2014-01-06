@@ -8,7 +8,6 @@ public abstract class BranchInstr extends Instr {
 
     public BranchInstr(Operation op, Label jumpTarget) {
         super(op);
-        
         this.jumpTarget = jumpTarget;
     }
 

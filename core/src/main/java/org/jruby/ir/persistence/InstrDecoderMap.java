@@ -230,21 +230,21 @@ class InstrDecoderMap implements IRPersistenceValues {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return null;
     }
 
     private Instr decodeAttrAssignInstr() {
         Operand op = d.decodeOperand();
         MethAddr methAddr = (MethAddr) d.decodeOperand();
-        
+
         int length = d.decodeInt();
         Operand[] args = new Operand[length];
-        
+
         for (int i = 0; i < length; i++) {
             args[i] = d.decodeOperand();
         }
-        
+
         return new AttrAssignInstr(op, methAddr, args);
     }
 
@@ -261,13 +261,13 @@ class InstrDecoderMap implements IRPersistenceValues {
         boolean hasClosureArg = argsCount.value < 0;
         int argsLength = Math.abs((int) argsCount.value);
         Operand[] args = new Operand[argsLength];
-        
+
         for (int i = 0; i < argsLength; i++) {
             args[i] = d.decodeOperand();
         }
-        
+
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        
+
         return CallInstr.create(CallType.fromOrdinal((int) callTypeOrdinal.value), result, methAddr, receiver, args, closure);
     }
 
@@ -276,7 +276,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         WrappedIRClosure c = (WrappedIRClosure) d.decodeOperand();
         StringLiteral l = (StringLiteral) d.decodeOperand();
         Fixnum f = (Fixnum) d.decodeOperand();
-        
+
         return new BuildLambdaInstr(v, c, new SimpleSourcePosition(l.getString(), (int) f.value));
     }
 
@@ -286,8 +286,8 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand receiver = d.decodeOperand();
         Operand[] args = d.decodeOperandArray();
         Operand closure = d.decodeOperand();
-        
-        return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal((int) callTypeOrdinal.value), methAddr, receiver, args, closure);        
+
+        return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal((int) callTypeOrdinal.value), methAddr, receiver, args, closure);
     }
 
     private Instr decodeCopy() {
@@ -295,7 +295,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         if (IRReaderFile.DEBUG) System.out.println("VARIABLE: " + variable);
         Operand value = d.decodeOperand();
         if (IRReaderFile.DEBUG) System.out.println("VALUE: " + value);
-        
+
         return new CopyInstr(variable, value);
     }
 
@@ -312,14 +312,14 @@ class InstrDecoderMap implements IRPersistenceValues {
         String constName = d.decodeOperandAsString();
         Operand startScope = d.decodeOperand();
         BooleanLiteral noPrivateConst = (BooleanLiteral) d.decodeOperand();
-        
+
         return new SearchConstInstr(result, constName, startScope, noPrivateConst.isTrue());
     }
 
     private Instr createBFalse() {
         return new BFalseInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
-    
+
     private Instr createBTrue() {
         return new BTrueInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }

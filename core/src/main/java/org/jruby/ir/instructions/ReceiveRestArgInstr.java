@@ -25,12 +25,12 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ", " + argIndex + ")";
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argIndex) };
     }
-    
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {

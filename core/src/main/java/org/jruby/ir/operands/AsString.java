@@ -14,7 +14,7 @@ public class AsString extends Operand {
 
     public AsString(Operand source) {
         super(OperandType.AS_STRING);
-        
+
         if (source == null) source = new StringLiteral("");
         this.source = source;
     }
@@ -48,7 +48,7 @@ public class AsString extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);
     }
-    
+
     @Override
     public String toString() {
         return "#{" + source + "}";

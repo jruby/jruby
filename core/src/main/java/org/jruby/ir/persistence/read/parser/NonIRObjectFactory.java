@@ -59,27 +59,27 @@ public class NonIRObjectFactory {
     public static Operation createOperation(String name) {
         return Operation.valueOf(name.toUpperCase());
     }
-    
+
     public static OperandType createOperandType(String name) {
         return OperandType.valueOf(name.toUpperCase());
     }
-    
+
     public static SpecializedInstType createSpecilizedInstrType(String specializedInstName) {
         return SpecializedInstType.valueOf(specializedInstName);
     }
-    
+
     public static IRScopeType createScopeType(String type) {
-        return IRScopeType.valueOf(type);        
+        return IRScopeType.valueOf(type);
     }
-    
+
     public static ISourcePosition createSourcePosition(String fileName, int line) {
         return new SimpleSourcePosition(fileName, line);
     }
-    
+
     public static Type createStaticScopeType(String type) {
-        return Type.valueOf(type);        
+        return Type.valueOf(type);
     }
-    
+
     public static Encoding createEncoding(String name) {
         if(name == null) {
             return null;
@@ -165,7 +165,7 @@ public class NonIRObjectFactory {
             return UTF8Encoding.INSTANCE;
         }
     }
-    
+
     /**
      * RegexpOptions(kcode:$kcode(, encodingNone)?(, extended)?(, fixed)?(,
      * ignorecase)?(, java)?(, kcodeDefault)?(, literal)?(, multiline)?(,
@@ -214,7 +214,7 @@ public class NonIRObjectFactory {
     public static CallType createCallType(String callTypeString) {
         return CallType.valueOf(callTypeString);
     }
-    
+
     public static Reason createReason(String reasonString) {
         return Reason.valueOf(reasonString.toUpperCase());
     }

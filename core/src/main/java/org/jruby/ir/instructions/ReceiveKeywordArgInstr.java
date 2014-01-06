@@ -19,12 +19,12 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
         super(Operation.RECV_KW_ARG, result, -1);
         this.numUsedArgs = numUsedArgs;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(numUsedArgs) };
     }
-    
+
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";

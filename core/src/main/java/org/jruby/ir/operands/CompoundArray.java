@@ -32,11 +32,11 @@ public class CompoundArray extends Operand {
         this.a2 = a2;
         this.isArgsPush = isArgsPush;
     }
-    
+
     public Operand getA1() {
         return a1;
     }
-    
+
     public Operand getA2() {
         return a2;
     }

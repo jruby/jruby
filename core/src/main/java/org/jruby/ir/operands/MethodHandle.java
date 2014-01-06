@@ -30,11 +30,11 @@ public class MethodHandle extends Operand {
 
     public MethodHandle(Operand methodName, Operand receiver) {
         super(OperandType.METHOD_HANDLE);
-        
+
         this.methodName = methodName;
         this.receiver = receiver;
     }
-    
+
     public Operand getReceiver() {
         return receiver;
     }
@@ -43,7 +43,7 @@ public class MethodHandle extends Operand {
     public String toString() {
         return "<" + receiver + "." + methodName + ">";
     }
-    
+
     public Operand getMethodNameOperand() {
         return methodName;
     }

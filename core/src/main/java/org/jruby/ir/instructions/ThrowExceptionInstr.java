@@ -23,7 +23,7 @@ public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
         super(Operation.THROW);
         this.exceptionArg = exception;
     }
-    
+
     public Operand getExceptionArg() {
         return exceptionArg;
     }

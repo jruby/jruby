@@ -28,7 +28,7 @@ public class Array extends Operand {
 
     public Array(Operand[] elts) {
         super(OperandType.ARRAY);
-        
+
         this.elts = elts == null ? new Operand[0] : elts;
     }
 

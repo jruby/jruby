@@ -48,7 +48,7 @@ import org.jruby.util.RegexpOptions;
  */
 class OperandEncoderMap extends IRVisitor {
     private final IRWriterEncoder encoder;
-    
+
     public OperandEncoderMap(IRWriterEncoder encoder) {
         this.encoder = encoder;
     }
@@ -57,48 +57,48 @@ class OperandEncoderMap extends IRVisitor {
         encoder.encode(operand.getOperandType().getCoded());
         operand.visit(this);
     }
-    
+
     @Override public void Array(Array array) {
         Operand[] elts = array.getElts();
-        
+
         encoder.encode(elts.length);
         for (Operand elt: elts) {
             encode(elt);
         }
     }
-    
+
     @Override public void AsString(AsString asstring) { encoder.encode(asstring.getSource()); }
-    
+
     @Override public void Backref(Backref backref) { encoder.encode(backref.type); }
-    
+
     @Override public void BacktickString(BacktickString backtickstring) {
         List<Operand> operands = backtickstring.pieces;
-        
+
         encoder.encode(operands.size());
-        
+
         for (Operand operand: operands) {
             encode(operand);
         }
     }
     @Override public void Bignum(Bignum bignum) { encoder.encode(bignum.value.toString()); }
-    
+
     @Override public void BooleanLiteral(BooleanLiteral booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
-    
+
     @Override public void ClosureLocalVariable(ClosureLocalVariable variable) {
         // We can refigure out closure scope it is in.
         encoder.encode(variable.getName());
-        encoder.encode(variable.getScopeDepth());        
+        encoder.encode(variable.getScopeDepth());
     }
-    
-    @Override public void CompoundArray(CompoundArray compoundarray) { 
+
+    @Override public void CompoundArray(CompoundArray compoundarray) {
         encode(compoundarray.getA1());
         encode(compoundarray.getA2());
         encoder.encode(compoundarray.isArgsPush());
     }
-    
+
     @Override public void CompoundString(CompoundString compoundstring) {
         Encoding encoding = compoundstring.getEncoding();
-        
+
         if (encoding == null) {
             encoder.encode("");
         } else {
@@ -106,24 +106,24 @@ class OperandEncoderMap extends IRVisitor {
         }
         List<Operand> pieces = compoundstring.getPieces();
         encoder.encode(pieces.size());
-        
+
         for (Operand piece: pieces) {
             encode(piece);
         }
     }
-    
+
     // FIXME: Can't I determine this instead of persisting it?
     @Override public void CurrentScope(CurrentScope scope) {  }
-    
+
     //@Override public void DynamicSymbol(DynamicSymbol dsym) { encode(dsym.getSymbolName()); }
     @Override public void DynamicSymbol(DynamicSymbol dsym) {  }
-    
+
     @Override public void Fixnum(Fixnum fixnum) { encoder.encode(fixnum.value); }
-    
+
     @Override public void Float(org.jruby.ir.operands.Float flote) { encoder.encode(flote.value); }
-    
+
     @Override public void GlobalVariable(GlobalVariable variable) { encoder.encode(variable.getName()); }
-    
+
     @Override public void Hash(Hash hash) {
         encoder.encode(hash.pairs.size());
         for (KeyValuePair pair: hash.pairs) {
@@ -131,55 +131,55 @@ class OperandEncoderMap extends IRVisitor {
             encoder.encode(pair.getValue());
         }
     }
-    
+
     @Override public void IRException(IRException irexception) { encoder.encode((byte) irexception.getType().ordinal()); }
-    
+
     @Override public void Label(Label label) { encoder.encode(label.label); }
-    
+
     @Override public void LocalVariable(LocalVariable variable) {
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
     }
-    
+
     @Override public void MethAddr(MethAddr methaddr) { encoder.encode(methaddr.getName()); }
-    
+
     @Override public void MethodHandle(MethodHandle methodhandle) {
         encoder.encode(methodhandle.getReceiver());
         encoder.encode(methodhandle.getMethodNameOperand());
     }
-    
+
     @Override public void Nil(Nil nil) {} // No data
-    
+
     @Override public void NthRef(NthRef nthref) { encoder.encode(nthref.matchNumber); }
-    
+
     @Override public void ObjectClass(ObjectClass objectclass) {} // No data
-    
+
     @Override public void Range(Range range) {
         encoder.encode(range.getBegin());
         encoder.encode(range.getEnd());
         encoder.encode(range.isExclusive());
     }
-    
+
     @Override public void Regexp(Regexp regexp) {
         RegexpOptions options = regexp.options;
-        
+
         encode(regexp.getRegexp());
         encoder.encode((byte) options.getKCode().ordinal());
         encoder.encode(options.isKcodeDefault());
     }
-    
+
     @Override public void ScopeModule(ScopeModule scope) { encoder.encode(scope.getScope()); }
-    
+
     @Override public void Self(Self self) {} // No data
-    
+
     @Override public void Splat(Splat splat) { encode(splat.getArray()); }
-    
+
     @Override public void StandardError(StandardError standarderror) {} // No data
-    
+
     @Override public void StringLiteral(StringLiteral stringliteral) { encoder.encode(stringliteral.string); }
-    
+
     @Override public void SValue(SValue svalue) { encode(svalue.getArray()); }
-    
+
     @Override public void Symbol(Symbol symbol) { encoder.encode(symbol.getName()); }
 
     // FIXME: There are two forms of constructors for both temp vars and they are not clear what there actual
@@ -188,15 +188,15 @@ class OperandEncoderMap extends IRVisitor {
         encoder.encode(variable.getName());
         encoder.encode(variable.offset);
     }
-    
-    @Override public void TemporaryVariable(TemporaryVariable variable) { 
-        encoder.encode(variable.getName()); 
-//        encoder.encode(variable.offset); 
+
+    @Override public void TemporaryVariable(TemporaryVariable variable) {
+        encoder.encode(variable.getName());
+//        encoder.encode(variable.offset);
     }
-    
+
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
-    
+
     @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {} // No data
-    
+
     @Override public void WrappedIRClosure(WrappedIRClosure scope) { encoder.encode(scope.getClosure()); }
 }

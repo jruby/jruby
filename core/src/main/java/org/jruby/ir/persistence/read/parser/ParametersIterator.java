@@ -13,29 +13,29 @@ import org.jruby.parser.StaticScope;
 public class ParametersIterator {
     private final IRParsingContext context;
     private final Iterator<Object> parametersIterator;
-    
+
     public ParametersIterator(IRParsingContext context, List<Object> parameters) {
         this.context = context;
         this.parametersIterator = parameters.iterator();
     }
-    
+
     public ParametersIterator(IRParsingContext context, Object parameter) {
         List<Object> listWithSingleParam = new ArrayList<Object>(1);
         listWithSingleParam.add(parameter);
         this.parametersIterator = listWithSingleParam.iterator();
-        
+
         this.context = context;
     }
-    
+
     public Operand nextOperand() {
         return (Operand) parametersIterator.next();
     }
-    
+
     public IRScope nextScope() {
-        String scopeName = nextString();       
-        
+        String scopeName = nextString();
+
         IRScope scope = context.getScopeByName(scopeName);
-        if(scope == null) {            
+        if(scope == null) {
             if(scopeName != null && scopeName.startsWith("Object")) {
                 return context.getIRManager().getObject();
             } else {
@@ -45,40 +45,40 @@ public class ParametersIterator {
             return scope;
         }
     }
-    
+
     public IRStaticScope nextStaticScope(IRScope lexicalParent) {
         String typeString = nextString();
         StaticScope.Type type = NonIRObjectFactory.createStaticScopeType(typeString);
-        
+
         List<Object> namesList = nextList();
         String[] names = new String[namesList.size()];
-        namesList.toArray(names);        
-        
+        namesList.toArray(names);
+
         StaticScope parent = null;
         if(lexicalParent != null) {
             parent = lexicalParent.getStaticScope();
         }
-        
+
         IRStaticScope staticScope = IRStaticScopeFactory.newStaticScope(parent, type, names);
-        
+
         int requiredArgs = nextInt();
-        
+
         staticScope.setRequiredArgs(requiredArgs);
-        
-        
+
+
         return staticScope;
     }
-    
+
     public String nextString() {
         return (String) parametersIterator.next();
     }
-    
+
     public List<Operand> nextOperandList() {
         @SuppressWarnings("unchecked")
         List<Operand> operands = (List<Operand>) (List<?>) nextList();
         return operands;
     }
-    
+
     public Operand[] nextOperandArray() {
         List<Operand> argsList = nextOperandList();
         Operand[] args;
@@ -90,25 +90,25 @@ public class ParametersIterator {
         }
         return args;
     }
-    
+
     public List<Object> nextList() {
         @SuppressWarnings("unchecked")
-        List<Object> parameters = (List<Object>) parametersIterator.next();        
+        List<Object> parameters = (List<Object>) parametersIterator.next();
         return parameters;
     }
 
     public boolean nextBoolean() {
         return Boolean.parseBoolean(nextString());
     }
-    
+
     public int nextInt() {
-        return Integer.parseInt(nextString()); 
+        return Integer.parseInt(nextString());
     }
-    
+
     public Object next() {
         return parametersIterator.next();
     }
-    
+
     public boolean hasNext() {
         return parametersIterator.hasNext();
     }

@@ -14,7 +14,7 @@ public class MethAddr extends Reference {
     public MethAddr(String name) {
         super(OperandType.METH_ADDR, name);
     }
-    
+
     @Override
     public String toString() {
         return "'" + getName() + "'";
@@ -34,11 +34,11 @@ public class MethAddr extends Reference {
     public boolean equals(Object o) {
         return (o instanceof MethAddr) && ((MethAddr)o).getName().equals(getName());
     }
-    
+
     @Override
     public int hashCode() {
         return getName().hashCode();
-    }    
+    }
 
     @Override
     public void visit(IRVisitor visitor) {

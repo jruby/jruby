@@ -25,10 +25,10 @@ public class SValue extends Operand {
 
     public SValue(Operand array) {
         super(OperandType.SVALUE);
-        
+
         this.array = array;
     }
-    
+
     public Operand getArray() {
         return array;
     }

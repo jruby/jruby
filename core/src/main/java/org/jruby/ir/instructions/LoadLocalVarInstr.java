@@ -33,7 +33,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
         this.result = result;
         this.scope = scope;
     }
-    
+
     public IRScope getScope() {
         return scope;
     }
@@ -55,7 +55,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public String toString() {
-        return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")"; 
+        return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")";
     }
 
     @Override

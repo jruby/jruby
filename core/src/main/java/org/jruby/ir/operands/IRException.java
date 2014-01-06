@@ -10,13 +10,13 @@ import java.util.List;
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
     private final RubyLocalJumpError.Reason type;
-    
+
     protected IRException(RubyLocalJumpError.Reason type) {
         super(OperandType.IR_EXCEPTION);
-        
+
         this.type = type;
     }
-    
+
     public RubyLocalJumpError.Reason getType() {
         return type;
     }
@@ -26,12 +26,12 @@ public class IRException extends Operand {
     public static final IRException BREAK_LocalJumpError = new IRException(RubyLocalJumpError.Reason.BREAK);
     public static final IRException RETURN_LocalJumpError = new IRException(RubyLocalJumpError.Reason.RETURN);
     public static final IRException REDO_LocalJumpError = new IRException(RubyLocalJumpError.Reason.REDO);
-    
+
     public static IRException getExceptionFromOrdinal(int ordinal) {
         if (ordinal < 0 || ordinal > RubyLocalJumpError.Reason.values().length) {
             throw new IllegalArgumentException("Invalid ordinal value for jump error: " + ordinal);
         }
-        
+
         switch(RubyLocalJumpError.Reason.values()[ordinal]) {
             case RETRY: return RETRY_LocalJumpError;
             case NEXT: return NEXT_LocalJumpError;
@@ -39,10 +39,10 @@ public class IRException extends Operand {
             case RETURN: return RETURN_LocalJumpError;
             case REDO: return REDO_LocalJumpError;
         }
-        
+
         return null; // not reached.
     }
-    
+
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
@@ -73,7 +73,7 @@ public class IRException extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.IRException(this);
     }
-    
+
     @Override
     public String toString() {
         return "LocalJumpError:" + getType();

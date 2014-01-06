@@ -64,8 +64,8 @@ StringCharacter = [^\"\\]
 %%
 
 <YYINITIAL> {
-    \"                 { stringResult = true; yybegin(STRING); } 
-    
+    \"                 { stringResult = true; yybegin(STRING); }
+
     {WhiteSpace}       { /* ignore */ }
     {LineTerminator}   { return PersistedIRParser.EOLN; }
     {FixnumLiteral}    { return PersistedIRParser.FIXNUM; }
@@ -73,13 +73,13 @@ StringCharacter = [^\"\\]
     "="                { return PersistedIRParser.EQ; }
     {BooleanLiteral}   { return PersistedIRParser.BOOLEAN; }
     "null"             { return PersistedIRParser.NULL; }
-    
+
     /* Markers that are common for all instructions */
     "[DEAD]"           { return PersistedIRParser.DEAD_INSTR_MARKER; }
     "[DEAD-RESULT]"    { return PersistedIRParser.DEAD_RESULT_INSTR_MARKER; }
-    
+
     {Identifier}       { return PersistedIRParser.ID; }
-    
+
     /* separators */
     "["                { return PersistedIRParser.LBRACK; }
     "]"                { return PersistedIRParser.RBRACK; }

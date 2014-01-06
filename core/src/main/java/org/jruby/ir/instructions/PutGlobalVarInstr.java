@@ -14,11 +14,11 @@ public class PutGlobalVarInstr extends PutInstr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
         super(Operation.PUT_GLOBAL_VAR, new GlobalVariable(varName), null, value);
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { getTarget(), getValue() };
-    }    
+    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

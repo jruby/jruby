@@ -8,7 +8,7 @@ public class BooleanLiteral extends ImmutableLiteral {
 
     public BooleanLiteral(boolean truthy) {
         super(OperandType.BOOLEAN_LITERAL);
-        
+
         this.truthy = truthy;
     }
 
@@ -24,11 +24,11 @@ public class BooleanLiteral extends ImmutableLiteral {
     public boolean isFalse() {
         return !truthy;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof BooleanLiteral && truthy == ((BooleanLiteral) other).truthy;
-    }    
+    }
 
     @Override
     public int hashCode() {

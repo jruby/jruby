@@ -6,13 +6,13 @@ import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 import org.jruby.parser.IRStaticScope;
 
 public abstract class AbstractIRStringBuilder<T> {
-    
+
     private static final String DOUBLE_QUOTES = "\"";
     private static final String ESCAPED_DOUBLE_QUOTES = "\\\\\"";
-    
+
     private static final String ARRAY_START_MARKER = "[";
     private static final String ARRAY_END_MARKER = "]";
-    
+
     private final String PARAMETER_LIST_START_MARKER = getParameterListStartMarker();
     private final String PARAMETER_SEPARATOR = getParameterSeparator();
     private final String PARAMETER_LIST_END_MARKER = getParameterListEndMarker();
@@ -47,7 +47,7 @@ public abstract class AbstractIRStringBuilder<T> {
     }
 
     private void appendParameter(Object parameter) {
-        
+
         // We need these ugly instanceof's because the choice of
         // which overloading to invoke is made at compile time
         // so we can't simply write appendParameter(String string) etc.
@@ -69,10 +69,10 @@ public abstract class AbstractIRStringBuilder<T> {
 
         } else if (parameter instanceof IRStaticScope) {
             appendStaticScopeParameter((IRStaticScope) parameter);
-            
+
         } else if (parameter == null) {
             builder.append(parameter);
-            
+
         } else {
             appendOtherParameter(parameter);
 
@@ -87,27 +87,27 @@ public abstract class AbstractIRStringBuilder<T> {
         String escapedStringValue = string.replaceAll(DOUBLE_QUOTES, ESCAPED_DOUBLE_QUOTES);
         builder.append(DOUBLE_QUOTES).append(escapedStringValue).append(DOUBLE_QUOTES);
     }
-    
+
     private void appendParameterWithoutModifications(Object parameter) {
         builder.append(parameter);
     }
-    
+
     private void appendArrayParameter(Object[] parameters) {
         builder.append(ARRAY_START_MARKER);
-        
+
         for (int i = 0; i < parameters.length; i++) {
             if (i != 0) builder.append(PARAMETER_SEPARATOR);
-            
+
             appendParameter(parameters[i]);
         }
-        
+
         builder.append(ARRAY_END_MARKER);
     }
 
     private void appendIRScopeParameter(IRScope scope) {
         appendEscapedString(scope.getName()+":"+scope.getLineNumber());
     }
-    
+
     private void appendStaticScopeParameter(IRStaticScope staticScope) {
         appendOtherParameter(staticScope.getType());
         builder.append(PARAMETER_SEPARATOR);
@@ -119,7 +119,7 @@ public abstract class AbstractIRStringBuilder<T> {
     private void appendOtherParameter(Object parameter) {
         appendEscapedString(parameter.toString());
     }
-    
+
     public String getResultString() {
         return builder.toString();
     }

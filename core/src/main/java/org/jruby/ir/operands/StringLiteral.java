@@ -26,7 +26,7 @@ public class StringLiteral extends Operand {
 
     public StringLiteral(ByteList val) {
         super(OperandType.STRING_LITERAL);
-        
+
         bytelist = val;
         string = Helpers.byteListToString(bytelist);
     }
@@ -34,7 +34,7 @@ public class StringLiteral extends Operand {
     public StringLiteral(String s) {
         this(s, ByteList.create(s));
     }
-    
+
     private StringLiteral(String string, ByteList byteList ) {
         super(OperandType.STRING_LITERAL);
 
@@ -56,7 +56,7 @@ public class StringLiteral extends Operand {
     public int hashCode() {
         return bytelist.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof StringLiteral && bytelist.equals(((StringLiteral) other).bytelist);

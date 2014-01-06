@@ -29,7 +29,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr, FixedAr
     public ReceiveExceptionInstr(Variable result) {
         this(result, true);
     }
-    
+
     public boolean isCheckType() {
         return checkType;
     }

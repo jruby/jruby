@@ -40,7 +40,7 @@ public class Backref extends Reference {
     public void visit(IRVisitor visitor) {
         visitor.Backref(this);
     }
-    
+
     @Override
     public String toString() {
         return "$" + "'" + type + "'";

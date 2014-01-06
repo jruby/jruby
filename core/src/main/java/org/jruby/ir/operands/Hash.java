@@ -21,7 +21,7 @@ public class Hash extends Operand {
 
     public Hash(List<KeyValuePair> pairs) {
         super(OperandType.HASH);
-        
+
         this.pairs = pairs;
     }
 
@@ -94,7 +94,7 @@ public class Hash extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.Hash(this);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

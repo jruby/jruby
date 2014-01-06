@@ -36,11 +36,11 @@ public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
     public Operand[] getOperands() {
         return new Operand[] { receiver, arg };
     }
-    
+
     public Operand getArg() {
         return arg;
     }
-    
+
     public Operand getReceiver() {
         return receiver;
     }

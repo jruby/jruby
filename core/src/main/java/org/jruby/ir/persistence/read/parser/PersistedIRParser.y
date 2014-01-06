@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2013 The JRuby Team <team@jruby.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -64,26 +64,26 @@ public class PersistedIRParser {
 %type <InstrWithParams> instr_with_params
 
 %%
-scopes : scopes_info EOLN scopes_instructions { 
+scopes : scopes_info EOLN scopes_instructions {
     $$ = logic.getToplevelScope();
 }
-    
+
 scopes_info : scope_info EOLN
             | scopes_info scope_info EOLN
 
-    
-/* Info that is needed to recreate a scope itself, do not contain instructions */    
+
+/* Info that is needed to recreate a scope itself, do not contain instructions */
 scope_info : ID LT parameter_list GT {
-    $$ = logic.createScope($1, $3); 
+    $$ = logic.createScope($1, $3);
 }
-    
+
 scopes_instructions : scope_instructions EOLN
                    |  scopes_instructions scope_instructions EOLN
-    
+
 scope_instructions : scope_descriptor EOLN instruction_list {
-    $$ = logic.addToScope($1, $3); 
+    $$ = logic.addToScope($1, $3);
 }
-    
+
 scope_descriptor : STRING {
     $$ = logic.enterScope($1);
 }
@@ -95,11 +95,11 @@ instruction_list : abstract_instruction EOLN {
                  | instruction_list abstract_instruction EOLN {
                      $$ = logic.addFollowingInstructions($1, $2, null);
                  }
-    
+
 abstract_instruction : instruction DEAD_INSTR_MARKER {
-    $$ = logic.markAsDeadIfNeeded($1, $2); 
+    $$ = logic.markAsDeadIfNeeded($1, $2);
 }
-    
+
 instruction: simple_instr | abstract_result_instr
 
 simple_instr: ID {
@@ -108,7 +108,7 @@ simple_instr: ID {
             | instr_with_params {
                 $$ = logic.createInstrWithParams($1);
             }
-     
+
 abstract_result_instr : result_instr DEAD_RESULT_INSTR_MARKER {
     $$ = logic.markHasUnusedResultIfNeeded($1, $2);
 }
@@ -119,29 +119,29 @@ result_instr : operand EQ ID {
              | operand EQ instr_with_params {
                        //                 $$ = logic.createReturnInstrWithParams($1, $3);
              }
-    
+
 instr_with_params : ID LPAREN parameter_list RPAREN {
-                       //   $$ = logic.createInstrWithParams($1, $3); 
+                       //   $$ = logic.createInstrWithParams($1, $3);
 }
 
-/* Parameters of instruction */ 
+/* Parameters of instruction */
 parameter_list : param | parameter_list COMMA param
-    
-param : operand | FIXNUM | FLOAT | BOOLEAN | list | STRING 
+
+param : operand | FIXNUM | FLOAT | BOOLEAN | list | STRING
       | NULL { $$ = logic.createNull(); }
-    
+
 list : LBRACK parameter_list RBRACK {
     $$ = logic.createList($2);
 }
 
 /* Operands */
 operand : operand_without_parameters | operand_with_parameters
-    
+
 operand_without_parameters : ID {
-    $$ = logic.createOperandWithoutParameters($1); 
+    $$ = logic.createOperandWithoutParameters($1);
 }
 
-    
+
 operand_with_parameters : ID LBRACE parameter_list RBRACE {
     $$ = logic.createOperandWithParameters($1, $3);
 }

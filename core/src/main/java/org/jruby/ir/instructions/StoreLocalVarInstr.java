@@ -30,11 +30,11 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
         this.value = value;
         this.scope = scope;
     }
-    
+
     public IRScope getScope() {
         return scope;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[]{value, new ScopeModule(scope), lvar};
@@ -49,7 +49,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     public String toString() {
         return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";
     }
-    
+
     public LocalVariable getLocalVar() {
         return lvar;
     }
@@ -71,7 +71,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     public void visit(IRVisitor visitor) {
         visitor.StoreLocalVarInstr(this);
     }
-    
+
     public Operand getValue() {
         return value;
     }

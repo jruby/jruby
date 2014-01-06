@@ -70,7 +70,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     public MethAddr getMethodAddr() {
         return methAddr;
     }
-    
+
     public Operand getClosureArg(Operand ifUnspecified) {
         return closure == null ? ifUnspecified : closure;
     }
@@ -307,7 +307,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     public boolean canSetDollarVars() {
         return true;
     }
-    
+
     @Override
     public String toString() {
         return "" + getOperation()  + "(" + callType + ", " + getMethodAddr() + ", " + receiver +
@@ -324,7 +324,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     private final static int REQUIRED_OPERANDS = 4;
-    private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver, 
+    private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver,
             Fixnum argsCount, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + ((closure != null) ? 1 : 0)];
 

@@ -40,11 +40,11 @@ public interface IRReaderDecoder {
     public long decodeLong();
     public double decodeDouble();
     public float decodeFloat();
-    
+
     public Variable decodeVariable();
     public IRScope decodeOperandAsIRScope();
     public String decodeOperandAsString();
-    
+
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset);
     public IRScope getCurrentScope();
     public Map<String, Operand> getVars();

@@ -8,7 +8,7 @@ public class Float extends ImmutableLiteral {
 
     public Float(double value) {
         super(OperandType.FLOAT);
-        
+
         this.value = value;
     }
 

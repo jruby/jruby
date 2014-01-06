@@ -25,15 +25,15 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
         super(Operation.MASGN_OPT, result, array, index);
         this.minArgsLength = minArgsLength;
     }
-    
+
     public int getMinArgsLength() {
         return minArgsLength;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { getArrayArg(), new Fixnum(getIndex()), new Fixnum(minArgsLength) };
-    }    
+    }
 
     @Override
     public String toString() {

@@ -35,11 +35,11 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     public Operand getContainer() {
         return container;
     }
-    
+
     public IRMethod getMethod() {
         return method;
-    }    
-    
+    }
+
     @Override
     public Operand[] getOperands() {
         return new Operand[]{container, new ScopeModule(method) };
@@ -48,12 +48,12 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);
-    }    
-    
+    }
+
     @Override
     public String toString() {
         return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
-    }    
+    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

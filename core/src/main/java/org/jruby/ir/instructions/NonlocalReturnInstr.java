@@ -19,7 +19,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public NonlocalReturnInstr(Operand returnValue) {
         this(returnValue, null);
     }
-    
+
     public String getMethodToReturnFrom() {
         return methodToReturnFrom.getName();
     }

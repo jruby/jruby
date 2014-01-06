@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
 
 public class FileIO {
     public static final Charset CHARSET = Charset.forName("UTF-8");
-    
+
     public static String readFile(File file) throws FileNotFoundException, IOException {
         FileInputStream fis = null;
         try {

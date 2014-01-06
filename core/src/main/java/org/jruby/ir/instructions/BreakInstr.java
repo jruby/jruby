@@ -38,14 +38,14 @@ public class BreakInstr extends Instr implements FixedArityInstr {
         this.scopeToReturnTo = s;
         this.returnValue = rv;
     }
-    
+
     public IRScope getScopeToReturnTo() {
         return scopeToReturnTo;
     }
 
     public Operand getReturnValue() {
         return returnValue;
-    }     
+    }
 
     @Override
     public Operand[] getOperands() {

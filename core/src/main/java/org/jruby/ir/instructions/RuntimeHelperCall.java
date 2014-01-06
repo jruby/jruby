@@ -28,15 +28,15 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         this.helperMethod = helperMethod;
         this.args = args;
     }
-    
+
     public Operand[] getArgs() {
         return args;
     }
-    
+
     public String getHelperMethod() {
         return helperMethod;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         Operand[] operands = new Operand[args.length + 1];

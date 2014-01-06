@@ -15,9 +15,9 @@ public class GetGlobalVariableInstr extends GetInstr  implements FixedArityInstr
     public GetGlobalVariableInstr(Variable dest, String gvarName) {
         this(dest, new GlobalVariable(gvarName));
     }
-    
+
     public GetGlobalVariableInstr(Variable dest, GlobalVariable gvar) {
-        super(Operation.GET_GLOBAL_VAR, dest, gvar, null); 
+        super(Operation.GET_GLOBAL_VAR, dest, gvar, null);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class IRModuleBody extends IRScope {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.MODULE_BODY;
-     } 
+     }
 
     public CodeVersion getVersion() {
         return version;

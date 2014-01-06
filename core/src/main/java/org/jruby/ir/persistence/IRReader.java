@@ -32,19 +32,19 @@ public class IRReader {
         if (DEBUG) System.out.println("header_offset = " + headersOffset);
         int poolOffset = file.decodeIntRaw();
         if (DEBUG) System.out.println("pool_offset = " + headersOffset);
-        
+
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
         if (DEBUG) System.out.println("scopes to read = " + scopesToRead);
-        
+
         IRScope script = decodeScopeHeader(manager, file);
         for (int i = 1; i < scopesToRead; i++) {
             decodeScopeHeader(manager, file);
         }
-        
+
         return script;
     }
-    
+
     private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
@@ -58,30 +58,30 @@ public class IRReader {
         int arity = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
-        StaticScope staticScope = decodeStaticScope(decoder, parentScope);     
+        StaticScope staticScope = decodeStaticScope(decoder, parentScope);
         IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
-        
+
         decoder.addScope(scope);
-        
+
         scope.savePersistenceInfo(decoder.decodeInt(), decoder);
-        
+
         return scope;
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope scope = IRStaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
-        
+
         scope.setRequiredArgs(decoder.decodeInt()); // requiredArgs has no constructor ...
-        
+
         return scope;
     }
-    
-    public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line, 
-            IRScope lexicalParent, boolean isForLoopBody, int arity, int argumentType, 
+
+    public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
+            IRScope lexicalParent, boolean isForLoopBody, int arity, int argumentType,
             StaticScope staticScope) {
-        
+
         switch (type) {
-        case CLASS_BODY:            
+        case CLASS_BODY:
             return new IRClassBody(manager, lexicalParent, name, line, staticScope);
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
@@ -93,12 +93,12 @@ public class IRReader {
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:
             return new IRScriptBody(manager, "__file__", name, staticScope);
-        case CLOSURE:   
+        case CLOSURE:
             return new IRClosure(manager, lexicalParent, isForLoopBody, line, staticScope, Arity.createArity(arity), argumentType);
         case EVAL_SCRIPT:
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope);
         }
-        
+
         return null;
     }
 }

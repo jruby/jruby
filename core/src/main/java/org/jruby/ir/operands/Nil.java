@@ -20,7 +20,7 @@ public class Nil extends ImmutableLiteral {
     protected Nil(OperandType type) {
         super(type);
     }
-    
+
     @Override
     public String toString() {
         return "nil";

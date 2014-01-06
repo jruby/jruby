@@ -264,8 +264,8 @@ public enum Operation {
     public String toString() {
         return name().toLowerCase();
     }
-    
+
     public static Operation fromOrdinal(int value) {
         return value < 0 || value >= values().length ? null : values()[value];
-    }      
+    }
 }

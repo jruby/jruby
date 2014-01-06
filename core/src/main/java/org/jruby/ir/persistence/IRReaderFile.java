@@ -35,7 +35,7 @@ import org.jruby.parser.StaticScope;
  */
 public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public static final boolean DEBUG = true;
-    
+
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
@@ -54,13 +54,13 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
             buf = ByteBuffer.wrap(bytes);
         } catch (IOException ex) {
             Logger.getLogger(IRReaderFile.class.getName()).log(Level.SEVERE, null, ex);
-            
+
         }
-        
+
         instrDecoderMap = new InstrDecoderMap(manager, this);
         operandDecoderMap = new OperandDecoderMap(manager, this);
     }
-    
+
     @Override
     public String decodeString() {
         int strLength = decodeInt();
@@ -68,12 +68,12 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         buf.get(bytes);
         return new String(bytes);
     }
-    
+
     @Override
     public void addScope(IRScope scope) {
         scopes.add(scope);
     }
-    
+
     @Override
     public IRScope getCurrentScope() {
         return currentScope;
@@ -88,9 +88,9 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         }
         return array;
     }
-    
+
     private Map<String, Operand> vars = null;
-    
+
     @Override
     public Map<String, Operand> getVars() {
         return vars;
@@ -104,11 +104,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         int numberOfInstructions = decodeInt();
         if (DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
         List<Instr> instrs = new ArrayList(numberOfInstructions);
-        
+
         for (int i = 0; i < numberOfInstructions; i++) {
             instrs.add(decodeInstr());
         }
-        
+
         return instrs;
     }
 
@@ -137,53 +137,53 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operand decodeOperand() {
         return operandDecoderMap.decode(decodeOperandType());
-    }      
+    }
 
     @Override
     public IRScope decodeOperandAsIRScope() {
         Operand operand = decodeOperand();
-        
+
         return ((ScopeModule) operand).getScope();
     }
-    
+
     @Override
     public String decodeOperandAsString() {
         Operand operand = decodeOperand();
-        
+
         return ((StringLiteral) operand).getString();
-    }    
-    
+    }
+
     @Override
     public Variable decodeVariable() {
         return (Variable) decodeOperand();
     }
-    
+
     @Override
     public Operand[] decodeOperandArray() {
         int size = decodeInt();
         Operand[] list = new Operand[size];
-        
+
         for (int i = 0; i < size; i++) {
             list[i] = decodeOperand();
         }
-        
+
         return list;
     }
-    
+
     @Override
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
         if (DEBUG) System.out.println("OPERAND LIST of size: " + size);
         List<Operand> list = new ArrayList<Operand>(size);
-        
+
         for (int i = 0; i < size; i++) {
             if (DEBUG) System.out.println("OPERAND #" + i);
             list.add(decodeOperand());
         }
-        
+
         return list;
     }
-    
+
     @Override
     public OperandType decodeOperandType() {
         return OperandType.fromCoded(decodeByte());
@@ -194,16 +194,16 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         byte value = buf.get();
         if (value == TRUE) return true;
         if (value == FALSE) return false;
-        
+
         throw new IllegalArgumentException("Value (" + ((int) value) + ") is not a boolean.");
     }
-    
-    @Override 
+
+    @Override
     public byte decodeByte() {
         return buf.get();
     }
-    
-    @Override 
+
+    @Override
     public char decodeChar() {
         return buf.getChar();
     }
@@ -213,7 +213,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         byte b = buf.get();
         return b == FULL ? buf.getInt() : (int) b;
     }
-    
+
     @Override
     public int decodeIntRaw() {
         return buf.getInt();
@@ -239,9 +239,9 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public IRScope decodeScope() {
         return scopes.get(decodeInt());
     }
-    
+
     @Override
     public void seek(int headersOffset) {
         buf.position(headersOffset);
-    }    
+    }
 }

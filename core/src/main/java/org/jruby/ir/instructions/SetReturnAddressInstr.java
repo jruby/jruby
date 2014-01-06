@@ -55,7 +55,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr, FixedAr
 
     @Override
     public String toString() {
-        return "" + result + " = " + returnAddr; 
+        return "" + result + " = " + returnAddr;
     }
 
     @Override

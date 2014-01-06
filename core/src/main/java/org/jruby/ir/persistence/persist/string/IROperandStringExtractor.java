@@ -48,13 +48,13 @@ import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 class IROperandStringExtractor extends IRVisitor {
-    
+
     private final IROperandStringBuilder stringProducer;
-    
+
     private IROperandStringExtractor(IROperandStringBuilder stringProducer) {
         this.stringProducer = stringProducer;
     }
-    
+
     // Static factory that is used in translator
     static IROperandStringExtractor createToplevelInstance() {
         IROperandStringBuilder stringProducer = new IROperandStringBuilder(null);
@@ -64,19 +64,19 @@ class IROperandStringExtractor extends IRVisitor {
         IROperandStringBuilder stringProducer = new IROperandStringBuilder(builder);
         return new IROperandStringExtractor(stringProducer);
     }
-    
+
     public String extract(Operand operand) {
         produceString(operand);
-        
+
         return stringProducer.getResultString();
     }
-    
+
     public void produceString(Operand operand) {
         stringProducer.appendOperandType(operand);
 
         operand.visit(this);
     }
-    
+
  // Operands
 
     // Operands without parameters
@@ -86,16 +86,16 @@ class IROperandStringExtractor extends IRVisitor {
     @Override public void StandardError(StandardError standarderror) {}
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {}
     @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {}
-    
+
     // Operands that have arrays as parameters
-    
+
     // If we simply pass array directly to appendParameters
     //  than it will be unwrapped
     //  we want to pass single parameters which type is Operand[]
     @Override public void Array(Array array) {
         stringProducer.appendParameters(new Object[] { array.getElts() });
     }
-    
+
     @Override public void BacktickString(BacktickString backtickstring) {
         stringProducer.appendParameters(new Object[] { backtickstring.pieces.toArray() });
     }
@@ -115,16 +115,16 @@ class IROperandStringExtractor extends IRVisitor {
             for (KeyValuePair keyValuePair : pairs) {
                 keyValuePairArrays.add(new Operand[] { keyValuePair.getKey(), keyValuePair.getValue() });
             }
-        }        
+        }
         stringProducer.appendParameters(new Object[] { keyValuePairArrays.toArray() });
     }
 
-    // Operands that takes another operands as parameters    
-    
+    // Operands that takes another operands as parameters
+
     @Override public void AsString(AsString asstring) {
         stringProducer.appendParameters(asstring.getSource());
     }
-    
+
     @Override public void CompoundArray(CompoundArray op) {
         stringProducer.appendParameters(op.getA1(), op.getA2(), op.isArgsPush());
     }
@@ -146,7 +146,7 @@ class IROperandStringExtractor extends IRVisitor {
         RegexpOptions options = regexp.options;
         KCode kCode = options.getKCode();
         boolean kcodeDefault = options.isKcodeDefault();
-        
+
         stringProducer.appendParameters(regexpOperand, kCode, kcodeDefault);
     }
 
@@ -157,7 +157,7 @@ class IROperandStringExtractor extends IRVisitor {
     @Override public void SValue(SValue svalue) {
         stringProducer.appendParameters(svalue.getArray());
     }
-    
+
     // Operands that takes IRScope as parameter
     //  actually, all we need to persist is name of scope, by IRPersisterHelper will deal with this
     @Override public void CurrentScope(CurrentScope currentscope) {
@@ -171,7 +171,7 @@ class IROperandStringExtractor extends IRVisitor {
     @Override public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) {
         stringProducer.appendParameters(wrappedirclosure.getClosure());
     }
-    
+
     // Parameters that takes string(or char) as parameters
     @Override public void Backref(Backref backref) {
         stringProducer.appendParameters(backref.type);
@@ -185,13 +185,13 @@ class IROperandStringExtractor extends IRVisitor {
         stringProducer.appendParameters(symbol.getName());
     }
 
-    @Override public void GlobalVariable(GlobalVariable variable) {        
+    @Override public void GlobalVariable(GlobalVariable variable) {
         stringProducer.appendParameters(variable.getName());
     }
 
     @Override public void IRException(IRException irexception) {
         String type = null;
-        
+
         if (irexception == IRException.NEXT_LocalJumpError) type = "NEXT";
         else if (irexception == IRException.BREAK_LocalJumpError) type = "BREAK";
         else if (irexception == IRException.RETURN_LocalJumpError) type = "RETURN";
@@ -201,7 +201,7 @@ class IROperandStringExtractor extends IRVisitor {
                         Throw RuntimeException here?
          */
         }
-        
+
         stringProducer.appendParameters(type);
     }
 
@@ -214,7 +214,7 @@ class IROperandStringExtractor extends IRVisitor {
     }
 
     // Operands that takes java objects from standard library(or primitive types) as parameters
-    //  exception for string types 
+    //  exception for string types
     @Override public void Bignum(Bignum bignum) {
         stringProducer.appendParameters(bignum.value);
     }
@@ -230,7 +230,7 @@ class IROperandStringExtractor extends IRVisitor {
     @Override public void LocalVariable(LocalVariable variable) {
         commonForLocalVariables(variable);
     }
-    
+
     private void commonForLocalVariables(LocalVariable variable) {
         stringProducer.appendParameters(variable.getName(), variable.getScopeDepth());
     }
@@ -241,7 +241,7 @@ class IROperandStringExtractor extends IRVisitor {
 
     @Override public void Float(org.jruby.ir.operands.Float flote) {
         stringProducer.appendParameters(flote.value);
-    }   
+    }
 
     @Override public void NthRef(NthRef nthref) {
         stringProducer.appendParameters(nthref.matchNumber);
@@ -250,7 +250,7 @@ class IROperandStringExtractor extends IRVisitor {
     @Override public void TemporaryVariable(TemporaryVariable variable) {
         commonForTemproraryVariable(variable);
     }
-    
+
     @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) {
         commonForTemproraryVariable(variable);
     }

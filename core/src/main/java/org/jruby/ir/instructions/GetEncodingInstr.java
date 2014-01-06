@@ -26,7 +26,7 @@ public class GetEncodingInstr extends Instr implements ResultInstr, FixedArityIn
     public Encoding getEncoding() {
         return encoding;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new StringLiteral(encoding.toString()) };

@@ -13,14 +13,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class TemporaryVariable extends Variable {
     public final int offset;
     String name;
-    
+
     public TemporaryVariable(int offset) {
         this(OperandType.TEMPORARY_VARIABLE, offset);
-    }    
+    }
 
     public TemporaryVariable(OperandType type, int offset) {
         super(type);
-        
+
         this.offset = offset;
         this.name = getPrefix() + offset;
     }
@@ -28,7 +28,7 @@ public class TemporaryVariable extends Variable {
     public TemporaryVariable(String name, int offset) {
         this(OperandType.TEMPORARY_VARIABLE, offset);
     }
-    
+
     // Used for temporary variables like %current_module, %_arg_array
     public TemporaryVariable(OperandType type, String name, int offset) {
         super(type);

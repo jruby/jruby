@@ -26,12 +26,12 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         this.preReqdArgsCount = preReqdArgsCount;
         this.postReqdArgsCount = postReqdArgsCount;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(argIndex), new Fixnum(preReqdArgsCount), new Fixnum(postReqdArgsCount) };
     }
-    
+
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + preReqdArgsCount + ", " + postReqdArgsCount + ")";

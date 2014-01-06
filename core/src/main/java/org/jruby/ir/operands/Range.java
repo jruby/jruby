@@ -22,7 +22,7 @@ public class Range extends Operand {
 
     public Range(Operand begin, Operand end, boolean exclusive) {
         super(OperandType.RANGE);
-        
+
         this.begin = begin;
         this.end = end;
         this.exclusive = exclusive;
@@ -44,7 +44,7 @@ public class Range extends Operand {
     public String toString() {
         return begin + (exclusive ? ".." : "...") + end;
     }
-    
+
 
 // ---------- These methods below are used during compile-time optimizations -------
     @Override

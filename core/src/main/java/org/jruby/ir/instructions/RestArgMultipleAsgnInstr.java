@@ -29,7 +29,7 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public int getPreArgsCount() {
         return preArgsCount;
     }
-    
+
     public int getPostArgsCount() {
         return postArgsCount;
     }
@@ -38,7 +38,7 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public Operand[] getOperands() {
         return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";

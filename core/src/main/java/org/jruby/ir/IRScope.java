@@ -141,7 +141,7 @@ public abstract class IRScope implements ParseResult {
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
     List<IRScope> lexicalChildren;
-    
+
     private int instructionsOffsetInfoPersistenceBuffer = -1;
     private IRReaderDecoder persistenceStore = null;
 
@@ -725,7 +725,7 @@ public abstract class IRScope implements ParseResult {
             instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
             computeScopeFlags();
         }
-        
+
         if (isLambda) {
             // Add a global ensure block to catch uncaught breaks
             // and throw a LocalJumpError.
@@ -751,7 +751,7 @@ public abstract class IRScope implements ParseResult {
         if (persistenceStore != null) {
             instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
         }
-        
+
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
@@ -1368,7 +1368,7 @@ public abstract class IRScope implements ParseResult {
     public boolean isScriptScope() {
         return false;
     }
-    
+
     public void savePersistenceInfo(int offset, IRReaderDecoder file) {
         instructionsOffsetInfoPersistenceBuffer = offset;
         persistenceStore = file;

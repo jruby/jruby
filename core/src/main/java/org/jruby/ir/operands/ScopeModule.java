@@ -18,7 +18,7 @@ public class ScopeModule extends Operand {
 
     public ScopeModule(IRScope scope) {
         super(OperandType.SCOPE_MODULE);
-        
+
         this.scope = scope;
     }
 
@@ -36,7 +36,7 @@ public class ScopeModule extends Operand {
     public int hashCode() {
         return scope.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof ScopeModule && scope.equals(((ScopeModule) other).scope);

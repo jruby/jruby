@@ -21,9 +21,9 @@ public class LocalVariable extends Variable {
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
-        this(OperandType.LOCAL_VARIABLE, name, scopeDepth, location); 
+        this(OperandType.LOCAL_VARIABLE, name, scopeDepth, location);
     }
-    
+
     protected LocalVariable(OperandType type, String name, int scopeDepth, int location) {
         super(type);
         this.name = name;
@@ -34,7 +34,7 @@ public class LocalVariable extends Variable {
     public int getScopeDepth() {
         return scopeDepth;
     }
-    
+
     public int getOffset() {
         return offset;
     }
@@ -52,7 +52,7 @@ public class LocalVariable extends Variable {
     public String toString() {
         return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
     }
-    
+
 
     @Override
     public int hashCode() {

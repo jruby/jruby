@@ -25,16 +25,16 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
         this.rest = rest;
         this.numArgs = numArgs;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest), new Fixnum(numArgs) };
     }
-    
+
     public int getNumArgs() {
         return numArgs;
     }
-    
+
     public int getOpt() {
         return opt;
     }
@@ -43,11 +43,11 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     public String toString() {
         return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
     }
-    
+
     public int getRequired() {
         return required;
     }
-    
+
     public int getRest() {
         return rest;
     }

@@ -17,11 +17,11 @@ public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArity
         this.end = end;
         this.firstRescueBlockLabel = firstRescueBlockLabel;
     }
-    
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { begin, end, firstRescueBlockLabel };
-    }    
+    }
 
     @Override
     public String toString() {

@@ -14,7 +14,7 @@ public class PushBindingInstr extends Instr implements FixedArityInstr {
         super(Operation.PUSH_BINDING);
         this.scope = scope;
     }
-    
+
     public IRScope getScope() {
         return scope;
     }
@@ -42,7 +42,7 @@ public class PushBindingInstr extends Instr implements FixedArityInstr {
     public String toString() {
         return "" + getOperation() + "(" + scope + ")";
     }
-    
+
     @Override
     public void visit(IRVisitor visitor) {
         visitor.PushBindingInstr(this);

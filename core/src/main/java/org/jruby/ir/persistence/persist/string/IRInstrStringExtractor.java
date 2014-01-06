@@ -131,29 +131,29 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallType;
 
 class IRInstrStringExtractor extends IRVisitor {
-    
+
     private final IRInstructionStringBuilder stringProducer;
-    
+
     private IRInstrStringExtractor(IRInstructionStringBuilder stringProducer) {
         this.stringProducer = stringProducer;
     }
-    
+
     // Static factories that are used in translator
     static IRInstrStringExtractor createToplevelInstance() {
         IRInstructionStringBuilder stringProducer = new IRInstructionStringBuilder(null);
         return new IRInstrStringExtractor(stringProducer);
-    }    
+    }
     static IRInstrStringExtractor createInstance(StringBuilder builder) {
         IRInstructionStringBuilder stringProducer = new IRInstructionStringBuilder(builder);
         return new IRInstrStringExtractor(stringProducer);
     }
-    
+
     public String extract(Instr instr) {
         produceString(instr);
-        
+
         return stringProducer.getResultString();
     }
-    
+
     public void produceString(Instr instr) {
         stringProducer.appendPrefix(instr);
 
@@ -161,7 +161,7 @@ class IRInstrStringExtractor extends IRVisitor {
 
         stringProducer.appendMarkers(instr);
     }
-    
+
  // Instructions without parameters
 
     public void BackrefIsMatchDataInstr(BackrefIsMatchDataInstr backrefismatchdatainstr) {}
@@ -175,7 +175,7 @@ class IRInstrStringExtractor extends IRVisitor {
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {}
     public void GetBackrefInstr(GetBackrefInstr getbackrefinstr) {}
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) {}
-    
+
     // Branch Instructions
 
     public void BEQInstr(BEQInstr beqinstr) {
@@ -190,7 +190,7 @@ class IRInstrStringExtractor extends IRVisitor {
         Operand arg1 = branchInstr.getArg1();
         Operand arg2 = branchInstr.getArg2();
         Label jumpTarget = branchInstr.getJumpTarget();
-        
+
         stringProducer.appendParameters(arg1, arg2, jumpTarget);
     }
 
@@ -213,7 +213,7 @@ class IRInstrStringExtractor extends IRVisitor {
     private void commonForBranchInstrWithoutArg2(OneOperandBranchInstr branchInstr) {
         Operand arg1 = branchInstr.getArg1();
         Label jumpTarget = branchInstr.getJumpTarget();
-        
+
         stringProducer.appendParameters(arg1, jumpTarget);
     }
 
@@ -222,30 +222,30 @@ class IRInstrStringExtractor extends IRVisitor {
     public void CallInstr(CallInstr callinstr) {
         commonForUnspecializedGeneralCallInstr(callinstr);
     }
-    
+
     public void NoResultCallInstr(NoResultCallInstr noresultcallinstr) {
         commonForUnspecializedGeneralCallInstr(noresultcallinstr);
     }
 
     private void commonForUnspecializedGeneralCallInstr(CallBase callBase) {
         List<Object> parameters = getParametersForGeneralCallInstr(callBase);
-        
+
         Operand closure = callBase.getClosureArg(null);
         parameters.add(closure);
-        
+
         stringProducer.appendParameters(parameters.toArray());
     }
-    
+
     private List<Object> getParametersForGeneralCallInstr(CallBase callBase) {
         List<Object> parameters = new ArrayList<Object>(5);
-        
+
         Operand receiver = callBase.getReceiver();
         CallType callType = callBase.getCallType();
         MethAddr methodAddr = callBase.getMethodAddr();
         Operand[] callArgs = callBase.getCallArgs();
-        
+
         Collections.addAll(parameters, receiver, callType, methodAddr, callArgs);
-        
+
         return parameters;
     }
 
@@ -263,7 +263,7 @@ class IRInstrStringExtractor extends IRVisitor {
     public void ZeroOperandArgNoBlockCallInstr(
             ZeroOperandArgNoBlockCallInstr zerooperandargnoblockcallinstr) {
         commonForSpecializedGeneralCallInstr(zerooperandargnoblockcallinstr, SpecializedInstType.ZERO_OPERAND);
-    }    
+    }
 
     // specialized NoResultCallInstr
     public void OneOperandArgNoBlockNoResultCallInstr(
@@ -275,7 +275,7 @@ class IRInstrStringExtractor extends IRVisitor {
             CallBase callInstr, SpecializedInstType type) {
         List<Object> parameters = getParametersForGeneralCallInstr(callInstr);
         parameters.add(type);
-        
+
         stringProducer.appendParameters(parameters.toArray());
     }
 
@@ -289,26 +289,26 @@ class IRInstrStringExtractor extends IRVisitor {
             OneArgOperandAttrAssignInstr oneargoperandattrassigninstr) {
         List<Object> parameters = getCommonParametersForAttrAssign(oneargoperandattrassigninstr);
         parameters.add(SpecializedInstType.ONE_OPERAND);
-        
+
         stringProducer.appendParameters(parameters);
     }
 
-    private List<Object> getCommonParametersForAttrAssign(AttrAssignInstr attrassigninstr) {        
+    private List<Object> getCommonParametersForAttrAssign(AttrAssignInstr attrassigninstr) {
         List<Object> parameters = new ArrayList<Object>(4);
-        
+
         Operand receiver = attrassigninstr.getReceiver();
         MethAddr methodAddr = attrassigninstr.getMethodAddr();
         Operand[] callArgs = attrassigninstr.getCallArgs();
-        
+
         Collections.addAll(parameters, receiver, methodAddr, callArgs);
-        
+
         return parameters;
     }
 
-    public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {        
-        commonForResolvedSupeInstr(classsuperinstr, SuperInstrType.CLASS);        
+    public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
+        commonForResolvedSupeInstr(classsuperinstr, SuperInstrType.CLASS);
     }
-    
+
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
         commonForResolvedSupeInstr(instancesuperinstr, SuperInstrType.INSTANCE);
     }
@@ -318,29 +318,29 @@ class IRInstrStringExtractor extends IRVisitor {
         MethAddr methodAddr = superInstr.getMethodAddr();
         Operand[] callArgs = superInstr.getCallArgs();
         Operand closure = superInstr.getClosureArg(null);
-        
+
         stringProducer.appendParameters(type, receiver, methodAddr, callArgs, closure);
     }
 
     public void ConstMissingInstr(ConstMissingInstr constmissinginstr) {
         Operand receiver = constmissinginstr.getReceiver();
         String missingConst = constmissinginstr.getMissingConst();
-        
+
         stringProducer.appendParameters(receiver, missingConst);
-    }    
+    }
 
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
         Operand receiver = unresolvedsuperinstr.getReceiver();
         Operand[] callArgs = unresolvedsuperinstr.getCallArgs();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
-        
+
         stringProducer.appendParameters(SuperInstrType.UNRESOLVED, receiver, callArgs, closure);
     }
 
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
         Operand receiver = zsuperinstr.getReceiver();
         Operand closure = zsuperinstr.getClosureArg(null);
-        
+
         stringProducer.appendParameters(receiver, closure);
     }
 
@@ -357,13 +357,13 @@ class IRInstrStringExtractor extends IRVisitor {
     private void coomonForMostGetInstr(GetInstr getInstr) {
         Operand source = getInstr.getSource();
         String ref = getInstr.getRef();
-        
+
         stringProducer.appendParameters(source, ref);
     }
 
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
         Operand source = getglobalvariableinstr.getSource();
-        
+
         stringProducer.appendParameters(source);
     }
 
@@ -371,28 +371,28 @@ class IRInstrStringExtractor extends IRVisitor {
 
     public void JumpIndirectInstr(JumpIndirectInstr jumpindirectinstr) {
         Variable jumpTarget = jumpindirectinstr.getJumpTarget();
-        
+
         stringProducer.appendParameters(jumpTarget);
     }
 
     public void JumpInstr(JumpInstr jumpinstr) {
         Label jumpTarget = jumpinstr.getJumpTarget();
-        
+
         stringProducer.appendParameters(jumpTarget);
     }
 
     // Label Instruction
     public void LabelInstr(LabelInstr labelinstr) {
-        Label label = labelinstr.getLabel();        
-        
+        Label label = labelinstr.getLabel();
+
         stringProducer.appendParameters(label);
     }
 
-    
+
     @Override public void NonlocalReturnInstr(NonlocalReturnInstr instr) {
         stringProducer.appendParameters(instr.getMethodToReturnFrom());
     }
-    
+
 
     // Put instructions
 
@@ -412,7 +412,7 @@ class IRInstrStringExtractor extends IRVisitor {
         GlobalVariable target = (GlobalVariable) putglobalvarinstr.getTarget();
         String varName = target.getName();
         Operand value = putglobalvarinstr.getValue();
-        
+
         stringProducer.appendParameters(varName, value);
     }
 
@@ -420,7 +420,7 @@ class IRInstrStringExtractor extends IRVisitor {
         Operand target = putInstr.getTarget();
         String ref = putInstr.getRef();
         Operand value = putInstr.getValue();
-        
+
         stringProducer.appendParameters(target, ref, value);
     }
 
@@ -430,7 +430,7 @@ class IRInstrStringExtractor extends IRVisitor {
         List<Object> parameters = getCommonParametersForMultipleAsgnBase(reqdargmultipleasgninstr);
         parameters.add(reqdargmultipleasgninstr.getPreArgsCount());
         parameters.add(reqdargmultipleasgninstr.getPostArgsCount());
-        
+
         stringProducer.appendParameters(parameters.toArray());
     }
 
@@ -438,23 +438,23 @@ class IRInstrStringExtractor extends IRVisitor {
         List<Object> parameters = getCommonParametersForMultipleAsgnBase(instr);
         parameters.add(instr.getPreArgsCount());
         parameters.add(instr.getPostArgsCount());
-        
+
         stringProducer.appendParameters(parameters.toArray());
     }
-    
-    
+
+
     @Override public void RuntimeHelperCall(RuntimeHelperCall instr) {
         stringProducer.appendParameters(instr.getHelperMethod(), instr.getArgs());
     }
 
     private List<Object> getCommonParametersForMultipleAsgnBase(MultipleAsgnBase multipleAsgnBase) {
         List<Object> parameters = new ArrayList<Object>(4);
-        
+
         Operand array = multipleAsgnBase.getArrayArg();
         int index = multipleAsgnBase.getIndex();
-        
+
         Collections.addAll(parameters, array, index);
-        
+
         return parameters;
     }
 
@@ -488,7 +488,7 @@ class IRInstrStringExtractor extends IRVisitor {
     private void commonForAllDefinedObjectName(DefinedObjectNameInstr definedObjectNameInstr) {
         Operand object = definedObjectNameInstr.getObject();
         StringLiteral name = definedObjectNameInstr.getName();
-        
+
         stringProducer.appendParameters(object, name);
     }
 
@@ -496,14 +496,14 @@ class IRInstrStringExtractor extends IRVisitor {
         Variable receiver = aliasinstr.getReceiver();
         Operand newName = aliasinstr.getNewName();
         Operand oldName = aliasinstr.getOldName();
-        
+
         stringProducer.appendParameters(receiver, newName, oldName);
     }
 
     public void BreakInstr(BreakInstr breakinstr) {
         Operand returnValue = breakinstr.getReturnValue();
         IRScope scopeToReturnTo = breakinstr.getScopeToReturnTo();
-        
+
         stringProducer.appendParameters(returnValue, scopeToReturnTo);
     }
 
@@ -512,7 +512,7 @@ class IRInstrStringExtractor extends IRVisitor {
         int required = checkargsarrayarityinstr.required;
         int opt = checkargsarrayarityinstr.opt;
         int rest = checkargsarrayarityinstr.rest;
-        
+
         stringProducer.appendParameters(argsArray, required, opt, rest);
     }
 
@@ -520,13 +520,13 @@ class IRInstrStringExtractor extends IRVisitor {
         int required = checkarityinstr.required;
         int opt = checkarityinstr.opt;
         int rest = checkarityinstr.rest;
-        
+
         stringProducer.appendParameters(required, opt, rest);
     }
 
     public void CopyInstr(CopyInstr copyinstr) {
         Operand source = copyinstr.getSource();
-        
+
         stringProducer.appendParameters(source);
     }
 
@@ -534,35 +534,35 @@ class IRInstrStringExtractor extends IRVisitor {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
         Operand container = defineclassinstr.getContainer();
         Operand superClass = defineclassinstr.getSuperClass();
-        
+
         stringProducer.appendParameters(newIRClassBody, container, superClass);
     }
 
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) {
         Operand container = defineclassmethodinstr.getContainer();
         IRMethod method = defineclassmethodinstr.getMethod();
-        
+
         stringProducer.appendParameters(container, method);
     }
 
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         Operand container = defineinstancemethodinstr.getContainer();
         IRMethod method = defineinstancemethodinstr.getMethod();
-        
+
         stringProducer.appendParameters(container, method);
     }
 
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) {
         IRModuleBody metaClassBody = definemetaclassinstr.getMetaClassBody();
         Operand object = definemetaclassinstr.getObject();
-        
+
         stringProducer.appendParameters(metaClassBody, object);
     }
 
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
         Operand container = definemoduleinstr.getContainer();
-        
+
         stringProducer.appendParameters(newIRModuleBody, container);
     }
 
@@ -575,7 +575,7 @@ class IRInstrStringExtractor extends IRVisitor {
         Label begin =  exceptionregionstartmarkerinstr.begin;
         Label end =  exceptionregionstartmarkerinstr.end;
         Label firstRescueBlockLabel =  exceptionregionstartmarkerinstr.firstRescueBlockLabel;
-        
+
         stringProducer.appendParameters(begin, end, firstRescueBlockLabel);
     }
 
@@ -591,7 +591,7 @@ class IRInstrStringExtractor extends IRVisitor {
         Operand currentModule = inheritancesearchconstinstr.getCurrentModule();
         String constName = inheritancesearchconstinstr.getConstName();
         boolean noPrivateConsts = inheritancesearchconstinstr.isNoPrivateConsts();
-        
+
         stringProducer.appendParameters(currentModule, constName, noPrivateConsts);
     }
 
@@ -621,7 +621,7 @@ class IRInstrStringExtractor extends IRVisitor {
 
     public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) {
         MethodHandle methodHandle = methodlookupinstr.getMethodHandle();
-        
+
         stringProducer.appendParameters(methodHandle);
     }
 
@@ -630,7 +630,7 @@ class IRInstrStringExtractor extends IRVisitor {
         int expectedVersion = instr.getExpectedVersion();
         String name = instr.getModule().getName();
         Label failurePathLabel = instr.getFailurePathLabel();
-        
+
         stringProducer.appendParameters(candidateObj, expectedVersion, name, failurePathLabel);
     }
 
@@ -644,7 +644,7 @@ class IRInstrStringExtractor extends IRVisitor {
 
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         Operand moduleBody = processmodulebodyinstr.getModuleBody();
-        
+
         stringProducer.appendParameters(moduleBody);
     }
 
@@ -657,7 +657,7 @@ class IRInstrStringExtractor extends IRVisitor {
         int opt = instr.getOpt();
         int rest = instr.getRest();
         int numArgs = instr.getNumArgs();
-        
+
         stringProducer.appendParameters(required, opt, rest, numArgs);
     }
 
@@ -730,7 +730,7 @@ class IRInstrStringExtractor extends IRVisitor {
         ISourcePosition position = instr.getPosition();
         String file = position.getFile();
         int line = position.getLine();
-        
+
         stringProducer.appendParameters(lambdaBodyName, file, line);
     }
 

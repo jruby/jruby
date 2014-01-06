@@ -18,7 +18,7 @@ public class IRMetaClassBody extends IRClassBody {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.METACLASS_BODY;
-    } 
+    }
 
     @Override
     public LocalVariable getImplicitBlockArg() {

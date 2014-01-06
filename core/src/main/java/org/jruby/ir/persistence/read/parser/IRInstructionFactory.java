@@ -186,7 +186,7 @@ public class IRInstructionFactory {
             return createThreadPoll(paramsIterator);
         case THROW:
             return createThrowException(paramsIterator);
-        
+
         case ALIAS:
             return createAlias(paramsIterator);
         case ATTR_ASSIGN:
@@ -233,7 +233,7 @@ public class IRInstructionFactory {
         case PUT_FIELD:
             return createPutInstrOtherThanGlobalVar(operation, paramsIterator);
         case RESTORE_ERROR_INFO:
-            return createRestoreErrorInfo(paramsIterator);            
+            return createRestoreErrorInfo(paramsIterator);
         case RETURN:
             return createReturn(paramsIterator);
 
@@ -241,10 +241,10 @@ public class IRInstructionFactory {
             throw new UnsupportedOperationException(operation.toString());
         }
     }
-    
+
     private JumpInstr createJump(final ParametersIterator paramsIterator) {
         final Label target = (Label) paramsIterator.next();
-        
+
         return new JumpInstr(target);
     }
 
@@ -253,23 +253,23 @@ public class IRInstructionFactory {
 
         return new JumpIndirectInstr(target);
     }
-    
+
     private LabelInstr createLabel(final ParametersIterator paramsIterator) {
         final Label label = (Label) paramsIterator.next();
-        
+
         return new LabelInstr(label);
     }
 
     private LineNumberInstr createLineNum(final ParametersIterator paramsIterator) {
         final int number = paramsIterator.nextInt();
         final IRScope currentScope = context.getCurrentScope();
-        
+
         return new LineNumberInstr(currentScope, number);
     }
-    
+
     private ThreadPollInstr createThreadPoll(final ParametersIterator paramsIterator) {
         final boolean onBackEdge = paramsIterator.nextBoolean();
-        
+
         return new ThreadPollInstr(onBackEdge);
     }
 
@@ -280,7 +280,7 @@ public class IRInstructionFactory {
     }
 
     private AliasInstr createAlias(final ParametersIterator paramsIterator) {
-        
+
         final Variable receiver = (Variable) paramsIterator.next();
         final Operand newName = paramsIterator.nextOperand();
         final Operand oldName = paramsIterator.nextOperand();
@@ -288,10 +288,10 @@ public class IRInstructionFactory {
         // FIXME?: Maybe AliasInstr should implement ResultInstr?
         return new AliasInstr(receiver, newName, oldName);
     }
-    
-    private AttrAssignInstr createAttrAssign(final ParametersIterator paramsIterator) {        
+
+    private AttrAssignInstr createAttrAssign(final ParametersIterator paramsIterator) {
         final Operand receiver =  paramsIterator.nextOperand();
-        final MethAddr methAddr = (MethAddr) paramsIterator.next();        
+        final MethAddr methAddr = (MethAddr) paramsIterator.next();
         final Operand[] args = paramsIterator.nextOperandArray();
 
         if(paramsIterator.hasNext()) {
@@ -305,15 +305,15 @@ public class IRInstructionFactory {
             final Operand receiver, final MethAddr methAddr, final Operand[] args) {
         final String specializedInstName = paramsIterator.nextString();
         final SpecializedInstType specializedInstType = NonIRObjectFactory.createSpecilizedInstrType(specializedInstName);
-        
+
         final AttrAssignInstr attrAssignInstr = new AttrAssignInstr(receiver, methAddr, args);
-        
+
         switch (specializedInstType) {
         case ONE_OPERAND:
             return new OneArgOperandAttrAssignInstr(attrAssignInstr);
-            
+
         default:
-            throw new UnsupportedOperationException(specializedInstName);    
+            throw new UnsupportedOperationException(specializedInstName);
         }
     }
 
@@ -364,14 +364,14 @@ public class IRInstructionFactory {
 
         return BNEInstr.create(arg1, arg2, target);
     }
-    
+
     private BreakInstr createBreak(final ParametersIterator paramsIterator) {
         final Operand rv = paramsIterator.nextOperand();
         final IRScope s = paramsIterator.nextScope();
 
         return new BreakInstr(rv, s);
     }
-    
+
     private CheckArgsArrayArityInstr createCheckArgsArrayArity(final ParametersIterator paramsIterator) {
         final Operand argsArray = paramsIterator.nextOperand();
         final int required = paramsIterator.nextInt();
@@ -399,12 +399,12 @@ public class IRInstructionFactory {
             return new DefineClassMethodInstr(container, method);
         }
     }
-    
+
     private ExceptionRegionStartMarkerInstr createExceptionRegionStartMarker(final ParametersIterator paramsIterator) {
         final Label begin = (Label) paramsIterator.next();
         final Label end = (Label) paramsIterator.next();
         final Label firstRescueBlockLabel = (Label) paramsIterator.next();
-        
+
         return new ExceptionRegionStartMarkerInstr(begin, end, firstRescueBlockLabel);
     }
 
@@ -422,7 +422,7 @@ public class IRInstructionFactory {
 
         return new StoreLocalVarInstr(value, scope, lvar);
     }
-    
+
     private NoResultCallInstr createNoResultCall(Operation operation, final ParametersIterator paramsIterator) {
         final Operand receiver = paramsIterator.nextOperand();
         final String callTypeString = paramsIterator.nextString();
@@ -430,7 +430,7 @@ public class IRInstructionFactory {
         final MethAddr methAddr = (MethAddr) paramsIterator.next();
         final Operand[] args = paramsIterator.nextOperandArray();
         final Object parameter = paramsIterator.next();
-        
+
         if (parameter instanceof Operand) {
             final Operand closure = (Operand) parameter;
             return new NoResultCallInstr(operation, callType, methAddr, receiver, args, closure);
@@ -441,8 +441,8 @@ public class IRInstructionFactory {
             final Operand closure = null; // than closure is null
             return new NoResultCallInstr(operation, callType, methAddr, receiver, args, closure);
         }
-        
-        
+
+
     }
 
     private NoResultCallInstr createSpecializedNoResultCall(Operation operation,
@@ -451,7 +451,7 @@ public class IRInstructionFactory {
         final String specializedInstName = (String) parameter;
         final SpecializedInstType specializedInstType = SpecializedInstType
                 .valueOf(specializedInstName);
-        
+
         final Operand closureOfSpecializedInstr = null; // It's always null, because it is only NoBlock instr
         final NoResultCallInstr noResultCallInstr = new NoResultCallInstr(operation, callType,
                 methAddr, receiver, args, closureOfSpecializedInstr);
@@ -463,11 +463,11 @@ public class IRInstructionFactory {
             throw new UnsupportedOperationException(specializedInstName);
         }
     }
-    
+
     private PutGlobalVarInstr createPutGlobalVar(final ParametersIterator paramsIterator) {
         final String varName = paramsIterator.nextString();
         final Operand value = paramsIterator.nextOperand();
-        
+
         return new PutGlobalVarInstr(varName, value);
     }
 
@@ -496,7 +496,7 @@ public class IRInstructionFactory {
 
         return new RestoreErrorInfoInstr(arg);
     }
-    
+
     private ReturnInstr createReturn(final ParametersIterator paramsIterator) {
         return new ReturnInstr(paramsIterator.nextOperand());
     }
@@ -521,7 +521,7 @@ public class IRInstructionFactory {
             throw new UnsupportedOperationException(operation.toString());
         }
     }
-    
+
     private BackrefIsMatchDataInstr createBackrefIsMatchData(final Variable result) {
         return new BackrefIsMatchDataInstr(result);
     }
@@ -545,7 +545,7 @@ public class IRInstructionFactory {
 
     private ReceiveClosureInstr createReceiveClosure(final Variable result) {
         return new ReceiveClosureInstr(result);
-    }    
+    }
 
     public Instr createReturnInstrWithParams(final Variable result, final InstrWithParams instr) {
         final Operation operation = instr.getOperation();
@@ -581,7 +581,7 @@ public class IRInstructionFactory {
             return createSuperMetodBound(result, paramsIterator);
         case UNDEF_METHOD:
             return createUndefMethod(result, paramsIterator);
-        
+
         case CALL:
             return createCall(result, paramsIterator);
         case CONST_MISSING:
@@ -644,7 +644,7 @@ public class IRInstructionFactory {
             return createYield(result, paramsIterator);
         case ZSUPER:
             return createZSuper(result, paramsIterator);
-            
+
             // Instructions that are different for versions of ruby
         case RECV_OPT_ARG:
             return createReceiveOptArg(result, paramsIterator);
@@ -655,10 +655,10 @@ public class IRInstructionFactory {
             throw new UnsupportedOperationException(operation.toString());
         }
     }
-    
+
     private CopyInstr createCopy(final Variable result, final ParametersIterator paramsIterator) {
         final Operand s = paramsIterator.nextOperand();
-        
+
         return new CopyInstr(result, s);
     }
 
@@ -719,12 +719,12 @@ public class IRInstructionFactory {
 
     private ReceivePreReqdArgInstr createReceivePreReqdArg(final Variable result, final ParametersIterator paramsIterator) {
         final int argIndex = paramsIterator.nextInt();
-        
+
         return new ReceivePreReqdArgInstr(result, argIndex);
     }
 
     private RecordEndBlockInstr createRecordEndBlock(final Variable result, final ParametersIterator paramsIterator) {
-        final IRScope declaringScope = context.getCurrentScope();        
+        final IRScope declaringScope = context.getCurrentScope();
         final IRClosure endBlockClosure = (IRClosure) paramsIterator.nextScope();
 
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
@@ -744,17 +744,17 @@ public class IRInstructionFactory {
 
     private UndefMethodInstr createUndefMethod(final Variable result, final ParametersIterator paramsIterator) {
         final Operand methodName = paramsIterator.nextOperand();
-        
+
         return new UndefMethodInstr(result, methodName);
     }
 
     private CallInstr createCall(final Variable result, final ParametersIterator paramsIterator) {
-        
+
         final Operand receiver = paramsIterator.nextOperand();
         final String callTypString = paramsIterator.nextString();
         final CallType callType = CallType.valueOf(callTypString);
 
-        final MethAddr methAddr = (MethAddr) paramsIterator.next();        
+        final MethAddr methAddr = (MethAddr) paramsIterator.next();
         final Operand[] args = paramsIterator.nextOperandArray();
         final Object parameter = paramsIterator.next();
         if (parameter instanceof Operand) {
@@ -766,7 +766,7 @@ public class IRInstructionFactory {
         } else {
             final Operand closure = null;
             return new CallInstr(callType, result, methAddr, receiver, args, closure);
-        }       
+        }
     }
 
     private CallInstr createSpecializedCallInstr(final Variable result, final Operand receiver,
@@ -839,7 +839,7 @@ public class IRInstructionFactory {
 
     private GetInstr createGetInstr(final Operation operation, final Variable dest, final ParametersIterator paramsIterator) {
         final Operand source = paramsIterator.nextOperand();
-        final String ref = paramsIterator.nextString();        
+        final String ref = paramsIterator.nextString();
 
         switch (operation) {
         case GET_CVAR:
@@ -884,7 +884,7 @@ public class IRInstructionFactory {
         return new InheritanceSearchConstInstr(result, currentModule, constName,
                 noPrivateConsts);
     }
-    
+
     private BuildLambdaInstr createBuildLambda(final Variable result, final ParametersIterator paramsIterator) {
         // FIXME: This is passing null variable which is wrong...
         final WrappedIRClosure lambdaBody = new WrappedIRClosure(null, (IRClosure) paramsIterator.nextScope());
@@ -991,20 +991,20 @@ public class IRInstructionFactory {
     private CallInstr createSuperInstr(final Variable result, final ParametersIterator paramsIterator) {
         final String superInstrTypeString = paramsIterator.nextString();
         final SuperInstrType instrType = SuperInstrType.valueOf(superInstrTypeString);
-        
+
         switch (instrType) {
         case CLASS:
-        case INSTANCE:            
+        case INSTANCE:
             return createResolvedSuperInstr(instrType, result, paramsIterator);
-            
+
         case UNRESOLVED:
             return createUnresolvedSuperInstr(result, paramsIterator);
-            
-        default:            
+
+        default:
             throw new UnsupportedOperationException(instrType.toString());
         }
-        
-        
+
+
     }
 
     private CallInstr createResolvedSuperInstr(final SuperInstrType type, final Variable result, final ParametersIterator paramsIterator) {
@@ -1016,24 +1016,24 @@ public class IRInstructionFactory {
         switch (type) {
         case CLASS:
             return new ClassSuperInstr(result, definingModule, superMeth, args, closure);
-            
+
         case INSTANCE:
             return new InstanceSuperInstr(result, definingModule, superMeth, args, closure);
-            
+
         default:
             throw new UnsupportedOperationException(type.toString());
         }
     }
-    
+
     private UnresolvedSuperInstr createUnresolvedSuperInstr(final Variable result, final ParametersIterator paramsIterator) {
         final Operand receiver = paramsIterator.nextOperand();
         final Operand[] args = paramsIterator.nextOperandArray();
-        
+
         Operand closure = null;
         if(paramsIterator.hasNext()) {
-            closure = paramsIterator.nextOperand();   
+            closure = paramsIterator.nextOperand();
         }
-        
+
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
@@ -1061,7 +1061,7 @@ public class IRInstructionFactory {
 
     private ZSuperInstr createZSuper(final Variable result, final ParametersIterator paramsIterator) {
         final Operand receiver = paramsIterator.nextOperand();
-        
+
         // Closure cannot be null here?
         Operand closure = null;
         if(paramsIterator.hasNext()) {
@@ -1070,7 +1070,7 @@ public class IRInstructionFactory {
 
         return new ZSuperInstr(result, receiver, closure);
     }
-    
+
 
     private ReceiveOptArgInstr createReceiveOptArg(Variable result, ParametersIterator iter) {
         return new ReceiveOptArgInstr(result, iter.nextInt(), iter.nextInt(), iter.nextInt());

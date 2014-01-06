@@ -25,7 +25,7 @@ import org.jruby.parser.StaticScope;
 // FIXME: Make into a base class at some point to play with different formats
 
 /**
- * Represents a file which is persisted to storage. 
+ * Represents a file which is persisted to storage.
  */
 public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private static final boolean DEBUG = false;
@@ -37,49 +37,49 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private final File file;
     private final OperandEncoderMap operandEncoder;
     private final IRWriterAnalzer analyzer;
-    
+
     int headersOffset = -1;
     int poolOffset = -1;
-    
+
     public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
         this.operandEncoder = new OperandEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
     }
-    
+
     /**
      * Record current offset as the beginning of specified scopes list of instructions.
      */
     public void addScopeInstructionOffset(IRScope scope) {
         scopeInstructionOffsets.put(scope, offset());
     }
-    
+
     private int offset() {
         return buf.position() + PROLOGUE_LENGTH;
     }
-    
+
     /**
      * Get recorded offset for this scropes instruction list.
      */
     public int getScopeInstructionOffset(IRScope scope) {
         return scopeInstructionOffsets.get(scope);
     }
-    
+
     @Override
     public void encode(boolean value) {
         buf.put((byte) (value ? TRUE : FALSE));
     }
-    
+
     @Override
     public void encode(byte value) {
         buf.put(value);
     }
-    
+
     @Override
     public void encode(char value) {
         buf.putChar(value);
-    }    
-    
+    }
+
     @Override
     public void encode(int value) {
         //FIXME: Use bit math
@@ -92,28 +92,28 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
             buf.putInt(value);
         }
     }
-    
+
     @Override
     public void encode(long value) {
         if (value >= 0 && value <= 128) {
             encode((byte) value);
-        } else {        
+        } else {
             buf.put(FULL);
             buf.putLong(value);
         }
-    }    
-    
+    }
+
     @Override
     public void encode(float value) {
 //        buf.put(FLOAT);
         buf.putFloat(value);
     }
-    
+
     @Override
     public void encode(double value) {
 //        buf.put(DOUBLE);
         buf.putDouble(value);
-    }    
+    }
 
     @Override
     public void encode(String value) {
@@ -121,7 +121,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
         encode(value.length());
         buf.put(value.getBytes());
     }
-    
+
     // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
     // encoding null.
     @Override
@@ -130,19 +130,19 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
             encode((int) 0);
             return;
         }
-        
+
         encode(values.length);
         for (String value : values) {
             encode(value.length());
             buf.put(value.getBytes());
         }
-    }    
-    
+    }
+
     @Override
     public void encode(Operand operand) {
         operandEncoder.encode(operand);
     }
-    
+
     @Override
     public void encode(Instr instr) {
         encode(instr.getOperation());
@@ -157,12 +157,12 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
             encode(operand);
         }
     }
-    
+
     @Override
     public void encode(IRScope value) {
         encode((int) analyzer.getScopeID(value));
     }
-    
+
     @Override
     public void encode(IRScopeType value) {
         encode((byte) value.ordinal());
@@ -211,7 +211,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void endEncodingScopeHeaders(IRScope script) {
     }
-    
+
     @Override
     public void startEncoding(IRScope script) {
         try {
@@ -224,14 +224,14 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void endEncoding(IRScope script) {
         FileOutputStream fos = null;
-        
+
         try {
             fos = new FileOutputStream(file);
             fos.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             fos.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             buf.flip();
             fos.getChannel().write(buf);
-            fos.close();            
+            fos.close();
         } catch (IOException e) {
             try { if (fos != null) fos.close(); } catch (IOException e1) {}
         }

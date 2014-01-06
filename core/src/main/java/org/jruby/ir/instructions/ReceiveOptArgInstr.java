@@ -21,12 +21,12 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         this.argOffset = argOffset;
         this.numUsedArgs = numUsedArgs;
     }
-     
+
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argOffset), new Fixnum(argIndex) };
     }
-    
+
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + "," + argOffset + "," + argIndex + ")";
@@ -35,7 +35,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     public int getArgOffset() {
         return argOffset;
     }
-    
+
     public int getNumUsedArgs() {
         return numUsedArgs;
     }

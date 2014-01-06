@@ -11,7 +11,7 @@ public enum OperandType {
     AS_STRING((byte) 'a'),
     BACKREF((byte) '\\'),
     BACKTICK_STRING((byte) '`'),
-    BIGNUM((byte) 'B'), 
+    BIGNUM((byte) 'B'),
     BOOLEAN_LITERAL((byte) 'b'),
     LOCAL_VARIABLE((byte) 'l'), // Also applicable for ClosureLocalVariable
     COMPOUND_ARRAY((byte) 'c'),
@@ -44,33 +44,33 @@ public enum OperandType {
     UNEXECUTABLE_NIL((byte) 'n'),
     WRAPPED_IR_CLOSURE((byte) 'w'),
     ;
-    
+
     private final byte coded;
-    
+
     OperandType(byte coded) {
         this.coded = coded;
     }
-    
+
     public byte getCoded() {
         return coded;
     }
-    
+
     @Override
     public String toString() {
         return name().toLowerCase();
     };
-    
+
     // FIXME: Slowwww
     public static OperandType fromCoded(byte coded) {
         for (OperandType value: values()) {
             if (value.coded == coded) return value;
         }
-        
+
         return null;
     }
-    
+
     public static OperandType fromOrdinal(int value) {
         return value < 0 || value >= values().length ? null : values()[value];
-    }     
+    }
 }
 

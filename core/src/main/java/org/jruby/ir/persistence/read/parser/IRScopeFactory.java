@@ -19,9 +19,9 @@ import org.jruby.runtime.Arity;
 public class IRScopeFactory {
 
     private static final String SCRIPT_BODY_PSEUDO_CLASS_NAME = "_file_";
-    
+
     private final IRParsingContext context;
-    
+
     public IRScopeFactory(IRParsingContext context) {
         this.context = context;
     }
@@ -29,17 +29,17 @@ public class IRScopeFactory {
     public IRScope createScope(final IRScopeType type, final List<Object> parameters) {
         final Ruby runtime = context.getRuntime();
         final IRManager manager = runtime.getIRManager();
-        
+
         final ParametersIterator parametersIterator = new ParametersIterator(context, parameters);
-        
+
         final String name = parametersIterator.nextString();
         final int lineNumber = parametersIterator.nextInt();
         final IRScope lexicalParent = parametersIterator.nextScope();
         final StaticScope staticScope = parametersIterator.nextStaticScope(lexicalParent);
-        
-        
+
+
         switch (type) {
-        case CLASS_BODY:            
+        case CLASS_BODY:
             return new IRClassBody(manager, lexicalParent, name, lineNumber, staticScope);
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), lineNumber, staticScope);
@@ -52,14 +52,14 @@ public class IRScopeFactory {
         case SCRIPT_BODY:
             return new IRScriptBody(manager, SCRIPT_BODY_PSEUDO_CLASS_NAME, name, staticScope);
 
-        case CLOSURE:   
+        case CLOSURE:
             return createClosure(manager, lexicalParent,
                     staticScope, runtime, parametersIterator, lineNumber);
-            
+
         case EVAL_SCRIPT:
             final String fileName = lexicalParent.getFileName();
             return new IREvalScript(manager, lexicalParent, fileName, lineNumber, staticScope);
-            
+
         default:
             throw new UnsupportedOperationException(type.toString());
         }
@@ -71,9 +71,9 @@ public class IRScopeFactory {
         final boolean isForLoopBody = parametersIterator.nextBoolean();
         final int arityInt = parametersIterator.nextInt();
         final int argumentType = parametersIterator.nextInt();
-        
+
         final Arity arity = Arity.createArity(arityInt);
-        
+
         return new IRClosure(manager, lexicalParent, isForLoopBody, lineNumber, staticScope, arity, argumentType);
     }
 }

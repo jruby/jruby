@@ -43,16 +43,16 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     public Label getFailurePathLabel() {
         return failurePathLabel;
     }
-    
+
     // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
     public RubyModule getModule() {
         return module;
     }
-    
-    public Operand getCandidateObject() { 
+
+    public Operand getCandidateObject() {
         return candidateObj;
     }
-    
+
     public int getExpectedVersion() {
         return expectedVersion;
     }
@@ -66,11 +66,11 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         candidateObj = candidateObj.getSimplifiedOperand(valueMap, force);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "(" + candidateObj + ", " + expectedVersion + "[" + module.getName() + "], " + failurePathLabel + ")";
-    }    
+    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

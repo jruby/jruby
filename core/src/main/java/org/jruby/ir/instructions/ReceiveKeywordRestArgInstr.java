@@ -21,7 +21,7 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     public Operand[] getOperands() {
         return new Operand[] { new Fixnum(numUsedArgs) };
     }
-    
+
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
