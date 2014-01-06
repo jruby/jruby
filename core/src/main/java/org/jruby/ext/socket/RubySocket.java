@@ -262,7 +262,8 @@ public class RubySocket extends RubyBasicSocket {
                 Iterator<InterfaceAddress> it = listIa.iterator();
                 while (it.hasNext()) {
                     InterfaceAddress ia = it.next();
-                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia));
+                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia, true));
+                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia, false));
                 }
             }
         } catch (Exception ex) {
