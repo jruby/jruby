@@ -83,7 +83,7 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        if (address != null) {
+        if (address != null && isLink == false) {
             return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), address);
         } else if (isLink == true) {
             return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), networkInterface, address, true);
