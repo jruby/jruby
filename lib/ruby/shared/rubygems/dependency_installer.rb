@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'rubygems/dependency_list'
-require 'rubygems/dependency_resolver'
 require 'rubygems/package'
 require 'rubygems/installer'
 require 'rubygems/spec_fetcher'
@@ -196,7 +195,7 @@ class Gem::DependencyInstaller
   # sources.  Gems are sorted with newer gems preferred over older gems, and
   # local gems preferred over remote gems.
 
-  def find_gems_with_sources dep # :nodoc:
+  def find_gems_with_sources dep, best_only=false # :nodoc:
     set = Gem::AvailableSet.new
 
     if consider_local?
@@ -211,7 +210,26 @@ class Gem::DependencyInstaller
 
     if consider_remote?
       begin
-        found, errors = Gem::SpecFetcher.fetcher.spec_for_dependency dep
+        # TODO this is pulled from #spec_for_dependency to allow
+        # us to filter tuples before fetching specs.
+        #
+        tuples, errors = Gem::SpecFetcher.fetcher.search_for_dependency dep
+
+        if best_only && !tuples.empty?
+          tuples.sort! { |a,b| b[0].version <=> a[0].version }
+          tuples = [tuples.first]
+        end
+
+        specs = []
+        tuples.each do |tup, source|
+          begin
+            spec = source.fetch_spec(tup)
+          rescue Gem::RemoteFetcher::FetchError => e
+            errors << Gem::SourceFetchProblem.new(source, e)
+          else
+            specs << [spec, source]
+          end
+        end
 
         if @errors
           @errors += errors
@@ -219,7 +237,7 @@ class Gem::DependencyInstaller
           @errors = errors
         end
 
-        set << found
+        set << specs
 
       rescue Gem::RemoteFetcher::FetchError => e
         # FIX if there is a problem talking to the network, we either need to always tell
@@ -250,6 +268,14 @@ class Gem::DependencyInstaller
       if gem_name =~ /\.gem$/ and File.file? gem_name then
         src = Gem::Source::SpecificFile.new(gem_name)
         set.add src.spec, src
+      elsif gem_name =~ /\.gem$/ then
+        Dir[gem_name].each do |name|
+          begin
+            src = Gem::Source::SpecificFile.new name
+            set.add src.spec, src
+          rescue Gem::Package::FormatError
+          end
+        end
       else
         local = Gem::Source::Local.new
 
@@ -263,7 +289,7 @@ class Gem::DependencyInstaller
       dep = Gem::Dependency.new gem_name, version
       dep.prerelease = true if prerelease
 
-      set = find_gems_with_sources(dep)
+      set = find_gems_with_sources(dep, true)
       set.match_platform!
     end
 
@@ -278,7 +304,7 @@ class Gem::DependencyInstaller
   # Gathers all dependencies necessary for the installation from local and
   # remote sources unless the ignore_dependencies was given.
   #--
-  # TODO remove, no longer used
+  # TODO remove at RubyGems 3
 
   def gather_dependencies # :nodoc:
     specs = @available.all_specs
@@ -394,16 +420,17 @@ class Gem::DependencyInstaller
     request_set = as.to_request_set install_development_deps
     request_set.soft_missing = @force
 
-    installer_set = Gem::DependencyResolver::InstallerSet.new @domain
+    installer_set = Gem::Resolver::InstallerSet.new @domain
     installer_set.always_install.concat request_set.always_install
     installer_set.ignore_installed = @only_install_dir
 
     if @ignore_dependencies then
       installer_set.ignore_dependencies = true
-      request_set.soft_missing = true
+      request_set.ignore_dependencies   = true
+      request_set.soft_missing          = true
     end
 
-    composed_set = Gem::DependencyResolver.compose_sets as, installer_set
+    composed_set = Gem::Resolver.compose_sets as, installer_set
 
     request_set.resolve composed_set
 

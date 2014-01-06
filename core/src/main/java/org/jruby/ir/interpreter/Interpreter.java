@@ -493,8 +493,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (resultVar instanceof TemporaryVariable) {
             temp[((TemporaryVariable)resultVar).offset] = result;
         } else {
-            System.out.println("StSc: " + currDynScope.getStaticScope());
             LocalVariable lv = (LocalVariable)resultVar;
+            
             currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
         }
     }
@@ -541,7 +541,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return;
         case RECV_CLOSURE:
             result = (block == Block.NULL_BLOCK) ? context.nil : context.runtime.newProc(Block.Type.PROC, block);
-            System.out.println("instr.getResult) " + instr.getResult().getClass());
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_OPT_ARG:

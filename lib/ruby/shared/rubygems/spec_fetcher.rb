@@ -18,6 +18,11 @@ class Gem::SpecFetcher
   attr_reader :latest_specs # :nodoc:
 
   ##
+  # Sources for this SpecFetcher
+
+  attr_reader :sources # :nodoc:
+
+  ##
   # Cache of all released specs
 
   attr_reader :specs # :nodoc:
@@ -29,6 +34,10 @@ class Gem::SpecFetcher
 
   @fetcher = nil
 
+  ##
+  # Default fetcher instance.  Use this instead of ::new to reduce object
+  # allocation.
+
   def self.fetcher
     @fetcher ||= new
   end
@@ -37,8 +46,22 @@ class Gem::SpecFetcher
     @fetcher = fetcher
   end
 
-  def initialize
-    @update_cache = File.stat(Gem.user_home).uid == Process.uid
+  ##
+  # Creates a new SpecFetcher.  Ordinarily you want to use the default fetcher
+  # from Gem::SpecFetcher::fetcher which uses the Gem.sources.
+  #
+  # If you need to retrieve specifications from a different +source+, you can
+  # send it as an argument.
+
+  def initialize sources = nil
+    @sources = sources || Gem.sources
+
+    @update_cache =
+      begin
+        File.stat(Gem.user_home).uid == Process.uid
+      rescue Errno::EACCES, Errno::ENOENT
+        false
+      end
 
     @specs = {}
     @latest_specs = {}
@@ -65,7 +88,11 @@ class Gem::SpecFetcher
     rejected_specs = {}
 
     if dependency.prerelease?
-      type = :complete
+      if dependency.specific?
+        type = :complete
+      else
+        type = :abs_latest
+      end
     elsif dependency.latest_version?
       type = :latest
     else
@@ -192,7 +219,7 @@ class Gem::SpecFetcher
     errors = []
     list = {}
 
-    Gem.sources.each_source do |source|
+    @sources.each_source do |source|
       begin
         names = case type
                 when :latest
@@ -203,6 +230,12 @@ class Gem::SpecFetcher
                   names =
                     tuples_for(source, :prerelease, true) +
                     tuples_for(source, :released)
+
+                  names.sort
+                when :abs_latest
+                  names =
+                    tuples_for(source, :prerelease, true) +
+                    tuples_for(source, :latest)
 
                   names.sort
                 when :prerelease
@@ -220,7 +253,11 @@ class Gem::SpecFetcher
     [list, errors]
   end
 
-  def tuples_for(source, type, gracefully_ignore=false)
+  ##
+  # Retrieves NameTuples from +source+ of the given +type+ (:prerelease,
+  # etc.).  If +gracefully_ignore+ is true, errors are ignored.
+
+  def tuples_for(source, type, gracefully_ignore=false) # :nodoc:
     cache = @caches[type]
 
     tuples =

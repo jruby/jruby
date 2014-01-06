@@ -473,4 +473,15 @@ class TestEval < Test::Unit::TestCase
     fname = "\u{3042}".encode("euc-jp")
     assert_equal(fname, eval("__FILE__", nil, fname, 1))
   end
+
+  def test_eval_location_fstring
+    o = Object.new
+    o.instance_eval "def foo() end", "generated code"
+    o.instance_eval "def bar() end", "generated code"
+
+    a, b = o.method(:foo).source_location[0],
+           o.method(:bar).source_location[0]
+
+    assert_same a, b
+  end
 end

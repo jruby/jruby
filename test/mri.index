@@ -207,6 +207,24 @@ mri/matrix/test_vector
 
 mri/monitor/test_monitor
 
+mri/net/ftp/test_ftp
+mri/net/http/test_buffered_io
+mri/net/http/test_http
+mri/net/http/test_http_request
+mri/net/http/test_httpheader
+mri/net/http/test_httpresponse
+mri/net/http/test_httpresponses
+mri/net/http/test_https
+mri/net/http/test_https_proxy
+# hangs and mostly fails
+#mri/net/imap/test_imap
+mri/net/imap/test_imap_response_parser
+mri/net/pop/test_pop
+mri/net/protocol/test_protocol
+mri/net/smtp/test_response
+mri/net/smtp/test_smtp
+mri/net/smtp/test_ssl_socket
+
 mri/nkf/test_kconv
 mri/nkf/test_nkf
 

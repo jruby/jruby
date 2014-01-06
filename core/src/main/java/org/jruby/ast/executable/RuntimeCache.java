@@ -111,7 +111,7 @@ public class RuntimeCache {
     public final RubyString getFrozenString(ThreadContext context, int bytelistIndex, int stringIndex, int codeRange) {
         RubyString str = frozenStrings[stringIndex];
         if (str == null) {
-            str = frozenStrings[stringIndex] = (RubyString)RubyString.newStringShared(context.runtime, getByteList(bytelistIndex), codeRange).freeze(context);
+            str = frozenStrings[stringIndex] = context.runtime.freezeAndDedupString((RubyString) RubyString.newStringShared(context.runtime, getByteList(bytelistIndex), codeRange).freeze(context));
         }
         return str;
     }

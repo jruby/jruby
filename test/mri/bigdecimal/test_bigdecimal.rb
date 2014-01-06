@@ -86,6 +86,9 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_raise(ArgumentError) { BigDecimal(0.1) }
     assert_raise(ArgumentError) { BigDecimal(0.1, Float::DIG + 2) }
     assert_nothing_raised { BigDecimal(0.1, Float::DIG + 1) }
+
+    bug9214 = '[ruby-core:58858]'
+    assert_equal(BigDecimal(-0.0, Float::DIG).sign, -1, bug9214)
   end
 
   def test_global_new_with_big_decimal
@@ -435,6 +438,20 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(0, BigDecimal("1E-1") <=> 10**(-1), '#4825')
   end
 
+  def test_cmp_issue9192
+    bug9192 = '[ruby-core:58756] [#9192]'
+    operators = { :== => :==, :< => :>, :> => :<, :<= => :>=, :>= => :<= }
+    5.upto(8) do |i|
+      s = "706.0#{i}"
+      d = BigDecimal(s)
+      f = s.to_f
+      operators.each do |op, inv|
+        assert_equal(d.send(op, f), f.send(inv, d),
+                     "(BigDecimal(#{s.inspect}) #{op} #{s}) and (#{s} #{inv} BigDecimal(#{s.inspect})) is different #{bug9192}")
+      end
+    end
+  end
+
   def test_cmp_nan
     n1 = BigDecimal.new("1")
     BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
@@ -605,8 +622,8 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_coerce
     a, b = BigDecimal.new("1").coerce(1.0)
-    assert_instance_of(Float, a)
-    assert_instance_of(Float, b)
+    assert_instance_of(BigDecimal, a)
+    assert_instance_of(BigDecimal, b)
     assert_equal(2, 1 + BigDecimal.new("1"), '[ruby-core:25697]')
 
     a, b = BigDecimal("1").coerce(1.quo(10))
@@ -802,6 +819,20 @@ class TestBigDecimal < Test::Unit::TestCase
 
     assert_equal(0, BigDecimal.new("0").sqrt(1))
     assert_equal(1, BigDecimal.new("1").sqrt(1))
+  end
+
+  def test_sqrt_5266
+    x = BigDecimal('2' + '0'*100)
+    assert_equal('0.14142135623730950488016887242096980785696718753769480731',
+                 x.sqrt(56).to_s(56).split(' ')[0])
+    assert_equal('0.1414213562373095048801688724209698078569671875376948073',
+                 x.sqrt(55).to_s(55).split(' ')[0])
+
+    x = BigDecimal('2' + '0'*200)
+    assert_equal('0.14142135623730950488016887242096980785696718753769480731766797379907324784621070388503875343276415727350138462',
+                 x.sqrt(110).to_s(110).split(' ')[0])
+    assert_equal('0.1414213562373095048801688724209698078569671875376948073176679737990732478462107038850387534327641572735013846',
+                 x.sqrt(109).to_s(109).split(' ')[0])
   end
 
   def test_fix
@@ -1109,6 +1140,9 @@ class TestBigDecimal < Test::Unit::TestCase
     e   = BigDecimal("2.71828182845904523536028747135266249775724709369996")
     pow = BigDecimal("22.459157718361045473")
     assert_equal(pow, pi.power(e, 20))
+
+    b = BigDecimal('1.034482758620689655172413793103448275862068965517241379310344827586206896551724')
+    assert_equal(BigDecimal('0.114523E1'), b.power(4, 5), '[Bug #8818] [ruby-core:56802]')
   end
 
   def test_limit
@@ -1117,6 +1151,25 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(90, x ** 4) # OK? must it be 80?
     # 3 * 3 * 3 * 3 = 10 * 3 * 3 = 30 * 3 = 90 ???
     assert_raise(ArgumentError) { BigDecimal.limit(-1) }
+
+    bug7458 = '[ruby-core:50269] [#7458]'
+    one = BigDecimal('1')
+    epsilon = BigDecimal('0.7E-18')
+    BigDecimal.save_limit do
+      BigDecimal.limit(0)
+      assert_equal(BigDecimal("1.0000000000000000007"), one + epsilon, "limit(0) #{bug7458}")
+
+      1.upto(18) do |lim|
+        BigDecimal.limit(lim)
+        assert_equal(BigDecimal("1.0"), one + epsilon, "limit(#{lim}) #{bug7458}")
+      end
+
+      BigDecimal.limit(19)
+      assert_equal(BigDecimal("1.000000000000000001"), one + epsilon, "limit(19) #{bug7458}")
+
+      BigDecimal.limit(20)
+      assert_equal(BigDecimal("1.0000000000000000007"), one + epsilon, "limit(20) #{bug7458}")
+    end
   end
 
   def test_sign
@@ -1442,7 +1495,7 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_BigMath_log_with_101
     # this is mainly a performance test (should be very fast, not the 0.3 s)
-    assert_in_delta(Math.log(101), BigMath.log(101, 20), 1E-20)
+    assert_in_delta(Math.log(101), BigMath.log(101, 20), 1E-15)
   end
 
   def test_BigMath_log_with_reciprocal_of_42

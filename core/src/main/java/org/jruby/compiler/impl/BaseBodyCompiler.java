@@ -754,25 +754,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
         if (keyCount <= 10) {
-            createNewHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmallCheckString");
+            createNewHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmall");
         } else {
-            createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+            createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASet");
         }
     }
 
     public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount) {
         if (keyCount <= 10) {
-            createNewLiteralHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmallCheckString");
+            createNewLiteralHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmall");
         } else {
-            createNewLiteralHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
-        }
-    }
-    
-    public void createNewHash19(Object elements, ArrayCallback callback, int keyCount) {
-        if (keyCount <= 10) {
-            createNewHashCommon(elements, callback, keyCount, "constructSmallHash19", "fastASetSmallCheckString19");
-        } else {
-            createNewHashCommon(elements, callback, keyCount, "constructHash19", "fastASetCheckString19");
+            createNewLiteralHashCommon(elements, callback, keyCount, "constructHash", "fastASet");
         }
     }
     
@@ -786,13 +778,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             callback.nextValue(this, elements, i);
         }
 
-        invokeUtilityMethod(constructorName, sig(RubyHash.class, params(Ruby.class, IRubyObject.class, i * 2)));
+        invokeUtilityMethod(constructorName, sig(RubyHash.class, params(Ruby.class, new Class[]{IRubyObject.class, IRubyObject.class, boolean.class}, i)));
 
         for (; i < keyCount; i++) {
             method.dup();
             loadRuntime();
             callback.nextValue(this, elements, i);
-            method.invokevirtual(p(RubyHash.class), methodName, sig(void.class, params(Ruby.class, IRubyObject.class, IRubyObject.class)));
+            method.invokevirtual(p(RubyHash.class), methodName, sig(void.class, params(Ruby.class, IRubyObject.class, IRubyObject.class, boolean.class)));
         }
     }
 
@@ -2015,6 +2007,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     
     public void pushByteList(ByteList byteList) {
         script.getCacheCompiler().cacheByteList(this, byteList);
+    }
+
+    public void pushBoolean(boolean value) {
+        method.ldc(value);
     }
 
     public void pushDefinedMessage(DefinedMessage definedMessage) {

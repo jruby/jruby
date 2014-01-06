@@ -702,9 +702,9 @@ class IRInstrStringExtractor extends IRVisitor {
     }
 
     @Override public void ToAryInstr(ToAryInstr instr) {
-        stringProducer.appendParameters(instr.getArrayArg(), instr.dontToAryArrays());
+        stringProducer.appendParameters(instr.getArrayArg());
     }
-    
+
     @Override public void UndefMethodInstr(UndefMethodInstr instr) {
         stringProducer.appendParameters(instr.getMethodName());
     }

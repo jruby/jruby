@@ -80,6 +80,9 @@ namespace :test do
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/mri/excludes'
     t.ruby_opts << '-J-ea'
+    t.ruby_opts << '-I lib/ruby/shared'
+    t.ruby_opts << '-I lib/ruby/2.1'
+    t.ruby_opts << '-I .'
     t.ruby_opts << '-I test/mri'
     t.ruby_opts << '-I test/mri/ruby'
     t.ruby_opts << '-r ./test/mri_test_env.rb'

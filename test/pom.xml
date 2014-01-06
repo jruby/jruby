@@ -16,6 +16,16 @@
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
+    <repository>
+      <id>rubygems-prereleases</id>
+      <url>http://rubygems-proxy.torquebox.org/prereleases</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
@@ -90,12 +100,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>${rake.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>rspec</artifactId>
       <version>${rspec.version}</version>
       <type>gem</type>
@@ -114,18 +118,22 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>${rdoc.version}-SNAPSHOT</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
       <version>${json.version}</version>
       <type>gem</type>
     </dependency>
-<!--
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
+      <artifactId>rake</artifactId>
+      <version>${rake.version}</version>
       <type>gem</type>
     </dependency>
--->
   </dependencies>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>

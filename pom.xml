@@ -63,7 +63,7 @@
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <minitest.version>5.0.7</minitest.version>
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <rdoc.version>4.1.0.preview.1</rdoc.version>
+    <rdoc.version>4.1.0.preview.3</rdoc.version>
     <json.version>1.8.0</json.version>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <ant.version>1.9.2</ant.version>

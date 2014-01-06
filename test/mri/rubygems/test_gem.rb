@@ -338,7 +338,7 @@ class TestGem < Gem::TestCase
     end
   end
 
-  def test_self_extension_install_dir_shared
+  def test_self_extension_dir_shared
     enable_shared, RbConfig::CONFIG['ENABLE_SHARED'] =
       RbConfig::CONFIG['ENABLE_SHARED'], 'yes'
 
@@ -347,7 +347,7 @@ class TestGem < Gem::TestCase
     RbConfig::CONFIG['ENABLE_SHARED'] = enable_shared
   end
 
-  def test_self_extension_install_dir_static
+  def test_self_extension_dir_static
     enable_shared, RbConfig::CONFIG['ENABLE_SHARED'] =
       RbConfig::CONFIG['ENABLE_SHARED'], 'no'
 
@@ -1120,7 +1120,7 @@ class TestGem < Gem::TestCase
 
     ENV['RUBYGEMS_GEMDEPS'] = "-"
 
-    assert_equal [a,b,c], Gem.detect_gemdeps
+    assert_equal [a,b,c], Gem.detect_gemdeps.sort_by { |s| s.name }
   end
 
   LIB_PATH = File.expand_path "../../../lib".untaint, __FILE__.untaint
@@ -1243,6 +1243,78 @@ class TestGem < Gem::TestCase
       Object.send :remove_const, :RUBY_ENGINE
       Object.const_set :RUBY_ENGINE, engine if engine
     end
+  end
+
+  def test_use_gemdeps
+    rubygems_gemdeps, ENV['RUBYGEMS_GEMDEPS'] = ENV['RUBYGEMS_GEMDEPS'], nil
+
+    spec = util_spec 'a', 1
+
+    refute spec.activated?
+
+    open 'Gemfile', 'w' do |io|
+      io.write 'gem "a"'
+    end
+
+    Gem.use_gemdeps
+
+    refute spec.activated?
+  ensure
+    ENV['RUBYGEMS_GEMDEPS'] = rubygems_gemdeps
+  end
+
+  def test_use_gemdeps_automatic
+    rubygems_gemdeps, ENV['RUBYGEMS_GEMDEPS'] = ENV['RUBYGEMS_GEMDEPS'], '-'
+
+    spec = util_spec 'a', 1
+
+    refute spec.activated?
+
+    open 'Gemfile', 'w' do |io|
+      io.write 'gem "a"'
+    end
+
+    Gem.use_gemdeps
+
+    assert spec.activated?
+  ensure
+    ENV['RUBYGEMS_GEMDEPS'] = rubygems_gemdeps
+  end
+
+  def test_use_gemdeps_disabled
+    rubygems_gemdeps, ENV['RUBYGEMS_GEMDEPS'] = ENV['RUBYGEMS_GEMDEPS'], ''
+
+    spec = util_spec 'a', 1
+
+    refute spec.activated?
+
+    open 'Gemfile', 'w' do |io|
+      io.write 'gem "a"'
+    end
+
+    Gem.use_gemdeps
+
+    refute spec.activated?
+  ensure
+    ENV['RUBYGEMS_GEMDEPS'] = rubygems_gemdeps
+  end
+
+  def test_use_gemdeps_specific
+    rubygems_gemdeps, ENV['RUBYGEMS_GEMDEPS'] = ENV['RUBYGEMS_GEMDEPS'], 'x'
+
+    spec = util_spec 'a', 1
+
+    refute spec.activated?
+
+    open 'x', 'w' do |io|
+      io.write 'gem "a"'
+    end
+
+    Gem.use_gemdeps
+
+    assert spec.activated?
+  ensure
+    ENV['RUBYGEMS_GEMDEPS'] = rubygems_gemdeps
   end
 
   def with_plugin(path)

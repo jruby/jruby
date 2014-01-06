@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_UDP;
 import static jnr.constants.platform.NameInfo.NI_NUMERICHOST;
@@ -184,7 +184,105 @@ public class SocketUtils {
      *
      * def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
      */
-    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject[] args) {
+    public static IRubyObject getaddrinfo(final ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        final List<IRubyObject> l = new ArrayList<IRubyObject>();
+
+        buildAddrinfoList(context, args, new AddrinfoCallback() {
+            @Override
+            public void addrinfo(InetAddress address, int port, Sock sock) {
+                boolean is_ipv6 = address instanceof Inet6Address;
+                boolean sock_stream = true;
+                boolean sock_dgram = true;
+
+                if (sock != null) {
+                    if (sock == SOCK_STREAM) {
+                        sock_dgram = false;
+
+                    } else if (sock == SOCK_DGRAM) {
+                        sock_stream = false;
+
+                    }
+                }
+
+                IRubyObject[] c;
+
+                if (sock_dgram) {
+                    c = new IRubyObject[7];
+                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                    c[1] = runtime.newFixnum(port);
+                    c[2] = runtime.newString(getHostAddress(context, address));
+                    c[3] = runtime.newString(address.getHostAddress());
+                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
+                    c[5] = runtime.newFixnum(SOCK_DGRAM);
+                    c[6] = runtime.newFixnum(IPPROTO_UDP);
+                    l.add(runtime.newArrayNoCopy(c));
+                }
+
+                if (sock_stream) {
+                    c = new IRubyObject[7];
+                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                    c[1] = runtime.newFixnum(port);
+                    c[2] = runtime.newString(getHostAddress(context, address));
+                    c[3] = runtime.newString(address.getHostAddress());
+                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
+                    c[5] = runtime.newFixnum(SOCK_STREAM);
+                    c[6] = runtime.newFixnum(IPPROTO_TCP);
+                    l.add(runtime.newArrayNoCopy(c));
+                }
+            }
+        });
+
+        return runtime.newArray(l);
+    }
+
+    public static List<Addrinfo> getaddrinfoList(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        final List<Addrinfo> l = new ArrayList<Addrinfo>();
+
+        buildAddrinfoList(context, args, new AddrinfoCallback() {
+            @Override
+            public void addrinfo(InetAddress address, int port, Sock sock) {
+                boolean sock_stream = true;
+                boolean sock_dgram = true;
+
+                if (sock != null) {
+                    if (sock == SOCK_STREAM) {
+                        sock_dgram = false;
+
+                    } else if (sock == SOCK_DGRAM) {
+                        sock_stream = false;
+
+                    }
+                }
+
+                if (sock_dgram) {
+                    l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                            address,
+                            port,
+                            SocketType.DATAGRAM));
+                }
+
+                if (sock_stream) {
+                    l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                            address,
+                            port,
+                            SocketType.SOCKET));
+                }
+            }
+        });
+
+        return l;
+    }
+
+    interface AddrinfoCallback {
+        void addrinfo(
+                InetAddress address,
+                int port,
+                Sock sock);
+    }
+
+    public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, AddrinfoCallback callback) {
         Ruby runtime = context.runtime;
         IRubyObject host = args[0];
         IRubyObject port = args[1];
@@ -200,17 +298,22 @@ public class SocketUtils {
             //IRubyObject protocol = args[4];
             IRubyObject flags = args.length > 5 ? args[5] : context.nil;
 
-            boolean is_ipv6 = (! family.isNil()) && (RubyNumeric.fix2int(family) & AF_INET6.intValue()) == AF_INET6.intValue();
+            AddressFamily addressFamily = AF_INET;
+            if (!family.isNil()) {
+                addressFamily = addressFamilyFromArg(family);
+            }
+            boolean is_ipv6 = addressFamily == AddressFamily.AF_INET6;
             boolean sock_stream = true;
             boolean sock_dgram = true;
 
+            Sock sock = SOCK_STREAM;
             if(!socktype.isNil()) {
-                int val = RubyNumeric.fix2int(socktype);
+                sockFromArg(socktype);
 
-                if(val == SOCK_STREAM.intValue()) {
+                if(sock == SOCK_STREAM) {
                     sock_dgram = false;
 
-                } else if(val == SOCK_DGRAM.intValue()) {
+                } else if (sock == SOCK_DGRAM) {
                     sock_stream = false;
 
                 }
@@ -234,37 +337,10 @@ public class SocketUtils {
                 addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[::1]" : null) : host.convertToString().toString());
             }
 
-            List<IRubyObject> l = new ArrayList<IRubyObject>();
-
             for(int i = 0; i < addrs.length; i++) {
-                IRubyObject[] c;
-
-                if(sock_dgram) {
-                    c = new IRubyObject[7];
-                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
-                    c[1] = port;
-                    c[2] = runtime.newString(getHostAddress(context, addrs[i]));
-                    c[3] = runtime.newString(addrs[i].getHostAddress());
-                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                    c[5] = runtime.newFixnum(SOCK_DGRAM);
-                    c[6] = runtime.newFixnum(IPPROTO_UDP);
-                    l.add(runtime.newArrayNoCopy(c));
-                }
-
-                if(sock_stream) {
-                    c = new IRubyObject[7];
-                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
-                    c[1] = port;
-                    c[2] = runtime.newString(getHostAddress(context, addrs[i]));
-                    c[3] = runtime.newString(addrs[i].getHostAddress());
-                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                    c[5] = runtime.newFixnum(SOCK_STREAM);
-                    c[6] = runtime.newFixnum(IPPROTO_TCP);
-                    l.add(runtime.newArrayNoCopy(c));
-                }
+                int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+                callback.addrinfo(addrs[i], p, sock);
             }
-
-            return runtime.newArray(l);
 
         } catch(UnknownHostException e) {
             throw sockerr(runtime, "getaddrinfo: name or service not known");

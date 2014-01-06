@@ -11,6 +11,16 @@
 # RDoc::Options@Saved+Options for instructions on setting up a `.doc_options`
 # file to store your project default.
 #
+# ## Usage
+#
+# Here is a brief example of using this parse to read a markdown file by hand.
+#
+#     data = File.read("README.md")
+#     formatter = RDoc::Markup::ToHtml.new(RDoc::Options.new, nil)
+#     html = RDoc::Markdown.parse(data).accept(@formatter)
+#
+#     # do something with html
+#
 # ## Extensions
 #
 # The following markdown extensions are supported by the parser, but not all
@@ -123,7 +133,6 @@
 # ## Limitations
 #
 # * Link titles are not used
-# * Image links are not generated correctly
 # * Footnotes are collapsed into a single paragraph
 #
 # ## Author
@@ -468,7 +477,7 @@ root = Doc
 
 Doc =       BOM? Block*:a { RDoc::Markup::Document.new(*a.compact) }
 
-Block =     BlankLine*
+Block =     @BlankLine*
             ( BlockQuote
             | Verbatim
             | CodeFence
@@ -484,33 +493,33 @@ Block =     BlankLine*
             | Para
             | Plain )
 
-Para =      NonindentSpace Inlines:a BlankLine+
+Para =      @NonindentSpace Inlines:a @BlankLine+
             { paragraph a }
 
 Plain =     Inlines:a
             { paragraph a }
 
-AtxInline = !Newline !(Sp? /#*/ Sp Newline) Inline
+AtxInline = !@Newline !(@Sp? /#*/ @Sp @Newline) Inline
 
 AtxStart =  < /\#{1,6}/ >
             { text.length }
 
-AtxHeading = AtxStart:s Sp? AtxInline+:a (Sp? /#*/ Sp)?  Newline
+AtxHeading = AtxStart:s @Sp? AtxInline+:a (@Sp? /#*/ @Sp)?  @Newline
             { RDoc::Markup::Heading.new(s, a.join) }
 
 SetextHeading = SetextHeading1 | SetextHeading2
 
-SetextBottom1 = /={3,}/ Newline
+SetextBottom1 = /={3,}/ @Newline
 
-SetextBottom2 = /-{3,}/ Newline
+SetextBottom2 = /-{3,}/ @Newline
 
-SetextHeading1 =  &(RawLine SetextBottom1)
-                  StartList:a ( !Endline Inline:b { a << b } )+ Sp? Newline
+SetextHeading1 =  &(@RawLine SetextBottom1)
+                  @StartList:a ( !@Endline Inline:b { a << b } )+ @Sp? @Newline
                   SetextBottom1
                   { RDoc::Markup::Heading.new(1, a.join) }
 
-SetextHeading2 =  &(RawLine SetextBottom2)
-                  StartList:a ( !Endline Inline:b { a << b })+ Sp? Newline
+SetextHeading2 =  &(@RawLine SetextBottom2)
+                  @StartList:a ( !@Endline Inline:b { a << b })+ @Sp? @Newline
                   SetextBottom2
                   { RDoc::Markup::Heading.new(2, a.join) }
 
@@ -519,44 +528,44 @@ Heading = SetextHeading | AtxHeading
 BlockQuote = BlockQuoteRaw:a
              { RDoc::Markup::BlockQuote.new(*a) }
 
-BlockQuoteRaw =  StartList:a
+BlockQuoteRaw =  @StartList:a
                  (( ">" " "? Line:l { a << l } )
-                  ( !">" !BlankLine Line:c { a << c } )*
-                  ( BlankLine:n { a << n } )*
+                  ( !">" !@BlankLine Line:c { a << c } )*
+                  ( @BlankLine:n { a << n } )*
                  )+
                  { inner_parse a.join }
 
-NonblankIndentedLine = !BlankLine IndentedLine
+NonblankIndentedLine = !@BlankLine IndentedLine
 
-VerbatimChunk = BlankLine*:a
+VerbatimChunk = @BlankLine*:a
                 NonblankIndentedLine+:b
                 { a.concat b }
 
 Verbatim =     VerbatimChunk+:a
                { RDoc::Markup::Verbatim.new(*a.flatten) }
 
-HorizontalRule = NonindentSpace
-                 ( "*" Sp "*" Sp "*" (Sp "*")*
-                 | "-" Sp "-" Sp "-" (Sp "-")*
-                 | "_" Sp "_" Sp "_" (Sp "_")*)
-                 Sp Newline BlankLine+
+HorizontalRule = @NonindentSpace
+                 ( "*" @Sp "*" @Sp "*" (@Sp "*")*
+                 | "-" @Sp "-" @Sp "-" (@Sp "-")*
+                 | "_" @Sp "_" @Sp "_" (@Sp "_")*)
+                 @Sp @Newline @BlankLine+
                  { RDoc::Markup::Rule.new 1 }
 
-Bullet = !HorizontalRule NonindentSpace /[+*-]/ Spacechar+
+Bullet = !HorizontalRule @NonindentSpace /[+*-]/ @Spacechar+
 
 BulletList = &Bullet (ListTight | ListLoose):a
              { RDoc::Markup::List.new(:BULLET, *a) }
 
 ListTight = ListItemTight+:a
-            BlankLine* !(Bullet | Enumerator)
+            @BlankLine* !(Bullet | Enumerator)
             { a }
 
-ListLoose = StartList:a
-            ( ListItem:b BlankLine* { a << b } )+
+ListLoose = @StartList:a
+            ( ListItem:b @BlankLine* { a << b } )+
             { a }
 
 ListItem =  ( Bullet | Enumerator )
-            StartList:a
+            @StartList:a
             ListBlock:b { a << b }
             ( ListContinuationBlock:c { a.push(*c) } )*
             { list_item_from a }
@@ -564,28 +573,28 @@ ListItem =  ( Bullet | Enumerator )
 ListItemTight =
             ( Bullet | Enumerator )
             ListBlock:a
-            ( !BlankLine
+            ( !@BlankLine
               ListContinuationBlock:b { a.push(*b) } )*
             !ListContinuationBlock
             { list_item_from a }
 
-ListBlock = !BlankLine Line:a
+ListBlock = !@BlankLine Line:a
             ListBlockLine*:c
             { [a, *c] }
 
-ListContinuationBlock = StartList:a
-                        ( BlankLine*
+ListContinuationBlock = @StartList:a
+                        ( @BlankLine*
                           { a << "\n" } )
                         ( Indent
                           ListBlock:b { a.concat b } )+
                         { a }
 
-Enumerator = NonindentSpace [0-9]+ "." Spacechar+
+Enumerator = @NonindentSpace [0-9]+ "." @Spacechar+
 
 OrderedList = &Enumerator (ListTight | ListLoose):a
              { RDoc::Markup::List.new(:NUMBER, *a) }
 
-ListBlockLine = !BlankLine
+ListBlockLine = !@BlankLine
                 !( Indent? (Bullet | Enumerator) )
                 !HorizontalRule
                 OptionallyIndentedLine
@@ -761,7 +770,7 @@ HtmlBlockInTags = HtmlBlockAddress
                 | HtmlBlockScript
 
 HtmlBlock = < ( HtmlBlockInTags | HtmlComment | HtmlBlockSelfClosing | HtmlUnclosed) >
-            BlankLine+
+            @BlankLine+
             { if html? then
                 RDoc::Markup::Raw.new text
               end }
@@ -847,19 +856,19 @@ StyleOpen =     "<" Spnl ("style" | "STYLE") Spnl HtmlAttribute* ">"
 StyleClose =    "<" Spnl "/" ("style" | "STYLE") Spnl ">"
 InStyleTags =   StyleOpen (!StyleClose .)* StyleClose
 StyleBlock =    < InStyleTags >
-                BlankLine*
+                @BlankLine*
                 { if css? then
                     RDoc::Markup::Raw.new text
                   end }
 
-Inlines  =  ( !Endline Inline:i { i }
-            | Endline:c &Inline { c } )+:chunks Endline?
+Inlines  =  ( !@Endline Inline:i { i }
+            | @Endline:c &Inline { c } )+:chunks @Endline?
             { chunks }
 
 Inline  = Str
-        | Endline
+        | @Endline
         | UlOrStarLine
-        | Space
+        | @Space
         | Strong
         | Emph
         | Image
@@ -872,85 +881,85 @@ Inline  = Str
         | EscapedChar
         | Symbol
 
-Space = Spacechar+ { " " }
+Space = @Spacechar+ { " " }
 
-Str = StartList:a
-      < NormalChar+ > { a = text }
+Str = @StartList:a
+      < @NormalChar+ > { a = text }
       ( StrChunk:c { a << c } )* { a }
 
-StrChunk = < (NormalChar | /_+/ &Alphanumeric)+ > { text }
+StrChunk = < (@NormalChar | /_+/ &Alphanumeric)+ > { text }
 
-EscapedChar =   "\\" !Newline < /[:\\`|*_{}\[\]()#+.!><-]/ > { text }
+EscapedChar =   "\\" !@Newline < /[:\\`|*_{}\[\]()#+.!><-]/ > { text }
 
 Entity =    ( HexEntity | DecEntity | CharEntity ):a { a }
 
-Endline =   LineBreak | TerminalEndline | NormalEndline
+Endline =   @LineBreak | @TerminalEndline | @NormalEndline
 
-NormalEndline =   Sp Newline !BlankLine !">" !AtxStart
-                  !(Line /={3,}|-{3,}=/ Newline)
+NormalEndline =   @Sp @Newline !@BlankLine !">" !AtxStart
+                  !(Line /={3,}|-{3,}=/ @Newline)
                   { "\n" }
 
-TerminalEndline = Sp Newline Eof
+TerminalEndline = @Sp @Newline @Eof
 
-LineBreak = "  " NormalEndline { RDoc::Markup::HardBreak.new }
+LineBreak = "  " @NormalEndline { RDoc::Markup::HardBreak.new }
 
-Symbol = < SpecialChar >
+Symbol = < @SpecialChar >
          { text }
 
 # This keeps the parser from getting bogged down on long strings of '*' or '_',
 # or strings of '*' or '_' with space on each side:
 UlOrStarLine =  (UlLine | StarLine):a { a }
 StarLine = < /\*{4,}/ > { text } |
-           < Spacechar /\*+/ &Spacechar > { text }
+           < @Spacechar /\*+/ &@Spacechar > { text }
 UlLine   = < /_{4,}/ > { text } |
-           < Spacechar /_+/ &Spacechar > { text }
+           < @Spacechar /_+/ &@Spacechar > { text }
 
 Emph =      EmphStar | EmphUl
 
-OneStarOpen  =  !StarLine "*" !Spacechar !Newline
-OneStarClose =  !Spacechar !Newline Inline:a "*"
+OneStarOpen  =  !StarLine "*" !@Spacechar !@Newline
+OneStarClose =  !@Spacechar !@Newline Inline:a "*"
                 { a }
 
 EmphStar =  OneStarOpen
-            StartList:a
+            @StartList:a
             ( !OneStarClose Inline:l { a << l } )*
             OneStarClose:l { a << l }
             { emphasis a.join }
 
-OneUlOpen  =  !UlLine "_" !Spacechar !Newline
-OneUlClose =  !Spacechar !Newline Inline:a "_" # !Alphanumeric # TODO check
+OneUlOpen  =  !UlLine "_" !@Spacechar !@Newline
+OneUlClose =  !@Spacechar !@Newline Inline:a "_" # !Alphanumeric # TODO check
               { a }
 
 EmphUl =    OneUlOpen
-            StartList:a
+            @StartList:a
             ( !OneUlClose Inline:l { a << l } )*
             OneUlClose:l { a << l }
             { emphasis a.join }
 
 Strong = StrongStar | StrongUl
 
-TwoStarOpen =   !StarLine "**" !Spacechar !Newline
-TwoStarClose =  !Spacechar !Newline Inline:a "**" { a }
+TwoStarOpen =   !StarLine "**" !@Spacechar !@Newline
+TwoStarClose =  !@Spacechar !@Newline Inline:a "**" { a }
 
 StrongStar =    TwoStarOpen
-                StartList:a
+                @StartList:a
                 ( !TwoStarClose Inline:l { a << l } )*
                 TwoStarClose:l { a << l }
                 { strong a.join }
 
-TwoUlOpen =     !UlLine "__" !Spacechar !Newline
-TwoUlClose =    !Spacechar !Newline Inline:a "__" # !Alphanumeric # TODO check
+TwoUlOpen =     !UlLine "__" !@Spacechar !@Newline
+TwoUlClose =    !@Spacechar !@Newline Inline:a "__" # !Alphanumeric # TODO check
                 { a }
 
 StrongUl =  TwoUlOpen
-            StartList:a
+            @StartList:a
             ( !TwoUlClose Inline:i { a << i } )*
             TwoUlClose:l { a << l }
             { strong a.join }
 
-# TODO image link support
+# TODO alt text support
 Image = "!" ( ExplicitLink | ReferenceLink ):a
-        { a }
+        { "rdoc-image:#{a[/\[(.*)\]/, 1]}" }
 
 Link =  ExplicitLink | ReferenceLink | AutoLink
 
@@ -962,7 +971,7 @@ ReferenceLinkDouble = Label:content < Spnl > !"[]" Label:label
 ReferenceLinkSingle = Label:content < (Spnl "[]")? >
                       { link_to content, content, text }
 
-ExplicitLink =  Label:l Spnl "(" Sp Source:s Spnl Title Sp ")"
+ExplicitLink =  Label:l Spnl "(" @Sp Source:s Spnl Title @Sp ")"
                 { "{#{l}}[#{s}]" }
 
 Source  = ( "<" < SourceContents > ">" | < SourceContents > )
@@ -974,27 +983,27 @@ SourceContents = ( ( !"(" !")" !">" Nonspacechar )+ | "(" SourceContents ")")*
 Title = ( TitleSingle | TitleDouble | "" ):a
         { a }
 
-TitleSingle = "'" ( !( "'" Sp ( ")" | Newline ) ) . )* "'"
+TitleSingle = "'" ( !( "'" @Sp ( ")" | @Newline ) ) . )* "'"
 
-TitleDouble = "\"" ( !( "\"" Sp ( ")" | Newline ) ) . )* "\""
+TitleDouble = "\"" ( !( "\"" @Sp ( ")" | @Newline ) ) . )* "\""
 
 AutoLink = AutoLinkUrl | AutoLinkEmail
 
-AutoLinkUrl =   "<" < /[A-Za-z]+/ "://" ( !Newline !">" . )+ > ">"
+AutoLinkUrl =   "<" < /[A-Za-z]+/ "://" ( !@Newline !">" . )+ > ">"
                 { text }
 
-AutoLinkEmail = "<" ("mailto:")? < /[\w+.\/!%~$-]+/i "@" ( !Newline !">" . )+ > ">"
+AutoLinkEmail = "<" ("mailto:")? < /[\w+.\/!%~$-]+/i "@" ( !@Newline !">" . )+ > ">"
                 { "mailto:#{text}" }
 
-Reference = NonindentSpace !"[]"
-              Label:label ":" Spnl RefSrc:link RefTitle BlankLine+
+Reference = @NonindentSpace !"[]"
+              Label:label ":" Spnl RefSrc:link RefTitle @BlankLine+
             { # TODO use title
               reference label, link
               nil
             }
 
 Label = "[" ( !"^" &{ notes? } | &. &{ !notes? } )
-        StartList:a
+        @StartList:a
         ( !"]" Inline:l { a << l } )*
         "]"
         { a.join.gsub(/\s+/, ' ') }
@@ -1005,11 +1014,11 @@ RefTitle = ( RefTitleSingle | RefTitleDouble | RefTitleParens | EmptyTitle )
 
 EmptyTitle = ""
 
-RefTitleSingle = Spnl "'" < ( !( "'" Sp Newline | Newline ) . )* > "'" { text }
+RefTitleSingle = Spnl "'" < ( !( "'" @Sp @Newline | @Newline ) . )* > "'" { text }
 
-RefTitleDouble = Spnl "\"" < ( !("\"" Sp Newline | Newline) . )* > "\"" { text }
+RefTitleDouble = Spnl "\"" < ( !("\"" @Sp @Newline | @Newline) . )* > "\"" { text }
 
-RefTitleParens = Spnl "(" < ( !(")" Sp Newline | Newline) . )* > ")" { text }
+RefTitleParens = Spnl "(" < ( !(")" @Sp @Newline | @Newline) . )* > ")" { text }
 
 References = ( Reference | SkipBlock )*
 
@@ -1019,48 +1028,48 @@ Ticks3 = "```" !"`"
 Ticks4 = "````" !"`"
 Ticks5 = "`````" !"`"
 
-Code = ( Ticks1 Sp < (
+Code = ( Ticks1 @Sp < (
            ( !"`" Nonspacechar )+ | !Ticks1 /`+/ |
-           !( Sp Ticks1 ) ( Spacechar | Newline !BlankLine )
-         )+ > Sp Ticks1 |
-         Ticks2 Sp < (
+           !( @Sp Ticks1 ) ( @Spacechar | @Newline !@BlankLine )
+         )+ > @Sp Ticks1 |
+         Ticks2 @Sp < (
            ( !"`" Nonspacechar )+ |
            !Ticks2 /`+/ |
-           !( Sp Ticks2 ) ( Spacechar | Newline !BlankLine )
-         )+ > Sp Ticks2 |
-         Ticks3 Sp < (
+           !( @Sp Ticks2 ) ( @Spacechar | @Newline !@BlankLine )
+         )+ > @Sp Ticks2 |
+         Ticks3 @Sp < (
            ( !"`" Nonspacechar )+ |
            !Ticks3 /`+/ |
-           !( Sp Ticks3 ) ( Spacechar | Newline !BlankLine )
-         )+ > Sp Ticks3 |
-         Ticks4 Sp < (
+           !( @Sp Ticks3 ) ( @Spacechar | @Newline !@BlankLine )
+         )+ > @Sp Ticks3 |
+         Ticks4 @Sp < (
            ( !"`" Nonspacechar )+ |
            !Ticks4 /`+/ |
-           !( Sp Ticks4 ) ( Spacechar | Newline !BlankLine )
-         )+ > Sp Ticks4 |
-         Ticks5 Sp < (
+           !( @Sp Ticks4 ) ( @Spacechar | @Newline !@BlankLine )
+         )+ > @Sp Ticks4 |
+         Ticks5 @Sp < (
            ( !"`" Nonspacechar )+ |
            !Ticks5 /`+/ |
-           !( Sp Ticks5 ) ( Spacechar | Newline !BlankLine )
-         )+ > Sp Ticks5
+           !( @Sp Ticks5 ) ( @Spacechar | @Newline !@BlankLine )
+         )+ > @Sp Ticks5
        )
        { "<code>#{text}</code>" }
 
 RawHtml = < (HtmlComment | HtmlBlockScript | HtmlTag) >
           { if html? then text else '' end }
 
-BlankLine =     Sp Newline { "\n" }
+BlankLine =     @Sp @Newline { "\n" }
 
 Quoted =        "\"" (!"\"" .)* "\"" | "'" (!"'" .)* "'"
 HtmlAttribute = (AlphanumericAscii | "-")+ Spnl ("=" Spnl (Quoted | (!">" Nonspacechar)+))? Spnl
 HtmlComment =   "<!--" (!"-->" .)* "-->"
 HtmlTag =       "<" Spnl "/"? AlphanumericAscii+ Spnl HtmlAttribute* "/"? Spnl ">"
 Eof =           !.
-Nonspacechar =  !Spacechar !Newline .
-Sp =            Spacechar*
-Spnl =          Sp (Newline Sp)?
-SpecialChar =   /[*_`&\[\]()<!#\\'"]/ | ExtendedSpecialChar
-NormalChar =    !( SpecialChar | Spacechar | Newline ) .
+Nonspacechar =  !@Spacechar !@Newline .
+Sp =            @Spacechar*
+Spnl =          @Sp (@Newline @Sp)?
+SpecialChar =   /[*_`&\[\]()<!#\\'"]/ | @ExtendedSpecialChar
+NormalChar =    !( @SpecialChar | @Spacechar | @Newline ) .
 Digit = [0-9]
 
 %literals         = RDoc::Markdown::Literals
@@ -1092,15 +1101,15 @@ OptionallyIndentedLine = Indent? Line
 StartList = &.
             { [] }
 
-Line =  RawLine:a { a }
-RawLine = ( < (!"\r" !"\n" .)* Newline >
-        | < .+ > Eof ) { text }
+Line =  @RawLine:a { a }
+RawLine = ( < (!"\r" !"\n" .)* @Newline >
+        | < .+ > @Eof ) { text }
 
 SkipBlock = HtmlBlock
-          | ( !"#" !SetextBottom1 !SetextBottom2 !BlankLine RawLine )+
-            BlankLine*
-          | BlankLine+
-          | RawLine
+          | ( !"#" !SetextBottom1 !SetextBottom2 !@BlankLine @RawLine )+
+            @BlankLine*
+          | @BlankLine+
+          | @RawLine
 
 # Syntax extensions
 
@@ -1110,13 +1119,13 @@ NoteReference = &{ notes? }
                 RawNoteReference:ref
                 { note_for ref }
 
-RawNoteReference = "[^" < ( !Newline !"]" . )+ > "]" { text }
+RawNoteReference = "[^" < ( !@Newline !"]" . )+ > "]" { text }
 
 # TODO multiple paragraphs for a footnote
 Note =          &{ notes? }
-                NonindentSpace RawNoteReference:ref ":" Sp
-                StartList:a
-                RawNoteBlock
+                @NonindentSpace RawNoteReference:ref ":" @Sp
+                @StartList:a
+                RawNoteBlock:i { a.concat i }
                 ( &Indent RawNoteBlock:i { a.concat i } )*
                 { @footnotes[ref] = paragraph a
 
@@ -1125,7 +1134,7 @@ Note =          &{ notes? }
 
 InlineNote = &{ notes? }
              "^["
-             StartList:a
+             @StartList:a
              ( !"]" Inline:l { a << l } )+
              "]"
              {
@@ -1137,20 +1146,20 @@ InlineNote = &{ notes? }
 
 Notes = ( Note | SkipBlock )*
 
-RawNoteBlock = StartList:a
-               ( !BlankLine OptionallyIndentedLine:l { a << l } )+
-               ( < BlankLine* > { a << text } )
+RawNoteBlock = @StartList:a
+               ( !@BlankLine OptionallyIndentedLine:l { a << l } )+
+               ( < @BlankLine* > { a << text } )
                { a }
 
 # Markdown extensions added by RDoc follow
 
 CodeFence = &{ github? }
-            Ticks3 (Sp StrChunk:format)? Spnl < (
+            Ticks3 (@Sp StrChunk:format)? Spnl < (
               ( !"`" Nonspacechar )+ |
               !Ticks3 /`+/ |
               Spacechar |
-              Newline
-            )+ > Ticks3 Sp Newline*
+              @Newline
+            )+ > Ticks3 @Sp @Newline*
             { verbatim = RDoc::Markup::Verbatim.new text
               verbatim.format = format.intern if format
               verbatim
@@ -1173,8 +1182,8 @@ DefinitionListItem = ( DefinitionListLabel+ ):label
                        list_items
                      }
 
-DefinitionListLabel = StrChunk:label Sp Newline
+DefinitionListLabel = StrChunk:label @Sp @Newline
                       { label }
 
-DefinitionListDefinition = NonindentSpace ":" Space Inlines:a BlankLine+
+DefinitionListDefinition = @NonindentSpace ":" @Space Inlines:a @BlankLine+
                            { paragraph a }

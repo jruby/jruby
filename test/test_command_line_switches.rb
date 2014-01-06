@@ -9,7 +9,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # FIXME: currently fails on Windows
   if (!WINDOWS)
     def test_dash_0_splits_records
-      output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 -n -e 'puts $_ + " "'})
+      output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 --disable-gems -n -e 'puts $_ + " "'})
       assert_equal 0, $?.exitstatus
       assert_equal "1, ,2, ,3\n ,", output
     end

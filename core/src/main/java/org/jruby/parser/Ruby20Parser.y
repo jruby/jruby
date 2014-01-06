@@ -60,7 +60,7 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.Hash19Node;
+import org.jruby.ast.HashNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -968,10 +968,10 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.arg_append($1, new Hash19Node(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
                 }
                 | assocs trailer {
-                    $$ = support.newArrayNode($1.getPosition(), new Hash19Node(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -987,10 +987,10 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = support.arg_append($1, new Hash19Node(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
                 }
                 | assocs ',' {
-                    $$ = support.newArrayNode($1.getPosition(), new Hash19Node(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
                 }
    
 
@@ -1002,11 +1002,11 @@ call_args       : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ = support.newArrayNode($1.getPosition(), new Hash19Node(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_append($1, new Hash19Node(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
                 | block_arg {
@@ -1136,7 +1136,7 @@ primary         : literal
                     }
                 }
                 | tLBRACE assoc_list tRCURLY {
-                    $$ = new Hash19Node($1.getPosition(), $2);
+                    $$ = new HashNode($1.getPosition(), $2);
                 }
                 | kRETURN {
                     $$ = new ReturnNode($1.getPosition(), NilImplicitNode.NIL);

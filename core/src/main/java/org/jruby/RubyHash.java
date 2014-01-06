@@ -952,9 +952,8 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value);
     }
 
-    public final RubyHash fastASetChained(IRubyObject key, IRubyObject value) {
-        internalPut(key, value);
-        return this;
+    public final void fastASetSmall(IRubyObject key, IRubyObject value) {
+        internalPutSmall(key, value);
     }
     
     public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
@@ -970,6 +969,22 @@ public class RubyHash extends RubyObject implements Map {
             op_asetSmallForString(runtime, (RubyString) key, value);
         } else {
             internalPutSmall(key, value);
+        }
+    }
+
+    public final void fastASet(Ruby runtime, IRubyObject key, IRubyObject value, boolean prepareString) {
+        if (prepareString) {
+            fastASetCheckString(runtime, key, value);
+        } else {
+            fastASet(key, value);
+        }
+    }
+
+    public final void fastASetSmall(Ruby runtime, IRubyObject key, IRubyObject value, boolean prepareString) {
+        if (prepareString) {
+            fastASetSmallCheckString(runtime, key, value);
+        } else {
+            fastASetSmall(key, value);
         }
     }
 
@@ -992,8 +1007,13 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             checkIterating();
             if (!key.isFrozen()) {
-                key = key.strDup(runtime, key.getMetaClass().getRealClass());
-                key.setFrozen(true);
+                if (isComparedByIdentity()) {
+                    // when comparing by identity, we don't want to be too eager about deduping
+                    key = key.strDup(runtime, key.getMetaClass().getRealClass());
+                    key.setFrozen(true);
+                } else {
+                    key = runtime.freezeAndDedupString(key);
+                }
             }
             internalPut(key, value, false);
         }
@@ -1005,9 +1025,12 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) {
+            if (isComparedByIdentity()) {
+                // when comparing by identity, we don't want to be too eager about deduping
                 key = key.strDup(runtime, key.getMetaClass().getRealClass());
                 key.setFrozen(true);
+            } else {
+                key = runtime.freezeAndDedupString(key);
             }
             internalPutSmall(key, value, false);
         }

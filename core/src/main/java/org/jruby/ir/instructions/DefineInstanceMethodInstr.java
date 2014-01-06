@@ -35,7 +35,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     public Operand getContainer() {
         return container;
     }
-    
+
 
     @Override
     public Operand[] getOperands() {
@@ -45,12 +45,12 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);
-    }    
-    
+    }
+
     @Override
     public String toString() {
         return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
-    }    
+    }
 
     public IRMethod getMethod() {
         return method;
@@ -71,14 +71,13 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
         // Till such time, this code implements the correct semantics.
         RubyModule clazz = context.getRubyClass();
         String     name  = method.getName();
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility currVisibility = context.getCurrentVisibility();
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, currVisibility);
 
-        visibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, visibility);
-
-        DynamicMethod newMethod = new InterpretedIRMethod(method, visibility, clazz);
+        DynamicMethod newMethod = new InterpretedIRMethod(method, newVisibility, clazz);
         clazz.addMethod(name, newMethod);
 
-        Helpers.addInstanceMethod(clazz, name, newMethod, visibility,context, runtime);
+        Helpers.addInstanceMethod(clazz, name, newMethod, currVisibility, context, runtime);
 
         return null; // unused; symbol is propagated
     }

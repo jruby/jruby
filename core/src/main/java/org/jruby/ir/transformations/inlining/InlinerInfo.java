@@ -150,7 +150,7 @@ public class InlinerInfo {
             IRScope callerScope   = getInlineHostScope();
             boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
             Variable yieldArgArray = callerScope.getNewTemporaryVariable();
-            yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg, callerScope.getManager().getTrue()));
+            yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg));
             this.yieldArg = yieldArgArray;
         }
 

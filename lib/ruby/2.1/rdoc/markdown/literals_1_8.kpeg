@@ -6,7 +6,7 @@
 ##
 # Provides Literals appropriate for your ruby version.
 #--
-# This set of literals is for ruby 1.8 regular expressions.
+# This set of literals is for Ruby 1.8 regular expressions.
 }
 
 Alphanumeric      = /[0-9A-Za-z\200-\377]/

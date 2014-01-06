@@ -1076,8 +1076,7 @@ public class JVMVisitor extends IRVisitor {
     public void ToAryInstr(ToAryInstr toaryinstr) {
         jvm.method().loadContext();
         visit(toaryinstr.getArrayArg());
-        jvm.method().adapter.ldc(toaryinstr.dontToAryArrays());
-        jvm.method().invokeHelper("irToAry", IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class);
+        jvm.method().invokeHelper("irToAry", IRubyObject.class, ThreadContext.class, IRubyObject.class);
         jvmStoreLocal(toaryinstr.getResult());
     }
 

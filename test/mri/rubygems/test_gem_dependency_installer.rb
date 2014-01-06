@@ -407,7 +407,7 @@ class TestGemDependencyInstaller < Gem::TestCase
     _, f1_gem = util_gem 'f', '1', 'e' => nil
 
     Gem::Installer.new(e1_gem).install
-    FileUtils.rm_r e1.extension_install_dir
+    FileUtils.rm_r e1.extension_dir
 
     FileUtils.mv e1_gem, @tempdir
     FileUtils.mv f1_gem, @tempdir
@@ -420,7 +420,7 @@ class TestGemDependencyInstaller < Gem::TestCase
 
     assert_equal %w[f-1], inst.installed_gems.map { |s| s.full_name }
 
-    assert_path_exists e1.extension_install_dir
+    assert_path_exists e1.extension_dir
   end
 
   def test_install_dependency_old
@@ -718,6 +718,9 @@ class TestGemDependencyInstaller < Gem::TestCase
       inst = Gem::DependencyInstaller.new :install_dir => gemhome2
       inst.install 'a'
     end
+
+    assert_equal %w[a-1], inst.installed_gems.map { |s| s.full_name },
+                 'sanity check'
 
     ENV['GEM_HOME'] = @gemhome
     ENV['GEM_PATH'] = [@gemhome, gemhome2].join File::PATH_SEPARATOR
@@ -1197,6 +1200,36 @@ class TestGemDependencyInstaller < Gem::TestCase
     util_clear_gems
 
     assert_resolve %w[d-1 e-1], e1, @d1, @d2
+  end
+
+  def test_resolve_dependencies
+    util_setup_gems
+
+    FileUtils.mv @a1_gem, @tempdir
+    FileUtils.mv @b1_gem, @tempdir
+
+    inst = Gem::DependencyInstaller.new
+    request_set = inst.resolve_dependencies 'b', req('>= 0')
+
+    requests = request_set.sorted_requests.map { |req| req.full_name }
+
+    assert_equal %w[a-1 b-1], requests
+  end
+
+  def test_resolve_dependencies_ignore_dependencies
+    util_setup_gems
+
+    FileUtils.mv @a1_gem, @tempdir
+    FileUtils.mv @b1_gem, @tempdir
+
+    inst = Gem::DependencyInstaller.new :ignore_dependencies => true
+    request_set = inst.resolve_dependencies 'b', req('>= 0')
+
+    requests = request_set.sorted_requests.map { |req| req.full_name }
+
+    assert request_set.ignore_dependencies
+
+    assert_equal %w[b-1], requests
   end
 
   def util_write_a1_bin

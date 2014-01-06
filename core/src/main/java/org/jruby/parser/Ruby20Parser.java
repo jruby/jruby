@@ -63,7 +63,7 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.Hash19Node;
+import org.jruby.ast.HashNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -3117,7 +3117,7 @@ states[31] = new ParserState() {
 };
 states[293] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Hash19Node(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
+                    yyVal = new HashNode(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -4007,7 +4007,7 @@ states[311] = new ParserState() {
 };
 states[246] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4044,7 +4044,7 @@ states[443] = new ParserState() {
 };
 states[247] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4303,7 +4303,7 @@ states[123] = new ParserState() {
 };
 states[254] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4347,7 +4347,7 @@ states[124] = new ParserState() {
 };
 states[255] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4470,7 +4470,7 @@ states[454] = new ParserState() {
 };
 states[258] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -4516,7 +4516,7 @@ states[455] = new ParserState() {
 };
 states[259] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }

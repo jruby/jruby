@@ -895,7 +895,7 @@ public class InvokeDynamicSupport {
     }
     
     public static RubyString newFrozenString(ThreadContext context, MutableCallSite site, ByteList contents, int codeRange) {
-        RubyString string = RubyString.newStringShared(context.runtime, contents, codeRange);
+        RubyString string = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, contents, codeRange));
         site.setTarget(dropArguments(constant(RubyString.class, string), 0, ThreadContext.class));
         return string;
     }

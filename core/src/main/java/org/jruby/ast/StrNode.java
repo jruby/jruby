@@ -51,6 +51,7 @@ import org.jruby.util.StringSupport;
 public class StrNode extends Node implements ILiteralNode {
     private final ByteList value;
     private final int codeRange;
+    private transient RubyString frozenLiteralString;
 
     public StrNode(ISourcePosition position, ByteList value) {
         this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
@@ -113,5 +114,11 @@ public class StrNode extends Node implements ILiteralNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return RubyString.newStringShared(runtime, value, codeRange);
+    }
+
+    public RubyString getFrozenLiteralString(Ruby runtime) {
+        if (frozenLiteralString != null) return frozenLiteralString;
+
+        return frozenLiteralString = runtime.freezeAndDedupString(RubyString.newStringShared(runtime, value, codeRange));
     }
 }

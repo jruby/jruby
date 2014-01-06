@@ -167,14 +167,13 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
 
         RubyModule containingClass = context.getRubyClass();
-        Visibility visibility = context.getCurrentVisibility();
-
-        visibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, visibility);
+        Visibility currVisibility = context.getCurrentVisibility();
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, visibility, containingClass, parameterDesc);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
 
-        return Helpers.addInstanceMethod(containingClass, rubyName, method, visibility, context, runtime);
+        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 };

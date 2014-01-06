@@ -105,6 +105,20 @@ public class RubyBasicSocket extends RubyIO {
         doNotReverseLookup = true;
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject _klass, IRubyObject _fileno) {
+        Ruby runtime = context.runtime;
+        int fileno = (int)_fileno.convertToInteger().getLongValue();
+        RubyClass klass = (RubyClass)_klass;
+
+        ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
+
+        RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
+        basicSocket.initSocket(runtime, descriptor);
+
+        return basicSocket;
+    }
+
     @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
         return context.runtime.newBoolean(doNotReverseLookup);
@@ -660,7 +674,7 @@ public class RubyBasicSocket extends RubyIO {
     protected static SocketOption optionFromArg(IRubyObject _opt) {
         SocketOption opt;
         if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
-            opt = SocketOption.valueOf(_opt.toString());
+            opt = SocketOption.valueOf("SO_" + _opt.toString());
         } else {
             opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
         }
@@ -670,7 +684,7 @@ public class RubyBasicSocket extends RubyIO {
     protected static SocketLevel levelFromArg(IRubyObject _level) {
         SocketLevel level;
         if (_level instanceof RubyString || _level instanceof RubySymbol) {
-            level = SocketLevel.valueOf(_level.toString());
+            level = SocketLevel.valueOf("SOL_" + _level.toString());
         } else {
             level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
         }

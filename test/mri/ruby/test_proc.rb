@@ -1112,7 +1112,7 @@ class TestProc < Test::Unit::TestCase
     assert_match(/^#<Proc:0x\h+ \(lambda\)>$/, method(:p).to_proc.to_s)
     x = proc {}
     x.taint
-    assert(x.to_s.tainted?)
+    assert_predicate(x.to_s, :tainted?)
   end
 
   @@line_of_source_location_test = __LINE__ + 1
@@ -1198,12 +1198,12 @@ class TestProc < Test::Unit::TestCase
     }
   end
 
-  def test_overriden_lambda
+  def test_overridden_lambda
     bug8345 = '[ruby-core:54687] [Bug #8345]'
     assert_normal_exit('def lambda; end; method(:puts).to_proc', bug8345)
   end
 
-  def test_overriden_proc
+  def test_overridden_proc
     bug8345 = '[ruby-core:54688] [Bug #8345]'
     assert_normal_exit('def proc; end; ->{}.curry', bug8345)
   end

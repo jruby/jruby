@@ -134,6 +134,16 @@ class TestEnumerator < Test::Unit::TestCase
     assert_raise(TypeError, bug8010){ @obj.to_enum(:foo, 1, 2, 3).with_index('1').to_a }
   end
 
+  def test_with_index_dangling_memo
+    bug9178 = '[ruby-core:58692] [Bug #9178]'
+    assert_separately([], <<-"end;")
+    bug = "#{bug9178}"
+    e = [1].to_enum(:chunk).with_index {|c,i| i == 5}
+    assert_kind_of(Enumerator, e)
+    assert_equal([false, [1]], e.to_a[0], bug)
+    end;
+  end
+
   def test_with_object
     obj = [0, 1]
     ret = (1..10).each.with_object(obj) {|i, memo|
@@ -491,9 +501,13 @@ class TestEnumerator < Test::Unit::TestCase
 
   def test_size_for_enum_created_from_hash
     h = {a: 1, b: 2, c: 3}
-    %i[delete_if reject! select select! keep_if each each_key each_pair].each do |method|
-      assert_equal 3, h.send(method).size
-    end
+    methods = %i[delete_if reject reject! select select! keep_if each each_key each_pair]
+    enums = methods.map {|method| h.send(method)}
+    s = enums.group_by(&:size)
+    assert_equal([3], s.keys, ->{s.reject!{|k| k==3}.inspect})
+    h[:d] = 4
+    s = enums.group_by(&:size)
+    assert_equal([4], s.keys, ->{s.reject!{|k| k==4}.inspect})
   end
 
   def test_size_for_enum_created_from_env
@@ -601,6 +615,15 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal 5, 'hello'.each_byte.size
     assert_equal 5, 'hello'.each_char.size
     assert_equal 5, 'hello'.each_codepoint.size
+  end
+
+  def test_peek_for_enumerator_objects
+    e = 2.times
+    assert_equal(0, e.peek)
+    e.next
+    assert_equal(1, e.peek)
+    e.next
+    assert_raise(StopIteration) { e.peek }
   end
 end
 
