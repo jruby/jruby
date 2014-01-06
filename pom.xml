@@ -27,6 +27,10 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/truffle/maven/</url>
+    </repository>
   </repositories>
 
   <modules>
@@ -70,8 +74,8 @@
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
     <asm.version>4.0</asm.version>
-    <base.java.version>1.6</base.java.version>
-    <base.javac.version>1.6</base.javac.version>
+    <base.java.version>1.7</base.java.version>
+    <base.javac.version>1.7</base.javac.version>
     <version.jruby>${project.version}</version.jruby>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <main.basedir>${project.basedir}</main.basedir>

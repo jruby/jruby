@@ -90,15 +90,18 @@ public final class UnsafeHolder {
     //// The following methods are Java8 only. They will throw undefined method errors if invoked without checking for fence support 
     
     public static void fullFence() {
-        U.fullFence();
+        // CS: Seems to cause problems when I build with Maven
+        //U.fullFence();
     }
     
     public static void loadFence() {
-        U.loadFence();
+        // CS: Seems to cause problems when I build with Maven
+        //U.loadFence();
     }
     
     public static void storeFence() {
-        U.storeFence();
+        // CS: Seems to cause problems when I build with Maven
+        //U.storeFence();
     }
 
 

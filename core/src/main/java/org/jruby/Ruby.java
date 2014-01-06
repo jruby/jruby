@@ -104,6 +104,8 @@ import org.jruby.runtime.profile.ProfiledMethod;
 import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.truffle.JRubyTruffleBridge;
+import org.jruby.truffle.runtime.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.IOInputStream;
@@ -813,7 +815,16 @@ public final class Ruby {
     
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        try {
-           if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+           if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+               final JRubyTruffleBridge bridge = new JRubyTruffleBridge(context);
+
+               try {
+                   assert parseResult instanceof RootNode;
+                   return bridge.toJRuby(bridge.execute(RubyParser.ParserContext.TOP_LEVEL, bridge.toTruffle(self), null, (RootNode) parseResult));
+               } finally {
+                   bridge.shutdown();
+               }
+           } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
                assert parseResult instanceof RootNode;
@@ -829,7 +840,16 @@ public final class Ruby {
         assert rootNode != null : "scriptNode is not null";
 
         try {
-            if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+                final JRubyTruffleBridge bridge = new JRubyTruffleBridge(context);
+
+                try {
+                    assert rootNode instanceof RootNode;
+                    return bridge.toJRuby(bridge.execute(RubyParser.ParserContext.TOP_LEVEL, bridge.toTruffle(self), null, (RootNode) rootNode));
+                } finally {
+                    bridge.shutdown();
+                }
+            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
             } else {
@@ -1192,15 +1212,18 @@ public final class Ruby {
             reflectionWorks = false;
         }
         
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
+                && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             loadService.require("jruby");
         }
 
         // out of base boot mode
         booting = false;
-        
+
         // init Ruby-based kernel
-        initRubyKernel();
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            initRubyKernel();
+        }
         
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(tc);

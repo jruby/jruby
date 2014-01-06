@@ -201,6 +201,12 @@
       <version>${joda.time.version}</version>
       <type>jar</type>
     </dependency>
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>truffle</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
   <properties>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
@@ -320,11 +326,16 @@
           <debug>true</debug>
           <verbose>true</verbose>
           <fork>true</fork>
+          <compilerArgs>
+            <arg>-J-Xmx1G</arg>
+          </compilerArgs>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
           <target>${base.javac.version}</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
         <executions>
           <execution>
@@ -355,7 +366,9 @@
             <configuration>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
               </annotationProcessors>
+              <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -481,6 +494,7 @@
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/truffle/test/TruffleTestSuite.java</include>
           </includes>
           <additionalClasspathElements>
               <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
