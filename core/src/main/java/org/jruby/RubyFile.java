@@ -1564,6 +1564,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
 
         String relativePath = get_path(context, args[0]).getUnicodeValue();
+
+        // Special /dev/null of windows
+        if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
+            return runtime.newString("//./" + relativePath.substring(0, 3));
+        }
+
         String[] uriParts = splitURI(relativePath);
         String cwd;
 
