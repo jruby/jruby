@@ -12,8 +12,8 @@ module Kernel
     # know about classpath: paths.
     if file =~ /^classpath:(.*)/
       dir = File.dirname($1)
-      dir = '' if dir == '.'
-      absolute_feature = "classpath:" + File.expand_path(relative_arg, dir)
+      dir = dir == '.' ? "" : dir + "/"
+      absolute_feature = "classpath:#{dir}#{relative_arg}"
     else
       absolute_feature = File.expand_path(relative_arg, File.dirname(file))
     end
