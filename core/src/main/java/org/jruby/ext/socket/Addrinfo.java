@@ -365,6 +365,15 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
+    @JRubyMethod
+    public IRubyObject to_str(ThreadContext context){
+        return context.runtime.newString(toString());
+    }
+    
+    public String toString(){  
+        return inetAddress.getHostAddress() + ":" + port;
+    }
+
     @JRubyMethod(notImplemented = true)
     public IRubyObject marshal_dump(ThreadContext context) {
         // unimplemented
@@ -375,6 +384,14 @@ public class Addrinfo extends RubyObject {
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         // unimplemented
         return context.nil;
+    }
+    
+    public InetAddress getInetAddress() {
+        return inetAddress;
+    }
+    
+    public int getPort(){
+        return port;
     }
 
     private InetAddress inetAddress;

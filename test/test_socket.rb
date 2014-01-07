@@ -85,8 +85,7 @@ class SocketTest < Test::Unit::TestCase
     ipv4_socket = Socket.new(:INET, :STREAM)
     addr = Addrinfo.tcp('0.0.0.0', 3030)
 
-    ipv4_socket.bind(addr).should_not be_nil
-    ipv4_socket.listen(Socket::SOMAXCONN).shoult_not be_nil
+    assert_not_equal(ipv4_socket.bind(addr), nil)
   end
 
   #JRUBY-2147
