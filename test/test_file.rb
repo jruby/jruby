@@ -93,6 +93,13 @@ class TestFile < Test::Unit::TestCase
       assert_equal "abc", File.basename("c:abc")
     end
 
+    def test_windows_expand_file_nul
+      assert_equal "//./nul", File.expand_path("nul:")
+      assert_equal "//./nul", File.expand_path("nul")
+      assert_equal "//./NUL", File.expand_path("NUL")
+      assert_equal "//./NUL", File.expand_path("NUL:")
+    end
+
     # JRUBY-2052: this is important for fileutils
     def test_windows_dirname
       assert_equal("C:/", File.dirname("C:/"))
