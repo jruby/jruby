@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
@@ -167,6 +168,11 @@ public abstract class IRVisitor {
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) { error(buildlambdainstr); }
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) { error(getencodinginstr); }
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivepostreqdarginstr) { error(receivepostreqdarginstr); }
+
+    // unboxing instrs
+    public void BoxFloatInstr(BoxFloatInstr instr) { error(instr); }
+    public void AluInstr(AluInstr instr) { error(instr); }
+    public void UnboxFloatInstr(UnboxFloatInstr instr) { error(instr); }
 
     // operands
     public void Array(Array array) { error(array); }

@@ -26,7 +26,7 @@ public class TemporaryClosureVariable extends TemporaryVariable {
     }
 
     @Override
-    protected String getPrefix() {
+    public String getPrefix() {
         return this.prefix;
     }
 

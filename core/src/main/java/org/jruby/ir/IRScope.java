@@ -39,6 +39,7 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -131,6 +132,7 @@ public abstract class IRScope implements ParseResult {
     private List<BasicBlock> linearizedBBList;
     private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
+    protected int floatVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
@@ -273,6 +275,7 @@ public abstract class IRScope implements ParseResult {
         this.threadPollInstrsCount = s.threadPollInstrsCount;
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
+        this.floatVariableIndex = s.floatVariableIndex;
         this.hasLoops = s.hasLoops;
         this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
         this.instrList = null;
@@ -315,6 +318,7 @@ public abstract class IRScope implements ParseResult {
         this.threadPollInstrsCount = 0;
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
+        this.floatVariableIndex = -1;
         this.instrList = new ArrayList<Instr>();
         this.nestedClosures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
@@ -705,10 +709,17 @@ public abstract class IRScope implements ParseResult {
             pass.run(this);
         }
 
+        CompilerPass pass;
+
+        if (RubyInstanceConfig.IR_UNBOXING) {
+            pass = new UnboxingPass();
+            pass.run(this);
+        }
+
         // For methods with unescaped bindings, inline the binding
         // by converting local var loads/store to tmp var loads/stores
         if (this instanceof IRMethod && !this.bindingHasEscaped()) {
-            CompilerPass pass = new DeadCodeElimination();
+            pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
             }
@@ -1076,12 +1087,22 @@ public abstract class IRScope implements ParseResult {
         return new TemporaryVariable(name, temporaryVariableIndex);
     }
 
-    public void resetTemporaryVariables() {
-        temporaryVariableIndex = -1;
+    public TemporaryVariable getNewFloatVariable() {
+        floatVariableIndex++;
+        return new TemporaryVariable("%f_" + floatVariableIndex, floatVariableIndex);
     }
 
-    public int getTemporaryVariableSize() {
+    public void resetTemporaryVariables() {
+        temporaryVariableIndex = -1;
+        floatVariableIndex = -1;
+    }
+
+    public int getTemporaryVariablesCount() {
         return temporaryVariableIndex + 1;
+    }
+
+    public int getFloatVariablesCount() {
+        return floatVariableIndex + 1;
     }
 
     // Generate a new variable for inlined code

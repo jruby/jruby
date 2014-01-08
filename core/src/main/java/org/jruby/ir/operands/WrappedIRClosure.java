@@ -50,7 +50,6 @@ public class WrappedIRClosure extends Operand {
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newSelf = self.getSimplifiedOperand(valueMap, force);
-
         return newSelf == self ? this : new WrappedIRClosure((Variable)newSelf, closure);
     }
 

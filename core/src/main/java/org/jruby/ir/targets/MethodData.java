@@ -22,9 +22,13 @@ public class MethodData {
         this.method = new IRBytecodeAdapter(method, arity);
     }
 
-    public int local(Variable variable) {
+    public int local(Variable variable, Type type) {
         String newName = variable.getName().replace('%', '$');
-        return local(newName, JVM.OBJECT_TYPE);
+        return local(newName, type);
+    }
+
+    public int local(Variable variable) {
+        return local(variable, JVM.OBJECT_TYPE);
     }
 
     public int local(String newName) {

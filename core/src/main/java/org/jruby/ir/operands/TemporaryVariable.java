@@ -19,14 +19,11 @@ public class TemporaryVariable extends Variable {
     }
 
     public TemporaryVariable(OperandType type, int offset) {
-        super(type);
-
-        this.offset = offset;
-        this.name = getPrefix() + offset;
+        this(type, getPrefix() + offset, offset);
     }
 
     public TemporaryVariable(String name, int offset) {
-        this(OperandType.TEMPORARY_VARIABLE, offset);
+        this(OperandType.TEMPORARY_VARIABLE, name, offset);
     }
 
     // Used for temporary variables like %current_module, %_arg_array
@@ -65,10 +62,9 @@ public class TemporaryVariable extends Variable {
         return getName();
     }
 
-    protected String getPrefix() {
+    public String getPrefix() {
         return "%v_";
     }
-
 
     @Override
     public Variable clone(InlinerInfo ii) {

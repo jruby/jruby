@@ -16,14 +16,14 @@ public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
     private Operand arg;
     private Variable result;
 
-    public CopyInstr(Variable result, Operand s) {
-        super(Operation.COPY);
-
-        assert result != null: "CopyInstr result is null";
-        assert s != null;
-
+    public CopyInstr(Operation op, Variable result, Operand s) {
+        super(op);
         this.arg = s;
         this.result = result;
+    }
+
+    public CopyInstr(Variable result, Operand s) {
+        this(Operation.COPY, result, s);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
+        return new CopyInstr(getOperation(), ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
 
     @Override
@@ -71,5 +71,4 @@ public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
     public void visit(IRVisitor visitor) {
         visitor.CopyInstr(this);
     }
-
 }
