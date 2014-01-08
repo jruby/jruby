@@ -19,7 +19,9 @@ public class TemporaryVariable extends Variable {
     }
 
     public TemporaryVariable(OperandType type, int offset) {
-        this(type, getPrefix() + offset, offset);
+        super(type);
+        this.offset = offset;
+        this.name = getPrefix() + offset;
     }
 
     public TemporaryVariable(String name, int offset) {
