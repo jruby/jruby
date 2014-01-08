@@ -142,10 +142,16 @@ class SocketTest < Test::Unit::TestCase
   
   # JRUBY-7200
   def test_ipv4_socket
-    ipv4_socket = Socket.new(:INET, :STREAM)
+    socket = Socket.new(:INET, :STREAM)
+    server_socket = ServerSocket.new(:INET, :STREAM)
+    
     addr = Addrinfo.tcp('0.0.0.0', 3030)
+    addr1 = Addrinfo.tcp('0.0.0.0', 3031)
 
-    assert_not_equal(ipv4_socket.bind(addr), nil)
+    assert_not_equal(socket.bind(addr), nil)
+    
+    assert_not_equal(server_socket.bind(addr1), nil)
+    assert_not_equal(server_socket.listen(128), nil)
   end
 end
 
