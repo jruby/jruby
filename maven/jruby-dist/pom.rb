@@ -32,6 +32,7 @@ project 'JRuby Dist' do
                       'bin', 
                       '*' ) ].each do |f|
         unless f.match /.(bat|exe|dll)$/
+          puts f
           File.chmod( 0755, f ) rescue nil
         end
       end
