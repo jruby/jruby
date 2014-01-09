@@ -117,6 +117,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         symbolClass.defineAnnotatedMethods(RubySymbol.class);
         symbolMetaClass.undefineMethod("new");
+
+        symbolClass.includeModule(runtime.getComparable());
         
         return symbolClass;
     }

@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFloat;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
@@ -25,6 +27,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.Operation;
+import org.jruby.ir.OpClass;
+import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.BoxInstr;
+import org.jruby.ir.instructions.boxing.UnboxInstr;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -34,6 +41,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
@@ -48,6 +56,8 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
@@ -670,6 +680,36 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    private static double getFloatArg(double[] floats, Operand arg) {
+        if (arg instanceof Float) {
+            return ((Float)arg).value;
+        } else if (arg instanceof Fixnum) {
+            return (double)((Fixnum)arg).value;
+        } else if (arg instanceof TemporaryVariable) {
+            return floats[((TemporaryVariable)arg).offset];
+        } else {
+            return 0.0/0.0;
+        }
+    }
+
+    private static void setFloatVar(double[] floats, Variable var, double val) {
+        floats[((TemporaryVariable)var).offset] = val;
+    }
+
+    private static void computeResult(AluInstr instr, Operation op, double[] floats) {
+        Variable dst = instr.getResult();
+        double   a1  = getFloatArg(floats, instr.getArg1());
+        double   a2  = getFloatArg(floats, instr.getArg2());
+        switch (op) {
+        case FADD: setFloatVar(floats, dst, a1 + a2); break;
+        case FSUB: setFloatVar(floats, dst, a1 - a2); break;
+        case FMUL: setFloatVar(floats, dst, a1 * a2); break;
+        case FDIV: setFloatVar(floats, dst, a1 / a2); break;
+        case FLT: setFloatVar(floats, dst, a1 < a2 ? 1.0 : 0.0); break;
+        case FGT: setFloatVar(floats, dst, a1 > a2 ? 1.0 : 0.0); break;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = scope.getInstrsForInterpretation();
@@ -679,8 +719,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         Map<Integer, Integer> rescueMap = scope.getRescueMap();
 
-        int      numTempVars    = scope.getTemporaryVariableSize();
+        int      numTempVars    = scope.getTemporaryVariablesCount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
+        int      numFloatVars   = scope.getFloatVariablesCount();
+        double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
         int      n              = instrs.length;
         int      ipc            = 0;
         Instr    instr          = null;
@@ -718,15 +760,20 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             try {
                 switch (operation.opClass) {
+                case ALU_OP: {
+                    computeResult((AluInstr)instr, operation, floats);
+                    break;
+                }
                 case ARG_OP: {
                     receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
                     break;
                 }
                 case BRANCH_OP: {
-                    if (operation == Operation.JUMP) {
-                        ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC();
-                    } else {
-                        ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc);
+                    switch (operation) {
+                    case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
+                    case B_TRUE_UNBOXED: if (getFloatArg(floats, ((OneOperandBranchInstr)instr).getArg1()) == 1.0) ipc = ((OneOperandBranchInstr)instr).getJumpTarget().getTargetPC(); break;
+                    case B_FALSE_UNBOXED: if (getFloatArg(floats, ((OneOperandBranchInstr)instr).getArg1()) == 0.0) ipc = ((OneOperandBranchInstr)instr).getJumpTarget().getTargetPC(); break;
+                    default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc); break;
                     }
                     break;
                 }
@@ -780,6 +827,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         break;
                     }
 
+                    case COPY_UNBOXED: {
+                        CopyInstr c = (CopyInstr)instr;
+                        setFloatVar(floats, c.getResult(), getFloatArg(floats, c.getSource()));
+                        break;
+                    }
+
                     case GET_FIELD: {
                         GetFieldInstr gfi = (GetFieldInstr)instr;
                         IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currDynScope, temp);
@@ -797,6 +850,23 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         result = sci.getCachedConst();
                         if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
                         setResult(temp, currDynScope, sci.getResult(), result);
+                        break;
+                    }
+
+                    case BOX_FLOAT: {
+                        RubyFloat f = context.runtime.newFloat(getFloatArg(floats, ((BoxFloatInstr)instr).getValue()));
+                        setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
+                        break;
+                    }
+
+                    case UNBOX_FLOAT: {
+                        UnboxInstr ui = (UnboxInstr)instr;
+                        Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
+                        if (val instanceof RubyFloat) {
+                            floats[((TemporaryVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
+                        } else {
+                            floats[((TemporaryVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
+                        }
                         break;
                     }
 

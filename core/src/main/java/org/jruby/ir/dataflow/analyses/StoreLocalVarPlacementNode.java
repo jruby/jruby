@@ -166,8 +166,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
     }
 
     public boolean addStores(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
-        StoreLocalVarPlacementProblem bsp = (StoreLocalVarPlacementProblem) problem;
-        IRScope scope = bsp.getScope();
+        IRScope scope = problem.getScope();
 
         boolean addedStores            = false;
         boolean isClosure              = scope instanceof IRClosure;

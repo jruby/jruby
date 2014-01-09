@@ -10,6 +10,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
@@ -146,6 +147,10 @@ public class IRBytecodeAdapter {
         adapter.invokestatic(p(Helpers.class), name, sig);
     }
 
+    public void invokeIRHelper(String name, String sig) {
+        adapter.invokestatic(p(IRRuntimeHelpers.class), name, sig);
+    }
+
     public void searchConst(String name) {
         adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst());
     }
@@ -229,6 +234,9 @@ public class IRBytecodeAdapter {
 
     public int newLocal(String name, Type type) {
         int index = variableCount++;
+        if (type == Type.DOUBLE_TYPE || type == Type.LONG_TYPE) {
+            variableCount++;
+        }
         variableTypes.put(index, type);
         variableNames.put(index, name);
         return index;

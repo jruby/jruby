@@ -67,6 +67,11 @@ public class BasicBlock implements ExplicitVertexID {
         return this.isRescueEntry;
     }
 
+    public void replaceInstrs(List<Instr> instrs) {
+        this.instrs = instrs;
+        this.instrsArray = null;
+    }
+
     public void addInstr(Instr i) {
         instrs.add(i);
     }

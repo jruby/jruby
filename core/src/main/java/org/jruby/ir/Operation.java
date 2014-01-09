@@ -17,7 +17,8 @@ class OpFlags {
     final static int f_is_arg_receive      = 0x0400;
     final static int f_modifies_code       = 0x0800;
     final static int f_inline_unfriendly   = 0x1000;
-    final static int f_is_book_keeping_op  = 0x4000;
+    final static int f_is_book_keeping_op  = 0x2000;
+    final static int f_is_alu_op           = 0x4000;
 }
 
 public enum Operation {
@@ -163,6 +164,29 @@ public enum Operation {
     SUPER_METHOD_BOUND(0),
     GET_ERROR_INFO(0),
 
+    /* Boxing/Unboxing between Ruby <--> Java types */
+    BOX_FIXNUM(0),
+    BOX_FLOAT(0),
+    UNBOX_FIXNUM(0),
+    UNBOX_FLOAT(0),
+
+    /* Unboxed ALU ops */
+    IADD(OpFlags.f_is_alu_op),
+    ISUB(OpFlags.f_is_alu_op),
+    IMUL(OpFlags.f_is_alu_op),
+    IDIV(OpFlags.f_is_alu_op),
+    ILT(OpFlags.f_is_alu_op),
+    IGT(OpFlags.f_is_alu_op),
+    FADD(OpFlags.f_is_alu_op),
+    FSUB(OpFlags.f_is_alu_op),
+    FMUL(OpFlags.f_is_alu_op),
+    FDIV(OpFlags.f_is_alu_op),
+    FLT(OpFlags.f_is_alu_op),
+    FGT(OpFlags.f_is_alu_op),
+    COPY_UNBOXED(0),
+    B_TRUE_UNBOXED(OpFlags.f_is_jump_or_branch),
+    B_FALSE_UNBOXED(OpFlags.f_is_jump_or_branch),
+
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
     PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
@@ -190,6 +214,8 @@ public enum Operation {
             this.opClass = OpClass.BOOK_KEEPING_OP;
         } else if (this.isCall()) {
             this.opClass = OpClass.CALL_OP;
+        } else if ((flags & OpFlags.f_is_alu_op) > 0) {
+            this.opClass = OpClass.ALU_OP;
         } else {
             this.opClass = OpClass.OTHER_OP;
         }

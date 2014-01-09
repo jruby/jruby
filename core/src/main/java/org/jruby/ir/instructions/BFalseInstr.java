@@ -11,13 +11,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInstr {
     // Public only for persistence reloading
+    public BFalseInstr(Operation op, Operand v, Label jmpTarget) {
+        super(op, v, jmpTarget);
+    }
+
     public BFalseInstr(Operand v, Label jmpTarget) {
         super(Operation.B_FALSE, v, jmpTarget);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BFalseInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+        return new BFalseInstr(getOperation(), getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 
     @Override
