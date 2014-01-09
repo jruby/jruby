@@ -816,7 +816,7 @@ public final class Ruby {
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-               final JRubyTruffleBridge bridge = new JRubyTruffleBridge(context);
+               final JRubyTruffleBridge bridge = new JRubyTruffleBridge(this);
 
                try {
                    assert parseResult instanceof RootNode;
@@ -841,7 +841,7 @@ public final class Ruby {
 
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-                final JRubyTruffleBridge bridge = new JRubyTruffleBridge(context);
+                final JRubyTruffleBridge bridge = new JRubyTruffleBridge(this);
 
                 try {
                     assert rootNode instanceof RootNode;

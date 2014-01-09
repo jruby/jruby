@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceManager;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.parser.JRubyParser;
 import org.jruby.truffle.runtime.*;
@@ -30,13 +31,11 @@ import java.io.Reader;
 
 public class JRubyTruffleBridge {
 
-    private final ThreadContext jrubyContext;
+    private final Ruby runtime;
     private final RubyContext truffleContext;
 
-    public JRubyTruffleBridge(ThreadContext jrubyContext) {
-        assert jrubyContext != null;
-
-        this.jrubyContext = jrubyContext;
+    public JRubyTruffleBridge(Ruby runtime) {
+        this.runtime = runtime;
 
         // Override the home directory if RUBYHOME is set
 
@@ -48,7 +47,7 @@ public class JRubyTruffleBridge {
 
         // Set up a context
 
-        truffleContext = new RubyContext(new Configuration(configurationBuilder), new JRubyParser(jrubyContext.getRuntime()));
+        truffleContext = new RubyContext(new Configuration(configurationBuilder), new JRubyParser(runtime));
 
         // Bring in core method nodes
 
@@ -60,7 +59,7 @@ public class JRubyTruffleBridge {
 
         // Set program arguments
 
-        for (IRubyObject arg : ((org.jruby.RubyArray) jrubyContext.getRuntime().getObject().getConstant("ARGV")).toJavaArray()) {
+        for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             truffleContext.getCoreLibrary().getArgv().push(truffleContext.makeString(arg.toString()));
         }
 
@@ -68,7 +67,7 @@ public class JRubyTruffleBridge {
 
         final RubyArray loadPath = (RubyArray) truffleContext.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
 
-        for (IRubyObject path : ((org.jruby.RubyArray) jrubyContext.getRuntime().getLoadService().getLoadPath()).toJavaArray()) {
+        for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             loadPath.push(truffleContext.makeString(path.toString()));
         }
     }
@@ -126,14 +125,14 @@ public class JRubyTruffleBridge {
 
     public IRubyObject toJRuby(Object object) {
         if (object instanceof NilPlaceholder) {
-            return jrubyContext.getRuntime().getNil();
+            return runtime.getNil();
+        } else {
+            return JavaUtil.convertJavaToUsableRubyObject(runtime, object);
         }
-
-        throw new UnsupportedOperationException(object.getClass().toString());
     }
 
     public Object toTruffle(IRubyObject object) {
-        if (object == jrubyContext.getRuntime().getTopSelf()) {
+        if (object == runtime.getTopSelf()) {
             return truffleContext.getCoreLibrary().getMainObject();
         }
 
