@@ -22,11 +22,7 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -291,7 +287,7 @@ public class Helpers {
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.runtime;
 
@@ -304,13 +300,14 @@ public class Helpers {
                 factory, javaName,
                 rubyName, containingClass, new SimpleSourcePosition(filename, line), arity, scope, newVisibility, scriptObject,
                 callConfig,
-                parameterDesc);
+                parameterDesc,
+                methodNodes);
 
         return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.runtime;
 
@@ -320,7 +317,7 @@ public class Helpers {
         DynamicMethod method = constructSingletonMethod(
                 factory, rubyName, javaName, rubyClass,
                 new SimpleSourcePosition(filename, line), arity, scope,
-                scriptObject, callConfig, parameterDesc);
+                scriptObject, callConfig, parameterDesc, methodNodes);
         
         rubyClass.addMethod(rubyName, method);
         
@@ -329,9 +326,9 @@ public class Helpers {
         return runtime.newSymbol(rubyName);
     }
 
-    public static byte[] defOffline(String rubyName, String javaName, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+    public static byte[] defOffline(String rubyName, String javaName, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line, MethodNodes methodNodes) {
         MethodFactory factory = MethodFactory.createFactory(Helpers.class.getClassLoader());
-        byte[] methodBytes = factory.getCompiledMethodOffline(rubyName, javaName, classPath, invokerName, arity, scope, callConfig, filename, line);
+        byte[] methodBytes = factory.getCompiledMethodOffline(rubyName, javaName, classPath, invokerName, arity, scope, callConfig, filename, line, methodNodes);
 
         return methodBytes;
     }
@@ -2051,7 +2048,8 @@ public class Helpers {
             Visibility visibility,
             Object scriptObject,
             CallConfiguration callConfig,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
         
         DynamicMethod method;
 
@@ -2070,7 +2068,8 @@ public class Helpers {
                     scriptObject,
                     callConfig,
                     position,
-                    parameterDesc);
+                    parameterDesc,
+                    methodNodes);
         } else {
             method = factory.getCompiledMethod(
                     containingClass,
@@ -2082,7 +2081,8 @@ public class Helpers {
                     scriptObject,
                     callConfig,
                     position,
-                    parameterDesc);
+                    parameterDesc,
+                    methodNodes);
         }
 
         return method;
@@ -2098,7 +2098,8 @@ public class Helpers {
             StaticScope scope,
             Object scriptObject,
             CallConfiguration callConfig,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
         
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
             return factory.getCompiledMethodLazily(
@@ -2111,7 +2112,8 @@ public class Helpers {
                     scriptObject,
                     callConfig,
                     position,
-                    parameterDesc);
+                    parameterDesc,
+                    methodNodes);
         } else {
             return factory.getCompiledMethod(
                     rubyClass,
@@ -2123,7 +2125,8 @@ public class Helpers {
                     scriptObject,
                     callConfig,
                     position,
-                    parameterDesc);
+                    parameterDesc,
+                    methodNodes);
         }
     }
 

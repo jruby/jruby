@@ -225,7 +225,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
 
         return new CompiledMethod.LazyCompiledMethod(
                 implementationClass,
@@ -238,7 +239,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 callConfig,
                 position,
                 parameterDesc,
-                new InvocationMethodFactory(classLoader));
+                new InvocationMethodFactory(classLoader),
+                methodNodes);
     }
 
     public static String getCompiledCallbackName(String typePath, String method) {
@@ -260,7 +262,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
         
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
@@ -278,7 +281,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     scope,
                     callConfig,
                     position.getFile(),
-                    position.getStartLine());
+                    position.getStartLine(),
+                    methodNodes);
             generatedClass = endCallWithBytes(invokerBytes, invokerPath);
         } catch (LinkageError le) {
             tryLoad = true;
@@ -323,7 +327,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     @Override
     public byte[] getCompiledMethodOffline(
             String RubyName, String method, String className, String invokerPath, Arity arity,
-            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+            StaticScope scope, CallConfiguration callConfig, String filename, int line,
+            MethodNodes methodNodes) {
         String sup = COMPILED_SUPER_CLASS_NAME;
         ClassWriter cw;
         cw = createCompiledCtor(invokerPath, invokerPath, sup);

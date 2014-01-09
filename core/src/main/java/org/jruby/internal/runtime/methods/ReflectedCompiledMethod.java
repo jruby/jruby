@@ -48,7 +48,7 @@ public class ReflectedCompiledMethod extends CompiledMethod {
     
     public ReflectedCompiledMethod(RubyModule implementationClass, Arity arity,
             Visibility visibility, StaticScope staticScope, Object scriptObject, Method method, CallConfiguration callConfig, ISourcePosition position, String parameterDesc) {
-        super();
+        super(null);
         init(implementationClass, arity, visibility, staticScope, scriptObject, callConfig, position, parameterDesc);
         
         this.method = method;

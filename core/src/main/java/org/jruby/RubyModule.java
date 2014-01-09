@@ -2284,7 +2284,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(method instanceof MethodWithNodes)) {
-            throw new UnsupportedOperationException("can only truffelize MethodWithNodes - " + name + " was " + method.getClass() + " - try -X-C");
+            throw new UnsupportedOperationException("can only truffelize methods that can from Ruby source code - " + name + " was " + method.getClass());
         }
 
         final MethodWithNodes methodWithNodes = (MethodWithNodes) method;

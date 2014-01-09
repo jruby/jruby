@@ -35,6 +35,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.internal.runtime.methods.MethodNodes;
 
 /**
  *
@@ -375,7 +376,7 @@ public interface BodyCompiler {
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
             CompilerCallback receiver, ASTInspector inspector, boolean root,
-            String filename, int line, String parameterDesc);
+            String filename, int line, String parameterDesc, MethodNodes methodNodes);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.

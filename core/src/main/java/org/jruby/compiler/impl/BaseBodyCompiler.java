@@ -49,6 +49,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -2692,7 +2693,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
             CompilerCallback receiver, ASTInspector inspector, boolean root,
-            String filename, int line, String parameterDesc) {
+            String filename, int line, String parameterDesc, MethodNodes methodNodes) {
         String mangledName = JavaNameMangler.mangleMethodName(name);
         String newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
@@ -2722,13 +2723,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class, MethodNodes.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class, MethodNodes.class)));
         }
 
-        script.addInvokerDescriptor(name, newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
+        script.addInvokerDescriptor(name, newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line, methodNodes);
 
         // emit method body
 

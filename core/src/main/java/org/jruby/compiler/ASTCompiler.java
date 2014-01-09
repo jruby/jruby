@@ -49,6 +49,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.StringSupport;
 
@@ -1815,7 +1816,8 @@ public class ASTCompiler {
                 defnNode.getName(), defnNode.getArgsNode().getArity().getValue(),
                 defnNode.getScope(), body, args, null, inspector, isAtRoot,
                 defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine(),
-                Helpers.encodeParameterList(argsNode));
+                Helpers.encodeParameterList(argsNode),
+                new MethodNodes(defnNode.getArgsNode(), defnNode.getBodyNode()));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -1873,7 +1875,8 @@ public class ASTCompiler {
                 defsNode.getName(), defsNode.getArgsNode().getArity().getValue(),
                 defsNode.getScope(), body, args, receiver, inspector, false,
                 defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine(),
-                Helpers.encodeParameterList(argsNode));
+                Helpers.encodeParameterList(argsNode),
+                new MethodNodes(defsNode.getArgsNode(), defsNode.getBodyNode()));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
