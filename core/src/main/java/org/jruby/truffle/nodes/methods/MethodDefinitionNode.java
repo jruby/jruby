@@ -87,4 +87,8 @@ public class MethodDefinitionNode extends RubyNode {
         return executeMethod(frame);
     }
 
+    public CallTarget getCallTarget() {
+        return callTarget;
+    }
+
 }

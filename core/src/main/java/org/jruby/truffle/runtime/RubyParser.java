@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 
 import org.jruby.Ruby;
+import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 
 /**
  * Interface to a Ruby parser.
@@ -23,6 +24,7 @@ public interface RubyParser {
         TOP_LEVEL, SHELL, MODULE
     }
 
+    MethodDefinitionNode parse(RubyContext context, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode);
     RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame);
     RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode);
 

@@ -349,10 +349,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCEIR);
                     } else if (extendedOption.equals("truffle")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-
-                        if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
-                            config.getError().println("jruby: using " + Truffle.getRuntime().getName());
-                        }
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);

@@ -231,6 +231,8 @@ public final class Ruby {
         }
 
         reinitialize(false);
+
+        truffleBridge = new JRubyTruffleBridge(this);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -816,14 +818,8 @@ public final class Ruby {
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-               final JRubyTruffleBridge bridge = new JRubyTruffleBridge(this);
-
-               try {
-                   assert parseResult instanceof RootNode;
-                   return bridge.toJRuby(bridge.execute(RubyParser.ParserContext.TOP_LEVEL, bridge.toTruffle(self), null, (RootNode) parseResult));
-               } finally {
-                   bridge.shutdown();
-               }
+               assert parseResult instanceof RootNode;
+               return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) parseResult));
            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
@@ -841,14 +837,8 @@ public final class Ruby {
 
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-                final JRubyTruffleBridge bridge = new JRubyTruffleBridge(this);
-
-                try {
-                    assert rootNode instanceof RootNode;
-                    return bridge.toJRuby(bridge.execute(RubyParser.ParserContext.TOP_LEVEL, bridge.toTruffle(self), null, (RootNode) rootNode));
-                } finally {
-                    bridge.shutdown();
-                }
+                assert rootNode instanceof RootNode;
+                return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) rootNode));
             } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
@@ -889,6 +879,10 @@ public final class Ruby {
     
     public JITCompiler getJITCompiler() {
         return jitCompiler;
+    }
+
+    public JRubyTruffleBridge getTruffleBridge() {
+        return truffleBridge;
     }
 
     /**
@@ -1248,6 +1242,8 @@ public final class Ruby {
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
         }
+
+        truffleBridge.init();
     }
 
     private void bootstrap() {
@@ -3072,6 +3068,8 @@ public final class Ruby {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
+        truffleBridge.shutdown();
+
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
 
@@ -4731,6 +4729,8 @@ public final class Ruby {
     
     // Compilation
     private final JITCompiler jitCompiler;
+
+    private final JRubyTruffleBridge truffleBridge;
 
     // Note: this field and the following static initializer
     // must be located be in this order!

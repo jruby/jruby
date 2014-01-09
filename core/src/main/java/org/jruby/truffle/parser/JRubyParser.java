@@ -12,8 +12,11 @@ package org.jruby.truffle.parser;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.source.SourceManager;
+import org.jruby.truffle.JRubyTruffleBridge;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
@@ -25,6 +28,8 @@ import org.jruby.truffle.runtime.methods.*;
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
+import java.io.Reader;
+
 public class JRubyParser implements RubyParser {
 
     private final Ruby jruby;
@@ -32,6 +37,91 @@ public class JRubyParser implements RubyParser {
 
     public JRubyParser(Ruby jruby) {
         this.jruby = jruby;
+    }
+
+    @Override
+    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+        // TODO(cs) should this get a new unique method identifier or not?
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+
+        // All parsing contexts have a visibility slot at their top level
+
+        environment.addMethodDeclarationSlots();
+
+        // Translate to Ruby Truffle nodes
+
+        final Source source = new SourceManager.SourceImpl() {
+            @Override
+            protected void reset() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String getName() {
+                return "(name)";
+            }
+
+            @Override
+            public String getPath() {
+                return "(path)";
+            }
+
+            @Override
+            public Reader getReader() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String getCode() {
+                return "(code)";
+            }
+        };
+
+        final SourceSection sourceSection = new SourceSection() {
+            @Override
+            public Source getSource() {
+                return source;
+            }
+
+            @Override
+            public int getStartLine() {
+                return 0;
+            }
+
+            @Override
+            public int getStartColumn() {
+                return 0;
+            }
+
+            @Override
+            public int getCharIndex() {
+                return 0;
+            }
+
+            @Override
+            public int getCharLength() {
+                return 0;
+            }
+
+            @Override
+            public int getCharEndIndex() {
+                return 0;
+            }
+
+            @Override
+            public String getIdentifier() {
+                return "(unknown)";
+            }
+
+            @Override
+            public String getCode() {
+                return "(code)";
+            }
+        };
+
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, source);
+
+        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode);
     }
 
     @Override

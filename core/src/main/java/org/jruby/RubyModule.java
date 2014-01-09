@@ -105,6 +105,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.truffle.TruffleMethod;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
@@ -2254,6 +2255,41 @@ public class RubyModule extends RubyObject {
             undef(context, args[i].asJavaString());
         }
         return this;
+    }
+
+    @JRubyMethod(name = "truffelize", rest = true)
+    public RubyModule truffelize(ThreadContext context, IRubyObject[] args) {
+        for (IRubyObject arg : args) {
+            if (!(arg instanceof RubyString || arg instanceof RubySymbol)) {
+                throw new UnsupportedOperationException(arg.getClass().toString());
+            }
+
+            truffelize(arg.asJavaString());
+
+            if (!isSingleton()) {
+                getSingletonClass().truffelize(arg.asJavaString());
+            }
+        }
+
+        return this;
+    }
+
+    public void truffelize(String name) {
+        final DynamicMethod method = searchMethod(name);
+
+        if (method == null) {
+            throw new UnsupportedOperationException("method " + name + " not found");
+        }
+
+        if (!(method instanceof InterpretedMethod)) {
+            throw new UnsupportedOperationException("can only truffelize default methods - " + name + " was " + method.getClass() + " - try -X-C");
+        }
+
+        final InterpretedMethod interpretedMethod = (InterpretedMethod) method;
+
+        final TruffleMethod truffleMethod = getRuntime().getTruffleBridge().truffelize(interpretedMethod.getArgsNode(), interpretedMethod.getBodyNode());
+
+        this.addMethod(name, truffleMethod);
     }
 
     @JRubyMethod(name = {"module_eval", "class_eval"})

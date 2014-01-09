@@ -1829,6 +1829,19 @@ public class RubyKernel {
         return ((RubyBasicObject)self).method19(symbol);
     }
 
+    @JRubyMethod(name = "truffelize", optional = 1)
+    public static IRubyObject truffelize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        for (IRubyObject arg : args) {
+            if (!(arg instanceof RubyString || arg instanceof RubySymbol)) {
+                throw new UnsupportedOperationException(arg.getClass().toString());
+            }
+
+            self.getSingletonClass().truffelize(arg.asJavaString());
+        }
+
+        return self;
+    }
+
     @JRubyMethod(name = "to_s")
     public static IRubyObject to_s(IRubyObject self) {
         return ((RubyBasicObject)self).to_s();
