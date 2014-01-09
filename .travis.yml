@@ -22,6 +22,11 @@ matrix:
     - env: TARGET='test-dist'
     - jdk: oraclejdk8
 
+branches:
+  only:
+    - master
+    - jruby-1_7
+
 script: "ant $TARGET"
 install: /bin/true
 notifications:
