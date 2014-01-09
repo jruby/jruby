@@ -82,7 +82,7 @@ public class OutputStrings {
                 .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
                 .append("  -X-C        disable all compilation\n")
                 .append("  -X+C        force compilation of all scripts before they are run (except eval)\n")
-                .append("  -X+T   use Truffle\n");
+                .append("  -X+T        use Truffle\n");
 
         return sb.toString();
     }
