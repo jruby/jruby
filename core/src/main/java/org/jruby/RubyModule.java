@@ -85,6 +85,8 @@ import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.internal.runtime.methods.MethodNodes;
+import org.jruby.internal.runtime.methods.MethodWithNodes;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -2281,13 +2283,14 @@ public class RubyModule extends RubyObject {
             throw new UnsupportedOperationException("method " + name + " not found");
         }
 
-        if (!(method instanceof InterpretedMethod)) {
-            throw new UnsupportedOperationException("can only truffelize default methods - " + name + " was " + method.getClass() + " - try -X-C");
+        if (!(method instanceof MethodWithNodes)) {
+            throw new UnsupportedOperationException("can only truffelize MethodWithNodes - " + name + " was " + method.getClass() + " - try -X-C");
         }
 
-        final InterpretedMethod interpretedMethod = (InterpretedMethod) method;
+        final MethodWithNodes methodWithNodes = (MethodWithNodes) method;
+        final MethodNodes methodNodes = methodWithNodes.getMethodNodes();
 
-        final TruffleMethod truffleMethod = getRuntime().getTruffleBridge().truffelize(interpretedMethod.getArgsNode(), interpretedMethod.getBodyNode());
+        final TruffleMethod truffleMethod = getRuntime().getTruffleBridge().truffelize(methodNodes.getArgsNode(), methodNodes.getBodyNode());
 
         this.addMethod(name, truffleMethod);
     }
