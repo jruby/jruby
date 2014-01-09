@@ -14,6 +14,8 @@ import java.util.*;
 import java.util.regex.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.instrument.*;
+import com.oracle.truffle.api.nodes.instrument.InstrumentationProbeNode.ProbeChain;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.*;
 import org.jruby.ast.MultipleAsgn19Node;
@@ -1467,15 +1469,19 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         if (Options.TRUFFLE_DEBUG_NODES.load()) {
             RubyProxyNode proxy;
-            SourceSection sourceSection;
             if (translated instanceof RubyProxyNode) {
                 proxy = (RubyProxyNode) translated;
-                sourceSection = proxy.getChild().getSourceSection();
+                if (proxy.getChild() instanceof CallNode) {
+                    // Special case; replace proxy with one registered by line, merge in information
+                    final CallNode callNode = (CallNode) proxy.getChild();
+                    final ProbeChain probeChain = proxy.getProbeChain();
+
+                    proxy = new RubyProxyNode(context, callNode, probeChain);
+                }
             } else {
                 proxy = new RubyProxyNode(context, translated);
-                sourceSection = translated.getSourceSection();
             }
-            context.getDebugManager().registerProbeChain(sourceSection, proxy.getProbeChain());
+            proxy.markAs(NodePhylum.STATEMENT);
             translated = proxy;
         }
 
@@ -1496,7 +1502,17 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitNextNode(org.jruby.ast.NextNode node) {
-        return new NextNode(context, translate(node.getPosition()));
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        RubyNode resultNode;
+
+        if (node.getValueNode() == null) {
+            resultNode = new NilNode(context, sourceSection);
+        } else {
+            resultNode = (RubyNode) node.getValueNode().accept(this);
+        }
+
+        return new NextNode(context, sourceSection, resultNode);
     }
 
     @Override

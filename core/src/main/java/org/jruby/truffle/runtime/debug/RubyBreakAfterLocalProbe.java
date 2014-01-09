@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,12 +14,12 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 /**
- * A Ruby probe for invoking a breakpoint shell after a child execution method completes.
+ * A Ruby probe for halting execution after a local assignment.
  */
-public final class RubyBreakAfterProbe extends RubyProbe {
+public final class RubyBreakAfterLocalProbe extends RubyLocalProbe {
 
-    public RubyBreakAfterProbe(RubyContext context) {
-        super(context);
+    public RubyBreakAfterLocalProbe(RubyContext context, MethodLocal local) {
+        super(context, local, false);
     }
 
     @Override

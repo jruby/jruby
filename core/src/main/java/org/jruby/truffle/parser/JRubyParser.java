@@ -50,78 +50,9 @@ public class JRubyParser implements RubyParser {
 
         // Translate to Ruby Truffle nodes
 
-        final Source source = new SourceManager.SourceImpl() {
-            @Override
-            protected void reset() {
-                throw new UnsupportedOperationException();
-            }
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, JRubyTruffleBridge.DUMMY_SOURCE);
 
-            @Override
-            public String getName() {
-                return "(name)";
-            }
-
-            @Override
-            public String getPath() {
-                return "(path)";
-            }
-
-            @Override
-            public Reader getReader() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getCode() {
-                return "(code)";
-            }
-        };
-
-        final SourceSection sourceSection = new SourceSection() {
-            @Override
-            public Source getSource() {
-                return source;
-            }
-
-            @Override
-            public int getStartLine() {
-                return 0;
-            }
-
-            @Override
-            public int getStartColumn() {
-                return 0;
-            }
-
-            @Override
-            public int getCharIndex() {
-                return 0;
-            }
-
-            @Override
-            public int getCharLength() {
-                return 0;
-            }
-
-            @Override
-            public int getCharEndIndex() {
-                return 0;
-            }
-
-            @Override
-            public String getIdentifier() {
-                return "(unknown)";
-            }
-
-            @Override
-            public String getCode() {
-                return "(code)";
-            }
-        };
-
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, source);
-
-        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode);
+        return translator.compileFunctionNode(JRubyTruffleBridge.DUMMY_SOURCE_SECTION, "(unknown)", argsNode, bodyNode);
     }
 
     @Override

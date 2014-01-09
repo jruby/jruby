@@ -12,9 +12,9 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 
 /**
- * Singleton source section used for core method nodes.
+ * Source sections used for core method nodes.
  */
-public final class CoreSourceSection implements SourceSection {
+public final class CoreSourceSection implements NullSourceSection {
 
     private final String name;
 

@@ -11,6 +11,7 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Source;
+import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceManager;
@@ -27,6 +28,7 @@ import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.io.InputStream;
 import java.io.Reader;
 
 public class JRubyTruffleBridge {
@@ -77,7 +79,7 @@ public class JRubyTruffleBridge {
 
     public Object execute(RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getParser().parse(truffleContext, getTruffleSource(rootNode), parserContext, parentFrame, rootNode);
+            final RubyParserResult parseResult = truffleContext.getParser().parse(truffleContext, DUMMY_SOURCE, parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode(), parseResult.getFrameDescriptor());
 
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
@@ -92,35 +94,6 @@ public class JRubyTruffleBridge {
             e.printStackTrace();
             throw new RaiseException(ExceptionTranslator.translateException(truffleContext, e));
         }
-    }
-
-    public Source getTruffleSource(org.jruby.ast.Node node) {
-        return new SourceManager.SourceImpl() {
-            @Override
-            protected void reset() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getName() {
-                return "(name)";
-            }
-
-            @Override
-            public String getPath() {
-                return "(path)";
-            }
-
-            @Override
-            public Reader getReader() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getCode() {
-                return "(code)";
-            }
-        };
     }
 
     public IRubyObject toJRuby(Object object) {
@@ -152,5 +125,99 @@ public class JRubyTruffleBridge {
     public void shutdown() {
         truffleContext.shutdown();
     }
+
+    public final static Source DUMMY_SOURCE = new Source() {
+        @Override
+        public String getName() {
+            return "(name)";
+        }
+
+        @Override
+        public String getPath() {
+            return "(reader)";
+        }
+
+        @Override
+        public Reader getReader() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getCode() {
+            return "(code)";
+        }
+
+        @Override
+        public String getCode(int i) {
+            return "(code)";
+        }
+
+        @Override
+        public int getLineCount() {
+            return 0;
+        }
+
+        @Override
+        public int getLineNumber(int i) {
+            return 0;
+        }
+
+        @Override
+        public int getLineStartOffset(int i) {
+            return 0;
+        }
+
+        @Override
+        public int getLineLength(int i) {
+            return 0;
+        }
+    };
+
+    public static final SourceSection DUMMY_SOURCE_SECTION = new SourceSection() {
+        @Override
+        public Source getSource() {
+            return DUMMY_SOURCE;
+        }
+
+        @Override
+        public int getStartLine() {
+            return 0;
+        }
+
+        @Override
+        public int getStartColumn() {
+            return 0;
+        }
+
+        @Override
+        public int getCharIndex() {
+            return 0;
+        }
+
+        @Override
+        public int getCharLength() {
+            return 0;
+        }
+
+        @Override
+        public int getCharEndIndex() {
+            return 0;
+        }
+
+        @Override
+        public String getIdentifier() {
+            return "(unknown)";
+        }
+
+        @Override
+        public String getCode() {
+            return "(code)";
+        }
+    };
 
 }

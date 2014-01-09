@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,19 +11,20 @@ package org.jruby.truffle.runtime.debug;
 
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.source.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 /**
  * A probe for instrumenting a Ruby program with a Ruby procedure to run on the return value from
- * node execution.
+ * node execution at a line.
  */
-public final class RubyProcAfterProbe extends RubyProbe {
+public final class RubyProcAfterLineProbe extends RubyLineProbe {
 
     private final RubyProc proc;
 
-    public RubyProcAfterProbe(RubyContext context, RubyProc proc) {
-        super(context);
+    public RubyProcAfterLineProbe(RubyContext context, SourceLineLocation location, RubyProc proc) {
+        super(context, location, false);
         this.proc = proc;
     }
 

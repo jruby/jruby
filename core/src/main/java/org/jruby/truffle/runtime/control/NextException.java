@@ -11,10 +11,26 @@ package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.nodes.*;
 
+import org.jruby.truffle.runtime.*;
+
 /**
  * Controls moving to the next iteration in a control structure or method.
  */
 public final class NextException extends ControlFlowException {
+
+    public static final NextException NIL = new NextException(NilPlaceholder.INSTANCE);
+
+    private final Object result;
+
+    public NextException(Object result) {
+        assert RubyContext.shouldObjectBeVisible(result);
+
+        this.result = result;
+    }
+
+    public Object getResult() {
+        return result;
+    }
 
     private static final long serialVersionUID = -302759969186731457L;
 

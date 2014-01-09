@@ -84,6 +84,11 @@ public class RubyContext implements ExecutionContext {
         return debugManager;
     }
 
+    @Override
+    public ASTPrinter getASTPrinter() {
+        throw new UnsupportedOperationException();
+    }
+
     public void implementationMessage(String format, Object... arguments) {
         System.err.println("rubytruffle: " + String.format(format, arguments));
     }
