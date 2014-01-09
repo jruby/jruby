@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.cli.Options;
 
 /**
  * Manages trace events and calls the user's trace method if one is set.
@@ -97,8 +98,8 @@ public final class TraceManager {
     }
 
     public void setTraceProc(RubyProc newTraceProc) {
-        if (!context.getConfiguration().getTrace()) {
-            throw new RuntimeException("You need the --trace option to use tracing");
+        if (!Options.TRUFFLE_TRACE_NODES.load()) {
+            throw new RuntimeException("You need truffle.traceNodes to use tracing");
         }
 
         traceProc.set(newTraceProc);

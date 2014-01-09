@@ -36,6 +36,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.range.*;
 import org.jruby.truffle.runtime.debug.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into our Ruby nodes, implementing a
@@ -1145,7 +1146,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
 
-        if (context.getConfiguration().getDebug()) {
+        if (Options.TRUFFLE_DEBUG_NODES.load()) {
             final UniqueMethodIdentifier methodIdentifier = environment.findMethodForLocalVar(node.getName());
 
             RubyProxyNode proxy;
@@ -1464,8 +1465,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitNewlineNode(org.jruby.ast.NewlineNode node) {
         RubyNode translated = (RubyNode) node.getNextNode().accept(this);
 
-        if (context.getConfiguration().getDebug()) {
-
+        if (Options.TRUFFLE_DEBUG_NODES.load()) {
             RubyProxyNode proxy;
             SourceSection sourceSection;
             if (translated instanceof RubyProxyNode) {
@@ -1479,7 +1479,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             translated = proxy;
         }
 
-        if (context.getConfiguration().getTrace()) {
+        if (Options.TRUFFLE_TRACE_NODES.load()) {
             RubyProxyNode proxy;
             if (translated instanceof RubyProxyNode) {
                 proxy = (RubyProxyNode) translated;

@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -308,7 +307,9 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = threadManager.leaveGlobalLock();
 
                 try {
-                    line = context.makeString(context.getConfiguration().getInputReader().readLine(""));
+                    // TODO(CS): use JRuby's readline
+                    final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                    line = context.makeString(reader.readLine());
                 } finally {
                     threadManager.enterGlobalLock(runningThread);
                 }
@@ -442,8 +443,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public NilPlaceholder print(Object[] args) {
-            final RubyContext context = getContext();
-            final ThreadManager threadManager = context.getThreadManager();
+            final ThreadManager threadManager = getContext().getThreadManager();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
 
@@ -457,12 +457,12 @@ public abstract class KernelNodes {
 
                     if (arg instanceof RubyString && !((RubyString) arg).isFromJavaString()) {
                         try {
-                            context.getConfiguration().getStandardOut().write(((RubyString) arg).getBytes());
+                            getContext().getRuntime().getOutputStream().write(((RubyString) arg).getBytes());
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        context.getConfiguration().getStandardOut().print(arg);
+                        getContext().getRuntime().getOutputStream().print(arg);
                     }
                 }
             } finally {
@@ -486,8 +486,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public NilPlaceholder printf(Object[] args) {
-            final RubyContext context = getContext();
-            final ThreadManager threadManager = context.getThreadManager();
+            final ThreadManager threadManager = getContext().getThreadManager();
 
             if (args.length > 0) {
                 final String format = ((RubyString) args[0]).toString();
@@ -496,7 +495,7 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = threadManager.leaveGlobalLock();
 
                 try {
-                    StringFormatter.format(context.getConfiguration().getStandardOut(), format, values);
+                    StringFormatter.format(getContext().getRuntime().getOutputStream(), format, values);
                 } finally {
                     threadManager.enterGlobalLock(runningThread);
                 }
@@ -563,12 +562,10 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        @ExplodeLoop
         @Specialization
         public NilPlaceholder puts(Object[] args) {
-            final RubyContext context = getContext();
-            final ThreadManager threadManager = context.getThreadManager();
-            final PrintStream standardOut = context.getConfiguration().getStandardOut();
+            final ThreadManager threadManager = getContext().getThreadManager();
+            final PrintStream standardOut = getContext().getRuntime().getOutputStream();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
 
@@ -577,7 +574,7 @@ public abstract class KernelNodes {
                     standardOut.println();
                 } else {
                     for (int n = 0; n < args.length; n++) {
-                        puts(context, standardOut, args[n]);
+                        puts(getContext(), standardOut, args[n]);
                     }
                 }
             } finally {
@@ -631,11 +628,6 @@ public abstract class KernelNodes {
         @Specialization(order = 3)
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             final RubyContext context = getContext();
-
-            if (context.getConfiguration().getPrintRubyExceptions()) {
-                context.implementationMessage("Ruby raise: %s", message);
-                new Exception().printStackTrace();
-            }
 
             final RubyBasicObject exception = exceptionClass.newInstance();
             initialize.dispatch(frame, exception, null, message);

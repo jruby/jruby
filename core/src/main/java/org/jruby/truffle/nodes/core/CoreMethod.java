@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import java.lang.annotation.*;
 
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.runtime.methods.*;
 
 @Target(ElementType.TYPE)

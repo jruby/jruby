@@ -43,10 +43,6 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
-        if (context.getConfiguration().getPrintJavaExceptions()) {
-            exception.printStackTrace();
-        }
-
         String message;
 
         if (exception.getMessage() == null) {

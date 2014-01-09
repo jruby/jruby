@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "Debug")
 public abstract class DebugNodes {
@@ -39,7 +40,7 @@ public abstract class DebugNodes {
         public NilPlaceholder debugBreak(VirtualFrame frame, Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder undefined0, @SuppressWarnings("unused") UndefinedPlaceholder undefined1,
                         @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 Node realCallNode = callNode;
                 while (realCallNode != null && !(realCallNode instanceof CallNode)) {
                     realCallNode = realCallNode.getParent();
@@ -52,7 +53,7 @@ public abstract class DebugNodes {
         @Specialization(order = 2)
         public NilPlaceholder debugBreak(RubyString fileName, int line, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final Source source = context.getSourceManager().get(fileName.toString());
                 final SourceLineLocation lineLocation = new SourceLineLocation(source, line);
                 context.getDebugManager().setBreakpoint(lineLocation);
@@ -63,7 +64,7 @@ public abstract class DebugNodes {
         @Specialization(order = 3)
         public NilPlaceholder debugBreak(RubyString fileName, int line, @SuppressWarnings("unused") Node callNode, RubyProc block) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final Source source = context.getSourceManager().get(fileName.toString());
                 final SourceLineLocation lineLocation = new SourceLineLocation(source, line);
                 context.getDebugManager().setLineProc(lineLocation, block);
@@ -74,7 +75,7 @@ public abstract class DebugNodes {
         @Specialization(order = 4)
         public NilPlaceholder debugBreak(RubySymbol methodName, RubySymbol localName, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final RubyMethod method = context.getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
                 context.getDebugManager().setLocalBreak(method.getUniqueIdentifier(), localName.toString());
             }
@@ -84,7 +85,7 @@ public abstract class DebugNodes {
         @Specialization(order = 5)
         public NilPlaceholder debugBreak(RubySymbol methodName, RubySymbol localName, @SuppressWarnings("unused") Node callNode, RubyProc block) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final RubyMethod method = context.getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
                 context.getDebugManager().setLocalProc(method.getUniqueIdentifier(), localName.toString(), block);
             }
@@ -106,7 +107,7 @@ public abstract class DebugNodes {
 
         @Specialization
         public Object debugContinue() {
-            if (getContext().getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 throw new BreakShellException();
             }
             return NilPlaceholder.INSTANCE;
@@ -127,7 +128,7 @@ public abstract class DebugNodes {
 
         @Specialization
         public boolean enabled() {
-            return getContext().getConfiguration().getDebug();
+            return Options.TRUFFLE_DEBUG_NODES.load();
         }
 
     }
@@ -146,8 +147,8 @@ public abstract class DebugNodes {
         @Specialization
         public NilPlaceholder where(Node callNode) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
-                context.getConfiguration().getStandardOut().println(callNode.getSourceSection());
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
+                context.getRuntime().getOutputStream().println(callNode.getSourceSection());
             }
             return NilPlaceholder.INSTANCE;
         }
@@ -168,7 +169,7 @@ public abstract class DebugNodes {
         @Specialization
         public NilPlaceholder debugRemove(RubyString fileName, int line) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final Source source = context.getSourceManager().get(fileName.toString());
                 final SourceLineLocation lineLocation = new SourceLineLocation(source, line);
                 context.getDebugManager().removeBreakpoint(lineLocation);
@@ -179,7 +180,7 @@ public abstract class DebugNodes {
         @Specialization
         public NilPlaceholder debugRemove(RubySymbol methodName, RubySymbol localName) {
             final RubyContext context = getContext();
-            if (context.getConfiguration().getDebug()) {
+            if (Options.TRUFFLE_DEBUG_NODES.load()) {
                 final RubyMethod method = context.getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
                 context.getDebugManager().removeLocalProbe(method.getUniqueIdentifier(), localName.toString());
             }

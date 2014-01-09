@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
@@ -56,11 +57,13 @@ public class RubyBasicObject {
 
     protected Object[] objectStorageLocations;
 
+    private final boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
+
     public RubyBasicObject(RubyClass rubyClass) {
         if (rubyClass != null) {
             unsafeSetRubyClass(rubyClass);
 
-            if (rubyClass.getContext().getConfiguration().getFullObjectSpace()) {
+            if (objectSpaceEnabled) {
                 rubyClass.getContext().getObjectSpaceManager().add(this);
             }
         }

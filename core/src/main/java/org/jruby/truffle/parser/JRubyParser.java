@@ -83,10 +83,6 @@ public class JRubyParser implements RubyParser {
             throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), message));
         }
 
-        if (context.getConfiguration().getPrintParseTree()) {
-            System.err.println(node);
-        }
-
         return parse(context, source, parserContext, parentFrame, node);
     }
 

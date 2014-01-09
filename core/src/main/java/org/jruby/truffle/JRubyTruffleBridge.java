@@ -18,8 +18,6 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.parser.JRubyParser;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.configuration.Configuration;
-import org.jruby.truffle.runtime.configuration.ConfigurationBuilder;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
@@ -35,19 +33,13 @@ public class JRubyTruffleBridge {
     private final RubyContext truffleContext;
 
     public JRubyTruffleBridge(Ruby runtime) {
+        assert runtime != null;
+
         this.runtime = runtime;
-
-        // Override the home directory if RUBYHOME is set
-
-        final ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-
-        if (System.getenv("RUBYHOME") != null) {
-            configurationBuilder.setStandardLibrary(System.getenv("RUBYHOME") + "/" + ConfigurationBuilder.JRUBY_STDLIB_JAR);
-        }
 
         // Set up a context
 
-        truffleContext = new RubyContext(new Configuration(configurationBuilder), new JRubyParser(runtime));
+        truffleContext = new RubyContext(runtime, new JRubyParser(runtime));
 
         // Bring in core method nodes
 
@@ -86,6 +78,7 @@ public class JRubyTruffleBridge {
         } catch (BreakShellException | QuitException e) {
             throw e;
         } catch (Throwable e) {
+            e.printStackTrace();
             throw new RaiseException(ExceptionTranslator.translateException(truffleContext, e));
         }
     }

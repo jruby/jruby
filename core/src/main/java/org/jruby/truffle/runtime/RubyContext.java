@@ -9,29 +9,31 @@
  */
 package org.jruby.truffle.runtime;
 
+import java.io.*;
 import java.math.*;
 import java.util.concurrent.atomic.*;
 
+import org.jruby.Ruby;
 import jnr.posix.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.debug.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.util.cli.Options;
 
 /**
  * The global state of a running Ruby system.
  */
 public class RubyContext implements ExecutionContext {
 
-    private final Configuration configuration;
+    private final Ruby runtime;
     private final RubyParser parser;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
@@ -49,14 +51,10 @@ public class RubyContext implements ExecutionContext {
 
     private POSIX posix = POSIXFactory.getPOSIX();
 
-    public RubyContext(RubyParser parser) {
-        this(new Configuration(new ConfigurationBuilder()), parser);
-    }
+    public RubyContext(Ruby runtime, RubyParser parser) {
+        assert runtime != null;
 
-    public RubyContext(Configuration configuration, RubyParser parser) {
-        assert configuration != null;
-
-        this.configuration = configuration;
+        this.runtime = runtime;
         this.parser = parser;
 
         objectSpaceManager = new ObjectSpaceManager(this);
@@ -70,7 +68,7 @@ public class RubyContext implements ExecutionContext {
         atExitManager = new AtExitManager();
         sourceManager = new SourceManager();
 
-        debugManager = configuration.getDebug() ? new RubyDebugManager(this) : null;
+        debugManager = Options.TRUFFLE_DEBUG_NODES.load() ? new RubyDebugManager(this) : null;
 
         // Must initialize threads before fibers
 
@@ -126,6 +124,8 @@ public class RubyContext implements ExecutionContext {
     }
 
     public void runShell(Node node, MaterializedFrame frame) {
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
         MaterializedFrame existingLocals = frame;
 
         String prompt = "Ruby> ";
@@ -138,11 +138,14 @@ public class RubyContext implements ExecutionContext {
 
         while (true) {
             try {
-                final String line = configuration.getInputReader().readLine(prompt);
+                System.out.print(prompt);
+                final String line = reader.readLine();
 
                 final ShellResult result = evalShell(line, existingLocals);
 
-                configuration.getStandardOut().println("=> " + result.getResult());
+                System.out.println("=> " + result.getResult());
+
+
 
                 existingLocals = result.getFrame();
             } catch (BreakShellException e) {
@@ -159,10 +162,6 @@ public class RubyContext implements ExecutionContext {
     }
 
     public Object execute(RubyContext context, Source source, RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
-        if (configuration.getPrintExecutedFiles()) {
-            implementationMessage("executing: %s", source.getName());
-        }
-
         try {
             final RubyParserResult parseResult = parser.parse(context, source, parserContext, parentFrame);
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
@@ -213,8 +212,8 @@ public class RubyContext implements ExecutionContext {
         return makeString(Character.toString(string));
     }
 
-    public Configuration getConfiguration() {
-        return configuration;
+    public Ruby getRuntime() {
+        return runtime;
     }
 
     public CoreLibrary getCoreLibrary() {

@@ -105,10 +105,6 @@ public class ObjectLayout {
                     storageLocations.put(entry.getKey(), newStorageLocation);
                     primitiveStorageLocationIndex += primitivesNeeded;
                 } else {
-                    if (canStoreInPrimitive && context.getConfiguration().getPrintSpiltInstanceVariables()) {
-                        context.implementationMessage("instance variable %s of type %s spilt due to lack of space", name, type.getName());
-                    }
-
                     final ObjectStorageLocation newStorageLocation = new ObjectStorageLocation(this, objectStorageLocationIndex);
                     storageLocations.put(entry.getKey(), newStorageLocation);
                     objectStorageLocationIndex++;
