@@ -25,7 +25,7 @@ project 'JRuby Dist' do
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
     end
     
-    execute :fix_executable_bits do |ctx|
+    execute :fix_executable_bits, 'package' do |ctx|
       Dir[ File.join( ctx.project.build.directory,
                       'META-INF', 
                       'jruby.home', 
@@ -65,7 +65,7 @@ project 'JRuby Dist' do
     end
 
     phase :package do
-      execute :pack_sources do |ctx|
+      execute :pack_sources, 'package' do |ctx|
         require 'fileutils'
 
         revision = `git show`.gsub( /\n.*|commit /, '' )
