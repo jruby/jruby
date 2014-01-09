@@ -56,6 +56,7 @@ import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -214,7 +215,15 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        
+        InetSocketAddress iaddr = null;
+        
+        if (arg instanceof Addrinfo){
+            Addrinfo addr = (Addrinfo) arg;
+            iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
+        } else {
+             iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        }
 
         doBind(context, getChannel(), iaddr);
 
@@ -513,7 +522,6 @@ public class RubySocket extends RubyBasicSocket {
 
     protected void doBind(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
         Ruby runtime = context.runtime;
-
         try {
             if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel)channel).socket();
