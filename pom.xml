@@ -307,6 +307,26 @@
         <plugin>
           <artifactId>maven-invoker-plugin</artifactId>
           <version>1.8</version>
+          <executions>
+            <execution>
+              <id>integration-test</id>
+              <goals>
+		<goal>install</goal>
+		<goal>run</goal>
+              </goals>
+              <configuration>
+		<settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+		<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+              </configuration>
+            </execution>
+          </executions>
+          <configuration>
+            <projectsDirectory>src/it</projectsDirectory>
+            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+            <preBuildHookScript>setup.bsh</preBuildHookScript>
+            <postBuildHookScript>verify.bsh</postBuildHookScript>
+            <streamLogs>true</streamLogs>
+          </configuration>
         </plugin>
 
         <plugin>
