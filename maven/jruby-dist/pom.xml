@@ -11,7 +11,7 @@
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
-    <jruby.basedir>${basedir}/../..</jruby.basedir>
+    <jruby.home>${basedir}/../..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
