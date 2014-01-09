@@ -54,6 +54,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.Enumeration;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -1421,10 +1422,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         return entry;
     }
-
+    
     public static ZipEntry getDirOrFileEntry(String jar, String path) throws IOException {
+        return getDirOrFileEntry(new JarFile(jar), path);
+    }    
+    
+    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
         String dirPath = path + "/";
-        ZipFile zf = Ruby.getGlobalRuntime().getCurrentContext().runtime.getLoadService().getJarFile(jar);
         ZipEntry entry = zf.getEntry(dirPath); // first try as directory
         if (entry == null) {
             if (dirPath.length() == 1) {
