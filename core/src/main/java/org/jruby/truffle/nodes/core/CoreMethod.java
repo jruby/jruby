@@ -30,8 +30,6 @@ public @interface CoreMethod {
 
     boolean appendCallNode() default false;
 
-    RubyVersion[] versions() default {RubyVersion.RUBY_18, RubyVersion.RUBY_19, RubyVersion.RUBY_20, RubyVersion.RUBY_21};
-
     int minArgs() default Arity.NO_MINIMUM;
 
     int maxArgs() default Arity.NO_MAXIMUM;

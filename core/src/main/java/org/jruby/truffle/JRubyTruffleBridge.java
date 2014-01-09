@@ -82,11 +82,7 @@ public class JRubyTruffleBridge {
         } catch (RaiseException e) {
             throw e;
         } catch (ThrowException e) {
-            if (truffleContext.getConfiguration().getRubyVersion().is18OrEarlier()) {
-                throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
-            } else {
-                throw new RaiseException(truffleContext.getCoreLibrary().argumentErrorUncaughtThrow(e.getTag()));
-            }
+            throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
         } catch (BreakShellException | QuitException e) {
             throw e;
         } catch (Throwable e) {

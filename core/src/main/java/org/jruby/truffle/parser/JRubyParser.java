@@ -40,29 +40,12 @@ public class JRubyParser implements RubyParser {
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(jruby);
 
-        org.jruby.CompatVersion parserVersion = null;
-
-        switch (context.getConfiguration().getRubyVersion()) {
-            case RUBY_18:
-                parserVersion = org.jruby.CompatVersion.RUBY1_8;
-                break;
-            case RUBY_19:
-                parserVersion = org.jruby.CompatVersion.RUBY1_9;
-                break;
-            case RUBY_20:
-                parserVersion = org.jruby.CompatVersion.RUBY2_0;
-                break;
-            case RUBY_21:
-                parserVersion = org.jruby.CompatVersion.RUBY2_0;
-                break;
-        }
-
         final org.jruby.parser.LocalStaticScope staticScope = new org.jruby.parser.LocalStaticScope(null);
 
         if (parentFrame != null) {
             /*
              * Note that jruby-parser will be mistaken about how deep the existing variables are,
-             * but that doesn't matter as we look them up ourselves after being told their in some
+             * but that doesn't matter as we look them up ourselves after being told they're in some
              * parent scope.
              */
 
@@ -74,9 +57,6 @@ public class JRubyParser implements RubyParser {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String) {
                         final String name = (String) slot.getIdentifier();
-                        //if (staticScope.exists(name) == -1) {
-                        //    staticScope.assign(scopeSourceSection, name, 1);
-                        //}
                         staticScope.addVariableThisScope(name);
                     }
                 }
@@ -85,7 +65,7 @@ public class JRubyParser implements RubyParser {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, parserVersion);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, org.jruby.CompatVersion.RUBY2_1);
 
         // Parse to the JRuby AST
 
