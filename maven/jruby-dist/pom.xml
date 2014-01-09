@@ -1,39 +1,39 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
     <version>9000.dev</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
-
   <properties>
     <jruby.basedir>${basedir}/../..</jruby.basedir>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
-
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-	    <id>unpack jruby-stdlib</id>
+            <id>unpack jruby-stdlib</id>
             <phase>process-classes</phase>
             <goals>
               <goal>unpack</goal>
             </goals>
             <configuration>
-	      <stripVersion>true</stripVersion>
+              <stripVersion>true</stripVersion>
               <artifactItems>
                 <artifactItem>
-		  <groupId>org.jruby</groupId>
-		  <artifactId>jruby-stdlib-complete</artifactId>
-		  <version>${project.version}</version>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-stdlib-complete</artifactId>
+                  <version>${project.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
@@ -46,30 +46,23 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
-	  <tarLongFileMode>gnu</tarLongFileMode>
+          <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
           </descriptors>
-	</configuration>
-	<executions>
-	  <execution>
-	    <phase>package</phase>
-	    <goals>
-	      <goal>single</goal>
-	    </goals>
-	  </execution>
-	</executions>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <preBuildHookScript>setup.bsh</preBuildHookScript>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-	  <streamLogs>true</streamLogs>
-        </configuration>
         <executions>
           <execution>
             <id>integration-test</id>
@@ -83,6 +76,38 @@
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <preBuildHookScript>setup.bsh</preBuildHookScript>
+          <postBuildHookScript>verify.bsh</postBuildHookScript>
+          <streamLogs>true</streamLogs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <executions>
+          <execution>
+            <id>fix_executable_bits</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>fix_executable_bits</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>0.0.8</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
@@ -90,97 +115,97 @@
     <profile>
       <id>source dist</id>
       <activation>
-	<file>
-	  <exists>../../.git</exists>
-	</file>
+        <file>
+          <exists>../../.git</exists>
+        </file>
       </activation>
       <build>
-	<plugins>
-	  <plugin>
-	    <groupId>org.codehaus.mojo</groupId>
-	    <artifactId>buildnumber-maven-plugin</artifactId>
-	    <version>1.2</version>
-	    <executions>
-	      <execution>
-		<id>jruby-revision</id>
-		<phase>generate-sources</phase>
-		<goals>
-		  <goal>create</goal>
-		</goals>
-		<configuration>
-		  <shortRevisionLength>7</shortRevisionLength>
-		  <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
-		</configuration>
-	      </execution>
-	    </executions>
-	  </plugin>
-	  <plugin>  
-	    <groupId>org.codehaus.mojo</groupId>
-	    <artifactId>exec-maven-plugin</artifactId>
-	    <executions>
-	      <execution>
-		<id>build source archive - tar</id>
-		<phase>package</phase>
-		<goals>
-		  <goal>exec</goal>
-		</goals>
-		<configuration>
-		  <workingDirectory>${basedir}/../..</workingDirectory>
-		  <arguments>
-		    <argument>archive</argument>
-		    <argument>--prefix</argument>
-		    <argument>jruby-${project.version}/</argument>
-		    <argument>--format</argument>
-		    <argument>tar</argument>
-		    <argument>${jruby.revision}</argument>
-		    <argument>.</argument>
-		    <argument>-o</argument>
-		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-		  </arguments>
-		  <executable>git</executable>
-		</configuration>
-	      </execution>
-	      <execution>
-		<id>gzip build source tar</id>
-		<phase>package</phase>
-		<goals>
-		  <goal>exec</goal>
-		</goals>
-		<configuration>
-		  <workingDirectory>${basedir}/../..</workingDirectory>
-		  <arguments>
-		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-		    <argument>-f</argument>
-		  </arguments>
-		  <executable>gzip</executable>
-		</configuration>
-	      </execution>
-	      <execution>
-		<id>build source archive - zip</id>
-		<phase>package</phase>
-		<goals>
-		  <goal>exec</goal>
-		</goals>
-		<configuration>
-		  <workingDirectory>${basedir}/../..</workingDirectory>
-		  <arguments>
-		    <argument>archive</argument>
-		    <argument>--prefix</argument>
-		    <argument>jruby-${project.version}/</argument>
-		    <argument>-9</argument>
-		    <argument>--format</argument>
-		    <argument>zip</argument>
-		    <argument>${jruby.revision}</argument>
-		    <argument>.</argument>
-		    <argument>-o</argument>
-		    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
-		  </arguments>
-		  <executable>git</executable>
-		</configuration>
-	      </execution>
-	    </executions>
-	  </plugin>
-	</plugins>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <version>1.2</version>
+            <executions>
+              <execution>
+                <id>jruby-revision</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>create</goal>
+                </goals>
+                <configuration>
+                  <shortRevisionLength>7</shortRevisionLength>
+                  <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>build source archive - tar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/../..</workingDirectory>
+                  <arguments>
+                    <argument>archive</argument>
+                    <argument>--prefix</argument>
+                    <argument>jruby-${project.version}/</argument>
+                    <argument>--format</argument>
+                    <argument>tar</argument>
+                    <argument>${jruby.revision}</argument>
+                    <argument>.</argument>
+                    <argument>-o</argument>
+                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+                  </arguments>
+                  <executable>git</executable>
+                </configuration>
+              </execution>
+              <execution>
+                <id>gzip build source tar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/../..</workingDirectory>
+                  <arguments>
+                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
+                    <argument>-f</argument>
+                  </arguments>
+                  <executable>gzip</executable>
+                </configuration>
+              </execution>
+              <execution>
+                <id>build source archive - zip</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/../..</workingDirectory>
+                  <arguments>
+                    <argument>archive</argument>
+                    <argument>--prefix</argument>
+                    <argument>jruby-${project.version}/</argument>
+                    <argument>-9</argument>
+                    <argument>--format</argument>
+                    <argument>zip</argument>
+                    <argument>${jruby.revision}</argument>
+                    <argument>.</argument>
+                    <argument>-o</argument>
+                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
+                  </arguments>
+                  <executable>git</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
   </profiles>
