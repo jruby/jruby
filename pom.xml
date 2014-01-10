@@ -70,6 +70,9 @@
     <rdoc.version>4.1.0.preview.3</rdoc.version>
     <json.version>1.8.0</json.version>
     <bouncy-castle.version>1.47</bouncy-castle.version>
+    <bc.version>1.5.0147</bc.version>
+    <krypt.version>0.0.1</krypt.version>
+    <jopenssl.version>0.9.4</jopenssl.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
