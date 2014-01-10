@@ -1,0 +1,15 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+
+
+String log = FileUtils.fileRead( new File( basedir, "tree.txt" ) );
+String unexpected = "SNAPSHOT";
+if ( log.contains( unexpected ) )
+{
+    throw new RuntimeException( "found '" + unexpected + "'" );
+}
+String file = "bin/jruby";
+if ( ! new File( basedir, file ).exists() )
+{
+    throw new RuntimeException( "not found '" + file + "'" );
+}
