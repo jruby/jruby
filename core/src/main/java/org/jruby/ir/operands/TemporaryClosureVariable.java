@@ -8,14 +8,14 @@ public class TemporaryClosureVariable extends TemporaryVariable {
     final String prefix;
 
     public TemporaryClosureVariable(int closureId, int offset) {
-        super(OperandType.TEMPORARY_CLOSURE_VARIABLE, offset);
+        super(OperandType.TEMPORARY_VARIABLE, offset);
         this.closureId = closureId;
         this.prefix =  "%cl_" + closureId + "_";
         this.name = getPrefix() + offset;
     }
 
     public TemporaryClosureVariable(String name, int offset) {
-        super(OperandType.TEMPORARY_CLOSURE_VARIABLE, name, offset);
+        super(OperandType.TEMPORARY_VARIABLE, name, offset);
         this.closureId = -1;
         this.prefix = "";
     }

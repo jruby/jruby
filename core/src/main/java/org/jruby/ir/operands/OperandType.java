@@ -39,7 +39,6 @@ public enum OperandType {
     SVALUE((byte) 'V'),
     SYMBOL((byte) ':'),
     TEMPORARY_VARIABLE((byte) 't'),
-    TEMPORARY_CLOSURE_VARIABLE((byte) 'c'),
     UNDEFINED_VALUE((byte) 'u'),
     UNEXECUTABLE_NIL((byte) 'n'),
     WRAPPED_IR_CLOSURE((byte) 'w'),

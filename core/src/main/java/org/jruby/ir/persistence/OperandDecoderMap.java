@@ -95,7 +95,6 @@ class OperandDecoderMap {
             case SVALUE: return new SValue(d.decodeOperand());
             case SYMBOL: return new Symbol(d.decodeString());
             case TEMPORARY_VARIABLE: return decodeTemporaryVariable();
-            case TEMPORARY_CLOSURE_VARIABLE: return new TemporaryClosureVariable(d.decodeString(), d.decodeInt());
             case UNDEFINED_VALUE: return UndefinedValue.UNDEFINED;
             case UNEXECUTABLE_NIL: return U_NIL;
             case WRAPPED_IR_CLOSURE: return new WrappedIRClosure(d.decodeVariable(), (IRClosure) d.decodeScope());
