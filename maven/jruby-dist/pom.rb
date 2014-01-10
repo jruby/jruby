@@ -9,7 +9,7 @@ project 'JRuby Dist' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'jruby.basedir' => '${basedir}/../..',
+              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   phase 'package' do
@@ -76,26 +76,15 @@ project 'JRuby Dist' do
 
     execute :prepare_sources_for_it, 'pre-integration-test' do |ctx|
       require 'fileutils'
-      dir = "#{ctx.project.build.directory}/it"
+      dir = File.join( "#{ctx.project.build.directory}", 'it' )
       FileUtils.mkdir_p dir
-      dir += '/sources'
-      FileUtils.mv( "#{ctx.project.build.directory}/jruby-#{ctx.project.version}", "#{dir}/sources" ) unless File.exists? "#{dir}"
+      dir = File.join( dir, 'sources')
+      FileUtils.mv( "#{ctx.project.build.directory}/jruby-#{ctx.project.version}", "#{dir}" ) unless File.exists? "#{dir}"
       File.open( "#{dir}/test.properties", 'w' ) do |f|
-        f.puts "outputFile=#{File.expand_path( dir )}/tree.txt"
+        f.puts File.join( "outputFile=#{File.expand_path( dir )}", 'tree.txt' )
         f.puts 'appendOutput=true'
       end
     end
-  # TODO move into plugin-management of root pom
-  plugin( :invoker,
-          'projectsDirectory' =>  'src/it',
-          'cloneProjectsTo' =>  '${project.build.directory}/it',
-          'preBuildHookScript' =>  'setup.bsh',
-          'postBuildHookScript' =>  'verify.bsh',
-          'streamLogs' =>  'true' ) do
-    execute_goals( 'install', 'run',
-                   :id => 'integration-test',
-                   'settingsFile' =>  '${basedir}/src/it/settings.xml',
-                   'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
   end
 
   profile 'source dist' do
