@@ -1485,7 +1485,7 @@ public class RubyInstanceConfig {
 	}
 
     public enum CompileMode {
-        JIT, FORCE, FORCEIR, OFF, OFFIR;
+        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE;
 
         public boolean shouldPrecompileCLI() {
             switch (this) {

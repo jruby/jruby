@@ -50,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class JittedMethod extends DynamicMethod implements MethodArgs, PositionAware {
+public class JittedMethod extends DynamicMethod implements MethodArgs, PositionAware, MethodWithNodes {
     private final StaticScope staticScope;
     private final Script jitCompiledScript;
     private final ISourcePosition position;
@@ -323,6 +323,11 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     public DynamicMethod dup() {
         return new JittedMethod(getImplementationClass(), staticScope, jitCompiledScript, name, callConfig, getVisibility(), arity, position, realMethod);
+    }
+
+    @Override
+    public MethodNodes getMethodNodes() {
+        return realMethod.getMethodNodes();
     }
 
 

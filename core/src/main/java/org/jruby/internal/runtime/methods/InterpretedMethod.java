@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class InterpretedMethod extends DynamicMethod implements MethodArgs, PositionAware {
+public class InterpretedMethod extends DynamicMethod implements MethodArgs, PositionAware, MethodWithNodes {
     private StaticScope staticScope;
     private Node body;
     private ArgsNode argsNode;
@@ -335,5 +335,10 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
     
     public DynamicMethod dup() {
         return new InterpretedMethod(getImplementationClass(), staticScope, body, name, argsNode, getVisibility(), position);
+    }
+
+    @Override
+    public MethodNodes getMethodNodes() {
+        return new MethodNodes(argsNode, body);
     }
 }

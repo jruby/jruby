@@ -104,6 +104,8 @@ import org.jruby.runtime.profile.ProfiledMethod;
 import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.truffle.JRubyTruffleBridge;
+import org.jruby.truffle.runtime.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.IOInputStream;
@@ -229,6 +231,8 @@ public final class Ruby {
         }
 
         reinitialize(false);
+
+        truffleBridge = new JRubyTruffleBridge(this);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -813,7 +817,10 @@ public final class Ruby {
     
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        try {
-           if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+           if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+               assert parseResult instanceof RootNode;
+               return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) parseResult));
+           } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
                assert parseResult instanceof RootNode;
@@ -829,7 +836,10 @@ public final class Ruby {
         assert rootNode != null : "scriptNode is not null";
 
         try {
-            if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+                assert rootNode instanceof RootNode;
+                return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) rootNode));
+            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
             } else {
@@ -869,6 +879,10 @@ public final class Ruby {
     
     public JITCompiler getJITCompiler() {
         return jitCompiler;
+    }
+
+    public JRubyTruffleBridge getTruffleBridge() {
+        return truffleBridge;
     }
 
     /**
@@ -1192,15 +1206,18 @@ public final class Ruby {
             reflectionWorks = false;
         }
         
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
+                && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             loadService.require("jruby");
         }
 
         // out of base boot mode
         booting = false;
-        
+
         // init Ruby-based kernel
-        initRubyKernel();
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            initRubyKernel();
+        }
         
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(tc);
@@ -1225,6 +1242,8 @@ public final class Ruby {
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
         }
+
+        truffleBridge.init();
     }
 
     private void bootstrap() {
@@ -1651,6 +1670,7 @@ public final class Ruby {
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
         addLazyBuiltin("io/try_nonblock.jar", "io/try_nonblock", "org.jruby.ext.io.try_nonblock.IOTryNonblockLibrary");
         addLazyBuiltin("pathname_ext.jar", "pathname_ext", "org.jruby.ext.pathname.PathnameLibrary");
+        addLazyBuiltin("truffelize.jar", "truffelize", "org.jruby.ext.truffelize.TruffelizeLibrary");
 
         addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
         addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
@@ -4708,6 +4728,8 @@ public final class Ruby {
     
     // Compilation
     private final JITCompiler jitCompiler;
+
+    private final JRubyTruffleBridge truffleBridge;
 
     // Note: this field and the following static initializer
     // must be located be in this order!

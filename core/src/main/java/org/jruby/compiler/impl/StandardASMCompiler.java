@@ -55,6 +55,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.internal.runtime.methods.MethodNodes;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassReader;
@@ -226,7 +227,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     descriptor.getScope(),
                     descriptor.getCallConfig(),
                     descriptor.getFile(),
-                    descriptor.getLine());
+                    descriptor.getLine(),
+                    descriptor.getMethodNodes());
 
             if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(invokerBytes), false, new PrintWriter(System.err));
 
@@ -301,8 +303,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private final CallConfiguration callConfig;
         private final String file;
         private final int line;
+        private final MethodNodes methodNodes;
         
-        public InvokerDescriptor(String rubyName, String javaName, String classname, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
+        public InvokerDescriptor(String rubyName, String javaName, String classname, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line, MethodNodes methodNodes) {
             this.rubyName = rubyName;
             this.javaName = javaName;
             this.classname = classname;
@@ -312,6 +315,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.callConfig = callConfig;
             this.file = file;
             this.line = line;
+            this.methodNodes = methodNodes;
         }
 
         public Arity getArity() {
@@ -348,6 +352,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public String getRubyName() {
             return rubyName;
+        }
+
+        public MethodNodes getMethodNodes() {
+            return methodNodes;
         }
     }
 
@@ -387,9 +395,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
     }
 
-    public void addInvokerDescriptor(String rubyName, String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+    public void addInvokerDescriptor(String rubyName, String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line, MethodNodes methodNodes) {
         Arity arity = Arity.createArity(methodArity);
-        InvokerDescriptor descriptor = new InvokerDescriptor(rubyName, newMethodName, classname, arity, scope, callConfig, filename, line);
+        InvokerDescriptor descriptor = new InvokerDescriptor(rubyName, newMethodName, classname, arity, scope, callConfig, filename, line, methodNodes);
 
         invokerDescriptors.add(descriptor);
     }

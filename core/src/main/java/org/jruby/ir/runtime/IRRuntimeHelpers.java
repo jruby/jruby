@@ -1,10 +1,15 @@
 package org.jruby.ir.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRClosure;
@@ -197,5 +202,46 @@ public class IRRuntimeHelpers {
 
     public static boolean feq(double v) {
         return v == 1.0;
+    }
+
+    // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
+    public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
+        Ruby runtime = context.runtime;
+        if (excObj instanceof IRubyObject) {
+            // regular ruby exception
+            if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+            return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();
+        } else if (runtime.getException().op_ge(excType).isTrue() || runtime.getObject() == excType) {
+            // convert java obj to a ruby object and try again
+            return excType.callMethod(context, "===", JavaUtil.convertJavaToUsableRubyObject(runtime, excObj)).isTrue();
+        } else if (excType instanceof RubyClass && excType.getInstanceVariables().hasInstanceVariable("@java_class")) {
+            // java exception where the rescue clause has an embedded java class that could catch it
+            RubyClass rubyClass = (RubyClass)excType;
+            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
+            if (javaClass != null) {
+                Class cls = javaClass.javaClass();
+                if (cls.isInstance(excObj)) return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
+        Ruby runtime = context.runtime;
+
+        boolean isUndefExc = excObj == UndefinedValue.UNDEFINED;
+        if (excType instanceof RubyArray) {
+            RubyArray testTypes = (RubyArray)excType;
+            for (int i = 0, n = testTypes.getLength(); i < n; i++) {
+                IRubyObject testType = (IRubyObject)testTypes.eltInternal(i);
+                boolean handled = isUndefExc ? testType.isTrue() : IRRuntimeHelpers.exceptionHandled(context, testType, excObj);
+                if (handled) return runtime.newBoolean(true);
+            }
+            return runtime.newBoolean(false);
+        } else {
+            // SSS FIXME: Why are we returning 'excType'? Shouldn't this be a boolean?
+            return isUndefExc ? excType : runtime.newBoolean(IRRuntimeHelpers.exceptionHandled(context, excType, excObj));
+        }
     }
 };

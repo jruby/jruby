@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFloat;
 import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRVisitor;
@@ -772,7 +773,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        super.GetGlobalVariableInstr(getglobalvariableinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        Operand source = getglobalvariableinstr.getSource();
+        GlobalVariable gvar = (GlobalVariable)source;
+        String name = gvar.getName();
+        jvm.method().loadRuntime();
+        jvm.method().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
+        jvm.method().adapter.ldc(name);
+        jvm.method().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject get(String)"));
+        jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
     @Override
@@ -977,7 +985,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
-        super.PutGlobalVarInstr(putglobalvarinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        GlobalVariable target = (GlobalVariable)putglobalvarinstr.getTarget();
+        String name = target.getName();
+        jvm.method().loadRuntime();
+        jvm.method().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
+        jvm.method().adapter.ldc(name);
+        visit(putglobalvarinstr.getValue());
+        jvm.method().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject set(String, org.jruby.runtime.builtin.IRubyObject)"));
     }
 
     @Override
@@ -1062,7 +1076,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) {
-        super.RescueEQQInstr(rescueeqqinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(rescueeqqinstr.getArg1());
+        visit(rescueeqqinstr.getArg2());
+        jvm.method().invokeIRHelper("isExceptionHandled", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class));
+        jvmStoreLocal(rescueeqqinstr.getResult());
     }
 
     @Override

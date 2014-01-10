@@ -93,9 +93,10 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
 
-        return getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+        return getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
     }
 
     /**
@@ -114,7 +115,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
         Class scriptClass = scriptObject.getClass();
 
         try {
@@ -188,7 +190,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     @Override
     public byte[] getCompiledMethodOffline(
             String rubyName, String javaName, String className, String invokerPath, Arity arity,
-            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+            StaticScope scope, CallConfiguration callConfig, String filename, int line,
+            MethodNodes methodNodes) {
         throw new RuntimeException("no offline support for invokedynamic handles");
     }
 

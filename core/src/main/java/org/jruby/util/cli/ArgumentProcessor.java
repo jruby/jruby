@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
+import com.oracle.truffle.api.Truffle;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -346,6 +347,8 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCEIR);
+                    } else if (extendedOption.equals("+T")) {
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);

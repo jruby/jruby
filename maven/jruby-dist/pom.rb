@@ -85,6 +85,17 @@ project 'JRuby Dist' do
         f.puts 'appendOutput=true'
       end
     end
+  # TODO move into plugin-management of root pom
+  plugin( :invoker,
+          'projectsDirectory' =>  'src/it',
+          'cloneProjectsTo' =>  '${project.build.directory}/it',
+          'preBuildHookScript' =>  'setup.bsh',
+          'postBuildHookScript' =>  'verify.bsh',
+          'streamLogs' =>  'true' ) do
+    execute_goals( 'install', 'run',
+                   :id => 'integration-test',
+                   'settingsFile' =>  '${basedir}/src/it/settings.xml',
+                   'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
   end
 
   profile 'source dist' do
