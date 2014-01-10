@@ -17,9 +17,26 @@
   </properties>
   <dependencies>
     <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>9000.dev</version>
+    </dependency>
+    <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rake</artifactId>
       <version>${rake.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>${rdoc.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -44,6 +61,12 @@
       <groupId>rubygems</groupId>
       <artifactId>bouncy-castle-java</artifactId>
       <version>${bc.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>jruby-openssl</artifactId>
+      <version>${jopenssl.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
@@ -71,12 +94,27 @@
               <goal>copy</goal>
             </goals>
             <configuration>
-              <stripVersion>false</stripVersion>
               <artifactItems>
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>rake</artifactId>
                   <version>${rake.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>rdoc</artifactId>
+                  <version>${rdoc.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>json</artifactId>
+                  <version>${json.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
@@ -109,6 +147,14 @@
                   <groupId>rubygems</groupId>
                   <artifactId>bouncy-castle-java</artifactId>
                   <version>${bc.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>jruby-openssl</artifactId>
+                  <version>${jopenssl.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>

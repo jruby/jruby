@@ -36,6 +36,7 @@
   <modules>
     <module>ext</module>
     <module>core</module>
+    <module>lib</module>
   </modules>
 
   <description>
