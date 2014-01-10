@@ -22,7 +22,6 @@ import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.KeyValuePair;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.NthRef;
@@ -38,8 +37,7 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
 import org.jruby.ir.operands.Variable;
@@ -164,16 +162,17 @@ class OperandDecoderMap {
     private Operand decodeTemporaryVariable() {
         String name = d.decodeString();
 
-        if (Variable.CURRENT_SCOPE.equals(name)) {
+/*        if (Variable.CURRENT_SCOPE.equals(name)) {
             return d.getCurrentScope().getCurrentScopeVariable();
         } else if (Variable.CURRENT_MODULE.equals(name)) {
             return d.getCurrentScope().getCurrentModuleVariable();
         } else if (d.getVars().containsKey(name)) {
             return d.getVars().get(name);
         } else {
-            TemporaryVariable newTemporaryVariable = d.getCurrentScope().getNewTemporaryVariable(name);
+            TemporaryLocalVariable newTemporaryVariable = d.getCurrentScope().getNewTemporaryVariable(name);
             d.getVars().put(name, newTemporaryVariable);
             return newTemporaryVariable;
-        }
+        }*/
+        return null;
     }
 }

@@ -44,7 +44,7 @@ import org.jruby.ir.operands.SValue;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import org.jruby.ir.listeners.IRScopeListener;
+import org.jruby.ir.operands.TemporaryVariable;
 
 // This class converts an AST into a bunch of IR instructions
 

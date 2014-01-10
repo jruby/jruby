@@ -62,6 +62,7 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -501,7 +502,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
         if (resultVar instanceof TemporaryVariable) {
-            temp[((TemporaryVariable)resultVar).offset] = result;
+            switch (((TemporaryVariable) resultVar).getType()) {
+                case LOCAL:
+                    temp[((TemporaryLocalVariable)resultVar).offset] = result;
+                case CURRENT_MODULE:
+                case CURRENT_SCOPE:
+            }
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
 
@@ -519,8 +525,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Object res;
         if (r instanceof Self) {
             return self;
-        } else if (r instanceof TemporaryVariable) {
-            res = temp[((TemporaryVariable)r).offset];
+        } else if (r instanceof TemporaryLocalVariable) {
+            res = temp[((TemporaryLocalVariable)r).offset];
             return res == null ? context.nil : res;
         } else if (r instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)r;
@@ -685,15 +691,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return ((Float)arg).value;
         } else if (arg instanceof Fixnum) {
             return (double)((Fixnum)arg).value;
-        } else if (arg instanceof TemporaryVariable) {
-            return floats[((TemporaryVariable)arg).offset];
+        } else if (arg instanceof TemporaryLocalVariable) {
+            return floats[((TemporaryLocalVariable)arg).offset];
         } else {
             return 0.0/0.0;
         }
     }
 
     private static void setFloatVar(double[] floats, Variable var, double val) {
-        floats[((TemporaryVariable)var).offset] = val;
+        floats[((TemporaryLocalVariable)var).offset] = val;
     }
 
     private static void computeResult(AluInstr instr, Operation op, double[] floats) {
@@ -863,9 +869,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         UnboxInstr ui = (UnboxInstr)instr;
                         Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
                         if (val instanceof RubyFloat) {
-                            floats[((TemporaryVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
+                            floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
                         } else {
-                            floats[((TemporaryVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
+                            floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
                         }
                         break;
                     }

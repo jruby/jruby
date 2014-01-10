@@ -20,7 +20,7 @@ import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
@@ -144,10 +144,10 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         return "";
     }
 
-    private TemporaryVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
-         TemporaryVariable value = (TemporaryVariable)varRenameMap.get(v);
+    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+         TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = scope.getNewTemporaryVariable("%t_" + v.getName());
+             value = scope.getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;

@@ -109,7 +109,7 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
@@ -135,7 +135,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
             case BACKREF_IS_MATCH_DATA: return new BackrefIsMatchDataInstr(d.decodeVariable());
             case BEQ: return BEQInstr.create(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeOperandAsIRScope(), (TemporaryVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
+            case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeOperandAsIRScope(), (TemporaryLocalVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeOperandAsIRScope(), (LocalVariable) d.decodeOperand());
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());

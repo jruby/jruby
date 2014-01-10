@@ -32,7 +32,12 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
+import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
@@ -120,10 +125,6 @@ public abstract class IRScope implements ParseResult {
 
     /** Is %block implicit block arg unused? */
     private boolean hasUnusedImplicitBlockArg;
-
-    /** %current_module and %current_scope variables */
-    private TemporaryVariable currentModuleVar;
-    private TemporaryVariable currentScopeVar;
 
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
@@ -1029,15 +1030,13 @@ public abstract class IRScope implements ParseResult {
         // -> searching a constant in the inheritance hierarchy
         // -> searching a super-method in the inheritance hierarchy
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
-        if (currentModuleVar == null) currentModuleVar = getNewTemporaryVariable(Variable.CURRENT_MODULE);
-        return currentModuleVar;
+        return TemporaryCurrentModuleVariable.CURRENT_MODULE;
     }
 
     public Variable getCurrentScopeVariable() {
         // SSS: Used in only 1 case in generated IR:
         // -> searching a constant in the lexical scope hierarchy
-        if (currentScopeVar == null) currentScopeVar = getNewTemporaryVariable(Variable.CURRENT_SCOPE);
-        return currentScopeVar;
+        return TemporaryCurrentScopeVariable.CURRENT_SCOPE;
     }
 
     public abstract LocalVariable getImplicitBlockArg();
@@ -1077,19 +1076,29 @@ public abstract class IRScope implements ParseResult {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
     }
 
-    public TemporaryVariable getNewTemporaryVariable() {
-        temporaryVariableIndex++;
-        return new TemporaryVariable(temporaryVariableIndex);
+    public TemporaryLocalVariable getNewTemporaryVariable() {
+        return getNewTemporaryVariable(TemporaryVariableType.LOCAL);
     }
-
-    public TemporaryVariable getNewTemporaryVariable(String name) {
+    
+    public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
         temporaryVariableIndex++;
-        return new TemporaryVariable(name, temporaryVariableIndex);
+        
+        return new TemporaryLocalReplacementVariable(var.getName(), temporaryVariableIndex);
     }
-
-    public TemporaryVariable getNewFloatVariable() {
-        floatVariableIndex++;
-        return new TemporaryVariable("%f_" + floatVariableIndex, floatVariableIndex);
+    
+    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
+        switch (type) {
+            case FLOAT: {
+                floatVariableIndex++;
+                return new TemporaryFloatVariable(floatVariableIndex);
+            }
+            case LOCAL: {
+                temporaryVariableIndex++;
+                return new TemporaryLocalVariable(temporaryVariableIndex);
+            }
+        }
+        
+        throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
     }
 
     public void resetTemporaryVariables() {

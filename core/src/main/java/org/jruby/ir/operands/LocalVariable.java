@@ -5,6 +5,7 @@
 
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
@@ -52,8 +53,7 @@ public class LocalVariable extends Variable {
     public String toString() {
         return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
     }
-
-
+    
     @Override
     public int hashCode() {
         return name.hashCode();

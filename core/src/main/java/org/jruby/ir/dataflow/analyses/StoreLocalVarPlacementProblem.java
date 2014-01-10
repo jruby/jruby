@@ -96,7 +96,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         }
 
         // Allocate global-ensure block, if necessary
-        BasicBlock geb = null;
+        BasicBlock geb;
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
@@ -104,7 +104,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);
                 if (value == null) {
-                    value = cfgScope.getNewTemporaryVariable("%t_" + v.getName());
+                    value = cfgScope.getNewTemporaryVariableFor(v);
                     varRenameMap.put(v, value);
                 }
                 geb.addInstr(new StoreLocalVarInstr(value, (IRClosure) cfgScope, v));

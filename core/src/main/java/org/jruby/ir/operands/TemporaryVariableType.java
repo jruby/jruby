@@ -5,5 +5,5 @@ package org.jruby.ir.operands;
  * and we want to be able to quickly switch on type.
  */
 public enum TemporaryVariableType {
-    LOCAL, FLOAT, CLOSURE
+    LOCAL, FLOAT, CLOSURE, CURRENT_MODULE, CURRENT_SCOPE
 }

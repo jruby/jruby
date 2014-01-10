@@ -116,7 +116,7 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -903,7 +903,7 @@ public class IRInstructionFactory {
     }
 
     private LoadLocalVarInstr createLoadLocalVar(final Variable result, final ParametersIterator paramsIterator) {
-        final TemporaryVariable tempResult = (TemporaryVariable) result;
+        final TemporaryLocalVariable tempResult = (TemporaryLocalVariable) result;
         final IRScope scope = paramsIterator.nextScope();
         final LocalVariable lvar = (LocalVariable) paramsIterator.next();
 

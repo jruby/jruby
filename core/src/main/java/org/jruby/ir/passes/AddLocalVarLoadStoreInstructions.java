@@ -30,9 +30,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     }
 
     private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
-         if (varRenameMap.get(v) == null) {
-             varRenameMap.put(v, s.getNewTemporaryVariable("%t_" + v.getName()));
-         }
+         if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
     }
 
     @Override

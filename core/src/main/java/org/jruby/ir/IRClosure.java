@@ -11,7 +11,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
@@ -19,6 +19,7 @@ import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -130,14 +131,18 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public TemporaryVariable getNewTemporaryVariable() {
-        temporaryVariableIndex++;
-        return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
+    public TemporaryLocalVariable getNewTemporaryVariable() {
+        return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
     }
 
-    public TemporaryVariable getNewTemporaryVariable(String name) {
-        temporaryVariableIndex++;
-        return new TemporaryClosureVariable(name, temporaryVariableIndex);
+    @Override
+    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
+        if (type == TemporaryVariableType.CLOSURE) {
+            temporaryVariableIndex++;
+            return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
+        }
+        
+        return super.getNewTemporaryVariable(type);
     }
 
     @Override

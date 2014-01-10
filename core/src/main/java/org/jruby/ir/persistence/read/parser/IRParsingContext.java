@@ -7,7 +7,7 @@ import org.jruby.Ruby;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 
 public class IRParsingContext {
 
@@ -15,7 +15,7 @@ public class IRParsingContext {
     private Map<String, IRScope> scopesByNames = new HashMap<String, IRScope>();
     private IRScope toplevelScope;
     private IRScope currentScope;
-    private Map<String, TemporaryVariable> variablesByNames = new HashMap<String, TemporaryVariable>();
+    private Map<String, TemporaryLocalVariable> variablesByNames = new HashMap<String, TemporaryLocalVariable>();
     private Map<String, Label> labelsByNames = new HashMap<String, Label>();
 
     public IRParsingContext(Ruby runtime) {
@@ -59,11 +59,11 @@ public class IRParsingContext {
         return variablesByNames.containsKey(name);
     }
 
-    public TemporaryVariable getVariable(String name) {
+    public TemporaryLocalVariable getVariable(String name) {
         return variablesByNames.get(name);
     }
 
-    public void addVariable(TemporaryVariable variable) {
+    public void addVariable(TemporaryLocalVariable variable) {
         this.variablesByNames.put(variable.getName(), variable);
     }
 

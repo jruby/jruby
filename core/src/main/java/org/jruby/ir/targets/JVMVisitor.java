@@ -67,7 +67,7 @@ import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
@@ -88,6 +88,7 @@ import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyRange;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ir.operands.TemporaryVariable;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -229,7 +230,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private boolean isFloatVar(Variable v) {
-        return v instanceof TemporaryVariable && v.getName().equals("%f_" + ((TemporaryVariable)v).offset);
+        return v instanceof TemporaryLocalVariable && v.getName().equals("%f_" + ((TemporaryLocalVariable)v).offset);
     }
 
     private int getJVMLocalVarIndex(Variable variable) {

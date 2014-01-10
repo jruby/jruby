@@ -5,12 +5,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
@@ -33,7 +31,8 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
+import static org.jruby.ir.operands.TemporaryVariableType.FLOAT;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.CFG;
@@ -353,18 +352,20 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         }
     }
 
+    @Override
     public boolean solutionChanged() {
         return !tmpState.equals(outState);
     }
 
+    @Override
     public void finalizeSolution() {
         outState = tmpState;
     }
 
-    private TemporaryVariable getUnboxedVar(Map<Variable, TemporaryVariable> unboxMap, Variable v, boolean createNew) {
-        TemporaryVariable unboxedVar = unboxMap.get(v);
+    private TemporaryLocalVariable getUnboxedVar(Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, boolean createNew) {
+        TemporaryLocalVariable unboxedVar = unboxMap.get(v);
         if (unboxedVar == null && createNew) {
-            unboxedVar = this.problem.getScope().getNewFloatVariable();
+            unboxedVar = this.problem.getScope().getNewTemporaryVariable(FLOAT);
             unboxMap.put(v, unboxedVar);
         } else if (unboxedVar == null) {
             // FIXME: throw an exception here
@@ -373,17 +374,17 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         return unboxedVar;
     }
 
-    private TemporaryVariable getUnboxedVar(Map<Variable, TemporaryVariable> unboxMap, Variable v) {
+    private TemporaryLocalVariable getUnboxedVar(Map<Variable, TemporaryLocalVariable> unboxMap, Variable v) {
         return getUnboxedVar(unboxMap, v, true);
     }
 
-    private Operand getUnboxedOperand(Set<Variable> unboxedVars, Map<Variable, TemporaryVariable> unboxMap, Operand arg, List<Instr> newInstrs, boolean unbox) {
+    private Operand getUnboxedOperand(Set<Variable> unboxedVars, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg, List<Instr> newInstrs, boolean unbox) {
         if (arg instanceof Variable) {
             Variable v = (Variable)arg;
             boolean isUnboxed = unboxedVars.contains(v);
             if (unbox) {
                 // Get a temp var for 'v' if we dont already have one
-                TemporaryVariable unboxedVar = getUnboxedVar(unboxMap, v);
+                TemporaryLocalVariable unboxedVar = getUnboxedVar(unboxMap, v);
                 // Unbox if 'v' is not already unboxed
                 if (!isUnboxed) {
                     // System.out.println("guo: UNBOXING for " + v);
@@ -402,11 +403,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         }
     }
 
-    private Operand getUnboxedOperand(Set<Variable> unboxedVars, Map<Variable, TemporaryVariable> unboxMap, Operand arg, List<Instr> newInstrs) {
+    private Operand getUnboxedOperand(Set<Variable> unboxedVars, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg, List<Instr> newInstrs) {
         return getUnboxedOperand(unboxedVars, unboxMap, arg, newInstrs, true);
     }
 
-    private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
+    private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
         // Special treatment for instructions that can raise exceptions
         boolean isClosure = this.problem.getScope() instanceof IRClosure;
         HashSet<Variable> varsToBox = new HashSet<Variable>();
@@ -497,7 +498,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
     }
 
 
-    public void unbox(Map<Variable, TemporaryVariable> unboxMap) {
+    public void unbox(Map<Variable, TemporaryLocalVariable> unboxMap) {
         // System.out.println("BB : " + basicBlock + " in " + this.problem.getScope().getName());
         // System.out.println("-- known types on entry:");
         // for (Variable v: inState.types.keySet()) {
@@ -581,7 +582,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
                     // dataflow graph / SSA graph.
                     if (srcType == Float.class) {
                         Operand unboxedSrc = src instanceof Variable ? getUnboxedVar(unboxMap, (Variable)src) : src;
-                        TemporaryVariable unboxedDst = getUnboxedVar(unboxMap, dst);
+                        TemporaryLocalVariable unboxedDst = getUnboxedVar(unboxMap, dst);
                         newInstrs.add(new CopyInstr(Operation.COPY_UNBOXED, unboxedDst, unboxedSrc));
                         dirtied = true;
                     }
@@ -604,7 +605,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
                                 setOperandType(tmpState, dst, Float.class);
                                 r = getUnboxedOperand(tmpState.unboxedVars, unboxMap, r, newInstrs);
                                 a = getUnboxedOperand(tmpState.unboxedVars, unboxMap, a, newInstrs);
-                                TemporaryVariable unboxedDst = getUnboxedVar(unboxMap, dst);
+                                TemporaryLocalVariable unboxedDst = getUnboxedVar(unboxMap, dst);
                                 newInstrs.add(new AluInstr(m.getUnboxedOp(Float.class), unboxedDst, r, a));
                                 dirtied = true;
                             } else {
