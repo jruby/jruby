@@ -1768,13 +1768,10 @@ public class IRBuilder {
 
         // Build IR for body
         Node bodyNode = defNode.getBodyNode();
-        if (bodyNode != null) {
-            // Create a new nested builder to ensure this gets its own IR builder state
-            Operand rv = newIRBuilder(manager).build(bodyNode, method);
-            if (rv != null) method.addInstr(new ReturnInstr(rv));
-        } else {
-            method.addInstr(new ReturnInstr(manager.getNil()));
-        }
+
+        // Create a new nested builder to ensure this gets its own IR builder state
+        Operand rv = newIRBuilder(manager).build(bodyNode, method);
+        if (rv != null) method.addInstr(new ReturnInstr(rv));
 
         // If the method can receive non-local returns
         if (method.canReceiveNonlocalReturns()) {

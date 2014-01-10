@@ -1249,8 +1249,8 @@ primary         : literal
                     support.setInDef(true);
                     support.pushLocalScope();
                 } f_arglist bodystmt kEND {
-                    // TODO: We should use implicit nil for body, but problem (punt til later)
-                    Node body = $5; //$5 == null ? NilImplicitNode.NIL : $5;
+                    Node body = $5;
+                    if (body == null) body = NilImplicitNode.NIL;
 
                     $$ = new DefnNode($1.getPosition(), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
@@ -1263,8 +1263,8 @@ primary         : literal
                     support.pushLocalScope();
                     lexer.setState(LexState.EXPR_ENDFN); /* force for args */
                 } f_arglist bodystmt kEND {
-                    // TODO: We should use implicit nil for body, but problem (punt til later)
-                    Node body = $8; //$8 == null ? NilImplicitNode.NIL : $8;
+                    Node body = $8;
+                    if (body == null) body = NilImplicitNode.NIL;
 
                     $$ = new DefsNode($1.getPosition(), $2, new ArgumentNode($5.getPosition(), (String) $5.getValue()), $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
