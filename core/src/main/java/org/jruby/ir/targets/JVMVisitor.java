@@ -1076,7 +1076,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RescueEQQInstr(RescueEQQInstr rescueeqqinstr) {
-        super.RescueEQQInstr(rescueeqqinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(rescueeqqinstr.getArg1());
+        visit(rescueeqqinstr.getArg2());
+        jvm.method().invokeIRHelper("isExceptionHandled", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class));
+        jvmStoreLocal(rescueeqqinstr.getResult());
     }
 
     @Override
