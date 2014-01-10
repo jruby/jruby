@@ -66,7 +66,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -87,7 +86,6 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyRange;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.operands.TemporaryVariable;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -1485,11 +1483,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Symbol(Symbol symbol) {
         jvm.method().pushSymbol(symbol.getName());
-    }
-
-    @Override
-    public void TemporaryClosureVariable(TemporaryClosureVariable temporaryclosurevariable) {
-        super.TemporaryClosureVariable(temporaryclosurevariable);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

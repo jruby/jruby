@@ -25,9 +25,4 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     public String getPrefix() {
         return "%cl_" + closureId + "_";
     }
-
-    @Override
-    public void visit(IRVisitor visitor) {
-        visitor.TemporaryClosureVariable(this);
-    }
 }

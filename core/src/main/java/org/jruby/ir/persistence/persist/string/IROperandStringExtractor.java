@@ -38,8 +38,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -249,10 +247,6 @@ class IROperandStringExtractor extends IRVisitor {
     }
 
     @Override public void TemporaryVariable(TemporaryVariable variable) {
-        commonForTemproraryVariable(variable);
-    }
-
-    @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) {
         commonForTemproraryVariable(variable);
     }
 

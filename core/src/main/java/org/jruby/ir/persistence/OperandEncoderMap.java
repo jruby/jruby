@@ -37,7 +37,6 @@ import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -183,16 +182,25 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Symbol(Symbol symbol) { encoder.encode(symbol.getName()); }
 
-    // FIXME: There are two forms of constructors for both temp vars and they are not clear what there actual
-    // requirements are (prefix/offset/name question).
-    @Override public void TemporaryClosureVariable(TemporaryClosureVariable variable) {
-        encoder.encode(variable.getName());
-        encoder.encode(variable.offset);
-    }
-
     @Override public void TemporaryVariable(TemporaryVariable variable) {
         encoder.encode(variable.getName());
-//        encoder.encode(variable.offset);
+        encoder.encode((byte) variable.getType().ordinal());
+        
+        switch(variable.getType()) {
+            case CLOSURE:
+                encoder.encode(((TemporaryClosureVariable) variable).getClosureId());
+                encoder.encode(((TemporaryClosureVariable) variable).getOffset());
+                break;
+                
+            case FLOAT:
+            case LOCAL:
+                encoder.encode(((TemporaryClosureVariable) variable).getOffset());
+                break;
+                
+            case CURRENT_MODULE:
+            case CURRENT_SCOPE:
+                break; // No information to encode
+        }
     }
 
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
