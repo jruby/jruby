@@ -548,4 +548,18 @@ class TestSocket < Test::Unit::TestCase
     accepted.close if accepted
     sock.close if sock && ! sock.closed?
   end
+
+  # JRUBY-7200
+  def test_ipv4_socket
+    socket = Socket.new(:INET, :STREAM)
+    server_socket = ServerSocket.new(:INET, :STREAM)
+
+    addr = Addrinfo.tcp('0.0.0.0', 3030)
+    addr1 = Addrinfo.tcp('0.0.0.0', 3031)
+
+    assert_not_equal(socket.bind(addr), nil)
+
+    assert_not_equal(server_socket.bind(addr1), nil)
+    assert_not_equal(server_socket.listen(128), nil)
+  end
 end if defined?(Socket)
