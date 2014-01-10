@@ -3069,8 +3069,6 @@ public final class Ruby {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
-        truffleBridge.shutdown();
-
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
 

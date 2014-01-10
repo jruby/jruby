@@ -399,6 +399,9 @@ public class Main {
             doCheckSecurityManager();
 
             runtime.runFromMain(in, filename);
+
+            runtime.getTruffleBridge().shutdown();
+
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }
