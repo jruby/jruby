@@ -19,7 +19,6 @@ public class MethodNodes {
 
     public MethodNodes(ArgsNode argsNode, Node bodyNode) {
         assert argsNode != null;
-        assert bodyNode != null;
 
         this.argsNode = argsNode;
         this.bodyNode = bodyNode;

@@ -2723,10 +2723,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class, MethodNodes.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class, MethodNodes.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         }
 
         script.addInvokerDescriptor(name, newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line, methodNodes);

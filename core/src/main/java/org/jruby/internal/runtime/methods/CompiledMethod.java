@@ -239,6 +239,12 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         }
         
     }
+
+    // Called by Class.newInstance in InvocationMethodCompiler and precompiled method subclasses
+    public CompiledMethod() {
+        // TODO: Need to have access to AST for recompilation. See #1395
+        this(null);
+    }
     
     protected CompiledMethod(MethodNodes methodNodes) {
         this.methodNodes = methodNodes;

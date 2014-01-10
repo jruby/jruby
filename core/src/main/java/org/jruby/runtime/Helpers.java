@@ -285,9 +285,15 @@ public class Helpers {
         return CompiledSharedScopeBlock.newCompiledSharedScopeClosure(context, self, Arity.createArity(arity),
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
-    
+
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
+                                  int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
+        // TODO: Need to have access to AST for recompilation. See #1395
+        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
+    }
+
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
+                                  int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.runtime;
 
@@ -304,6 +310,12 @@ public class Helpers {
                 methodNodes);
 
         return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+    }
+
+    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
+                                   int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
+        // TODO: Need to have access to AST for recompilation. See #1395
+        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
