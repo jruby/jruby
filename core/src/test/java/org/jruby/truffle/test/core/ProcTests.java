@@ -11,7 +11,6 @@ package org.jruby.truffle.test.core;
 
 import org.junit.*;
 
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.test.*;
 
 /**
@@ -36,20 +35,9 @@ public class ProcTests extends RubyTests {
         assertPrints("1\n", "x = Proc.new { puts 1 }; x.call");
         assertPrints("1\n", "x = Proc.new { 1 }; puts x.call");
     }
-
     @Test
-    public void testProcReturn18() {
-        assertPrints(RubyVersion.RUBY_18, "2\n", "def foo; x = proc { return 1 }; x.call; return 2; end; puts foo");
-    }
-
-    @Test
-    public void testProcReturn19() {
-        assertPrints(RubyVersion.RUBY_19, "1\n", "def foo; x = proc { return 1 }; x.call; return 2; end; puts foo");
-    }
-
-    @Test
-    public void testProcReturn20() {
-        assertPrints(RubyVersion.RUBY_20, "1\n", "def foo; x = proc { return 1 }; x.call; return 2; end; puts foo");
+    public void testProcReturn() {
+        assertPrints("1\n", "def foo; x = proc { return 1 }; x.call; return 2; end; puts foo");
     }
 
     @Test

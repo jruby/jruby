@@ -11,7 +11,6 @@ package org.jruby.truffle.test.core;
 
 import org.junit.*;
 
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.test.*;
 
 /**
@@ -43,7 +42,7 @@ public class KernelTests extends RubyTests {
 
     @Test
     public void testGets() {
-        assertPrintsWithInput("test\n", "puts gets", "test\n");
+        assertPrintsWithInput("test\n", "puts gets", "test\n", new String[]{});
     }
 
     @Test
@@ -71,11 +70,8 @@ public class KernelTests extends RubyTests {
         assertPrints("16\n", "class Foo; def foo; @x = 14; @y = 2; binding; end; end; puts eval(\"@x + @y\", Foo.new.foo)");
     }
 
-    @Test
+    /*@Test
     public void testSetTraceFuncLine() {
-        final ConfigurationBuilder configuration = new ConfigurationBuilder();
-        configuration.setTrace(true);
-
         final String code = "def foo\n" + //
                         "    a = 14\n" + //
                         "    b = 2\n" + //
@@ -91,8 +87,8 @@ public class KernelTests extends RubyTests {
                         "foo";
         final String input = "";
         final String expected = "(test):13\n(test):2\n(test):3\n(test):4\n";
-        assertPrints(new Configuration(configuration), expected, "(test)", code, input);
-    }
+        assertPrints(expected, "(test)", code, input);
+    }*/
 
     @Test
     public void testBlockGiven() {

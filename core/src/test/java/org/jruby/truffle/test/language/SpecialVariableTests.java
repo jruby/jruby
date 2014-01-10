@@ -21,7 +21,7 @@ public class SpecialVariableTests extends RubyTests {
 
     @Test
     public void testGetsResult() {
-        assertPrintsWithInput("test\n", "gets; puts $_", "test\n");
+        assertPrintsWithInput("test\n", "gets; puts $_", "test\n", new String[]{});
     }
 
 }

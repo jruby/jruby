@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.test.runtime;
 
+import org.jruby.Ruby;
 import org.junit.*;
 
 import org.jruby.truffle.runtime.*;
@@ -26,7 +27,7 @@ public class ObjectLayoutTests extends RubyTests {
 
     @Test
     public void testNewInstanceVariable() {
-        final RubyContext context = new RubyContext(null);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), null);
 
         // Create a class and an instance
 
@@ -60,7 +61,7 @@ public class ObjectLayoutTests extends RubyTests {
 
     @Test
     public void testOverflowPrimitives() {
-        final RubyContext context = new RubyContext(null);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), null);
 
         // Create a class and an instance
 
@@ -84,7 +85,7 @@ public class ObjectLayoutTests extends RubyTests {
 
     @Test
     public void testGeneralisation() {
-        final RubyContext context = new RubyContext(null);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), null);
 
         // Create a class and two instances
 
@@ -148,7 +149,7 @@ public class ObjectLayoutTests extends RubyTests {
 
     @Test
     public void testSubclasses() {
-        final RubyContext context = new RubyContext(null);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), null);
 
         // Create two classes, A, and a subclass, B, and an instance of each
 
@@ -223,7 +224,7 @@ public class ObjectLayoutTests extends RubyTests {
 
     @Test
     public void testPerObjectInstanceVariables() {
-        final RubyContext context = new RubyContext(null);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), null);
 
         // Create a class and an instance
 

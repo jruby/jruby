@@ -214,9 +214,9 @@
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <jruby.compile.memory>512M</jruby.compile.memory>
-    <jruby.test.memory>1024M</jruby.test.memory>
-    <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
+    <jruby.compile.memory>1G</jruby.compile.memory>
+    <jruby.test.memory>1G</jruby.test.memory>
+    <jruby.test.memory.permgen>1G</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
@@ -487,17 +487,14 @@
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
-          <argLine>-Xmx${jruby.test.memory}</argLine>
-          <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
-          <argLine>-Dfile.encoding=UTF-8</argLine>
-          <argLine>-Djava.awt.headless=true</argLine>
+          <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
             <include>org/jruby/truffle/test/TruffleTestSuite.java</include>
           </includes>
           <additionalClasspathElements>
-              <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
+            <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
           </additionalClasspathElements>
         </configuration>
       </plugin>

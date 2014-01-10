@@ -20,7 +20,7 @@ public class ObjectTests extends RubyTests {
 
     @Test
     public void testARGV() {
-        assertPrints("1\n2\n3\n", "puts ARGV", "1", "2", "3");
+        assertPrints("1\n2\n3\n", "puts ARGV", new String[]{"1", "2", "3"});
     }
 
     @Test
