@@ -2259,42 +2259,6 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "truffelize", rest = true)
-    public RubyModule truffelize(ThreadContext context, IRubyObject[] args) {
-        for (IRubyObject arg : args) {
-            if (!(arg instanceof RubyString || arg instanceof RubySymbol)) {
-                throw new UnsupportedOperationException(arg.getClass().toString());
-            }
-
-            truffelize(arg.asJavaString());
-
-            if (!isSingleton()) {
-                getSingletonClass().truffelize(arg.asJavaString());
-            }
-        }
-
-        return this;
-    }
-
-    public void truffelize(String name) {
-        final DynamicMethod method = searchMethod(name);
-
-        if (method == null) {
-            throw new UnsupportedOperationException("method " + name + " not found");
-        }
-
-        if (!(method instanceof MethodWithNodes)) {
-            throw new UnsupportedOperationException("can only truffelize methods that can from Ruby source code - " + name + " was " + method.getClass());
-        }
-
-        final MethodWithNodes methodWithNodes = (MethodWithNodes) method;
-        final MethodNodes methodNodes = methodWithNodes.getMethodNodes();
-
-        final TruffleMethod truffleMethod = getRuntime().getTruffleBridge().truffelize(methodNodes.getArgsNode(), methodNodes.getBodyNode());
-
-        this.addMethod(name, truffleMethod);
-    }
-
     @JRubyMethod(name = {"module_eval", "class_eval"})
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block);
