@@ -71,6 +71,7 @@ import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.invokedynamic.MethodNames.DEFAULT;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 // Design overview:
@@ -1083,7 +1084,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? callMethod(context, "default", key) : value;
+        return ((value = internalGet(key)) == null) ? invokedynamic(context, this, DEFAULT, key) : value;
     }
 
     /** rb_hash_hash

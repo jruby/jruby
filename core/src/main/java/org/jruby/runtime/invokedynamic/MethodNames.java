@@ -14,7 +14,8 @@ public enum MethodNames {
     EQL("eql?"),
     HASH("hash"),
     OP_CMP("<=>"),
-    INSPECT("inspect");
+    INSPECT("inspect"),
+    DEFAULT("default");
 
     MethodNames(String realName) {
         this.realName = realName;
