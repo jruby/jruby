@@ -72,6 +72,7 @@ project 'JRuby Lib Setup' do
     openssl = File.join( ctx.project.basedir.to_s, 'ruby', 'shared', 'openssl.rb' )
     openssl_copy = File.join( ctx.project.basedir.to_s, 'ruby', 'shared', 'openssl.rb.orig' )
 
+    FileUtils.mkdir_p( default_specs )
     begin
       # setup a openssl.rb so gems can be installed
       if File.exists?( openssl )
