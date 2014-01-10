@@ -25,7 +25,7 @@ public class TruffleTestSuite extends TestSuite {
         suite.addTestSuite(ArrayTests.class);
         suite.addTestSuite(BignumTests.class);
         suite.addTestSuite(BoolTests.class);
-        suite.addTestSuite(ContinuationTests.class);
+        //suite.addTestSuite(ContinuationTests.class);
         suite.addTestSuite(FiberTests.class);
         suite.addTestSuite(FixnumTests.class);
         suite.addTestSuite(FloatTests.class);
@@ -34,7 +34,7 @@ public class TruffleTestSuite extends TestSuite {
         suite.addTestSuite(KernelTests.class);
         suite.addTestSuite(MathTests.class);
         suite.addTestSuite(org.jruby.truffle.test.core.ModuleTests.class);
-        suite.addTestSuite(ObjectSpaceTests.class);
+        //suite.addTestSuite(ObjectSpaceTests.class);
         suite.addTestSuite(ProcTests.class);
         suite.addTestSuite(RangeTests.class);
         suite.addTestSuite(RegexpTests.class);
@@ -42,7 +42,7 @@ public class TruffleTestSuite extends TestSuite {
         suite.addTestSuite(SymbolTests.class);
         suite.addTestSuite(ThreadTests.class);
 
-        suite.addTestSuite(DebugTests.class);
+        //suite.addTestSuite(DebugTests.class);
 
         suite.addTestSuite(AndTests.class);
         suite.addTestSuite(BlockTests.class);

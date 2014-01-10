@@ -15,15 +15,12 @@ import java.io.*;
 import java.util.*;
 
 import org.junit.*;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import junit.framework.TestCase;
 
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.parser.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.runtime.core.*;
 
 import org.jruby.Ruby;
@@ -43,7 +40,15 @@ public class RubyTests extends TestCase {
      * Executes some Ruby code and asserts that it prints an expected string. Remember to include
      * the newline characters.
      */
-    public static void assertPrints(String expectedOutput, String code, String... args) {
+    public static void assertPrints(String expectedOutput, String code) {
+        assertPrintsWithInput(expectedOutput, code, "", new String[]{});
+    }
+
+    /**
+     * Executes some Ruby code and asserts that it prints an expected string. Remember to include
+     * the newline characters.
+     */
+    public static void assertPrints(String expectedOutput, String code, String[] args) {
         assertPrintsWithInput(expectedOutput, code, "", args);
     }
 
@@ -51,60 +56,32 @@ public class RubyTests extends TestCase {
      * Executes some Ruby code and asserts that it prints an expected string. Remember to include
      * the newline characters. Allows input for {@code Kernel#gets} to be passed in.
      */
-    public static void assertPrintsWithInput(String expectedOutput, String code, String input, String... args) {
-        assertPrints(null, expectedOutput, "(test)", code, input, args);
-    }
-
-    /**
-     * Executes some Ruby code of a particular version and asserts that it prints an expected
-     * string. Remember to include the newline characters.
-     */
-    public static void assertPrints(RubyVersion rubyVersion, String expectedOutput, String code, String... args) {
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.setRubyVersion(rubyVersion);
-        assertPrints(new Configuration(configurationBuilder), expectedOutput, "(test)", code, "", args);
+    public static void assertPrintsWithInput(String expectedOutput, String code, String input, String[] args) {
+        assertPrints(expectedOutput, "(test)", code, input, args);
     }
 
     /**
      * Executes some Ruby code in a file and asserts that it prints an expected string. Remember to
      * include the newline characters.
      */
-    public static void assertFilePrints(String expectedOutput, String fileName, String... args) {
-        assertPrints(null, expectedOutput, fileName, null, "", args);
+    public static void assertFilePrints(String expectedOutput, String fileName, String[] args) {
+        assertPrints(expectedOutput, fileName, null, "", args);
     }
 
     /**
      * Executes some Ruby code and asserts that it prints an expected string. Remember to include
      * the newline characters. Also takes a string to simulate input.
      */
-    public static void assertPrints(Configuration configuration, String expectedOutput, String fileName, String code, String input, String... args) {
+    public static void assertPrints(String expectedOutput, String fileName, String code, String input, String... args) {
         final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         final PrintStream printStream = new PrintStream(byteArray);
 
-        ConfigurationBuilder configurationBuilder;
+        final Ruby ruby = Ruby.newInstance();
 
-        if (configuration == null) {
-            configurationBuilder = new ConfigurationBuilder();
-        } else {
-            configurationBuilder = new ConfigurationBuilder(configuration);
-        }
+        ruby.getInstanceConfig().setOutput(printStream);
+        ruby.getInstanceConfig().setInput(new ByteArrayInputStream(input.getBytes()));
 
-        configurationBuilder.setStandardOut(printStream);
-
-        final BufferedReader inputReader = new BufferedReader(new StringReader(input));
-
-        configurationBuilder.setInputReader(new InputReader() {
-
-            @Override
-            public String readLine(String prompt) throws IOException {
-                return inputReader.readLine();
-            }
-
-        });
-
-        final Ruby jruby = Ruby.newInstance();
-
-        final RubyContext context = new RubyContext(new Configuration(configurationBuilder), new JRubyParser(jruby));
+        final RubyContext context = new RubyContext(ruby, new JRubyParser(ruby));
 
         CoreMethodNodeManager.addMethods(context.getCoreLibrary().getObjectClass());
         context.getCoreLibrary().initializeAfterMethodsAdded();

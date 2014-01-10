@@ -11,7 +11,6 @@ package org.jruby.truffle.test.core;
 
 import org.junit.*;
 
-import org.jruby.truffle.runtime.configuration.*;
 import org.jruby.truffle.test.*;
 
 /**
@@ -29,24 +28,22 @@ public class ObjectSpaceTests extends RubyTests {
         assertPrints("true\n", "puts ObjectSpace._id2ref(String.object_id) == String");
     }
 
+    @Ignore
     @Test
     public void testEachObjectString() {
-        final ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.setFullObjectSpace(true);
         final String code = "foo = \"foo\"; found_foo = false; ObjectSpace.each_object(String) { |o| if o == foo; found_foo= true; end  }; puts found_foo";
         final String input = "";
         final String expected = "true\n";
-        assertPrints(new Configuration(configurationBuilder), expected, "(test)", code, input);
+        assertPrints(expected, "(test)", code, input);
     }
 
+    @Ignore
     @Test
     public void testId2RefString() {
-        final ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.setFullObjectSpace(true);
         final String code = "foo = \"foo\"; puts ObjectSpace._id2ref(foo.object_id) == foo";
         final String input = "";
         final String expected = "true\n";
-        assertPrints(new Configuration(configurationBuilder), expected, "(test)", code, input);
+        assertPrints(expected, "(test)", code, input);
     }
 
     @Test

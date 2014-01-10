@@ -18,6 +18,9 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyArgsFile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
@@ -301,21 +304,19 @@ public abstract class KernelNodes {
 
             final ThreadManager threadManager = context.getThreadManager();
 
-            RubyString line;
+            String line;
+
+            final RubyThread runningThread = threadManager.leaveGlobalLock();
 
             try {
-                final RubyThread runningThread = threadManager.leaveGlobalLock();
-
-                try {
-                    // TODO(CS): use JRuby's readline
-                    final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                    line = context.makeString(reader.readLine());
-                } finally {
-                    threadManager.enterGlobalLock(runningThread);
-                }
+                line = gets(context);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } finally {
+                threadManager.enterGlobalLock(runningThread);
             }
+
+            final RubyString rubyLine = context.makeString(line);
 
             // Set the local variable $_ in the caller
 
@@ -323,11 +324,31 @@ public abstract class KernelNodes {
             final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                unpacked.setObject(slot, line);
+                unpacked.setObject(slot, rubyLine);
             }
 
-            return line;
+            return rubyLine;
         }
+
+        @SlowPath
+        private static String gets(RubyContext context) throws IOException {
+            // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
+
+            final StringBuilder builder = new StringBuilder();
+
+            while (true) {
+                final char c = (char) context.getRuntime().getInstanceConfig().getInput().read();
+
+                if (c == '\r' || c == '\n') {
+                    break;
+                }
+
+                builder.append(c);
+            }
+
+            return builder.toString();
+        }
+
     }
 
     @CoreMethod(names = "Integer", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
@@ -457,12 +478,12 @@ public abstract class KernelNodes {
 
                     if (arg instanceof RubyString && !((RubyString) arg).isFromJavaString()) {
                         try {
-                            getContext().getRuntime().getOutputStream().write(((RubyString) arg).getBytes());
+                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes());
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        getContext().getRuntime().getOutputStream().print(arg);
+                        getContext().getRuntime().getInstanceConfig().getOutput().print(arg);
                     }
                 }
             } finally {
@@ -495,7 +516,7 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = threadManager.leaveGlobalLock();
 
                 try {
-                    StringFormatter.format(getContext().getRuntime().getOutputStream(), format, values);
+                    StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
                 } finally {
                     threadManager.enterGlobalLock(runningThread);
                 }
@@ -565,7 +586,7 @@ public abstract class KernelNodes {
         @Specialization
         public NilPlaceholder puts(Object[] args) {
             final ThreadManager threadManager = getContext().getThreadManager();
-            final PrintStream standardOut = getContext().getRuntime().getOutputStream();
+            final PrintStream standardOut = getContext().getRuntime().getInstanceConfig().getOutput();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
 
