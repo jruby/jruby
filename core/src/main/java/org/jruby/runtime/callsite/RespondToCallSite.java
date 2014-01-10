@@ -68,13 +68,16 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
-        if (false &&
-                entry.method.equals(context.runtime.getRespondToMethod())) {
+        if (entry.method.equals(context.runtime.getRespondToMethod())) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
-            respondToTuple = tuple;
-            return tuple.respondsTo;
+
+            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+            if (tuple.respondsTo.isTrue() ||
+                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
+                respondToTuple = tuple;
+                return tuple.respondsTo;
+            }
         }
 
         // normal logic if it's not the builtin respond_to? method
@@ -91,14 +94,16 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
-        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
-        if (false &&
-                entry.method.equals(context.runtime.getRespondToMethod())) {
+        if (entry.method.equals(context.runtime.getRespondToMethod())) {
             String name = arg0.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
-            respondToTuple = tuple;
-            return tuple.respondsTo;
+
+            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+            if (tuple.respondsTo.isTrue() ||
+                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
+                respondToTuple = tuple;
+                return tuple.respondsTo;
+            }
         }
 
         // normal logic if it's not the builtin respond_to? method

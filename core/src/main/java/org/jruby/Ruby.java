@@ -1849,6 +1849,14 @@ public final class Ruby {
     public void setRespondToMethod(DynamicMethod rtm) {
         this.respondTo = rtm;
     }
+
+    public DynamicMethod getRespondToMissingMethod() {
+        return respondToMissing;
+    }
+
+    public void setRespondToMissingMethod(DynamicMethod rtmm) {
+        this.respondToMissing = rtmm;
+    }
     
     public RubyClass getDummy() {
         return dummyClass;
@@ -4695,7 +4703,7 @@ public final class Ruby {
             procSysModule, precisionModule, errnoModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
-            superMethodMissing, normalMethodMissing, defaultMethodMissing, respondTo;
+            superMethodMissing, normalMethodMissing, defaultMethodMissing, respondTo, respondToMissing;
     
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;

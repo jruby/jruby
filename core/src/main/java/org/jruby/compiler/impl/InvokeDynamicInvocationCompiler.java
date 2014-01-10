@@ -98,7 +98,14 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
     @Override
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+        // super calls do not optimize in indy right now
         if (callType == CallType.SUPER) {
+            super.invokeDynamic(name, receiverCallback, argsCallback, callType, closureArg, iterator);
+            return;
+        }
+
+        // respond_to? calls do not optimize in indy right now
+        if (name.equals("respond_to?")) {
             super.invokeDynamic(name, receiverCallback, argsCallback, callType, closureArg, iterator);
             return;
         }
