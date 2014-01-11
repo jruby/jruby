@@ -30,6 +30,12 @@
     <repository>
       <id>truffle</id>
       <url>http://lafo.ssw.uni-linz.ac.at/truffle/maven/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
