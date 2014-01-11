@@ -323,14 +323,12 @@
 		<goal>install</goal>
 		<goal>run</goal>
               </goals>
-              <configuration>
-		<settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-		<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-		<pomIncludes><pomInclude>*</pomInclude></pomIncludes>
-              </configuration>
             </execution>
           </executions>
           <configuration>
+	    <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+	    <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            <pomIncludes><pomInclude>*/pom.xml</pomInclude></pomIncludes>
             <projectsDirectory>src/it</projectsDirectory>
             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
             <preBuildHookScript>setup.bsh</preBuildHookScript>
