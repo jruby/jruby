@@ -81,17 +81,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>prepare_sources_for_it</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>prepare_sources_for_it</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
-          <execution>
             <id>pack_sources</id>
             <phase>package</phase>
             <goals>
