@@ -1,1 +1,0 @@
-fails(bug #1648):Rational#div raises a TypeError if passed a non-numeric argument

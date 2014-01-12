@@ -1,11 +1,6 @@
-Revisions:
-
-mspec: 1343524a06466b7aa0c90798b7894454c8abce0f
-rubyspec: 926e356b268fe32c67bec43a21565d727360a89b
-
 To run:
 
 Then you can run MSpec to run RubySpec. We can run all of the harness in our
 implementation, not just as an executable under test.
 
-    $ ../../bin/jruby -X+T  mspec/bin/mspec run -t ../../bin/jruby -T -X+T --config jrubytruffle.mspec --excl-tag fails
+    $ ../../bin/jruby -X+T ../mspec/bin/mspec run -t ../../bin/jruby -T -X+T --config truffle.mspec --excl-tag fails
