@@ -8,4 +8,4 @@ To run:
 Then you can run MSpec to run RubySpec. We can run all of the harness in our
 implementation, not just as an executable under test.
 
-    $ ./jrubytruffle mspec/bin/mspec run -t ./jrubytruffle --config jrubytruffle.mspec --excl-tag fails
+    $ ../../bin/jruby -X+T  mspec/bin/mspec run -t ../../bin/jruby -T -X+T --config jrubytruffle.mspec --excl-tag fails
