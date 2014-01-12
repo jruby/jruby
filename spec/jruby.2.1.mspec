@@ -1,4 +1,4 @@
-# Default RubySpec/CI settings for JRuby in 1.9 mode.
+# Default RubySpec/CI settings for JRuby in 2.1 mode.
 
 # detect windows platform:
 require 'rbconfig'
