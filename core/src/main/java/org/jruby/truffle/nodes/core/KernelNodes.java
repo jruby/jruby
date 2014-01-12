@@ -815,4 +815,22 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "truffelized?", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class TruffelizedNode extends CoreMethodNode {
+
+        public TruffelizedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TruffelizedNode(ThrowNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean truffelized() {
+            return true;
+        }
+
+    }
+
 }

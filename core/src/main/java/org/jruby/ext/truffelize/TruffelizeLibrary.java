@@ -37,11 +37,15 @@ public class TruffelizeLibrary implements Library {
         }
 
         if (!(method instanceof MethodWithNodes)) {
-            throw new UnsupportedOperationException("can only truffelize methods that can from Ruby source code - " + name + " was " + method.getClass());
+            throw new UnsupportedOperationException("can only truffelize methods where JRuby can provide the nodes for us");
         }
 
         final MethodWithNodes methodWithNodes = (MethodWithNodes) method;
         final MethodNodes methodNodes = methodWithNodes.getMethodNodes();
+
+        if (methodNodes == null || methodNodes.getArgsNode() == null || methodNodes.getBodyNode() == null) {
+            throw new UnsupportedOperationException("can only truffelize methods where JRuby can provide the nodes for us");
+        }
 
         final TruffleMethod truffleMethod = module.getRuntime().getTruffleBridge().truffelize(methodNodes.getArgsNode(), methodNodes.getBodyNode());
 

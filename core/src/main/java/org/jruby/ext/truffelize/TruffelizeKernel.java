@@ -9,6 +9,7 @@
  */
 package org.jruby.ext.truffelize;
 
+import org.jruby.RubyBoolean;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
@@ -16,6 +17,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TruffelizeKernel {
+
+    @JRubyMethod(name = "truffelized?", module = true)
+    public static IRubyObject truffelized(IRubyObject self) {
+        return self.getRuntime().getFalse();
+    }
 
     @JRubyMethod(module = true, rest = true)
     public static IRubyObject truffelize(IRubyObject self, IRubyObject[] args) {
