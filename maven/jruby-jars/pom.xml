@@ -97,25 +97,11 @@ freezing to) a specific jruby-complete jar version.</description>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <streamLogs>true</streamLogs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.8</version>
         <configuration>
           <nativePom>Mavenfile</nativePom>
         </configuration>
@@ -136,7 +122,7 @@ freezing to) a specific jruby-complete jar version.</description>
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.8</version>
           </dependency>
         </dependencies>
       </plugin>
