@@ -26,6 +26,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
@@ -122,6 +123,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         return IRScopeType.fromOrdinal(decodeInt());
     }
 
+    @Override
+    public TemporaryVariableType decodeTemporaryVariableType() {
+        return TemporaryVariableType.fromOrdinal(decodeInt());
+    }
+    
     @Override
     public StaticScope.Type decodeStaticScopeType() {
         return StaticScope.Type.fromOrdinal(decodeInt());

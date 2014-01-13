@@ -14,6 +14,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
@@ -53,4 +54,6 @@ public interface IRReaderDecoder {
     public void seek(int headersOffset);
 
     public IRScope decodeScope();
+
+    public TemporaryVariableType decodeTemporaryVariableType();
 }

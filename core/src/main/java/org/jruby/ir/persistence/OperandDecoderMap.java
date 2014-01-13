@@ -37,10 +37,13 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.TemporaryClosureVariable;
+import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
+import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.UndefinedValue;
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -160,19 +163,20 @@ class OperandDecoderMap {
     }
 
     private Operand decodeTemporaryVariable() {
-        String name = d.decodeString();
+        TemporaryVariableType type = d.decodeTemporaryVariableType();
+        
+        switch(type) {
+            case CLOSURE:
+                return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
+            case CURRENT_MODULE:
+                return TemporaryCurrentModuleVariable.CURRENT_MODULE;
+            case CURRENT_SCOPE:
+                return TemporaryCurrentScopeVariable.CURRENT_SCOPE;
+            case FLOAT:
+            case LOCAL:
+                return new TemporaryFloatVariable(d.decodeInt());
+        }
 
-/*        if (Variable.CURRENT_SCOPE.equals(name)) {
-            return d.getCurrentScope().getCurrentScopeVariable();
-        } else if (Variable.CURRENT_MODULE.equals(name)) {
-            return d.getCurrentScope().getCurrentModuleVariable();
-        } else if (d.getVars().containsKey(name)) {
-            return d.getVars().get(name);
-        } else {
-            TemporaryLocalVariable newTemporaryVariable = d.getCurrentScope().getNewTemporaryVariable(name);
-            d.getVars().put(name, newTemporaryVariable);
-            return newTemporaryVariable;
-        }*/
         return null;
     }
 }
