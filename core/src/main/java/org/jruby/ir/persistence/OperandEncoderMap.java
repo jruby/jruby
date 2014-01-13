@@ -37,6 +37,7 @@ import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.TemporaryClosureVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -183,7 +184,6 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void Symbol(Symbol symbol) { encoder.encode(symbol.getName()); }
 
     @Override public void TemporaryVariable(TemporaryVariable variable) {
-        encoder.encode(variable.getName());
         encoder.encode((byte) variable.getType().ordinal());
         
         switch(variable.getType()) {
@@ -194,7 +194,7 @@ class OperandEncoderMap extends IRVisitor {
                 
             case FLOAT:
             case LOCAL:
-                encoder.encode(((TemporaryClosureVariable) variable).getOffset());
+                encoder.encode(((TemporaryLocalVariable) variable).getOffset());
                 break;
                 
             case CURRENT_MODULE:
