@@ -63,8 +63,11 @@ public abstract class CallBase extends Instr implements Specializeable {
 
     }
 
+    @Override
     public Operand[] getOperands() {
-        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, new Fixnum(arguments.length * (closure == null ? 1 : -1)), arguments, closure);
+        // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
+        Fixnum arity = new Fixnum(closure != null ? -1*(arguments.length + 1) : arguments.length);
+        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, arity, arguments, closure);
     }
 
     public MethAddr getMethodAddr() {
@@ -326,7 +329,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     private final static int REQUIRED_OPERANDS = 4;
     private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver,
             Fixnum argsCount, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + ((closure != null) ? 1 : 0)];
+        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
 
         assert methAddr != null : "METHADDR is null";
         assert receiver != null : "RECEIVER is null";
@@ -335,6 +338,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         allArgs[0] = callType;
         allArgs[1] = methAddr;
         allArgs[2] = receiver;
+        // -0 not possible so if closure exists we are negative and we subtract one to get real arg count.
         allArgs[3] = argsCount;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";

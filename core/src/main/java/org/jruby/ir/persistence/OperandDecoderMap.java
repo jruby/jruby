@@ -74,7 +74,11 @@ class OperandDecoderMap {
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.getCurrentScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
-            case FIXNUM: return new Fixnum(d.decodeLong());
+            case FIXNUM: {
+                long v = d.decodeLong();
+                System.out.println("V: " + v);
+                return new Fixnum(v);
+            }
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();

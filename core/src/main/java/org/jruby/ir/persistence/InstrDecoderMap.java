@@ -259,7 +259,8 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand receiver = d.decodeOperand();
         Fixnum argsCount = (Fixnum) d.decodeOperand();
         boolean hasClosureArg = argsCount.value < 0;
-        int argsLength = Math.abs((int) argsCount.value);
+        int argsLength = (int) (hasClosureArg ? (-1 * (argsCount.value + 1)) : argsCount.value);
+        System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
         Operand[] args = new Operand[argsLength];
 
         for (int i = 0; i < argsLength; i++) {
