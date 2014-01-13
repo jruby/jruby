@@ -22,6 +22,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.ScopeModule;
@@ -146,6 +147,13 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public boolean decodeOperandAsBoolean() {
+        Operand operand = decodeOperand();
+
+        return ((BooleanLiteral) operand).isTrue();
+    }
+    
+    @Override
     public IRScope decodeOperandAsIRScope() {
         Operand operand = decodeOperand();
 
@@ -201,7 +209,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         if (value == TRUE) return true;
         if (value == FALSE) return false;
 
-        throw new IllegalArgumentException("Value (" + ((int) value) + ") is not a boolean.");
+        throw new IllegalArgumentException("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean.");
     }
 
     @Override

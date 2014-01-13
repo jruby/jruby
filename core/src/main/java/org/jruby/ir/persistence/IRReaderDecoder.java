@@ -43,6 +43,7 @@ public interface IRReaderDecoder {
     public float decodeFloat();
 
     public Variable decodeVariable();
+    public boolean decodeOperandAsBoolean();
     public IRScope decodeOperandAsIRScope();
     public String decodeOperandAsString();
 

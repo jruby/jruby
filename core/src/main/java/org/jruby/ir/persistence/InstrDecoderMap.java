@@ -220,7 +220,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case INSTANCE_SUPER: return new InstanceSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
             case UNRESOLVED_SUPER: return new UnresolvedSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
             case SUPER_METHOD_BOUND: return new SuperMethodBoundInstr(d.decodeVariable(), d.decodeOperand());
-            case THREAD_POLL: return new ThreadPollInstr(d.decodeBoolean());
+            case THREAD_POLL: return new ThreadPollInstr(d.decodeOperandAsBoolean());
             case THROW: return new ThrowExceptionInstr(d.decodeOperand());
             case TO_ARY: return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
             case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());

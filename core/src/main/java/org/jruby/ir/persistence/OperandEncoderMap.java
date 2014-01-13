@@ -202,10 +202,13 @@ class OperandEncoderMap extends IRVisitor {
                 break; // No information to encode
         }
     }
-
+    
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
 
     @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {} // No data
 
-    @Override public void WrappedIRClosure(WrappedIRClosure scope) { encoder.encode(scope.getClosure()); }
+    @Override public void WrappedIRClosure(WrappedIRClosure scope) { 
+        encoder.encode(scope.getSelf());
+        encoder.encode(scope.getClosure()); 
+    }
 }
