@@ -14,10 +14,13 @@ import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.source.SourceManager;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyNil;
+import org.jruby.RubyKernel;
 import org.jruby.ast.Node;
 import org.jruby.ast.ArgsNode;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.parser.JRubyParser;
@@ -72,9 +75,9 @@ public class JRubyTruffleBridge {
         }
     }
 
-    public TruffleMethod truffelize(ArgsNode argsNode, Node bodyNode) {
+    public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getParser().parse(truffleContext, argsNode, bodyNode);
-        return new TruffleMethod(methodDefinitionNode.getCallTarget());
+        return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
     }
 
     public Object execute(RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
@@ -99,6 +102,10 @@ public class JRubyTruffleBridge {
     public IRubyObject toJRuby(Object object) {
         if (object instanceof NilPlaceholder) {
             return runtime.getNil();
+        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
+            return runtime.getTopSelf();
+        } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
+            return runtime.getKernel();
         } else {
             return JavaUtil.convertJavaToUsableRubyObject(runtime, object);
         }
@@ -107,9 +114,15 @@ public class JRubyTruffleBridge {
     public Object toTruffle(IRubyObject object) {
         if (object == runtime.getTopSelf()) {
             return truffleContext.getCoreLibrary().getMainObject();
-        }
-
-        if (object instanceof org.jruby.RubyFixnum) {
+        } else if (object == runtime.getKernel()) {
+            return truffleContext.getCoreLibrary().getKernelModule();
+        } else if (object instanceof RubyNil) {
+            return NilPlaceholder.INSTANCE;
+        } else if (object instanceof RubyBoolean.True) {
+            return true;
+        } else if (object instanceof RubyBoolean.False) {
+            return false;
+        } else if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
@@ -117,9 +130,11 @@ public class JRubyTruffleBridge {
             }
 
             return (int) value;
+        } else if (object instanceof org.jruby.RubyFloat) {
+            return ((org.jruby.RubyFloat) object).getDoubleValue();
+        } else {
+            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
         }
-
-        throw new UnsupportedOperationException(object.getClass().toString());
     }
 
     public void shutdown() {

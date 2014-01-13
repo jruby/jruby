@@ -22,7 +22,9 @@ public class TruffleMethod extends DynamicMethod {
 
     private final CallTarget callTarget;
 
-    public TruffleMethod(CallTarget callTarget) {
+    public TruffleMethod(DynamicMethod originalMethod, CallTarget callTarget) {
+        super(originalMethod.getImplementationClass(), originalMethod.getVisibility(), originalMethod.getCallConfig(), originalMethod.getName());
+
         assert callTarget != null;
 
         this.callTarget = callTarget;

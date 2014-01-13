@@ -26,11 +26,11 @@ public class TruffelizeKernel {
     @JRubyMethod(module = true, rest = true)
     public static IRubyObject truffelize(IRubyObject self, IRubyObject[] args) {
         for (IRubyObject arg : args) {
-            if (!(arg instanceof RubyString || arg instanceof RubySymbol)) {
-                throw new UnsupportedOperationException(arg.getClass().toString());
+            if (self == self.getRuntime().getTopSelf()) {
+                TruffelizeLibrary.truffelize(self.getRuntime().getObject(), arg.asJavaString());
+            } else {
+                TruffelizeLibrary.truffelize(self.getSingletonClass(), arg.asJavaString());
             }
-
-            TruffelizeLibrary.truffelize(self.getSingletonClass(), arg.asJavaString());
         }
 
         return self;

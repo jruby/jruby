@@ -13,8 +13,8 @@ import org.jruby.RubyString;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 
 public class TruffelizeModule {
 
@@ -23,14 +23,12 @@ public class TruffelizeModule {
         final RubyModule module = (RubyModule) self;
 
         for (IRubyObject arg : args) {
-            if (!(arg instanceof RubyString || arg instanceof RubySymbol)) {
-                throw new UnsupportedOperationException(arg.getClass().toString());
-            }
+            final String methodName = arg.asJavaString();
 
-            TruffelizeLibrary.truffelize(module, arg.asJavaString());
+            TruffelizeLibrary.truffelize(module, methodName);
 
-            if (!module.isSingleton()) {
-                TruffelizeLibrary.truffelize(module.getSingletonClass(), arg.asJavaString());
+            if (!(module.getSingletonClass().searchMethod(methodName) instanceof UndefinedMethod)) {
+                TruffelizeLibrary.truffelize(module.getSingletonClass(), methodName);
             }
         }
 

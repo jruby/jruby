@@ -15,6 +15,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.internal.runtime.methods.MethodWithNodes;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.load.Library;
 import org.jruby.truffle.TruffleMethod;
 
@@ -32,22 +33,26 @@ public class TruffelizeLibrary implements Library {
     public static void truffelize(RubyModule module, String name) {
         final DynamicMethod method = module.searchMethod(name);
 
-        if (method == null) {
-            throw new UnsupportedOperationException("method " + name + " not found");
+        if (method instanceof UndefinedMethod) {
+            throw module.getRuntime().newRuntimeError("method not found");
+        }
+
+        if (method instanceof TruffleMethod) {
+            throw module.getRuntime().newRuntimeError("already truffelized");
         }
 
         if (!(method instanceof MethodWithNodes)) {
-            throw new UnsupportedOperationException("can only truffelize methods where JRuby can provide the nodes for us");
+            throw module.getRuntime().newRuntimeError("can only truffelize methods where JRuby can provide the nodes for us");
         }
 
         final MethodWithNodes methodWithNodes = (MethodWithNodes) method;
         final MethodNodes methodNodes = methodWithNodes.getMethodNodes();
 
         if (methodNodes == null || methodNodes.getArgsNode() == null || methodNodes.getBodyNode() == null) {
-            throw new UnsupportedOperationException("can only truffelize methods where JRuby can provide the nodes for us");
+            throw module.getRuntime().newRuntimeError("can only truffelize methods where JRuby can provide the nodes for us");
         }
 
-        final TruffleMethod truffleMethod = module.getRuntime().getTruffleBridge().truffelize(methodNodes.getArgsNode(), methodNodes.getBodyNode());
+        final TruffleMethod truffleMethod = module.getRuntime().getTruffleBridge().truffelize(method, methodNodes.getArgsNode(), methodNodes.getBodyNode());
 
         module.addMethod(name, truffleMethod);
     }
