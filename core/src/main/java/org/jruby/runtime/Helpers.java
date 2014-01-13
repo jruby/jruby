@@ -2703,7 +2703,9 @@ public class Helpers {
             builder.append("b").append(argsNode.getBlock().getName());
         }
 
-        if (!added) builder.append("NONE");
+        if (!added) {
+          return "NONE";
+        }
 
         return builder.toString();
     }
