@@ -41,10 +41,12 @@ import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
 import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.UndefinedValue;
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
@@ -74,11 +76,7 @@ class OperandDecoderMap {
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.getCurrentScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
-            case FIXNUM: {
-                long v = d.decodeLong();
-                System.out.println("V: " + v);
-                return new Fixnum(v);
-            }
+            case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
@@ -113,7 +111,8 @@ class OperandDecoderMap {
 
         if (encodingString.equals("")) return new CompoundString(d.decodeOperandList());
 
-        return new CompoundString(d.decodeOperandList(), Encoding.load(encodingString));
+        // FIXME: yuck
+        return new CompoundString(d.decodeOperandList(), NonIRObjectFactory.createEncoding(encodingString));
     }
 
     private Operand decodeHash() {
@@ -177,8 +176,10 @@ class OperandDecoderMap {
             case CURRENT_SCOPE:
                 return TemporaryCurrentScopeVariable.CURRENT_SCOPE;
             case FLOAT:
-            case LOCAL:
                 return new TemporaryFloatVariable(d.decodeInt());
+            case LOCAL:
+                return new TemporaryLocalVariable(d.decodeInt());
+                
         }
 
         return null;
