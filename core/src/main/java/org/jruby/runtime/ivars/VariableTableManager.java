@@ -465,12 +465,22 @@ public class VariableTableManager {
      * uses of id/object_id will only ever need it to be a unique identifier,
      * and the id2ref behavior provided by ObjectSpace is considered internal
      * and not generally supported.
+     *
+     * Note that this method does not need to be synchronized, since it is
+     * only called from #getObjectId, which synchronizes against the target
+     * object. The accessor is already present, and variable accesses are
+     * thread-safe (albeit not atomic, which necessitates the synchronization
+     * in getObjectId).
+     *
+     * Synchronization here ends up being a bottleneck for every object
+     * created from the class that contains this VariableTableManager. See
+     * GH #1400.
      * 
      * @param objectIdAccessor The variable accessor to use for storing the
      * generated object ID
      * @return The generated object ID
      */
-    protected synchronized long initObjectId(RubyBasicObject self, VariableAccessor objectIdAccessor) {
+    private long initObjectId(RubyBasicObject self, VariableAccessor objectIdAccessor) {
         Ruby runtime = self.getRuntime();
         long id;
         
