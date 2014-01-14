@@ -136,7 +136,7 @@ public class IRStaticScope extends StaticScope {
 
     @Override
     public int getNumberOfVariables() {
-        return (irScope == null) ? super.getNumberOfVariables() : irScope.getUsedVariablesCount();
+        return irScope == null ? super.getNumberOfVariables() : irScope.getUsedVariablesCount();
     }
 
     @Override
