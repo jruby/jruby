@@ -1869,6 +1869,30 @@ public class RubyHash extends RubyObject implements Map {
         return clone;
     }
 
+    /**
+     * A lightweight dup for internal use that does not dispatch to initialize_copy nor rehash the keys. Intended for
+     * use in dup'ing keyword args for processing.
+     *
+     * @param context
+     * @return
+     */
+    public RubyHash dupFast(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        RubyHash dup = new RubyHash(runtime, getMetaClass(), this);
+
+        dup.setComparedByIdentity(this.isComparedByIdentity());
+
+        dup.ifNone = this.ifNone;
+
+        if ((this.flags & PROCDEFAULT_HASH_F) != 0) {
+            dup.flags |= PROCDEFAULT_HASH_F;
+        } else {
+            dup.flags &= ~PROCDEFAULT_HASH_F;
+        }
+
+        return dup;
+    }
+
     public boolean hasDefaultProc() {
         return (flags & PROCDEFAULT_HASH_F) != 0;
     }
