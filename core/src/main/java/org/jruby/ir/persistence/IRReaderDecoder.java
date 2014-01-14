@@ -44,6 +44,8 @@ public interface IRReaderDecoder {
 
     public Variable decodeVariable();
     public boolean decodeOperandAsBoolean();
+    public int decodeOperandAsInt();
+    public long decodeOperandAsLong();
     public IRScope decodeOperandAsIRScope();
     public String decodeOperandAsString();
 

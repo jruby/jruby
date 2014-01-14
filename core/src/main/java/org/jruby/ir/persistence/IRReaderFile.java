@@ -23,6 +23,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.ScopeModule;
@@ -36,7 +37,7 @@ import org.jruby.parser.StaticScope;
  * @author enebo
  */
 public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
@@ -152,6 +153,21 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
         return ((BooleanLiteral) operand).isTrue();
     }
+    
+
+    @Override
+    public int decodeOperandAsInt() {
+        Operand operand = decodeOperand();
+
+        return (int) ((Fixnum) operand).getValue();
+    }      
+
+    @Override
+    public long decodeOperandAsLong() {
+        Operand operand = decodeOperand();
+
+        return ((Fixnum) operand).getValue();
+    }    
     
     @Override
     public IRScope decodeOperandAsIRScope() {

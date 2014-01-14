@@ -89,6 +89,7 @@ import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
@@ -145,8 +146,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             case B_TRUE: return createBTrue();
             case B_UNDEF: return createBUndef();
             case CALL: return decodeCall();
-            case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
+            case CHECK_ARITY: return new CheckArityInstr(d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
             case CLASS_VAR_IS_DEFINED: return new ClassVarIsDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case CONST_MISSING: return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
@@ -178,9 +179,9 @@ class InstrDecoderMap implements IRPersistenceValues {
             case LAMBDA: return decodeLambda();
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case LINE_NUM: return decodeLineNumber();
-            case MASGN_OPT: return new OptArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
-            case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case MASGN_REST: return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case MASGN_OPT: return new OptArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
+            case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
+            case MASGN_REST: return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
             case MATCH: return new MatchInstr(d.decodeVariable(), d.decodeOperand());
             case MATCH2: return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
@@ -200,16 +201,16 @@ class InstrDecoderMap implements IRPersistenceValues {
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_GLOBAL_VAR: return new PutGlobalVarInstr(d.decodeString(), d.decodeOperand());
-            case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeOperandAsIRScope(), (IRClosure) d.decodeOperandAsIRScope());
             case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
             case RECV_EXCEPTION: return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
-            case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
-            case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
-            case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
-            case RECV_REST_ARG: return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt());
+            case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeOperandAsString(), d.decodeOperandAsInt());
+            case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeOperandAsInt());
+            case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
+            case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
+            case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr(d.decodeVariable(), (int)d.decodeOperandAsInt());
+            case RECV_REST_ARG: return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
             case RECV_SELF: return new ReceiveSelfInstr(d.decodeVariable());
             case RESCUE_EQQ: return new RescueEQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case RESTORE_ERROR_INFO: return new RestoreErrorInfoInstr(d.decodeOperand());
@@ -238,7 +239,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand op = d.decodeOperand();
         MethAddr methAddr = (MethAddr) d.decodeOperand();
 
-        int length = d.decodeInt();
+        int length = d.decodeOperandAsInt();
         Operand[] args = new Operand[length];
 
         for (int i = 0; i < length; i++) {
@@ -260,7 +261,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         Fixnum argsCount = (Fixnum) d.decodeOperand();
         boolean hasClosureArg = argsCount.value < 0;
         int argsLength = (int) (hasClosureArg ? (-1 * (argsCount.value + 1)) : argsCount.value);
-        System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        if (IRReaderFile.DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
         Operand[] args = new Operand[argsLength];
 
         for (int i = 0; i < argsLength; i++) {

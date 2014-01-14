@@ -733,11 +733,6 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
-        if (persistenceStore != null) {
-            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
-            computeScopeFlags();
-        }
-
         if (isLambda) {
             // Add a global ensure block to catch uncaught breaks
             // and throw a LocalJumpError.
@@ -760,10 +755,6 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
-        if (persistenceStore != null) {
-            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
-        }
-
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
@@ -1196,6 +1187,9 @@ public abstract class IRScope implements ParseResult {
     // This should only be used to do pre-cfg opts and to build the CFG.
     // Everyone else should use the CFG.
     public List<Instr> getInstrs() {
+        if (persistenceStore != null) {
+            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
+        }
         if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
         return instrList;
     }

@@ -15,7 +15,7 @@ import org.jruby.parser.StaticScope;
  * information.
  */
 public class IRWriter {
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
