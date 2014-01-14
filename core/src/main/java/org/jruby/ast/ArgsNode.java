@@ -496,6 +496,7 @@ public class ArgsNode extends Node {
     protected void assignKwargs(RubyHash keyValues, Ruby runtime, ThreadContext context, DynamicScope scope, IRubyObject self) {
         if (keyValues != null) {
             if (keywords != null) {
+                keyValues = keyValues.dupFast(context);
                 for (Node knode : keywords.childNodes()) {
                     KeywordArgNode kwarg = (KeywordArgNode) knode;
                     AssignableNode kasgn = (AssignableNode) kwarg.getAssignable();
