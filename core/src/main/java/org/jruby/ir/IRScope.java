@@ -1312,12 +1312,6 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public void buildCFG(List<Instr> instrList) {
-        CFG newBuild = new CFG(this);
-        newBuild.build(instrList);
-        cfg = newBuild;
-    }
-
     public void resetCFG() {
         cfg = null;
     }
