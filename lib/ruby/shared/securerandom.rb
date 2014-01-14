@@ -49,14 +49,11 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.random_bytes(n=nil)
-    # Java specific implementation
-    n = (n.nil?) ? 16 : n.to_int
-    raise ArgumentError, "non-integer argument: #{n}" unless n.is_a?(Fixnum)
-    raise ArgumentError, "negative argument: #{n}" if n < 0
-    bytes = Java::byte[n].new
-    java.security.SecureRandom.new.nextBytes(bytes)
-    String.from_java_bytes(bytes)
+    # replaced below by native version
+    raise
   end
+
+  JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
 
   # SecureRandom.hex generates a random hex string.
   #
