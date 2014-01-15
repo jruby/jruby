@@ -1953,8 +1953,7 @@ public class IRBuilder {
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = s.getNewLocalVariable(argName, 0);
                 Label l = s.getNewLabel();
-                // FIXME: add right arg decriptor
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("kwarg", argName);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("key", argName);
                 s.addInstr(new ReceiveKeywordArgInstr(av, argName, required));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
                 build(kasgn, s);
@@ -1967,8 +1966,7 @@ public class IRBuilder {
         if (keyRest != null) {
             String argName = keyRest.getName();
             Variable av = s.getNewLocalVariable(argName, 0);
-            // FIXME: add right arg decriptor
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("kwrestarg", argName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("keyrest", argName);
             s.addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
