@@ -91,6 +91,15 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         nodeDefinedNames.put(org.jruby.ast.DVarNode.class, "local-variable");
     }
 
+    private static final Set<String> debugIgnoredCalls = new HashSet<>();
+
+    static {
+        debugIgnoredCalls.add("downto");
+        debugIgnoredCalls.add("each");
+        debugIgnoredCalls.add("times");
+        debugIgnoredCalls.add("upto");
+    }
+
     /**
      * Global variables which in common usage have frame local semantics.
      */
@@ -293,7 +302,20 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument);
 
-        return new CallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+        RubyNode translated = new CallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+
+        if (Options.TRUFFLE_DEBUG_NODES.load()) {
+            final CallNode callNode = (CallNode) translated;
+            if (!debugIgnoredCalls.contains(callNode.getName())) {
+
+                final RubyProxyNode proxy = new RubyProxyNode(context, translated);
+                proxy.markAs(NodePhylum.CALL);
+                proxy.getProbeChain().appendProbe(new RubyCallProbe(context, node.getName()));
+                translated = proxy;
+            }
+        }
+
+        return translated;
     }
 
     protected class ArgumentsAndBlockTranslation {

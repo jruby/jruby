@@ -152,4 +152,8 @@ public class CallNode extends RubyNode {
         return context.makeString("method");
     }
 
+    public String getName() {
+        return name;
+    }
+
 }
