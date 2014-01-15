@@ -64,7 +64,7 @@ module JRuby
             f << "@ECHO OFF\r\n"
             f << "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
           end
-        end if File.writable?(File.join(RbConfig::CONFIG['bindir'], 'jirb.bat'))
+        end if File.writable?(File.join(RbConfig::CONFIG['bindir'], 'jruby.bash'))
       end
 
       def method_missing(name, *)
