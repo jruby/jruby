@@ -644,7 +644,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, IRubyObject self, Block block, RubyModule implClass, Visibility visibility, boolean profile)
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, int kwArgHashCount, IRubyObject self, Block block, RubyModule implClass, Visibility visibility, boolean profile)
     {
         switch(operation) {
         case PUSH_FRAME: {
@@ -675,7 +675,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             context.callThreadPoll();
             break;
         case CHECK_ARITY:
-            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs);
+            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs, kwArgHashCount);
             break;
         case LINE_NUM:
             context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -797,7 +797,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, scope, args.length, self, block, implClass, visibility, profile);
+                        processBookKeepingOp(context, instr, operation, scope, args.length, kwArgHashCount, self, block, implClass, visibility, profile);
                     }
                     break;
                 }

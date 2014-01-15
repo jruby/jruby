@@ -51,8 +51,8 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
         }
     }
 
-    public void checkArity(Ruby runtime, int numArgs) {
-        if ((numArgs < this.required) || ((this.rest == -1) && (numArgs > (this.required + this.opt)))) {
+    public void checkArity(Ruby runtime, int numArgs, int kwArgHashCount) {
+        if ((numArgs < this.required) || ((this.rest == -1) && (numArgs > (this.required + this.opt + kwArgHashCount)))) {
             Arity.raiseArgumentError(runtime, numArgs, this.required, this.required + this.opt);
         }
     }
