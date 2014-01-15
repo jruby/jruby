@@ -733,7 +733,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         int      ipc            = 0;
         Instr    instr          = null;
         Object   exception      = null;
-        int      kwArgHashCount = (scope.receivesKeywordArgs() && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
+        int      kwArgHashCount = (scope.receivesKeywordArgs() && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
         DynamicScope currDynScope = context.getCurrentScope();
 
         // Counter tpCount = null;
