@@ -18,6 +18,7 @@ import org.jruby.ir.instructions.BuildLambdaInstr;
 import org.jruby.ir.instructions.BUndefInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -56,23 +57,19 @@ import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.PopBindingInstr;
-import org.jruby.ir.instructions.PopFrameInstr;
 import org.jruby.ir.instructions.ProcessModuleBodyInstr;
 import org.jruby.ir.instructions.PushBindingInstr;
-import org.jruby.ir.instructions.PushFrameInstr;
 import org.jruby.ir.instructions.PutClassVariableInstr;
 import org.jruby.ir.instructions.PutConstInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
+import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
-import org.jruby.ir.instructions.ReceiveClosureInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RescueEQQInstr;
@@ -100,6 +97,7 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
+import org.jruby.ir.operands.Operand;
 
 /**
  *
@@ -132,7 +130,7 @@ public class InstrEncoderMap {
             case B_NIL: encodeBNilInstr((BNilInstr) instr); break;
             case B_TRUE: encodeBTrueInstr((BTrueInstr) instr); break;
             case B_UNDEF: encodeBUndefInstr((BUndefInstr) instr); break;
-            case CALL: encodeCallInstr((CallInstr) instr); break;
+            case CALL: encodeCallBaseInstr((CallInstr) instr); break;
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_IS_DEFINED: encodeClassVarIsDefinedInstr((ClassVarIsDefinedInstr) instr); break;
@@ -175,28 +173,28 @@ public class InstrEncoderMap {
             case METHOD_IS_PUBLIC: encodeMethodIsPublicInstr((MethodIsPublicInstr) instr); break;
             case METHOD_LOOKUP: encodeMethodLookupInstr((MethodLookupInstr) instr); break;
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
-            case NOP: break;
-            case NORESULT_CALL: encodeNoResultCallInstr((NoResultCallInstr) instr); break;
+            case NOP: /* no state */ break;
+            case NORESULT_CALL: encodeCallBaseInstr((NoResultCallInstr) instr); break;
             case NOT: encodeNotInstr((NotInstr) instr); break;
-            case POP_BINDING: encodePopBindingInstr((PopBindingInstr) instr); break;
-            case POP_FRAME: encodePopFrameInstr((PopFrameInstr) instr); break;
+            case POP_BINDING: /* no state */ break;
+            case POP_FRAME: /* no state */ break;
             case PROCESS_MODULE_BODY: encodeProcessModuleBodyInstr((ProcessModuleBodyInstr) instr); break;
             case PUSH_BINDING: encodePushBindingInstr((PushBindingInstr) instr); break;
-            case PUSH_FRAME: encodePushFrameInstr((PushFrameInstr) instr); break;
+            case PUSH_FRAME: /* no state */ break;
             case PUT_CONST: encodePutConstInstr((PutConstInstr) instr); break;
             case PUT_CVAR: encodePutClassVariableInstr((PutClassVariableInstr) instr); break;
             case PUT_FIELD: encodePutFieldInstr((PutFieldInstr) instr); break;
             case PUT_GLOBAL_VAR: encodePutGlobalVarInstr((PutGlobalVarInstr) instr); break;
             case RAISE_ARGUMENT_ERROR: encodeRaiseArgumentErrorInstr((RaiseArgumentErrorInstr) instr); break;
             case RECORD_END_BLOCK: encodeRecordEndBlockInstr((RecordEndBlockInstr) instr); break;
-            case RECV_CLOSURE: encodeReceiveClosureInstr((ReceiveClosureInstr) instr); break;
+            case RECV_CLOSURE: /* no state */ break;
             case RECV_KW_ARG: encodeReceiveKeywordArgInstr((ReceiveKeywordArgInstr) instr); break;
             case RECV_KW_REST_ARG: encodeReceiveKeywordRestArgInstr((ReceiveKeywordRestArgInstr) instr); break;
             case RECV_OPT_ARG: encodeReceivePostReqdArgInstr((ReceivePostReqdArgInstr) instr); break;
             case RECV_POST_REQD_ARG: encodeReceivePostReqdArgInstr((ReceivePostReqdArgInstr) instr); break;
             case RECV_PRE_REQD_ARG: encodeReceivePreReqdArgInstr((ReceivePreReqdArgInstr) instr); break;
             case RECV_REST_ARG: encodeReceiveRestArgInstr((ReceiveRestArgInstr) instr); break;
-            case RECV_SELF: encodeReceiveSelfInstr((ReceiveSelfInstr) instr); break;
+            case RECV_SELF: /* no state */ break;
             case RESCUE_EQQ: encodeRescueEQQInstr((RescueEQQInstr) instr); break;
             case RESTORE_ERROR_INFO: encodeRestoreErrorInfoInstr((RestoreErrorInfoInstr) instr); break;
             case RETURN: encodeReturnInstr((ReturnInstr) instr); break;
@@ -222,7 +220,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeAttrAssignInstr(AttrAssignInstr instr) {
-        encodeNoResultCallInstr(instr);
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeBEQInstr(BEQInstr instr) {
@@ -269,10 +267,6 @@ public class InstrEncoderMap {
         encodeOneOperandBranchInstr(instr);
     }
 
-    private void encodeCallInstr(CallInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     private void encodeCheckArgsArrayArityInstr(CheckArgsArrayArityInstr instr) {
         e.encode(instr.getArgsArray());
         e.encode(instr.required);
@@ -296,7 +290,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeConstMissingInstr(ConstMissingInstr instr) {
-        encodeCallInstr(instr);
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeCopyInstr(CopyInstr instr) {
@@ -396,6 +390,7 @@ public class InstrEncoderMap {
         e.encode(instr.getLabel());
     }
 
+    // FIXME: If these always occur in the same source file thet live in we do not need to encode filename
     private void encodeBuildLambdaInstr(BuildLambdaInstr instr) {
         e.encode(instr.getLambdaBodyName());
         e.encode(instr.getPosition().getFile());
@@ -454,151 +449,156 @@ public class InstrEncoderMap {
     }
 
     private void encodeMethodLookupInstr(MethodLookupInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getMethodHandle());
     }
 
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getMethodToReturnFrom());
     }
 
-    private void encodeNoResultCallInstr(NoResultCallInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeCallBaseInstr(CallBase instr) {
+        boolean hasClosure = instr.getClosureArg(null) != null;
+        
+        e.encode(instr.getCallType().ordinal());
+        e.encode(instr.getMethodAddr().getName());
+        e.encode(instr.getReceiver());
+        e.encode(calculateArity(instr.getCallArgs(), hasClosure));
+        
+        for (Operand arg: instr.getCallArgs()) {
+            e.encode(arg);
+        }
+        
+        if (hasClosure) e.encode(instr.getClosureArg(null));
     }
 
     private void encodeNotInstr(NotInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void encodePopBindingInstr(PopBindingInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void encodePopFrameInstr(PopFrameInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArg());
     }
 
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getModuleBody());
     }
 
     private void encodePushBindingInstr(PushBindingInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void encodePushFrameInstr(PushFrameInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getScope());
     }
 
     private void encodePutConstInstr(PutConstInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodePutInstr(instr);
     }
 
     private void encodePutClassVariableInstr(PutClassVariableInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodePutInstr(instr);
     }
 
     private void encodePutFieldInstr(PutFieldInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodePutInstr(instr);
     }
 
     private void encodePutGlobalVarInstr(PutGlobalVarInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getTarget());
+        e.encode(instr.getValue());
     }
 
     private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getRequired());
+        e.encode(instr.getOpt());
+        e.encode(instr.getRest());
+        e.encode(instr.getNumArgs());
     }
 
     private void encodeRecordEndBlockInstr(RecordEndBlockInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void encodeReceiveClosureInstr(ReceiveClosureInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getDeclaringScope());
+        e.encode(instr.getEndBlockClosure());
     }
 
     private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.argName);
+        e.encode(instr.numUsedArgs);
     }
 
     private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.numUsedArgs);
     }
 
     private void encodeReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArgIndex());
+        e.encode(instr.preReqdArgsCount);
+        e.encode(instr.postReqdArgsCount);
     }
 
     private void encodeReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArgIndex());
     }
 
     private void encodeReceiveRestArgInstr(ReceiveRestArgInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void encodeReceiveSelfInstr(ReceiveSelfInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.numUsedArgs);
+        e.encode(instr.getArgIndex());
     }
 
     private void encodeRescueEQQInstr(RescueEQQInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArg1());
+        e.encode(instr.getArg2());
     }
 
     private void encodeRestoreErrorInfoInstr(RestoreErrorInfoInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArg());
     }
 
     private void encodeReturnInstr(ReturnInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getReturnValue());
     }
 
     private void encodeSearchConstInstr(SearchConstInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getConstName());
+        e.encode(instr.getStartingScope());
+        e.encode(instr.isNoPrivateConsts());
     }
 
     private void encodeSetReturnAddressInstr(SetReturnAddressInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getReturnAddr());
     }
 
     private void encodeClassSuperInstr(ClassSuperInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeInstanceSuperInstr(InstanceSuperInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeUnresolvedSuperInstr(UnresolvedSuperInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getObject());
     }
 
     private void encodeThreadPollInstr(ThreadPollInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.onBackEdge);
     }
 
     private void encodeThrowExceptionInstr(ThrowExceptionInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getExceptionArg());
     }
 
     private void encodeToAryInstr(ToAryInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getArrayArg());
     }
 
     private void encodeUndefMethodInstr(UndefMethodInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getMethodName());
     }
 
     private void encodeYieldInstr(YieldInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        e.encode(instr.getBlockArg());
+        e.encode(instr.getYieldArg());
+        e.encode(instr.isUnwrapArray());
     }
 
     private void encodeZSuperInstr(ZSuperInstr instr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        encodeCallBaseInstr(instr);
     }
 
     private void encodeTwoOperandBranchInstr(TwoOperandBranchInstr instr) {
@@ -620,5 +620,16 @@ public class InstrEncoderMap {
     private void encodeGetInstr(GetInstr instr) {
         e.encode(instr.getSource());
         e.encode(instr.getRef());
+    }
+
+    private void encodePutInstr(PutInstr instr) {
+        e.encode(instr.getTarget());
+        e.encode(instr.getRef());
+        e.encode(instr.getValue());
+    }
+ 
+    // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
+    private int calculateArity(Operand[] arguments, boolean hasClosure) {
+        return hasClosure ? -1*(arguments.length + 1) : arguments.length;
     }
 }
