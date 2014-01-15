@@ -552,7 +552,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         switch(operation) {
         case RECV_PRE_REQD_ARG:
             int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
-            result = ((argIndex + kwArgHashCount) < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+            result = argIndex < args.length ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_CLOSURE:

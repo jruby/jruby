@@ -35,15 +35,10 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
-        if (kwArgHashCount == 0) {
+        if (kwArgHashCount == 0 || numUsedArgs == args.length) {
             return UndefinedValue.UNDEFINED;
         } else {
             RubyHash lastArg = (RubyHash)args[args.length - 1];
-            if (numUsedArgs == args.length) {
-                /* throw ArgumentError */
-                Arity.raiseArgumentError(context.getRuntime(), args.length-1, numUsedArgs, -1);
-            }
-
             // If the key exists in the hash, delete and return it.
             RubySymbol argSym = context.getRuntime().newSymbol(argName);
             if (lastArg.fastARef(argSym) != null) {

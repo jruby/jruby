@@ -29,14 +29,9 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
-        if (kwArgHashCount == 0) {
+        if (kwArgHashCount == 0 || numUsedArgs == args.length) {
             return RubyHash.newSmallHash(context.getRuntime());
         } else {
-            if (numUsedArgs == args.length) {
-                /* throw ArgumentError */
-                Arity.raiseArgumentError(context.getRuntime(), args.length-1, numUsedArgs, -1);
-            }
-
             return args[args.length - 1];
         }
     }
