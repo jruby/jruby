@@ -4,10 +4,11 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
  *
- * @author enebo
  */
-public class TemporaryCurrentModuleVariable extends TemporaryVariable {
-    public static TemporaryVariable CURRENT_MODULE = new TemporaryCurrentModuleVariable();
+public class TemporaryCurrentModuleVariable extends TemporaryLocalVariable {
+    public TemporaryCurrentModuleVariable(int offset) {
+        super(offset);
+    }
 
     @Override
     public TemporaryVariableType getType() {

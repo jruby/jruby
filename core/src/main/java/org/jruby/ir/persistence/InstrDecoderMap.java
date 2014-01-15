@@ -171,7 +171,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case GLOBAL_IS_DEFINED: return new GlobalIsDefinedInstr(d.decodeVariable(), (StringLiteral) d.decodeOperand());
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
             case HAS_INSTANCE_VAR: return new HasInstanceVarInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+            case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeOperandAsBoolean());
             case IS_METHOD_BOUND: return new IsMethodBoundInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
             case JUMP_INDIRECT: return new JumpIndirectInstr(d.decodeVariable());
@@ -204,7 +204,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeOperandAsIRScope(), (IRClosure) d.decodeOperandAsIRScope());
             case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
-            case RECV_EXCEPTION: return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
             case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeOperandAsString(), d.decodeOperandAsInt());
             case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeOperandAsInt());
             case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeOperandAsInt(), d.decodeOperandAsInt(), d.decodeOperandAsInt());
@@ -225,7 +224,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case THROW: return new ThrowExceptionInstr(d.decodeOperand());
             case TO_ARY: return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
             case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
-            case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeOperandAsBoolean());
             case ZSUPER: return new ZSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
         }
         } catch (Exception e) {

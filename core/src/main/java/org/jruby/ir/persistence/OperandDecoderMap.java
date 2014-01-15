@@ -3,7 +3,6 @@ package org.jruby.ir.persistence;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import org.jcodings.Encoding;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.Array;
@@ -172,14 +171,13 @@ class OperandDecoderMap {
             case CLOSURE:
                 return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
             case CURRENT_MODULE:
-                return TemporaryCurrentModuleVariable.CURRENT_MODULE;
+                return new TemporaryCurrentModuleVariable(d.decodeInt());
             case CURRENT_SCOPE:
-                return TemporaryCurrentScopeVariable.CURRENT_SCOPE;
+                return new TemporaryCurrentScopeVariable(d.decodeInt());
             case FLOAT:
                 return new TemporaryFloatVariable(d.decodeInt());
             case LOCAL:
                 return new TemporaryLocalVariable(d.decodeInt());
-                
         }
 
         return null;

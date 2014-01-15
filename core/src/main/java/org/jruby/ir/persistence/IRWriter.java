@@ -71,6 +71,8 @@ public class IRWriter {
         file.encode(scope.getName());
         if (DEBUG) System.out.println("NAME = " + scope.getLineNumber());
         file.encode(scope.getLineNumber());
+        file.encode(scope.getTemporaryVariablesCount());
+        file.encode(scope.getLocalVariablesCount());
 
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 

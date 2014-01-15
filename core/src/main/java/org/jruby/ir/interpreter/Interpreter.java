@@ -504,9 +504,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (resultVar instanceof TemporaryVariable) {
             switch (((TemporaryVariable) resultVar).getType()) {
                 case LOCAL:
-                    temp[((TemporaryLocalVariable)resultVar).offset] = result;
                 case CURRENT_MODULE:
                 case CURRENT_SCOPE:
+                    temp[((TemporaryLocalVariable)resultVar).offset] = result;
+                    break;
             }
         } else {
             LocalVariable lv = (LocalVariable)resultVar;

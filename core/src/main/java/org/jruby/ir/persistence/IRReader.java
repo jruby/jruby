@@ -53,6 +53,8 @@ public class IRReader {
         if (DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
         if (DEBUG) System.out.println("LINE = " + line);
+        int tempVarsCount = decoder.decodeInt();
+        int localVarsCount = decoder.decodeInt();
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
         int arity = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
@@ -60,6 +62,9 @@ public class IRReader {
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
         IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
+        
+        scope.setTemporaryVariableCount(tempVarsCount);
+        scope.setLocalVariablesCount(localVarsCount);
 
         decoder.addScope(scope);
 

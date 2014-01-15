@@ -5,9 +5,11 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 /**
  * 
  */
-public class TemporaryCurrentScopeVariable extends TemporaryVariable {
-    public static TemporaryVariable CURRENT_SCOPE = new TemporaryCurrentScopeVariable();
-
+public class TemporaryCurrentScopeVariable extends TemporaryLocalVariable {
+    public TemporaryCurrentScopeVariable(int offset) {
+        super(offset);
+    }
+    
     @Override
     public TemporaryVariableType getType() {
         return TemporaryVariableType.CURRENT_SCOPE;

@@ -147,6 +147,8 @@ public abstract class IRScope implements ParseResult {
 
     private int instructionsOffsetInfoPersistenceBuffer = -1;
     private IRReaderDecoder persistenceStore = null;
+    private TemporaryLocalVariable currentModuleVariable;
+    private TemporaryLocalVariable currentScopeVariable;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -617,11 +619,14 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG buildCFG() {
-        cfg = new CFG(this);
-        cfg.build(instrList);
+        CFG newCFG = new CFG(this);
+        newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
         this.instrList = null;
-        return cfg;
+        
+        setCFG(newCFG);
+        
+        return newCFG;
     }
 
     protected void setCFG(CFG cfg) {
@@ -1021,13 +1026,21 @@ public abstract class IRScope implements ParseResult {
         // -> searching a constant in the inheritance hierarchy
         // -> searching a super-method in the inheritance hierarchy
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
-        return TemporaryCurrentModuleVariable.CURRENT_MODULE;
+        if (currentModuleVariable == null) {
+            temporaryVariableIndex++;
+            currentModuleVariable = new TemporaryCurrentModuleVariable(temporaryVariableIndex);
+        }
+        return currentModuleVariable;
     }
 
     public Variable getCurrentScopeVariable() {
         // SSS: Used in only 1 case in generated IR:
         // -> searching a constant in the lexical scope hierarchy
-        return TemporaryCurrentScopeVariable.CURRENT_SCOPE;
+        if (currentScopeVariable == null) {
+            temporaryVariableIndex++;
+            currentScopeVariable = new TemporaryCurrentScopeVariable(temporaryVariableIndex);
+        }
+        return currentScopeVariable;
     }
 
     public abstract LocalVariable getImplicitBlockArg();
@@ -1091,6 +1104,10 @@ public abstract class IRScope implements ParseResult {
         
         throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
     }
+    
+    public void setTemporaryVariableCount(int count) {
+        temporaryVariableIndex = count + 1;
+    }
 
     public void resetTemporaryVariables() {
         temporaryVariableIndex = -1;
@@ -1121,6 +1138,10 @@ public abstract class IRScope implements ParseResult {
 
     public int getLocalVariablesCount() {
         return localVars.nextSlot;
+    }
+    
+    public void setLocalVariablesCount(int newCount) {
+        localVars.nextSlot = newCount;
     }
 
     public int getUsedVariablesCount() {
