@@ -194,12 +194,10 @@ class OperandEncoderMap extends IRVisitor {
                 
             case FLOAT:
             case LOCAL:
-                encoder.encode(((TemporaryLocalVariable) variable).getOffset());
-                break;
-                
             case CURRENT_MODULE:
             case CURRENT_SCOPE:
-                break; // No information to encode
+                encoder.encode(((TemporaryLocalVariable) variable).getOffset());
+                break;
         }
     }
     
