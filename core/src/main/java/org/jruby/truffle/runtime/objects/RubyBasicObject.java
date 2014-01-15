@@ -57,7 +57,7 @@ public class RubyBasicObject {
 
     protected Object[] objectStorageLocations;
 
-    private final boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
+    private static final boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
 
     public RubyBasicObject(RubyClass rubyClass) {
         if (rubyClass != null) {
