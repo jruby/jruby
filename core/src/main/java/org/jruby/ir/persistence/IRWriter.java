@@ -2,6 +2,7 @@ package org.jruby.ir.persistence;
 
 import java.io.IOException;
 import java.util.List;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -15,7 +16,6 @@ import org.jruby.parser.StaticScope;
  * information.
  */
 public class IRWriter {
-    private static final boolean DEBUG = true;
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
@@ -63,13 +63,13 @@ public class IRWriter {
     // other scopes: {type,name,linenumber,lexical_parent_name, lexical_parent_line,{static_scope}, instrs_offset}
     // for non-for scopes is_for,arity, and arg_type will be 0.
     private static void persistScopeHeader(IRWriterEncoder file, IRScope scope) {
-        if (DEBUG) System.out.println("Writing Scope Header");
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Writing Scope Header");
         file.startEncodingScopeHeader(scope);
-        if (DEBUG) System.out.println("IRScopeType = " + scope.getScopeType());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + scope.getScopeType());
         file.encode(scope.getScopeType()); // type is enum of kind of scope
-        if (DEBUG) System.out.println("NAME = " + scope.getName());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getName());
         file.encode(scope.getName());
-        if (DEBUG) System.out.println("NAME = " + scope.getLineNumber());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getLineNumber());
         file.encode(scope.getLineNumber());
         file.encode(scope.getTemporaryVariablesCount());
         file.encode(scope.getLocalVariablesCount());

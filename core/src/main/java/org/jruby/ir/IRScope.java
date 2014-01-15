@@ -357,7 +357,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private final void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_PERSISTENCE) {
+        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
             lexicalChildren = new ArrayList<IRScope>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }

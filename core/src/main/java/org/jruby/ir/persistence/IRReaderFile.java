@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -37,8 +38,6 @@ import org.jruby.parser.StaticScope;
  * @author enebo
  */
 public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
-    public static final boolean DEBUG = false;
-
     private ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
@@ -48,7 +47,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public IRReaderFile(IRManager manager, File file) {
         try {
             byte[] bytes = new byte[(int)file.length()];
-            if (DEBUG) System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             FileInputStream fis = new FileInputStream(file);
             FileChannel fc = fis.getChannel();
@@ -105,7 +104,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         vars = new HashMap<String, Operand>();
         buf.position(offset);
         int numberOfInstructions = decodeInt();
-        if (DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
         List<Instr> instrs = new ArrayList(numberOfInstructions);
 
         for (int i = 0; i < numberOfInstructions; i++) {
@@ -138,7 +137,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operation decodeOperation() {
         Operation operation = Operation.fromOrdinal(decodeInt());
-        if (DEBUG) System.out.println("INSTR OP: " + operation);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("INSTR OP: " + operation);
         return operation;
     }
 
@@ -203,11 +202,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
-        if (DEBUG) System.out.println("OPERAND LIST of size: " + size);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OPERAND LIST of size: " + size);
         List<Operand> list = new ArrayList<Operand>(size);
 
         for (int i = 0; i < size; i++) {
-            if (DEBUG) System.out.println("OPERAND #" + i);
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OPERAND #" + i);
             list.add(decodeOperand());
         }
 

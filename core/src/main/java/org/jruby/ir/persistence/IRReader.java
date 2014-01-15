@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import java.io.IOException;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -26,16 +27,15 @@ import org.jruby.runtime.Arity;
  * @author enebo
  */
 public class IRReader {
-    private static boolean DEBUG = false;
     public static IRScope load(IRManager manager, IRReaderDecoder file) throws IOException {
         int headersOffset = file.decodeIntRaw();
-        if (DEBUG) System.out.println("header_offset = " + headersOffset);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
         int poolOffset = file.decodeIntRaw();
-        if (DEBUG) System.out.println("pool_offset = " + headersOffset);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("pool_offset = " + headersOffset);
 
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
-        if (DEBUG) System.out.println("scopes to read = " + scopesToRead);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
 
         IRScope script = decodeScopeHeader(manager, file);
         for (int i = 1; i < scopesToRead; i++) {
@@ -46,13 +46,13 @@ public class IRReader {
     }
 
     private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
-        if (DEBUG) System.out.println("DECODING SCOPE HEADER");
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
-        if (DEBUG) System.out.println("IRScopeType = " + type);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
         String name = decoder.decodeString();
-        if (DEBUG) System.out.println("NAME = " + name);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
-        if (DEBUG) System.out.println("LINE = " + line);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         int localVarsCount = decoder.decodeInt();
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;

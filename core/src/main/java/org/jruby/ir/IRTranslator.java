@@ -26,7 +26,7 @@ public abstract class IRTranslator<R, S> {
         } else if (result instanceof RootNode) { // Need to perform create IR from AST
             scope = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) result);
 
-            if (RubyInstanceConfig.IR_PERSISTENCE) {
+            if (RubyInstanceConfig.IR_WRITING) {
                 try {
                     IRWriter.persist(new IRWriterFile(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
 //                    FileIO.writeToFile(IRFileExpert.getIRPersistedFile(scope.getFileName()),

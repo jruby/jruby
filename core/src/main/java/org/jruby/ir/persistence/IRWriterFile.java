@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -28,7 +29,6 @@ import org.jruby.parser.StaticScope;
  * Represents a file which is persisted to storage.
  */
 public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
-    private static final boolean DEBUG = false;
     private static final int VERSION = 0;
 
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
@@ -146,14 +146,14 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void encode(Instr instr) {
         encode(instr.getOperation());
-        if (DEBUG) System.out.println("ENCODING : " + instr);
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("ENCODING : " + instr);
         if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
 
         Operand[] operands = instr.getOperands();
 //        if (!(instr instanceof FixedArityInstr)) encode(operands.length);
 
         for (Operand operand: operands) {
-            if (DEBUG) System.out.println("ENCODING OPER: " + operand);
+            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("ENCODING OPER: " + operand);
             encode(operand);
         }
     }
