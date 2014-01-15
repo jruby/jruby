@@ -3,6 +3,7 @@ package org.jruby.ir.persistence;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.Array;
@@ -62,7 +63,7 @@ class OperandDecoderMap {
     }
 
     public Operand decode(OperandType type) {
-        if (IRReaderFile.DEBUG) System.out.println("Decoding operand " + type);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Decoding operand " + type);
 
         switch (type) {
             case ARRAY: return new Array(d.decodeOperandList());

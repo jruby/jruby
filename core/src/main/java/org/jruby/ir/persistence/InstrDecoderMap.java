@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -249,18 +250,18 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeCall() {
-        if (IRReaderFile.DEBUG) System.out.println("decoding call");
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call");
         Variable result = d.decodeVariable();
-        if (IRReaderFile.DEBUG) System.out.println("decoding call, result:  "+ result);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
         Fixnum callTypeOrdinal = (Fixnum) d.decodeOperand();
-        if (IRReaderFile.DEBUG) System.out.println("decoding call, result:  "+ callTypeOrdinal);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ callTypeOrdinal);
         MethAddr methAddr = (MethAddr) d.decodeOperand();
-        if (IRReaderFile.DEBUG) System.out.println("decoding call, methaddr:  "+ methAddr);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
         Fixnum argsCount = (Fixnum) d.decodeOperand();
         boolean hasClosureArg = argsCount.value < 0;
         int argsLength = (int) (hasClosureArg ? (-1 * (argsCount.value + 1)) : argsCount.value);
-        if (IRReaderFile.DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
         Operand[] args = new Operand[argsLength];
 
         for (int i = 0; i < argsLength; i++) {
@@ -293,18 +294,18 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeCopy() {
         Variable variable = d.decodeVariable();
-        if (IRReaderFile.DEBUG) System.out.println("VARIABLE: " + variable);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("VARIABLE: " + variable);
         Operand value = d.decodeOperand();
-        if (IRReaderFile.DEBUG) System.out.println("VALUE: " + value);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("VALUE: " + value);
 
         return new CopyInstr(variable, value);
     }
 
     private Instr decodeLineNumber() {
         ScopeModule scope = (ScopeModule) d.decodeOperand();
-        if (IRReaderFile.DEBUG) System.out.println("IR Scope " + scope);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IR Scope " + scope);
         int lineNumber = (int) ((Fixnum)d.decodeOperand()).value;
-        if (IRReaderFile.DEBUG) System.out.println("On Line Number " + lineNumber);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("On Line Number " + lineNumber);
         return new LineNumberInstr(scope.getScope(), lineNumber);
     }
 
