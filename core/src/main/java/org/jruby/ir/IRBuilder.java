@@ -1955,7 +1955,7 @@ public class IRBuilder {
                 Label l = s.getNewLabel();
                 // FIXME: add right arg decriptor
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("kwarg", argName);
-                s.addInstr(new ReceiveKeywordArgInstr(av, required));
+                s.addInstr(new ReceiveKeywordArgInstr(av, argName, required));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
                 build(kasgn, s);
                 s.addInstr(new LabelInstr(l));
