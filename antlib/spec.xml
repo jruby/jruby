@@ -77,6 +77,24 @@
         <rake task="spec:ir"/>
     </target>
 
+    <!-- Doesn't use the same spec infrastructure as the rest of the system at
+         the moment as Truffle is still a bit too tender for that.-->
+    <target name="spec:truffle" depends="bootstrap">
+        <exec executable="bin/jruby" failonerror="true">
+            <arg value="-X+T"/>
+            <arg value="spec/mspec/bin/mspec"/>
+            <arg value="run"/>
+            <arg value="-t"/>
+            <arg value="bin/jruby"/>
+            <arg value="-T"/>
+            <arg value="-X+T"/>
+            <arg value="--config"/>
+            <arg value="spec/truffle/truffle.mspec"/>
+            <arg value="--excl-tag"/>
+            <arg value="fails"/>
+        </exec>
+    </target>
+
     <!-- Old compatibility targets which call to newer Rake-based ones -->
     <target name="spec" depends="spec:ci_18"/>
     <target name="spec-ci" depends="spec:ci_18"/>

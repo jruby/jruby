@@ -13,6 +13,7 @@ env:
     - TARGET='spec:ci_interpreted_travis'
     - TARGET='spec:ci_interpreted_ir_travis'
     - TARGET='spec:ir'
+    - TARGET='spec:truffle'
     - TARGET='test-dist'
 
 matrix:

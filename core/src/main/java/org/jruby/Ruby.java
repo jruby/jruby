@@ -1220,7 +1220,9 @@ public final class Ruby {
         }
         
         // everything booted, so SizedQueue should be available; set up root fiber
-        ThreadFiber.initRootFiber(tc);
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            ThreadFiber.initRootFiber(tc);
+        }
         
         if(config.isProfiling()) {
             // additional twiddling for profiled mode

@@ -1,11 +1,11 @@
 class MSpecScript
 
   set :language, [
-    "../ruby/language"
+    "spec/ruby/language"
   ]
 
   set :tags_patterns, [
-                        [%r(^.*/language/),     'tags/language/'],
+                        [%r(^.*/language/),     'spec/truffle/tags/language/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 
