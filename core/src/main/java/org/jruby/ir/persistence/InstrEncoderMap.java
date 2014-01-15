@@ -30,7 +30,6 @@ import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GVarAliasInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
@@ -38,6 +37,7 @@ import org.jruby.ir.instructions.GetClassVariableInstr;
 import org.jruby.ir.instructions.GetEncodingInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
+import org.jruby.ir.instructions.GetInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
@@ -54,6 +54,7 @@ import org.jruby.ir.instructions.MethodLookupInstr;
 import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NotInstr;
+import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.PopBindingInstr;
 import org.jruby.ir.instructions.PopFrameInstr;
@@ -76,6 +77,7 @@ import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
@@ -83,15 +85,14 @@ import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.instructions.TwoOperandBranchInstr;
 import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
-import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
-import org.jruby.ir.instructions.defined.GetBackrefInstr;
+import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
-import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
 import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
@@ -113,11 +114,14 @@ public class InstrEncoderMap {
         this.e = encoder;
     }
 
-    public void encode(Instr instr) { 
+    public void encode(Instr instr) {
+        e.encode(instr.getOperation());
+        if (instr instanceof ResultInstr) e.encode(((ResultInstr) instr).getResult());
+        
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
-            case BACKREF_IS_MATCH_DATA: encodeBackrefIsMatchDataInstr((BackrefIsMatchDataInstr) instr); break;
+            case BACKREF_IS_MATCH_DATA: /* no state */ break;
             case BEQ: encodeBEQInstr((BEQInstr) instr); break;
             case BINDING_LOAD: encodeLoadLocalVarInstr((LoadLocalVarInstr) instr); break;
             case BINDING_STORE:encodeStoreLocalVarInstr((StoreLocalVarInstr) instr); break;
@@ -142,12 +146,12 @@ public class InstrEncoderMap {
             case DEF_META_CLASS: encodeDefineMetaClassInstr((DefineMetaClassInstr) instr); break;
             case DEF_MODULE: encodeDefineModuleInstr((DefineModuleInstr) instr); break;
             case EQQ: encodeEQQInstr((EQQInstr) instr); break;
-            case EXC_REGION_END: encodeExceptionRegionEndMarkerInstr((ExceptionRegionEndMarkerInstr) instr); break;
+            case EXC_REGION_END: /* no state */ break;
             case EXC_REGION_START: encodeExceptionRegionStartMarkerInstr((ExceptionRegionStartMarkerInstr) instr); break;
-            case GET_BACKREF: encodeGetBackrefInstr((GetBackrefInstr) instr); break;
+            case GET_BACKREF: /* no state */ break;
             case GET_CVAR: encodeGetClassVariableInstr((GetClassVariableInstr) instr); break;
             case GET_ENCODING: encodeGetEncodingInstr((GetEncodingInstr) instr); break;
-            case GET_ERROR_INFO: encodeGetErrorInfoInstr((GetErrorInfoInstr) instr); break;
+            case GET_ERROR_INFO: /* no state */ break;
             case GET_FIELD: encodeGetFieldInstr((GetFieldInstr) instr); break;
             case GET_GLOBAL_VAR: encodeGetGlobalVariableInstr((GetGlobalVariableInstr) instr); break;
             case GLOBAL_IS_DEFINED: encodeGlobalIsDefinedInstr((GlobalIsDefinedInstr) instr); break;
@@ -211,367 +215,410 @@ public class InstrEncoderMap {
         }        
     }   
 
-    private void encodeAliasInstr(AliasInstr aliasInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeAliasInstr(AliasInstr instr) {
+        e.encode(instr.getReceiver());
+        e.encode(instr.getNewName());
+        e.encode(instr.getOldName());
     }
 
-    private void encodeAttrAssignInstr(AttrAssignInstr attrAssignInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeAttrAssignInstr(AttrAssignInstr instr) {
+        encodeNoResultCallInstr(instr);
     }
 
-    private void encodeBackrefIsMatchDataInstr(BackrefIsMatchDataInstr backrefIsMatchDataInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBEQInstr(BEQInstr instr) {
+        encodeTwoOperandBranchInstr(instr);
     }
 
-    private void encodeBEQInstr(BEQInstr beqInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeLoadLocalVarInstr(LoadLocalVarInstr instr) {
+        e.encode(instr.getScope());
+        e.encode(instr.getLocalVar());
     }
 
-    private void encodeLoadLocalVarInstr(LoadLocalVarInstr loadLocalVarInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeStoreLocalVarInstr(StoreLocalVarInstr instr) {
+        e.encode(instr.getScope());
+        e.encode(instr.getLocalVar());
+        e.encode(instr.getValue());
     }
 
-    private void encodeStoreLocalVarInstr(StoreLocalVarInstr storeLocalVarInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBlockGivenInstr(BlockGivenInstr instr) {
+        e.encode(instr.getBlockArg());
     }
 
-    private void encodeBlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBNEInstr(BNEInstr instr) {
+        encodeTwoOperandBranchInstr(instr);
     }
 
-    private void encodeBNEInstr(BNEInstr bneInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBreakInstr(BreakInstr instr) {
+        e.encode(instr.getReturnValue());
+        e.encode(instr.getScopeToReturnTo());
     }
 
-    private void encodeBreakInstr(BreakInstr breakInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBFalseInstr(BFalseInstr instr) {
+        encodeOneOperandBranchInstr(instr);
     }
 
-    private void encodeBFalseInstr(BFalseInstr bFalseInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBNilInstr(BNilInstr instr) {
+        encodeOneOperandBranchInstr(instr);
     }
 
-    private void encodeBNilInstr(BNilInstr bNilInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBTrueInstr(BTrueInstr instr) {
+        encodeOneOperandBranchInstr(instr);
     }
 
-    private void encodeBTrueInstr(BTrueInstr bTrueInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBUndefInstr(BUndefInstr instr) {
+        encodeOneOperandBranchInstr(instr);
     }
 
-    private void encodeBUndefInstr(BUndefInstr bUndefInstr) {
+    private void encodeCallInstr(CallInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeCallInstr(CallInstr callInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeCheckArgsArrayArityInstr(CheckArgsArrayArityInstr instr) {
+        e.encode(instr.getArgsArray());
+        e.encode(instr.required);
+        e.encode(instr.opt);
+        e.encode(instr.rest);
     }
 
-    private void encodeCheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkArgsArrayArityInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeCheckArityInstr(CheckArityInstr instr) {
+        e.encode(instr.required);
+        e.encode(instr.opt);
+        e.encode(instr.rest);
     }
 
-    private void encodeCheckArityInstr(CheckArityInstr checkArityInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr classVarIsDefinedInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
+        e.encode(instr.getStartingScope());
+        e.encode(instr.getObject());
     }
 
-    private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getClassVarContainerModuleInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeConstMissingInstr(ConstMissingInstr instr) {
+        encodeCallInstr(instr);
     }
 
-    private void encodeConstMissingInstr(ConstMissingInstr constMissingInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeCopyInstr(CopyInstr instr) {
+        e.encode(instr.getSource());
     }
 
-    private void encodeCopyInstr(CopyInstr copyInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeGetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr getDefinedConstantOrMethodInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefineClassInstr(DefineClassInstr instr) {
+        e.encode(instr.getNewIRClassBody());
+        e.encode(instr.getContainer());
+        e.encode(instr.getSuperClass());
     }
 
-    private void encodeDefineClassInstr(DefineClassInstr defineClassInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefineClassMethodInstr(DefineClassMethodInstr instr) {
+        e.encode(instr.getContainer());
+        e.encode(instr.getMethod());
     }
 
-    private void encodeDefineClassMethodInstr(DefineClassMethodInstr defineClassMethodInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefineInstanceMethodInstr(DefineInstanceMethodInstr instr) {
+        e.encode(instr.getContainer());
+        e.encode(instr.getMethod());
     }
 
-    private void encodeDefineInstanceMethodInstr(DefineInstanceMethodInstr defineInstanceMethodInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefineMetaClassInstr(DefineMetaClassInstr instr) {
+        e.encode(instr.getObject());
+        e.encode(instr.getMetaClassBody());
     }
 
-    private void encodeDefineMetaClassInstr(DefineMetaClassInstr defineMetaClassInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefineModuleInstr(DefineModuleInstr instr) {
+        e.encode(instr.getNewIRModuleBody());
+        e.encode(instr.getContainer());
     }
 
-    private void encodeDefineModuleInstr(DefineModuleInstr defineModuleInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeEQQInstr(EQQInstr instr) {
+        e.encode(instr.getArg1());
+        e.encode(instr.getArg2());
     }
 
-    private void encodeEQQInstr(EQQInstr eqqInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr instr) {
+        e.encode(instr.begin);
+        e.encode(instr.end);
+        e.encode(instr.firstRescueBlockLabel);
     }
 
-    private void encodeExceptionRegionEndMarkerInstr(ExceptionRegionEndMarkerInstr exceptionRegionEndMarkerInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetClassVariableInstr(GetClassVariableInstr instr) {
+        encodeGetInstr(instr);
     }
 
-    private void encodeExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionRegionStartMarkerInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    // FIXME: We know this is giving us a difficult to lookup name on decode side.
+    private void encodeGetEncodingInstr(GetEncodingInstr instr) {
+        e.encode(instr.getEncoding().toString());
     }
 
-    private void encodeGetBackrefInstr(GetBackrefInstr getBackrefInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetFieldInstr(GetFieldInstr instr) {
+        encodeGetInstr(instr);
     }
 
-    private void encodeGetClassVariableInstr(GetClassVariableInstr getClassVariableInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetGlobalVariableInstr(GetGlobalVariableInstr instr) {
+        encodeGetInstr(instr);
     }
 
-    private void encodeGetEncodingInstr(GetEncodingInstr getEncodingInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr instr) {
+        e.encode(instr.getName());
     }
 
-    private void encodeGetErrorInfoInstr(GetErrorInfoInstr getErrorInfoInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGVarAliasInstr(GVarAliasInstr instr) {
+        e.encode(instr.getNewName());
+        e.encode(instr.getOldName());
     }
 
-    private void encodeGetFieldInstr(GetFieldInstr getFieldInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeHasInstanceVarInstr(HasInstanceVarInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeGetGlobalVariableInstr(GetGlobalVariableInstr getGlobalVariableInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeInheritanceSearchConstInstr(InheritanceSearchConstInstr instr) {
+        e.encode(instr.getCurrentModule());
+        e.encode(instr.getConstName());
+        e.encode(instr.isNoPrivateConsts());
     }
 
-    private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr globalIsDefinedInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeIsMethodBoundInstr(IsMethodBoundInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeGVarAliasInstr(GVarAliasInstr gVarAliasInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeJumpInstr(JumpInstr instr) {
+        e.encode(instr.getJumpTarget());
     }
 
-    private void encodeHasInstanceVarInstr(HasInstanceVarInstr hasInstanceVarInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeJumpIndirectInstr(JumpIndirectInstr instr) {
+        e.encode(instr.getJumpTarget());
     }
 
-    private void encodeInheritanceSearchConstInstr(InheritanceSearchConstInstr inheritanceSearchConstInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeLabelInstr(LabelInstr instr) {
+        e.encode(instr.getLabel());
     }
 
-    private void encodeIsMethodBoundInstr(IsMethodBoundInstr isMethodBoundInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeBuildLambdaInstr(BuildLambdaInstr instr) {
+        e.encode(instr.getLambdaBodyName());
+        e.encode(instr.getPosition().getFile());
+        e.encode(instr.getPosition().getLine());
     }
 
-    private void encodeJumpInstr(JumpInstr jumpInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeLexicalSearchConstInstr(LexicalSearchConstInstr instr) {
+        e.encode(instr.getDefiningScope());
+        e.encode(instr.getConstName());
     }
 
-    private void encodeJumpIndirectInstr(JumpIndirectInstr jumpIndirectInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeLineNumberInstr(LineNumberInstr instr) {
+        e.encode(instr.getLineNumber());
     }
 
-    private void encodeLabelInstr(LabelInstr labelInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeOptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr instr) {
+        e.encode(instr.getArrayArg());
+        e.encode(instr.getIndex());
+        e.encode(instr.getMinArgsLength());
     }
 
-    private void encodeBuildLambdaInstr(BuildLambdaInstr buildLambdaInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr instr) {
+        e.encode(instr.getArrayArg());
+        e.encode(instr.getPreArgsCount());
+        e.encode(instr.getPostArgsCount());
+        e.encode(instr.getIndex());
     }
 
-    private void encodeLexicalSearchConstInstr(LexicalSearchConstInstr lexicalSearchConstInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeRestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr instr) {
+        e.encode(instr.getArrayArg());
+        e.encode(instr.getPreArgsCount());
+        e.encode(instr.getPostArgsCount());
+        e.encode(instr.getIndex());
     }
 
-    private void encodeLineNumberInstr(LineNumberInstr lineNumberInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeMatchInstr(MatchInstr instr) {
+        e.encode(instr.getReceiver());
     }
 
-    private void encodeOptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optArgMultipleAsgnInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeMatch2Instr(Match2Instr instr) {
+        e.encode(instr.getReceiver());
+        e.encode(instr.getArg());
     }
 
-    private void encodeReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdArgMultipleAsgnInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeMatch3Instr(Match3Instr instr) {
+        e.encode(instr.getReceiver());
+        e.encode(instr.getArg());
     }
 
-    private void encodeRestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restArgMultipleAsgnInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeMethodDefinedInstr(MethodDefinedInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeMatchInstr(MatchInstr matchInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeMethodIsPublicInstr(MethodIsPublicInstr instr) {
+        encodeDefinedObjectNameInstr(instr);
     }
 
-    private void encodeMatch2Instr(Match2Instr match2Instr) {
+    private void encodeMethodLookupInstr(MethodLookupInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeMatch3Instr(Match3Instr match3Instr) {
+    private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeMethodDefinedInstr(MethodDefinedInstr methodDefinedInstr) {
+    private void encodeNoResultCallInstr(NoResultCallInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeMethodIsPublicInstr(MethodIsPublicInstr methodIsPublicInstr) {
+    private void encodeNotInstr(NotInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeMethodLookupInstr(MethodLookupInstr methodLookupInstr) {
+    private void encodePopBindingInstr(PopBindingInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeNonlocalReturnInstr(NonlocalReturnInstr nonlocalReturnInstr) {
+    private void encodePopFrameInstr(PopFrameInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeNoResultCallInstr(NoResultCallInstr noResultCallInstr) {
+    private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeNotInstr(NotInstr notInstr) {
+    private void encodePushBindingInstr(PushBindingInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePopBindingInstr(PopBindingInstr popBindingInstr) {
+    private void encodePushFrameInstr(PushFrameInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePopFrameInstr(PopFrameInstr popFrameInstr) {
+    private void encodePutConstInstr(PutConstInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr processModuleBodyInstr) {
+    private void encodePutClassVariableInstr(PutClassVariableInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePushBindingInstr(PushBindingInstr pushBindingInstr) {
+    private void encodePutFieldInstr(PutFieldInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePushFrameInstr(PushFrameInstr pushFrameInstr) {
+    private void encodePutGlobalVarInstr(PutGlobalVarInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePutConstInstr(PutConstInstr putConstInstr) {
+    private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePutClassVariableInstr(PutClassVariableInstr putClassVariableInstr) {
+    private void encodeRecordEndBlockInstr(RecordEndBlockInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePutFieldInstr(PutFieldInstr putFieldInstr) {
+    private void encodeReceiveClosureInstr(ReceiveClosureInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodePutGlobalVarInstr(PutGlobalVarInstr putGlobalVarInstr) {
+    private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseArgumentErrorInstr) {
+    private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeRecordEndBlockInstr(RecordEndBlockInstr recordEndBlockInstr) {
+    private void encodeReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceiveClosureInstr(ReceiveClosureInstr receiveClosureInstr) {
+    private void encodeReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr receiveKeywordArgInstr) {
+    private void encodeReceiveRestArgInstr(ReceiveRestArgInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr receiveKeywordRestArgInstr) {
+    private void encodeReceiveSelfInstr(ReceiveSelfInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivePostReqdArgInstr) {
+    private void encodeRescueEQQInstr(RescueEQQInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceivePreReqdArgInstr(ReceivePreReqdArgInstr receivePreReqdArgInstr) {
+    private void encodeRestoreErrorInfoInstr(RestoreErrorInfoInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceiveRestArgInstr(ReceiveRestArgInstr receiveRestArgInstr) {
+    private void encodeReturnInstr(ReturnInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReceiveSelfInstr(ReceiveSelfInstr receiveSelfInstr) {
+    private void encodeSearchConstInstr(SearchConstInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeRescueEQQInstr(RescueEQQInstr rescueEQQInstr) {
+    private void encodeSetReturnAddressInstr(SetReturnAddressInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeRestoreErrorInfoInstr(RestoreErrorInfoInstr restoreErrorInfoInstr) {
+    private void encodeClassSuperInstr(ClassSuperInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeReturnInstr(ReturnInstr returnInstr) {
+    private void encodeInstanceSuperInstr(InstanceSuperInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeSearchConstInstr(SearchConstInstr searchConstInstr) {
+    private void encodeUnresolvedSuperInstr(UnresolvedSuperInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeSetReturnAddressInstr(SetReturnAddressInstr setReturnAddressInstr) {
+    private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeClassSuperInstr(ClassSuperInstr classSuperInstr) {
+    private void encodeThreadPollInstr(ThreadPollInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeInstanceSuperInstr(InstanceSuperInstr instanceSuperInstr) {
+    private void encodeThrowExceptionInstr(ThrowExceptionInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeUnresolvedSuperInstr(UnresolvedSuperInstr unresolvedSuperInstr) {
+    private void encodeToAryInstr(ToAryInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr superMethodBoundInstr) {
+    private void encodeUndefMethodInstr(UndefMethodInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeThreadPollInstr(ThreadPollInstr threadPollInstr) {
+    private void encodeYieldInstr(YieldInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeThrowExceptionInstr(ThrowExceptionInstr throwExceptionInstr) {
+    private void encodeZSuperInstr(ZSuperInstr instr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void encodeToAryInstr(ToAryInstr toAryInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeTwoOperandBranchInstr(TwoOperandBranchInstr instr) {
+        e.encode(instr.getArg1());
+        e.encode(instr.getArg2());
+        e.encode(instr.getJumpTarget());
     }
 
-    private void encodeUndefMethodInstr(UndefMethodInstr undefMethodInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeOneOperandBranchInstr(OneOperandBranchInstr instr) {
+        e.encode(instr.getArg1());
+        e.encode(instr.getJumpTarget());
     }
 
-    private void encodeYieldInstr(YieldInstr yieldInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeDefinedObjectNameInstr(DefinedObjectNameInstr instr) {
+        e.encode(instr.getObject());
+        e.encode(instr.getName());
     }
 
-    private void encodeZSuperInstr(ZSuperInstr zSuperInstr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void encodeGetInstr(GetInstr instr) {
+        e.encode(instr.getSource());
+        e.encode(instr.getRef());
     }
 }
