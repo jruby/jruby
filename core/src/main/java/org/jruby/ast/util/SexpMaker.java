@@ -1,6 +1,12 @@
 package org.jruby.ast.util;
 
 import java.io.File;
+import java.nio.CharBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Locale;
+
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.AttrAssignNode;
@@ -41,25 +47,156 @@ import org.jruby.ast.UndefNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.XStrNode;
+import org.jruby.util.ConvertBytes;
 
 public class SexpMaker {
+    private interface Builder {
+        public Builder append(String str);
+        public Builder append(char ch);
+        public Builder append(int i);
+        public Builder append(Object o);
+        public Builder append(boolean b);
+        public Builder append(long l);
+        public Builder append(double d);
+    }
+
+    private static class StringBuilder implements Builder {
+        final java.lang.StringBuilder b;
+
+        StringBuilder(int size) {
+            b = new java.lang.StringBuilder(size);
+        }
+
+        @Override
+        public Builder append(Object o) {
+            append(o.toString());
+            return this;
+        }
+
+        @Override
+        public Builder append(String str) {
+            b.append(str);
+            return this;
+        }
+
+        @Override
+        public Builder append(boolean bool) {
+            b.append(bool);
+            return this;
+        }
+
+        @Override
+        public Builder append(char ch) {
+            b.append(ch);
+            return this;
+        }
+
+        @Override
+        public Builder append(int i) {
+            b.append(i);
+            return this;
+        }
+
+        @Override
+        public Builder append(long l) {
+            b.append(l);
+            return this;
+        }
+
+        @Override
+        public Builder append(double d) {
+            b.append(d);
+            return this;
+        }
+    }
+
+    private static class DigestBuilder implements Builder {
+        MessageDigest d;
+
+        DigestBuilder(MessageDigest digest) {
+            this.d = digest;
+        }
+
+        @Override
+        public Builder append(Object o) {
+            append(o.toString());
+            return this;
+        }
+
+        @Override
+        public Builder append(String str) {
+            d.update(str.getBytes());
+            return this;
+        }
+
+        @Override
+        public Builder append(boolean b) {
+            append((byte) (b ? 1 : 0));
+            return this;
+        }
+
+        @Override
+        public Builder append(char ch) {
+            d.update((byte)(ch >> 8));
+            d.update((byte)(ch));
+            return this;
+        }
+
+        @Override
+        public Builder append(int i) {
+            append((char) (i >> 16));
+            append((char) i);
+            return this;
+        }
+
+        @Override
+        public Builder append(long l) {
+            append((int) (l >> 32));
+            append((int) l);
+            return this;
+        }
+
+        @Override
+        public Builder append(double d) {
+            append(Double.doubleToLongBits(d));
+            return this;
+        }
+    }
+    
     public static String create(Node node) {
-        StringBuilder sb = new StringBuilder(100);
-        
+        Builder sb = new StringBuilder(100);
+
         process(sb, node);
-        
+
         return sb.toString();
     }
-    
+
     public static String create(String methodName, Node argsNode, Node body) {
-        StringBuilder sb = new StringBuilder(100);
-        
+        Builder sb = new StringBuilder(100);
+
         processMethod(sb, methodName, argsNode, body);
-        
+
         return sb.toString();
     }
-    
-    private static void processMethod(StringBuilder sb, String methodName, Node argsNode, Node body) {
+
+    public static String sha1(String methodName, Node argsNode, Node body) {
+        MessageDigest sha1;
+        try {
+            sha1 = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new RuntimeException(nsae);
+        }
+
+        DigestBuilder db = new DigestBuilder(sha1);
+
+        processMethod(db, methodName, argsNode, body);
+
+        byte[] digest = db.d.digest();
+
+        return new String(ConvertBytes.twosComplementToHexBytes(digest, false));
+    }
+
+    private static void processMethod(Builder sb, String methodName, Node argsNode, Node body) {
         sb.append("(method ").append(methodName).append(' ');
         // JRUBY-4301, include filename and line in sexp
         sb.append("(file ").append(new File(body.getPosition().getFile()).getName()).append(") ");
@@ -74,25 +211,27 @@ public class SexpMaker {
      * process each node by printing out '(' name data child* ')'
      * @param node
      */
-    private static void process(StringBuilder sb, Node node) {
+    private static void process(Builder sb, Node node) {
         if (node == null) {
             sb.append("null");
             return;
         }
-        
+
         sb.append('(');
         shortName(sb, node);
         leafInfo(sb, node);
-        
-        for (Node child: node.childNodes()) {
+
+        List<Node> nodes = node.childNodes();
+        for (int i = 0; i < nodes.size(); i++) {
+            Node child = nodes.get(i);
             sb.append(' ');
             process(sb, child);
         }
-        
+
         sb.append(')');
     }
 
-    private static void shortName(StringBuilder sb, Node node) {
+    private static void shortName(Builder sb, Node node) {
         sb.append(node.getNodeType().simpleName());
     }
 
@@ -101,7 +240,7 @@ public class SexpMaker {
      *
      * @param node
      */
-    private static void leafInfo(StringBuilder sb, Node node) {
+    private static void leafInfo(Builder sb, Node node) {
         switch (node.getNodeType()) {
             case ALIASNODE: aliasNode(sb, (AliasNode) node); break;
             case ARGUMENTNODE: argumentNode(sb, (ArgumentNode) node); break;
@@ -202,28 +341,28 @@ public class SexpMaker {
                 noDataContents(node);
                 break;
             */
-            
+
             default:
         }
     }
 
-    private static void xStrNode(StringBuilder sb, XStrNode node) {
+    private static void xStrNode(Builder sb, XStrNode node) {
         sb.append(" '").append(node.getValue()).append('\'');
     }
 
-    private static void vcallNode(StringBuilder sb, VCallNode node) {
+    private static void vcallNode(Builder sb, VCallNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void valiasNode(StringBuilder sb, VAliasNode node) {
+    private static void valiasNode(Builder sb, VAliasNode node) {
         sb.append(' ').append(node.getOldName()).append(node.getNewName());
     }
 
-    private static void undefNode(StringBuilder sb, UndefNode node) {
+    private static void undefNode(Builder sb, UndefNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void strNode(StringBuilder sb, StrNode node) {
+    private static void strNode(Builder sb, StrNode node) {
         if (node instanceof FileNode) {
             // don't put the filename in, since it can vary based on filesystem
             // layout and does not change behavior directly
@@ -233,136 +372,136 @@ public class SexpMaker {
         }
     }
 
-    private static void regexpNode(StringBuilder sb, RegexpNode node) {
+    private static void regexpNode(Builder sb, RegexpNode node) {
         sb.append(' ').append(node.getValue()).append(' ').append(node.getOptions());
     }
 
-    private static void opElementAsgnNode(StringBuilder sb, OpElementAsgnNode node) {
+    private static void opElementAsgnNode(Builder sb, OpElementAsgnNode node) {
         sb.append(' ').append(node.getOperatorName());
     }
 
-    private static void nthRefNode(StringBuilder sb, NthRefNode node) {
+    private static void nthRefNode(Builder sb, NthRefNode node) {
         sb.append(' ').append(node.getMatchNumber());
     }
 
-    private static void localAsgnNode(StringBuilder sb, LocalAsgnNode node) {
+    private static void localAsgnNode(Builder sb, LocalAsgnNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void instVarNode(StringBuilder sb, InstVarNode node) {
+    private static void instVarNode(Builder sb, InstVarNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void instAsgnNode(StringBuilder sb, InstAsgnNode node) {
+    private static void instAsgnNode(Builder sb, InstAsgnNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void globalVarNode(StringBuilder sb, GlobalVarNode node) {
+    private static void globalVarNode(Builder sb, GlobalVarNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void globalAsgnNode(StringBuilder sb, GlobalAsgnNode node) {
+    private static void globalAsgnNode(Builder sb, GlobalAsgnNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void floatNode(StringBuilder sb, FloatNode node) {
+    private static void floatNode(Builder sb, FloatNode node) {
         sb.append(' ').append(node.getValue());
     }
 
-    private static void flipNode(StringBuilder sb, FlipNode node) {
+    private static void flipNode(Builder sb, FlipNode node) {
         sb.append(' ').append(node.isExclusive());
     }
 
-    private static void fixnumNode(StringBuilder sb, FixnumNode node) {
+    private static void fixnumNode(Builder sb, FixnumNode node) {
         sb.append(' ').append(node.getValue());
     }
 
-    private static void fCallNode(StringBuilder sb, FCallNode node) {
+    private static void fCallNode(Builder sb, FCallNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void dVarNode(StringBuilder sb, DVarNode node) {
+    private static void dVarNode(Builder sb, DVarNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void blockArgNode(StringBuilder sb, BlockArgNode node) {
+    private static void blockArgNode(Builder sb, BlockArgNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void backRefNode(StringBuilder sb, BackRefNode node) {
+    private static void backRefNode(Builder sb, BackRefNode node) {
         sb.append(' ').append(node.getType());
     }
 
-    private static void symbolNode(StringBuilder sb, SymbolNode node) {
+    private static void symbolNode(Builder sb, SymbolNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void localVarNode(StringBuilder sb, LocalVarNode node) {
+    private static void localVarNode(Builder sb, LocalVarNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void argumentNode(StringBuilder sb, ArgumentNode node) {
+    private static void argumentNode(Builder sb, ArgumentNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void dRegexpNode(StringBuilder sb, DRegexpNode node) {
+    private static void dRegexpNode(Builder sb, DRegexpNode node) {
         sb.append(' ').append(node.getOnce()).append(' ').append(node.getOptions());
     }
 
-    private static void dotNode(StringBuilder sb, DotNode node) {
+    private static void dotNode(Builder sb, DotNode node) {
         sb.append(' ').append(node.isExclusive()).append(' ').append(node.isLiteral());
     }
 
-    private static void dAsgnNode(StringBuilder sb, DAsgnNode node) {
+    private static void dAsgnNode(Builder sb, DAsgnNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void constNode(StringBuilder sb, ConstNode node) {
+    private static void constNode(Builder sb, ConstNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void constDeclNode(StringBuilder sb, ConstDeclNode node) {
+    private static void constDeclNode(Builder sb, ConstDeclNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void colon3Node(StringBuilder sb, Colon3Node node) {
+    private static void colon3Node(Builder sb, Colon3Node node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void colon2Node(StringBuilder sb, Colon2Node node) {
+    private static void colon2Node(Builder sb, Colon2Node node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void classVarNode(StringBuilder sb, ClassVarNode node) {
+    private static void classVarNode(Builder sb, ClassVarNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void classVarDeclNode(StringBuilder sb, ClassVarDeclNode node) {
+    private static void classVarDeclNode(Builder sb, ClassVarDeclNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void classVarAsgnNode(StringBuilder sb, ClassVarAsgnNode node) {
+    private static void classVarAsgnNode(Builder sb, ClassVarAsgnNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void callNode(StringBuilder sb, CallNode node) {
+    private static void callNode(Builder sb, CallNode node) {
         sb.append(' ').append(node.getName());
     }
 
 
-    private static void bignumNode(StringBuilder sb, BignumNode node) {
+    private static void bignumNode(Builder sb, BignumNode node) {
         sb.append(' ').append(node.getValue());
     }
 
-    private static void attrAssignNode(StringBuilder sb, AttrAssignNode node) {
+    private static void attrAssignNode(Builder sb, AttrAssignNode node) {
         sb.append(' ').append(node.getName());
     }
 
-    private static void aliasNode(StringBuilder sb, AliasNode node) {
+    private static void aliasNode(Builder sb, AliasNode node) {
         sb.append(' ').append(node.getOldName()).append(node.getNewName());
     }
 
-    private static void opAsgnNode(StringBuilder sb, OpAsgnNode node) {
+    private static void opAsgnNode(Builder sb, OpAsgnNode node) {
         sb.append(" '").append(node.getOperatorName()).append('\'');
     }
         
