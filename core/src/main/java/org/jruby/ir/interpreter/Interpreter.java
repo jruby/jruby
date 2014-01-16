@@ -737,6 +737,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Map<Integer, Integer> rescueMap = scope.getRescueMap();
 
         int      numTempVars    = scope.getTemporaryVariablesCount();
+//        System.out.println("NUM: temp vars: " + numTempVars);
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
         int      numFloatVars   = scope.getFloatVariablesCount();
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;

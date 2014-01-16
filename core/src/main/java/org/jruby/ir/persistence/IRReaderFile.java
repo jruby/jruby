@@ -23,12 +23,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
@@ -144,42 +140,6 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operand decodeOperand() {
         return operandDecoderMap.decode(decodeOperandType());
-    }
-
-    @Override
-    public boolean decodeOperandAsBoolean() {
-        Operand operand = decodeOperand();
-
-        return ((BooleanLiteral) operand).isTrue();
-    }
-    
-
-    @Override
-    public int decodeOperandAsInt() {
-        Operand operand = decodeOperand();
-
-        return (int) ((Fixnum) operand).getValue();
-    }      
-
-    @Override
-    public long decodeOperandAsLong() {
-        Operand operand = decodeOperand();
-
-        return ((Fixnum) operand).getValue();
-    }    
-    
-    @Override
-    public IRScope decodeOperandAsIRScope() {
-        Operand operand = decodeOperand();
-
-        return ((ScopeModule) operand).getScope();
-    }
-
-    @Override
-    public String decodeOperandAsString() {
-        Operand operand = decodeOperand();
-
-        return ((StringLiteral) operand).getString();
     }
 
     @Override

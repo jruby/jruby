@@ -54,7 +54,9 @@ public class IRReader {
         int line = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
         int localVarsCount = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Local Vars = " + localVarsCount);
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
         int arity = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;

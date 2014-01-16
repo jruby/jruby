@@ -289,7 +289,8 @@ public class InstrEncoderMap {
     }
 
     private void encodeConstMissingInstr(ConstMissingInstr instr) {
-        encodeCallBaseInstr(instr);
+        e.encode(instr.getReceiver());
+        e.encode(instr.getMissingConst());
     }
 
     private void encodeCopyInstr(CopyInstr instr) {
@@ -402,6 +403,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeLineNumberInstr(LineNumberInstr instr) {
+        e.encode(instr.scope); // FIXME: We should be able to know which scope we are in decoding
         e.encode(instr.getLineNumber());
     }
 

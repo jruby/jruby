@@ -69,9 +69,11 @@ public class IRWriter {
         file.encode(scope.getScopeType()); // type is enum of kind of scope
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getName());
         file.encode(scope.getName());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getLineNumber());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + scope.getLineNumber());
         file.encode(scope.getLineNumber());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
         file.encode(scope.getTemporaryVariablesCount());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of local vars = " + scope.getLocalVariablesCount());
         file.encode(scope.getLocalVariablesCount());
 
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
