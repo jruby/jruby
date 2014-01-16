@@ -9,7 +9,6 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -36,7 +35,7 @@ public class IREvalScript extends IRClosure {
             n++;
             s = s.getLexicalParent();
         }
-
+        
         this.nearestNonEvalScope = s;
         this.nearestNonEvalScopeDepth = n;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);

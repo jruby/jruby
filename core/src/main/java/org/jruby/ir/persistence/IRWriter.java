@@ -73,8 +73,6 @@ public class IRWriter {
         file.encode(scope.getLineNumber());
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
         file.encode(scope.getTemporaryVariablesCount());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of local vars = " + scope.getLocalVariablesCount());
-        file.encode(scope.getLocalVariablesCount());
 
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 

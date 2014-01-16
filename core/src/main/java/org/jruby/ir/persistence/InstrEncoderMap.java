@@ -6,7 +6,7 @@
 
 package org.jruby.ir.persistence;
 
-import org.jruby.ir.IRManager;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
@@ -65,6 +65,7 @@ import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
+import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
@@ -77,6 +78,7 @@ import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
@@ -98,6 +100,7 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
+import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
 
 /**
@@ -112,8 +115,11 @@ public class InstrEncoderMap {
     }
 
     public void encode(Instr instr) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Instr(" + instr.getOperation() + "): " + instr);
         e.encode(instr.getOperation());
-        if (instr instanceof ResultInstr) e.encode(((ResultInstr) instr).getResult());
+        if (instr instanceof ResultInstr) {
+            e.encode(((ResultInstr) instr).getResult());
+        }
         
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
@@ -187,6 +193,7 @@ public class InstrEncoderMap {
             case RAISE_ARGUMENT_ERROR: encodeRaiseArgumentErrorInstr((RaiseArgumentErrorInstr) instr); break;
             case RECORD_END_BLOCK: encodeRecordEndBlockInstr((RecordEndBlockInstr) instr); break;
             case RECV_CLOSURE: /* no state */ break;
+            case RECV_EXCEPTION: encodeReceiveExceptionInstr((ReceiveExceptionInstr) instr); break;
             case RECV_KW_ARG: encodeReceiveKeywordArgInstr((ReceiveKeywordArgInstr) instr); break;
             case RECV_KW_REST_ARG: encodeReceiveKeywordRestArgInstr((ReceiveKeywordRestArgInstr) instr); break;
             case RECV_OPT_ARG: encodeReceiveOptArgInstr((ReceiveOptArgInstr) instr); break;
@@ -197,6 +204,7 @@ public class InstrEncoderMap {
             case RESCUE_EQQ: encodeRescueEQQInstr((RescueEQQInstr) instr); break;
             case RESTORE_ERROR_INFO: encodeRestoreErrorInfoInstr((RestoreErrorInfoInstr) instr); break;
             case RETURN: encodeReturnInstr((ReturnInstr) instr); break;
+            case RUNTIME_HELPER: encodeRuntimeHelperCall((RuntimeHelperCall) instr); break;
             case SEARCH_CONST: encodeSearchConstInstr((SearchConstInstr) instr); break;
             case SET_RETADDR: encodeSetReturnAddressInstr((SetReturnAddressInstr) instr); break;
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
@@ -209,6 +217,7 @@ public class InstrEncoderMap {
             case UNDEF_METHOD: encodeUndefMethodInstr((UndefMethodInstr) instr); break;
             case YIELD: encodeYieldInstr((YieldInstr) instr); break;
             case ZSUPER: encodeZSuperInstr((ZSuperInstr) instr); break;
+            default: throw new IllegalArgumentException("Whoa what am I encoding: " + instr);
         }        
     }   
 
@@ -352,7 +361,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeGetGlobalVariableInstr(GetGlobalVariableInstr instr) {
-        e.encode(instr.getSource());
+        e.encode(((GlobalVariable) instr.getSource()).getName());
     }
 
     private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr instr) {
@@ -379,7 +388,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeJumpInstr(JumpInstr instr) {
-        e.encode(instr.getJumpTarget());
+        e.encode(instr.getJumpTarget().label);
     }
 
     private void encodeJumpIndirectInstr(JumpIndirectInstr instr) {
@@ -512,6 +521,10 @@ public class InstrEncoderMap {
         e.encode(instr.getDeclaringScope());
         e.encode(instr.getEndBlockClosure());
     }
+    
+    private void encodeReceiveExceptionInstr(ReceiveExceptionInstr instr) {
+        e.encode(instr.isCheckType());
+    }
 
     private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         e.encode(instr.argName);
@@ -638,5 +651,15 @@ public class InstrEncoderMap {
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity(Operand[] arguments, boolean hasClosure) {
         return hasClosure ? -1*(arguments.length + 1) : arguments.length;
+    }
+
+    private void encodeRuntimeHelperCall(RuntimeHelperCall instr) {
+        e.encode(instr.getHelperMethod());
+        //FIXME: Probably make an Operand[] encoder
+        Operand[] args = instr.getArgs();
+        e.encode(args.length);
+        for (int i = 0; i < args.length; i++) {
+            e.encode(args[i]);
+        }
     }
 }

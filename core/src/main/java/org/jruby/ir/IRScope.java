@@ -1159,10 +1159,6 @@ public abstract class IRScope implements ParseResult {
     public int getLocalVariablesCount() {
         return localVars.nextSlot;
     }
-    
-    public void setLocalVariablesCount(int newCount) {
-        localVars.nextSlot = newCount;
-    }
 
     public int getUsedVariablesCount() {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);

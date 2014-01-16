@@ -64,7 +64,8 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         int strLength = decodeInt();
         byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
         buf.get(bytes);
-        return new String(bytes);
+        
+        return new String(bytes).intern();
     }
 
     @Override

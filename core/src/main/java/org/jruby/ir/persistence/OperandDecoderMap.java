@@ -72,7 +72,7 @@ class OperandDecoderMap {
             case BACKTICK_STRING: return new BacktickString(d.decodeOperandList());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
             case BOOLEAN_LITERAL: return new BooleanLiteral(d.decodeBoolean());
-            case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeOperandAsBoolean());
+            case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.getCurrentScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
@@ -88,7 +88,7 @@ class OperandDecoderMap {
             case NIL: return manager.getNil();
             case NTH_REF: return new NthRef(d.decodeInt());
             case OBJECT_CLASS: return new ObjectClass();
-            case RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeOperandAsBoolean());
+            case RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeScope());
             case SELF: return Self.SELF;
