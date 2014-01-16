@@ -2819,7 +2819,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             Map<CompilerCallback, int[]> switchCases,
             List<ArgumentsCallback> conditionals,
             List<CompilerCallback> bodies,
-            CompilerCallback fallback) {
+            CompilerCallback fallback,
+            boolean outline) {
         Map<CompilerCallback, Label> bodyLabels = new HashMap<CompilerCallback, Label>();
         Label defaultCase = new Label();
         Label slowPath = new Label();
@@ -2915,7 +2916,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             Label bodyLabel = bodyLabels.get(body);
             if (bodyLabel != null) method.label(bodyLabel);
 
-            body.call(this);
+            // if we're told to outline bodies, generate into its own method
+            // see ASTCompiler#compileCase and ASTInspector#inspect
+            if (outline) {
+                BaseBodyCompiler outlined = outline(methodName + "_when_" +  script.getAndIncrementMethodIndex());
+                body.call(outlined);
+                outlined.endBody();
+            } else {
+                body.call(this);
+            }
 
             method.go_to(done);
         }

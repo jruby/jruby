@@ -51,6 +51,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 
 /**
  *
@@ -807,15 +808,17 @@ public class ASTCompiler {
     public void compileCase(Node node, BodyCompiler context, boolean expr) {
         CaseNode caseNode = (CaseNode) node;
 
-        boolean hasCase = caseNode.getCaseNode() != null;
-
         // aggregate when nodes into a list, unfortunately, this is no
         List<Node> cases = caseNode.getCases().childNodes();
 
         // last node, either !instanceof WhenNode or null, is the else
         Node elseNode = caseNode.getElseNode();
 
-        compileWhen(caseNode.getCaseNode(), cases, elseNode, context, expr, hasCase);
+
+        // if more than N cases, disable; we'll compile them as separate bodies
+        // see BaseBodyCompiler#compiledSequencedConditional and ASTInspector#inspect
+        boolean outline = caseNode.getCases().size() > Options.COMPILE_OUTLINE_CASECOUNT.load();
+        compileWhen(caseNode.getCaseNode(), cases, elseNode, context, expr, outline);
     }
 
     private FastSwitchType getHomogeneousSwitchType(List<Node> whenNodes) {
@@ -873,7 +876,7 @@ public class ASTCompiler {
         return foundType;
     }
 
-    public void compileWhen(final Node value, List<Node> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
+    public void compileWhen(final Node value, List<Node> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, boolean outline) {
         CompilerCallback caseValue = null;
         if (value != null) caseValue = new CompilerCallback() {
             public void call(BodyCompiler context) {
@@ -913,7 +916,7 @@ public class ASTCompiler {
             }
         };
         
-        context.compileSequencedConditional(caseValue, switchType, switchCases, conditionals, bodies, fallback);
+        context.compileSequencedConditional(caseValue, switchType, switchCases, conditionals, bodies, fallback, outline);
     }
 
     private int[] getOptimizedCases(WhenNode whenNode) {
