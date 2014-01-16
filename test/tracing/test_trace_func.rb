@@ -20,8 +20,8 @@ class TestTraceFunc < Test::Unit::TestCase
 
     line = __LINE__ - 5
     expected = ["line #{__FILE__}:#{line} test_class TestTraceFunc",
-      "class #{__FILE__}:#{line} test_class TestTraceFunc",
-      "end #{__FILE__}:#{line} test_class TestTraceFunc",
+      "class #{__FILE__}:#{line} nil TestTraceFunc",
+      "end #{__FILE__}:#{line} nil TestTraceFunc",
       "line #{__FILE__}:#{line + 3} test_class TestTraceFunc",
       "c-call #{__FILE__}:#{line + 3} set_trace_func Kernel"]
     assert_equal(expected, output);
