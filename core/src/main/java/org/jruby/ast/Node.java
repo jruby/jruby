@@ -138,4 +138,13 @@ public abstract class Node implements ISourcePositionHolder {
      * @return the nodeId
      */
     public abstract NodeType getNodeType();
+
+    /**
+     * Whether the node evaluates to nil and has no side effects.
+     *
+     * @return true if nil, false otherwise
+     */
+    public boolean isNil() {
+        return false;
+    }
 }

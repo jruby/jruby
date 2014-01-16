@@ -432,6 +432,10 @@ public class Helpers {
         return map;
     }
 
+    public static IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj) {
+        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
@@ -755,6 +759,7 @@ public class Helpers {
             case REDO:
                 return JumpException.REDO_JUMP;
             case NEXT:
+                if (jumpError.exit_value().isNil()) throw JumpException.NEXT_JUMP;
                 return new JumpException.NextJump(jumpError.exit_value());
             case BREAK:
                 return new JumpException.BreakJump(context.getFrameJumpTarget(), jumpError.exit_value());
@@ -1258,6 +1263,8 @@ public class Helpers {
     }
 
     public static IRubyObject nextJump(IRubyObject value) {
+        if (value.isNil()) throw JumpException.NEXT_JUMP;
+
         throw new JumpException.NextJump(value);
     }
     

@@ -112,7 +112,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
             return callback.call(context, self, realArg, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -133,7 +133,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
             return callback.call(context, self, realArg, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -144,10 +144,6 @@ public class CompiledBlock extends ContextAwareBlockBody {
         binding.getFrame().setSelf(self);
         
         return self;
-    }
-
-    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
