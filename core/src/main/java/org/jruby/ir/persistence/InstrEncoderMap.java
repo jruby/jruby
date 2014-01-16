@@ -67,6 +67,7 @@ import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
@@ -105,10 +106,8 @@ import org.jruby.ir.operands.Operand;
  */
 public class InstrEncoderMap {
     private final IRWriterEncoder e;
-    private final IRManager manager;
 
-    public InstrEncoderMap(IRManager manager, IRWriterEncoder encoder) {
-        this.manager = manager;
+    public InstrEncoderMap(IRWriterEncoder encoder) {
         this.e = encoder;
     }
 
@@ -190,7 +189,7 @@ public class InstrEncoderMap {
             case RECV_CLOSURE: /* no state */ break;
             case RECV_KW_ARG: encodeReceiveKeywordArgInstr((ReceiveKeywordArgInstr) instr); break;
             case RECV_KW_REST_ARG: encodeReceiveKeywordRestArgInstr((ReceiveKeywordRestArgInstr) instr); break;
-            case RECV_OPT_ARG: encodeReceivePostReqdArgInstr((ReceivePostReqdArgInstr) instr); break;
+            case RECV_OPT_ARG: encodeReceiveOptArgInstr((ReceiveOptArgInstr) instr); break;
             case RECV_POST_REQD_ARG: encodeReceivePostReqdArgInstr((ReceivePostReqdArgInstr) instr); break;
             case RECV_PRE_REQD_ARG: encodeReceivePreReqdArgInstr((ReceivePreReqdArgInstr) instr); break;
             case RECV_REST_ARG: encodeReceiveRestArgInstr((ReceiveRestArgInstr) instr); break;
@@ -352,7 +351,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeGetGlobalVariableInstr(GetGlobalVariableInstr instr) {
-        encodeGetInstr(instr);
+        e.encode(instr.getSource());
     }
 
     private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr instr) {
@@ -520,6 +519,12 @@ public class InstrEncoderMap {
     private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
         e.encode(instr.numUsedArgs);
     }
+    
+    private void encodeReceiveOptArgInstr(ReceiveOptArgInstr instr) {
+        e.encode(instr.numUsedArgs);
+        e.encode(instr.getArgOffset());
+        e.encode(instr.getArgIndex());
+    }    
 
     private void encodeReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
         e.encode(instr.getArgIndex());

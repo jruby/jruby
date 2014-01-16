@@ -36,6 +36,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
     private final OperandEncoderMap operandEncoder;
+    private final InstrEncoderMap instrEncoder;
     private final IRWriterAnalzer analyzer;
 
     int headersOffset = -1;
@@ -44,6 +45,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
         this.operandEncoder = new OperandEncoderMap(this);
+        this.instrEncoder = new InstrEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
     }
 
@@ -117,7 +119,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(String value) {
-//        buf.put(STRING);
         encode(value.length());
         buf.put(value.getBytes());
     }
@@ -145,17 +146,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Instr instr) {
-        encode(instr.getOperation());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("ENCODING : " + instr);
-        if (instr instanceof ResultInstr) encode(((ResultInstr) instr).getResult());
-
-        Operand[] operands = instr.getOperands();
-//        if (!(instr instanceof FixedArityInstr)) encode(operands.length);
-
-        for (Operand operand: operands) {
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("ENCODING OPER: " + operand);
-            encode(operand);
-        }
+        instrEncoder.encode(instr);
     }
 
     @Override
