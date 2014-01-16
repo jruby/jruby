@@ -6,6 +6,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ConvertBytes;
 
 import java.security.SecureRandom;
 
@@ -15,26 +16,38 @@ import java.security.SecureRandom;
 public class SecureRandomLibrary {
     @JRubyMethod(meta = true)
     public static IRubyObject random_bytes(ThreadContext context, IRubyObject self) {
-        return nextBytes(context.runtime, 16);
+        return RubyString.newStringNoCopy(context.runtime, nextBytes(context, 16));
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject random_bytes(ThreadContext context, IRubyObject self, IRubyObject n) {
-        Ruby runtime = context.runtime;
+        return RubyString.newStringNoCopy(context.runtime, nextBytes(context, n));
+    }
 
-        if (!(n instanceof RubyFixnum)) throw runtime.newArgumentError("non-integer argument: " + n);
+    @JRubyMethod(meta = true)
+    public static IRubyObject hex(ThreadContext context, IRubyObject self) {
+        return RubyString.newStringNoCopy(context.runtime, ConvertBytes.twosComplementToHexBytes(nextBytes(context, 16), false));
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject hex(ThreadContext context, IRubyObject self, IRubyObject n) {
+        return RubyString.newStringNoCopy(context.runtime, ConvertBytes.twosComplementToHexBytes(nextBytes(context, 16), false));
+    }
+
+    private static byte[] nextBytes(ThreadContext context, IRubyObject n) {
+        if (!(n instanceof RubyFixnum)) throw context.runtime.newArgumentError("non-integer argument: " + n);
 
         int size = (int)n.convertToInteger().getLongValue();
 
-        return nextBytes(runtime, size);
+        return nextBytes(context, size);
     }
 
-    private static IRubyObject nextBytes(Ruby runtime, int size) {
-        if (size < 0) throw runtime.newArgumentError("negative argument: " + size);
+    private static byte[] nextBytes(ThreadContext context, int size) {
+        if (size < 0) throw context.runtime.newArgumentError("negative argument: " + size);
 
         byte[] bytes = new byte[size];
-        new SecureRandom().nextBytes(bytes);
+        context.secureRandom.nextBytes(bytes);
 
-        return RubyString.newStringNoCopy(runtime, bytes);
+        return bytes;
     }
 }

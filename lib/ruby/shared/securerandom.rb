@@ -53,8 +53,6 @@ module SecureRandom
     raise
   end
 
-  JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
-
   # SecureRandom.hex generates a random hex string.
   #
   # The argument n specifies the length of the random length.
@@ -71,8 +69,11 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.hex(n=nil)
-    random_bytes(n).unpack("H*")[0]
+    # replaced below by native version
+    raise
   end
+
+  JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
 
   # SecureRandom.base64 generates a random base64 string.
   #
