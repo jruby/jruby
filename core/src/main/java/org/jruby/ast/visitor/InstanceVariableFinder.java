@@ -1,6 +1,7 @@
 package org.jruby.ast.visitor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.InstAsgnNode;
@@ -69,7 +70,11 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
     @Override
     public Object visitInstAsgnNode(InstAsgnNode iVisited) {
         foundVariables.add(iVisited.getName());
-        for (Node node : iVisited.childNodes()) node.accept(this);
+        List<Node> nodes = iVisited.childNodes();
+        for (int i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
+            node.accept(this);
+        }
         return null;
     }
 
@@ -82,7 +87,10 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
     @Override
     public Object visitInstVarNode(InstVarNode iVisited) {
         foundVariables.add(iVisited.getName());
-        for (Node node : iVisited.childNodes()) node.accept(this);
+        List<Node> nodes = iVisited.childNodes();
+        for (int i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
+        }
         return null;
     }
 

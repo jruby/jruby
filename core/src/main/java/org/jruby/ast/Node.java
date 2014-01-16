@@ -104,8 +104,9 @@ public abstract class Node implements ISourcePositionHolder, List<Node> {
 
         builder.append(" ").append(getPosition().getStartLine());
 
-        for (Node child: childNodes()) {
-            builder.append(", ").append(child);
+        List<Node> children = childNodes();
+        for (int i = 0; i < children.size(); i++) {
+            builder.append(", ").append(children.get(i));
         }
         builder.append(")");
 

@@ -497,8 +497,9 @@ public class ArgsNode extends Node {
         if (keyValues != null) {
             if (keywords != null) {
                 keyValues = keyValues.dupFast(context);
-                for (Node knode : keywords.childNodes()) {
-                    KeywordArgNode kwarg = (KeywordArgNode) knode;
+                List<Node> keywordNodes = keywords.childNodes();
+                for (int i = 0; i < keywordNodes.size(); i++) {
+                    KeywordArgNode kwarg = (KeywordArgNode) keywordNodes.get(i);
                     AssignableNode kasgn = (AssignableNode) kwarg.getAssignable();
                     String name = ((INameNode) kasgn).getName();
                     RubySymbol sym = runtime.newSymbol(name);
@@ -528,12 +529,11 @@ public class ArgsNode extends Node {
         }
 
         if (keywords != null) {
-            for (Node knode : keywords.childNodes()) {
-                KeywordArgNode kwarg = (KeywordArgNode)knode;
-                if (kwarg.getAssignable() instanceof LocalAsgnNode) {
-                    ((LocalAsgnNode)kwarg.getAssignable()).interpret(runtime, context, self, Block.NULL_BLOCK);
-                } else if (kwarg.getAssignable() instanceof DAsgnNode) {
-                    ((DAsgnNode)kwarg.getAssignable()).interpret(runtime, context, self, Block.NULL_BLOCK);                    
+            List<Node> keywordNodes = keywords.childNodes();
+            for (int i = 0; i < keywordNodes.size(); i++) {
+                KeywordArgNode kwarg = (KeywordArgNode)keywordNodes.get(i);
+                if (kwarg.getAssignable() instanceof LocalAsgnNode || kwarg.getAssignable() instanceof DAsgnNode) {
+                    kwarg.getAssignable().interpret(runtime, context, self, Block.NULL_BLOCK);
                 }
             }
         }
