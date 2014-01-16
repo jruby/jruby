@@ -80,8 +80,35 @@ public abstract class Node implements ISourcePositionHolder, List<Node> {
     public abstract Object accept(NodeVisitor visitor);
     public abstract List<Node> childNodes();
 
+    protected static List<Node> createList(Node node) {
+        ArrayList<Node> list = new ArrayList<Node>(1);
+
+        list.add(node);
+
+        return list;
+    }
+
+    protected static List<Node> createList(Node node1, Node node2) {
+        ArrayList<Node> list = new ArrayList<Node>(2);
+
+        list.add(node1);
+        list.add(node2);
+
+        return list;
+    }
+
+    protected static List<Node> createList(Node node1, Node node2, Node node3) {
+        ArrayList<Node> list = new ArrayList<Node>(3);
+
+        list.add(node1);
+        list.add(node2);
+        list.add(node3);
+
+        return list;
+    }
+
     protected static List<Node> createList(Node... nodes) {
-        ArrayList<Node> list = new ArrayList<Node>();
+        ArrayList<Node> list = new ArrayList<Node>(nodes.length);
         
         for (Node node: nodes) {
             if (node != null) list.add(node);
