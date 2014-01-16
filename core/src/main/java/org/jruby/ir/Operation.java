@@ -183,8 +183,6 @@ public enum Operation {
     FDIV(OpFlags.f_is_alu_op),
     FLT(OpFlags.f_is_alu_op),
     FGT(OpFlags.f_is_alu_op),
-    B_TRUE_UNBOXED(OpFlags.f_is_jump_or_branch),
-    B_FALSE_UNBOXED(OpFlags.f_is_jump_or_branch),
 
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
