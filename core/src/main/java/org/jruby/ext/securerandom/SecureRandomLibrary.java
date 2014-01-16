@@ -2,6 +2,7 @@ package org.jruby.ext.securerandom;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -31,13 +32,11 @@ public class SecureRandomLibrary {
 
     @JRubyMethod(meta = true)
     public static IRubyObject hex(ThreadContext context, IRubyObject self, IRubyObject n) {
-        return RubyString.newStringNoCopy(context.runtime, ConvertBytes.twosComplementToHexBytes(nextBytes(context, 16), false));
+        return RubyString.newStringNoCopy(context.runtime, ConvertBytes.twosComplementToHexBytes(nextBytes(context, n), false));
     }
 
     private static byte[] nextBytes(ThreadContext context, IRubyObject n) {
-        if (!(n instanceof RubyFixnum)) throw context.runtime.newArgumentError("non-integer argument: " + n);
-
-        int size = (int)n.convertToInteger().getLongValue();
+        int size = n.isNil() ? 16 : (int)n.convertToInteger().getLongValue();
 
         return nextBytes(context, size);
     }
