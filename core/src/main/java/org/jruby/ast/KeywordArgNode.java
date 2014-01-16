@@ -27,7 +27,7 @@ public class KeywordArgNode extends Node {
 
     @Override
     public List<Node> childNodes() {
-        return assignable;
+        return Node.createList(assignable);
     }
 
     @Override

@@ -88,7 +88,7 @@ public class NewlineNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return nextNode;
+        return createList(nextNode);
     }
     
     @Override

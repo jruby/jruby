@@ -61,7 +61,7 @@ public class ToAryNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return node;
+        return createList(node);
     }
     
     @Override

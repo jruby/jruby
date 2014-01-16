@@ -75,7 +75,7 @@ public class BeginNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return bodyNode;
+        return createList(bodyNode);
     }
     
     @Override

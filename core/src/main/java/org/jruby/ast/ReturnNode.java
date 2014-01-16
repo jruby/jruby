@@ -84,7 +84,7 @@ public class ReturnNode extends Node implements NonLocalControlFlowNode {
     }
     
     public List<Node> childNodes() {
-        return valueNode;
+        return createList(valueNode);
     }
     
     @Override

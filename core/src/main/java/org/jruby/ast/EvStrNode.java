@@ -76,7 +76,7 @@ public class EvStrNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return body;
+        return createList(body);
     }
     
     @Override

@@ -73,7 +73,7 @@ public class MatchNode extends Node {
     }
 
     public List<Node> childNodes() {
-        return regexpNode;
+        return createList(regexpNode);
     }
     
     @Override

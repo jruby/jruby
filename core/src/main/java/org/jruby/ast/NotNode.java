@@ -77,7 +77,7 @@ public class NotNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return conditionNode;
+        return createList(conditionNode);
     }
 
     @Override

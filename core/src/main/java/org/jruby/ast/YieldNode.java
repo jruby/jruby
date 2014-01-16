@@ -103,7 +103,7 @@ public class YieldNode extends Node {
     }
 
     public List<Node> childNodes() {
-        return argsNode;
+        return createList(argsNode);
     }
     
     @Override
