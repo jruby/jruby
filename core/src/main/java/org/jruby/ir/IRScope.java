@@ -27,6 +27,9 @@ import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.listeners.IRScopeListener;
+import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -34,6 +37,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
 import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
+import org.jruby.ir.operands.TemporaryBooleanVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
@@ -1083,30 +1087,46 @@ public abstract class IRScope implements ParseResult {
     public TemporaryLocalVariable getNewTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.LOCAL);
     }
-    
+
     public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
         temporaryVariableIndex++;
-        
         return new TemporaryLocalReplacementVariable(var.getName(), temporaryVariableIndex);
     }
-    
+
     public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
         switch (type) {
             case FLOAT: {
                 floatVariableIndex++;
                 return new TemporaryFloatVariable(floatVariableIndex);
             }
+            case BOOLEAN: {
+                // Shares var index with locals
+                temporaryVariableIndex++;
+                return new TemporaryBooleanVariable(temporaryVariableIndex);
+            }
             case LOCAL: {
                 temporaryVariableIndex++;
                 return new TemporaryLocalVariable(temporaryVariableIndex);
             }
         }
-        
+
         throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
     }
-    
+
     public void setTemporaryVariableCount(int count) {
         temporaryVariableIndex = count + 1;
+    }
+
+    public TemporaryLocalVariable getNewUnboxedVariable(Class type) {
+        TemporaryVariableType varType;
+        if (type == Float.class) {
+            varType = TemporaryVariableType.FLOAT;
+        } else if (type == BooleanLiteral.class) {
+            varType = TemporaryVariableType.BOOLEAN;
+        } else {
+            varType = TemporaryVariableType.LOCAL;
+        }
+        return getNewTemporaryVariable(varType);
     }
 
     public void resetTemporaryVariables() {

@@ -66,6 +66,8 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.TemporaryBooleanVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -227,13 +229,13 @@ public class JVMVisitor extends IRVisitor {
         }
     }
 
-    private boolean isFloatVar(Variable v) {
-        return v instanceof TemporaryLocalVariable && v.getName().equals("%f_" + ((TemporaryLocalVariable)v).offset);
-    }
-
     private int getJVMLocalVarIndex(Variable variable) {
-        if (isFloatVar(variable)) {
-            return jvm.methodData().local(variable, JVM.DOUBLE_TYPE);
+        if (variable instanceof TemporaryLocalVariable) {
+            switch (((TemporaryLocalVariable)variable).getType()) {
+            case FLOAT: return jvm.methodData().local(variable, JVM.DOUBLE_TYPE);
+            case BOOLEAN: return jvm.methodData().local(variable, JVM.BOOLEAN_TYPE);
+            default: return jvm.methodData().local(variable);
+            }
         } else {
             return jvm.methodData().local(variable);
         }
@@ -248,8 +250,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void jvmStoreLocal(Variable variable) {
-        if (isFloatVar(variable)) {
-            jvm.method().adapter.dstore(getJVMLocalVarIndex(variable));
+        if (variable instanceof TemporaryLocalVariable) {
+            switch (((TemporaryLocalVariable)variable).getType()) {
+            case FLOAT: jvm.method().adapter.dstore(getJVMLocalVarIndex(variable)); break;
+            case BOOLEAN: jvm.method().adapter.istore(getJVMLocalVarIndex(variable)); break;
+            default: jvm.method().storeLocal(getJVMLocalVarIndex(variable)); break;
+            }
         } else {
             jvm.method().storeLocal(getJVMLocalVarIndex(variable));
         }
@@ -260,8 +266,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void jvmLoadLocal(Variable variable) {
-        if (isFloatVar(variable)) {
-            jvm.method().adapter.dload(getJVMLocalVarIndex(variable));
+        if (variable instanceof TemporaryLocalVariable) {
+            switch (((TemporaryLocalVariable)variable).getType()) {
+            case FLOAT: jvm.method().adapter.dload(getJVMLocalVarIndex(variable)); break;
+            case BOOLEAN: jvm.method().adapter.iload(getJVMLocalVarIndex(variable)); break;
+            default: jvm.method().loadLocal(getJVMLocalVarIndex(variable)); break;
+            }
         } else {
             jvm.method().loadLocal(getJVMLocalVarIndex(variable));
         }
@@ -313,10 +323,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BFalseInstr(BFalseInstr bFalseInstr) {
-        visit(bFalseInstr.getArg1());
-        if (bFalseInstr.getOperation() == Operation.B_FALSE_UNBOXED) {
-            jvm.method().invokeIRHelper("feq", sig(boolean.class, double.class));
-        } else {
+        Operand arg1 = bFalseInstr.getArg1();
+        visit(arg1);
+        if (!(arg1 instanceof TemporaryBooleanVariable)) {
             jvm.method().isTrue();
         }
         jvm.method().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
@@ -393,8 +402,8 @@ public class JVMVisitor extends IRVisitor {
         case FSUB: a.dsub(); break;
         case FMUL: a.dmul(); break;
         case FDIV: a.ddiv(); break;
-        case FLT: m.invokeIRHelper("flt", sig(double.class, double.class, double.class)); break; // annoying to have to do it in a method
-        case FGT: m.invokeIRHelper("fgt", sig(double.class, double.class, double.class)); break; // annoying to have to do it in a method
+        case FLT: m.invokeIRHelper("flt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
+        case FGT: m.invokeIRHelper("fgt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
         default: throw new RuntimeException("UNHANDLED!");
         }
 
@@ -436,10 +445,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
-        visit(btrueinstr.getArg1());
-        if (btrueinstr.getOperation() == Operation.B_TRUE_UNBOXED) {
-            jvm.method().invokeIRHelper("feq_true", sig(boolean.class, double.class));
-        } else {
+        Operand arg1 = btrueinstr.getArg1();
+        visit(arg1);
+        if (!(arg1 instanceof TemporaryBooleanVariable)) {
             jvm.method().isTrue();
         }
         jvm.method().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
@@ -523,13 +531,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CopyInstr(CopyInstr copyinstr) {
-        Operand src = copyinstr.getSource();
-        if (copyinstr.getOperation() == Operation.COPY_UNBOXED) {
+        Operand  src = copyinstr.getSource();
+        Variable res = copyinstr.getResult();
+        if (res instanceof TemporaryFloatVariable) {
             loadFloatArg(src);
         } else {
             visit(src);
         }
-        jvmStoreLocal(copyinstr.getResult());
+        jvmStoreLocal(res);
     }
 
     @Override

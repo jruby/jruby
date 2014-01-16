@@ -26,9 +26,6 @@ public class UnboxingPass extends CompilerPass {
         problem.compute_MOP_Solution();
         problem.unbox();
 
-        // SSS FIXME: This should be done differently
-        problem.getScope().setDataFlowSolution(DataFlowConstants.LVP_NAME, null);
-
         return true;
     }
 

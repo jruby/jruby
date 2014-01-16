@@ -6,6 +6,9 @@ import org.jruby.runtime.ThreadContext;
 public class BooleanLiteral extends ImmutableLiteral {
     private final boolean truthy;
 
+    public static final BooleanLiteral TRUE = new BooleanLiteral(true);
+    public static final BooleanLiteral FALSE = new BooleanLiteral(false);
+
     public BooleanLiteral(boolean truthy) {
         super(OperandType.BOOLEAN_LITERAL);
 

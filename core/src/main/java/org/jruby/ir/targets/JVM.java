@@ -116,6 +116,7 @@ public class JVM {
     public static final Class THREADCONTEXT = ThreadContext.class;
     public static final Class STATICSCOPE = StaticScope.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
+    public static final Type BOOLEAN_TYPE = Type.BOOLEAN_TYPE;
     public static final Type DOUBLE_TYPE = Type.DOUBLE_TYPE;
     public static final Type LONG_TYPE = Type.LONG_TYPE;
     public static final Type BLOCK_TYPE = Type.getType(BLOCK);

@@ -42,14 +42,14 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
     public TemporaryVariableType getType() {
         return TemporaryVariableType.FLOAT;
     }
-    
+
     @Override
     public String getPrefix() {
         return "%f_";
     }
-    
+
     @Override
     public Variable clone(InlinerInfo ii) {
         return new TemporaryFloatVariable(offset);
-    }    
+    }
 }

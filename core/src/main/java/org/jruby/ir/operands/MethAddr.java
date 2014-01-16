@@ -4,6 +4,9 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Float;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,6 +50,21 @@ public class MethAddr extends Reference {
             n.equals("|") || n.equals("&") || n.equals(">>") || n.equals("<<") ||
             n.equals(">") || n.equals("<") ||
             n.equals("==") || n.equals("!=");
+    }
+
+    public Class getUnboxedResultType(Class operandType) {
+        String n = getName();
+        if (n.length() == 1) {
+            switch (n.charAt(0)) {
+            case '+' :
+            case '-' :
+            case '*' :
+            case '/' : return operandType == Float.class ? Float.class : /*(operandType == Fixnum.class ? Fixnum.class : null)*/ null;
+            case '>' :
+            case '<' : return operandType == Float.class /*|| operandType == Fixnum.class*/ ? BooleanLiteral.class : null;
+            }
+        }
+        return null;
     }
 
     public Operation getUnboxedOp(Class unboxedType) {

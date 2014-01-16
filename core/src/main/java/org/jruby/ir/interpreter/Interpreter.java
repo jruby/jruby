@@ -41,7 +41,6 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
-import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
@@ -56,12 +55,15 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -503,6 +505,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
         if (resultVar instanceof TemporaryVariable) {
             switch (((TemporaryVariable) resultVar).getType()) {
+                case BOOLEAN:
                 case LOCAL:
                 case CURRENT_MODULE:
                 case CURRENT_SCOPE:
@@ -692,6 +695,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return ((Float)arg).value;
         } else if (arg instanceof Fixnum) {
             return (double)((Fixnum)arg).value;
+        } else if (arg instanceof Bignum) {
+            return (double)((Bignum)arg).value.doubleValue();
         } else if (arg instanceof TemporaryLocalVariable) {
             return floats[((TemporaryLocalVariable)arg).offset];
         } else {
@@ -699,21 +704,26 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void setFloatVar(double[] floats, Variable var, double val) {
-        floats[((TemporaryLocalVariable)var).offset] = val;
+    private static void setFloatVar(double[] floats, TemporaryLocalVariable var, double val) {
+        floats[var.offset] = val;
     }
 
-    private static void computeResult(AluInstr instr, Operation op, double[] floats) {
-        Variable dst = instr.getResult();
-        double   a1  = getFloatArg(floats, instr.getArg1());
-        double   a2  = getFloatArg(floats, instr.getArg2());
+    private static void setBooleanVar(ThreadContext context, Object[] temp, TemporaryLocalVariable var, boolean val) {
+        BooleanLiteral bVal = val ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
+        temp[var.offset] = bVal.cachedObject(context);
+    }
+
+    private static void computeResult(AluInstr instr, Operation op, ThreadContext context, double[] floats, Object[] temp) {
+        TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
+        double a1 = getFloatArg(floats, instr.getArg1());
+        double a2 = getFloatArg(floats, instr.getArg2());
         switch (op) {
         case FADD: setFloatVar(floats, dst, a1 + a2); break;
         case FSUB: setFloatVar(floats, dst, a1 - a2); break;
         case FMUL: setFloatVar(floats, dst, a1 * a2); break;
         case FDIV: setFloatVar(floats, dst, a1 / a2); break;
-        case FLT: setFloatVar(floats, dst, a1 < a2 ? 1.0 : 0.0); break;
-        case FGT: setFloatVar(floats, dst, a1 > a2 ? 1.0 : 0.0); break;
+        case FLT : setBooleanVar(context, temp, dst, a1 < a2); break;
+        case FGT : setBooleanVar(context, temp, dst, a1 > a2); break;
         }
     }
 
@@ -768,7 +778,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             try {
                 switch (operation.opClass) {
                 case ALU_OP: {
-                    computeResult((AluInstr)instr, operation, floats);
+                    computeResult((AluInstr)instr, operation, context, floats, temp);
                     break;
                 }
                 case ARG_OP: {
@@ -778,8 +788,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 case BRANCH_OP: {
                     switch (operation) {
                     case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
-                    case B_TRUE_UNBOXED: if (getFloatArg(floats, ((OneOperandBranchInstr)instr).getArg1()) == 1.0) ipc = ((OneOperandBranchInstr)instr).getJumpTarget().getTargetPC(); break;
-                    case B_FALSE_UNBOXED: if (getFloatArg(floats, ((OneOperandBranchInstr)instr).getArg1()) == 0.0) ipc = ((OneOperandBranchInstr)instr).getJumpTarget().getTargetPC(); break;
                     default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc); break;
                     }
                     break;
@@ -829,14 +837,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     // ---------- Common instruction ---------
                     case COPY: {
                         CopyInstr c = (CopyInstr)instr;
-                        result = retrieveOp(c.getSource(), context, self, currDynScope, temp);
-                        setResult(temp, currDynScope, c.getResult(), result);
-                        break;
-                    }
-
-                    case COPY_UNBOXED: {
-                        CopyInstr c = (CopyInstr)instr;
-                        setFloatVar(floats, c.getResult(), getFloatArg(floats, c.getSource()));
+                        Operand  src = c.getSource();
+                        Variable res = c.getResult();
+                        if (res instanceof TemporaryFloatVariable) {
+                            setFloatVar(floats, (TemporaryFloatVariable)res, getFloatArg(floats, src));
+                        } else {
+                            setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, temp));
+                        }
                         break;
                     }
 
