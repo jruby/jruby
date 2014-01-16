@@ -15,6 +15,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.0.8</tesla.version>
   </properties>
   <build>
     <plugins>
@@ -67,7 +68,7 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.8</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>fix_executable_bits</id>
@@ -80,23 +81,12 @@
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
-          <execution>
-            <id>pack_sources</id>
-            <phase>package</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>pack_sources</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
         </executions>
         <dependencies>
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -107,6 +97,14 @@
       <id>release</id>
       <build>
         <plugins>
+          <plugin>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <pomIncludes>
+                <pomInclude>*</pomInclude>
+              </pomIncludes>
+            </configuration>
+          </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
@@ -153,38 +151,32 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>     
-	  <plugin>
+          </plugin>
+          <plugin>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
             <executions>
               <execution>
-		<id>prepare_sources_for_it</id>
-		<phase>pre-integration-test</phase>
-		<goals>
-		  <goal>execute</goal>
-		</goals>
-		<configuration>
-		  <taskId>prepare_sources_for_it</taskId>
-		  <nativePom>pom.rb</nativePom>
-		</configuration>
+                <id>prepare_sources_for_it</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <taskId>prepare_sources_for_it</taskId>
+                  <nativePom>pom.rb</nativePom>
+                </configuration>
               </execution>
             </executions>
             <dependencies>
               <dependency>
-		<groupId>io.tesla.polyglot</groupId>
-		<artifactId>tesla-polyglot-ruby</artifactId>
-		<version>0.0.8</version>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
               </dependency>
             </dependencies>
-	  </plugin>
-	  <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-	    <configuration>
-	      <pomIncludes><pomInclude>*</pomInclude></pomIncludes>
-	    </configuration>
-	  </plugin>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -195,6 +187,35 @@
           <exists>../../.git</exists>
         </file>
       </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-maven-plugin</artifactId>
+            <version>${tesla.version}</version>
+            <executions>
+              <execution>
+                <id>pack_sources</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <taskId>pack_sources</taskId>
+                  <nativePom>pom.rb</nativePom>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

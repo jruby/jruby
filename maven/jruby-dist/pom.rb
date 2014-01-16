@@ -9,6 +9,8 @@ project 'JRuby Dist' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
+              # use a version which is released
+              'tesla.version' => '0.0.8',
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
@@ -49,7 +51,13 @@ project 'JRuby Dist' do
 
   plugin( :invoker )
 
+  # for the release we do some extra IT by unzipping a source dist file
+  # and run the $ mvn -Pall from there and check a few things to be in place.
+  # add check for SNAPSHOT version in any of the modules !!!!
+
   profile 'release' do
+
+    plugin( :invoker, :pomIncludes => [ '*' ] )
 
     phase 'pre-integration-test' do
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
@@ -86,6 +94,10 @@ project 'JRuby Dist' do
       end
     end
   end
+
+  # since the source packages are done from the git repository we need
+  # to inside git controlled directory. for example the source packages
+  # itself does not contain the git repository !!
 
   profile 'source dist' do
 
