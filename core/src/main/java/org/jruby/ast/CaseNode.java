@@ -122,7 +122,9 @@ public class CaseNode extends Node {
 
         context.pollThreadEvents();
 
-        for (Node child : cases.childNodes()) {
+        List<Node> cases = this.cases.childNodes();
+        for (int i = 0; i < cases.size(); i++) {
+            Node child = cases.get(i);
             WhenNode when = (WhenNode) child;
             ISourcePosition position = child.getPosition();
 
