@@ -63,7 +63,7 @@ public class SValueNode extends Node {
     }
 
     public List<Node> childNodes() {
-        return createList(node);
+        return node;
     }
     
     @Override

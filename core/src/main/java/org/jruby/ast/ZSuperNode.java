@@ -81,7 +81,7 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     }
     
     public List<Node> childNodes() {
-        return iterNode != null ? createList(iterNode) : EMPTY_LIST;
+        return iterNode != null ? iterNode : EMPTY_LIST;
     }
 
     public Node getIterNode() {

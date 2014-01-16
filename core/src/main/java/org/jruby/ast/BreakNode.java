@@ -80,7 +80,7 @@ public class BreakNode extends Node implements NonLocalControlFlowNode {
     }
     
     public List<Node> childNodes() {
-        return createList(valueNode);
+        return valueNode;
     }
     
     @Override

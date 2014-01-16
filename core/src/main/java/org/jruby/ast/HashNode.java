@@ -75,7 +75,7 @@ public class HashNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return createList(listNode);
+        return listNode;
     }
     
     @Override

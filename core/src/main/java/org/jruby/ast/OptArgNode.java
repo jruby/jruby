@@ -73,7 +73,7 @@ public class OptArgNode extends Node implements INameNode {
 
     @Override
     public List<Node> childNodes() {
-        return Node.createList(value);
+        return value;
     }
 
     public String getName() {

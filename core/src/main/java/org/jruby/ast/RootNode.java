@@ -104,7 +104,7 @@ public class RootNode extends Node {
     }
 
     public List<Node> childNodes() {
-        return createList(bodyNode);
+        return bodyNode;
     }
     
     @Override

@@ -78,7 +78,7 @@ public class DefinedNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return createList(expressionNode);
+        return expressionNode;
     }
 
     @Override

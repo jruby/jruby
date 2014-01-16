@@ -34,7 +34,11 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
@@ -46,13 +50,12 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder {    
+public abstract class Node implements ISourcePositionHolder, List<Node> {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
     
@@ -146,5 +149,183 @@ public abstract class Node implements ISourcePositionHolder {
      */
     public boolean isNil() {
         return false;
+    }
+
+    @Override
+    public int size() {
+        return 1;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        return o == this;
+    }
+
+    @Override
+    public Iterator<Node> iterator() {
+        return new NodeListIterator();
+    }
+
+    @Override
+    public Object[] toArray() {
+        return new Object[]{this};
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return (T[])new Node[]{this};
+    }
+
+    @Override
+    public boolean add(Node node) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        return c.size() == 1 && c.contains(this);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends Node> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends Node> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Node get(int index) {
+        if (index != 0) throw new IndexOutOfBoundsException("Index: 1, Size: 1");
+        return this;
+    }
+
+    @Override
+    public Node set(int index, Node element) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void add(int index, Node element) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Node remove(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int indexOf(Object o) {
+        return o == this ? 0 : -1;
+    }
+
+    @Override
+    public int lastIndexOf(Object o) {
+        return o == this ? 0 : -1;
+    }
+
+    @Override
+    public ListIterator<Node> listIterator() {
+        return new NodeListIterator();
+    }
+
+    @Override
+    public ListIterator<Node> listIterator(int index) {
+        if (index == 0) {
+            return listIterator();
+        } else {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: 1");
+        }
+    }
+
+    @Override
+    public List<Node> subList(int fromIndex, int toIndex) {
+        if (fromIndex == 0) {
+            if (toIndex == 0) return Collections.EMPTY_LIST;
+            if (toIndex == 1) return this;
+        } else if (fromIndex == 1) {
+            if (toIndex == 1) return Collections.EMPTY_LIST;
+        }
+        throw new IndexOutOfBoundsException("From: " + fromIndex + ", To: " + toIndex + ", Size: 1");
+    }
+
+    private class NodeListIterator implements ListIterator {
+        boolean nexted = false;
+        @Override
+        public boolean hasNext() {
+            return !nexted;
+        }
+
+        @Override
+        public Node next() {
+            if (nexted) throw new IndexOutOfBoundsException("Index: 1, Size: 1");
+            nexted = true;
+            return Node.this;
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return nexted;
+        }
+
+        @Override
+        public Object previous() {
+            if (!nexted) throw new IndexOutOfBoundsException("Index: 1, Size: 1");
+            nexted = false;
+            return Node.this;
+        }
+
+        @Override
+        public int nextIndex() {
+            return nexted ? 1 : 0;
+        }
+
+        @Override
+        public int previousIndex() {
+            return nexted ? 0 : -1;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void set(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(Object o) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

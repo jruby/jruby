@@ -74,7 +74,7 @@ public class UndefNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return Node.createList(name);
+        return name;
     }
     
     @Override

@@ -82,7 +82,7 @@ public class NextNode extends Node implements NonLocalControlFlowNode {
     }
     
     public List<Node> childNodes() {
-        return createList(valueNode);
+        return valueNode;
     }
     
     @Override
