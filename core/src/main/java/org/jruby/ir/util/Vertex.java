@@ -1,7 +1,11 @@
 package org.jruby.ir.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -193,6 +197,7 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         return data instanceof ExplicitVertexID ? ((ExplicitVertexID) data).getID() : id;
     }
 
+    // FIXME: This is pretty ugly...creating massive number of comparators
     @Override
     public String toString() {
         boolean found = false;
@@ -206,12 +211,13 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         if (size > 0) {
             found = true;
             buf.append(">[");
-            Iterator<Edge<T>> iterator = edges.iterator();
+            List<Edge<T>> e = new ArrayList<Edge<T>>(edges);
+            Collections.sort(e, new DestinationCompare());
 
             for (int i = 0; i < size - 1; i++) {
-                buf.append(iterator.next().getDestination().getID()).append(",");
+                buf.append(e.get(i).getDestination().getID()).append(",");
             }
-            buf.append(iterator.next().getDestination().getID()).append("]");
+            buf.append(e.get(size - 1).getDestination().getID()).append("]");
         }
 
         edges = getIncomingEdges();
@@ -220,12 +226,13 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         if (size > 0) {
             if (found) buf.append(", ");
             buf.append("<[");
-            Iterator<Edge<T>> iterator = edges.iterator();
+            List<Edge<T>> e = new ArrayList<Edge<T>>(edges);
+            Collections.sort(e, new SourceCompare());            
 
             for (int i = 0; i < size - 1; i++) {
-                buf.append(iterator.next().getSource().getID()).append(",");
+                buf.append(e.get(i).getSource().getID()).append(",");
             }
-            buf.append(iterator.next().getSource().getID()).append("]");
+            buf.append(e.get(size - 1).getSource().getID()).append("]");
         }
         buf.append("\n");
 
@@ -238,4 +245,26 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         if (getID() < that.getID()) return -1;
         return 1;
     }
+    
+    class SourceCompare implements Comparator<Edge<T>> {
+        @Override
+        public int compare(Edge<T> o1, Edge<T> o2) {
+            int i1 = o1.getSource().getID();
+            int i2 = o2.getSource().getID();
+            
+            if (i1 == i2) return 0;
+            return i1 < i2 ? -1 : 1;
+        }
+    }
+    
+    class DestinationCompare implements Comparator<Edge<T>> {
+        @Override
+        public int compare(Edge<T> o1, Edge<T> o2) {
+            int i1 = o1.getDestination().getID();
+            int i2 = o2.getDestination().getID();
+            
+            if (i1 == i2) return 0;
+            return i1 < i2 ? -1 : 1;
+        }
+    }    
 }
