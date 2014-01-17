@@ -184,7 +184,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyArray to_a(RubyHash hash) {
+        public RubyArray toArray(RubyHash hash) {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object key : hash.storage.keySet()) {
