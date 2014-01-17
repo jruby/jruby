@@ -82,9 +82,9 @@ public final class Buffer extends AbstractMemory {
         this.inout = flags;
         setMemoryIO(allocateMemoryIO(context.runtime, (int) this.size));
 
-        // if (block.isGiven()) {
+        if (block.isGiven()) {
             block.yield(context, this);
-        // }
+        }
 
         return this;
     }
