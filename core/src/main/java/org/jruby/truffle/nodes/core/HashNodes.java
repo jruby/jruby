@@ -172,6 +172,33 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "to_a", maxArgs = 0)
+    public abstract static class ToArrayNode extends CoreMethodNode {
+
+        public ToArrayNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToArrayNode(ToArrayNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray to_a(RubyHash hash) {
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (Object key : hash.storage.keySet()) {
+                RubyArray subArray = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+                subArray.push(key);
+                subArray.push(hash.storage.get(key));
+                array.push(subArray);
+            }
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "initialize", needsBlock = true, maxArgs = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
