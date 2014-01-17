@@ -130,7 +130,22 @@ public final class ThreadContext {
 
     IRubyObject lastExitStatus;
 
-    public final SecureRandom secureRandom = new SecureRandom();
+    public final SecureRandom secureRandom;
+
+    private static boolean trySHA1PRNG = true;
+
+    {
+        SecureRandom sr;
+        try {
+            sr = trySHA1PRNG ?
+                    SecureRandom.getInstance("SHA1PRNG") :
+                    new SecureRandom();
+        } catch (Exception e) {
+            trySHA1PRNG = false;
+            sr = new SecureRandom();
+        }
+        secureRandom = sr;
+    }
     
     /**
      * Constructor for Context.

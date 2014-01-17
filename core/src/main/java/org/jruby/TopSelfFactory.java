@@ -57,6 +57,7 @@ public final class TopSelfFactory {
                 return runtime.newString("main");
             }
         });
+        topSelf.getSingletonClass().defineAlias("inspect", "to_s");
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
