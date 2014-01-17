@@ -12,6 +12,16 @@ describe "The for expression" do
     j.should == 6
   end
 
+  it "converts a hash into an array" do
+    a = { 1 => 10, 2 => 20 }.to_a
+
+    a.first.first.should == 1
+    a.first.last.should == 10
+
+    a.last.first.should == 2
+    a.last.last.should == 20
+  end
+
   it "iterates over an Hash passing each key-value pair to the block" do
     k = 0
     l = 0
