@@ -2,6 +2,7 @@
 # This file is part of ruby-ffi.
 # For licensing, see LICENSE.SPECS
 #
+require 'ffi'
 
 describe "Buffer#total" do
   [1,2,3].each do |i|
