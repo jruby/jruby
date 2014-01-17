@@ -95,6 +95,12 @@ public class Sprintf {
             return new HashMap<Locale, NumberFormat>();
         }
     };
+
+    private static final ThreadLocal<Map<Locale, DecimalFormatSymbols>> LOCALE_DECIMAL_FORMATS = new ThreadLocal<Map<Locale, DecimalFormatSymbols>>() {
+        protected Map<Locale, DecimalFormatSymbols> initialValue() {
+            return new HashMap<Locale, DecimalFormatSymbols>();
+        }
+    };
     
     private static final class Args {
         private final Ruby runtime;
@@ -207,8 +213,7 @@ public class Sprintf {
         }
         
         byte getDecimalSeparator() {
-            // not saving DFS instance, as it will only be used once (at most) per call
-            return (byte)new DecimalFormatSymbols(locale).getDecimalSeparator();
+            return (byte)getDecimalFormat(locale).getDecimalSeparator();
         }
     } // Args
 
@@ -1333,6 +1338,15 @@ public class Sprintf {
         if (format == null) {
             format = NumberFormat.getNumberInstance(locale);
             LOCALE_NUMBER_FORMATS.get().put(locale, format);
+        }
+        return format;
+    }
+
+    public static DecimalFormatSymbols getDecimalFormat(Locale locale) {
+        DecimalFormatSymbols format = LOCALE_DECIMAL_FORMATS.get().get(locale);
+        if (format == null) {
+            format = new DecimalFormatSymbols(locale);
+            LOCALE_DECIMAL_FORMATS.get().put(locale, format);
         }
         return format;
     }
