@@ -245,7 +245,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -265,7 +265,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -285,7 +285,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -304,7 +304,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -339,7 +339,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -360,7 +360,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -400,10 +400,6 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         binding.getFrame().setSelf(self);
         
         return self;
-    }
-    
-    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     public Node getBodyNode() {

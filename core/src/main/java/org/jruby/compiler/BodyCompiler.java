@@ -703,13 +703,25 @@ public interface BodyCompiler {
 
     public void clearErrorInfo();
 
+    /**
+     * Compile a "sequenced conditional", known as a case/when in Ruby or a switch in Java.
+     *
+     * @param inputValue callback to create the case/switch value
+     * @param fastSwitchType type of fast-switching to use, if any
+     * @param switchCases callbacks and array of Java case values for fast switching
+     * @param conditionals callbacks for eqq switching
+     * @param bodies case bodies
+     * @param fallback else body
+     * @param outline whether the case bodies should be generated into their own JVM methods
+     */
     public void compileSequencedConditional(
             CompilerCallback inputValue,
             FastSwitchType fastSwitchType,
             Map<CompilerCallback, int[]> switchCases,
             List<ArgumentsCallback> conditionals,
             List<CompilerCallback> bodies,
-            CompilerCallback fallback);
+            CompilerCallback fallback,
+            boolean outline);
 
     public void raiseTypeError(String string);
 

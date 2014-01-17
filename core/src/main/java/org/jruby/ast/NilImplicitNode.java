@@ -13,4 +13,8 @@ public class NilImplicitNode extends NilNode implements InvisibleNode {
     public NilImplicitNode() {
         super(ISourcePosition.INVALID_POSITION);
     }
+
+    public boolean isNil() {
+        return true;
+    }
 }

@@ -31,8 +31,6 @@
 # p SecureRandom.random_bytes(10) #=> "\323U\030TO\234\357\020\a\337"
 # ...
 
-require 'java'
-
 module SecureRandom
   # SecureRandom.random_bytes generates a random binary string.
   #
@@ -49,13 +47,8 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.random_bytes(n=nil)
-    # Java specific implementation
-    n = (n.nil?) ? 16 : n.to_int
-    raise ArgumentError, "non-integer argument: #{n}" unless n.is_a?(Fixnum)
-    raise ArgumentError, "negative argument: #{n}" if n < 0
-    bytes = Java::byte[n].new
-    java.security.SecureRandom.new.nextBytes(bytes)
-    String.from_java_bytes(bytes)
+    # replaced below by native version
+    raise
   end
 
   # SecureRandom.hex generates a random hex string.
@@ -74,7 +67,8 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.hex(n=nil)
-    random_bytes(n).unpack("H*")[0]
+    # replaced below by native version
+    raise
   end
 
   # SecureRandom.base64 generates a random base64 string.
@@ -185,10 +179,8 @@ if RUBY_VERSION >= "1.9.0"
   # See RFC 4122 for details of UUID.
   #
   def self.uuid
-    ary = self.random_bytes(16).unpack("NnnnnN")
-    ary[2] = (ary[2] & 0x0fff) | 0x4000
-    ary[3] = (ary[3] & 0x3fff) | 0x8000
-    "%08x-%04x-%04x-%04x-%04x%08x" % ary
+    # replaced below by native version
+    raise
   end
 
   # Following code is based on David Garamond's GUID library for Ruby.
@@ -203,6 +195,9 @@ if RUBY_VERSION >= "1.9.0"
     len = format_message.call(format_message_ignore_inserts + format_message_from_system, 0, code, 0, msg, 1024, nil, nil, nil, nil, nil, nil, nil, nil)
     msg[0, len].tr("\r", '').chomp
   end
+
+  # Load the JRuby native ext
+  JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
 end
 
   class << self

@@ -171,7 +171,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             }
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return (IRubyObject)nj.getValue();
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, null, lastFrame);
         }

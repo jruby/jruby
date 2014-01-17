@@ -36,6 +36,7 @@
 package org.jruby.runtime;
 
 import java.lang.ref.WeakReference;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -128,6 +129,8 @@ public final class ThreadContext {
     Visibility lastVisibility;
 
     IRubyObject lastExitStatus;
+
+    public final SecureRandom secureRandom = new SecureRandom();
     
     /**
      * Constructor for Context.

@@ -1341,7 +1341,8 @@ public class ParserSupport {
     }    
 
     private boolean hasAssignableArgs(ListNode list) {
-        for (Node node : list.childNodes()) {
+        for (int i = 0; i < list.size(); i++) {
+            Node node = list.get(i);
             if (node instanceof AssignableNode) return true;
         }
         return false;
@@ -1539,7 +1540,8 @@ public class ParserSupport {
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
             
-            for (Node fragment: dStrNode.childNodes()) {
+            for (int i = 0; i < dStrNode.size(); i++) {
+                Node fragment = dStrNode.get(i);
                 if (fragment instanceof StrNode) {
                     ByteList frag = ((StrNode) fragment).getValue();
                     regexpFragmentCheck(end, frag);

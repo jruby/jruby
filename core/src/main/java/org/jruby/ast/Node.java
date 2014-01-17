@@ -77,8 +77,35 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     public abstract Object accept(NodeVisitor visitor);
     public abstract List<Node> childNodes();
 
+    protected static List<Node> createList(Node node) {
+        ArrayList<Node> list = new ArrayList<Node>(1);
+
+        list.add(node);
+
+        return list;
+    }
+
+    protected static List<Node> createList(Node node1, Node node2) {
+        ArrayList<Node> list = new ArrayList<Node>(2);
+
+        list.add(node1);
+        list.add(node2);
+
+        return list;
+    }
+
+    protected static List<Node> createList(Node node1, Node node2, Node node3) {
+        ArrayList<Node> list = new ArrayList<Node>(3);
+
+        list.add(node1);
+        list.add(node2);
+        list.add(node3);
+
+        return list;
+    }
+
     protected static List<Node> createList(Node... nodes) {
-        ArrayList<Node> list = new ArrayList<Node>();
+        ArrayList<Node> list = new ArrayList<Node>(nodes.length);
         
         for (Node node: nodes) {
             if (node != null) list.add(node);
@@ -101,8 +128,9 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
         builder.append(" ").append(getPosition().getStartLine());
 
-        for (Node child: childNodes()) {
-            builder.append(", ").append(child);
+        List<Node> children = childNodes();
+        for (int i = 0; i < children.size(); i++) {
+            builder.append(", ").append(children.get(i));
         }
         builder.append(")");
 
@@ -138,4 +166,13 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
      * @return the nodeId
      */
     public abstract NodeType getNodeType();
+
+    /**
+     * Whether the node evaluates to nil and has no side effects.
+     *
+     * @return true if nil, false otherwise
+     */
+    public boolean isNil() {
+        return false;
+    }
 }

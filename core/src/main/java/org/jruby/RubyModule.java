@@ -3843,21 +3843,21 @@ public class RubyModule extends RubyObject {
     private static void visitMethods(NodeVisitor visitor, RubyModule mod) {
         for (DynamicMethod method : mod.getNonIncludedClass().getMethods().values()) {
             DynamicMethod realMethod = method.getRealMethod();
+            List<Node> args, body;
             if (method instanceof DefaultMethod) {
-                for (Node node : ((DefaultMethod) realMethod).getArgsNode().childNodes()) {
-                    node.accept(visitor);
-                }
-                for (Node node : ((DefaultMethod) realMethod).getBodyNode().childNodes()) {
-                    node.accept(visitor);
-                }
+                DefaultMethod defaultMethod = ((DefaultMethod) realMethod);
+                args = defaultMethod.getArgsNode().childNodes();
+                body = defaultMethod.getBodyNode().childNodes();
             } else if (method instanceof InterpretedMethod) {
-                for (Node node : ((InterpretedMethod) realMethod).getArgsNode().childNodes()) {
-                    node.accept(visitor);
-                }
-                for (Node node : ((InterpretedMethod) realMethod).getBodyNode().childNodes()) {
-                    node.accept(visitor);
-                }
+                InterpretedMethod interpretedMethod = ((InterpretedMethod) realMethod);
+                args = interpretedMethod.getArgsNode().childNodes();
+                body = interpretedMethod.getBodyNode().childNodes();
+            } else {
+                return;
             }
+
+            for (int i = 0; i < args.size(); i++) args.get(i).accept(visitor);
+            for (int i = 0; i < body.size(); i++) body.get(i).accept(visitor);
         }
     }
 

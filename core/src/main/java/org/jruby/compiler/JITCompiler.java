@@ -251,7 +251,7 @@ public class JITCompiler implements JITCompilerMBean {
                     }
                 }
 
-                String key = SexpMaker.create(methodName, method.getArgsNode(), method.getBodyNode());
+                String key = SexpMaker.sha1(methodName, method.getArgsNode(), method.getBodyNode());
                 JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts);
 
                 Class<Script> sourceClass = (Class<Script>) config.getClassCache().cacheClassByKey(generator.digestString, generator);
@@ -364,9 +364,9 @@ public class JITCompiler implements JITCompilerMBean {
                 // at class level rather than at our runtime level. This makes it impossible to share jitted code
                 // across runtimes.
                 
-                digestString = getHashForString(key) + Math.abs(ruby.hashCode());
+                digestString = key + Math.abs(ruby.hashCode());
             } else {
-                digestString = getHashForString(key);
+                digestString = key;
             }
             this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
             this.name = this.className.replaceAll("/", ".");
