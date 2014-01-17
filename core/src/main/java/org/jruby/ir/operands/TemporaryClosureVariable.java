@@ -1,6 +1,5 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class TemporaryClosureVariable extends TemporaryLocalVariable {
@@ -14,7 +13,12 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     
     public int getClosureId() {
         return closureId;
-    }    
+    }
+    
+    @Override
+    public TemporaryVariableType getType() {
+        return TemporaryVariableType.CLOSURE;
+    }
 
     @Override
     public Variable clone(InlinerInfo ii) {
