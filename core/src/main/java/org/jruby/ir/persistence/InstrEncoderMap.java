@@ -228,7 +228,15 @@ public class InstrEncoderMap {
     }
 
     private void encodeAttrAssignInstr(AttrAssignInstr instr) {
-        encodeCallBaseInstr(instr);
+        e.encode(instr.getReceiver());
+        e.encode(instr.getMethodAddr().getName());
+        Operand[] args = instr.getCallArgs();
+        
+        e.encode(args.length);
+        
+        for (int i = 0; i < args.length; i++) {
+            e.encode(args[i]);
+        }
     }
 
     private void encodeBEQInstr(BEQInstr instr) {
@@ -388,7 +396,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeJumpInstr(JumpInstr instr) {
-        e.encode(instr.getJumpTarget().label);
+        e.encode(instr.getJumpTarget());
     }
 
     private void encodeJumpIndirectInstr(JumpIndirectInstr instr) {
@@ -506,7 +514,7 @@ public class InstrEncoderMap {
     }
 
     private void encodePutGlobalVarInstr(PutGlobalVarInstr instr) {
-        e.encode(instr.getTarget());
+        e.encode(((GlobalVariable) instr.getTarget()).getName());
         e.encode(instr.getValue());
     }
 
@@ -588,7 +596,17 @@ public class InstrEncoderMap {
     }
 
     private void encodeUnresolvedSuperInstr(UnresolvedSuperInstr instr) {
-        encodeCallBaseInstr(instr);
+        boolean hasClosure = instr.getClosureArg(null) != null;
+        
+        e.encode(instr.getCallType().ordinal());
+        e.encode(instr.getReceiver());
+        e.encode(calculateArity(instr.getCallArgs(), hasClosure));
+        
+        for (Operand arg: instr.getCallArgs()) {
+            e.encode(arg);
+        }
+        
+        if (hasClosure) e.encode(instr.getClosureArg(null));
     }
 
     private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr instr) {

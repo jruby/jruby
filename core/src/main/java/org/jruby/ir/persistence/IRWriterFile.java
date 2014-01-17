@@ -85,7 +85,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
         //FIXME: Use bit math
         // We can write 7 bits of ints as a single byte and if 8th is set we end
         // using first byte to indicate full precision int.
-        if (value >= 0 && value <= 128) {
+        if (value >= 0 && value <= 127) {
             buf.put((byte) value);
         } else {
             buf.put(FULL);
@@ -95,7 +95,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(long value) {
-        if (value >= 0 && value <= 128) {
+        if (value >= 0 && value <= 127) {
             encode((byte) value);
         } else {
             buf.put(FULL);

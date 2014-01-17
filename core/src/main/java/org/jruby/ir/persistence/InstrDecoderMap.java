@@ -127,6 +127,14 @@ class InstrDecoderMap implements IRPersistenceValues {
         this.d = decoder;
     }
 
+    /*
+    public Instr decode(Operation operation) {
+        Instr instr = decodeInner(operation);
+        
+        System.out.println("Got: " + instr + ", :" + d.getCurrentScope().getClass().getName());
+        return instr;
+    }*/
+    
     public Instr decode(Operation operation) {
         try {
         switch(operation) {
@@ -171,7 +179,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case HAS_INSTANCE_VAR: return new HasInstanceVarInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
             case IS_METHOD_BOUND: return new IsMethodBoundInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
-            case JUMP: return new JumpInstr(new Label(d.decodeString()));
+            case JUMP: return new JumpInstr((Label) d.decodeOperand());
             case JUMP_INDIRECT: return new JumpIndirectInstr(d.decodeVariable());
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
@@ -216,9 +224,9 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RUNTIME_HELPER: return decodeRuntimeHelperCall();
             case SEARCH_CONST: return decodeSearchConst();
             case SET_RETADDR: return new SetReturnAddressInstr(d.decodeVariable(), (Label) d.decodeOperand());
-            case CLASS_SUPER: return new ClassSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
-            case INSTANCE_SUPER: return new InstanceSuperInstr(d.decodeVariable(), d.decodeOperand(), (MethAddr) d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
-            case UNRESOLVED_SUPER: return new UnresolvedSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperandArray(), d.decodeOperand());
+            case CLASS_SUPER: return decodeSuperInstr(operation);
+            case INSTANCE_SUPER: return decodeSuperInstr(operation);
+            case UNRESOLVED_SUPER: return decodeUnresolvedSuperInstr();
             case SUPER_METHOD_BOUND: return new SuperMethodBoundInstr(d.decodeVariable(), d.decodeOperand());
             case THREAD_POLL: return new ThreadPollInstr(d.decodeBoolean());
             case THROW: return new ThrowExceptionInstr(d.decodeOperand());
@@ -356,5 +364,53 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeReceiveException() {
         return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
+    }
+
+    private Instr decodeSuperInstr(Operation operation) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super");
+        Variable result = d.decodeVariable();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, result:  "+ result);
+        int callTypeOrdinal = d.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
+        MethAddr methAddr = new MethAddr(d.decodeString());
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
+        Operand receiver = d.decodeOperand();
+        int argsCount = d.decodeInt();
+        boolean hasClosureArg = argsCount < 0;
+        int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        Operand[] args = new Operand[argsLength];
+
+        for (int i = 0; i < argsLength; i++) {
+            args[i] = d.decodeOperand();
+        }
+
+        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        
+        if (operation == Operation.CLASS_SUPER) return new ClassSuperInstr(result, receiver, methAddr, args, closure);
+                
+        return new InstanceSuperInstr(result, receiver, methAddr, args, closure);
+    }
+    
+    public Instr decodeUnresolvedSuperInstr() {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding un. super");
+        Variable result = d.decodeVariable();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding un. super, result:  "+ result);
+        int callTypeOrdinal = d.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding un. super, calltype(ord):  "+ callTypeOrdinal);
+        Operand receiver = d.decodeOperand();
+        int argsCount = d.decodeInt();
+        boolean hasClosureArg = argsCount < 0;
+        int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        Operand[] args = new Operand[argsLength];
+
+        for (int i = 0; i < argsLength; i++) {
+            args[i] = d.decodeOperand();
+        }
+
+        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        
+        return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
  }
