@@ -116,6 +116,7 @@
       <version>${minitest-excludes.version}</version>
       <type>gem</type>
     </dependency>
+<!-- TODO those are default gems and should not be installed here -->
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
