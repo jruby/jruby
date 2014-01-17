@@ -1,6 +1,7 @@
 package org.jruby.util;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
@@ -273,6 +274,57 @@ public class ConvertBytes {
         spaceOrUnderscore['\r'] = true;
         spaceOrUnderscore[' '] = true;
         spaceOrUnderscore['_'] = true;
+    }
+
+    public static byte[] bytesToUUIDBytes(byte[] randBytes, boolean upper) {
+        ByteBuffer bytes = ByteBuffer.wrap(randBytes);
+        long N0 = bytes.getInt() & 0xFFFFFFFFL;
+        int n1 = bytes.getShort() & 0xFFFF;
+        int n2 = bytes.getShort() & 0xFFFF;
+        n2 = n2 & 0x0FFF | 0x4000;
+        int n3 = bytes.getShort() & 0xFFFF;
+        n3 = n3 & 0x3FFF | 0x8000;
+        int n4 = bytes.getShort() & 0xFFFF;
+        long N5 = bytes.getInt() & 0xFFFFFFFFL;
+        byte[] convert = upper ? UPPER_DIGITS : LOWER_DIGITS;
+        return new byte[]{
+                convert[(int)((N0 >> 28) & 0xF)],
+                convert[(int)((N0 >> 24) & 0xF)],
+                convert[(int)((N0 >> 20) & 0xF)],
+                convert[(int)((N0 >> 16) & 0xF)],
+                convert[(int)((N0 >> 12) & 0xF)],
+                convert[(int)((N0 >> 8) & 0xF)],
+                convert[(int)((N0 >> 4) & 0xF)],
+                convert[(int)(N0 & 0xF)],
+                (byte)'-',
+                convert[(n1 >> 12) & 0xF],
+                convert[(n1 >> 8) & 0xF],
+                convert[(n1 >> 4) & 0xF],
+                convert[n1 & 0xF],
+                (byte)'-',
+                convert[(n2 >> 12) & 0xF],
+                convert[(n2 >> 8) & 0xF],
+                convert[(n2 >> 4) & 0xF],
+                convert[n2 & 0xF],
+                (byte)'-',
+                convert[(n3 >> 12) & 0xF],
+                convert[(n3 >> 8) & 0xF],
+                convert[(n3 >> 4) & 0xF],
+                convert[n3 & 0xF],
+                (byte)'-',
+                convert[(n4 >> 12) & 0xF],
+                convert[(n4 >> 8) & 0xF],
+                convert[(n4 >> 4) & 0xF],
+                convert[n4 & 0xF],
+                convert[(int)((N5 >> 28) & 0xF)],
+                convert[(int)((N5 >> 24) & 0xF)],
+                convert[(int)((N5 >> 20) & 0xF)],
+                convert[(int)((N5 >> 16) & 0xF)],
+                convert[(int)((N5 >> 12) & 0xF)],
+                convert[(int)((N5 >> 8) & 0xF)],
+                convert[(int)((N5 >> 4) & 0xF)],
+                convert[(int)(N5 & 0xF)]
+        };
     }
 
     /** conv_digit
