@@ -64,6 +64,9 @@
 
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <tesla.version>0.0.8</tesla.version>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.0-rc3</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
@@ -438,7 +441,6 @@
     <profile>
       <id>main</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -448,14 +450,12 @@
     <profile>
       <id>jruby-jars</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
       <id>complete</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -474,7 +474,6 @@
     <profile>
       <id>dist</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
@@ -496,6 +495,7 @@
         <module>maven</module>
       </modules>
     </profile>
+<!-- not used right now - if ever
     <profile>
       <id>repo</id>
       <distributionManagement>
@@ -512,6 +512,7 @@
 	<defaultGoal>deploy</defaultGoal>
       </build>
     </profile>
+-->
   </profiles>
   <reporting>
       <plugins>

@@ -1,51 +1,81 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
     <version>9000.dev</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-artifacts</artifactId>
-  <version>9000.dev</version>
   <packaging>pom</packaging>
   <name>JRuby Artifacts</name>
-
+  <properties>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+  </properties>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-artifacts</id>
+              <phase>package</phase>
+              <goals>
+                <goal>attach-artifact</goal>
+              </goals>
+              <configuration>
+                <artifacts>
+                  <artifact>
+                    <file>${basedir}/src/empty.jar</file>
+                    <classifier>sources</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>${basedir}/src/empty.jar</file>
+                    <classifier>javadoc</classifier>
+                  </artifact>
+                </artifacts>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
   <profiles>
     <profile>
       <id>all</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-rake-plugin</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
-        <module>jruby-jars</module>
         <module>jruby-dist</module>
+        <module>jruby-jars</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
       <id>release</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-rake-plugin</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
         <module>jruby-dist</module>
+        <module>jruby-jars</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
       <id>main</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
@@ -56,32 +86,22 @@
       </modules>
     </profile>
     <profile>
-      <id>rake-plugin</id>
+      <id>jruby-jars</id>
       <modules>
-        <module>jruby-rake-plugin</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-jars</module>
       </modules>
     </profile>
     <profile>
       <id>dist</id>
       <modules>
-        <module>jruby-stdlib</module>
-        <module>jruby-stdlib-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
     <profile>
-      <id>jruby-jars</id>
+      <id>jruby-rake-plugin</id>
       <modules>
-        <module>jruby-stdlib</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
-        <module>jruby-jars</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>gems</id>
-      <modules>
-        <module>gems</module>
+        <module>jruby-rake-plugin</module>
       </modules>
     </profile>
   </profiles>
