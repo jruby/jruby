@@ -507,6 +507,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             switch (((TemporaryVariable) resultVar).getType()) {
                 case BOOLEAN:
                 case LOCAL:
+                case CLOSURE:
                 case CURRENT_MODULE:
                 case CURRENT_SCOPE:
                     temp[((TemporaryLocalVariable)resultVar).offset] = result;
