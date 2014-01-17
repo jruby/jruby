@@ -664,6 +664,8 @@ public abstract class IRScope implements ParseResult {
         for (BasicBlock b: linearizedBBList) {
             Label l = b.getLabel();
             labelIPCMap.put(l, ipc);
+            // This assumes if multiple equal/same labels exist which are scattered around the scope
+            // must be the same Java instance or only this one will get a targetPC set.
             l.setTargetPC(ipc);
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
