@@ -14,6 +14,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.control.*;
@@ -133,7 +134,7 @@ class MethodTranslator extends Translator {
              */
 
             if (postCount != 0) {
-                context.implementationMessage("post arguments as well as a rest argument - they will conflict");
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, body.getSourceSection().getSource().getName(), body.getSourceSection().getStartLine(), "post arguments as well as a rest argument - they will conflict");
             }
 
             final ReadRestArgumentNode readArgumentNode = new ReadRestArgumentNode(context, sourceSection, preCount);
@@ -206,7 +207,7 @@ class MethodTranslator extends Translator {
                      * the names out and define them so the rest of the parser succeeds.
                      */
 
-                    context.implementationMessage("only extracting names from multiple assignment in arguments");
+                    context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, args.getPosition().getFile(), args.getPosition().getStartLine(), "only extracting names from multiple assignment in arguments");
 
                     final org.jruby.ast.MultipleAsgnNode multAsgn = (org.jruby.ast.MultipleAsgnNode) arg;
 

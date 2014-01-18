@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.objects.*;
+import org.jruby.util.cli.Options;
 
 public final class ExceptionTranslator {
 
@@ -24,6 +25,10 @@ public final class ExceptionTranslator {
         assert exception != null;
 
         CompilerAsserts.neverPartOfCompilation();
+
+        if (Options.TRUFFLE_PRINT_JAVA_EXCEPTIONS.load()) {
+            exception.printStackTrace();
+        }
 
         // RaiseException already includes the Ruby exception
 

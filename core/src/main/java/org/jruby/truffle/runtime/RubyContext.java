@@ -85,10 +85,6 @@ public class RubyContext implements ExecutionContext {
         throw new UnsupportedOperationException();
     }
 
-    public void implementationMessage(String format, Object... arguments) {
-        System.err.println("rubytruffle: " + String.format(format, arguments));
-    }
-
     public void load(Source source) {
         execute(this, source, RubyParser.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }

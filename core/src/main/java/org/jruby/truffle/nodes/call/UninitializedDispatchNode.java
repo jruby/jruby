@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -59,8 +60,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
              * GeneralDispatchNode.
              */
 
-            context.implementationMessage("resorting to a general call node at %s", getSourceSection());
-            NodeUtil.printTree(System.err, dispatchHead);
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "resorting to a general call node");
 
             final GeneralBoxedDispatchNode newGeneralDispatch = new GeneralBoxedDispatchNode(getContext(), getSourceSection(), name);
             final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), getSourceSection(), newGeneralDispatch);
