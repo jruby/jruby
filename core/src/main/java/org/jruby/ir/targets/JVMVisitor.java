@@ -84,6 +84,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.JRubyClassLoader;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
@@ -146,15 +150,59 @@ public class JVMVisitor extends IRVisitor {
         Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
         Instr[] instrs = t.a;
         Map<Integer, Label[]> jumpTable = t.b;
+        Map<Integer, Integer> rescueTable = scope.getRescueMap();
+//        System.out.println("rescues: " + rescueTable);
+//        System.out.println("jumps: " + jumpTable);
 
         jvm.pushmethod(name, arity);
         IRBytecodeAdapter m = jvm.method();
+        org.objectweb.asm.Label[] allLabels = new org.objectweb.asm.Label[instrs.length + 1];
+        for (int i = 0; i < allLabels.length; i++) {
+            allLabels[i] = new org.objectweb.asm.Label();
+        }
+
+        // set up try/catch table
+        int[][] tryCatchTable = new int[instrs.length][];
+        List<int[]> allCatches = new ArrayList<int[]>();
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
+
+            int rescueIPC = rescueTable.get(instr.getIPC());
+            if (rescueIPC != -1) {
+                int[] rescueRange = tryCatchTable[rescueIPC];
+                if (rescueRange == null) {
+                    rescueRange = new int[]{i, i + 1, rescueIPC};
+                    tryCatchTable[rescueIPC] = rescueRange;
+                    allCatches.add(rescueRange);
+                } else {
+                    rescueRange[1] = i + 1;
+                }
+            }
+        }
+
+        Collections.sort(allCatches, new Comparator<int[]>() {
+            @Override
+            public int compare(int[] o1, int[] o2) {
+                return Integer.compare(o1[0], o2[0]);
+            }
+        });
+
+        for (int[] range : allCatches) {
+            jvm.method().adapter.trycatch(allLabels[range[0]], allLabels[range[1]], allLabels[range[2]], p(Throwable.class));
+        }
+
+        for (int i = 0; i < instrs.length; i++) {
+            Instr instr = instrs[i];
+//            System.out.println("ipc " + instr.getIPC() + " rescued by " + rescueTable.get(instr.getIPC()));
+//            System.out.println("ipc " + instr.getIPC() + " is: " + instr + " (" + instr.getClass() + ")");
 
             if (jumpTable.get(i) != null) {
                 for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
             }
+
+            // this is probably not efficient because it's putting a label at every instruction
+            m.mark(allLabels[i]);
+
             visit(instr);
         }
 
@@ -1000,6 +1048,8 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.ldc(name);
         visit(putglobalvarinstr.getValue());
         jvm.method().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject set(String, org.jruby.runtime.builtin.IRubyObject)"));
+        // leaves copy of value on stack
+        jvm.method().adapter.pop();
     }
 
     @Override
@@ -1017,7 +1067,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveExceptionInstr(ReceiveExceptionInstr receiveexceptioninstr) {
-        // TODO implement
+        // exception should be on stack from try/catch, so just store it
+        jvmStoreLocal(receiveexceptioninstr.getResult());
     }
 
     @Override
@@ -1190,7 +1241,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) {
-        // TODO implement
+        visit(throwexceptioninstr.getExceptionArg());
+        jvm.method().adapter.athrow();
     }
 
     @Override

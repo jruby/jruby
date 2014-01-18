@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -203,7 +204,8 @@ public class IRRuntimeHelpers {
     // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
     public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         Ruby runtime = context.runtime;
-        if (excObj instanceof IRubyObject) {
+        if (excObj instanceof IRubyObject ||
+                (excObj instanceof RaiseException && ((excObj = ((RaiseException) excObj).getException()) != null))) {
             // regular ruby exception
             if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
             return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();

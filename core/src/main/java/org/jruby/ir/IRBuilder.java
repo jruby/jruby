@@ -3115,16 +3115,16 @@ public class IRBuilder {
         Label rEndLabel   = ensure == null ? s.getNewLabel() : ensure.end;
         Label rescueLabel = s.getNewLabel(); // Label marking start of the first rescue code.
 
-        if (ensure == null) s.addInstr(new LabelInstr(rBeginLabel));
-
-        // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
-
         // Save $! in a temp var so it can be restored when the exception gets handled.
         // SSS FIXME: Dont yet understand why an exception needs to be saved/restored.
         Variable savedGlobalException = s.getNewTemporaryVariable();
         s.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
+
+        if (ensure == null) s.addInstr(new LabelInstr(rBeginLabel));
+
+        // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
 
         // Body
         Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -3184,9 +3184,15 @@ public class IRBuilder {
             // buildRescueBodyInternal below.  So, in either case, we are good!
         }
 
-        // Build the actual rescue block(s)
+        // Start of rescue logic
         s.addInstr(new LabelInstr(rescueLabel));
-        buildRescueBodyInternal(s, rescueNode.getRescueNode(), rv, rEndLabel);
+
+        // Save off exception & exception comparison type
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new ReceiveExceptionInstr(exc));
+
+        // Build the actual rescue block(s)
+        buildRescueBodyInternal(s, rescueNode.getRescueNode(), rv, exc, rEndLabel);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (ensure == null) s.addInstr(new LabelInstr(rEndLabel));
@@ -3201,13 +3207,9 @@ public class IRBuilder {
         s.addInstr(BEQInstr.create(eqqResult, manager.getTrue(), caughtLabel));
     }
 
-    private void buildRescueBodyInternal(IRScope s, Node node, Variable rv, Label endLabel) {
+    private void buildRescueBodyInternal(IRScope s, Node node, Variable rv, Variable exc, Label endLabel) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
-
-        // Load exception & exception comparison type
-        Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc));
 
         // Compare and branch as necessary!
         Label uncaughtLabel = s.getNewLabel();
@@ -3241,7 +3243,7 @@ public class IRBuilder {
         // Uncaught exception -- build other rescue nodes or rethrow!
         s.addInstr(new LabelInstr(uncaughtLabel));
         if (rescueBodyNode.getOptRescueNode() != null) {
-            buildRescueBodyInternal(s, rescueBodyNode.getOptRescueNode(), rv, endLabel);
+            buildRescueBodyInternal(s, rescueBodyNode.getOptRescueNode(), rv, exc, endLabel);
         } else {
             s.addInstr(new ThrowExceptionInstr(exc));
         }

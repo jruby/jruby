@@ -28,7 +28,6 @@ import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -153,6 +152,7 @@ public abstract class IRScope implements ParseResult {
     private IRReaderDecoder persistenceStore = null;
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
+    private HashMap<Label,Integer> labelIPCMap;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -646,20 +646,11 @@ public abstract class IRScope implements ParseResult {
 
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
 
-        try {
-            buildLinearization(); // FIXME: compiler passes should have done this
-            depends(linearization());
-        } catch (RuntimeException e) {
-            LOG.error("Error linearizing cfg: ", e);
-            CFG c = cfg();
-            LOG.error("\nGraph:\n" + c.toStringGraph());
-            LOG.error("\nInstructions:\n" + c.toStringInstrs());
-            throw e;
-        }
+        setupLinearization();
 
         // Set up IPCs
-        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         List<Instr> newInstrs = new ArrayList<Instr>();
+        labelIPCMap = new HashMap<Label, Integer>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
             Label l = b.getLabel();
@@ -692,6 +683,13 @@ public abstract class IRScope implements ParseResult {
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
 
         // Set up rescue map
+        setupRescueMap();
+
+        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
+        return linearizedInstrArray;
+    }
+
+    public void setupRescueMap() {
         this.rescueMap = new HashMap<Integer, Integer>();
         for (BasicBlock b : linearizedBBList) {
             BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
@@ -700,9 +698,6 @@ public abstract class IRScope implements ParseResult {
                 rescueMap.put(i.getIPC(), rescuerPC);
             }
         }
-
-        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return linearizedInstrArray;
     }
 
     private void runCompilerPasses() {
@@ -780,16 +775,7 @@ public abstract class IRScope implements ParseResult {
             this.relinearizeCFG = true;
         }
 
-        try {
-            buildLinearization(); // FIXME: compiler passes should have done this
-            depends(linearization());
-        } catch (RuntimeException e) {
-            LOG.error("Error linearizing cfg: ", e);
-            CFG c = cfg();
-            LOG.error("\nGraph:\n" + c.toStringGraph());
-            LOG.error("\nInstructions:\n" + c.toStringInstrs());
-            throw e;
-        }
+        prepareInstructionsForInterpretation();
 
         // Set up IPCs
         // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
@@ -809,6 +795,19 @@ public abstract class IRScope implements ParseResult {
         }
 
         return new Tuple<Instr[], Map<Integer,Label[]>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
+    }
+
+    private void setupLinearization() {
+        try {
+            buildLinearization(); // FIXME: compiler passes should have done this
+            depends(linearization());
+        } catch (RuntimeException e) {
+            LOG.error("Error linearizing cfg: ", e);
+            CFG c = cfg();
+            LOG.error("\nGraph:\n" + c.toStringGraph());
+            LOG.error("\nInstructions:\n" + c.toStringInstrs());
+            throw e;
+        }
     }
 
     private List<Object[]> buildJVMExceptionTable() {
