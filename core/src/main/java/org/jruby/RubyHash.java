@@ -71,6 +71,7 @@ import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.invokedynamic.MethodNames.DEFAULT;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 // Design overview:
@@ -1083,7 +1084,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? callMethod(context, "default", key) : value;
+        return ((value = internalGet(key)) == null) ? invokedynamic(context, this, DEFAULT, key) : value;
     }
 
     /** rb_hash_hash
@@ -1935,6 +1936,30 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash clone = (RubyHash) super.rbClone();
         clone.setComparedByIdentity(isComparedByIdentity());
         return clone;
+    }
+
+    /**
+     * A lightweight dup for internal use that does not dispatch to initialize_copy nor rehash the keys. Intended for
+     * use in dup'ing keyword args for processing.
+     *
+     * @param context
+     * @return
+     */
+    public RubyHash dupFast(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        RubyHash dup = new RubyHash(runtime, getMetaClass(), this);
+
+        dup.setComparedByIdentity(this.isComparedByIdentity());
+
+        dup.ifNone = this.ifNone;
+
+        if ((this.flags & PROCDEFAULT_HASH_F) != 0) {
+            dup.flags |= PROCDEFAULT_HASH_F;
+        } else {
+            dup.flags &= ~PROCDEFAULT_HASH_F;
+        }
+
+        return dup;
     }
 
     public boolean hasDefaultProc() {

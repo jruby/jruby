@@ -39,6 +39,7 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -357,8 +358,17 @@ public class ASTInspector {
         case CASENODE:
             CaseNode caseNode = (CaseNode)node;
             inspect(caseNode.getCaseNode());
-            for (Node when : caseNode.getCases().childNodes()) inspect(when);
-            inspect(caseNode.getElseNode());
+            if (caseNode.getCases().size() > Options.COMPILE_OUTLINE_CASECOUNT.load()) {
+                // if more than N cases, disable; we'll compile them as separate bodies
+                // see BaseBodyCompiler#compiledSequencedConditional and ASTCompiler#compileCase
+                disable();
+                return;
+            } else {
+                for (Node when : caseNode.getCases().childNodes()) {
+                    inspect(when);
+                }
+                inspect(caseNode.getElseNode());
+            }
             break;
         case CLASSNODE:
             setFlag(node, CLASS);

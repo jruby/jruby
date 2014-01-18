@@ -36,6 +36,7 @@
 package org.jruby.runtime;
 
 import java.lang.ref.WeakReference;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -128,6 +129,23 @@ public final class ThreadContext {
     Visibility lastVisibility;
 
     IRubyObject lastExitStatus;
+
+    public final SecureRandom secureRandom;
+
+    private static boolean trySHA1PRNG = true;
+
+    {
+        SecureRandom sr;
+        try {
+            sr = trySHA1PRNG ?
+                    SecureRandom.getInstance("SHA1PRNG") :
+                    new SecureRandom();
+        } catch (Exception e) {
+            trySHA1PRNG = false;
+            sr = new SecureRandom();
+        }
+        secureRandom = sr;
+    }
     
     /**
      * Constructor for Context.
@@ -1002,6 +1020,7 @@ public final class ThreadContext {
         pushFrameCopy();
         getCurrentFrame().setSelf(type);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
+        getCurrentFrame().setName(null);
 
         pushScope(DynamicScope.newDynamicScope(staticScope, null));
     }

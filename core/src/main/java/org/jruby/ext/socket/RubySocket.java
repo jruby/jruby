@@ -93,6 +93,11 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, TCP.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
 
+        // this value seems to be hardcoded in MRI to 5 when not defined, but
+        // it is 128 on OS X. We use 128 for now until we can get it added to
+        // jnr-constants.
+        rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
+
         // mandatory constants we haven't implemented
         rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
         rb_mConstants.setConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
@@ -210,7 +215,6 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        
         InetSocketAddress iaddr = null;
         
         if (arg instanceof Addrinfo){
@@ -576,6 +580,8 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof Addrinfo) return Sockaddr.addressFromArg(context, arg);
+
         switch (soProtocol) {
             case PF_UNIX:
             case PF_LOCAL:

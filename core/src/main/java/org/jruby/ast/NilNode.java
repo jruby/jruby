@@ -90,4 +90,8 @@ public class NilNode extends Node implements INameNode, IEqlNode {
     public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         return otherValue == interpret(runtime, context, self, aBlock);
     }
+
+    public boolean isNil() {
+        return true;
+    }
 }

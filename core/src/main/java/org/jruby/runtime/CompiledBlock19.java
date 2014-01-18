@@ -117,7 +117,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             return callback.call(context, self, args, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -135,7 +135,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -159,7 +159,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
+            return Helpers.handleNextJump(context, nj);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -170,10 +170,6 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         binding.getFrame().setSelf(self);
         
         return self;
-    }
-
-    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self, Block.Type type) {

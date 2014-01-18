@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.socket.Addrinfo;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,6 +51,18 @@ public class Sockaddr {
 
         return new InetSocketAddress(
                 addr.convertToString().toString(), port);
+    }
+
+    public static InetSocketAddress addressFromArg(ThreadContext context, IRubyObject arg) {
+        InetSocketAddress iaddr;
+        if (arg instanceof Addrinfo) {
+            Addrinfo addrinfo = (Addrinfo)arg;
+            iaddr = new InetSocketAddress(addrinfo.getInetAddress(), addrinfo.getPort());
+        } else {
+            iaddr = addressFromSockaddr_in(context, arg);
+        }
+
+        return iaddr;
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, IRubyObject arg) {

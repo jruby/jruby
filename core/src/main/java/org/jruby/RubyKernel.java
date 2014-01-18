@@ -169,6 +169,8 @@ public class RubyKernel {
 
         if (!runtime.is1_9()) { // method_missing is in BasicObject in 1.9
             runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
+        } else {
+            runtime.setRespondToMissingMethod(module.searchMethod("respond_to_missing?"));
         }
     }
 

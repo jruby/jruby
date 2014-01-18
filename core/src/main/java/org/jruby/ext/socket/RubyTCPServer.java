@@ -104,8 +104,8 @@ public class RubyTCPServer extends RubyTCPSocket {
         try {
             InetAddress addr = InetAddress.getByName(host);
 
-            ssc = ServerSocketChannel.open();
-            socket_address = new InetSocketAddress(addr, port);
+            ServerSocketChannel ssc = ServerSocketChannel.open();
+            InetSocketAddress socket_address = new InetSocketAddress(addr, port);
 
             ssc.socket().bind(socket_address);
 
@@ -152,7 +152,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     context.pollThreadEvents();
 
                 } else {
-                    SocketChannel connected = ssc.accept();
+                    SocketChannel connected = getServerSocketChannel().accept();
                     if (connected == null) continue;
 
                     connected.finishConnect();
@@ -180,6 +180,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         Ruby runtime = context.runtime;
         RubyTCPSocket socket = new RubyTCPSocket(runtime, runtime.getClass("TCPSocket"));
         Selector selector = null;
+        ServerSocketChannel ssc = getServerSocketChannel();
 
         synchronized (ssc.blockingLock()) {
             boolean oldBlocking = ssc.isBlocking();
@@ -243,6 +244,10 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
+    public ServerSocketChannel getServerSocketChannel() {
+        return (ServerSocketChannel)getChannel();
+    }
+
     @Override
     public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
         // act like a platform that does not support shutdown for server sockets
@@ -288,7 +293,4 @@ public class RubyTCPServer extends RubyTCPSocket {
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
-
-    private ServerSocketChannel ssc;
-    private InetSocketAddress socket_address;
 }

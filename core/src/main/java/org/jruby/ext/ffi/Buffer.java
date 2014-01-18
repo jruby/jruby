@@ -76,32 +76,36 @@ public final class Buffer extends AbstractMemory {
                 allocateMemoryIO(context.runtime, total), total, typeSize, flags);
     }
 
-    private IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int flags) {
+    private IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int flags, Block block) {
         this.typeSize = calculateTypeSize(context, rbTypeSize);
         this.size = this.typeSize * count;
         this.inout = flags;
         setMemoryIO(allocateMemoryIO(context.runtime, (int) this.size));
 
+        if (block.isGiven()) {
+            block.yield(context, this);
+        }
+
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
         return sizeArg instanceof RubyFixnum
                 ? init(context, RubyFixnum.one(context.runtime),
-                    RubyFixnum.fix2int(sizeArg), IN | OUT)
-                : init(context, sizeArg, 1, IN | OUT);
+                    RubyFixnum.fix2int(sizeArg), (IN | OUT), block)
+                : init(context, sizeArg, 1, (IN | OUT), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject arg2) {
-        return init(context, sizeArg, getCount(arg2), IN | OUT);
+    public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject arg2, Block block) {
+        return init(context, sizeArg, getCount(arg2), (IN | OUT), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg,
-            IRubyObject countArg, IRubyObject clearArg) {
-        return init(context, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
+            IRubyObject countArg, IRubyObject clearArg, Block block) {
+        return init(context, sizeArg, RubyFixnum.fix2int(countArg), (IN | OUT), block);
     }
     
     /**

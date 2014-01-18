@@ -604,7 +604,7 @@ public class RubyFileTest {
                 after = after.substring(0, after.length() -1);
             }
             try {
-                return RubyFile.getDirOrFileEntry(jar, after);
+                return RubyFile.getDirOrFileEntry(runtime.getLoadService().getJarFile(jar), after);
             } catch (Exception e) {
             }
         }

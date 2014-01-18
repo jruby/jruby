@@ -70,6 +70,14 @@ public class Addrinfo extends RubyObject {
         this.socketType = SocketType.SOCKET;
     }
 
+    public InetAddress getInetAddress() {
+        return inetAddress;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr) {
         initializeCommon(context.runtime, _sockaddr, null, null, null);
@@ -164,8 +172,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(rest = true, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        // unimplemented
-        return context.nil;
+        return RubyArray.newArray(context.runtime, SocketUtils.getaddrinfoList(context, args));
     }
 
     @JRubyMethod(meta = true)
@@ -384,14 +391,6 @@ public class Addrinfo extends RubyObject {
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         // unimplemented
         return context.nil;
-    }
-    
-    public InetAddress getInetAddress() {
-        return inetAddress;
-    }
-    
-    public int getPort(){
-        return port;
     }
 
     private InetAddress inetAddress;
