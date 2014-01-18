@@ -47,8 +47,6 @@ public class RubyContext implements ExecutionContext {
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
-    private String currentDirectory = System.getProperty("user.dir");
-
     public RubyContext(Ruby runtime, RubyParser parser) {
         assert runtime != null;
 
@@ -274,14 +272,6 @@ public class RubyContext implements ExecutionContext {
         }
 
         return true;
-    }
-
-    public void setCurrentDirectory(String currentDirectory) {
-        this.currentDirectory = currentDirectory;
-    }
-
-    public String getCurrentDirectory() {
-        return currentDirectory;
     }
 
     public AtExitManager getAtExitManager() {

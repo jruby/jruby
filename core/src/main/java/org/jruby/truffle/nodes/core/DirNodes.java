@@ -113,14 +113,14 @@ public abstract class DirNodes {
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
             final RubyContext context = getContext();
 
-            final String previous = context.getCurrentDirectory();
-            context.setCurrentDirectory(path.toString());
+            final String previous = context.getRuntime().getCurrentDirectory();
+            context.getRuntime().setCurrentDirectory(path.toString());
 
             if (block != null) {
                 try {
                     return yield(frame, block, path);
                 } finally {
-                    context.setCurrentDirectory(previous);
+                    context.getRuntime().setCurrentDirectory(previous);
                 }
             } else {
                 return 0;
@@ -160,7 +160,7 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
-            return getContext().makeString(getContext().getCurrentDirectory());
+            return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }
 
     }
