@@ -29,7 +29,7 @@ public abstract class ProcessNodes {
 
         @Specialization
         public int pid() {
-            return getContext().getPOSIX().getpid();
+            return getContext().getRuntime().getPosix().getpid();
         }
 
     }

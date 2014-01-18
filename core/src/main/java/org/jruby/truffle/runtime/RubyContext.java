@@ -49,8 +49,6 @@ public class RubyContext implements ExecutionContext {
 
     private String currentDirectory = System.getProperty("user.dir");
 
-    private POSIX posix = POSIXFactory.getPOSIX();
-
     public RubyContext(Ruby runtime, RubyParser parser) {
         assert runtime != null;
 
@@ -284,10 +282,6 @@ public class RubyContext implements ExecutionContext {
 
     public String getCurrentDirectory() {
         return currentDirectory;
-    }
-
-    public POSIX getPOSIX() {
-        return posix;
     }
 
     public AtExitManager getAtExitManager() {
