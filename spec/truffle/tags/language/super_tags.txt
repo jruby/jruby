@@ -10,5 +10,3 @@ fails:The super keyword can be used with implicit arguments from a method define
 fails:The super keyword respects the original module a method is aliased from
 fails:The super keyword passes along modified rest args when they weren't originally empty
 fails:The super keyword passes along modified rest args when they were originally empty
-fails:The super keyword sees the included version of a module a method is alias from
-fails:The super keyword can't be used with implicit arguments from a method defined with define_method
