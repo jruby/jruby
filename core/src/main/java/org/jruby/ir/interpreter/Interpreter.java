@@ -504,18 +504,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
         if (resultVar instanceof TemporaryVariable) {
-            switch (((TemporaryVariable) resultVar).getType()) {
-                case BOOLEAN:
-                case LOCAL:
-                case CLOSURE:
-                case CURRENT_MODULE:
-                case CURRENT_SCOPE:
-                    temp[((TemporaryLocalVariable)resultVar).offset] = result;
-                    break;
-            }
+            // Unboxed Java primitives (float/double/int/long) don't come here because result is an Object
+            // So, it is safe to use offset directly without any correction as long as IRScope uses
+            // three different allocators (each with its own 'offset' counter)
+            // * one for LOCAL, BOOLEAN, CURRENT_SCOPE, CURRENT_MODULE, CLOSURE tmpvars
+            // * one for FIXNUM
+            // * one for FLOAT
+            temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-
             currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
         }
     }
@@ -697,7 +694,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         } else if (arg instanceof Fixnum) {
             return (double)((Fixnum)arg).value;
         } else if (arg instanceof Bignum) {
-            return (double)((Bignum)arg).value.doubleValue();
+            return ((Bignum)arg).value.doubleValue();
         } else if (arg instanceof TemporaryLocalVariable) {
             return floats[((TemporaryLocalVariable)arg).offset];
         } else {
@@ -902,7 +899,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {
-                    Helpers.throwException((Throwable)t);
+                    Helpers.throwException(t);
                 } else {
                     exception = t;
                 }
