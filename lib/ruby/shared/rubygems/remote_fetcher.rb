@@ -78,7 +78,6 @@ class Gem::RemoteFetcher
   end
 
   ##
-  #
   # Given a source at +uri+, calculate what hostname to actually
   # connect to query the data for it.
 
@@ -91,7 +90,7 @@ class Gem::RemoteFetcher
     rescue Resolv::ResolvError
       uri
     else
-      URI.parse "#{res.target}#{uri.path}"
+      URI.parse "#{uri.scheme}://#{res.target}#{uri.path}"
     end
   end
 
@@ -107,7 +106,7 @@ class Gem::RemoteFetcher
 
     return if found.empty?
 
-    spec, source = found.sort_by { |(s,_)| s.version }.last
+    spec, source = found.max_by { |(s,_)| s.version }
 
     download spec, source.uri.to_s
   end
@@ -293,6 +292,7 @@ class Gem::RemoteFetcher
 
       if update and path then
         open(path, 'wb') do |io|
+          io.flock(File::LOCK_EX)
           io.write data
         end
       end

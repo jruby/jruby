@@ -1,2 +1,0 @@
-fails(JRUBY-3320):ERB#filename raises an exception if there are errors processing content
-fails(JRUBY-3320):ERB#filename uses '(erb)' as filename when filename is not set

@@ -59,9 +59,7 @@ public class RubyObjectSpace {
         
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
-        if (runtime.is2_0()) {
-            WeakMap.createWeakMap(runtime);
-        }
+        WeakMap.createWeakMap(runtime);
 
         return objectSpaceModule;
     }

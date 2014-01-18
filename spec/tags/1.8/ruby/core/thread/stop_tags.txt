@@ -1,3 +1,0 @@
-fails(JRUBY-3459):Thread#stop? describes a killed thread
-fails(JRUBY-3459):Thread#stop? describes a thread with an uncaught exception
-fails(JRUBY-3587):Thread#stop? reports aborting on a killed thread

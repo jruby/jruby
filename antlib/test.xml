@@ -148,7 +148,6 @@
         <pathelement path="${java.class.path}"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
         <pathelement location="${test.classes.dir}"/>
-        <pathelement path="${test.dir}/requireTest.jar"/>
         <pathelement location="${test.dir}"/>
     </path>
 

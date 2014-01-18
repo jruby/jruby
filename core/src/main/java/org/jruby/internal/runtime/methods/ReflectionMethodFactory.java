@@ -70,7 +70,8 @@ public class ReflectionMethodFactory extends MethodFactory {
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
             String rubyName, String javaName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
-            ISourcePosition position, String parameterDesc) {
+            ISourcePosition position, String parameterDesc,
+            MethodNodes methodNodes) {
 
         return getCompiledMethod(
                 implementationClass,
@@ -82,7 +83,8 @@ public class ReflectionMethodFactory extends MethodFactory {
                 scriptObject,
                 callConfig,
                 position,
-                parameterDesc);
+                parameterDesc,
+                methodNodes);
     }
     
     /**
@@ -93,7 +95,8 @@ public class ReflectionMethodFactory extends MethodFactory {
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String rubyName, String javaName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
-            ISourcePosition position, String parameterDesc) {
+            ISourcePosition position, String parameterDesc,
+            MethodNodes methodNodes) {
         try {
             Class scriptClass = scriptObject.getClass();
             Method method = scriptClass.getMethod(javaName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);

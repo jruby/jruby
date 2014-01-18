@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class MethodLookupInstr extends Instr implements ResultInstr {
+public class MethodLookupInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand methodHandle;
     private Variable result;
 
@@ -34,14 +34,17 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
         return (MethodHandle)methodHandle;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{methodHandle};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

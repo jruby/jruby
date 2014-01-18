@@ -22,6 +22,8 @@ public interface CacheCompiler {
     
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange);
     
+    public void cacheFrozenString(BaseBodyCompiler method, ByteList contents, int codeRange);
+    
     public void cacheByteList(BaseBodyCompiler method, ByteList contents);
 
     public void cacheRubyEncoding(BaseBodyCompiler method, Encoding encoding);

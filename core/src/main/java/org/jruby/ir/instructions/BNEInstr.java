@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BNEInstr extends BranchInstr {
+public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof BooleanLiteral) {
             return ((BooleanLiteral) v2).isFalse() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);
@@ -24,14 +24,9 @@ public class BNEInstr extends BranchInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BNEInstr(getArg1().cloneForInlining(ii),
                 getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BNEInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), getJumpTarget());
     }
 
     @Override

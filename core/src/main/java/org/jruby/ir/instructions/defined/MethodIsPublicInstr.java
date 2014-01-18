@@ -7,6 +7,7 @@ package org.jruby.ir.instructions.defined;
 import org.jruby.RubyClass;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
@@ -22,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class MethodIsPublicInstr extends DefinedObjectNameInstr {
+public class MethodIsPublicInstr extends DefinedObjectNameInstr implements FixedArityInstr {
     public MethodIsPublicInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.METHOD_IS_PUBLIC, result, new Operand[] { object, name });
     }

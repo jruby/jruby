@@ -3,8 +3,6 @@ require 'test/unit'
 
 
 class TestRegexp < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   def test_EQUAL # '=='
     assert_equal(/.foo.*([a-z])/,/.foo.*([a-z])/)
     a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
@@ -12,11 +10,7 @@ class TestRegexp < Test::Unit::TestCase
     assert(!(a == b))
     a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
     b=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-    if IS19
-      assert_equal(a, b)
-    else
-      assert(a != b)
-    end
+    assert_equal(a, b)
   end
 
   def test_MATCH # '=~'
@@ -60,17 +54,6 @@ class TestRegexp < Test::Unit::TestCase
         assert_equal(a.frozen?, b.frozen?)
         assert_equal(a.tainted?, b.tainted?)
       end
-    end
-  end
-
-  unless IS19
-    def test_kcode
-      a = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
-      b = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-      c = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
-      assert_equal(nil, a.kcode) if $KCODE == "NONE"
-      assert_equal("sjis", b.kcode)
-      assert_equal("none",    c.kcode)
     end
   end
 

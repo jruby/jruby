@@ -94,11 +94,7 @@ public class NthRefNode extends Node {
         IRubyObject backref = context.getBackRef();
         if (backref instanceof RubyMatchData) {
             if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                if (!context.runtime.is1_9()) {
-                    return runtime.getDefinedMessage(definedMessage);
-                } else {
-                    return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
-                }
+                return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
             }
         }
         

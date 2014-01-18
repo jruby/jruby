@@ -16,7 +16,7 @@ import org.jruby.runtime.Helpers;
 
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
-public class ThrowExceptionInstr extends Instr {
+public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
     private Operand exceptionArg;
 
     public ThrowExceptionInstr(Operand exception) {
@@ -24,6 +24,11 @@ public class ThrowExceptionInstr extends Instr {
         this.exceptionArg = exception;
     }
 
+    public Operand getExceptionArg() {
+        return exceptionArg;
+    }
+
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{ exceptionArg };
     }

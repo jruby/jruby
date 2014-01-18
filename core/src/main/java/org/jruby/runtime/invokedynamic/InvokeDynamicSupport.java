@@ -146,6 +146,10 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("getStringBootstrap", BOOTSTRAP_STRING_STRING_INT_SIG);
     }
     
+    public static Handle getFrozenStringHandle() {
+        return getBootstrapHandle("getFrozenStringBootstrap", BOOTSTRAP_STRING_STRING_INT_SIG);
+    }
+    
     public static Handle getBigIntegerHandle() {
         return getBootstrapHandle("getBigIntegerBootstrap", BOOTSTRAP_STRING_SIG);
     }
@@ -393,6 +397,21 @@ public class InvokeDynamicSupport {
                 "newString",
                 methodType(RubyString.class, ThreadContext.class, ByteList.class, int.class));
         init = insertArguments(init, 1, byteList, codeRange);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static CallSite getFrozenStringBootstrap(Lookup lookup, String name, MethodType type, String asString, String encodingName, int codeRange) {
+        byte[] bytes = Helpers.stringToRawBytes(asString);
+        Encoding encoding = EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding();
+        ByteList byteList = new ByteList(bytes, encoding);
+        
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "newFrozenString",
+                methodType(RubyString.class, ThreadContext.class, MutableCallSite.class, ByteList.class, int.class));
+        init = insertArguments(init, 1, site, byteList, codeRange);
         site.setTarget(init);
         return site;
     }
@@ -873,6 +892,12 @@ public class InvokeDynamicSupport {
     
     public static RubyString newString(ThreadContext context, ByteList contents, int codeRange) {
         return RubyString.newStringShared(context.runtime, contents, codeRange);
+    }
+    
+    public static RubyString newFrozenString(ThreadContext context, MutableCallSite site, ByteList contents, int codeRange) {
+        RubyString string = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, contents, codeRange));
+        site.setTarget(dropArguments(constant(RubyString.class, string), 0, ThreadContext.class));
+        return string;
     }
     
     public static RubyEncoding initEncoding(MutableCallSite site, ThreadContext context, Encoding encoding) {

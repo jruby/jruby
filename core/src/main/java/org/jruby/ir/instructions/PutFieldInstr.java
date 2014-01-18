@@ -10,14 +10,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutFieldInstr extends PutInstr {
+public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     public PutFieldInstr(Operand obj, String fieldName, Operand value) {
         super(Operation.PUT_FIELD, obj, fieldName, value);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PutFieldInstr(operands[TARGET].cloneForInlining(ii), ref, operands[VALUE].cloneForInlining(ii));
+        return new PutFieldInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
     }
 
     @Override

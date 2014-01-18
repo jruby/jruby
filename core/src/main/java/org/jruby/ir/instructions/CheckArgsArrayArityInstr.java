@@ -5,16 +5,16 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.runtime.Helpers;
 
-public class CheckArgsArrayArityInstr extends Instr {
+public class CheckArgsArrayArityInstr extends Instr  implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final int rest;
@@ -35,7 +35,7 @@ public class CheckArgsArrayArityInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { argsArray };
+        return new Operand[] { argsArray, new Fixnum(required), new Fixnum(opt), new Fixnum(rest) };
     }
 
     @Override

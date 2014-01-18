@@ -1,3 +1,0 @@
-fails:Process.waitall waits for all children
-fails:Process.waitall returns an array of pid/status pairs
-windows(JRUBY-4354):Process.waitall returns an empty array when there are no children

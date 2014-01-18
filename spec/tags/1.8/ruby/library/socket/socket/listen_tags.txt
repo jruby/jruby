@@ -1,1 +1,0 @@
-fails(JRUBY-2739):Socket#listen verifies we can listen for incoming connections

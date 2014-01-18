@@ -18,10 +18,11 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
-public class DefineClassMethodInstr extends Instr {
+public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     private Operand container;
     private final IRMethod method;
 
@@ -31,9 +32,8 @@ public class DefineClassMethodInstr extends Instr {
         this.method = method;
     }
 
-    @Override
-    public String toString() {
-        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
+    public Operand getContainer() {
+        return container;
     }
 
     public IRMethod getMethod() {
@@ -41,8 +41,22 @@ public class DefineClassMethodInstr extends Instr {
     }
 
     @Override
+    public Operand[] getOperands() {
+        return new Operand[]{container, new ScopeModule(method) };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        container = container.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
+    public String toString() {
+        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
+    }
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: So, what happens to the method?
         return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
     }
 
@@ -64,15 +78,6 @@ public class DefineClassMethodInstr extends Instr {
         rubyClass.addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass));
         obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         return null;
-    }
-
-    public Operand[] getOperands() {
-        return new Operand[]{container};
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        container = container.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

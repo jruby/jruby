@@ -39,15 +39,24 @@ public final class Constants {
     public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
     public static final String RUBY_VERSION = "@version.ruby@";
     public static final int    RUBY_PATCHLEVEL = Integer.parseInt("@version.ruby.patchlevel@");
+    public static final int    RUBY_REVISION = Integer.parseInt("@version.ruby.revision@");
 
+    @Deprecated
     public static final String RUBY1_9_MAJOR_VERSION = "@version.ruby1_9.major@";
+    @Deprecated
     public static final String RUBY1_9_VERSION = "@version.ruby1_9@";
+    @Deprecated
     public static final int    RUBY1_9_PATCHLEVEL = Integer.parseInt("@version.ruby1_9.patchlevel@");
+    @Deprecated
     public static final int    RUBY1_9_REVISION = Integer.parseInt("@version.ruby1_9.revision@");
 
+    @Deprecated
     public static final String RUBY2_0_MAJOR_VERSION = "@version.ruby2_0.major@";
+    @Deprecated
     public static final String RUBY2_0_VERSION = "@version.ruby2_0@";
+    @Deprecated
     public static final int    RUBY2_0_PATCHLEVEL = Integer.parseInt("@version.ruby2_0.patchlevel@");
+    @Deprecated
     public static final int    RUBY2_0_REVISION = Integer.parseInt("@version.ruby2_0.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
@@ -60,7 +69,7 @@ public final class Constants {
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
     
-    public static final String DEFAULT_RUBY_VERSION;
+    public static final String DEFAULT_RUBY_VERSION = "2.1";
     
     /**
      * Default size for chained compilation.
@@ -83,7 +92,6 @@ public final class Constants {
     public static final int JIT_THRESHOLD = 50;
     
     private static String jruby_revision = "@jruby.revision@";
-    private static String jruby_default_ruby_version = "@jruby.default.ruby.version@";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
@@ -96,17 +104,6 @@ public final class Constants {
             REVISION = "fffffff";
         } else {
             REVISION = jruby_revision;
-        }
-        String defaultRubyVersion = jruby_default_ruby_version;
-        if (defaultRubyVersion.equals("1.8")) {
-            DEFAULT_RUBY_VERSION = "1.8";
-        } else if (defaultRubyVersion.equals("1.9")) {
-            DEFAULT_RUBY_VERSION = "1.9";
-        } else if (defaultRubyVersion.equals("2.0")) {
-            DEFAULT_RUBY_VERSION = "2.0";
-        } else {
-            System.err.println("invalid version selected in build (\"" + defaultRubyVersion + "\"), using 1.9");
-            DEFAULT_RUBY_VERSION = "1.9";
         }
     }
 

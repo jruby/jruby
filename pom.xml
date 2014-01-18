@@ -11,7 +11,7 @@
 
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>1.7.10</version>
+  <version>9000.dev</version>
   <packaging>pom</packaging>
 
   <name>JRuby</name>
@@ -27,11 +27,22 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/truffle/maven/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
   </repositories>
 
   <modules>
     <module>ext</module>
     <module>core</module>
+    <module>lib</module>
   </modules>
 
   <description>
@@ -53,7 +64,7 @@
 
   <properties>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-rc2</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc3</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
@@ -63,17 +74,21 @@
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <minitest.version>5.0.7</minitest.version>
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <rdoc.version>4.0.1</rdoc.version>
+    <rdoc.version>4.1.0.preview.3</rdoc.version>
     <json.version>1.8.0</json.version>
     <bouncy-castle.version>1.47</bouncy-castle.version>
+    <bc.version>1.5.0147</bc.version>
+    <krypt.version>0.0.1</krypt.version>
+    <jopenssl.version>0.9.4</jopenssl.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
     <asm.version>4.0</asm.version>
-    <base.java.version>1.6</base.java.version>
-    <base.javac.version>1.6</base.javac.version>
+    <base.java.version>1.7</base.java.version>
+    <base.javac.version>1.7</base.javac.version>
     <version.jruby>${project.version}</version.jruby>
     <jruby.basedir>${project.basedir}</jruby.basedir>
+    <jruby.home>${project.basedir}</jruby.home>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <bundle.name>JRuby</bundle.name>
@@ -307,6 +322,25 @@
         <plugin>
           <artifactId>maven-invoker-plugin</artifactId>
           <version>1.8</version>
+          <executions>
+            <execution>
+              <id>integration-test</id>
+              <goals>
+		<goal>install</goal>
+		<goal>run</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+	    <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+	    <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            <pomIncludes><pomInclude>*/pom.xml</pomInclude></pomIncludes>
+            <projectsDirectory>src/it</projectsDirectory>
+            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+            <preBuildHookScript>setup.bsh</preBuildHookScript>
+            <postBuildHookScript>verify.bsh</postBuildHookScript>
+            <streamLogs>true</streamLogs>
+          </configuration>
         </plugin>
 
         <plugin>

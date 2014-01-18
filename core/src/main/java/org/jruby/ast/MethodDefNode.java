@@ -44,9 +44,8 @@ public abstract class MethodDefNode extends Node implements INameNode {
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
 	        StaticScope scope, Node bodyNode) {
             super(position);
-            
-            // TODO: Adding implicit nils caused multiple problems in compiler -- revist after landing
-            //assert bodyNode != null : "bodyNode is not null";
+
+            assert bodyNode != null : "bodyNode must not be null";
             
             this.nameNode = nameNode;
             this.argsNode = argsNode;

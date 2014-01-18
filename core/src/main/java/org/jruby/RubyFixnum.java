@@ -36,14 +36,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
@@ -55,8 +51,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
-import static org.jruby.CompatVersion.*;
-import org.jruby.runtime.Arity;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 /** 
  * Implementation of the Fixnum class.
@@ -69,14 +67,10 @@ public class RubyFixnum extends RubyInteger {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFixnum(fixnum);
 
-        fixnum.index = ClassIndex.FIXNUM;
+        fixnum.setClassIndex(ClassIndex.FIXNUM);
         fixnum.setReifiedClass(RubyFixnum.class);
         
         fixnum.kindOf = new RubyModule.JavaClassKindOf(RubyFixnum.class);
-
-        if (!runtime.is1_9()) {
-            fixnum.includeModule(runtime.getPrecision());
-        }
 
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
@@ -127,7 +121,7 @@ public class RubyFixnum extends RubyInteger {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.FIXNUM;
     }
     
@@ -282,7 +276,7 @@ public class RubyFixnum extends RubyInteger {
             }
             return this;
         } else {
-            return RubyEnumerator.enumeratorize(context.runtime, this, "times");
+            return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
         }
     }
 
@@ -302,7 +296,7 @@ public class RubyFixnum extends RubyInteger {
     public RubyString to_s() {
         int base = 10;
         ByteList bl = ConvertBytes.longToByteList(value, base);
-        if (getRuntime().is1_9()) bl.setEncoding(USASCIIEncoding.INSTANCE);
+        bl.setEncoding(USASCIIEncoding.INSTANCE);
         return getRuntime().newString(bl);
     }
     
@@ -313,7 +307,7 @@ public class RubyFixnum extends RubyInteger {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
         ByteList bl = ConvertBytes.longToByteList(value, base);
-        if (getRuntime().is1_9()) bl.setEncoding(USASCIIEncoding.INSTANCE);
+        bl.setEncoding(USASCIIEncoding.INSTANCE);
         return getRuntime().newString(bl);
     }
 
@@ -332,7 +326,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_to_sym
      * 
      */
-    @JRubyMethod(compat = RUBY1_8)
+    @Deprecated
     public IRubyObject to_sym() {
         RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
@@ -563,7 +557,7 @@ public class RubyFixnum extends RubyInteger {
         return idiv(context, other, "/");
     }
 
-    @JRubyMethod(name = {"odd?"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"odd?"})
     public RubyBoolean odd_p(ThreadContext context) {
         if(value%2 != 0) {
             return context.runtime.getTrue();
@@ -571,7 +565,7 @@ public class RubyFixnum extends RubyInteger {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(name = {"even?"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"even?"})
     public RubyBoolean even_p(ThreadContext context) {
         if(value%2 == 0) {
             return context.runtime.getTrue();
@@ -579,7 +573,7 @@ public class RubyFixnum extends RubyInteger {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject pred(ThreadContext context) {
         return context.runtime.newFixnum(value-1);
     }
@@ -627,7 +621,7 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        if (context.runtime.is1_9()) checkZeroDivisionError(context, other);
+        checkZeroDivisionError(context, other);
         if (other instanceof RubyFixnum) {
             return moduloFixnum(context, (RubyFixnum)other);
         }
@@ -662,7 +656,7 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "divmod")
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        if (context.runtime.is1_9()) checkZeroDivisionError(context, other);
+        checkZeroDivisionError(context, other);
         if (other instanceof RubyFixnum) {
             return divmodFixnum(context, other);
         }
@@ -704,7 +698,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_quo
      * 
      */
-    @JRubyMethod(name = "quo", compat = RUBY1_8)
+    @Deprecated
     @Override
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -837,7 +831,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     @Override
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
@@ -1245,18 +1239,7 @@ public class RubyFixnum extends RubyInteger {
     @Override
     public String asJavaString() {
         Ruby runtime = getRuntime();
-        if (runtime.is1_9()) throw runtime.newTypeError(inspect().toString() + " is not a symbol");
-        runtime.getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "do not use Fixnums as Symbols");
-
-        // FIXME: I think this chunk is equivalent to MRI id2name (and not our public method 
-        // id2name).  Make into method if used more than once.  
-        RubySymbol symbol = RubySymbol.getSymbolLong(runtime, value);
-
-        if (symbol == null) {
-            throw runtime.newArgumentError("" + value + " is not a symbol");
-        }
-
-        return symbol.asJavaString();
+        throw runtime.newTypeError(inspect().toString() + " is not a symbol");
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
@@ -1271,23 +1254,9 @@ public class RubyFixnum extends RubyInteger {
     /** rb_fix_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, compat = RUBY1_8)
+    @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
-    }
-    
-    private static Object coerceToJavaType(Ruby ruby, RubyFixnum self, Class javaClass) {
-        if (!Number.class.isAssignableFrom(javaClass)) {
-            throw ruby.newTypeError(javaClass.getCanonicalName() + " is not a numeric type");
-        }
-        
-        TypeCoercer coercer = JAVA_COERCERS.get(javaClass);
-        
-        if (coercer == null) {
-            throw ruby.newTypeError("Cannot coerce Fixnum to " + javaClass.getCanonicalName());
-        }
-        
-        return coercer.coerce(self);
     }
     
     private static final Map<Class, TypeCoercer> JAVA_COERCERS = new HashMap<Class, TypeCoercer>();

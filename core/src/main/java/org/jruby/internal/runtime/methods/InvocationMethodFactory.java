@@ -225,7 +225,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
 
         return new CompiledMethod.LazyCompiledMethod(
                 implementationClass,
@@ -238,7 +239,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 callConfig,
                 position,
                 parameterDesc,
-                new InvocationMethodFactory(classLoader));
+                new InvocationMethodFactory(classLoader),
+                methodNodes);
     }
 
     public static String getCompiledCallbackName(String typePath, String method) {
@@ -260,7 +262,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Object scriptObject,
             CallConfiguration callConfig,
             ISourcePosition position,
-            String parameterDesc) {
+            String parameterDesc,
+            MethodNodes methodNodes) {
         
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
@@ -278,7 +281,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     scope,
                     callConfig,
                     position.getFile(),
-                    position.getStartLine());
+                    position.getStartLine(),
+                    methodNodes);
             generatedClass = endCallWithBytes(invokerBytes, invokerPath);
         } catch (LinkageError le) {
             tryLoad = true;
@@ -323,7 +327,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     @Override
     public byte[] getCompiledMethodOffline(
             String RubyName, String method, String className, String invokerPath, Arity arity,
-            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+            StaticScope scope, CallConfiguration callConfig, String filename, int line,
+            MethodNodes methodNodes) {
         String sup = COMPILED_SUPER_CLASS_NAME;
         ClassWriter cw;
         cw = createCompiledCtor(invokerPath, invokerPath, sup);
@@ -435,25 +440,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         mv.start();
 
-        // save off callNumber
-        mv.aload(1);
-        mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+        boolean heapScoped = callConfig.scoping() != Scoping.None;
+        boolean framed = callConfig.framing() != Framing.None;
+
+        // save off callNumber if framed or scoped, for non-local returns
         int callNumberIndex = -1;
-        if (specificArity) {
-            switch (scope.getRequiredArgs()) {
-            case -1:
-                callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
-                break;
-            case 0:
+        if (framed || heapScoped) {
+            mv.aload(1);
+            mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+            if (specificArity) {
+                switch (scope.getRequiredArgs()) {
+                case -1:
+                    callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
+                    break;
+                case 0:
+                    callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+                    break;
+                default:
+                    callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                }
+            } else {
                 callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
-                break;
-            default:
-                callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
             }
-        } else {
-            callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+            mv.istore(callNumberIndex);
         }
-        mv.istore(callNumberIndex);
 
         // invoke pre method stuff
         if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -498,9 +508,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label doRedoFinally = new Label();
         Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
-
-        boolean heapScoped = callConfig.scoping() != Scoping.None;
-        boolean framed = callConfig.framing() != Framing.None;
 
         if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
         if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));

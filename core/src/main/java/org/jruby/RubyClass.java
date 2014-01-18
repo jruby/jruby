@@ -74,7 +74,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessorField;
@@ -103,7 +102,7 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
-        classClass.index = ClassIndex.CLASS;
+        classClass.setClassIndex(ClassIndex.CLASS);
         classClass.setReifiedClass(RubyClass.class);
         classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
         
@@ -217,7 +216,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "allocate")
     public IRubyObject allocate() {
         if (superClass == null) {
-            if(!(runtime.is1_9() && this == runtime.getBasicObject())) {
+            if(this != runtime.getBasicObject()) {
                 throw runtime.newTypeError("can't instantiate uninitialized class");
             }
         }
@@ -264,14 +263,6 @@ public class RubyClass extends RubyModule {
 
     public VariableAccessorField getObjectIdAccessorField() {
         return variableTableManager.getObjectIdAccessorField();
-    }
-
-    public VariableAccessorField getNativeHandleAccessorField() {
-        return variableTableManager.getNativeHandleAccessorField();
-    }
-
-    public VariableAccessor getNativeHandleAccessorForWrite() {
-        return variableTableManager.getNativeHandleAccessorForWrite();
     }
 
     public VariableAccessorField getFFIHandleAccessorField() {
@@ -322,7 +313,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.CLASS;
     }
     
@@ -397,7 +388,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         this.realClass = this;
         this.variableTableManager = new VariableTableManager(this);
-        index = ClassIndex.CLASS;
+        setClassIndex(ClassIndex.CLASS);
     }
     
     /** rb_class_boot (for plain Classes)
@@ -829,27 +820,22 @@ public class RubyClass extends RubyModule {
     /** rb_class_initialize
      * 
      */
-    @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, Block block) {
-        checkNotInitialized();
-        return initializeCommon(context, runtime.getObject(), block, false);
+        return initialize19(context, block);
     }
         
-    @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        checkNotInitialized();
-        checkInheritable(superObject);
-        return initializeCommon(context, (RubyClass)superObject, block, false);
+        return initialize19(context, superObject, block);
     }
         
-    @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block, true);
     }
         
-    @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
@@ -962,6 +948,7 @@ public class RubyClass extends RubyModule {
         }
     }
 
+    @Override
     public void becomeSynchronized() {
         // make this class and all subclasses sync
         synchronized (getRuntime().getHierarchyLock()) {
@@ -1050,7 +1037,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
         
         if (superClazz == null) {
-            if (runtime.is1_9() && metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1060,7 +1047,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void checkNotInitialized() {
-        if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {
+        if (superClass != null || this == runtime.getBasicObject()) {
             throw runtime.newTypeError("already initialized class");
         }
     }
@@ -1105,6 +1092,7 @@ public class RubyClass extends RubyModule {
     }
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
+        @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
@@ -1113,6 +1101,7 @@ public class RubyClass extends RubyModule {
             marshalStream.dumpVariables(object.getVariableList());
         }
 
+        @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             IRubyObject result = type.allocate();
@@ -1253,7 +1242,7 @@ public class RubyClass extends RubyModule {
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
                 interfaceNames);
 
-        if (classAnnotations != null && classAnnotations.size() != 0) {
+        if (classAnnotations != null && !classAnnotations.isEmpty()) {
             for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
                 Class annoType = entry.getKey();
                 Map<String,Object> fields = entry.getValue();

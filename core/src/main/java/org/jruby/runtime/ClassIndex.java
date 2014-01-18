@@ -1,62 +1,75 @@
-/*
- * ClassIndex.java
+/***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * Created on January 1, 2007, 7:50 PM
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 
 package org.jruby.runtime;
 
 /**
- *
+ * An enum of core JRuby classes. Used for optimization and fast identification.
  * @author headius
- * FIXME convert to enum ?
  */
-public final class ClassIndex {
-    public static final int NO_INDEX = 0;
-    public static final int FIXNUM = 1;
-    public static final int BIGNUM = 2;
-    public static final int ARRAY = 3;
-    public static final int STRING = 4;
-    public static final int NIL = 5;
-    public static final int TRUE = 6;
-    public static final int FALSE = 7;
-    public static final int SYMBOL = 8;
-    public static final int REGEXP = 9;
-    public static final int HASH = 10;
-    public static final int FLOAT = 11;
-    public static final int MODULE = 12;
-    public static final int CLASS = 13;
-    public static final int OBJECT = 14;
-    public static final int STRUCT = 15;
-    public static final int INTEGER = 16;
-    public static final int NUMERIC = 17;
-    public static final int RANGE = 18;
-    public static final int TIME = 19;
-    public static final int COMPLEX = 20;
-    public static final int RATIONAL = 21;
-    public static final int ENCODING = 22;
-    public static final int CONVERTER = 23;
-    public static final int GENERATOR = 24;
-    public static final int YIELDER = 25;
-    public static final int FILE = 26;
-    public static final int MATCHDATA = 27;
-    public static final int THREADGROUP = 28;
-    public static final int THREAD = 29;
-    public static final int EXCEPTION = 30;
-    public static final int IO = 31;
-    public static final int BINDING = 32;
-    public static final int PROC = 33;
-    public static final int METHOD = 34;
-    public static final int DIR = 35;
-    public static final int UNBOUNDMETHOD = 36;
-    public static final int CONTINUATION = 37;
-    public static final int BASICOBJECT = 38;
-    public static final int MAX_CLASSES = 39;
-
-    /** Creates a new instance of ClassIndex */
-    private ClassIndex() {
-    }
+public enum ClassIndex {
+    NO_INDEX,
+    FIXNUM,
+    BIGNUM,
+    ARRAY,
+    STRING,
+    NIL,
+    TRUE,
+    FALSE,
+    SYMBOL,
+    REGEXP,
+    HASH,
+    FLOAT,
+    MODULE,
+    CLASS,
+    OBJECT,
+    STRUCT,
+    INTEGER,
+    NUMERIC,
+    RANGE,
+    TIME,
+    COMPLEX,
+    RATIONAL,
+    ENCODING,
+    CONVERTER,
+    GENERATOR,
+    YIELDER,
+    FILE,
+    MATCHDATA,
+    THREADGROUP,
+    THREAD,
+    EXCEPTION,
+    IO,
+    BINDING,
+    PROC,
+    METHOD,
+    DIR,
+    UNBOUNDMETHOD,
+    CONTINUATION,
+    BASICOBJECT,
+    // insert new values here
+    MAX_CLASSES;
 }

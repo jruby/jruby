@@ -72,9 +72,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
 
-            // only cache if it's 1.8 OR it does respond_to? OR there's no custom respond_to_missing? logic
-            if (!context.is19 ||
-                    tuple.respondsTo.isTrue() ||
+            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+            if (tuple.respondsTo.isTrue() ||
                     selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
                 respondToTuple = tuple;
                 return tuple.respondsTo;
@@ -99,9 +98,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
             String name = arg0.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
 
-            // only cache if it's 1.8 OR it does respond_to? OR there's no custom respond_to_missing? logic
-            if (!context.is19 ||
-                    tuple.respondsTo.isTrue() ||
+            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+            if (tuple.respondsTo.isTrue() ||
                     selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
                 respondToTuple = tuple;
                 return tuple.respondsTo;

@@ -16,7 +16,7 @@ class Gem::Platform
   attr_accessor :version
 
   def self.local
-    arch = Gem::ConfigMap[:arch]
+    arch = RbConfig::CONFIG['arch']
     arch = "#{arch}_60" if arch =~ /mswin32$/
     @local ||= new(arch)
   end
@@ -26,6 +26,14 @@ class Gem::Platform
       platform.nil? or
         local_platform == platform or
         (local_platform != Gem::Platform::RUBY and local_platform =~ platform)
+    end
+  end
+
+  def self.installable?(spec)
+    if spec.respond_to? :installable_platform?
+      spec.installable_platform?
+    else
+      match spec.platform
     end
   end
 

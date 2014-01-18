@@ -17,9 +17,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
-public class DefineClassInstr extends Instr implements ResultInstr {
-    private IRClassBody newIRClassBody;
+public class DefineClassInstr extends Instr implements ResultInstr, FixedArityInstr {
+    private final IRClassBody newIRClassBody;
     private Operand container;
     private Operand superClass;
     private Variable result;
@@ -35,14 +36,17 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{container, superClass};
+        return new Operand[]{new ScopeModule(newIRClassBody), container, superClass};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Arity;
@@ -10,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RaiseArgumentErrorInstr extends Instr {
+public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     private final int required;
     private final int opt;
     private final int rest;
@@ -27,7 +28,15 @@ public class RaiseArgumentErrorInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest), new Fixnum(numArgs) };
+    }
+
+    public int getNumArgs() {
+        return numArgs;
+    }
+
+    public int getOpt() {
+        return opt;
     }
 
     @Override
@@ -35,9 +44,17 @@ public class RaiseArgumentErrorInstr extends Instr {
         return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
     }
 
+    public int getRequired() {
+        return required;
+    }
+
+    public int getRest() {
+        return rest;
+    }
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
+        return this;
     }
 
     @Override

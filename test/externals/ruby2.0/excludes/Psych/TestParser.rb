@@ -1,5 +1,0 @@
-exclude :test_column_numbers, "column numbers are off"
-exclude :test_start_document_version, "fails with SnakeYAML 1.11"
-exclude :test_index_numbers, "indices are off"
-exclude :test_line_numbers, "line numbers are off"
-exclude :test_start_document_tag, "tag includes extra chars"

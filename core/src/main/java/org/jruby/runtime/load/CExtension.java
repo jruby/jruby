@@ -32,16 +32,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.cext.ModuleLoader;
-import org.jruby.util.SafePropertyAccessor;
 
 /**
- * This class wraps the {@link ModuleLoader} for loading c-extensions 
+ * This class wraps the ModuleLoader for loading c-extensions
  * in JRuby. Resources in the native file-system are loaded directly,
  * extensions included in a Jar are extracted to java.io.tmpdir to allow
  * the System to load them into the process space.
@@ -91,7 +91,21 @@ public class CExtension implements Library {
             }
             file = dstFile.getAbsolutePath();
         }
-        ModuleLoader.load(runtime, file);
+
+        // reflectively load extension
+        try {
+            Class moduleLoader = Class.forName("org.jruby.cext.ModuleLoader", true, runtime.getJRubyClassLoader());
+            Method load = moduleLoader.getMethod("load", Ruby.class, String.class);
+            load.invoke(null, runtime, file);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
         
         // set a "global" property to indicate we have loaded a C extension
         RubyInstanceConfig.setLoadedNativeExtensions(true);

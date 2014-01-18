@@ -1,0 +1,1 @@
+fails:String#end_with? ignores arguments not convertible to string

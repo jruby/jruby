@@ -34,11 +34,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.util.Numeric.checkInteger;
-import static org.jruby.util.Numeric.f_gcd;
-import static org.jruby.util.Numeric.f_lcm;
-
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -54,6 +49,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.util.Numeric.checkInteger;
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_lcm;
+import static org.jruby.RubyEnumerator.SizeFn;
+
 /** Implementation of the Integer class.
  *
  * @author  jpetersen
@@ -66,16 +67,12 @@ public abstract class RubyInteger extends RubyNumeric {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setInteger(integer);
 
-        integer.index = ClassIndex.INTEGER;
+        integer.setClassIndex(ClassIndex.INTEGER);
         integer.setReifiedClass(RubyInteger.class);
         
         integer.kindOf = new RubyModule.JavaClassKindOf(RubyInteger.class);
 
         integer.getSingletonClass().undefineMethod("new");
-
-        if (!runtime.is1_9()) {
-            integer.includeModule(runtime.getPrecision());
-        }
 
         integer.defineAnnotatedMethods(RubyInteger.class);
         
@@ -136,7 +133,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "upto", to);
+            return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
         }
     }
 
@@ -176,6 +173,15 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    private static SizeFn uptoSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
+            }
+        };
+    }
+
     /** int_downto
      * 
      */
@@ -190,7 +196,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "downto", to);
+            return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
         }
     }
 
@@ -230,6 +236,15 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    private static SizeFn downToSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
+            }
+        };
+    }
+
     @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
         if (block.isGiven()) {
@@ -245,8 +260,24 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.runtime, this, "times");
+            return enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
         }
+    }
+
+    protected SizeFn timesSizeFn(final Ruby runtime) {
+        final RubyInteger self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                RubyFixnum zero = RubyFixnum.zero(runtime);
+                if ((self instanceof RubyFixnum && getLongValue() < 0)
+                        || self.callMethod("<", zero).isTrue()) {
+                    return zero;
+                }
+
+                return self;
+            }
+        };
     }
 
     /** int_succ
@@ -281,15 +312,11 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_chr
      * 
      */
-    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_8)
     public RubyString chr(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        long value = getLongValue();
-        if (value < 0 || value > 0xff) throw runtime.newRangeError(this.toString() + " out of char range");
-        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
+        return chr19(context);
     }
 
-    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "chr")
     public RubyString chr19(ThreadContext context) {
         Ruby runtime = context.runtime;
         int value = (int)getLongValue();
@@ -307,7 +334,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "chr")
     public RubyString chr19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         long value = getLongValue();
@@ -361,17 +388,16 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_8)
     public IRubyObject round() {
         return this;
     }
 
-    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "round")
     public IRubyObject round19() {
         return this;
     }
 
-    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "round")
     public IRubyObject round19(ThreadContext context, IRubyObject arg) {
         int ndigits = RubyNumeric.num2int(arg);
         if (ndigits > 0) return RubyKernel.new_float(this, this);
@@ -410,7 +436,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** integer_to_r
      * 
      */
-    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         return RubyRational.newRationalCanonicalize(context, this);
     }
@@ -418,7 +444,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** integer_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "rationalize", optional = 1)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         return to_r(context);
     }
@@ -450,7 +476,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_gcd
      * 
      */
-    @JRubyMethod(name = "gcd", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         return f_gcd(context, this, RubyRational.intValue(context, other));
@@ -459,7 +485,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_lcm
      * 
      */
-    @JRubyMethod(name = "lcm", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         return f_lcm(context, this, RubyRational.intValue(context, other));
@@ -468,7 +494,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_gcdlcm
      * 
      */
-    @JRubyMethod(name = "gcdlcm", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         other = RubyRational.intValue(context, other);
@@ -476,13 +502,13 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
         return this;
     }
 
     @Override
-    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
         return RubyFixnum.one(context.runtime);
     }
@@ -495,7 +521,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
+    @Deprecated
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;

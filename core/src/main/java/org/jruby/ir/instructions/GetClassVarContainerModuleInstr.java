@@ -21,7 +21,7 @@ import java.util.Map;
  * A candidate static IRMethod is also passed in.
  */
 // SSS FIXME: Split into 2 different instrs?
-public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr {
+public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand  startingScope;
     private Operand  object;
     private Variable result;
@@ -36,6 +36,14 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
         this.result = result;
     }
 
+    public Operand getObject() {
+        return object;
+    }
+
+    public Operand getStartingScope() {
+        return startingScope;
+    }
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetClassVarContainerModuleInstr(ii.getRenamedVariable(result), startingScope.cloneForInlining(ii), object == null ? null : object.cloneForInlining(ii));
@@ -46,14 +54,17 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
         return super.toString() + "(" + startingScope + ", " + object + ")";
     }
 
+    @Override
     public Operand[] getOperands() {
         return object == null ? new Operand[] {startingScope} : new Operand[] {startingScope, object};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

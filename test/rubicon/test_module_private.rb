@@ -7,8 +7,6 @@ require 'test/unit'
 
 
 class TestModulePrivate < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   #
   # Check that two arrays contain the same "bag" of elements.
   # A mathematical bag differs from a "set" by counting the
@@ -48,7 +46,7 @@ class TestModulePrivate < Test::Unit::TestCase
     t1 = T1.new
     assert_equal("m1", t1.m1)
     assert_equal("m1", t1.new_m1)
-    assert_bag_equal(IS19 ? [:new_m1, :m1] : ["new_m1", "m1"], T1.instance_methods(false))
+    assert_bag_equal([:new_m1, :m1], T1.instance_methods(false))
   end
 
   # --------------------------------------------------------
@@ -63,7 +61,7 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_attr
-    assert_bag_equal(IS19 ? [:a, :b, :b=] : ["a", "b", "b="], C3.instance_methods(false))
+    assert_bag_equal([:a, :b, :b=], C3.instance_methods(false))
     c3 = C3.new
     assert_equal(1, c3.a)
     assert_equal(2, c3.b)
@@ -82,7 +80,7 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_attr_accessor
-    assert_bag_equal(IS19 ? [:a, :a=, :b, :b=] : ["a", "a=", "b", "b="], C4.instance_methods(false))
+    assert_bag_equal([:a, :a=, :b, :b=], C4.instance_methods(false))
     c4 = C4.new
     assert_equal(1, c4.a)
     assert_equal(2, c4.b)
@@ -103,7 +101,7 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_attr_reader
-    assert_bag_equal(IS19 ? [:a, :b] : ["a", "b"], C5.instance_methods(false))
+    assert_bag_equal([:a, :b], C5.instance_methods(false))
     c5 = C5.new
     assert_equal(1, c5.a)
     assert_equal(2, c5.b)
@@ -123,7 +121,7 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_attr_writer
-    assert_bag_equal(IS19 ? [:a=, :b=, :getem] : ["a=", "b=", "getem"], C6.instance_methods(false))
+    assert_bag_equal([:a=, :b=, :getem], C6.instance_methods(false))
     c6 = C6.new
     assert_equal([1, 2], c6.getem)
     c6.a = "cat"
@@ -230,22 +228,22 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_private
-    assert_equal(IS19 ? [:two] : ["two"], C10A.private_instance_methods(false))
-    assert_equal(IS19 ? [:two] : ["two"], C10B.private_instance_methods(false))
+    assert_equal([:two], C10A.private_instance_methods(false))
+    assert_equal([:two], C10B.private_instance_methods(false))
   end
 
   # --------------------------------------------------------
 
   def test_protected
-    assert_equal(IS19 ? [:three] : ["three"], C10A.protected_instance_methods)
-    assert_equal(IS19 ? [:three] : ["three"], C10B.protected_instance_methods)
+    assert_equal([:three], C10A.protected_instance_methods)
+    assert_equal([:three], C10B.protected_instance_methods)
   end
 
   # --------------------------------------------------------
 
   def test_public
-    assert_bag_equal(IS19 ? [:one, :four] : ["one", "four"], C10A.public_instance_methods(false))
-    assert_bag_equal(IS19 ? [:one, :four] : ["one", "four"], C10B.public_instance_methods(false))
+    assert_bag_equal([:one, :four], C10A.public_instance_methods(false))
+    assert_bag_equal([:one, :four], C10B.public_instance_methods(false))
   end
 
   # --------------------------------------------------------
@@ -262,9 +260,9 @@ class TestModulePrivate < Test::Unit::TestCase
   end
 
   def test_remove_const
-    assert_bag_equal(IS19 ? [:ONE, :TWO] : ["ONE", "TWO"], M13.constants)
+    assert_bag_equal([:ONE, :TWO], M13.constants)
     M13.hackOne
-    assert_bag_equal(IS19 ? [:TWO] : ["TWO"], M13.constants)
+    assert_bag_equal([:TWO], M13.constants)
     M13.hackTwo
     assert_bag_equal([], M13.constants)
   end

@@ -28,9 +28,6 @@
 package org.jruby.java.proxies;
 
 
-import java.util.Map;
-import java.util.Set;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -46,7 +43,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.CompatVersion.*;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 
@@ -248,7 +247,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_set_default_proc
      *
      */
-    @JRubyMethod(name = "default_proc=", compat = RUBY1_9)
+    @JRubyMethod(name = "default_proc=")
     public IRubyObject set_default_proc(IRubyObject proc) {
         return getOrCreateRubyHashMap().set_default_proc(proc);
     }
@@ -258,9 +257,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        if (context.runtime.is1_9()) return getOrCreateRubyHashMap().inspect19(context);
-
-        return getOrCreateRubyHashMap().inspect(context);
+        return getOrCreateRubyHashMap().inspect19(context);
     }
 
     /** rb_hash_size
@@ -292,14 +289,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_s(context);
-    }
-
-    /** rb_hash_to_s19
-     *
-     */
-    @JRubyMethod(name = "to_s", compat = RUBY1_9)
-    public IRubyObject to_s19(ThreadContext context) {
         return getOrCreateRubyHashMap().to_s19(context);
     }
 
@@ -354,30 +343,20 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_hash
      *
      */
-    @JRubyMethod(name = "hash", compat = RUBY1_8)
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
-        return getOrCreateRubyHashMap().hash();
-    }
-
-    @JRubyMethod(name = "hash", compat = RUBY1_9)
-    public RubyFixnum hash19() {
         return getOrCreateRubyHashMap().hash19();
     }
 
     /** rb_hash_fetch
      *
      */
-    @JRubyMethod(required = 1, optional = 1, compat = RUBY1_8)
-    public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
-        return getOrCreateRubyHashMap().fetch(context, args, block);
-    }
-    
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
         return getOrCreateRubyHashMap().fetch(context, key, block);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
         return getOrCreateRubyHashMap().fetch(context, key, _default, block);
     }
@@ -401,16 +380,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_each
      *
      */
-    @JRubyMethod(compat = RUBY1_8)
+    @JRubyMethod
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().each(context, block);
-    }
-    
-    /** rb_hash_each
-     *
-     */
-    @JRubyMethod(name = "each", compat = RUBY1_9)
-    public IRubyObject each19(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().each19(context, block);
     }
 
@@ -442,7 +413,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_select_bang
      *
      */
-    @JRubyMethod(name = "select!", compat = RUBY1_9)
+    @JRubyMethod(name = "select!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().select_bang(context, block);
     }
@@ -450,7 +421,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_keep_if
      *
      */
-    @JRubyMethod(name = "keep_if", compat = RUBY1_9)
+    @JRubyMethod(name = "keep_if")
     public IRubyObject keep_if(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().keep_if(context, block);
     }
@@ -466,20 +437,15 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_index
      *
      */
-    @JRubyMethod(name = "index", compat = RUBY1_8)
+    @JRubyMethod(name = "index")
     public IRubyObject index(ThreadContext context, IRubyObject expected) {
-        return getOrCreateRubyHashMap().index(context, expected);
-    }
-
-    @JRubyMethod(name = "index", compat = RUBY1_9)
-    public IRubyObject index19(ThreadContext context, IRubyObject expected) {
         return getOrCreateRubyHashMap().index19(context, expected);
     }
 
     /** rb_hash_key
      *
      */
-    @JRubyMethod(name = "key", compat = RUBY1_9)
+    @JRubyMethod(name = "key")
     public IRubyObject key(ThreadContext context, IRubyObject expected) {
         return getOrCreateRubyHashMap().key(context, expected);
     }
@@ -529,11 +495,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "select")
     public IRubyObject select(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().select(context, block);
-    }
-
-    @JRubyMethod(name = "select", compat = RUBY1_9)
-    public IRubyObject select19(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().select19(context, block);
     }
 
@@ -580,13 +541,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_merge_bang
      *
      */
-    @JRubyMethod(name = {"merge!", "update"}, required = 1, compat = RUBY1_8)
+    @JRubyMethod(name = {"merge!", "update"}, required = 1)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return getOrCreateRubyHashMap().merge_bang(context, other, block);
-    }
-
-    @JRubyMethod(name = {"merge!", "update"}, required = 1, compat = RUBY1_9)
-    public RubyHash merge_bang19(final ThreadContext context, final IRubyObject other, final Block block) {
         return getOrCreateRubyHashMap().merge_bang19(context, other, block);
     }
 
@@ -601,26 +557,16 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_initialize_copy
      *
      */
-    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE, compat = RUBY1_8)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().initialize_copy(context, other);
-    }
-
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE, compat = RUBY1_9)
-    public RubyHash initialize_copy19(ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap().initialize_copy19(context, other);
     }
 
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "replace", required = 1, compat = RUBY1_8)
+    @JRubyMethod(name = "replace", required = 1)
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().replace(context, other);
-    }
-
-    @JRubyMethod(name = "replace", required = 1, compat = RUBY1_9)
-    public RubyHash replace19(final ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap().replace19(context, other);
     }
 
@@ -632,32 +578,32 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().values_at(context, args);
     }
 
-    @JRubyMethod(name = "assoc", compat = RUBY1_9)
+    @JRubyMethod(name = "assoc")
     public IRubyObject assoc(final ThreadContext context, final IRubyObject obj) {
         return getOrCreateRubyHashMap().assoc(context, obj);
     }
 
-    @JRubyMethod(name = "rassoc", compat = RUBY1_9)
+    @JRubyMethod(name = "rassoc")
     public IRubyObject rassoc(final ThreadContext context, final IRubyObject obj) {
         return getOrCreateRubyHashMap().rassoc(context, obj);
     }
 
-    @JRubyMethod(name = "flatten", compat = RUBY1_9)
+    @JRubyMethod(name = "flatten")
     public IRubyObject flatten(ThreadContext context) {
         return getOrCreateRubyHashMap().flatten(context);
     }
 
-    @JRubyMethod(name = "flatten", compat = RUBY1_9)
+    @JRubyMethod(name = "flatten")
     public IRubyObject flatten(ThreadContext context, IRubyObject level) {
         return getOrCreateRubyHashMap().flatten(context, level);
     }
 
-    @JRubyMethod(name = "compare_by_identity", compat = RUBY1_9)
+    @JRubyMethod(name = "compare_by_identity")
     public IRubyObject getCompareByIdentity(ThreadContext context) {
         return getOrCreateRubyHashMap().getCompareByIdentity(context);
     }
 
-    @JRubyMethod(name = "compare_by_identity?", compat = RUBY1_9)
+    @JRubyMethod(name = "compare_by_identity?")
     public IRubyObject getCompareByIdentity_p(ThreadContext context) {
         return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
     }

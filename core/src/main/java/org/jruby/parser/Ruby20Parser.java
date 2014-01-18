@@ -63,7 +63,7 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.Hash19Node;
+import org.jruby.ast.HashNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -129,7 +129,7 @@ public class Ruby20Parser implements RubyParser {
 
     public Ruby20Parser(ParserSupport19 support) {
         this.support = support;
-        lexer = new RubyYaccLexer(false);
+        lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
         support.setLexer(lexer);
     }
@@ -1701,8 +1701,8 @@ states[198] = new ParserState() {
 };
 states[329] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* TODO: We should use implicit nil for body, but problem (punt til later)*/
-                    Node body = ((Node)yyVals[-1+yyTop]); /*$8 == null ? NilImplicitNode.NIL : $8;*/
+                    Node body = ((Node)yyVals[-1+yyTop]);
+                    if (body == null) body = NilImplicitNode.NIL;
 
                     yyVal = new DefsNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
                     support.popCurrentScope();
@@ -3117,7 +3117,7 @@ states[31] = new ParserState() {
 };
 states[293] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Hash19Node(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
+                    yyVal = new HashNode(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -4007,7 +4007,7 @@ states[311] = new ParserState() {
 };
 states[246] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4044,7 +4044,7 @@ states[443] = new ParserState() {
 };
 states[247] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4303,7 +4303,7 @@ states[123] = new ParserState() {
 };
 states[254] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4347,7 +4347,7 @@ states[124] = new ParserState() {
 };
 states[255] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4470,7 +4470,7 @@ states[454] = new ParserState() {
 };
 states[258] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(((ListNode)yyVals[-1+yyTop]).getPosition(), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -4516,7 +4516,7 @@ states[455] = new ParserState() {
 };
 states[259] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -4587,8 +4587,8 @@ states[64] = new ParserState() {
 };
 states[326] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* TODO: We should use implicit nil for body, but problem (punt til later)*/
-                    Node body = ((Node)yyVals[-1+yyTop]); /*$5 == null ? NilImplicitNode.NIL : $5;*/
+                    Node body = ((Node)yyVals[-1+yyTop]);
+                    if (body == null) body = NilImplicitNode.NIL;
 
                     yyVal = new DefnNode(((Token)yyVals[-5+yyTop]).getPosition(), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
                     support.popCurrentScope();

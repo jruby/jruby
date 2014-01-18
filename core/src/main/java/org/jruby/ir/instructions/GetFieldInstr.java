@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.ir.IRVisitor;
@@ -13,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetFieldInstr extends GetInstr {
+public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public GetFieldInstr(Variable dest, Operand obj, String fieldName) {

@@ -40,7 +40,7 @@ public abstract class CompilerPass {
 
     /**
      * The data that this pass is responsible for will get invalidated so that
-     * if this pass is then execute()d it will generate new pass data.  Note
+     * if this pass is then executed it will generate new pass data.  Note
      * that some data will destructively manipulate dependent compiler pass
      * data.  In that case, the pass may wipe more than just it's data.  In
      * that case an execute() should still rebuild everything fine because all

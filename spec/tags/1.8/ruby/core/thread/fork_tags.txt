@@ -1,1 +1,0 @@
-fails:Thread.fork Thread.start does not call #initialize

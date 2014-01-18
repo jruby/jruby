@@ -120,7 +120,7 @@ public class Sprintf {
                 this.rubyArray = (RubyArray)rubyObject;
                 this.rubyHash = null;
                 this.length = rubyArray.size();
-            } else if (rubyObject instanceof RubyHash && rubyObject.getRuntime().is1_9()) {
+            } else if (rubyObject instanceof RubyHash) {
                 // allow a hash for args if in 1.9 mode
                 this.rubyHash = (RubyHash)rubyObject;
                 this.rubyArray = null;
@@ -161,16 +161,14 @@ public class Sprintf {
         
         IRubyObject next(ByteList name) {
             // for 1.9 hash args
-            if (runtime.is1_9()) {
-                if (name != null) {
-                    if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
+            if (name != null) {
+                if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
 
-                    IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
-                    if (object == null) raiseKeyError("key<" + name + "> not found");
-                    return object;
-                } else if (rubyHash != null) {
-                    raiseArgumentError("positional args mixed with named args");
-                }
+                IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
+                if (object == null) raiseKeyError("key<" + name + "> not found");
+                return object;
+            } else if (rubyHash != null) {
+                raiseArgumentError("positional args mixed with named args");
             }
 
             // this is the order in which MRI does these two tests
@@ -590,13 +588,13 @@ public class Sprintf {
                         name = null;
                     }
 
-                    int type = arg.getMetaClass().index;
+                    ClassIndex type = arg.getMetaClass().getClassIndex();
                     if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
                         switch(type) {
-                        case ClassIndex.FLOAT:
+                        case FLOAT:
                             arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
                             break;
-                        case ClassIndex.STRING:
+                        case STRING:
                             arg = ((RubyString)arg).stringToInum(0, true);
                             break;
                         default:
@@ -607,7 +605,7 @@ public class Sprintf {
                             }
                             break;
                         }
-                        type = arg.getMetaClass().index;
+                        type = arg.getMetaClass().getClassIndex();
                     }
                     byte[] bytes = null;
                     int first = 0;

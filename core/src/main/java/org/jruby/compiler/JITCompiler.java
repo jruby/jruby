@@ -660,7 +660,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
     
     public CompiledBlockCallback19 compileBlock19(ThreadContext context, StandardASMCompiler asmCompiler, final IterNode iterNode) {
-        final ASTCompiler19 astCompiler = new ASTCompiler19();
+        final ASTCompiler astCompiler = new ASTCompiler();
         final StaticScope scope = iterNode.getScope();
         
         asmCompiler.startScript(scope);

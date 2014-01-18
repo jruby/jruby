@@ -71,19 +71,13 @@ public class UnmarshalStream extends InputStream {
     private final IRubyObject proc;
     private final InputStream inputStream;
     private final boolean taint;
-    private final boolean untrust;
 
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
-        this(runtime, in, proc, taint, false);
-    }
-    
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
         this.inputStream = in;
         this.taint = taint;
-        this.untrust = untrust;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -135,13 +129,12 @@ public class UnmarshalStream extends InputStream {
         IRubyObject result = null;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
-            if (callProc && runtime.is1_9()) return doCallProcForLink(result, type);
+            if (callProc) return doCallProcForLink(result, type);
         } else {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
 
         result.setTaint(taint);
-        result.setUntrusted(untrust);
 
         return result;
     }
@@ -269,13 +262,8 @@ public class UnmarshalStream extends InputStream {
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
 
-        if (runtime.is1_9()) {
-            if (callProc) {
-                return doCallProcForObj(rubyObj);
-            }
-        } else if (type != ':') {
-            // call the proc, but not for symbols
-            doCallProcForObj(rubyObj);
+        if (callProc) {
+            return doCallProcForObj(rubyObj);
         }
         
         return rubyObj;
@@ -479,5 +467,10 @@ public class UnmarshalStream extends InputStream {
 
     public int read() throws IOException {
         return inputStream.read();
+    }
+
+    @Deprecated
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
+        this(runtime, in, proc, taint);
     }
 }

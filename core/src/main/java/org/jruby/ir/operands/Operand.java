@@ -12,6 +12,15 @@ import java.util.Map;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
+    private final OperandType type;
+
+    public Operand(OperandType type) {
+        this.type = type;
+    }
+
+    public final OperandType getOperandType() {
+        return type;
+    }
 
     /**
      * Do we know the value of this operand at compile-time?
@@ -63,11 +72,6 @@ public abstract class Operand {
 
     public Operand getValue(Map<Operand, Operand> valueMap) {
         return this;
-    }
-
-    // if (getSubArray) is false, returns the 'index' element of the array, else returns the subarray starting at that element
-    public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) {
-        return null;
     }
 
     /** Append the list of variables used in this operand to the input list -- force every operand

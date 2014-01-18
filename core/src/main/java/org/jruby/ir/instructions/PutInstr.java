@@ -4,24 +4,25 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 
 import java.util.Map;
+import org.jruby.ir.operands.StringLiteral;
 
 // Represents target.ref = value or target = value where target is not a stack variable
-public abstract class PutInstr extends Instr {
-    public final int VALUE = 0;
-    public final int TARGET = 1;
-
-    protected Operand[] operands;
+public abstract class PutInstr extends Instr implements FixedArityInstr {
+    private Operand target;
+    private Operand value;
     protected String  ref;
 
     public PutInstr(Operation op, Operand target, String ref, Operand value) {
         super(op);
 
-        operands = new Operand[] { value, target };
+        this.target = target;
+        this.value = value;
         this.ref = ref;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return operands;
+        return new Operand[] { target, new StringLiteral(ref), value };
     }
 
     public String getRef() {
@@ -29,22 +30,21 @@ public abstract class PutInstr extends Instr {
     }
 
     public Operand getTarget() {
-        return operands[TARGET];
+        return target;
     }
 
     public Operand getValue() {
-        return operands[VALUE];
+        return value;
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[TARGET] +
-                (ref == null ? "" : ", " + ref) + ") = " + operands[VALUE];
+        return super.toString() + "(" + target + (ref == null ? "" : ", " + ref) + ") = " + value;
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        operands[VALUE] = operands[VALUE].getSimplifiedOperand(valueMap, force);
-        operands[TARGET] = operands[TARGET].getSimplifiedOperand(valueMap, force);
+        value = value.getSimplifiedOperand(valueMap, force);
+        target = target.getSimplifiedOperand(valueMap, force);
     }
 }

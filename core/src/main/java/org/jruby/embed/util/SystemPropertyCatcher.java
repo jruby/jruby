@@ -165,12 +165,6 @@ public class SystemPropertyCatcher {
                 config.setCompileMode(CompileMode.OFF);
             }
         }
-        s = SafePropertyAccessor.getProperty(PropertyName.COMPATVERSION.toString());
-        if (s != null) {
-            if (isRuby19(s)) {
-                config.setCompatVersion(CompatVersion.RUBY1_9);
-            }
-        }
     }
 
     /**

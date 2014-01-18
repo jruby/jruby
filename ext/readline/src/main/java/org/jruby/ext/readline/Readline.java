@@ -195,24 +195,19 @@ public class Readline {
             // is that no al M17n encodings are valid encodings in java.lang.String.
             // We clearly need a byte[]-version of JLine since we cannot totally
             // behave properly using Java Strings.
-            if (runtime.is1_9()) {
-                ByteList list = new ByteList(v.getBytes(), runtime.getDefaultExternalEncoding());
-                line = RubyString.newString(runtime, list);
-            } else {
-                /* Explicitly use UTF-8 here. c.f. history.addToHistory using line.asUTF8() */
-                line = RubyString.newUnicodeString(recv.getRuntime(), v);
-            }
+            ByteList list = new ByteList(v.getBytes(), runtime.getDefaultExternalEncoding());
+            line = RubyString.newString(runtime, list);
         }
         return line;
     }
 
-    @JRubyMethod(name = "input=", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "input=", module = true, visibility = PRIVATE)
     public static IRubyObject setInput(ThreadContext context, IRubyObject recv, IRubyObject input) {
         // FIXME: JRUBY-3604
         return context.runtime.getNil();
     }
 
-    @JRubyMethod(name = "output=", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "output=", module = true, visibility = PRIVATE)
     public static IRubyObject setOutput(ThreadContext context, IRubyObject recv, IRubyObject output) {
         // FIXME: JRUBY-3604
         return context.runtime.getNil();
@@ -258,31 +253,16 @@ public class Readline {
     }
 
     @JRubyMethod(name = {
-        "basic_quote_characters", "basic_quote_characters=",
-        "completer_quote_characters", "completer_quote_characters=",
-        "completer_word_break_characters", "completer_word_break_characters=",
-        "completion_append_character",
-        "completion_proc",
-        "emacs_editing_mode",
-        "filename_quote_characters", "filename_quote_characters=",
-        "vi_editing_mode"}, frame = true, module = true, visibility = PRIVATE)
+            "basic_quote_characters", "basic_quote_characters=",
+            "completer_quote_characters", "completer_quote_characters=",
+            "completer_word_break_characters", "completer_word_break_characters=",
+            "completion_append_character",
+            "completion_proc",
+            "emacs_editing_mode", "emacs_editing_mode?",
+            "filename_quote_characters", "filename_quote_characters=",
+            "vi_editing_mode", "vi_editing_mode?",
+            "set_screen_size"}, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject unimplemented(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        String err = context.getFrameName() + "() function is unimplemented on this machine";
-        throw runtime.newNotImplementedError(err);
-    }
-
-    @JRubyMethod(name = {
-        "basic_quote_characters", "basic_quote_characters=",
-        "completer_quote_characters", "completer_quote_characters=",
-        "completer_word_break_characters", "completer_word_break_characters=",
-        "completion_append_character",
-        "completion_proc",
-        "emacs_editing_mode", "emacs_editing_mode?",
-        "filename_quote_characters", "filename_quote_characters=",
-        "vi_editing_mode", "vi_editing_mode?",
-        "set_screen_size"}, frame = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
-    public static IRubyObject unimplemented19(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         String err = context.getFrameName() + "() function is unimplemented on this machine";
         throw runtime.newNotImplementedError(err);
@@ -302,7 +282,7 @@ public class Readline {
         return COMPLETION_CASE_FOLD = other;
     }
 
-    @JRubyMethod(name = "get_screen_size", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "get_screen_size", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_screen_size(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolderWithReadline(runtime);
@@ -313,7 +293,7 @@ public class Readline {
 
     }
 
-    @JRubyMethod(name = "line_buffer", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "line_buffer", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_line_buffer(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolderWithReadline(runtime);
@@ -321,7 +301,7 @@ public class Readline {
         return runtime.newString(cb.toString()).taint(context);
     }
 
-    @JRubyMethod(name = "point", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "point", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_point(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolderWithReadline(runtime);
@@ -329,7 +309,7 @@ public class Readline {
         return runtime.newFixnum(cb.cursor);
     }
 
-    @JRubyMethod(name = "refresh_line", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "refresh_line", module = true, visibility = PRIVATE)
     public static IRubyObject s_refresh_line(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolderWithReadline(runtime);
@@ -474,7 +454,7 @@ public class Readline {
             return recv;
         }
 
-        @JRubyMethod(name = "clear", compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "clear")
         public static IRubyObject clear(ThreadContext context, IRubyObject recv, Block block) {
             ConsoleHolder holder = getHolder(context.runtime);
 

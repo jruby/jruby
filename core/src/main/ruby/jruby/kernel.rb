@@ -1,9 +1,6 @@
-# This is the primary kernel file, containing loads for subkernels that are
-# common to all supported versions of Ruby. Subsequent version-specific kernel
-# loads are expected to add and patch the behaviors loaded by this file.
+# This file boots the Ruby-based parts of JRuby.
 
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/kernel/jruby/generator.rb'
 load 'jruby/kernel/jruby/type.rb'
 load 'jruby/kernel/signal.rb'
 
@@ -19,3 +16,23 @@ rescue Exception
   warn "ProcessBuilder unavailable; using default backtick" if $VERBOSE
   # leave old backtick logic in place
 end
+
+require 'thread.jar'
+
+# These are loads so they don't pollute LOADED_FEATURES
+load 'jruby/kernel/thread.rb'
+load 'jruby/kernel/kernel.rb'
+load 'jruby/kernel/proc.rb'
+load 'jruby/kernel/process.rb'
+load 'jruby/kernel/jruby/process_util.rb'
+load 'jruby/kernel/jruby/type.rb'
+load 'jruby/kernel/enumerator.rb'
+load 'jruby/kernel/enumerable.rb'
+load 'jruby/kernel/io.rb'
+load 'jruby/kernel/time.rb'
+load 'jruby/kernel/gc.rb'
+load 'jruby/kernel/encoding/converter.rb'
+load 'jruby/kernel/range.rb'
+load 'jruby/kernel/load_error.rb'
+
+load 'jruby/kernel/rubygems.rb' unless JRuby::CONFIG.rubygems_disabled?

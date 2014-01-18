@@ -1,2 +1,0 @@
-fails:Regexp#== is true if self does not specify /n option and other does
-fails:Regexp#== is true if self specifies /n option and other does not

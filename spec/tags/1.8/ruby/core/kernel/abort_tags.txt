@@ -1,2 +1,0 @@
-fails:Kernel#abort coerces the argument with #to_str
-fails:Kernel.abort coerces the argument with #to_str

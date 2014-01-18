@@ -9,19 +9,19 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BFalseInstr extends BranchInstr {
-    protected BFalseInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_FALSE, v, null, jmpTarget);
+public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInstr {
+    // Public only for persistence reloading
+    public BFalseInstr(Operation op, Operand v, Label jmpTarget) {
+        super(op, v, jmpTarget);
+    }
+
+    public BFalseInstr(Operand v, Label jmpTarget) {
+        super(Operation.B_FALSE, v, jmpTarget);
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return new BFalseInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BFalseInstr(getArg1().cloneForInlining(ii), getJumpTarget());
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new BFalseInstr(getOperation(), getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 
     @Override

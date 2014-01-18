@@ -1,0 +1,6 @@
+ruby/shared/krypt*
+ruby/shared/rake*
+ruby/shared/bouncy-castle-java.rb
+ruby/shared/bc*.jar
+ruby/gems/shared/specifications/default/*
+ruby/gems/shared/gems/*/bin/*

@@ -53,9 +53,6 @@ import org.jruby.runtime.marshal.DataType;
 
 import java.util.Arrays;
 
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
-
 /**
  * @author  jpetersen
  */
@@ -80,7 +77,7 @@ public class RubyProc extends RubyObject implements DataType {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProc(procClass);
 
-        procClass.index = ClassIndex.PROC;
+        procClass.setClassIndex(ClassIndex.PROC);
         procClass.setReifiedClass(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);
@@ -138,7 +135,7 @@ public class RubyProc extends RubyObject implements DataType {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
         
-        if (isLambda() && procBlock == null) {
+        if (isLambda()) {
             // TODO: warn "tried to create Proc object without a block"
         }
 
@@ -196,15 +193,12 @@ public class RubyProc extends RubyObject implements DataType {
                 (this == other || this.block.equals(((RubyProc)other).block)));
     }
     
-    @JRubyMethod(name = "to_s", compat = RUBY1_8)
     @Override
     public IRubyObject to_s() {
-        return RubyString.newString(
-                getRuntime(),"#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1) + ">");
+        return to_s19();
     }
 
-    @JRubyMethod(name = "to_s", compat = RUBY1_9)
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
@@ -219,9 +213,8 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, compat = RUBY1_8)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return call(context, args, null, block);
+        return call19(context, args, block);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -229,46 +222,58 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     /**
-     * Transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
+     * For Type.LAMBDA, ensures that the args have the correct arity.
+     *
+     * For others, transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
      */
-    public static IRubyObject[] prepareProcArgs(ThreadContext context, Arity arity, IRubyObject[] args) {
+    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, Arity arity, IRubyObject[] args) {
+        if (arity == null) {
+            return args;
+        }
+
+        if (args == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        if (type == Block.Type.LAMBDA) {
+            arity.checkArity(context.runtime, args.length);
+            return args;
+        }
+
         boolean isFixed = arity.isFixed();
         int required = arity.required();
         int actual = args.length;
-        
+
         // for procs and blocks, single array passed to multi-arg must be spread
-        if (arity != Arity.ONE_ARGUMENT &&  required != 0 && 
+        if (arity != Arity.ONE_ARGUMENT &&  required != 0 &&
                 (isFixed || arity != Arity.OPTIONAL) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
             args = args[0].convertToArray().toJavaArray();
             actual = args.length;
         }
-        
+
         // fixed arity > 0 with mismatch needs a new args array
         if (isFixed && required > 0 && required != actual) {
-            
+
             IRubyObject[] newArgs = Arrays.copyOf(args, required);
-            
+
             // pad with nil
             if (required > actual) {
                 Helpers.fillNil(newArgs, actual, required, context.runtime);
             }
-            
+
             args = newArgs;
         }
 
         return args;
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        if (isLambda()) {
-            block.arity().checkArity(context.runtime, args.length);
-        }
-        if (isProc()) args = prepareProcArgs(context, block.arity(), args);
+        IRubyObject[] preppedArgs = prepareArgs(context, type, block.arity(), args);
 
-        return call(context, args, null, blockCallArg);
+        return call(context, preppedArgs, null, blockCallArg);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
@@ -348,7 +353,7 @@ public class RubyProc extends RubyObject implements DataType {
     	return this;
     }
 
-    @JRubyMethod(name = "source_location", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (sourcePosition != null) {
@@ -363,7 +368,7 @@ public class RubyProc extends RubyObject implements DataType {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "parameters", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
         BlockBody body = this.getBlock().getBody();
 
@@ -373,7 +378,7 @@ public class RubyProc extends RubyObject implements DataType {
                 body.getParameterList(), isLambda());
     }
 
-    @JRubyMethod(name = "lambda?", compat = RUBY1_9)
+    @JRubyMethod(name = "lambda?")
     public IRubyObject lambda_p(ThreadContext context) {
         return context.runtime.newBoolean(isLambda());
     }

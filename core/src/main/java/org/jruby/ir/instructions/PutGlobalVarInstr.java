@@ -10,14 +10,19 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutGlobalVarInstr extends PutInstr {
+public class PutGlobalVarInstr extends PutInstr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
         super(Operation.PUT_GLOBAL_VAR, new GlobalVariable(varName), null, value);
     }
 
     @Override
+    public Operand[] getOperands() {
+        return new Operand[] { getTarget(), getValue() };
+    }
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PutGlobalVarInstr(((GlobalVariable) operands[TARGET]).getName(), operands[VALUE].cloneForInlining(ii));
+        return new PutGlobalVarInstr(((GlobalVariable) getTarget()).getName(), getValue().cloneForInlining(ii));
     }
 
     @Override

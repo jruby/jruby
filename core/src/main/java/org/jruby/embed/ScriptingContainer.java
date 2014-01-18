@@ -480,32 +480,13 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         provider.getRubyInstanceConfig().setRunRubyInProcess(inprocess);
     }
 
-    /**
-     * Returns a Ruby version currently chosen, which is one of CompatVersion.RUBY1_8,
-     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
-     * CompatVersion.RUBY1_8.
-     *
-     * @since JRuby 1.5.0.
-     *
-     * @return a Ruby version
-     */
+    @Deprecated
     public CompatVersion getCompatVersion() {
         return provider.getRubyInstanceConfig().getCompatVersion();
     }
 
-    /**
-     * Changes a Ruby version to be evaluated into one of CompatVersion.RUBY1_8,
-     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
-     * CompatVersion.RUBY1_8.
-     * Call this method before you use put/get, runScriptlet, and parse methods so that
-     * the given version will be set.
-     *
-     * @since JRuby 1.5.0.
-     *
-     * @param version a Ruby version
-     */
+    @Deprecated
     public void setCompatVersion(CompatVersion version) {
-        provider.getRubyInstanceConfig().setCompatVersion(version);
     }
 
     /**
@@ -978,7 +959,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion() {
-        return OutputStrings.getVersionString(provider.getRubyInstanceConfig().getCompatVersion()).trim();
+        return OutputStrings.getVersionString().trim();
     }
 
     /**

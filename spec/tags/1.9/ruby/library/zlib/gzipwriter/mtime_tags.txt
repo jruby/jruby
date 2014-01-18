@@ -1,1 +1,0 @@
-fails:Zlib::GzipWriter#mtime= raises if the header was written

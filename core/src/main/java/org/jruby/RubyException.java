@@ -78,6 +78,9 @@ public class RubyException extends RubyObject {
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length == 1) message = args[0];
+
+        IRubyObject errinfo = getRuntime().getCurrentContext().getErrorInfo();
+        if (!errinfo.isNil()) cause = errinfo;
         return this;
     }
 
@@ -99,7 +102,7 @@ public class RubyException extends RubyObject {
         return backtrace();
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY2_0, omit = true)
+    @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
         Ruby runtime = context.runtime;
         RubyStackTraceElement[] elements = backtraceData.getBacktrace(runtime);
@@ -129,27 +132,16 @@ public class RubyException extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) {
-            return context.runtime.newString(getMetaClass().getRealClass().getName());
-        }
-        message.setTaint(isTaint());
-        return message;
+        return to_s19(context);
     }
 
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s19(ThreadContext context) {
-        if (message.isNil()) {
-            return context.runtime.newString(getMetaClass().getRealClass().getName());
-        }
+        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
+
         message.setTaint(isTaint());
         return message.asString();
-    }
-
-    @JRubyMethod(name = "to_str", compat = CompatVersion.RUBY1_8)
-    public IRubyObject to_str(ThreadContext context) {
-        return callMethod(context, "to_s");
     }
 
     @JRubyMethod(name = "message")
@@ -167,23 +159,21 @@ public class RubyException extends RubyObject {
         RubyModule rubyClass = getMetaClass().getRealClass();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.size() == 0) return getRuntime().newString(rubyClass.getName());
+        if (exception.isEmpty()) return getRuntime().newString(rubyClass.getName());
         StringBuilder sb = new StringBuilder("#<");
         sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
         return getRuntime().newString(sb.toString());
     }
 
-    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.runtime.getTrue();
 
         boolean equal = context.runtime.getException().isInstance(other) &&
-                        callMethod(context, "message").equals(other.callMethod(context, "message")) &&
-                        callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        if (context.runtime.is2_0()) {
-            equal = equal && getMetaClass().getRealClass() == other.getMetaClass().getRealClass();
-        }
+                callMethod(context, "message").equals(other.callMethod(context, "message")) &&
+                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace")) &&
+                getMetaClass().getRealClass() == other.getMetaClass().getRealClass();
         return context.runtime.newBoolean(equal);
     }
 
@@ -201,6 +191,13 @@ public class RubyException extends RubyObject {
         }
         // fall back on default logic
         return ((RubyClass)recv).op_eqq(context, other);
+    }
+
+    @JRubyMethod(name = "cause")
+    public IRubyObject cause(ThreadContext context) {
+        IRubyObject nil = context.nil;
+        if (cause != nil) return cause;
+        return nil;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -285,9 +282,9 @@ public class RubyException extends RubyObject {
      * @param errorStream the PrintStream to which backtrace should be printed
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
-        IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        if (!backtrace.isNil() && backtrace instanceof RubyArray) {
-            IRubyObject[] elements = backtrace.convertToArray().toJavaArray();
+        IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
+        if (!trace.isNil() && trace instanceof RubyArray) {
+            IRubyObject[] elements = trace.convertToArray().toJavaArray();
 
             for (int i = skip; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
@@ -315,6 +312,7 @@ public class RubyException extends RubyObject {
     }
 
     public static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyException instance = new RubyException(runtime, klass);
 
@@ -326,6 +324,7 @@ public class RubyException extends RubyObject {
     };
 
     private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+        @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyException exc = (RubyException)obj;
@@ -338,6 +337,7 @@ public class RubyException extends RubyObject {
             marshalStream.dumpVariables(attrs);
         }
 
+        @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             RubyException exc = (RubyException)type.allocate();
@@ -358,7 +358,7 @@ public class RubyException extends RubyObject {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
         runtime.setException(exceptionClass);
 
-        exceptionClass.index = ClassIndex.EXCEPTION;
+        exceptionClass.setClassIndex(ClassIndex.EXCEPTION);
         exceptionClass.setReifiedClass(RubyException.class);
 
         exceptionClass.setMarshal(EXCEPTION_MARSHAL);
@@ -379,6 +379,7 @@ public class RubyException extends RubyObject {
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
+    private IRubyObject cause = getRuntime().getNil();
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

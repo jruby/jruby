@@ -1,6 +1,6 @@
 package org.jruby.ext.tracepoint;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
@@ -47,22 +47,36 @@ public class TracePoint extends RubyObject {
         
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
         
-        RubyEvent[] events = new RubyEvent[_events.length];
+        ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
             IRubyObject _event = _events[i];
             if (_event instanceof RubySymbol || _event instanceof RubyString) {
-                String eventName = _event.asJavaString();
-                RubyEvent event = RubyEvent.valueOf(eventName);
+                String eventName = _event.asJavaString().toUpperCase();
+                RubyEvent event = null;
+                try {
+                    event = RubyEvent.valueOf(eventName);
+                } catch (IllegalArgumentException iae) {}
                 
                 if (event == null) throw runtime.newArgumentError("unknown event: " + eventName);
                 
-                events[i] = event;
+                // a_call is call | b_call | c_call, and same as a_return.
+                if (event == RubyEvent.A_CALL) {
+                    events.add(RubyEvent.CALL);
+                    events.add(RubyEvent.B_CALL);
+                    events.add(RubyEvent.C_CALL);
+                } else if (event == RubyEvent.A_RETURN) {
+                    events.add(RubyEvent.RETURN);
+                    events.add(RubyEvent.B_RETURN);
+                    events.add(RubyEvent.C_RETURN);
+                } else {
+                    events.add(event);
+                }
             }
         }
         
         EnumSet<RubyEvent> _eventSet;
-        if (events.length > 0) {
-            _eventSet = EnumSet.copyOf(Arrays.asList(events));
+        if (events.size() > 0) {
+            _eventSet = EnumSet.copyOf(events);
         } else {
             _eventSet = EnumSet.allOf(RubyEvent.class);
         }

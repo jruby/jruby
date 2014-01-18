@@ -12,14 +12,23 @@ import org.jruby.runtime.ThreadContext;
  * way I got lazy and removed protected.
  */
 public class Nil extends ImmutableLiteral {
-    @Override
-    public Object createCacheObject(ThreadContext context) {
-        return context.nil;
+    public Nil() {
+        super(OperandType.NIL);
+    }
+
+    // For UnexecutableNil
+    protected Nil(OperandType type) {
+        super(type);
     }
 
     @Override
     public String toString() {
         return "nil";
+    }
+
+    @Override
+    public Object createCacheObject(ThreadContext context) {
+        return context.nil;
     }
 
     @Override

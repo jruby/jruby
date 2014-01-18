@@ -15,17 +15,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
+import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
+public class InheritanceSearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
     Operand  currentModule;
     String   constName;
     private Variable result;
-    private boolean  noPrivateConsts;
+    private final boolean  noPrivateConsts;
 
     // Constant caching
     private volatile transient Object cachedConstant = null;
@@ -46,7 +48,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { currentModule };
+        return new Operand[] { currentModule, new StringLiteral(constName), new BooleanLiteral(noPrivateConsts) };
     }
 
     @Override
@@ -54,10 +56,12 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         currentModule = currentModule.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

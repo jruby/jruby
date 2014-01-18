@@ -57,8 +57,6 @@ public class ParserConfiguration {
     // whether we should save the end-of-file data as DATA
     private boolean saveData = false;
 
-    private CompatVersion version;
-
     private Encoding defaultEncoding;
     private Ruby runtime;
 
@@ -77,13 +75,12 @@ public class ParserConfiguration {
     }
 
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
-            boolean inlineSource, boolean isFileParse, CompatVersion version, boolean saveData) {
+                               boolean inlineSource, boolean isFileParse, boolean saveData) {
         this.runtime = runtime;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.extraPositionInformation = extraPositionInformation;
         this.isEvalParse = !isFileParse;
-        this.version = version;
         this.saveData = saveData;
     }
 
@@ -94,8 +91,7 @@ public class ParserConfiguration {
 
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
             boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse,
-                config.getCompatVersion(), saveData);
+        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
     }
@@ -108,11 +104,7 @@ public class ParserConfiguration {
 
     public Encoding getDefaultEncoding() {
         if (defaultEncoding == null) {
-            if (runtime.is2_0()) {
-                defaultEncoding = UTF8Encoding.INSTANCE;
-            } else {
-                defaultEncoding = getEncodingService().loadEncoding(USASCII);
-            }
+            defaultEncoding = UTF8Encoding.INSTANCE;
         }
         
         return defaultEncoding;
@@ -199,13 +191,6 @@ public class ParserConfiguration {
         // any of the specific-size scopes.
         return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null), existingScope);
     }
-
-    /**
-     * Get the compatibility version we're targeting with this parse.
-     */
-    public CompatVersion getVersion() {
-        return version;
-    }
     
     /**
      * Get whether we are saving the DATA contents of the file.
@@ -248,5 +233,19 @@ public class ParserConfiguration {
      */
     public Integer[] getCoverage() {
         return coverage;
+    }
+
+    @Deprecated
+    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
+                               boolean inlineSource, boolean isFileParse, CompatVersion version, boolean saveData) {
+        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, saveData);
+    }
+
+    /**
+     * Get the compatibility version we're targeting with this parse.
+     */
+    @Deprecated
+    public CompatVersion getVersion() {
+        return CompatVersion.RUBY2_1;
     }
 }

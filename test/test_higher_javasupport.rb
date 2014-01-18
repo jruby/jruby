@@ -111,11 +111,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_inner_classes
     assert_equal("java.nio.channels.Pipe$SinkChannel",
                  Pipe::SinkChannel.java_class.name)
-    if RUBY_VERSION =~ /1\.9/
-      assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
-    else
-      assert(Pipe::SinkChannel.instance_methods.include?("keyFor"))
-    end
+    assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
   end
 
   def test_subclasses_and_their_return_types
@@ -280,9 +276,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     toString toUpperCase to_char_array to_lower_case to_string
     to_upper_case trim wait]
 
-    if RUBY_VERSION =~ /1\.9/
-      jstring_methods = jstring_methods.map(&:to_sym)
-    end
+    jstring_methods = jstring_methods.map(&:to_sym)
 
     jstring_methods.each { |method| assert(JString.public_instance_methods.include?(method), "#{method} is missing from JString") }
   end
@@ -490,22 +484,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
   OuterClass = org.jruby.javasupport.test.OuterClass
   def test_inner_class_proxies
     assert defined?(OuterClass::PublicStaticInnerClass)
-    if RUBY_VERSION =~ /1\.9/
-      assert OuterClass::PublicStaticInnerClass.instance_methods.include?(:a)
-    else
-      assert OuterClass::PublicStaticInnerClass.instance_methods.include?("a")
-    end
+    assert OuterClass::PublicStaticInnerClass.instance_methods.include?(:a)
 
     assert !defined?(OuterClass::ProtectedStaticInnerClass)
     assert !defined?(OuterClass::DefaultStaticInnerClass)
     assert !defined?(OuterClass::PrivateStaticInnerClass)
 
     assert defined?(OuterClass::PublicInstanceInnerClass)
-    if RUBY_VERSION =~ /1\.9/
-      assert OuterClass::PublicInstanceInnerClass.instance_methods.include?(:a)
-    else
-      assert OuterClass::PublicInstanceInnerClass.instance_methods.include?("a")
-    end
+    assert OuterClass::PublicInstanceInnerClass.instance_methods.include?(:a)
 
     assert !defined?(OuterClass::ProtectedInstanceInnerClass)
     assert !defined?(OuterClass::DefaultInstanceInnerClass)
@@ -682,11 +668,7 @@ CLASSDEF
     assert java.lang.respond_to?(:__methods__)
 
     java.lang.String # ensure java.lang.String has been loaded
-    if RUBY_VERSION =~ /1\.9/
-      assert java.lang.__constants__.include?(:String)
-    else
-      assert java.lang.__constants__.include?('String')
-    end
+    assert java.lang.__constants__.include?(:String)
   end
 
   # JRUBY-2106

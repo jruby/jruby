@@ -39,7 +39,6 @@ import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -156,20 +155,11 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        Ruby runtime = context.runtime;
-
-        initFieldsFromArgs(runtime, domain, type, protocol);
-
-        ChannelDescriptor descriptor = initChannel(runtime);
-
-        initSocket(runtime, descriptor);
-
-        return this;
+        return initialize(context, domain, type, protocol);
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize")
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
@@ -182,7 +172,7 @@ public class RubySocket extends RubyBasicSocket {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize")
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
@@ -304,7 +294,7 @@ public class RubySocket extends RubyBasicSocket {
         return SocketUtils.getnameinfo(context, args);
     }
 
-    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
         return SocketUtils.ip_address_list(context);
     }
@@ -476,11 +466,7 @@ public class RubySocket extends RubyBasicSocket {
                 }
 
                 if(!result) {
-                    if (runtime.is1_9()) {
-                        throw runtime.newErrnoEINPROGRESSWritableError();
-                    } else {
-                        throw runtime.newErrnoEINPROGRESSError();
-                    }
+                    throw runtime.newErrnoEINPROGRESSWritableError();
                 }
 
             } else if (channel instanceof UnixSocketChannel) {
@@ -498,11 +484,7 @@ public class RubySocket extends RubyBasicSocket {
             throw runtime.newErrnoEISCONNError();
 
         } catch(ConnectionPendingException e) {
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEINPROGRESSWritableError();
-            } else {
-                throw runtime.newErrnoEINPROGRESSError();
-            }
+            throw runtime.newErrnoEINPROGRESSWritableError();
 
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");

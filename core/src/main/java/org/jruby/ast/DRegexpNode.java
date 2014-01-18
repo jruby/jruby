@@ -98,11 +98,7 @@ public class DRegexpNode extends DNode implements ILiteralNode {
 
         RubyString string;
         
-        if (runtime.is1_9()) {
-            string = buildDRegexpString19(runtime, context, self, aBlock);
-        } else {
-            string = buildDynamicString(runtime, context, self, aBlock);
-        }
+        string = buildDRegexpString19(runtime, context, self, aBlock);
 
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         

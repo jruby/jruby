@@ -57,7 +57,7 @@ import org.jruby.util.RegexpOptions;
 public class Timeout implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule timeout = runtime.defineModule("Timeout");
-        RubyClass superclass = runtime.is1_9() ? runtime.getRuntimeError() : runtime.getInterrupt();
+        RubyClass superclass = runtime.getRuntimeError();
         RubyClass timeoutError = runtime.defineClassUnder("Error", superclass, superclass.getAllocator(), timeout);
         runtime.defineClassUnder("ExitException", runtime.getException(), runtime.getException().getAllocator(), timeout);
 

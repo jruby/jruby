@@ -634,8 +634,9 @@ public class SSLSocket extends RubyObject {
         return do_sysread(context, args, true);
     }
     
-    @JRubyMethod(rest = true, required = 1, optional = 1)
+    @JRubyMethod(rest = true, required = 1, optional = 2)
     public IRubyObject sysread_nonblock(ThreadContext context, IRubyObject[] args) {
+        // TODO: options for exception raising
         return do_sysread(context, args, false);
     }
 
@@ -669,6 +670,12 @@ public class SSLSocket extends RubyObject {
 
     @JRubyMethod
     public IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject arg) {
+        return do_syswrite(context, arg, false);
+    }
+
+    @JRubyMethod
+    public IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject arg, IRubyObject options) {
+        // TODO: options for exception raising
         return do_syswrite(context, arg, false);
     }
 

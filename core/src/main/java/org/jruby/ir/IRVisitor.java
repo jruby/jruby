@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
@@ -13,9 +14,6 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.instructions.ruby19.BuildLambdaInstr;
-import org.jruby.ir.instructions.ruby19.GetEncodingInstr;
-import org.jruby.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -48,7 +46,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
@@ -92,7 +89,6 @@ public abstract class IRVisitor {
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) { error(defineinstancemethodinstr); }
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) { error(definemetaclassinstr); }
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) { error(definemoduleinstr); }
-    public void EnsureRubyArrayInstr(EnsureRubyArrayInstr ensurerubyarrayinstr) { error(ensurerubyarrayinstr); }
     public void EQQInstr(EQQInstr eqqinstr) { error(eqqinstr); }
     public void ExceptionRegionEndMarkerInstr(ExceptionRegionEndMarkerInstr exceptionregionendmarkerinstr) { error(exceptionregionendmarkerinstr); }
     public void ExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) { error(exceptionregionstartmarkerinstr); }
@@ -172,6 +168,11 @@ public abstract class IRVisitor {
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) { error(getencodinginstr); }
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr receivepostreqdarginstr) { error(receivepostreqdarginstr); }
 
+    // unboxing instrs
+    public void BoxFloatInstr(BoxFloatInstr instr) { error(instr); }
+    public void AluInstr(AluInstr instr) { error(instr); }
+    public void UnboxFloatInstr(UnboxFloatInstr instr) { error(instr); }
+
     // operands
     public void Array(Array array) { error(array); }
     public void AsString(AsString asstring) { error(asstring); }
@@ -205,7 +206,6 @@ public abstract class IRVisitor {
     public void StringLiteral(StringLiteral stringliteral) { error(stringliteral); }
     public void SValue(SValue svalue) { error(svalue); }
     public void Symbol(Symbol symbol) { error(symbol); }
-    public void TemporaryClosureVariable(TemporaryClosureVariable temporaryclosurevariable) { error(temporaryclosurevariable); }
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { error(temporaryvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) { error(undefinedvalue); }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) { error(unexecutablenil); }

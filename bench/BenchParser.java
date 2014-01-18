@@ -9,7 +9,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.parser.DefaultRubyParser;
+import org.jruby.parser.Ruby20Parser;
 import org.jruby.parser.ParserConfiguration;
 
 public class BenchParser {
@@ -21,7 +21,7 @@ public class BenchParser {
             int[] parsers = getParsers(args);
 
             System.out.println("Parsing " + args[0] + " " + iterations + " times");
-            DefaultRubyParser parser = new DefaultRubyParser();
+            RubyParser parser = new Ruby20Parser();
             parser.setWarnings(new NullWarnings(null));
             Ruby runtime = Ruby.getGlobalRuntime();
             RubyInstanceConfig rconfig = new RubyInstanceConfig();

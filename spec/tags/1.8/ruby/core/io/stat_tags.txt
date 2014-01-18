@@ -1,2 +1,0 @@
-windows(JRUBY-2665):IO#stat returns a File::Stat object for the stream
-fails(JRUBY-5663):IO#stat can stat pipes

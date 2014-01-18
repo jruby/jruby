@@ -96,16 +96,12 @@ public class RubyFloat extends RubyNumeric {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFloat(floatc);
 
-        floatc.index = ClassIndex.FLOAT;
+        floatc.setClassIndex(ClassIndex.FLOAT);
         floatc.setReifiedClass(RubyFloat.class);
         
         floatc.kindOf = new RubyModule.JavaClassKindOf(RubyFloat.class);
 
         floatc.getSingletonClass().undefineMethod("new");
-
-        if (!runtime.is1_9()) {
-            floatc.includeModule(runtime.getPrecision());
-        }
 
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, ROUNDS));
@@ -122,10 +118,8 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, EPSILON));
 
-        if (runtime.is1_9()) {
-            floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
-            floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
-        }
+        floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
+        floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
 
         floatc.defineAnnotatedMethods(RubyFloat.class);
 
@@ -135,7 +129,7 @@ public class RubyFloat extends RubyNumeric {
     private final double value;
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.FLOAT;
     }
 
@@ -197,7 +191,7 @@ public class RubyFloat extends RubyNumeric {
     /** rb_flo_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
+    @Deprecated
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, "to_f");
@@ -225,11 +219,7 @@ public class RubyFloat extends RubyNumeric {
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
         // Double-precision can represent around 16 decimal digits;
         // we use 20 to ensure full representation.
-        if (runtime.is1_9()) {
-            Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
-        } else {
-            Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
-        }
+        Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
         int e = buf.indexOf('e');
         if (e == -1) e = buf.getRealSize();
         ASCIIEncoding ascii = ASCIIEncoding.INSTANCE; 
@@ -246,7 +236,7 @@ public class RubyFloat extends RubyNumeric {
         System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
         buf.setRealSize(p + buf.getRealSize() - e);
 
-        if (getRuntime().is1_9()) buf.setEncoding(USASCIIEncoding.INSTANCE);
+        buf.setEncoding(USASCIIEncoding.INSTANCE);
 
         return runtime.newString(buf);
     }
@@ -273,10 +263,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value + ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, "+", other);
@@ -292,10 +282,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value - ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, "-", other);
@@ -311,10 +301,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyFloat.newFloat(
                     getRuntime(), value * ((RubyNumeric) other).getDoubleValue());
         default:
@@ -332,10 +322,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "/", required = 1)
     public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, "/", other);
@@ -349,7 +339,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_quo
     *
     */
-    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "quo")
         public IRubyObject magnitude(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
@@ -357,12 +347,11 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
             return op_mod(context, y);
         default:
@@ -385,7 +374,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
@@ -397,13 +386,12 @@ public class RubyFloat extends RubyNumeric {
     /** flo_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
             double x = value;
 
@@ -429,7 +417,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
@@ -441,12 +429,11 @@ public class RubyFloat extends RubyNumeric {
     /** flo_pow
      * 
      */
-    @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyFloat.newFloat(getRuntime(), Math.pow(value, ((RubyNumeric) other)
                     .getDoubleValue()));
         default:
@@ -458,7 +445,7 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), Math.pow(value, other));
     }
     
-    @JRubyMethod(name = "**", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
         double d_other = ((RubyNumeric) other).getDoubleValue();
         if (value < 0 && (d_other != Math.round(d_other))) {
@@ -477,10 +464,10 @@ public class RubyFloat extends RubyNumeric {
         if (Double.isNaN(value)) {
             return getRuntime().getFalse();
         }
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return RubyBoolean.newBoolean(getRuntime(), value == ((RubyNumeric) other)
                     .getDoubleValue());
         default:
@@ -505,10 +492,10 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public final int compareTo(IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
         default:
             return (int)coerceCmp(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
@@ -520,13 +507,13 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
             if (Double.isInfinite(value)) {
                 return value > 0.0 ? RubyFixnum.one(getRuntime()) : RubyFixnum.minus_one(getRuntime());
             }
-        case ClassIndex.FLOAT:
+        case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
             return dbl_cmp(getRuntime(), value, b);
         default:
@@ -565,10 +552,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value > b);
         default:
@@ -585,10 +572,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value >= b);
         default:
@@ -605,10 +592,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value < b);
         default:
@@ -625,10 +612,10 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
+        switch (other.getMetaClass().getClassIndex()) {
+        case FIXNUM:
+        case BIGNUM:
+        case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value <= b);
         default:
@@ -696,7 +683,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_abs/1.9
      * 
      */
-    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "magnitude")
     @Override
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
@@ -726,7 +713,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_numerator
      * 
      */
-    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "numerator")
     @Override
     public IRubyObject numerator(ThreadContext context) {
         if (Double.isInfinite(value) || Double.isNaN(value)) return this;
@@ -736,7 +723,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_denominator
      * 
      */
-    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
@@ -750,7 +737,7 @@ public class RubyFloat extends RubyNumeric {
      */
     static final int DBL_MANT_DIG = 53;
     static final int FLT_RADIX = 2;
-    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[]exp = new long[1]; 
         double f = frexp(value, exp);
@@ -767,7 +754,7 @@ public class RubyFloat extends RubyNumeric {
     /** float_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "rationalize", optional = 1)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         if (f_negative_p(context, this))
             return f_negate(context, ((RubyFloat) f_abs(context, this)).rationalize(context, args));
@@ -834,13 +821,12 @@ public class RubyFloat extends RubyNumeric {
     /** flo_round
      * 
      */
-    @JRubyMethod(name = "round")
     @Override
     public IRubyObject round() {
         return dbl2num(getRuntime(), val2dbl());
     }
     
-    @JRubyMethod(name = "round", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "round", optional = 1)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) return round();
         // truncate floats.

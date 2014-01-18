@@ -116,10 +116,8 @@ describe "A Java primitive Array of type" do
     end
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
-    if RUBY_VERSION =~ /1\.9/
-      test_equal({"d"=>400, "e"=>500}, h.select {|k,v| k > "c"})
-      test_equal({"c"=>300}, h.select {|k,v| v < 400})
-    end
+    test_equal({"d"=>400, "e"=>500}, h.select {|k,v| k > "c"})
+    test_equal({"c"=>300}, h.select {|k,v| v < 400})
 
     # Java 8 adds a replace method to Map that takes a key and value
     if ENV_JAVA['java.specification.version'] < '1.8'
@@ -137,12 +135,7 @@ describe "A Java primitive Array of type" do
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
     test_equal(Hash, rh.class)
 
-    # 1.9
-    if RUBY_VERSION =~ /1\.9/
-      test_equal("{\"a\"=>20, \"d\"=>10, \"c\"=>30, \"b\"=>0, \"e\"=>20}", h.to_s)
-    else
-      test_equal("a20d10c30b0e20", h.to_s)
-    end
+    test_equal("{\"a\"=>20, \"d\"=>10, \"c\"=>30, \"b\"=>0, \"e\"=>20}", h.to_s)
 
     test_ok(h.all? { |k, v| k.length == 1 })
     test_ok(!h.all? { |k, v| v > 100 })
@@ -239,49 +232,47 @@ describe "A Java primitive Array of type" do
 ###
 
 # Test hash coercion
-    if RUBY_VERSION =~ /1\.9/
-      class ToHashImposter
-        def initialize(hash)
-          @hash = hash
-        end
-
-        def to_hash
-          @hash
-        end
+    class ToHashImposter
+      def initialize(hash)
+        @hash = hash
       end
 
-      class SubHash < Hash
+      def to_hash
+        @hash
       end
+    end
 
-      x = java.util.HashMap.new
-      x.put(:a, 1); x.put(:b, 2)
-      x.update(ToHashImposter.new({:a => 10, :b => 20}))
+    class SubHash < Hash
+    end
+
+    x = java.util.HashMap.new
+    x.put(:a, 1); x.put(:b, 2)
+    x.update(ToHashImposter.new({:a => 10, :b => 20}))
+    test_equal(10, x[:a])
+    test_equal(20, x[:b])
+    test_exception(TypeError) { x.update(ToHashImposter.new(4)) }
+
+    x.put(:a, 1); x.put(:b, 2)
+    sub2 = SubHash.new()
+    sub2[:a] = 10
+    sub2[:b] = 20
+    x.update(ToHashImposter.new(sub2))
+    test_equal(10, x[:a])
+    test_equal(20, x[:b])
+
+    x.put(:a, 1); x.put(:b, 2)
+
+    # Java 8 adds a replace method to Map that takes a key and value
+    if ENV_JAVA['java.specification.version'] < '1.8'
+      x.replace(ToHashImposter.new({:a => 10, :b => 20}))
       test_equal(10, x[:a])
       test_equal(20, x[:b])
-      test_exception(TypeError) { x.update(ToHashImposter.new(4)) }
+      test_exception(TypeError) { x.replace(ToHashImposter.new(4)) }
 
       x.put(:a, 1); x.put(:b, 2)
-      sub2 = SubHash.new()
-      sub2[:a] = 10
-      sub2[:b] = 20
-      x.update(ToHashImposter.new(sub2))
+      x.replace(ToHashImposter.new(sub2))
       test_equal(10, x[:a])
       test_equal(20, x[:b])
-
-      x.put(:a, 1); x.put(:b, 2)
-
-      # Java 8 adds a replace method to Map that takes a key and value
-      if ENV_JAVA['java.specification.version'] < '1.8'
-        x.replace(ToHashImposter.new({:a => 10, :b => 20}))
-        test_equal(10, x[:a])
-        test_equal(20, x[:b])
-        test_exception(TypeError) { x.replace(ToHashImposter.new(4)) }
-
-        x.put(:a, 1); x.put(:b, 2)
-        x.replace(ToHashImposter.new(sub2))
-        test_equal(10, x[:a])
-        test_equal(20, x[:b])
-      end
     end
 
     class H1 < java.util.HashMap

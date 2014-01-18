@@ -89,7 +89,7 @@ public class TestRubyArray extends TestRubyBase {
      */
     public void testConversions() throws Exception {
         result = eval("p $h.to_s");
-        assertEquals("\"foobar\"", result);
+        assertEquals("\"[\\\"foo\\\", \\\"bar\\\"]\"", result);
         result = eval("p $h.to_a");
         assertEquals("[\"foo\", \"bar\"]", result);
     }

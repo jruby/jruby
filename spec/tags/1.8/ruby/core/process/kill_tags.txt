@@ -1,3 +1,0 @@
-windows(JRUBY-4317):Process.kill raises an ArgumentError for unknown signals
-fails:Process.kill raises a TypeError if the PID is not a Fixnum
-unstable(travis,intermittent):Process.kill accepts a signal name without the 'SIG' prefix

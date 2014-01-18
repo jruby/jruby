@@ -1,1 +1,0 @@
-fails(JRUBY-2334):REXML::Document#write returns document with transitive support

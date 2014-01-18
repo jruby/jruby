@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.oracle.truffle.api.Truffle;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -45,6 +46,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -213,6 +215,10 @@ public class Main {
 
     public Status run(String[] args) {
         try {
+            if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
+                config.getError().println("jruby: using " + Truffle.getRuntime().getName());
+            }
+
             config.processArguments(args);
             return internalRun();
         } catch (MainExitException mee) {
@@ -393,6 +399,9 @@ public class Main {
             doCheckSecurityManager();
 
             runtime.runFromMain(in, filename);
+
+            runtime.getTruffleBridge().shutdown();
+
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }
@@ -476,7 +485,7 @@ public class Main {
 
     private void doShowVersion() {
         if (config.isShowVersion()) {
-            config.getOutput().println(OutputStrings.getVersionString(config.getCompatVersion()));
+            config.getOutput().println(OutputStrings.getVersionString());
         }
     }
 

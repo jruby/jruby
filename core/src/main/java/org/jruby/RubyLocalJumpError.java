@@ -45,6 +45,7 @@ public class RubyLocalJumpError extends RubyException {
     }
     
     private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyLocalJumpError(runtime, klass);
         }
@@ -71,7 +72,7 @@ public class RubyLocalJumpError extends RubyException {
         setInternalVariable("exit_value", exitValue);
     }
 
-    @JRubyMethod(name = "reason")
+    @JRubyMethod
     public IRubyObject reason() {
         return (IRubyObject)getInternalVariable("reason");
     }
@@ -80,7 +81,7 @@ public class RubyLocalJumpError extends RubyException {
         return reason;
     }
     
-    @JRubyMethod(name = "exit_value")
+    @JRubyMethod
     public IRubyObject exit_value() {
         return (IRubyObject)getInternalVariable("exit_value");
     }

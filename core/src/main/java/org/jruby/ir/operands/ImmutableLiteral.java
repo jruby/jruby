@@ -10,9 +10,8 @@ import java.util.List;
 /**
  * Operands extending this type can make a reasonable assumption of
  * immutability.  In Ruby, almost nothing is truly immutable (set_instance_var)
- * but for the sake of our compiler we can assume the basic behavior will
- * continue to work unchanged (the value of an instance of fixnum 3 will remain
- * 3).
+ * but for the sake of our compiler, we can assume the basic behavior will
+ * continue to work unchanged (the value of an instance of fixnum 3 will remain 3).
  *
  * Knowing that we have a literal which will not change can be used for
  * optimizations like constant propagation.
@@ -25,6 +24,10 @@ import java.util.List;
  */
 public abstract class ImmutableLiteral extends Operand {
     private Object cachedObject = null;
+
+    public ImmutableLiteral(OperandType type) {
+       super(type);
+   }
 
     @Override
     public boolean hasKnownValue() {
@@ -50,7 +53,6 @@ public abstract class ImmutableLiteral extends Operand {
      * Implementing class is responsible for constructing the cached value.
      */
     public abstract Object createCacheObject(ThreadContext context);
-
 
     /**
      * Returns the cached object.  If not then it asks class to create an

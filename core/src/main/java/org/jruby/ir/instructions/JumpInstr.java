@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class JumpInstr extends Instr {
+public class JumpInstr extends Instr implements FixedArityInstr {
     public final Label target;
 
     public JumpInstr(Label target) {
@@ -14,8 +14,9 @@ public class JumpInstr extends Instr {
         this.target = target;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { target };
     }
 
     @Override
@@ -28,15 +29,11 @@ public class JumpInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(target));
     }
 
     @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new JumpInstr(target);
-    }
-
     public void visit(IRVisitor visitor) {
         visitor.JumpInstr(this);
     }

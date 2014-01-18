@@ -14,7 +14,7 @@ public class Backref extends Reference {
     final public char type;
 
     public Backref(char t) {
-        super("$" + t);
+        super(OperandType.BACKREF, "$" + t);
         type = t;
     }
 

@@ -46,5 +46,7 @@ public class ThreadFiberLibrary implements Library {
         });
 
         cFiber.defineAnnotatedMethods(ThreadFiber.class);
+
+        runtime.setFiber(cFiber);
     }
 }

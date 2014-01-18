@@ -38,9 +38,9 @@ public abstract class CachingCallSite extends CallSite {
     public int getCachedClassIndex() {
         CacheEntry cacheEntry = getCache();
         if (cacheEntry != CacheEntry.NULL_CACHE) {
-            return cacheEntry.method.getImplementationClass().index;
+            return cacheEntry.method.getImplementationClass().getClassIndex().ordinal();
         }
-        return ClassIndex.NO_INDEX;
+        return ClassIndex.NO_INDEX.ordinal();
     }
 
     public String getMethodName() {

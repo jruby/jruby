@@ -27,7 +27,10 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +44,7 @@ public class RubyYielder extends RubyObject {
     public static RubyClass createYielderClass(Ruby runtime) {
         RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
         runtime.setYielder(yielderc);
-        yielderc.index = ClassIndex.YIELDER;
+        yielderc.setClassIndex(ClassIndex.YIELDER);
         yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
 
         yielderc.defineAnnotatedMethods(RubyYielder.class);
@@ -49,6 +52,7 @@ public class RubyYielder extends RubyObject {
     }
 
     private static ObjectAllocator YIELDER_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyYielder(runtime, klass);
         }
@@ -60,6 +64,23 @@ public class RubyYielder extends RubyObject {
 
     public RubyYielder(Ruby runtime) {
         super(runtime, runtime.getYielder());
+    }
+
+    public static RubyYielder newYielder(ThreadContext context, final Block block) {
+        Ruby runtime = context.runtime;
+        RubyYielder yielder = new RubyYielder(runtime, runtime.getYielder());
+        yielder.initialize(context, CallBlock19.newCallClosure(
+                yielder,
+                yielder.metaClass,
+                Arity.NO_ARGUMENTS,
+                new BlockCallback() {
+            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
+                return block.call(context, args, inner);
+            }
+        },
+                context));
+
+        return yielder;
     }
 
     private void checkInit() {
@@ -77,11 +98,7 @@ public class RubyYielder extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
         checkInit();
-        if (context.runtime.is1_9()) {
-            return proc.call19(context, args, Block.NULL_BLOCK);
-        } else {
-            return proc.call(context, args);
-        }
+        return proc.call19(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "<<", rest = true)

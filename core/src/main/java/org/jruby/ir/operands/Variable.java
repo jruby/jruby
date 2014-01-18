@@ -10,6 +10,10 @@ public abstract class Variable extends Operand implements Comparable {
     public final static String CURRENT_SCOPE  = "%current_scope";
     public final static String CURRENT_MODULE = "%current_module";
 
+    public Variable(OperandType type) {
+        super(type);
+    }
+
     public abstract String getName();
 
     @Override
@@ -41,7 +45,7 @@ public abstract class Variable extends Operand implements Comparable {
         l.add(this);
     }
 
-    public abstract Variable cloneForCloningClosure(InlinerInfo ii);
+    public abstract Variable clone(InlinerInfo ii);
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {

@@ -29,8 +29,19 @@ public class MethodHandle extends Operand {
     private IRubyObject receiverObj;
 
     public MethodHandle(Operand methodName, Operand receiver) {
+        super(OperandType.METHOD_HANDLE);
+
         this.methodName = methodName;
         this.receiver = receiver;
+    }
+
+    public Operand getReceiver() {
+        return receiver;
+    }
+
+    @Override
+    public String toString() {
+        return "<" + receiver + "." + methodName + ">";
     }
 
     public Operand getMethodNameOperand() {
@@ -65,11 +76,6 @@ public class MethodHandle extends Operand {
         Operand newMethodName = methodName.getSimplifiedOperand(valueMap, force);
         Operand newReceiver = receiver.getSimplifiedOperand(valueMap, force);
         return (newMethodName == methodName && newReceiver == receiver) ? this : new MethodHandle(newMethodName, newReceiver);
-    }
-
-    @Override
-    public String toString() {
-        return "<" + receiver + "." + methodName + ">";
     }
 
     @Override

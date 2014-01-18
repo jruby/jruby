@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -15,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This instruction shows only when a block is inlined.
 // Opt arg receive instructions get transformed to this.
 // This does not show up in regular Ruby code.
-public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
+public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     /** This instruction gets to pick an argument off the arry only if
      *  the array has at least these many elements */
     private final int minArgsLength;
@@ -23,6 +24,15 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
     public OptArgMultipleAsgnInstr(Variable result, Operand array, int index, int minArgsLength) {
         super(Operation.MASGN_OPT, result, array, index);
         this.minArgsLength = minArgsLength;
+    }
+
+    public int getMinArgsLength() {
+        return minArgsLength;
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { getArrayArg(), new Fixnum(getIndex()), new Fixnum(minArgsLength) };
     }
 
     @Override
@@ -39,10 +49,8 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
-        Object val;
-
         int n = rubyArray.getLength();
-		  return minArgsLength <= n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+        return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
     }
 
     @Override

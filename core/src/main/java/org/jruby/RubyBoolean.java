@@ -66,7 +66,7 @@ public class RubyBoolean extends RubyObject {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
@@ -88,7 +88,7 @@ public class RubyBoolean extends RubyObject {
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFalseClass(falseClass);
-        falseClass.index = ClassIndex.FALSE;
+        falseClass.setClassIndex(ClassIndex.FALSE);
         falseClass.setReifiedClass(RubyBoolean.class);
         
         falseClass.defineAnnotatedMethods(False.class);
@@ -102,7 +102,7 @@ public class RubyBoolean extends RubyObject {
     public static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setTrueClass(trueClass);
-        trueClass.index = ClassIndex.TRUE;
+        trueClass.setClassIndex(ClassIndex.TRUE);
         trueClass.setReifiedClass(RubyBoolean.class);
         
         trueClass.defineAnnotatedMethods(True.class);

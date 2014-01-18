@@ -5,15 +5,12 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class RecordEndBlockInstr extends Instr {
-    private IRScope declaringScope;
-    private IRClosure endBlockClosure;
+public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
+    private final IRScope declaringScope;
+    private final IRClosure endBlockClosure;
 
     public RecordEndBlockInstr(IRScope declaringScope, IRClosure endBlockClosure) {
         super(Operation.RECORD_END_BLOCK);
@@ -21,10 +18,18 @@ public class RecordEndBlockInstr extends Instr {
         this.declaringScope = declaringScope;
         this.endBlockClosure = endBlockClosure;
     }
+    
+    public IRScope getDeclaringScope() {
+        return declaringScope;
+    }
+
+    public IRClosure getEndBlockClosure() {
+        return endBlockClosure;
+    }
 
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new ScopeModule(declaringScope), new ScopeModule(endBlockClosure) };
     }
 
     @Override

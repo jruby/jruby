@@ -44,4 +44,4 @@ describe "An Enumerator that has been abandoned" do
     # thousands of extra threads here.
     (thread_bean.thread_count - thread_count).should < 200
   end
-end if RUBY_VERSION >= "1.9"
+end

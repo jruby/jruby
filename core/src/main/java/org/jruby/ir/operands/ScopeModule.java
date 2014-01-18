@@ -17,6 +17,8 @@ public class ScopeModule extends Operand {
     private final IRScope scope;
 
     public ScopeModule(IRScope scope) {
+        super(OperandType.SCOPE_MODULE);
+
         this.scope = scope;
     }
 
@@ -28,6 +30,16 @@ public class ScopeModule extends Operand {
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
         return this;
+    }
+
+    @Override
+    public int hashCode() {
+        return scope.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof ScopeModule && scope.equals(((ScopeModule) other).scope);
     }
 
     @Override

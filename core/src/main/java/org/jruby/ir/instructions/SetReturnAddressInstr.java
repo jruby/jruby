@@ -16,23 +16,25 @@ import java.util.Map;
 // This is of the form:
 //    v = LBL_..
 // Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
-public class SetReturnAddressInstr extends Instr implements ResultInstr {
-    private Label returnAddr;
+public class SetReturnAddressInstr extends Instr implements ResultInstr, FixedArityInstr {
+    private final Label returnAddr;
     private Variable result;
 
-    public SetReturnAddressInstr(Variable result, Label l) {
+    public SetReturnAddressInstr(Variable result, Label returnAddr) {
         super(Operation.SET_RETADDR);
 
         assert result != null: "SetReturnAddressInstr result is null";
 
-        this.returnAddr = l;
+        this.returnAddr = returnAddr;
         this.result = result;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -41,6 +43,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
         return (Label) returnAddr;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{returnAddr};
     }
@@ -56,13 +59,8 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new SetReturnAddressInstr(ii.getRenamedVariable(result), ii.getRenamedLabel(returnAddr));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new SetReturnAddressInstr(ii.getRenamedVariable(result), returnAddr);
     }
 
     @Override

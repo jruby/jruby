@@ -13,6 +13,7 @@ public class CurrentScope extends Operand {
     private final IRScope scope;
 
     public CurrentScope(IRScope scope) {
+        super(OperandType.CURRENT_SCOPE);
         this.scope = scope;
     }
 
@@ -36,8 +37,13 @@ public class CurrentScope extends Operand {
     }
 
     @Override
-    public String toString() {
-        return "scope<" + scope.getName() + ">";
+    public int hashCode() {
+        return scope.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof CurrentScope && scope.equals(((CurrentScope) other).scope);
     }
 
     @Override
@@ -48,5 +54,10 @@ public class CurrentScope extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.CurrentScope(this);
+    }
+
+    @Override
+    public String toString() {
+        return "scope<" + scope.getName() + ">";
     }
 }

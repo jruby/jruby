@@ -13,8 +13,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -116,6 +114,9 @@ public class JVM {
     public static final Class THREADCONTEXT = ThreadContext.class;
     public static final Class STATICSCOPE = StaticScope.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
+    public static final Type BOOLEAN_TYPE = Type.BOOLEAN_TYPE;
+    public static final Type DOUBLE_TYPE = Type.DOUBLE_TYPE;
+    public static final Type LONG_TYPE = Type.LONG_TYPE;
     public static final Type BLOCK_TYPE = Type.getType(BLOCK);
     public static final Type THREADCONTEXT_TYPE = Type.getType(THREADCONTEXT);
     public static final Type STATICSCOPE_TYPE = Type.getType(STATICSCOPE);

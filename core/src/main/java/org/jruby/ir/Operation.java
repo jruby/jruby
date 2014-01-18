@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
+
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
     final static int f_has_side_effect     = 0x0001;
@@ -16,7 +17,8 @@ class OpFlags {
     final static int f_is_arg_receive      = 0x0400;
     final static int f_modifies_code       = 0x0800;
     final static int f_inline_unfriendly   = 0x1000;
-    final static int f_is_book_keeping_op  = 0x4000;
+    final static int f_is_book_keeping_op  = 0x2000;
+    final static int f_is_alu_op           = 0x4000;
 }
 
 public enum Operation {
@@ -60,7 +62,9 @@ public enum Operation {
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -117,7 +121,6 @@ public enum Operation {
     // that cannot.  But, for now, this should be good enough
     PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
@@ -129,29 +132,27 @@ public enum Operation {
     COPY(0),
     NOT(0), // ruby NOT operator
     BLOCK_GIVEN(0),
-    GET_OBJECT(0),
     GET_BACKREF(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    TO_ARY(0),
-    ENSURE_RUBY_ARRAY(0),
+    // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
+    // Clarify semantics of 'f_has_side_effect' better
+    TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     SET_RETADDR(0),
     CLASS_VAR_MODULE(0),
-    IS_TRUE(0), // checks if the operand is non-null and non-false
     EQQ(0), // (FIXME: Exceptions?) a === call used in when
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     GET_ENCODING(0),
 
     /* Instructions to support defined? */
-    SET_WITHIN_DEFINED(OpFlags.f_has_side_effect),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
     BACKREF_IS_MATCH_DATA(0),
@@ -163,15 +164,33 @@ public enum Operation {
     SUPER_METHOD_BOUND(0),
     GET_ERROR_INFO(0),
 
+    /* Boxing/Unboxing between Ruby <--> Java types */
+    BOX_FIXNUM(0),
+    BOX_FLOAT(0),
+    UNBOX_FIXNUM(0),
+    UNBOX_FLOAT(0),
+
+    /* Unboxed ALU ops */
+    IADD(OpFlags.f_is_alu_op),
+    ISUB(OpFlags.f_is_alu_op),
+    IMUL(OpFlags.f_is_alu_op),
+    IDIV(OpFlags.f_is_alu_op),
+    ILT(OpFlags.f_is_alu_op),
+    IGT(OpFlags.f_is_alu_op),
+    FADD(OpFlags.f_is_alu_op),
+    FSUB(OpFlags.f_is_alu_op),
+    FMUL(OpFlags.f_is_alu_op),
+    FDIV(OpFlags.f_is_alu_op),
+    FLT(OpFlags.f_is_alu_op),
+    FGT(OpFlags.f_is_alu_op),
+
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
     PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    METHOD_LOOKUP(0), /* for splitting calls into method-lookup and call -- unused **/
-    BOX_VALUE(0), /* primitive value boxing/unboxing -- unused */
-    UNBOX_VALUE(0); /* unused */
+    METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
 
 /* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)
@@ -192,6 +211,8 @@ public enum Operation {
             this.opClass = OpClass.BOOK_KEEPING_OP;
         } else if (this.isCall()) {
             this.opClass = OpClass.CALL_OP;
+        } else if ((flags & OpFlags.f_is_alu_op) > 0) {
+            this.opClass = OpClass.ALU_OP;
         } else {
             this.opClass = OpClass.OTHER_OP;
         }
@@ -265,5 +286,9 @@ public enum Operation {
     @Override
     public String toString() {
         return name().toLowerCase();
+    }
+
+    public static Operation fromOrdinal(int value) {
+        return value < 0 || value >= values().length ? null : values()[value];
     }
 }

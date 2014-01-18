@@ -37,6 +37,7 @@ public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
     private static final ObjectAllocator NOMETHODERROR_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNoMethodError(runtime, klass);
         }
@@ -61,6 +62,7 @@ public class RubyNoMethodError extends RubyNameError {
     }    
 
     @JRubyMethod(optional = 3)
+    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {
             this.args = args[args.length - 1];
@@ -75,7 +77,7 @@ public class RubyNoMethodError extends RubyNameError {
         return this;
     }
     
-    @JRubyMethod(name = "args")
+    @JRubyMethod
     public IRubyObject args() {
         return args;
     }

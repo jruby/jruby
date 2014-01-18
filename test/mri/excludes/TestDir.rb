@@ -1,0 +1,8 @@
+exclude :test_chdir, "needs investigation"
+exclude :test_dir_enc, "needs investigation"
+exclude :test_glob, "needs investigation"
+exclude :test_home, "needs investigation"
+exclude :test_inspect, "needs investigation"
+exclude :test_path, "needs investigation"
+exclude :test_rewind, "needs investigation"
+exclude :test_unknown_keywords, "https://github.com/jruby/jruby/issues/1368"

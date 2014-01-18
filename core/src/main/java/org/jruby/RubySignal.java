@@ -79,22 +79,22 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(name = "__jtrap_kernel", required = 2, module = true)
+    @JRubyMethod(required = 2, module = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNALS.trap(recv, block, sig);
     }
 
-    @JRubyMethod(name = "__jtrap_platform_kernel", required = 1, module = true)
+    @JRubyMethod(required = 1, module = true)
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restorePlatformDefault(recv, sig);
     }
 
-    @JRubyMethod(name = "__jtrap_osdefault_kernel", required = 1, module = true)
+    @JRubyMethod(required = 1, module = true)
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restoreOSDefault(recv, sig);
     }
 
-    @JRubyMethod(name = "__jtrap_ignore_kernel", required = 1, module = true)
+    @JRubyMethod(required = 1, module = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.ignore(recv, sig);
     }

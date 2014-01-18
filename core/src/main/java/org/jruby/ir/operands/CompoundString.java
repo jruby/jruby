@@ -26,12 +26,21 @@ public class CompoundString extends Operand {
     final private Encoding encoding;
 
     public CompoundString(List<Operand> pieces, Encoding encoding) {
+        super(OperandType.COMPOUND_STRING);
         this.pieces = pieces;
         this.encoding = encoding;
     }
 
     public CompoundString(List<Operand> pieces) {
         this(pieces, null);
+    }
+
+    public List<Operand> getPieces() {
+       return pieces;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
 
     @Override
@@ -43,11 +52,6 @@ public class CompoundString extends Operand {
         }
 
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 
     @Override
@@ -113,17 +117,15 @@ public class CompoundString extends Operand {
         //
         // return context.getRuntime().newString(retrieveJavaString(interp, context, self));
 
-        boolean is1_9 = context.runtime.is1_9();
         ByteList bytes = new ByteList();
-        if (is1_9) bytes.setEncoding(encoding);
+        bytes.setEncoding(encoding);
         RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
         for (Operand p : pieces) {
-            if ((p instanceof StringLiteral) && (!is1_9 || isSameEncoding((StringLiteral)p))) {
+            if ((p instanceof StringLiteral) && (isSameEncoding((StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);
             } else {
                IRubyObject pval = (IRubyObject)p.retrieve(context, self, currDynScope, temp);
-               if (is1_9) str.append19(pval);
-               else str.append(pval);
+               str.append19(pval);
             }
         }
 
@@ -133,5 +135,10 @@ public class CompoundString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.CompoundString(this);
+    }
+
+    @Override
+    public String toString() {
+        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 }

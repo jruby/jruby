@@ -30,28 +30,27 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.rbconfig;
 
+import jnr.posix.util.Platform;
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
+import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jruby.CompatVersion;
-
-import org.jruby.Ruby;
-import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
-import jnr.posix.util.Platform;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.load.Library;
-import org.jruby.util.NormalizedFile;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.anno.JRubyModule;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -109,10 +108,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRuntimeVerStr(Ruby runtime) {
-        if (runtime.is1_9()) {
-            return "1.9";
-        }
-        return "1.8";
+        return "2.1";
     }
 
     public static String getNormalizedHome(Ruby runtime) {
@@ -212,13 +208,8 @@ public class RbConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         RubyModule configModule;
 
-        if (runtime.is1_9()) {
-            configModule = runtime.defineModule("RbConfig");
-            RubyKernel.autoload(runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
-        } else {
-            configModule = runtime.defineModule("Config");
-            runtime.getObject().defineConstant("RbConfig", configModule);
-        }
+        configModule = runtime.defineModule("RbConfig");
+        RubyKernel.autoload(runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
         
         configModule.defineAnnotatedMethods(RbConfigLibrary.class);
         
@@ -226,11 +217,7 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts;
-        if (runtime.is1_9()) {
-            versionParts = Constants.RUBY1_9_VERSION.split("\\.");
-        } else {
-            versionParts = Constants.RUBY_VERSION.split("\\.");
-        }
+        versionParts = Constants.RUBY_VERSION.split("\\.");
         
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);
@@ -299,7 +286,7 @@ public class RbConfigLibrary implements Library {
         String sysConfDir = getSysConfDir(runtime);
 
         setConfig(configHash, "libdir", vendorDirGeneral);
-        if (runtime.is1_9()) setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
+        setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
         setConfig(configHash, "rubylibdir",     rubyLibDir);
         setConfig(configHash, "rubysharedlibdir", rubySharedLibDir);
         if (!isSiteVendorSame(runtime)) {
@@ -330,9 +317,7 @@ public class RbConfigLibrary implements Library {
             setConfig(configHash, "EXEEXT", "");
         }
 
-        if (runtime.is1_9()) {
-            setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
-        }
+        setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
 
         // These will be used as jruby defaults for rubygems if found
         String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
@@ -479,7 +464,7 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    @JRubyMethod(name = "ruby", module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "ruby", module = true)
     public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");

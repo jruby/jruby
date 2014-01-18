@@ -50,10 +50,7 @@ public class OSGiLoadService extends LoadService {
     
     public static LoadServiceCreator OSGI_DEFAULT = new LoadServiceCreator() {
         public LoadService create(Ruby runtime) {
-            if (runtime.is1_9()) {
-                return new OSGiLoadService19(runtime);
-            }
-            return new OSGiLoadService(runtime);
+            return new OSGiLoadService19(runtime);
         }
     };
 

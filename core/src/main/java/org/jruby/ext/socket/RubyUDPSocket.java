@@ -451,11 +451,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         if (sender == null) {
             // noblocking receive
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEAGAINReadableError("recvfrom(2) would block");
-            } else {
-                throw runtime.newErrnoEAGAINError("recvfrom(2) would block");
-            }
+            throw runtime.newErrnoEAGAINReadableError("recvfrom(2) would block");
         }
 
         // see JRUBY-4678
@@ -484,11 +480,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         } catch (IllegalBlockingModeException ibme) {
             // MulticastSocket does not support nonblocking
             // TODO: Use Java 7 NIO.2 DatagramChannel to do multicast
-            if (runtime.is1_9()) {
-                throw runtime.newErrnoEAGAINReadableError("multicast UDP does not support nonblocking");
-            } else {
-                throw runtime.newErrnoEAGAINError("multicast UDP does not support nonblocking");
-            }
+            throw runtime.newErrnoEAGAINReadableError("multicast UDP does not support nonblocking");
         }
 
         InetSocketAddress sender = (InetSocketAddress) recv.getSocketAddress();

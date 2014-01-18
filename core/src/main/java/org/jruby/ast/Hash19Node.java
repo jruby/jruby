@@ -40,19 +40,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
  * of default values in a method call.
  */
+@Deprecated
 public class Hash19Node extends HashNode {
     
     public Hash19Node(ISourcePosition position, ListNode listNode) {
         super(position, listNode);
-    }
-
-    @Override
-    protected void aset(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
-        hash.fastASetCheckString(runtime, key, value);
-    }
-
-    @Override
-    protected void asetSmall(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
-        hash.fastASetSmallCheckString(runtime, key, value);
     }
 }

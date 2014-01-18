@@ -43,7 +43,6 @@ import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -51,7 +50,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import static org.jruby.CompatVersion.*;
 
 /**
  * @author olabini
@@ -70,7 +68,7 @@ public class RubyMatchData extends RubyObject {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
         runtime.setMatchData(matchDataClass);
 
-        matchDataClass.index = ClassIndex.MATCHDATA;
+        matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
         
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
@@ -82,6 +80,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private static ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyMatchData(runtime, klass);
         }
@@ -108,12 +107,13 @@ public class RubyMatchData extends RubyObject {
     }
 
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.MATCHDATA;
     }
 
     private static final class Pair implements Comparable<Pair> {
         int bytePos, charPos;
+        @Override
         public int compareTo(Pair pair) {
             return bytePos - pair.bytePos;
         }
@@ -233,14 +233,8 @@ public class RubyMatchData extends RubyObject {
         if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
     }
     
-    // FIXME: We should have a better way of using the proper method based
-    // on version as a general solution...
     private RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
-        if (runtime.is1_9()) {
-            return str.makeShared19(runtime, begin, length);
-        } else {
-            return str.makeShared(runtime, begin, length);
-        }
+        return str.makeShared19(runtime, begin, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -296,7 +290,7 @@ public class RubyMatchData extends RubyObject {
         return values;
     }
 
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod
     @Override
     public IRubyObject inspect() {
         if (str == null) return anyToString();
@@ -330,21 +324,21 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat("nil".getBytes());
             } else {
-                result.append(runtime.is1_9() ? ((RubyString)v).inspect19() : ((RubyString)v).inspect());
+                result.append(((RubyString)v).inspect19());
             }
         }
 
         return result.cat((byte)'>');
     }
 
-    @JRubyMethod(name = "regexp", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject regexp(ThreadContext context, Block block) {
         check();
         checkLazyRegexp();
         return regexp;
     }
 
-    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject names(ThreadContext context, Block block) {
         check();
         checkLazyRegexp();
@@ -354,42 +348,21 @@ public class RubyMatchData extends RubyObject {
     /** match_to_a
      *
      */
-    @JRubyMethod(name = "to_a")
+    @JRubyMethod
     @Override
     public RubyArray to_a() {
         return match_array(getRuntime(), 0);
     }
 
-    @JRubyMethod(name = "values_at", rest = true)
+    @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         return to_a().values_at(args);
-    }
-
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
-    public IRubyObject select(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        final RubyArray result;
-        if (regs == null) {
-            if (begin < 0) return runtime.newEmptyArray();
-            IRubyObject s = str.substr(runtime, begin, end - begin);
-            s.setTaint(isTaint());
-            result = block.yield(context, s).isTrue() ? runtime.newArray(s) : runtime.newEmptyArray();
-        } else {
-            result = runtime.newArray();
-            boolean taint = isTaint();
-            for (int i = 0; i < regs.numRegs; i++) {
-                IRubyObject s = str.substr(runtime, regs.beg[i], regs.end[i] - regs.beg[i]);
-                if (taint) s.setTaint(true);
-                if (block.yield(context, s).isTrue()) result.append(s);
-            }
-        }
-        return result;
     }
 
     /** match_captures
      *
      */
-    @JRubyMethod(name = "captures")
+    @JRubyMethod
     public IRubyObject captures(ThreadContext context) {
         return match_array(context.runtime, 1);
     }
@@ -414,49 +387,24 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * @deprecated Use the versions with zero, one, or two args.
-     */
-    public IRubyObject op_aref(IRubyObject[] args) {
-        switch (args.length) {
-        case 1:
-            return op_aref(args[0]);
-        case 2:
-            return op_aref(args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** match_aref
     *
     */
-    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(IRubyObject idx) {
-        check();
-        if (!(idx instanceof RubyFixnum) || ((RubyFixnum)idx).getLongValue() < 0) {
-            return ((RubyArray)to_a()).aref(idx);
-        }
-        return RubyRegexp.nth_match(RubyNumeric.fix2int(idx), this);
+        return op_aref19(idx);
+    }
+
+    /** match_aref
+     *
+     */
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        return op_aref19(idx, rest);
     }
 
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
-        if (!rest.isNil() || !(idx instanceof RubyFixnum) || ((RubyFixnum)idx).getLongValue() < 0) {
-            return ((RubyArray)to_a()).aref(idx, rest);
-        }
-        return RubyRegexp.nth_match(RubyNumeric.fix2int(idx), this);
-    }
-
-    /** match_aref
-     *
-     */
-    @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
@@ -466,7 +414,7 @@ public class RubyMatchData extends RubyObject {
     /** match_aref
     *
     */
-    @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
         return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref19(idx, rest) : result;
@@ -499,15 +447,11 @@ public class RubyMatchData extends RubyObject {
     /** match_begin
      *
      */
-    @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_8)
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        int i = RubyNumeric.num2int(index);
-        Ruby runtime = context.runtime;
-        int b = beginCommon(runtime, i);
-        return b < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, b);
+        return begin19(context, index);
     }
 
-    @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "begin")
     public IRubyObject begin19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
         Ruby runtime = context.runtime;
@@ -529,15 +473,11 @@ public class RubyMatchData extends RubyObject {
     /** match_end
      *
      */
-    @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_8)
     public IRubyObject end(ThreadContext context, IRubyObject index) {
-        int i = RubyNumeric.num2int(index);
-        Ruby runtime = context.runtime;
-        int e = endCommon(runtime, i);
-        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
+        return end19(context, index);
     }
 
-    @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "end")
     public IRubyObject end19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
         Ruby runtime = context.runtime;
@@ -559,13 +499,11 @@ public class RubyMatchData extends RubyObject {
     /** match_offset
      *
      */
-    @JRubyMethod(name = "offset", compat = CompatVersion.RUBY1_8)
     public IRubyObject offset(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, RubyNumeric.num2int(index), false);
-
+        return offset19(context, index);
     }
 
-    @JRubyMethod(name = "offset", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "offset")
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
         return offsetCommon(context, backrefNumber(index), true);
     }
@@ -594,7 +532,7 @@ public class RubyMatchData extends RubyObject {
     /** match_pre_match
      *
      */
-    @JRubyMethod(name = "pre_match")
+    @JRubyMethod
     public IRubyObject pre_match(ThreadContext context) {
         check();
         if (begin == -1) {
@@ -606,7 +544,7 @@ public class RubyMatchData extends RubyObject {
     /** match_post_match
      *
      */
-    @JRubyMethod(name = "post_match")
+    @JRubyMethod
     public IRubyObject post_match(ThreadContext context) {
         check();
         if (begin == -1) {
@@ -618,7 +556,7 @@ public class RubyMatchData extends RubyObject {
     /** match_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod
     @Override
     public IRubyObject to_s() {
         check();
@@ -631,13 +569,13 @@ public class RubyMatchData extends RubyObject {
     /** match_string
      *
      */
-    @JRubyMethod(name = "string")
+    @JRubyMethod
     public IRubyObject string() {
         check();
         return str; //str is frozen
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(required = 1)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
@@ -655,6 +593,7 @@ public class RubyMatchData extends RubyObject {
         return this;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (this == other) return true;
         if (!(other instanceof RubyMatchData)) return false;
@@ -669,13 +608,13 @@ public class RubyMatchData extends RubyObject {
                 this.charOffsetUpdated == match.charOffsetUpdated;
     }
 
-    @JRubyMethod(name = {"eql?", "=="}, required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = {"eql?", "=="}, required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
         return getRuntime().newBoolean(equals(obj));
     }
 
-    @JRubyMethod(name = "hash", compat = RUBY1_9)
+    @JRubyMethod
     @Override
     public RubyFixnum hash() {
         check();

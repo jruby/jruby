@@ -95,11 +95,11 @@ one of the gems to a newer version or clean out all installed gems.
 
 ### Day to Day Testing
 
-For normal day-to-day testing, we recommend running the Ruby 1.9 tests
+For normal day-to-day testing, we recommend running the Ruby (MRI) tests
 via the following rake command:
 
 ```
-rake test:mri19
+rake test:mri
 ```
 
 This is a reasonably good suite that does not take too long to run. For

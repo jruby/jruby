@@ -43,8 +43,10 @@ class TestTraceFunc < Test::Unit::TestCase
     line = __LINE__ - 7
     expected = ["line #{__FILE__}:#{line} test_block_and_vars TestTraceFunc",
       "c-call #{__FILE__}:#{line} times Fixnum",
+      "b-call #{__FILE__}:#{line} test_block_and_vars TestTraceFunc",
       "line #{__FILE__}:#{line + 1} test_block_and_vars TestTraceFunc",
       "line #{__FILE__}:#{line + 2} test_block_and_vars TestTraceFunc",
+      "b-return #{__FILE__}:#{line + 2} test_block_and_vars TestTraceFunc",
       "c-return #{__FILE__}:#{line} times Fixnum",
       "line #{__FILE__}:#{line + 5} test_block_and_vars TestTraceFunc",
       "c-call #{__FILE__}:#{line + 5} set_trace_func Kernel"]
@@ -83,14 +85,14 @@ class TestTraceFunc < Test::Unit::TestCase
 
   def test_trace_binding
     a = true
-    expected = [["a", "expected", "results"],
-                ["a", "expected", "results"],
-                ["a", "expected", "results"],
-                ["a", "expected", "results"],
+    expected = [[:a, :expected, :results],
+                [:a, :expected, :results],
+                [:a, :expected, :results],
+                [:a, :expected, :results],
                 [],
                 [],
-                ["a", "expected", "results"],
-                ["a", "expected", "results"]]
+                [:a, :expected, :results],
+                [:a, :expected, :results]]
     results = []
     set_trace_func proc { |event, file, line, id, binding, classname|
       results << eval('local_variables', binding)
@@ -146,9 +148,9 @@ class TestTraceFunc < Test::Unit::TestCase
 
     line = __LINE__ - 4
     expected = ["#{__FILE__} line #{line} test_require_trace_full_paths TestTraceFunc",
-      "./test/tracing/dummy1.rb line 1 nil false",
-      "./test/tracing/dummy1.rb class 1 nil false",
-      "./test/tracing/dummy1.rb end 1 nil false",
+      "#{File.join(@test_dir, 'dummy1.rb')} line 1 nil false",
+      "#{File.join(@test_dir, 'dummy1.rb')} class 1 nil false",
+      "#{File.join(@test_dir, 'dummy1.rb')} end 1 nil false",
       "#{__FILE__} line #{line + 2} test_require_trace_full_paths TestTraceFunc"]
 
     assert_equal(expected, output);

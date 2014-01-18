@@ -9,12 +9,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Stack;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -175,11 +181,8 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
         }
 
-        // Pass 3: Replace all single use operands with constants they were assigned to.
-        // Using operand -> operand signature because simplifyOperands works on operands
-        //
-        // In parallel, compute last use of temporary variables -- this effectively is the
-        // end of the live range that started with its first definition.  This implicitly
+        // Pass 3: Compute last use of temporary variables -- this effectively is the
+        // end of the live range that started with its first definition. This implicitly
         // encodes the live range of the temporary variable.
         //
         // These live ranges are valid because these instructions are generated from an AST
@@ -188,6 +191,20 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // defined outside a loop cannot be used within the loop.  So, the first definition
         // of a temporary and the last use of the temporary delimit its live range.
         //
+        // Caveat one
+        // ----------
+        // Ensure regions complicate matters for return instructions that return from
+        // a temporary variable. Control flow from def of the tmp-var to the return is
+        // interrupted by a detour through the ensure block. So, the live range of the
+        // tmp-var has to be extended to the end-label of the region.
+        //
+        // SSS FIXME: Currently, with recent refactorings, we lose information about whether
+        // an exception region has an ensure block or not. We could add back a flag to
+        // the ExceptionRegionStartMarkerInstr that lets us exploit this here rather than
+        // applying this technique for plain-rescue exception regions as well.
+        //
+        // Caveat two
+        // ----------
         // %current-scope and %current-module are the two "temporary" variables that violate
         // this contract right now since they are used everywhere in the scope.
         // So, in the presence of loops, we:
@@ -201,9 +218,39 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // NOTE: It is sufficient to just track last use for renaming purposes.
         // At the first definition, we allocate a variable which then starts the live range
         Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
+        Stack<Tuple<Label, List>> excRegionStack = new Stack<Tuple<Label, List>>();
         int iCount = -1;
         for (Instr i: s.getInstrs()) {
             iCount++;
+
+            // If we have entries on the exception region stack,
+            // * pop the topmost entry on encountering a matching label and
+            //   extend live range of stashed return-value tmpvars upto this label
+            // * add a return's return-value to the stack-top's variable list
+            //   if it is a tmp var
+            if (excRegionStack.size() > 0) {
+                Tuple<Label, List> t = excRegionStack.peek();
+                if (i instanceof LabelInstr) {
+                    if (t.a == ((LabelInstr)i).label) {
+                        excRegionStack.pop();
+                        for (Object o: t.b) {
+                            lastVarUseOrDef.put((TemporaryVariable)o, iCount);
+                        }
+                    }
+                }
+                if (i instanceof ReturnInstr) {
+                    Operand rv = ((ReturnInstr)i).getReturnValue();
+                    if (rv instanceof TemporaryVariable) {
+                        t.b.add(rv);
+                    }
+                }
+            }
+
+            // Add a new entry to the exception region stack
+            if (i instanceof ExceptionRegionStartMarkerInstr) {
+                Tuple<Label, List> t = new Tuple<Label, List>(((ExceptionRegionStartMarkerInstr)i).end, new ArrayList());
+                excRegionStack.push(t);
+            }
 
             // update last use/def
             if (i instanceof ResultInstr) {
@@ -225,6 +272,8 @@ public class OptimizeTempVarsPass extends CompilerPass {
         }
 
         // Pass 4: Reallocate temporaries based on last uses to minimize # of unique vars.
+        // Replace all single use operands with constants they were assigned to.
+        // Using operand -> operand signature because simplifyOperands works on operands
         Map<Operand, Operand>   newVarMap    = new HashMap<Operand, Operand>();
         List<TemporaryVariable> freeVarsList = new ArrayList<TemporaryVariable>();
         iCount = -1;

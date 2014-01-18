@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.10</version>
+    <version>9000.dev</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
@@ -15,6 +15,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.0.8</tesla.version>
   </properties>
   <build>
     <plugins>
@@ -23,7 +24,7 @@
         <executions>
           <execution>
             <id>unpack jruby-stdlib</id>
-            <phase>process-classes</phase>
+            <phase>package</phase>
             <goals>
               <goal>unpack</goal>
             </goals>
@@ -63,35 +64,15 @@
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-            </configuration>
-          </execution>
-        </executions>
-        <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <preBuildHookScript>setup.bsh</preBuildHookScript>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <streamLogs>true</streamLogs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.8</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>fix_executable_bits</id>
-            <phase>process-classes</phase>
+            <phase>package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
@@ -105,13 +86,100 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>
     </plugins>
   </build>
   <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <pomIncludes>
+                <pomInclude>*</pomInclude>
+              </pomIncludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>${project.build.directory}/jruby-dist-${project.version}-src.zip</file>
+                      <type>zip</type>
+                      <classifier>src</classifier>
+                    </artifact>
+                  </artifacts>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack jruby-dist</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <stripVersion>true</stripVersion>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.jruby</groupId>
+                      <artifactId>jruby-dist</artifactId>
+                      <version>${project.version}</version>
+                      <type>zip</type>
+                      <classifier>src</classifier>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-maven-plugin</artifactId>
+            <version>${tesla.version}</version>
+            <executions>
+              <execution>
+                <id>prepare_sources_for_it</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <taskId>prepare_sources_for_it</taskId>
+                  <nativePom>pom.rb</nativePom>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>source dist</id>
       <activation>
@@ -122,88 +190,29 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>buildnumber-maven-plugin</artifactId>
-            <version>1.2</version>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-maven-plugin</artifactId>
+            <version>${tesla.version}</version>
             <executions>
               <execution>
-                <id>jruby-revision</id>
-                <phase>generate-sources</phase>
+                <id>pack_sources</id>
+                <phase>package</phase>
                 <goals>
-                  <goal>create</goal>
+                  <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <shortRevisionLength>7</shortRevisionLength>
-                  <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+                  <taskId>pack_sources</taskId>
+                  <nativePom>pom.rb</nativePom>
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>build source archive - tar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>archive</argument>
-                    <argument>--prefix</argument>
-                    <argument>jruby-${project.version}/</argument>
-                    <argument>--format</argument>
-                    <argument>tar</argument>
-                    <argument>${jruby.revision}</argument>
-                    <argument>.</argument>
-                    <argument>-o</argument>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-                  </arguments>
-                  <executable>git</executable>
-                </configuration>
-              </execution>
-              <execution>
-                <id>gzip build source tar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-                    <argument>-f</argument>
-                  </arguments>
-                  <executable>gzip</executable>
-                </configuration>
-              </execution>
-              <execution>
-                <id>build source archive - zip</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>archive</argument>
-                    <argument>--prefix</argument>
-                    <argument>jruby-${project.version}/</argument>
-                    <argument>-9</argument>
-                    <argument>--format</argument>
-                    <argument>zip</argument>
-                    <argument>${jruby.revision}</argument>
-                    <argument>.</argument>
-                    <argument>-o</argument>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
-                  </arguments>
-                  <executable>git</executable>
-                </configuration>
-              </execution>
-            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>

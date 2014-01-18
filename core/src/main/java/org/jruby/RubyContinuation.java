@@ -62,7 +62,7 @@ public class RubyContinuation extends RubyObject {
     public static void createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
 
-        cContinuation.index = ClassIndex.CONTINUATION;
+        cContinuation.setClassIndex(ClassIndex.CONTINUATION);
         cContinuation.setReifiedClass(RubyContinuation.class);
         
         cContinuation.defineAnnotatedMethods(RubyContinuation.class);

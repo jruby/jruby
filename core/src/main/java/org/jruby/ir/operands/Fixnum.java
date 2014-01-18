@@ -29,6 +29,7 @@ public class Fixnum extends ImmutableLiteral {
     final public long value;
 
     public Fixnum(long val) {
+        super(OperandType.FIXNUM);
         value = val;
     }
 
@@ -42,8 +43,13 @@ public class Fixnum extends ImmutableLiteral {
     }
 
     @Override
-    public String toString() {
-        return "Fixnum:" + value;
+    public int hashCode() {
+        return 47 * 7 + (int) (this.value ^ (this.value >>> 32));
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Fixnum && value == ((Fixnum) other).value;
     }
 
 // ---------- These methods below are used during compile-time optimizations -------
@@ -77,5 +83,10 @@ public class Fixnum extends ImmutableLiteral {
 
     public long getValue() {
         return value;
+    }
+
+    @Override
+    public String toString() {
+        return "Fixnum:" + value;
     }
 }

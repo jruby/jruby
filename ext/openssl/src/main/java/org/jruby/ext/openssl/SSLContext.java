@@ -130,6 +130,8 @@ public class SSLContext extends RubyObject {
         cSSLContext.defineAlias("ssl_timeout=", "timeout=");
 
         cSSLContext.defineAnnotatedMethods(SSLContext.class);
+        
+        cSSLContext.defineConstant("METHODS", runtime.newEmptyArray());
     }
 
     public SSLContext(Ruby runtime, RubyClass type) {

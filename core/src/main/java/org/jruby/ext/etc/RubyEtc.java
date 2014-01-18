@@ -9,7 +9,6 @@ import jnr.posix.Passwd;
 import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -20,7 +19,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.NormalizedFile;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -53,9 +51,7 @@ public class RubyEtc {
         };
         
         runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        if (runtime.is1_9()) {
-            runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
-        }
+        runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
     }
 
     private static void defineGroupStruct(Ruby runtime) {
@@ -68,9 +64,7 @@ public class RubyEtc {
         };
         
         runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        if (runtime.is1_9()) {
-            runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
-        }
+        runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
     }
     
     private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
@@ -112,7 +106,7 @@ public class RubyEtc {
     }
 
 
-    @JRubyMethod(name = "getpwuid", optional=1, module = true)
+    @JRubyMethod(optional=1, module = true)
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
@@ -139,7 +133,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getpwnam", required=1, module = true)
+    @JRubyMethod(required=1, module = true)
     public static IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
@@ -200,7 +194,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getlogin", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
 
@@ -222,7 +216,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "endpwent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject endpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -235,7 +229,7 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "setpwent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject setpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -248,7 +242,7 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "getpwent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -266,7 +260,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getgrnam", required=1, module = true)
+    @JRubyMethod(required=1, module = true)
     public static IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
@@ -287,7 +281,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getgrgid", optional=1, module = true)
+    @JRubyMethod(optional=1, module = true)
     public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
@@ -312,7 +306,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "endgrent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject endgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -383,7 +377,7 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "getgrent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -401,7 +395,7 @@ public class RubyEtc {
         }
     }
     
-    @JRubyMethod(name = "systmpdir", module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(module = true)
     public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create("/tmp"); // default for all platforms except Windows
@@ -413,12 +407,11 @@ public class RubyEtc {
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
     
-    @JRubyMethod(name = "sysconfdir", module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(module = true)
     public static IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
@@ -430,8 +423,7 @@ public class RubyEtc {
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
     

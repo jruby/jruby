@@ -1,1 +1,0 @@
-fails:CApiBignumSpecs RBIGNUM_POSITIVE_P returns C true if the Bignum has a positive sign

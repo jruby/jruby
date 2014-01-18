@@ -1,1 +1,0 @@
-exclude :test_deoptimization, "needs investigation"

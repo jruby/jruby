@@ -1,18 +1,18 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
 
 // These instructions show up in three contexts:
 // - To assign args in parenthesized units: |.., (a,b,c), .. |
 // - Regular multiple/parallel assignments: x,y,*z = ...
 // - When blocks are inlined, all receive* instructions get
 //   converted into multiple-assign instructions
-public class MultipleAsgnBase extends Instr implements ResultInstr {
+public abstract class MultipleAsgnBase extends Instr implements ResultInstr {
     protected Variable result;
     protected Operand array;
     protected final int index;
@@ -27,14 +27,16 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
         this.index = index;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{array};
+        return new Operand[]{array, new Fixnum(index) };
     }
 
     public Operand getArrayArg() {
         return array;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
@@ -43,6 +45,7 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
         return index;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -50,16 +53,5 @@ public class MultipleAsgnBase extends Instr implements ResultInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         array = array.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
-        return super.simplifyAndGetResult(scope, valueMap);
-        // SSS FIXME!  This is buggy code for 1.9 mode
-/*
-        simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
-        return val.fetchCompileTimeArrayElement(index);
-*/
     }
 }

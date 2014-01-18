@@ -85,7 +85,6 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
-import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
@@ -107,7 +106,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         fileClass.defineAnnotatedMethods(RubyFile.class);
 
-        fileClass.index = ClassIndex.FILE;
+        fileClass.setClassIndex(ClassIndex.FILE);
         fileClass.setReifiedClass(RubyFile.class);
 
         fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
@@ -166,9 +165,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
         // NULL device
-        if (runtime.is1_9() || runtime.is2_0()) {
-            constants.setConstant("NULL", runtime.newString(getNullDevice()));
-        }
+        constants.setConstant("NULL", runtime.newString(getNullDevice()));
 
         // File::Constants module is included in IO.
         runtime.getIO().includeModule(constants);
@@ -323,23 +320,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = RUBY1_8)
-    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (openFile != null) {
-            throw getRuntime().newRuntimeError("reinitializing File");
-        }
-        
-        if (args.length > 0 && args.length < 3) {
-            if (args[0] instanceof RubyInteger) {
-                return super.initialize(args, block);
-            }
-        }
-
-        return openFile(args);
+        return initialize19(null, args, block);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 2, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "initialize", required = 1, optional = 2, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         if (openFile != null) {
             throw context.runtime.newRuntimeError("reinitializing File");
@@ -447,7 +432,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.runtime.newFileStat(path, false).mtime();
     }
 
-    @JRubyMethod(meta = true, compat = RUBY1_9)
+    @JRubyMethod(meta = true)
     public static IRubyObject path(ThreadContext context, IRubyObject self, IRubyObject str) {
         return get_path(context, str);
     }
@@ -743,12 +728,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args 
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expandPathInternal(context, recv, args, true);
+        return expand_path19(context, recv, args);
     }
 
-    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RubyString path = (RubyString) expandPathInternal(context, recv, args, true);
         path.force_encoding(context, context.runtime.getEncodingService().getDefaultExternal());
@@ -776,17 +760,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args
      * @return
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, recv, args, false);
     }
 
-    @JRubyMethod(name = {"realdirpath"}, required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, recv, args, false);
     }
 
-    @JRubyMethod(name = {"realpath"}, required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject file = expandPathInternal(context, recv, args, false);
         if (!RubyFileTest.exist_p(recv, file).isTrue()) {
@@ -914,7 +898,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(ret);
     }
 
-    @JRubyMethod(name = "mtime", required = 1, meta = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         return context.runtime.newFileStat(get_path(context, filename).getUnicodeValue(), false).mtime();
     }
@@ -1015,12 +999,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // Can we produce IOError which bypasses a close?
-    @JRubyMethod(required = 2, meta = true, compat = RUBY1_8)
     public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {        
-        return truncateCommon(context, recv, arg1, arg2);
+        return truncate19(context, recv, arg1, arg2);
     }
 
-    @JRubyMethod(name = "truncate", required = 2, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "truncate", required = 2, meta = true)
     public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return truncateCommon(context, recv, get_path(context, arg1), arg2);
     }
@@ -1100,7 +1083,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(args.length);
     }
 
-    @JRubyMethod(name = "size", compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
         
@@ -1280,7 +1263,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (getRuntime().is1_9() && modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }
@@ -1362,13 +1345,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (path instanceof RubyString) {
             return (RubyString)path;
         }
-        if (context.runtime.is1_9()) {
-            if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
-            
-            return filePathConvert(context, path.convertToString());
-        } 
-          
-        return path.convertToString();
+
+        if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
+
+        return filePathConvert(context, path.convertToString());
     }
     
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.

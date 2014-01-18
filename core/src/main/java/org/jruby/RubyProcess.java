@@ -47,7 +47,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
-import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaiseException;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
@@ -90,8 +90,23 @@ public class RubyProcess {
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         process.defineConstant("WUNTRACED", runtime.newFixnum(2));
         
+        // FIXME: These should come out of jnr-constants
+        // TODO: other clock types
+        process.defineConstant("CLOCK_REALTIME", RubySymbol.newSymbol(runtime, CLOCK_REALTIME));
+        process.defineConstant("CLOCK_MONOTONIC", RubySymbol.newSymbol(runtime, CLOCK_MONOTONIC));
+        
         return process;
     }
+    
+    public static final String CLOCK_MONOTONIC = "CLOCK_MONOTONIC";
+    public static final String CLOCK_REALTIME = "CLOCK_REALTIME";
+    public static final String CLOCK_UNIT_NANOSECOND = "nanosecond";
+    public static final String CLOCK_UNIT_MICROSECOND = "microsecond";
+    public static final String CLOCK_UNIT_MILLISECOND = "millisecond";
+    public static final String CLOCK_UNIT_FLOAT_MICROSECOND = "float_microsecond";
+    public static final String CLOCK_UNIT_FLOAT_MILLISECOND = "float_millisecond";
+    public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
+    public static final String CLOCK_UNIT_HERTZ = "hertz";
     
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
@@ -541,6 +556,7 @@ public class RubyProcess {
     }
 
     private static final NonNativeErrno ECHILD = new NonNativeErrno() {
+        @Override
         public int handle(Ruby runtime, int result) {
             throw runtime.newErrnoECHILDError();
         }
@@ -987,6 +1003,7 @@ public class RubyProcess {
         Ruby runtime = context.runtime;
         
         BlockCallback callback = new BlockCallback() {
+            @Override
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                 int[] status = new int[1];
                 Ruby runtime = context.runtime;
@@ -1031,6 +1048,114 @@ public class RubyProcess {
                 },
                 Block.NULL_BLOCK);
     }
+    
+    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
+        Ruby runtime = context.runtime;
+        
+        return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
+    }
+    
+    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
+        Ruby runtime = context.runtime;
+        
+        if (!(_unit instanceof RubySymbol)) {
+            throw runtime.newArgumentError("unexpected unit: " + _unit);
+        }
+        
+        return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), _unit.toString());
+    }
+
+    /**
+     * Get the time in nanoseconds corresponding to the requested clock.
+     */
+    private static long getTimeForClock(IRubyObject _clock_id, Ruby runtime) throws RaiseException {
+        long nanos;
+        
+        if (_clock_id instanceof RubySymbol) {
+            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+                nanos = System.nanoTime();
+            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
+                nanos = System.currentTimeMillis() * 1000000;
+            } else {
+                throw runtime.newErrnoEINVALError("clock_gettime");
+            }
+        } else {
+            // TODO: probably need real clock_id values to do this right.
+            throw runtime.newErrnoEINVALError("clock_gettime");
+        }
+        return nanos;
+    }
+
+    /**
+     * Get the time resolution in nanoseconds corresponding to the requested clock.
+     */
+    private static long getResolutionForClock(IRubyObject _clock_id, Ruby runtime) throws RaiseException {
+        long nanos;
+        
+        if (_clock_id instanceof RubySymbol) {
+            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+                nanos = 1;
+            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
+                nanos = 1000000;
+            } else {
+                throw runtime.newErrnoEINVALError("clock_gettime");
+            }
+        } else {
+            // TODO: probably need real clock_id values to do this right.
+            throw runtime.newErrnoEINVALError("clock_gettime");
+        }
+        return nanos;
+    }
+    
+    private static IRubyObject makeClockResult(Ruby runtime, long nanos, String unit) {
+        if (unit.equals(CLOCK_UNIT_NANOSECOND)) {
+            return runtime.newFixnum(nanos);
+        } else if (unit.equals(CLOCK_UNIT_MICROSECOND)) {
+            return runtime.newFixnum(nanos / 1000);
+        } else if (unit.equals(CLOCK_UNIT_MILLISECOND)) {
+            return runtime.newFixnum(nanos / 1000000);
+        } else if (unit.equals(CLOCK_UNIT_FLOAT_MICROSECOND)) {
+            return runtime.newFloat(nanos / 1000.0);
+        } else if (unit.equals(CLOCK_UNIT_FLOAT_MILLISECOND)) {
+            return runtime.newFloat(nanos / 1000000.0);
+        } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND)) {
+            return runtime.newFloat(nanos / 1000000000.0);
+        } else {
+            throw runtime.newArgumentError("unexpected unit: " + unit);
+        }
+    }
+    
+    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
+        Ruby runtime = context.runtime;
+        
+        return makeClockResolutionResult(runtime, getResolutionForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
+    }
+    
+    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
+        Ruby runtime = context.runtime;
+        
+        if (!(_unit instanceof RubySymbol)) {
+            throw runtime.newArgumentError("unexpected unit: " + _unit);
+        }
+        
+        return makeClockResolutionResult(runtime, getResolutionForClock(_clock_id, runtime), _unit.toString());
+    }
+    
+    private static IRubyObject makeClockResolutionResult(Ruby runtime, long nanos, String unit) {
+        if (unit.equals(CLOCK_UNIT_HERTZ)) {
+            return runtime.newFloat(1000000000.0 / nanos);
+        } else {
+            return makeClockResult(runtime, nanos, unit);
+        }
+    }
 
     @Deprecated
     public static IRubyObject pid(IRubyObject recv) {
@@ -1044,18 +1169,17 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpid());
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_9, notImplemented = true)
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
     public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
 
-    // See Process#spawn in src/jruby/kernel19/process.rb
-    @JRubyMethod(required = 4, module = true, compat = CompatVersion.RUBY1_9, visibility = PRIVATE)
+    // See Process#spawn in src/jruby/kernel/process.rb
+    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
     public static RubyFixnum _spawn_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -1076,6 +1200,7 @@ public class RubyProcess {
     }
     
     private static final NonNativeErrno IGNORE = new NonNativeErrno() {
+        @Override
         public int handle(Ruby runtime, int result) {return result;}
     };
 

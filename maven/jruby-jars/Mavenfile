@@ -37,13 +37,6 @@ execute 'rename gem file', :package do |ctx|
 
 end
 
-plugin( :invoker,
-        :projectsDirectory => 'src/it',
-        :cloneProjectsTo => '${project.build.directory}/it',
-        :postBuildHookScript => 'verify.bsh',
-        :streamLogs => true ) do
-  execute_goals( :install, :run )
-#  :settingsFile => '${basedir}/src/it/settings.xml', 
-#  :localRepositoryPath => '${project.build.directory}/local-repo' )
-end
+plugin( :invoker )
+
 # vim: syntax=Ruby

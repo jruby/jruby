@@ -43,7 +43,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import static org.jruby.CompatVersion.*;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.exceptions.RaiseException;
 
@@ -100,7 +99,7 @@ public class RubyConverter extends RubyObject {
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
         runtime.setConverter(converterc);
-        converterc.index = ClassIndex.CONVERTER;
+        converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
         converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 
@@ -110,6 +109,7 @@ public class RubyConverter extends RubyObject {
     }
 
     private static ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyConverter(runtime, klass);
         }
@@ -333,7 +333,7 @@ public class RubyConverter extends RubyObject {
         return context.runtime.newString(transcoder.finish(ASCIIEncoding.INSTANCE));
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject replacement(ThreadContext context) {
         String replacement = transcoder.getReplaceWith();
         
@@ -345,14 +345,14 @@ public class RubyConverter extends RubyObject {
     }
 
 
-    @JRubyMethod(name = "replacement=", compat = RUBY1_9)
+    @JRubyMethod(name = "replacement=")
     public IRubyObject replacement_set(ThreadContext context, IRubyObject replacement) {
         transcoder.getCodingErrorActions().setReplaceWith(replacement.convertToString().asJavaString());
 
         return replacement;
     }
     
-    @JRubyMethod(compat = RUBY1_9, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject asciicompat_encoding(ThreadContext context, IRubyObject self, IRubyObject strOrEnc) {
         Ruby runtime = context.runtime;
         EncodingService encodingService = runtime.getEncodingService();
@@ -376,7 +376,7 @@ public class RubyConverter extends RubyObject {
         return encodingService.convertEncodingToRubyEncoding(asciiCompat);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject last_error(ThreadContext context) {
         RaiseException lastError = transcoder.getLastError();
         
@@ -385,7 +385,7 @@ public class RubyConverter extends RubyObject {
         return context.nil;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject primitive_errinfo(ThreadContext context) {
         Ruby runtime = context.runtime;
         

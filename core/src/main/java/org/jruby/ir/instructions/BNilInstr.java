@@ -9,21 +9,17 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BNilInstr extends BranchInstr {
-    protected BNilInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_NIL, v, null, jmpTarget);
+public class BNilInstr extends OneOperandBranchInstr  implements FixedArityInstr {
+    public BNilInstr(Operand v, Label jmpTarget) {
+        super(Operation.B_NIL, v, jmpTarget);
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BNilInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 
     @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BNilInstr(getArg1().cloneForInlining(ii), getJumpTarget());
-    }
-
     public void visit(IRVisitor visitor) {
         visitor.BNilInstr(this);
     }

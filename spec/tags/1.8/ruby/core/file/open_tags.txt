@@ -1,3 +1,0 @@
-fails(JRUBY-4082):File.open opens directories
-fails(JRUBY-5663):File.open raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode
-fails(JRUBY-5663):File.open raises an IOError if the file exists when open with File::RDONLY|File::APPEND

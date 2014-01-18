@@ -1,0 +1,6 @@
+exclude :test_enc, "depending on MRI buffer sizes, not useful"
+exclude :test_inspect, "depending on MRI buffer sizes, not useful"
+exclude :test_period2, ""
+exclude :test_strftime, "depending on MRI buffer sizes, not useful"
+exclude :test_to_s, "depending on MRI buffer sizes, not useful"
+exclude :test_zone, "depending on MRI buffer sizes, not useful"

@@ -30,7 +30,6 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -52,7 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "Pathname")
 public class RubyPathname extends RubyObject {
     private RubyString path;
-
+    
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
                 PATHNAME_ALLOCATOR);
@@ -193,9 +192,8 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        String toPath = toPathMethod(context.runtime);
-        if (path.respondsTo(toPath)) {
-            path = path.callMethod(context, toPath);
+        if (path.respondsTo("to_path")) {
+            path = path.callMethod(context, "to_path");
         }
 
         RubyString str = path.convertToString();
@@ -210,10 +208,6 @@ public class RubyPathname extends RubyObject {
         return this;
     }
 
-    private static String toPathMethod(Ruby runtime) {
-        return runtime.is1_8() ? "to_str" : "to_path";
-    }
-
     @JRubyMethod
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
         super.initialize_copy(pathname);
@@ -221,12 +215,7 @@ public class RubyPathname extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
-    public IRubyObject to_str(ThreadContext context) {
-        return path;
-    }
-
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path;
     }

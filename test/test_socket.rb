@@ -140,12 +140,23 @@ class SocketTest < Test::Unit::TestCase
     assert_equal(21, Socket.getservbyname('       21'))
   end
   
+  def test_ipv4_socket
+    socket = Socket.new(:INET, :STREAM)
+    server_socket = ServerSocket.new(:INET, :STREAM)
+  
+    addr = Addrinfo.tcp('0.0.0.0', 3030)
+    addr1 = Addrinfo.tcp('0.0.0.0', 3031)
+
+    assert_not_equal(socket.bind(addr), nil)
+
+    assert_not_equal(server_socket.bind(addr1), nil)
+    assert_not_equal(server_socket.listen(128), nil)
+  end
+  
 end
 
 
 class UNIXSocketTests < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   # this is intentional, otherwise test run fails on windows
   def test_dummy; end
 
@@ -257,7 +268,7 @@ class UNIXSocketTests < Test::Unit::TestCase
          sock.accept_nonblock
          assert false, "failed to raise EAGAIN"
        rescue Errno::EAGAIN => e
-         assert IO::WaitReadable === e if IS19
+         assert IO::WaitReadable === e
        end
 
        cli = UNIXSocket.open(path)

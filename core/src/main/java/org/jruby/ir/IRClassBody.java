@@ -14,8 +14,8 @@ public class IRClassBody extends IRModuleBody {
     }
 
     @Override
-    public String getScopeName() {
-        return "ClassBody";
+    public IRScopeType getScopeType() {
+        return IRScopeType.CLASS_BODY;
     }
 
     @Override

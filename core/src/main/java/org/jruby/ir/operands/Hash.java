@@ -20,6 +20,8 @@ public class Hash extends Operand {
     final public List<KeyValuePair> pairs;
 
     public Hash(List<KeyValuePair> pairs) {
+        super(OperandType.HASH);
+
         this.pairs = pairs;
     }
 

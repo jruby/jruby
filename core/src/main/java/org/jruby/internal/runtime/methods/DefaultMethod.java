@@ -56,7 +56,7 @@ import org.jruby.runtime.ivars.MethodData;
  * method.
  *
  */
-public class DefaultMethod extends DynamicMethod implements MethodArgs, PositionAware, CacheableMethod {
+public class DefaultMethod extends DynamicMethod implements MethodArgs, PositionAware, CacheableMethod, MethodWithNodes {
 
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;
@@ -276,4 +276,10 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
         box = newBox;
         super.setVisibility(visibility);
     }
+
+    @Override
+    public MethodNodes getMethodNodes() {
+        return interpretedMethod.getMethodNodes();
+    }
+
 }

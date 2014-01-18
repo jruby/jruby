@@ -3,10 +3,12 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class LineNumberInstr extends Instr {
+public class LineNumberInstr extends Instr implements FixedArityInstr {
     public final int lineNumber;
     public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 
@@ -16,8 +18,9 @@ public class LineNumberInstr extends Instr {
         this.lineNumber = lineNumber;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { new ScopeModule(scope), new Fixnum(lineNumber) };
     }
 
     @Override
@@ -27,7 +30,7 @@ public class LineNumberInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: Okay to share this or not?
+        // SSS FIXME: This is buggy! 'scope' might have changed because of cloning.
         return this;
     }
 

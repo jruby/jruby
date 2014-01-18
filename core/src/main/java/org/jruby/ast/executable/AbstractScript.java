@@ -173,6 +173,18 @@ public abstract class AbstractScript implements Script {
     public final RubyString getString8(ThreadContext context, int codeRange) {return runtimeCache.getString(context, 8, codeRange);}
     public final RubyString getString9(ThreadContext context, int codeRange) {return runtimeCache.getString(context, 9, codeRange);}
 
+    public final RubyString getFrozenString(ThreadContext context, int i, int j, int codeRange) {return runtimeCache.getFrozenString(context, i, j, codeRange);}
+    public final RubyString getFrozenString0(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 0, j, codeRange);}
+    public final RubyString getFrozenString1(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 1, j, codeRange);}
+    public final RubyString getFrozenString2(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 2, j, codeRange);}
+    public final RubyString getFrozenString3(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 3, j, codeRange);}
+    public final RubyString getFrozenString4(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 4, j, codeRange);}
+    public final RubyString getFrozenString5(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 5, j, codeRange);}
+    public final RubyString getFrozenString6(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 6, j, codeRange);}
+    public final RubyString getFrozenString7(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 7, j, codeRange);}
+    public final RubyString getFrozenString8(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 8, j, codeRange);}
+    public final RubyString getFrozenString9(ThreadContext context, int j, int codeRange) {return runtimeCache.getFrozenString(context, 9, j, codeRange);}
+
     public final ByteList getByteList(int i) {return runtimeCache.getByteList(i);}
     public final ByteList getByteList0() {return runtimeCache.getByteList(0);}
     public final ByteList getByteList1() {return runtimeCache.getByteList(1);}

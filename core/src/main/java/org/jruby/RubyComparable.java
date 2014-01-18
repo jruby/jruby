@@ -38,6 +38,9 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.concurrent.Callable;
+
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
@@ -90,6 +93,23 @@ public class RubyComparable {
         throw recv.getRuntime().newArgumentError("comparison of " + recv.getType() + " with " + target + " failed");
     }
 
+    /** rb_invcmp
+     *
+     */
+    public static IRubyObject invcmp(final ThreadContext context, final IRubyObject recv, final IRubyObject other) {
+        final Ruby runtime = context.runtime;
+        IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur || !other.respondsTo("<=>")) return context.runtime.getNil();
+                return invokedynamic(context, other, OP_CMP, recv);
+            }
+        }, recv);
+
+        if (result.isNil()) return result;
+        return RubyFixnum.newFixnum(runtime, -cmpint(context, result, recv, other));
+    }
+
     /*  ================
      *  Module Methods
      *  ================ 
@@ -98,12 +118,11 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      * 
      */
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return callCmpMethod(context, recv, other, context.runtime.getNil());
+        return op_equal19(context, recv, other);
     }
 
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return callCmpMethod(context, recv, other, context.runtime.getFalse());
     }

@@ -42,6 +42,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -135,33 +136,13 @@ import org.jruby.util.cli.Options;
  * library loaded</li>
  * </ol>
  *
- * <h2>How to make a class that can get required by JRuby</h2>
- *
- * <p>First, decide on what name should be used to require the extension. In
- * this purely hypothetical example, this name will be
- * 'active_record/connection_adapters/jdbc_adapter'. Then create the class
- * name for this require-name, by looking at the guidelines above. Our class
- * should be named active_record.connection_adapters.JdbcAdapterService, and
- * implement one of the library-interfaces. The easiest one is
- * BasicLibraryService, where you define the basicLoad-method, which will
- * get called when your library should be loaded.</p>
- *
- * <p>The next step is to either put your compiled class on JRuby's
- * classpath, or package the class/es inside a jar-file. To package into a
- * jar-file, we first create the file, then rename it to jdbc_adapter.jar.
- * Then we put this jar-file in the directory
- * active_record/connection_adapters somewhere in JRuby's load path. For
- * example, copying jdbc_adapter.jar into
- * JRUBY_HOME/lib/ruby/site_ruby/1.8/active_record/connection_adapters will
- * make everything work. If you've packaged your extension inside a RubyGem,
- * write a setub.rb-script that copies the jar-file to this place.</p>
- *
  * @author jpetersen
  */
 public class LoadService {
     private static final Logger LOG = LoggerFactory.getLogger("LoadService");
 
     private final LoadTimer loadTimer;
+    private boolean canGetAbsolutePath = true;
 
     public enum SuffixType {
         Source, Extension, Both, Neither;
@@ -172,18 +153,20 @@ public class LoadService {
         public static final String[] extensionSuffixes;
         private static final String[] allSuffixes;
 
-        static {                // compute based on platform
-            if (Options.CEXT_ENABLED.load()) {
-                if (Platform.IS_WINDOWS) {
-                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
-                } else if (Platform.IS_MAC) {
-                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
-                } else {
-                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
-                }
-            } else {
-                extensionSuffixes = new String[]{".jar", ".jar.rb"};
-            }
+        static {
+            // compute based on platform
+//            if (Options.CEXT_ENABLED.load()) {
+//                if (Platform.IS_WINDOWS) {
+//                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
+//                } else if (Platform.IS_MAC) {
+//                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
+//                } else {
+//                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
+//                }
+//            } else {
+//                extensionSuffixes = new String[]{".jar", ".jar.rb"};
+//            }
+            extensionSuffixes = new String[]{".jar", ".jar.rb"};
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
@@ -270,19 +253,11 @@ public class LoadService {
                     addPath(rubygemsDir);
                 }
                 addPath(RbConfigLibrary.getRubySharedLibDir(runtime));
-                // if 2.0, we append 1.9 libs; our copy of 2.0 only has diffs right now
-                if (runtime.is2_0()) {
-                    addPath(RbConfigLibrary.getRubyLibDirFor(runtime, "2.0"));
-                }
+                // TODO: merge
                 addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 
         } catch(SecurityException ignore) {}
-
-        // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
-        if (!runtime.is1_9()) {
-            addPath(".");
-        }
     }
 
     /**
@@ -436,7 +411,7 @@ public class LoadService {
         }
 
         if (!requireLocks.lock(requireName)) {
-            if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
+            if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(requireName);
             }
             return RequireState.CIRCULAR;
@@ -1096,11 +1071,12 @@ public class LoadService {
         String file = resource.getName();
         String location = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            if (runtime.getInstanceConfig().isCextEnabled()) {
-                return new CExtension(resource);
-            } else {
-                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
-            }
+//            if (runtime.getInstanceConfig().isCextEnabled()) {
+//                return new CExtension(resource);
+//            } else {
+//                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
+//            }
+            throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);
         } else if (file.endsWith(".class")) {
@@ -1139,8 +1115,6 @@ public class LoadService {
      * passing it to tryResourceAsIs to have the ./ replaced by CWD.
      */
     protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
-        if (!runtime.is1_9()) return tryResourceFromCWD(state, baseName, suffixType);
-        
         LoadServiceResource foundResource = null;
 
         for (String suffix : suffixType.getSuffixes()) {
@@ -1333,8 +1307,7 @@ public class LoadService {
     }
     
     protected String getLoadPathEntry(IRubyObject entry) {
-        RubyString entryString = entry.convertToString();
-        return entryString.asJavaString();
+        return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
 
     protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
@@ -1468,7 +1441,7 @@ public class LoadService {
                 
                 debugLogTry(debugName, actualPath.toString());
                 
-                if (reportedPath.contains("..") && runtime.is1_9()) {
+                if (reportedPath.contains("..")) {
                     // try to canonicalize if path contains ..
                     try {
                         actualPath = actualPath.getCanonicalFile();
@@ -1620,14 +1593,23 @@ public class LoadService {
     }
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        return previousPath;
+        if (canGetAbsolutePath) {
+            try {
+                String path = foundResource.getAbsolutePath();
+                if (Platform.IS_WINDOWS) {
+                    path = path.replace('\\', '/');
+                }
+                return path;
+            } catch (AccessControlException ace) {
+                // can't get absolute path in this security context, so we give up forever
+                runtime.getWarnings().warn("can't canonicalize loaded names due to security restrictions; disabling");
+                canGetAbsolutePath = false;
+            }
+        }
+        return resolveLoadName(foundResource, previousPath);
     }
 
     protected String getFileName(JRubyFile file, String namePlusSuffix) {
-        String s = namePlusSuffix;
-        if(!namePlusSuffix.startsWith("./")) {
-            s = "./" + s;
-        }
-        return s;
+        return file.getAbsolutePath();
     }
 }

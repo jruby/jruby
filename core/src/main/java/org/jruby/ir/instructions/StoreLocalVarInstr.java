@@ -12,15 +12,16 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
-public class StoreLocalVarInstr extends Instr {
-    private IRScope scope;
+public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
+    private final IRScope scope;
     private Operand value;
 
     /** This is the variable that is being stored into in this scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
-    private LocalVariable lvar;
+    private final LocalVariable lvar;
 
     public StoreLocalVarInstr(Operand value, IRScope scope, LocalVariable lvar) {
         super(Operation.BINDING_STORE);
@@ -30,8 +31,13 @@ public class StoreLocalVarInstr extends Instr {
         this.scope = scope;
     }
 
+    public IRScope getScope() {
+        return scope;
+    }
+
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{value};
+        return new Operand[]{value, new ScopeModule(scope), lvar};
     }
 
     @Override
@@ -39,13 +45,13 @@ public class StoreLocalVarInstr extends Instr {
         value = value.getSimplifiedOperand(valueMap, force);
     }
 
-    public LocalVariable getLocalVar() {
-        return lvar;
-    }
-
     @Override
     public String toString() {
         return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";
+    }
+
+    public LocalVariable getLocalVar() {
+        return lvar;
     }
 
     @Override

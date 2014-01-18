@@ -263,7 +263,7 @@ do
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
         fi 
-        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
+        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;
@@ -280,10 +280,12 @@ do
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
-     # Special pass --1.9 along so when processing cygwin we don't think it is
-     # a file (this is fairly gross that we special case this -- my bash-fu
-     # is weak)
-     --1.9) mode=--1.9 ;;
+     # warn but ignore
+     --1.8) echo "warning: --1.8 ignored" ;;
+     # warn but ignore
+     --1.9) echo "warning: --1.9 ignored" ;;
+     # warn but ignore
+     --2.0) echo "warning: --1.9 ignored" ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby

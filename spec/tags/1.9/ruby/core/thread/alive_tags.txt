@@ -1,1 +1,0 @@
-fails:Thread#alive? return true for a killed but still running thread

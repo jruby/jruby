@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.10</version>
+    <version>9000.dev</version>
   </parent>
   <artifactId>jruby-tests</artifactId>
   <packaging>jar</packaging>
@@ -15,6 +15,16 @@
     <repository>
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </repository>
+    <repository>
+      <id>rubygems-prereleases</id>
+      <url>http://rubygems-proxy.torquebox.org/prereleases</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </repository>
   </repositories>
   <pluginRepositories>
@@ -90,12 +100,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>${rake.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>rspec</artifactId>
       <version>${rspec.version}</version>
       <type>gem</type>
@@ -114,14 +118,20 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>${rdoc.version}-SNAPSHOT</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
       <version>${json.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
+      <artifactId>rake</artifactId>
+      <version>${rake.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
@@ -222,5 +232,38 @@
         </configuration>
       </plugin>
     </plugins>
+    <pluginManagement>
+    	<plugins>
+    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    		<plugin>
+    			<groupId>org.eclipse.m2e</groupId>
+    			<artifactId>lifecycle-mapping</artifactId>
+    			<version>1.0.0</version>
+    			<configuration>
+    				<lifecycleMappingMetadata>
+    					<pluginExecutions>
+    						<pluginExecution>
+    							<pluginExecutionFilter>
+    								<groupId>de.saumya.mojo</groupId>
+    								<artifactId>
+    									gem-maven-plugin
+    								</artifactId>
+    								<versionRange>
+    									[1.0.0-rc3,)
+    								</versionRange>
+    								<goals>
+    									<goal>initialize</goal>
+    								</goals>
+    							</pluginExecutionFilter>
+    							<action>
+    								<ignore></ignore>
+    							</action>
+    						</pluginExecution>
+    					</pluginExecutions>
+    				</lifecycleMappingMetadata>
+    			</configuration>
+    		</plugin>
+    	</plugins>
+    </pluginManagement>
   </build>
 </project>

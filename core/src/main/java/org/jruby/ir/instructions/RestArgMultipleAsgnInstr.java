@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -11,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
+public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     private final int preArgsCount;       // # of reqd args before rest-arg
     private final int postArgsCount;      // # of reqd args after rest-arg
 
@@ -23,6 +24,19 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
 
     public RestArgMultipleAsgnInstr(Variable result, Operand array, int index) {
         this(result, array, -1, -1, index);
+    }
+
+    public int getPreArgsCount() {
+        return preArgsCount;
+    }
+
+    public int getPostArgsCount() {
+        return postArgsCount;
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
     }
 
     @Override

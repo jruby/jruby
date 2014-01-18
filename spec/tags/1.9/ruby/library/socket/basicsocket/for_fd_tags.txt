@@ -1,1 +1,0 @@
-fails:BasicSocket#for_fd return a Socket instance wrapped around the descriptor

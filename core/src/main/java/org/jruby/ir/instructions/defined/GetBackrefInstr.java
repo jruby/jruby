@@ -6,6 +6,7 @@ package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
@@ -21,7 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GetBackrefInstr extends Instr implements ResultInstr {
+public class GetBackrefInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 
     public GetBackrefInstr(Variable result) {
@@ -33,10 +34,12 @@ public class GetBackrefInstr extends Instr implements ResultInstr {
         return EMPTY_OPERANDS;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         result = v;
     }

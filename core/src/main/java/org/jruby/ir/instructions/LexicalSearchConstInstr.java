@@ -16,13 +16,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
+import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class LexicalSearchConstInstr extends Instr implements ResultInstr {
+public class LexicalSearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
     Operand definingScope;
     String constName;
     private Variable result;
@@ -42,9 +43,17 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    public Operand getDefiningScope() {
+        return definingScope;
+    }
+
+    public String getConstName() {
+        return constName;
+    }
+
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { definingScope };
+        return new Operand[] { definingScope, new StringLiteral(constName) };
     }
 
     @Override
@@ -52,10 +61,17 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         definingScope = definingScope.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + "(" + definingScope + ", " + constName  + ")";
+    }
+
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -63,11 +79,6 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + definingScope + ", " + constName  + ")";
     }
 
     private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {

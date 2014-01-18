@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class EQQInstr extends Instr implements ResultInstr {
+public class EQQInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Operand arg1;
     private Operand arg2;
     private Variable result;
@@ -30,14 +30,25 @@ public class EQQInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    public Operand getArg1() {
+        return arg1;
+    }
+
+    public Operand getArg2() {
+        return arg2;
+    }
+
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{arg1, arg2};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

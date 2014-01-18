@@ -1,2 +1,0 @@
-fails(JRUBY-3459):Thread.critical= defers exit
-fails(JRUBY-3459):Thread.critical= is not reset if the critical thread is killed

@@ -11,17 +11,26 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.List;
+import java.util.Map;
 
 public class WrappedIRClosure extends Operand {
+    private final Variable self;
     private final IRClosure closure;
 
-    public WrappedIRClosure(IRClosure scope) {
-        this.closure = scope;
+    public WrappedIRClosure(Variable self, IRClosure closure) {
+        super(OperandType.WRAPPED_IR_CLOSURE);
+
+        this.self = self;
+        this.closure = closure;
     }
 
     @Override
     public void addUsedVariables(List<Variable> l) {
-        /* Nothing to o */
+        l.add(self);
+    }
+
+    public Variable getSelf() {
+        return self;
     }
 
     public IRClosure getClosure() {
@@ -35,19 +44,30 @@ public class WrappedIRClosure extends Operand {
 
     @Override
     public String toString() {
-        return closure.toString();
+        return self + ":" + closure.toString();
+    }
+
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        Operand newSelf = self.getSimplifiedOperand(valueMap, force);
+        return newSelf == self ? this : new WrappedIRClosure((Variable)newSelf, closure);
     }
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return new WrappedIRClosure(closure.cloneForClonedInstr(ii));
+        return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         BlockBody body = closure.getBlockBody();
         closure.getStaticScope().determineModule();
-        Binding binding = context.currentBinding(self, currDynScope);
+
+        // In non-inlining scenarios, this.self will always be %self.
+        // However, in inlined scenarios, this.self will be the self in the original scope where the closure
+        // was present before inlining.
+        IRubyObject selfVal = (this.self instanceof Self) ? self : (IRubyObject)this.self.retrieve(context, self, currDynScope, temp);
+        Binding binding = context.currentBinding(selfVal, currDynScope);
 
         return new Block(body, binding);
     }

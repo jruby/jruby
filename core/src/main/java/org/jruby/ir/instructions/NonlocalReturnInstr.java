@@ -4,10 +4,11 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class NonlocalReturnInstr extends ReturnBase {
+public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final IRMethod methodToReturnFrom;
 
     public NonlocalReturnInstr(Operand returnValue, IRMethod methodToReturnFrom) {
@@ -19,6 +20,15 @@ public class NonlocalReturnInstr extends ReturnBase {
         this(returnValue, null);
     }
 
+    public String getMethodToReturnFrom() {
+        return methodToReturnFrom.getName();
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { returnValue, new ScopeModule(methodToReturnFrom) };
+    }
+
     @Override
     public String toString() {
         return getOperation() + "(" + returnValue + ", <" + (methodToReturnFrom == null ? "-NULL-" : methodToReturnFrom.getName()) + ">" + ")";
@@ -26,16 +36,18 @@ public class NonlocalReturnInstr extends ReturnBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
-    }
-
-    @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
-        if (ii.getInlineHostScope() == methodToReturnFrom) {
-            // Convert to a regular return instruction
-            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii));
-        } else {
-            return cloneForInlining(ii);
+        switch (ii.getCloneMode()) {
+            case CLOSURE_INLINE:
+                if (ii.getInlineHostScope() == methodToReturnFrom) {
+                    // Treat like inlining of a regular method-return
+                    Variable v = ii.getCallResultVariable();
+                    return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+                }
+                // fall through
+            case NORMAL_CLONE:
+                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
+            default:
+                return super.cloneForInlining(ii);
         }
     }
 

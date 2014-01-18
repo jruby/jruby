@@ -45,7 +45,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import static org.jruby.CompatVersion.*;
 import org.jruby.internal.runtime.GlobalVariable;
 
 public class RubyArgsFile {
@@ -215,27 +214,27 @@ public class RubyArgsFile {
         return getData(context, recv, "no stream").currentFile;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding, IRubyObject internalEncoding) {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding, internalEncoding);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject set_encoding(ThreadContext context, IRubyObject recv, IRubyObject encoding, IRubyObject internalEncoding, IRubyObject options) {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).set_encoding(context, encoding, internalEncoding, options);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject internal_encoding(ThreadContext context, IRubyObject recv) {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).internal_encoding(context);
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject external_encoding(ThreadContext context, IRubyObject recv) {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).external_encoding(context);
     }    
@@ -258,7 +257,7 @@ public class RubyArgsFile {
             }
         }
         
-        if (!line.isNil()) {
+        if (line != null && !line.isNil()) {
             context.runtime.setCurrentLine(data.currentLineNumber);
         }
 
@@ -307,7 +306,7 @@ public class RubyArgsFile {
         Ruby runtime = context.runtime;
         
         if (!data.next_argv(context)) {
-            return runtime.is1_9() ? runtime.newEmptyArray() : runtime.getNil();
+            return runtime.newEmptyArray();
         }
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "readlines", args);
@@ -327,7 +326,7 @@ public class RubyArgsFile {
         Ruby runtime = context.runtime;
         
         if (!data.next_argv(context)) {
-            return runtime.is1_9() ? runtime.newEmptyArray() : runtime.getNil();
+            return runtime.newEmptyArray();
         }
 
         if (!(data.currentFile instanceof RubyIO)) {
@@ -409,7 +408,6 @@ public class RubyArgsFile {
     /** Invoke a block for each line.
      *
      */
-    @JRubyMethod(name = {"each_line", "each"}, optional = 1)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
@@ -431,17 +429,17 @@ public class RubyArgsFile {
         return recv;
     }
     
-    @JRubyMethod(compat = RUBY1_9, optional = 1)
+    @JRubyMethod(optional = 1)
     public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return each_line(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "each_line", optional = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "each_line", optional = 1)
     public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_line", args);
     }
 
-    @JRubyMethod(name = "each", optional = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "each", optional = 1)
     public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
     }
@@ -502,14 +500,9 @@ public class RubyArgsFile {
     }
     
     private static boolean isClosed(ThreadContext context, IRubyObject currentFile) {
-        boolean closed = false;
-
-        if (!(currentFile instanceof RubyIO)) {
-            closed = currentFile.callMethod(context, "closed?").isTrue();
-        } else {
-            closed = ((RubyIO)currentFile).closed_p(context).isTrue();
-        }
-        return closed;
+        if (!(currentFile instanceof RubyIO)) return currentFile.callMethod(context, "closed?").isTrue();
+            
+        return ((RubyIO)currentFile).closed_p(context).isTrue();
     }
 
     @JRubyMethod(name = "binmode")
@@ -520,7 +513,7 @@ public class RubyArgsFile {
         return recv;
     }
     
-    @JRubyMethod(name = "binmode?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "binmode?")
     public static IRubyObject op_binmode(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = getData(context, recv, "no stream");
         
@@ -611,7 +604,7 @@ public class RubyArgsFile {
         return c;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject getbyte(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
@@ -631,12 +624,12 @@ public class RubyArgsFile {
         }
     }
     
-    @JRubyMethod(compat = RUBY1_9, required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1)
     public static IRubyObject read_nonblock(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return getPartial(context, recv, args, true);
     }
     
-    @JRubyMethod(compat = RUBY1_9, required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1)
     public static IRubyObject readpartial(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return getPartial(context, recv, args, false);
     }
@@ -675,7 +668,7 @@ public class RubyArgsFile {
         return tmp;
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public static IRubyObject readbyte(ThreadContext context, IRubyObject recv) {
         IRubyObject c = getbyte(context, recv);
         

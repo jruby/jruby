@@ -1415,8 +1415,8 @@ public class Pack {
                         } else if((ul & ulmask) == 0) {
                             RubyBignum big = RubyBignum.newBignum(runtime, ul);
                             while(occurrences > 0 && pos < encode.limit()) {
-                                big = (RubyBignum)big.op_mul(runtime.getCurrentContext(), big128);
-                                IRubyObject v = big.op_plus(runtime.getCurrentContext(),
+                                IRubyObject mulResult = big.op_mul(runtime.getCurrentContext(), big128);
+                                IRubyObject v = mulResult.callMethod(runtime.getCurrentContext(), "+",
                                         RubyBignum.newBignum(runtime, encode.get(pos) & 0x7f));
                                 if(v instanceof RubyFixnum) {
                                     big = RubyBignum.newBignum(runtime, RubyNumeric.fix2long(v));
@@ -1930,16 +1930,7 @@ public class Pack {
     @SuppressWarnings("fallthrough")
     public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
         RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor19());
-        pack = (RubyString) pack.infectBy(formatString);
-
-        for (IRubyObject element : list.toJavaArray()) {
-            if (element.isUntrusted()) {
-                pack = (RubyString) pack.untrust(context);
-                break;
-            }
-        }
-
-        return pack;
+        return (RubyString) pack.infectBy(formatString);
     }
 
     private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
@@ -2027,19 +2018,17 @@ public class Pack {
                 }
             }
 
-            if (runtime.is1_9()) {
-                switch (type) {
-                    case 'U':
-                        if (enc_info == 1) enc_info = 2;
-                        break;
-                    case 'm':
-                    case 'M':
-                    case 'u':
-                        break;
-                    default:
-                        enc_info = 0;
-                        break;
-                }
+            switch (type) {
+                case 'U':
+                    if (enc_info == 1) enc_info = 2;
+                    break;
+                case 'm':
+                case 'M':
+                case 'u':
+                    break;
+                default:
+                    enc_info = 0;
+                    break;
             }
 
             Converter converter = converters[type];
@@ -2272,7 +2261,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        if (runtime.is1_9() && occurrences == 0 && type == 'm' && !ignoreStar) {
+                        if (occurrences == 0 && type == 'm' && !ignoreStar) {
                             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
                                     lCurElemString.getBegin(), lCurElemString.length(),
                                     lCurElemString.length(), (byte)type, false);
@@ -2377,19 +2366,17 @@ public class Pack {
         RubyString output = runtime.newString(result);
         if (taintOutput) output.taint(runtime.getCurrentContext());
 
-        if (runtime.is1_9()) {
-            switch (enc_info)
-            {
-                case 1:
-                    output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
-                    break;
-                case 2:
-                    output.force_encoding(runtime.getCurrentContext(),
-                            runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
-                    break;
-                default:
-                    /* do nothing, keep ASCII-8BIT */
-            }
+        switch (enc_info)
+        {
+            case 1:
+                output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
+                break;
+            case 2:
+                output.force_encoding(runtime.getCurrentContext(),
+                        runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
+                break;
+            default:
+                /* do nothing, keep ASCII-8BIT */
         }
 
         return output;

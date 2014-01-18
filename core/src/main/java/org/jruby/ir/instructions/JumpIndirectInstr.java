@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 // Used in ensure blocks to jump to the label contained in '_target'
-public class JumpIndirectInstr extends Instr {
+public class JumpIndirectInstr extends Instr  implements FixedArityInstr {
     private Variable target;
 
     public JumpIndirectInstr(Variable target) {
@@ -25,6 +25,7 @@ public class JumpIndirectInstr extends Instr {
         return target;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{target};
     }

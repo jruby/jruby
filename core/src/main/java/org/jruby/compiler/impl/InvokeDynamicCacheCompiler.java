@@ -393,6 +393,34 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     /**
+     * Cache a frozen String literal using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param contents the contents of the bytelist for the String
+     * @param codeRange the code range for the String
+     */
+    @Override
+    public void cacheFrozenString(BaseBodyCompiler method, ByteList contents, int codeRange) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheString(method, contents, codeRange);
+            return;
+        }
+        
+        String asString = Helpers.rawBytesToString(contents.bytes());
+        String encodingName = new String(contents.getEncoding().getName());
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getFrozenString",
+                sig(RubyString.class, ThreadContext.class),
+                InvokeDynamicSupport.getFrozenStringHandle(),
+                asString,
+                encodingName,
+                codeRange);
+    }
+
+    /**
      * Cache a BigInteger using invokedynamic. Used for Bignum construction
      * 
      * @param method the method compiler with which bytecode is emitted

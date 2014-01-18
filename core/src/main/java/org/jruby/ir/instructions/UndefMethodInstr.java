@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class UndefMethodInstr extends Instr implements ResultInstr {
+public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand methodName;
 
@@ -24,14 +24,18 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
         this.methodName = methodName;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { methodName };
+    public Operand getMethodName() {
+        return methodName;
     }
 
     @Override
     public String toString() {
         return super.toString() + "(" + methodName + ")";
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { methodName };
     }
 
     @Override

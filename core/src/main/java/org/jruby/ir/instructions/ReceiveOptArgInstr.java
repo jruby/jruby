@@ -2,12 +2,14 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReceiveOptArgInstr extends ReceiveArgBase {
+public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInstr {
     /** Starting offset into the args array*/
     public final int argOffset;
 
@@ -21,36 +23,45 @@ public class ReceiveOptArgInstr extends ReceiveArgBase {
     }
 
     @Override
+    public Operand[] getOperands() {
+        return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argOffset), new Fixnum(argIndex) };
+    }
+
+    @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + "," + argOffset + "," + argIndex + ")";
+    }
+
+    public int getArgOffset() {
+        return argOffset;
+    }
+
+    public int getNumUsedArgs() {
+        return numUsedArgs;
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: Need to add kwArgLoss information in InlinerInfo
-
         // Added this copy for code clarity
         // argIndex is relative to start of opt args and not the start of arg array
         int optArgIndex = this.argIndex;
-        int minReqdArgs = optArgIndex + numUsedArgs;
-
-        if (ii.canMapArgsStatically()) {
-            int n = ii.getArgsCount();
-            return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(argOffset + optArgIndex) : UndefinedValue.UNDEFINED);
-        } else {
-            return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argOffset + optArgIndex, minReqdArgs);
+        switch (ii.getCloneMode()) {
+            case NORMAL_CLONE:
+                return new ReceiveOptArgInstr(ii.getRenamedVariable(result), numUsedArgs, argOffset, optArgIndex);
+            default: {
+                int minReqdArgs = optArgIndex + numUsedArgs;
+                if (ii.canMapArgsStatically()) {
+                    int n = ii.getArgsCount();
+                    return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(argOffset + optArgIndex) : UndefinedValue.UNDEFINED);
+                } else {
+                    return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argOffset + optArgIndex, minReqdArgs);
+                }
+            }
         }
     }
 
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        // Added this copy for code clarity
-        // argIndex is relative to start of opt args and not the start of arg array
-        int optArgIndex = this.argIndex;
-        return new ReceiveOptArgInstr(ii.getRenamedVariable(result), numUsedArgs, argOffset, optArgIndex);
-    }
-
-    public Object receiveOptArg(IRubyObject[] args, int kwArgHashCount) {
+    public IRubyObject receiveOptArg(IRubyObject[] args, int kwArgHashCount) {
         // Added this copy for code clarity
         // argIndex is relative to start of opt args and not the start of arg array
         int optArgIndex = this.argIndex;

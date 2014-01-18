@@ -15,8 +15,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.ScopeModule;
 
-public class DefineModuleInstr extends Instr implements ResultInstr {
+public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRModuleBody newIRModuleBody;
     private Operand container;
     private Variable result;
@@ -31,14 +32,17 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() {
-        return new Operand[]{container};
+        return new Operand[]{new ScopeModule(newIRModuleBody), container};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -55,7 +59,6 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: So, do we clone the module body scope or not?
         return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, container.cloneForInlining(ii));
     }
 

@@ -100,11 +100,7 @@ public class RubyRunnable implements ThreadedRunnable {
                 if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass);
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
-                if (runtime.is1_9()) {
-                    rubyThread.exceptionRaised(rj.buildException(runtime));
-                } else {
-                    rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
-                }
+                rubyThread.exceptionRaised(rj.buildException(runtime));
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();

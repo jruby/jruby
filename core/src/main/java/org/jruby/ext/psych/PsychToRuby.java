@@ -40,33 +40,40 @@ import static org.jruby.runtime.Visibility.*;
 
 public class PsychToRuby {
     public static void initPsychToRuby(Ruby runtime, RubyModule psych) {
+        RubyClass classLoader = runtime.defineClassUnder("ClassLoader", runtime.getObject(), RubyObject.OBJECT_ALLOCATOR, psych);
+
         RubyModule visitors = runtime.defineModuleUnder("Visitors", psych);
         RubyClass visitor = runtime.defineClassUnder("Visitor", runtime.getObject(), runtime.getObject().getAllocator(), visitors);
         RubyClass psychToRuby = runtime.defineClassUnder("ToRuby", visitor, RubyObject.OBJECT_ALLOCATOR, visitors);
 
-        psychToRuby.defineAnnotatedMethods(PsychToRuby.class);
+        psychToRuby.defineAnnotatedMethods(ToRuby.class);
+        classLoader.defineAnnotatedMethods(ClassLoader.class);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
-    public static IRubyObject build_exception(ThreadContext context, IRubyObject self, IRubyObject klass, IRubyObject message) {
-        if (klass instanceof RubyClass) {
-            IRubyObject exception = ((RubyClass)klass).allocate();
-            ((RubyException)exception).message = message;
-            return exception;
-        } else {
-            throw context.runtime.newTypeError(klass, context.runtime.getClassClass());
+    public static class ToRuby {
+        @JRubyMethod(visibility = PRIVATE)
+        public static IRubyObject build_exception(ThreadContext context, IRubyObject self, IRubyObject klass, IRubyObject message) {
+            if (klass instanceof RubyClass) {
+                IRubyObject exception = ((RubyClass)klass).allocate();
+                ((RubyException)exception).message = message;
+                return exception;
+            } else {
+                throw context.runtime.newTypeError(klass, context.runtime.getClassClass());
+            }
         }
     }
 
-    @JRubyMethod(visibility = PRIVATE)
-    public static IRubyObject path2class(ThreadContext context, IRubyObject self, IRubyObject path) {
-        try {
-            return context.runtime.getClassFromPath(path.asJavaString());
-        } catch (RaiseException re) {
-            if (re.getException().getMetaClass() == context.runtime.getNameError()) {
-                throw context.runtime.newArgumentError("undefined class/module " + path);
+    public static class ClassLoader {
+        @JRubyMethod(visibility = PRIVATE)
+        public static IRubyObject path2class(ThreadContext context, IRubyObject self, IRubyObject path) {
+            try {
+                return context.runtime.getClassFromPath(path.asJavaString());
+            } catch (RaiseException re) {
+                if (re.getException().getMetaClass() == context.runtime.getNameError()) {
+                    throw context.runtime.newArgumentError("undefined class/module " + path);
+                }
+                throw re;
             }
-            throw re;
         }
     }
 }

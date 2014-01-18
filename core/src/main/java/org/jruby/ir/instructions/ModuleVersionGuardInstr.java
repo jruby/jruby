@@ -9,18 +9,17 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.StringLiteral;
 
 /**
  * This instruction will be generated whenever speculative optimizations are performed
  * based on assuming that an object's metaclass is C (as determined by the version number
  * of C -- where the version number changes every time C's class structure changes).
  */
-public class ModuleVersionGuardInstr extends Instr {
+public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     /** The token value that has been assumed */
     private final int expectedVersion;
 
@@ -31,7 +30,7 @@ public class ModuleVersionGuardInstr extends Instr {
     private Operand candidateObj;
 
     /** Where to jump if the version assumption fails? */
-    private Label failurePathLabel;
+    private final Label failurePathLabel;
 
     public ModuleVersionGuardInstr(RubyModule module, int expectedVersion, Operand candidateObj, Label failurePathLabel) {
         super(Operation.MODULE_GUARD);
@@ -45,9 +44,22 @@ public class ModuleVersionGuardInstr extends Instr {
         return failurePathLabel;
     }
 
+    // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
+    public RubyModule getModule() {
+        return module;
+    }
+
+    public Operand getCandidateObject() {
+        return candidateObj;
+    }
+
+    public int getExpectedVersion() {
+        return expectedVersion;
+    }
+
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { candidateObj };
+        return new Operand[] { new StringLiteral(module.getName()), new Fixnum(expectedVersion), candidateObj, failurePathLabel };
     }
 
     @Override
@@ -61,13 +73,8 @@ public class ModuleVersionGuardInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), failurePathLabel);
     }
 
     private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

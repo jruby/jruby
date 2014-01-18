@@ -13,6 +13,8 @@ public class AsString extends Operand {
     final private Operand source;
 
     public AsString(Operand source) {
+        super(OperandType.AS_STRING);
+
         if (source == null) source = new StringLiteral("");
         this.source = source;
     }
@@ -38,11 +40,6 @@ public class AsString extends Operand {
         source.addUsedVariables(l);
     }
 
-    @Override
-    public String toString() {
-        return "#{" + source + "}";
-    }
-
     public Operand getSource() {
         return source;
     }
@@ -50,5 +47,10 @@ public class AsString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);
+    }
+
+    @Override
+    public String toString() {
+        return "#{" + source + "}";
     }
 }

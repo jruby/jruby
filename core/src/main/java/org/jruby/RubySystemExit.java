@@ -38,6 +38,7 @@ public class RubySystemExit extends RubyException {
     IRubyObject status;
 
     private static ObjectAllocator SYSTEMEXIT_ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySystemExit(runtime, klass);
         }
@@ -65,6 +66,7 @@ public class RubySystemExit extends RubyException {
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @Override
     public IRubyObject initialize(IRubyObject[]args, Block block) {
         status = RubyFixnum.zero(getRuntime());
         if (args.length > 0 && args[0] instanceof RubyFixnum) {

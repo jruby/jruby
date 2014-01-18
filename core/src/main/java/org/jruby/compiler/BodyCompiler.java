@@ -35,6 +35,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.internal.runtime.methods.MethodNodes;
 
 /**
  *
@@ -235,13 +236,6 @@ public interface BodyCompiler {
     public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount);
     
     /**
-    * @see createNewHash
-    *
-    * Create new hash running in ruby 1.9 compat version.
-    */
-    public void createNewHash19(Object elements, ArrayCallback callback, int keyCount);
-    
-    /**
      * Create a new range. It is expected that the stack will contain the end and begin values for the range as
      * its topmost and second topmost elements.
      * 
@@ -382,7 +376,7 @@ public interface BodyCompiler {
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
             CompilerCallback receiver, ASTInspector inspector, boolean root,
-            String filename, int line, String parameterDesc);
+            String filename, int line, String parameterDesc, MethodNodes methodNodes);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
@@ -627,6 +621,7 @@ public interface BodyCompiler {
     public void pushNull();
     public void pushString(String strVal);
     public void pushByteList(ByteList bl);
+    public void pushBoolean(boolean value);
     public void pushDefinedMessage(DefinedMessage definedMessage);
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
@@ -780,4 +775,9 @@ public interface BodyCompiler {
      * using IRubyObject.isTrue();
      */
     public void isTrue();
+    
+    /**
+     * Cache a frozen string in the frozen string table.
+     */
+    public void cacheFrozenString(ByteList string, int codeRange);
 }

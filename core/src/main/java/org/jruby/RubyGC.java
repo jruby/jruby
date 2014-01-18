@@ -37,7 +37,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -106,7 +105,7 @@ public class RubyGC {
         return runtime.newBoolean(stress);
     }
     
-    @JRubyMethod(module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject count(ThreadContext context, IRubyObject recv) {
         try {
             int count = 0;

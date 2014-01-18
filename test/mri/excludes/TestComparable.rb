@@ -1,0 +1,1 @@
+exclude :test_no_cmp, 'GH-1111'

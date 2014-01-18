@@ -108,6 +108,14 @@ public class RuntimeCache {
         return RubyString.newStringShared(context.runtime, getByteList(index), codeRange);
     }
 
+    public final RubyString getFrozenString(ThreadContext context, int bytelistIndex, int stringIndex, int codeRange) {
+        RubyString str = frozenStrings[stringIndex];
+        if (str == null) {
+            str = frozenStrings[stringIndex] = context.runtime.freezeAndDedupString((RubyString) RubyString.newStringShared(context.runtime, getByteList(bytelistIndex), codeRange).freeze(context));
+        }
+        return str;
+    }
+
     public final ByteList getByteList(int index) {
         return byteLists[index];
     }
@@ -280,6 +288,7 @@ public class RuntimeCache {
     private static final int METHOD = BLOCKCALLBACK + 1;
     private static final int STRING = METHOD + 1;
     private static final int ENCODING = STRING + 1;
+    private static final int FROZEN_STRING = ENCODING + 1;
 
     /**
      * Given a packed descriptor of other cache sizes, construct the cache arrays
@@ -302,7 +311,7 @@ public class RuntimeCache {
      *
      * @param descriptor The descriptor to use for preparing caches
      */
-    public final void initOthers(String descriptor) {
+    public final void initOthers(String descriptor) {;
         int scopeCount = getDescriptorValue(descriptor, SCOPE);
         if (scopeCount > 0) initScopes(scopeCount);
         int symbolCount = getDescriptorValue(descriptor, SYMBOL);
@@ -331,6 +340,8 @@ public class RuntimeCache {
         if (stringCount > 0) initStrings(stringCount);
         int encodingCount = getDescriptorValue(descriptor, ENCODING);
         if (encodingCount > 0) initEncodings(encodingCount);
+        int frozenStringCount = getDescriptorValue(descriptor, FROZEN_STRING);
+        if (frozenStringCount > 0) initFrozenStrings(frozenStringCount);
     }
 
     private static int getDescriptorValue(String descriptor, int type) {
@@ -351,6 +362,10 @@ public class RuntimeCache {
 
     public final ByteList[] initStrings(int size) {
         return byteLists = new ByteList[size];
+    }
+
+    public final RubyString[] initFrozenStrings(int size) {
+        return frozenStrings = new RubyString[size];
     }
 
     public final Encoding[] initEncodings(int size) {
@@ -648,6 +663,8 @@ public class RuntimeCache {
     public RubySymbol[] symbols = EMPTY_RUBYSYMBOLS;
     private static final ByteList[] EMPTY_BYTELISTS = {};
     public ByteList[] byteLists = EMPTY_BYTELISTS;
+    private static final RubyString[] EMPTY_STRINGS = {};
+    public RubyString[] frozenStrings = EMPTY_STRINGS;
     private static final Encoding[] EMPTY_ENCODINGS = {};
     public Encoding[] encodings = EMPTY_ENCODINGS;
     private static final RubyFixnum[] EMPTY_FIXNUMS = {};

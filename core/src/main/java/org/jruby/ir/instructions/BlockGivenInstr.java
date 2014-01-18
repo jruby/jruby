@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BlockGivenInstr extends Instr implements ResultInstr {
+public class BlockGivenInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand blockArg;
 
@@ -26,10 +26,12 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
         this.blockArg = block;
     }
 
+    @Override
     public Operand[] getOperands() {
         return new Operand[]{blockArg};
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
@@ -43,6 +45,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
         blockArg = blockArg.getSimplifiedOperand(valueMap, force);
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }

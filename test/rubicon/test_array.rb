@@ -1,8 +1,6 @@
 require 'test/unit'
 
 class TestArray < Test::Unit::TestCase
-  IS19 = RUBY_VERSION =~ /1\.9/
-
   def setup
     super
     @cls = Array
@@ -340,52 +338,27 @@ class TestArray < Test::Unit::TestCase
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[0,1] = nil)
-    if IS19
-      assert_equal(@cls[nil, *(1..99).to_a], a)
-    else
-      assert_equal(@cls[*(1..99).to_a], a)
-    end
+    assert_equal(@cls[nil, *(1..99).to_a], a)
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[10,10] = nil)
-    if IS19
-      assert_equal(@cls[*(0..9).to_a] + @cls[nil, *(20..99).to_a], a)
-    else
-      assert_equal(@cls[*(0..9).to_a] + @cls[*(20..99).to_a], a)
-    end
+    assert_equal(@cls[*(0..9).to_a] + @cls[nil, *(20..99).to_a], a)
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[-1, 1] = nil)
-    if IS19
-      assert_equal(@cls[*(0..98).to_a] + [nil], a)
-    else
-      assert_equal(@cls[*(0..98).to_a], a)
-    end
+    assert_equal(@cls[*(0..98).to_a] + [nil], a)
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[-10, 10] = nil)
-    if IS19
-      assert_equal(@cls[*(0..89).to_a] + [nil], a)
-    else
-      assert_equal(@cls[*(0..89).to_a], a)
-    end
-
+    assert_equal(@cls[*(0..89).to_a] + [nil], a)
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[0,1000] = nil)
-    if IS19
-      assert_equal(@cls[nil] , a)
-    else
-      assert_equal(@cls[] , a)
-    end
+    assert_equal(@cls[nil] , a)
 
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[10..19] = nil)
-    if IS19
-      assert_equal(@cls[*(0..9).to_a] + @cls[nil, *(20..99).to_a], a)
-    else
-      assert_equal(@cls[*(0..9).to_a] + @cls[*(20..99).to_a], a)
-    end
+    assert_equal(@cls[*(0..9).to_a] + @cls[nil, *(20..99).to_a], a)
 
     a = @cls[1, 2, 3]
     a[1, 0] = a
@@ -453,8 +426,6 @@ class TestArray < Test::Unit::TestCase
     assert_equal([ 99, 99, 99], a.collect { 99 } )
 
     assert_equal([], @cls[].collect { 99 })
-
-    assert_equal([1, 2, 3], @cls[1, 2, 3].collect) unless IS19
   end
 
   def test_collect!
@@ -845,16 +816,6 @@ class TestArray < Test::Unit::TestCase
     generic_test_collect!(:map!)
   end
 
-  if !IS19
-    def test_nitems
-      assert_equal(0, @cls[].nitems)
-      assert_equal(1, @cls[1].nitems)
-      assert_equal(1, @cls[1, nil].nitems)
-      assert_equal(1, @cls[nil, 1].nitems)
-      assert_equal(3, @cls[1, nil, nil, 2, nil, 3, nil].nitems)
-    end
-  end
-
   def test_pop
     a = @cls[ 'cat', 'dog' ]
     assert_equal('dog', a.pop)
@@ -1073,20 +1034,16 @@ class TestArray < Test::Unit::TestCase
 
   def test_to_s
     $, = ""
-    a = @cls[]
-    assert_equal("", a.to_s) unless IS19
-
-    $, = ""
     a = @cls[1, 2]
-    assert_equal(IS19 ? "[1, 2]" : "12", a.to_s)
+    assert_equal("[1, 2]", a.to_s)
 
     $, = ""
     a = @cls[1, 2, 3]
-    assert_equal(IS19 ? "[1, 2, 3]" : "123", a.to_s)
+    assert_equal("[1, 2, 3]", a.to_s)
 
     $, = ":"
     a = @cls[1, 2, 3]
-    assert_equal(IS19 ? "[1, 2, 3]" : "1:2:3", a.to_s)
+    assert_equal("[1, 2, 3]", a.to_s)
 
     $, = ""
   end

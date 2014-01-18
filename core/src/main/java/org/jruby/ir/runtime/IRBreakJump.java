@@ -3,10 +3,11 @@ package org.jruby.ir.runtime;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class IRBreakJump extends RuntimeException {
+public class IRBreakJump extends RuntimeException implements Unrescuable {
     public int scopeIdToReturnTo;
     public IRubyObject breakValue;
     public boolean caughtByLambda;

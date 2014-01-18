@@ -24,7 +24,13 @@ public class SValue extends Operand {
     final private Operand array;
 
     public SValue(Operand array) {
+        super(OperandType.SVALUE);
+
         this.array = array;
+    }
+
+    public Operand getArray() {
+        return array;
     }
 
     @Override
@@ -42,7 +48,7 @@ public class SValue extends Operand {
         Operand newArray = array.getSimplifiedOperand(valueMap, force);
         if (newArray instanceof Array) {
             Array a = (Array) newArray;
-            return (a.elts.length == 1) ? a.elts[0] : a;
+            return (a.getElts().length == 1) ? a.getElts()[0] : a;
         } else {
             return (newArray == array) ? this : new SValue(newArray);
         }
@@ -63,20 +69,7 @@ public class SValue extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         Object val = array.retrieve(context, self, currDynScope, temp);
 
-        if (context.runtime.is1_9()) {
-            return (val instanceof RubyArray) ? val : context.runtime.getNil();
-        } else {
-            if (val instanceof RubyArray) {
-                int n = ((RubyArray) val).getLength();
-
-                if (n == 0) return context.nil;
-                if (n == 1) return ((RubyArray) val).entry(0);
-
-                return val;
-            }
-
-            return context.nil;
-        }
+        return (val instanceof RubyArray) ? val : context.runtime.getNil();
     }
 
     @Override

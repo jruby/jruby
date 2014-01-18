@@ -29,6 +29,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.IterNode;
@@ -44,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class Interpreted19Block  extends ContextAwareBlockBody {
-    private static final boolean ALREADY_ARRAY = true;
 
     /** The position for the block */
     private final ISourcePosition position;
@@ -117,12 +117,12 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, newArgsArrayFromArgsWithUnbox(args, context), null, null, ALREADY_ARRAY, binding, type, Block.NULL_BLOCK);
+        return yield(context, args, null, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, newArgsArrayFromArgsWithoutUnbox(args, context), null, null, ALREADY_ARRAY, binding, type, block);
+        return yield(context, args, null, null, binding, type, block);
     }
 
     @Override
@@ -137,15 +137,16 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, ALREADY_ARRAY, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, ALREADY_ARRAY, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
     }
 
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+    @Override
+    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -166,20 +167,21 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
      * Yield to this block, usually passed to the current call.
      *
      * @param context represents the current thread-specific data
-     * @param value The value to yield, either a single value or an array of values
+     * @param args The args for yield
      * @param self The current self
      * @param klass
-     * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        return yield(context, value, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+    @Override
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+            RubyModule klass, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
 
     }
+
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
+            RubyModule klass, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -188,7 +190,8 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, klass, binding);
 
         try {
-            setupBlockArgs(context, value, self, block, type, aValue);
+            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+            setupBlockArgs(context, context.runtime.newArrayNoCopyLight(preppedArgs), self, block, type, true);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
@@ -231,7 +234,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         IRubyObject[] parameters = Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
 
         Ruby runtime = context.runtime;
-        if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        
+        if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);
         if (!(args instanceof ArgsNoArgNode)) args.prepare(context, runtime, self, parameters, block);
     }
 

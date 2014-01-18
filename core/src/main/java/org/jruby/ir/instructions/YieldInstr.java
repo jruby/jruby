@@ -16,8 +16,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.operands.BooleanLiteral;
 
-public class YieldInstr extends Instr implements ResultInstr {
+public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     public final boolean unwrapArray;
     private Operand blockArg;
     private Operand yieldArg;
@@ -36,6 +37,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
+        // FIXME: Is it necessary to clone a yield instruction in a method
+        // that is being inlined, i.e. in METHOD_INLINE clone mode?
+        // Fix BasicBlock.java:cloneForInlining!!
         return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
 
@@ -52,15 +56,22 @@ public class YieldInstr extends Instr implements ResultInstr {
         return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
     }
 
-    // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
-    public Operand[] getOperands() {
-        return new Operand[] {blockArg, yieldArg};
+    public boolean isUnwrapArray() {
+        return unwrapArray;
     }
 
+    // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] {blockArg, yieldArg, new BooleanLiteral(unwrapArray) };
+    }
+
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -83,8 +94,6 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
-        // Ruby 1.8 mode: yields are always to normal blocks
-        if (!context.runtime.is1_9()) b.type = Block.Type.NORMAL;
         if (yieldArg == UndefinedValue.UNDEFINED) {
             return b.yieldSpecific(context);
         } else {

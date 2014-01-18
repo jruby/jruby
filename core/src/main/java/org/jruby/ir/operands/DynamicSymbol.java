@@ -15,10 +15,14 @@ public class DynamicSymbol extends Operand {
     // Or can it happen during optimizations that this becomes a generic operand?
     final private CompoundString symbolName;
 
-    public DynamicSymbol(CompoundString n) { symbolName = n; }
+    public DynamicSymbol(CompoundString n) {
+        super(OperandType.DYNAMIC_SYMBOL);
 
-    public String toString() {
-        return ":" + symbolName.toString();
+        symbolName = n;
+   }
+
+    public Operand getSymbolName() {
+        return symbolName;
     }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
@@ -44,5 +48,10 @@ public class DynamicSymbol extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.DynamicSymbol(this);
+    }
+
+    @Override
+    public String toString() {
+        return ":" + symbolName.toString();
     }
 }

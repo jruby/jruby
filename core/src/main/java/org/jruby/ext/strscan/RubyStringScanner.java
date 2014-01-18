@@ -26,12 +26,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.strscan;
 
+import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
-import org.jcodings.Encoding;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -48,10 +47,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  * @author kscott
@@ -214,8 +214,7 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return getRuntime().getNil();
         if (end > size) end = size;
-        return runtime.is1_9() ? str.makeSharedString19(runtime, beg, end - beg) :
-                str.makeSharedString(runtime, beg, end - beg);
+        return str.makeSharedString19(runtime, beg, end - beg);
     }
     
     private IRubyObject extractBegLen(Ruby runtime, int beg, int len) {
@@ -223,8 +222,7 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return getRuntime().getNil();
         if (beg + len > size) len = size - beg;
-        return runtime.is1_9() ? str.makeSharedString19(runtime, beg, len) :
-                str.makeSharedString(runtime, beg, len);
+        return str.makeSharedString19(runtime, beg, len);
     }
     
     private IRubyObject scan(IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {
@@ -232,9 +230,7 @@ public class RubyStringScanner extends RubyObject {
         if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
         check();
         
-        Regex pattern = runtime.is1_9() ?
-                ((RubyRegexp)regex).preparePattern(str) :
-                ((RubyRegexp)regex).getPattern();
+        Regex pattern = ((RubyRegexp)regex).preparePattern(str);
 
         clearMatched();
         int rest = str.getByteList().getRealSize() - pos;
@@ -323,12 +319,11 @@ public class RubyStringScanner extends RubyObject {
         regs = null;
     }
 
-    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_8)
     public IRubyObject getch(ThreadContext context) {
-        return getchCommon(context, false);
+        return getch19(context);
     }
 
-    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "getch")
     public IRubyObject getch19(ThreadContext context) {
         return getchCommon(context, true);
     }

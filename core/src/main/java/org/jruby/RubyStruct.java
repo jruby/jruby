@@ -51,10 +51,11 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.RubyEnumerator.SizeFn;
 
 /**
  * @author  jpetersen
@@ -81,7 +82,7 @@ public class RubyStruct extends RubyObject {
     public static RubyClass createStructClass(Ruby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setStructClass(structClass);
-        structClass.index = ClassIndex.STRUCT;
+        structClass.setClassIndex(ClassIndex.STRUCT);
         structClass.includeModule(runtime.getEnumerable());
         structClass.defineAnnotatedMethods(RubyStruct.class);
 
@@ -89,7 +90,7 @@ public class RubyStruct extends RubyObject {
     }
     
     @Override
-    public int getNativeTypeIndex() {
+    public ClassIndex getNativeClassIndex() {
         return ClassIndex.STRUCT;
     }
     
@@ -202,7 +203,7 @@ public class RubyStruct extends RubyObject {
 
         // set reified class to RubyStruct, for Java subclasses to use
         newStruct.setReifiedClass(RubyStruct.class);
-        newStruct.index = ClassIndex.STRUCT;
+        newStruct.setClassIndex(ClassIndex.STRUCT);
         
         newStruct.setInternalVariable("__size__", member.length());
         newStruct.setInternalVariable("__member__", member);
@@ -286,13 +287,8 @@ public class RubyStruct extends RubyObject {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
 
-        @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_8)
+        @JRubyMethod
         public static IRubyObject members(IRubyObject recv, Block block) {
-            return RubyStruct.members(recv, block);
-        }
-
-        @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_9)
-        public static IRubyObject members19(IRubyObject recv, Block block) {
             return RubyStruct.members19(recv, block);
         }
     }
@@ -436,27 +432,21 @@ public class RubyStruct extends RubyObject {
         return __member__(classOf());
     }
 
-    @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_8)
     public RubyArray members() {
-        return members(classOf(), Block.NULL_BLOCK);
+        return members19();
     }
 
-    @JRubyMethod(name = "members", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "members")
     public RubyArray members19() {
         return members19(classOf(), Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_8)
-    public RubyArray select18(ThreadContext context, Block block) {
-        return selectCommon(context, block);
-    }
-
-    @JRubyMethod(name = "select", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject select(ThreadContext context, Block block) {
-        return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.runtime, this, "select");
-    }
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "select", enumSizeFn());
+        }
 
-    public RubyArray selectCommon(ThreadContext context, Block block) {
         RubyArray array = RubyArray.newArray(context.runtime);
         
         for (int i = 0; i < values.length; i++) {
@@ -466,6 +456,16 @@ public class RubyStruct extends RubyObject {
         }
         
         return array;
+    }
+
+    private SizeFn enumSizeFn() {
+        final RubyStruct self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                return self.size();
+            }
+        };
     }
 
     public IRubyObject set(IRubyObject value, int index) {
@@ -546,7 +546,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = __member__();
         ByteList buffer = new ByteList("#<struct ".getBytes());
 
-        if (is1_8() || getMetaClass().getRealClass().getBaseName() != null) {
+        if (getMetaClass().getRealClass().getBaseName() != null) {
             buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
             buffer.append(' ');
         }
@@ -561,10 +561,6 @@ public class RubyStruct extends RubyObject {
 
         buffer.append('>');
         return getRuntime().newString(buffer); // OBJ_INFECT
-    }
-
-    private boolean is1_8() {
-        return !(getRuntime().is1_9() || getRuntime().is2_0());
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -585,7 +581,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newArray(values);
     }
     
-    @JRubyMethod(compat = CompatVersion.RUBY2_0)
+    @JRubyMethod
     public RubyHash to_h(ThreadContext context) {
         RubyHash hash = RubyHash.newHash(context.runtime);
         RubyArray members = __member__();
@@ -612,7 +608,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return block.isGiven() ? eachInternal(context, block) : enumeratorize(context.runtime, this, "each");
+        return block.isGiven() ? eachInternal(context, block) : enumeratorizeWithSize(context, this, "each", enumSizeFn());
     }
 
     public IRubyObject each_pairInternal(ThreadContext context, Block block) {
@@ -627,7 +623,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairInternal(context, block) : enumeratorize(context.runtime, this, "each_pair");
+        return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
     }
 
     @JRubyMethod(name = "[]", required = 1)
@@ -728,22 +724,11 @@ public class RubyStruct extends RubyObject {
         RubyArray mem = members(rbClass, Block.NULL_BLOCK);
 
         int len = input.unmarshalInt();
-        IRubyObject[] values;
-        if (len == 0) {
-            values = IRubyObject.NULL_ARRAY;
-        } else {
-            values = new IRubyObject[len];
-            Helpers.fillNil(values, runtime);
-        }
 
         // FIXME: This could all be more efficient, but it's how struct works
         RubyStruct result;
-        if (runtime.is1_9()) {
-            // 1.9 does not appear to call initialize (JRUBY-5875)
-            result = new RubyStruct(runtime, rbClass);
-        } else {
-            result = newStruct(rbClass, values, Block.NULL_BLOCK);
-        }
+        // 1.9 does not appear to call initialize (JRUBY-5875)
+        result = new RubyStruct(runtime, rbClass);
         input.registerLinkTarget(result);
 
         for (int i = 0; i < len; i++) {

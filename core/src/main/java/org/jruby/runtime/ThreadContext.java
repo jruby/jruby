@@ -153,7 +153,7 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
-        this.is19 = runtime.is1_9();
+        this.is19 = true;
         if (runtime.getInstanceConfig().isProfilingEntireRun())
             startProfiling();
 
@@ -387,11 +387,7 @@ public final class ThreadContext {
     public Continuation getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
             Continuation c = catchStack[i];
-            if (runtime.is1_9()) {
-                if (c.tag == tag) return c;
-            } else {
-                if (c.tag.equals(tag)) return c;
-            }
+            if (c.tag == tag) return c;
         }
         return null;
     }
@@ -1450,7 +1446,7 @@ public final class ThreadContext {
     
     @Deprecated
     public org.jruby.util.RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, runtime.is1_9());
+        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, true);
         
         return dateFormat;
     }

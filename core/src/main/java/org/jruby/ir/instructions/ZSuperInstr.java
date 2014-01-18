@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ZSuperInstr extends UnresolvedSuperInstr {
+public class ZSuperInstr extends UnresolvedSuperInstr implements FixedArityInstr {
 	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
     public ZSuperInstr(Variable result, Operand receiver, Operand closure) {
         super(Operation.ZSUPER, result, receiver, closure);
@@ -30,6 +30,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         return (closure == null) ? EMPTY_OPERANDS : new Operand[] { closure };
     }
 
+    @Override
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
         // Unlike calls, zsuper args are known only at interpret time, not at constructor time.
         // So, we cannot use the cached containsSplat field from CallBase

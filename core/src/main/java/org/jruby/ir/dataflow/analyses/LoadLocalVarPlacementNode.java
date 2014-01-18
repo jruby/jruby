@@ -19,7 +19,7 @@ import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
@@ -41,7 +41,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         // rather than build a new data flow type for it
     }
 
-    public void initSolnForNode() {
+    public void applyPreMeetHandler() {
         if (basicBlock == problem.getScope().cfg().getExitBB()) {
             inRequiredLoads = ((LoadLocalVarPlacementProblem) problem).getLoadsOnScopeExit();
         }
@@ -52,92 +52,89 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         inRequiredLoads.addAll(n.outRequiredLoads);
     }
 
-    public boolean applyTransferFunction() {
+    public void initSolution() {
+        reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
+    }
+
+    public void applyTransferFunction(Instr i) {
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
-        Set<LocalVariable>  reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
-        List<Instr>         instrs    = basicBlock.getInstrs();
-        ListIterator<Instr> it        = instrs.listIterator(instrs.size());
-
-        while (it.hasPrevious()) {
-            Instr i = it.previous();
-            // System.out.println("-----\nInstr " + i);
-            // System.out.println("Before: " + java.util.Arrays.toString(reqdLoads.toArray()));
-
-            // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
-            if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
-
-            // Process calls specially -- these are the sites of binding loads!
-            if (i instanceof CallBase) {
-                CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(null);
-                if (o != null && o instanceof WrappedIRClosure) {
-                    IRClosure cl = ((WrappedIRClosure) o).getClosure();
-
-                    // Variables defined in the closure do not need to be loaded anymore at
-                    // program points before the call, because they will be loaded after the
-                    // call completes to fetch the latest value.
-                    //
-                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
-                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
-                    for (LocalVariable v: reqdLoads) {
-                        if (cl.definesLocalVariable(v)) newReqdLoads.remove(v);
-                    }
-                    reqdLoads = newReqdLoads;
-                }
-
-                // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
-                    reqdLoads.clear();
-                } else {
-                    // All variables not defined in the current scope have to be always loaded
-                    // because of multi-threading scenarios where some other scope
-                    // could update this variable concurrently.
-                    //
-                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
-                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
-                    for (LocalVariable v: reqdLoads) {
-                        if (!scope.definesLocalVariable(v)) newReqdLoads.remove(v);
-                    }
-                    reqdLoads = newReqdLoads;
-                }
-            } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-                // global-var tracing can execute closures set up in previous trace-var calls
-                // in which case we would have the 'scopeBindingHasEscaped' flag set to true
-                reqdLoads.clear();
-            }
-
-            if (i.getOperation() == Operation.BINDING_STORE) {
-                LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
-                if (!lv.isSelf()) reqdLoads.add(lv);
-            } else {
-                // The variables used as arguments will need to be loaded
-                // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                for (Variable x : i.getUsedVariables()) {
-                    if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
-                        reqdLoads.add((LocalVariable)x);
-                    }
-                }
-            }
-            // System.out.println("After: " + java.util.Arrays.toString(reqdLoads.toArray()));
+        // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
+        if (i instanceof ResultInstr) {
+            reqdLoads.remove(((ResultInstr) i).getResult());
         }
 
-        // At the beginning of the scope and rescue block entries, required loads can be discarded
-        // since all these loads will be executed there.
-        if ((basicBlock == problem.getScope().cfg().getEntryBB()) || basicBlock.isRescueEntry()) {
+        // Process calls specially -- these are the sites of binding loads!
+        if (i instanceof CallBase) {
+            CallBase call = (CallBase) i;
+            Operand o = call.getClosureArg(null);
+            if (o != null && o instanceof WrappedIRClosure) {
+                IRClosure cl = ((WrappedIRClosure) o).getClosure();
+
+                // Variables defined in the closure do not need to be loaded anymore at
+                // program points before the call, because they will be loaded after the
+                // call completes to fetch the latest value.
+                //
+                // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
+                Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
+                for (LocalVariable v: reqdLoads) {
+                    if (cl.definesLocalVariable(v)) newReqdLoads.remove(v);
+                }
+                reqdLoads = newReqdLoads;
+            }
+
+            // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
+            if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
+                reqdLoads.clear();
+            } else {
+                // All variables not defined in the current scope have to be always loaded
+                // because of multi-threading scenarios where some other scope
+                // could update this variable concurrently.
+                //
+                // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
+                Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
+                for (LocalVariable v: reqdLoads) {
+                    if (!scope.definesLocalVariable(v)) newReqdLoads.remove(v);
+                }
+                reqdLoads = newReqdLoads;
+            }
+        } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
+            // global-var tracing can execute closures set up in previous trace-var calls
+            // in which case we would have the 'scopeBindingHasEscaped' flag set to true
             reqdLoads.clear();
         }
 
-        if (outRequiredLoads.equals(reqdLoads)) {
-            //System.out.println("\n For CFG " + problem.getCFG() + " BB " + _bb.getID());
-            //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
-            //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
-            return false;
+        if (i.getOperation() == Operation.BINDING_STORE) {
+            LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
+            if (!lv.isSelf()) reqdLoads.add(lv);
         } else {
-            outRequiredLoads = reqdLoads;
-            return true;
+            // The variables used as arguments will need to be loaded
+            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+            for (Variable x : i.getUsedVariables()) {
+                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
+                    reqdLoads.add((LocalVariable)x);
+                }
+            }
         }
+    }
+
+    public boolean solutionChanged() {
+        // At the beginning of the scope and rescue block entries, required loads can be discarded
+        // since all these loads will be executed there.
+        if (basicBlock == problem.getScope().cfg().getEntryBB() || basicBlock.isRescueEntry()) {
+            reqdLoads.clear();
+        }
+
+        //System.out.println("\n For CFG " + problem.getCFG() + " BB " + _bb.getID());
+        //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
+        //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
+        return !outRequiredLoads.equals(reqdLoads);
+    }
+
+    public void finalizeSolution() {
+
+        outRequiredLoads = reqdLoads;
     }
 
     @Override
@@ -145,10 +142,10 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         return "";
     }
 
-    private TemporaryVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
-         TemporaryVariable value = (TemporaryVariable)varRenameMap.get(v);
+    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+         TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = scope.getNewTemporaryVariable("%t_" + v.getName());
+             value = scope.getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;
@@ -163,8 +160,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
 
         List<Instr>         instrs    = basicBlock.getInstrs();
         ListIterator<Instr> it        = instrs.listIterator(instrs.size());
-        Set<LocalVariable>  reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
 
+        initSolution();
         while (it.hasPrevious()) {
             Instr i = it.previous();
 
@@ -279,8 +276,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         }
     }
 
-    // On entry to flow graph node:  Variables that need to be loaded from the heap binding
-    Set<LocalVariable> inRequiredLoads;
-    // On exit from flow graph node: Variables that need to be loaded from the heap binding
-    Set<LocalVariable> outRequiredLoads;
+    Set<LocalVariable> inRequiredLoads;  // On entry to flow graph node:  Variables that need to be loaded from the heap binding
+    Set<LocalVariable> outRequiredLoads; // On exit from flow graph node: Variables that need to be loaded from the heap binding
+    Set<LocalVariable> reqdLoads;        // Temporary state while applying transfer function
 }

@@ -67,9 +67,6 @@ public class OutputStrings {
                 .append("  --manage        enable remote JMX management and monitoring of the VM\n")
                 .append("                    and JRuby\n")
                 .append("  --headless      do not launch a GUI window, no matter what\n")
-                .append("  --1.8           specify Ruby 1.8.x compatibility\n")
-                .append("  --1.9           specify Ruby 1.9.x compatibility (default)\n")
-                .append("  --2.0           specify Ruby 2.0.x compatibility\n")
                 .append("  --bytecode      show the JVM bytecode produced by compiling specified code\n")
                 .append("  --version       print the version\n")
                 .append("  --disable-gems  do not load RubyGems on startup\n");
@@ -84,7 +81,8 @@ public class OutputStrings {
                 .append("  -X-O        run with ObjectSpace disabled (default; improves performance)\n")
                 .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
                 .append("  -X-C        disable all compilation\n")
-                .append("  -X+C        force compilation of all scripts before they are run (except eval)\n");
+                .append("  -X+C        force compilation of all scripts before they are run (except eval)\n")
+                .append("  -X+T        use Truffle\n");
 
         return sb.toString();
     }
@@ -106,28 +104,15 @@ public class OutputStrings {
         return sb.toString();
     }
 
-    public static String getVersionString(CompatVersion compatVersion) {
+    public static String getVersionString() {
         String ver;
         String patchDelimeter = "p";
         int patchlevel;
         String versionString = "";
-        switch (compatVersion) {
-        case RUBY1_8:
-            ver = Constants.RUBY_VERSION;
-            patchlevel = Constants.RUBY_PATCHLEVEL;
-            versionString = String.format("ruby-%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        case RUBY1_9:
-            ver = Constants.RUBY1_9_VERSION;
-            patchlevel = Constants.RUBY1_9_PATCHLEVEL;
-            versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        case RUBY2_0:
-            ver = Constants.RUBY2_0_VERSION;
-            patchlevel = Constants.RUBY2_0_PATCHLEVEL;
-            versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
-            break;
-        }
+        ver = Constants.RUBY_VERSION;
+        patchlevel = Constants.RUBY_PATCHLEVEL;
+        // TODO: add patchlevel once 2.1 is released
+        versionString = String.format("%s", ver);
 
         String fullVersion = String.format(
                 "jruby %s (%s) %s %s on %s %s%s [%s-%s]",
@@ -146,6 +131,6 @@ public class OutputStrings {
     }
 
     public static String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2013 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2014 The JRuby Community (and contribs)";
     }
 }

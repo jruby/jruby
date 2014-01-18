@@ -114,7 +114,7 @@ public class Mutex extends RubyObject {
         return hasQueued ? context.nil : this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject sleep(ThreadContext context) {
         long beg = System.currentTimeMillis();
         try {
@@ -128,7 +128,7 @@ public class Mutex extends RubyObject {
         return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
         long beg = System.currentTimeMillis();
         try {

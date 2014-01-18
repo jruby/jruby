@@ -1,2 +1,0 @@
-unstable(JRUBY-3391):Thread#inspect reports aborting on a killed thread
-fails(JRUBY-3459):Thread#inspect describes a dying running thread

@@ -49,7 +49,6 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import static org.jruby.CompatVersion.*;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -64,7 +63,7 @@ public class RubyEncoding extends RubyObject {
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setEncoding(encodingc);
-        encodingc.index = ClassIndex.ENCODING;
+        encodingc.setClassIndex(ClassIndex.ENCODING);
         encodingc.setReifiedClass(RubyEncoding.class);
         encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
 
@@ -498,24 +497,24 @@ public class RubyEncoding extends RubyObject {
         return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
     }
 
-    @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "default_external", meta = true)
     public static IRubyObject getDefaultExternal(ThreadContext context, IRubyObject recv) {
         return context.runtime.getEncodingService().getDefaultExternal();
     }
 
-    @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "default_external=", meta = true)
     public static IRubyObject setDefaultExternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_external");
         EncodingUtils.rbEncSetDefaultExternal(context, encoding);
         return encoding;
     }
 
-    @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "default_internal", meta = true)
     public static IRubyObject getDefaultInternal(ThreadContext context, IRubyObject recv) {
         return context.runtime.getEncodingService().getDefaultInternal();
     }
 
-    @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "default_internal=", required = 1, meta = true)
     public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);

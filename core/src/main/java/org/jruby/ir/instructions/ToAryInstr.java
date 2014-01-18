@@ -1,11 +1,9 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -17,32 +15,35 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends Instr implements ResultInstr {
+public class ToAryInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
-    private final BooleanLiteral dontToAryArrays;
     private Operand array;
 
-    public ToAryInstr(Variable result, Operand array, BooleanLiteral dontToAryArrays) {
+    public ToAryInstr(Variable result, Operand array) {
         super(Operation.TO_ARY);
 
-        assert result != null: "ToArtInstr result is null";
+        assert result != null: "ToAryInstr result is null";
 
         this.result = result;
         this.array = array;
-        this.dontToAryArrays = dontToAryArrays;
     }
 
     public Operand getArrayArg() {
         return array;
     }
 
-    public boolean dontToAryArrays() {
-        return dontToAryArrays.isTrue();
-    }
-
     @Override
     public Operand[] getOperands() {
         return new Operand[] { array };
+    }
+
+    @Override
+    public boolean canBeDeleted(IRScope s) {
+        // This is an instruction that can be safely deleted
+        // since it is inserted by JRuby to facilitate other operations
+        // and has no real side effects. Currently, this has been marked
+        // as side-effecting in Operation.java. FIXME: Revisit that!
+        return true;
     }
 
     @Override
@@ -53,32 +54,34 @@ public class ToAryInstr extends Instr implements ResultInstr {
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        return dontToAryArrays.isTrue() && (array.getValue(valueMap) instanceof Array) ? array : null;
+        Operand a = array.getValue(valueMap);
+        return a instanceof Array ? a : null;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ToAryInstr((Variable) result.cloneForInlining(ii), array.cloneForInlining(ii),
-                (BooleanLiteral) dontToAryArrays.cloneForInlining(ii));
+        return new ToAryInstr((Variable) result.cloneForInlining(ii), array.cloneForInlining(ii));
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + array + ", dont_to_ary_arrays: " + dontToAryArrays + ")";
+        return super.toString() + "(" + array + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object receiver = array.retrieve(context, self, currDynScope, temp);
-        return Helpers.irToAry(context, (IRubyObject)receiver, dontToAryArrays.isTrue());
+        return Helpers.irToAry(context, (IRubyObject)receiver);
     }
 
     @Override

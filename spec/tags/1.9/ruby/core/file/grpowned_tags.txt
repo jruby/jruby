@@ -1,1 +1,0 @@
-windows(JRUBY-4446):File.grpowned? returns false if the file exist

@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.10</version>
+    <version>9000.dev</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
@@ -201,6 +201,12 @@
       <version>${joda.time.version}</version>
       <type>jar</type>
     </dependency>
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>truffle</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
   <properties>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
@@ -208,9 +214,9 @@
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <jruby.compile.memory>512M</jruby.compile.memory>
-    <jruby.test.memory>1024M</jruby.test.memory>
-    <jruby.test.memory.permgen>512M</jruby.test.memory.permgen>
+    <jruby.compile.memory>1G</jruby.compile.memory>
+    <jruby.test.memory>1G</jruby.test.memory>
+    <jruby.test.memory.permgen>1G</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->
@@ -320,11 +326,16 @@
           <debug>true</debug>
           <verbose>true</verbose>
           <fork>true</fork>
+          <compilerArgs>
+            <arg>-J-Xmx1G</arg>
+          </compilerArgs>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
           <target>${base.javac.version}</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
         <executions>
           <execution>
@@ -355,7 +366,9 @@
             <configuration>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
               </annotationProcessors>
+              <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -474,17 +487,14 @@
             <jruby.compat.version>1.9</jruby.compat.version>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
-          <argLine>-Xmx${jruby.test.memory}</argLine>
-          <argLine>-XX:MaxPermSize=${jruby.test.memory.permgen}</argLine>
-          <argLine>-Dfile.encoding=UTF-8</argLine>
-          <argLine>-Djruby.compile.mode=OFF</argLine>
-          <argLine>-Djava.awt.headless=true</argLine>
+          <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/truffle/test/TruffleTestSuite.java</include>
           </includes>
           <additionalClasspathElements>
-              <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
+            <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
           </additionalClasspathElements>
         </configuration>
       </plugin>

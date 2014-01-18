@@ -26,11 +26,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.zlib;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jcodings.Encoding;
 import org.joda.time.DateTime;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -78,22 +75,11 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return instance;
     }
 
-    @JRubyMethod(meta = true, name = "wrap", compat = CompatVersion.RUBY1_8)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyGzipFile instance;
-
-        // TODO: People extending GzipWriter/reader will break.  Find better way here.
-        if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
-            instance = JZlibRubyGzipWriter.newInstance(recv, new IRubyObject[]{io}, block);
-        } else {
-            instance = JZlibRubyGzipReader.newInstance(recv, new IRubyObject[]{io}, block);
-        }
-
-        return wrapBlock(context, instance, block);
+        return wrap19(context, recv, new IRubyObject[]{io}, block);
     }
     
-    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1)
     public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;
@@ -165,20 +151,16 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
-        if (runtime.is1_9()) {
-            if (enc2 == null) {
-                return RubyString.newString(runtime, value, getReadEncoding());
-            }
-            
-            if (ec != null && enc2.isDummy()) {
-                value = ec.convert(runtime.getCurrentContext(), value, false);
-                return RubyString.newString(runtime, value, getEnc());
-            }
-            
-            value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
-            return RubyString.newString(runtime, value);
-        } 
+        if (enc2 == null) {
+            return RubyString.newString(runtime, value, getReadEncoding());
+        }
 
+        if (ec != null && enc2.isDummy()) {
+            value = ec.convert(runtime.getCurrentContext(), value, false);
+            return RubyString.newString(runtime, value, getEnc());
+        }
+
+        value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
         return RubyString.newString(runtime, value);
     }
 

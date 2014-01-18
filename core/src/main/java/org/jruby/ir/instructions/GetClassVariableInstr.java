@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetClassVariableInstr extends GetInstr {
+public class GetClassVariableInstr extends GetInstr implements FixedArityInstr {
     public GetClassVariableInstr(Variable dest, Operand scope, String varName) {
         super(Operation.GET_CVAR, dest, scope, varName);
     }

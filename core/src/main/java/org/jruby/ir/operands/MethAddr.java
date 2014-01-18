@@ -3,6 +3,10 @@ package org.jruby.ir.operands;
 // Placeholder class for method address
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
+import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Float;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -12,7 +16,12 @@ public class MethAddr extends Reference {
     public static final MethAddr UNKNOWN_SUPER_TARGET  = new MethAddr("-unknown-super-target-");
 
     public MethAddr(String name) {
-        super(name);
+        super(OperandType.METH_ADDR, name);
+    }
+
+    @Override
+    public String toString() {
+        return "'" + getName() + "'";
     }
 
     @Override
@@ -31,12 +40,50 @@ public class MethAddr extends Reference {
     }
 
     @Override
-    public void visit(IRVisitor visitor) {
-        visitor.MethAddr(this);
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    public boolean resemblesALUOp() {
+        String n = getName();
+        return n.equals("+") || n.equals("-") || n.equals("*") || n.equals("/") ||
+            n.equals("|") || n.equals("&") || n.equals(">>") || n.equals("<<") ||
+            n.equals(">") || n.equals("<") ||
+            n.equals("==") || n.equals("!=");
+    }
+
+    public Class getUnboxedResultType(Class operandType) {
+        String n = getName();
+        if (n.length() == 1) {
+            switch (n.charAt(0)) {
+            case '+' :
+            case '-' :
+            case '*' :
+            case '/' : return operandType == Float.class ? Float.class : /*(operandType == Fixnum.class ? Fixnum.class : null)*/ null;
+            case '>' :
+            case '<' : return operandType == Float.class /*|| operandType == Fixnum.class*/ ? BooleanLiteral.class : null;
+            }
+        }
+        return null;
+    }
+
+    public Operation getUnboxedOp(Class unboxedType) {
+        String n = getName();
+        if (unboxedType == Float.class && n.length() == 1) {
+            switch (n.charAt(0)) {
+            case '+' : return Operation.FADD;
+            case '-' : return Operation.FSUB;
+            case '*' : return Operation.FMUL;
+            case '/' : return Operation.FDIV;
+            case '>' : return Operation.FGT;
+            case '<' : return Operation.FLT;
+            }
+        }
+        return null;
     }
 
     @Override
-    public String toString() {
-        return "'" + getName() + "'";
+    public void visit(IRVisitor visitor) {
+        visitor.MethAddr(this);
     }
 }

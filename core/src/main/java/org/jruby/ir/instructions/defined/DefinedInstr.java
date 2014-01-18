@@ -20,14 +20,17 @@ public abstract class DefinedInstr extends Instr implements ResultInstr {
         this.operands = operands;
     }
 
+    @Override
     public Operand[] getOperands() {
         return operands;
     }
 
+    @Override
     public Variable getResult() {
         return result;
     }
 
+    @Override
     public void updateResult(Variable v) {
         result = v;
     }

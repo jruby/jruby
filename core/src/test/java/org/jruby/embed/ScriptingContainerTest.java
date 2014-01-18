@@ -29,7 +29,27 @@
  */
 package org.jruby.embed;
 
+import org.jruby.Profile;
+import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubyInstanceConfig.LoadServiceCreator;
+import org.jruby.ast.Node;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.internal.ConcurrentLocalContextProvider;
+import org.jruby.embed.internal.LocalContextProvider;
+import org.jruby.embed.internal.SingleThreadLocalContextProvider;
+import org.jruby.embed.internal.SingletonLocalContextProvider;
+import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache;
+import org.jruby.util.KCode;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,27 +76,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-import org.jruby.CompatVersion;
-import org.jruby.Profile;
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.RubyInstanceConfig.LoadServiceCreator;
-import org.jruby.ast.Node;
-import org.jruby.embed.internal.BiVariableMap;
-import org.jruby.embed.internal.LocalContextProvider;
-import org.jruby.embed.internal.SingleThreadLocalContextProvider;
-import org.jruby.embed.internal.SingletonLocalContextProvider;
-import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
-import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassCache;
-import org.jruby.util.KCode;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**
@@ -105,7 +105,7 @@ public class ScriptingContainerTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(System.getProperty("user.dir") + "/target/run-junit-embed.log", true);
+        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
         Handler handler = new StreamHandler(outStream, new SimpleFormatter());
         logger0.addHandler(handler);
         logger0.setUseParentHandlers(false);
@@ -573,7 +573,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -609,17 +609,17 @@ public class ScriptingContainerTest {
         instance.setAttribute(AttributeName.UNICODE_ESCAPE, true);
         planets = new String[]{"水星", "金星", "地球", "火星", "木星", "土星", "天王星", "海王星"};
         instance.put("@list", Arrays.asList(planets));
-        filename = "org/jruby/embed/ruby/list_printer.rb";
-        result = instance.parse(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        result = instance.parse(PathType.RELATIVE, filename);
         ret = result.run();
         expResult = "水星 >> 金星 >> 地球 >> 火星 >> 木星 >> 土星 >> 天王星 >> 海王星: 8 in total";
         assertEquals(expResult, sw.toString().trim());
 
-        filename = "org/jruby/embed/ruby/raises_parse_error.rb";
+        filename = "src/test/ruby/org/jruby/embed/ruby/raises_parse_error.rb";
         sw = new StringWriter();
         instance.setErrorWriter(sw);
         try {
-            instance.parse(PathType.CLASSPATH, filename, 2);
+            instance.parse(PathType.RELATIVE, filename, 2);
         } catch (Exception e) {
             logger1.info(sw.toString());
             assertTrue(sw.toString().contains(filename + ":7:"));
@@ -771,12 +771,11 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(istream, filename);
         assertEquals(expResult, result);
 
-        filename = "org/jruby/embed/ruby/law_of_cosines.rb";
-        istream = getClass().getClassLoader().getResourceAsStream(filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/law_of_cosines.rb";
         instance.put("@a", 2.0);
         instance.put("@b", 2 * Math.sqrt(3.0));
         instance.put("@c", 2.0);
-        List<Double> angles = (List<Double>) instance.runScriptlet(istream, filename);
+        List<Double> angles = (List<Double>) instance.runScriptlet(PathType.RELATIVE, filename);
         // this result goes to 30.00000000000004,30.00000000000004,120.0.
         // these should be 30.0, 30.0, 120.0. conversion precision error?
         logger1.info(angles.get(0) + ", " + angles.get(1) + ", " +angles.get(2));
@@ -796,7 +795,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -840,8 +839,8 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         radioactive_isotopes = new String[]{"ウラン", "プルトニウム", "炭素", "ラジウム", "アインスタイニウム", "ノーベリウム"};
         instance.put("@list", Arrays.asList(radioactive_isotopes));
-        filename = "org/jruby/embed/ruby/list_printer.rb";
-        result = instance.runScriptlet(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/list_printer.rb";
+        result = instance.runScriptlet(PathType.RELATIVE, filename);
         expResult = "ウラン >> プルトニウム >> 炭素 >> ラジウム >> アインスタイニウム >> ノーベリウム: 6 in total";
         assertEquals(expResult, sw.toString().trim());
 
@@ -906,7 +905,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/1.9"};
+        String[] paths = {basedir + "/lib/ruby/2.1"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -918,8 +917,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/next_year_1.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/next_year_1.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         int next_year = instance.callMethod(receiver, "get_year", Integer.class);
         assertEquals(getNextYear(), next_year);
 
@@ -929,7 +928,8 @@ public class ScriptingContainerTest {
             "end\n" +
             "def surface_area\n" +
             "  Math::PI * @r * Math.sqrt((@r ** 2.0) + (@h ** 2.0)) + Math::PI * (@r ** 2.0)\n" +
-            "end";
+            "end\n" +
+            "self";
         receiver = instance.runScriptlet(script);
         instance.put("@r", 1.0);
         instance.put("@h", Math.sqrt(3.0));
@@ -961,8 +961,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, singleArg, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/list_printer_1.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/list_printer_1.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         methodName = "print_list";
         String[] hellos = {"你好", "こんにちは", "Hello", "Здравствуйте"};
         singleArg = Arrays.asList(hellos);
@@ -995,8 +995,8 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(receiver, methodName, args, returnType);
         assertEquals(expResult, result);
 
-        String filename = "org/jruby/embed/ruby/quadratic_formula.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/quadratic_formula.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         methodName = "solve";
         args = new Double[]{12.0, -21.0, -6.0};
         List<Double> solutions = instance.callMethod(receiver, methodName, args, List.class);
@@ -1069,7 +1069,7 @@ public class ScriptingContainerTest {
         instance.setWriter(sw);
         // local variable doesn't work in this case, so instance variable is used.
         instance.put("@text", text);
-        unit = instance.parse(PathType.CLASSPATH, "org/jruby/embed/ruby/yaml_dump.rb");
+        unit = instance.parse(PathType.RELATIVE, "src/test/ruby/org/jruby/embed/ruby/yaml_dump.rb");
         Object receiver = unit.run();
         instance.callMethod(instance.getProvider().getRuntime().getTopSelf(), "dump", null, unit);
         Object expResult =
@@ -1247,8 +1247,8 @@ public class ScriptingContainerTest {
 
         // calculates Plutonium decay
         instance.put("$h", 24100.0); // half-life of Plutonium is 24100 years.
-        String filename = "org/jruby/embed/ruby/radioactive_decay.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        String filename = "src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         result = instance.getInstance(receiver, RadioActiveDecay.class);
         double initial = 10.0; // 10.0 g
         double years = 1000; // 1000 years
@@ -1262,8 +1262,8 @@ public class ScriptingContainerTest {
         instance.put("initial_velocity", 16.0);
         instance.put("initial_height", 32.0);
         instance.put("system", "english");
-        filename = "org/jruby/embed/ruby/position_function.rb";
-        receiver = instance.runScriptlet(PathType.CLASSPATH, filename);
+        filename = "src/test/ruby/org/jruby/embed/ruby/position_function.rb";
+        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
         result = instance.getInstance(receiver, PositionFunction.class);
         double time = 2.0;
         double position = ((PositionFunction)result).getPosition(time);
@@ -1820,53 +1820,6 @@ public class ScriptingContainerTest {
     }
 
     /**
-     * Test of getCompatVersion method, of class ScriptingContainer.
-     */
-    @Test
-    public void testGetCompatVersion() {
-        logger1.info("getCompatVersion");
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        CompatVersion expResult = CompatVersion.RUBY1_9;
-        CompatVersion result = instance.getCompatVersion();
-        assertEquals(expResult, result);
-
-        instance = null;
-    }
-
-    /**
-     * Test of setCompatVersion method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetCompatVersion() {
-        logger1.info("setCompatVersion");
-        CompatVersion version = null;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setCompatVersion(version);
-        assertEquals(CompatVersion.RUBY1_8, instance.getCompatVersion());
-
-        // CompatVersion can't be changed after Ruby Runtime has been initialized, so
-        // need to have new Runtime for this test
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        version = CompatVersion.RUBY1_9;
-        instance.setCompatVersion(version);
-        assertEquals(version, instance.getCompatVersion());
-
-        String result = (String)instance.runScriptlet(PathType.CLASSPATH, "org/jruby/embed/ruby/block-param-scope.rb");
-        String expResult = "bear";
-        assertEquals(expResult, result);
-
-        instance = null;
-    }
-
-    /**
      * Test of isObjectSpaceEnabled method, of class ScriptingContainer.
      */
     @Test
@@ -2383,40 +2336,6 @@ public class ScriptingContainerTest {
         KCode expResult = KCode.NONE;
         KCode result = instance.getKCode();
         assertEquals(expResult, result);
-
-        instance = null;
-    }
-
-    /**
-     * Test of setKCode method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetKCode() {
-        logger1.info("setKCode");
-        KCode kcode = null;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        instance.setCompatVersion(CompatVersion.RUBY1_8);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setKCode(kcode);
-
-        instance = null;
-
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        instance.setCompatVersion(CompatVersion.RUBY1_8);
-        //instance.setError(pstream);
-        //instance.setOutput(pstream);
-        //instance.setWriter(writer);
-        //instance.setErrorWriter(writer);
-        kcode = KCode.UTF8;
-        instance.setKCode(kcode);
-        StringWriter sw = new StringWriter();
-        instance.setWriter(sw);
-        instance.runScriptlet("p \"Résumé\"");
-        String expResult = "\"Résumé\"";
-        assertEquals(expResult, sw.toString().trim());
 
         instance = null;
     }

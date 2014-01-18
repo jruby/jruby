@@ -14,7 +14,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class UnexecutableNil extends Nil {
     public static final UnexecutableNil U_NIL = new UnexecutableNil();
 
-    private UnexecutableNil() { }
+    private UnexecutableNil() {
+        super(OperandType.UNEXECUTABLE_NIL);
+    }
 
     @Override
     public String toString() {

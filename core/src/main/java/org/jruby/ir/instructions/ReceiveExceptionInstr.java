@@ -2,11 +2,12 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ReceiveExceptionInstr extends Instr implements ResultInstr {
+public class ReceiveExceptionInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 
     /** If true, the implementation (compiler/interpreter) may have to check the type
@@ -29,21 +30,28 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
         this(result, true);
     }
 
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+    public boolean isCheckType() {
+        return checkType;
     }
 
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { new BooleanLiteral(checkType) };
+    }
+
+    @Override
     public Variable getResult() {
         return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + (!checkType ? " [no-typecheck]" : "");
+    }
+
+    @Override
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

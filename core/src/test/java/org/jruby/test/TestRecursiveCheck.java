@@ -14,11 +14,7 @@ public class TestRecursiveCheck extends TestCase {
     }
 
     public void setUp() {
-        runtime = Ruby.newInstance(new RubyInstanceConfig() {
-            {
-                setCompatVersion(CompatVersion.RUBY1_9);
-            }
-        });
+        runtime = Ruby.newInstance();
     }
 
     public void testWorksFromMultipleThreads() throws Exception {

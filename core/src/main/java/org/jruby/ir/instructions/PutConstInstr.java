@@ -10,14 +10,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutConstInstr extends PutInstr {
+public class PutConstInstr extends PutInstr implements FixedArityInstr {
     public PutConstInstr(Operand scopeOrObj, String constName, Operand val) {
         super(Operation.PUT_CONST, scopeOrObj, constName, val);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PutConstInstr(operands[TARGET].cloneForInlining(ii), ref, operands[VALUE].cloneForInlining(ii));
+        return new PutConstInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
     }
 
     @Override

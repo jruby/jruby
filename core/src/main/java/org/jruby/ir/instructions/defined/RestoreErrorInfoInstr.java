@@ -15,18 +15,23 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
+import org.jruby.ir.instructions.FixedArityInstr;
 
 /**
  *
  * @author enebo
  */
-public class RestoreErrorInfoInstr extends Instr {
+public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     private Operand arg;
 
     public RestoreErrorInfoInstr(Operand arg) {
         super(Operation.RESTORE_ERROR_INFO);
 
         this.arg = arg;
+    }
+
+    public Operand getArg() {
+        return arg;
     }
 
     @Override

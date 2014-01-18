@@ -11,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class GVarAliasInstr extends Instr {
+public class GVarAliasInstr extends Instr implements FixedArityInstr {
     private Operand newName;
     private Operand oldName;
 
@@ -22,14 +22,22 @@ public class GVarAliasInstr extends Instr {
         this.oldName = oldName;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { newName, oldName };
+    public Operand getNewName() {
+        return newName;
+    }
+
+    public Operand getOldName() {
+        return oldName;
     }
 
     @Override
     public String toString() {
         return getOperation().toString() + "(" + newName + ", " + oldName + ")";
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return new Operand[] { newName, oldName };
     }
 
     @Override

@@ -10,19 +10,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BUndefInstr extends BranchInstr {
-    protected BUndefInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_UNDEF, v, null, jmpTarget);
+public class BUndefInstr extends OneOperandBranchInstr  implements FixedArityInstr {
+    public BUndefInstr(Operand v, Label jmpTarget) {
+        super(Operation.B_UNDEF, v, jmpTarget);
     }
 
     @Override
-    public Instr cloneForInlinedScope(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new BUndefInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new BUndefInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
     @Override

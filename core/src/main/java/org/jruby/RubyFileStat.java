@@ -65,6 +65,7 @@ public class RubyFileStat extends RubyObject {
     private FileStat stat;
 
     private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyFileStat(runtime, klass);
         }
@@ -168,174 +169,212 @@ public class RubyFileStat extends RubyObject {
             this.zipEntry = zipEntry;
         }
         
+        @Override
         public long atime() {
             return zipEntry.getTime();
         }
 
+        @Override
         public long blocks() {
             return zipEntry.getSize();
         }
 
+        @Override
         public long blockSize() {
             return 1L;
         }
 
+        @Override
         public long ctime() {
             return zipEntry.getTime();
         }
 
+        @Override
         public long dev() {
             return -1;
         }
 
+        @Override
         public String ftype() {
             return "zip file entry";
         }
 
+        @Override
         public int gid() {
             return -1;
         }
 
+        @Override
         public boolean groupMember(int i) {
             return false;
         }
 
+        @Override
         public long ino() {
             return -1;
         }
 
+        @Override
         public boolean isBlockDev() {
             return false;
         }
 
+        @Override
         public boolean isCharDev() {
             return false;
         }
 
+        @Override
         public boolean isDirectory() {
             return zipEntry.isDirectory();
         }
 
+        @Override
         public boolean isEmpty() {
             return zipEntry.getSize() == 0;
         }
 
+        @Override
         public boolean isExecutable() {
             return false;
         }
 
+        @Override
         public boolean isExecutableReal() {
             return false;
         }
 
+        @Override
         public boolean isFifo() {
             return false;
         }
 
+        @Override
         public boolean isFile() {
             return !zipEntry.isDirectory();
         }
 
+        @Override
         public boolean isGroupOwned() {
             return false;
         }
 
+        @Override
         public boolean isIdentical(FileStat fs) {
             return fs instanceof ZipFileStat && ((ZipFileStat)fs).zipEntry.equals(zipEntry);
         }
 
+        @Override
         public boolean isNamedPipe() {
             return false;
         }
 
+        @Override
         public boolean isOwned() {
             return false;
         }
 
+        @Override
         public boolean isROwned() {
             return false;
         }
 
+        @Override
         public boolean isReadable() {
             return true;
         }
 
+        @Override
         public boolean isReadableReal() {
             return true;
         }
 
+        @Override
         public boolean isWritable() {
             return false;
         }
 
+        @Override
         public boolean isWritableReal() {
             return false;
         }
 
+        @Override
         public boolean isSetgid() {
             return false;
         }
 
+        @Override
         public boolean isSetuid() {
             return false;
         }
 
+        @Override
         public boolean isSocket() {
             return false;
         }
 
+        @Override
         public boolean isSticky() {
             return false;
         }
 
+        @Override
         public boolean isSymlink() {
             return false;
         }
 
+        @Override
         public int major(long l) {
             return -1;
         }
 
+        @Override
         public int minor(long l) {
             return -1;
         }
 
+        @Override
         public int mode() {
             return -1;
         }
 
+        @Override
         public long mtime() {
             return zipEntry.getTime();
         }
 
+        @Override
         public int nlink() {
             return -1;
         }
 
+        @Override
         public long rdev() {
             return -1;
         }
 
+        @Override
         public long st_size() {
             return zipEntry.getSize();
         }
 
+        @Override
         public int uid() {
             return 0;
         }
 
     }
 
-    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        setup(fname.convertToString().toString(), false);
-
-        return this;
+        return initialize19(fname, unusedBlock);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
-        return initialize(RubyFile.get_path(getRuntime().getCurrentContext(), fname), unusedBlock);
+        setup(RubyFile.get_path(getRuntime().getCurrentContext(), fname).convertToString().toString(), false);
+
+        return this;    
     }
     
     @JRubyMethod(name = "atime")
@@ -435,6 +474,7 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize_copy", required = 1)
+    @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyFileStat)) {
             throw getRuntime().newTypeError("wrong argument class");
@@ -454,6 +494,7 @@ public class RubyFileStat extends RubyObject {
     }
 
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
         StringBuilder buf = new StringBuilder("#<");
         buf.append(getMetaClass().getRealClass().getName());
@@ -620,12 +661,12 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(stat.isEmpty());
     }
 
-    @JRubyMethod(name = "world_readable?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "world_readable?")
     public IRubyObject worldReadable(ThreadContext context) {
         return getWorldMode(context, FileStat.S_IROTH);
     }
 
-    @JRubyMethod(name = "world_writable?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "world_writable?")
     public IRubyObject worldWritable(ThreadContext context) {
         return getWorldMode(context, FileStat.S_IWOTH);
     }

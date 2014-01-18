@@ -1,1 +1,0 @@
-fails(JRUBY-4811):Kernel.srand accepts a Bignum as a seed

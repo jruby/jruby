@@ -56,7 +56,7 @@ public class RubyThreadGroup extends RubyObject {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
         runtime.setThreadGroup(threadGroupClass);
 
-        threadGroupClass.index = ClassIndex.THREADGROUP;
+        threadGroupClass.setClassIndex(ClassIndex.THREADGROUP);
         
         threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
         
@@ -153,6 +153,16 @@ public class RubyThreadGroup extends RubyObject {
             }
             return ary;
         }
+    }
+
+    /**
+     * Number of threads in this thread group. Note that threads that have
+     * recently died may still be counted here.
+     *
+     * @return number of threads in this thread group
+     */
+    public int size() {
+        return rubyThreadList.size();
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {

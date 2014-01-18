@@ -7,9 +7,6 @@ import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-/**
- *
- */
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger("BasicCompilerPassListener");
 

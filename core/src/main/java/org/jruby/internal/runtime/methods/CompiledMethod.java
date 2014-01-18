@@ -39,9 +39,11 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.PositionAware;
 
-public abstract class CompiledMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2 {
+public abstract class CompiledMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2, MethodWithNodes {
     protected Object $scriptObject;
     protected ISourcePosition position;
+
+    private final MethodNodes methodNodes;
     
     public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
         private final String rubyName;
@@ -54,6 +56,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         private final ISourcePosition position;
         private final String parameterDesc;
         private final String[] parameterList;
+        private final MethodNodes methodNodes;
     
         public LazyCompiledMethod(
                 RubyModule implementationClass,
@@ -66,7 +69,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
                 CallConfiguration callConfig,
                 ISourcePosition position,
                 String parameterDesc,
-                MethodFactory factory) {
+                MethodFactory factory,
+                MethodNodes methodNodes) {
             
             super(implementationClass, visibility, callConfig);
             this.rubyName = rubyName;
@@ -78,11 +82,12 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
             this.position = position;
             this.parameterDesc = parameterDesc;
             this.parameterList = parameterDesc.split(";");
+            this.methodNodes = methodNodes;
         }
         
         private synchronized void initializeMethod() {
             if (compiledMethod != null) return;
-            compiledMethod = factory.getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+            compiledMethod = factory.getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
             factory = null;
         }
         
@@ -234,8 +239,16 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         }
         
     }
+
+    // Called by Class.newInstance in InvocationMethodCompiler and precompiled method subclasses
+    public CompiledMethod() {
+        // TODO: Need to have access to AST for recompilation. See #1395
+        this(null);
+    }
     
-    protected CompiledMethod() {}
+    protected CompiledMethod(MethodNodes methodNodes) {
+        this.methodNodes = methodNodes;
+    }
     
     protected void init(
             RubyModule implementationClass,
@@ -299,4 +312,10 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     public Object getScriptObject() {
         return $scriptObject;
     }
+
+    @Override
+    public MethodNodes getMethodNodes() {
+        return methodNodes;
+    }
+
 }// SimpleInvocationMethod

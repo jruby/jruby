@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class MatchInstr extends Instr implements ResultInstr {
+public class MatchInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand receiver;
 
@@ -29,6 +29,10 @@ public class MatchInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { receiver };
+    }
+
+    public Operand getReceiver() {
+        return receiver;
     }
 
     @Override
@@ -57,9 +61,7 @@ public class MatchInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
-        return context.runtime.is1_9() ?
-                regexp.op_match2_19(context) :
-                regexp.op_match2(context);
+        return regexp.op_match2_19(context);
     }
 
     @Override
