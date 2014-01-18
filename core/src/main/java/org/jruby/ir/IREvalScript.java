@@ -35,7 +35,7 @@ public class IREvalScript extends IRClosure {
             n++;
             s = s.getLexicalParent();
         }
-        
+
         this.nearestNonEvalScope = s;
         this.nearestNonEvalScopeDepth = n;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);

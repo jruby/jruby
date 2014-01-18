@@ -13,8 +13,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 import static org.jruby.util.CodegenUtils.ci;

@@ -44,7 +44,6 @@ import org.jruby.ir.operands.SValue;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
@@ -1949,7 +1948,7 @@ public class IRBuilder {
         if (keywords != null) {
             for (Node knode : keywords.childNodes()) {
                 KeywordArgNode kwarg = (KeywordArgNode)knode;
-                AssignableNode kasgn = (AssignableNode)kwarg.getAssignable();
+                AssignableNode kasgn = kwarg.getAssignable();
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = s.getNewLocalVariable(argName, 0);
                 Label l = s.getNewLabel();

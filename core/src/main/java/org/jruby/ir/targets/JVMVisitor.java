@@ -17,7 +17,6 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
-import org.jruby.ir.Operation;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.*;
@@ -87,7 +86,6 @@ import org.jruby.util.JRubyClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
@@ -394,7 +392,7 @@ public class JVMVisitor extends IRVisitor {
         } else {
             double val;
             if (arg instanceof Float) {
-                val = (double)((Float)arg).value;
+                val = ((Float)arg).value;
             } else if (arg instanceof Fixnum) {
                 val = (double)((Fixnum)arg).value;
             } else {

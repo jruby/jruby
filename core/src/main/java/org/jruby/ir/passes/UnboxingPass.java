@@ -2,9 +2,7 @@ package org.jruby.ir.passes;
 
 import java.util.Arrays;
 import java.util.List;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 
 public class UnboxingPass extends CompilerPass {

@@ -2,8 +2,6 @@ package org.jruby.ir.dataflow.analyses;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
