@@ -421,7 +421,6 @@ public class IRBuilder {
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
         IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2432,7 +2431,6 @@ public class IRBuilder {
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
         IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2584,7 +2582,6 @@ public class IRBuilder {
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
         IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack

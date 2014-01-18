@@ -71,6 +71,7 @@ public class IRClosure extends IRScope {
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
         this.arity = arity;
+        lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
             this.body = null;
