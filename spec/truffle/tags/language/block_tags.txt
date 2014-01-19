@@ -1,12 +1,10 @@
 fails:A block allows to define a block variable with the same name as the enclosing block
 fails:A block taking |a| arguments assigns nil to the argument when no values are yielded
-fails:A block taking |a| arguments does not call #to_ary to convert a single yielded object to an Array
 fails:A block taking |a| arguments assigns the first value yielded to the argument
 fails:A block taking |a, b| arguments assgins nil to the arguments when no values are yielded
 fails:A block taking |a, b| arguments assigns one value yielded to the first argument
 fails:A block taking |a, b| arguments destructures a splatted Array
 fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, b| arguments does not call #to_ary if the single yielded object is an Array
 fails:A block taking |a, b| arguments does not call #to_ary if the object does not respond to #to_ary
 fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, *b| arguments assigns 'nil' and '[]' to the arguments when no values are yielded
@@ -50,15 +48,6 @@ fails:A block taking nested |a, (b, (c, d))| destructures a single multi-level A
 fails:A block taking nested |a, ((b, c), d)| destructures a single multi-level Array value yielded
 fails:A block taking nested |a, ((b, c), d)| destructures a single multi-level Array value yielded
 fails:A block arguments with _ extracts arguments with _
-fails:Block-local variables override shadowed variables from the outer scope
-fails:Post-args appear after a splat
-fails:Post-args are required
-fails:Post-args with required args gathers remaining args in the splat
-fails:Post-args with required args has an empty splat when there are no remaining args
-fails:Post-args with optional args gathers remaining args in the splat
-fails:Post-args with optional args overrides the optional arg before gathering in the splat
-fails:Post-args with optional args uses the required arg before the optional and the splat
-fails:Post-args with optional args overrides the optional args from left to right before gathering the splat
 fails:A block taking |(a, b)| arguments destructures a single Array value yielded
 fails:A block taking |(a, b)| arguments destructures a single Array value yielded when shadowing an outer variable
 fails:A block taking nested |a, (b, (c, d))| assigns nil to the arguments when yielded no values

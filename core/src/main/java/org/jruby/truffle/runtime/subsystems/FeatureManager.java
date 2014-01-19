@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -36,7 +37,7 @@ public class FeatureManager {
         // Some features are handled specially
 
         if (feature.equals("stringio")) {
-            context.implementationMessage("stringio not yet implemented");
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
             return true;
         }
 

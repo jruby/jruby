@@ -963,7 +963,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static final int QUOTED_V = 11;
-    static ByteList quote19(ByteList bs, boolean asciiOnly) {
+    public static ByteList quote19(ByteList bs, boolean asciiOnly) {
         int p = bs.getBegin();
         int end = p + bs.getRealSize();
         byte[]bytes = bs.getUnsafeBytes();

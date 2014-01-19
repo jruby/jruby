@@ -67,7 +67,8 @@ import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -569,8 +570,10 @@ public class IRInstructionFactory {
             return createProcessModuleBody(result, paramsIterator);
         case PUSH_BINDING:
             return createPushBinding(result, paramsIterator);
-        case RECV_EXCEPTION:
-            return createReceiveException(result, paramsIterator);
+        case RECV_RUBY_EXC:
+            return createReceiveRubyException(result, paramsIterator);
+        case RECV_JRUBY_EXC:
+            return createReceiveJRubyException(result, paramsIterator);
         case RECV_PRE_REQD_ARG:
             return createReceivePreReqdArg(result, paramsIterator);
         case RECORD_END_BLOCK:
@@ -711,10 +714,12 @@ public class IRInstructionFactory {
         return new PushBindingInstr(scope);
     }
 
-    private ReceiveExceptionInstr createReceiveException(final Variable result, final ParametersIterator paramsIterator) {
-        final boolean checkType = paramsIterator.nextBoolean();
+    private ReceiveRubyExceptionInstr createReceiveRubyException(final Variable result, final ParametersIterator paramsIterator) {
+        return new ReceiveRubyExceptionInstr(result);
+    }
 
-        return new ReceiveExceptionInstr(result, checkType);
+    private ReceiveJRubyExceptionInstr createReceiveJRubyException(final Variable result, final ParametersIterator paramsIterator) {
+        return new ReceiveJRubyExceptionInstr(result);
     }
 
     private ReceivePreReqdArgInstr createReceivePreReqdArg(final Variable result, final ParametersIterator paramsIterator) {

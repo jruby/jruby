@@ -1,4 +1,3 @@
-fails:Magic comment is optional
 fails:Magic comment determines __ENCODING__
 fails:Magic comment is case-insensitive
 fails:Magic comment must be at the first line

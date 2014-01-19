@@ -8,8 +8,6 @@ fails:Basic multiple assignment with a splatted single RHS value does not call #
 fails:Basic multiple assignment with a splatted single RHS value calls #to_a on an object if #to_ary is not defined
 fails:Assigning multiple values calls #to_ary on RHS arg if the corresponding LHS var is a splat
 fails:Assigning multiple values allows complex parallel assignment
-fails:Unconditional operator assignment 'var op= expr' is equivalent to 'var = var op expr'
-fails:Unconditional operator assignment 'obj.meth op= expr' is equivalent to 'obj.meth = obj.meth op expr'
 fails:Conditional operator assignment 'obj.meth op= expr' is equivalent to 'obj.meth op obj.meth = expr'
 fails:Conditional operator assignment 'obj.meth op= expr' may not assign at all, depending on the truthiness of lhs
 fails:Operator assignment 'obj.meth op= expr' evaluates lhs one time
@@ -26,4 +24,3 @@ fails:Multiple assignments with grouping A group on the lhs is considered one po
 fails:Multiple assignments with grouping supports multiple levels of nested groupings
 fails:Multiple assignment has the proper return value
 fails:Multiple assignment, array-style returns an array of all rhs values
-fails:Multiple assignments with splats * on the LHS has to be applied to any parameter

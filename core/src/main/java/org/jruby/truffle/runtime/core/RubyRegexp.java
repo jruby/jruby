@@ -9,10 +9,19 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.regex.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.*;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.joni.*;
+import org.joni.exception.ValueException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.objects.*;
 
@@ -39,81 +48,180 @@ public class RubyRegexp extends RubyObject {
 
     }
 
-    @CompilationFinal private Pattern pattern;
+    @CompilationFinal private Regex regex;
+    @CompilationFinal private Object source;
 
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
 
-    public RubyRegexp(RubyClass regexpClass, String pattern) {
+    public RubyRegexp(RubyClass regexpClass, String regex, int options) {
         this(regexpClass);
-        initialize(compile(pattern));
+        initialize(compile(getRubyClass().getContext(), regex, options), regex);
     }
 
-    public RubyRegexp(RubyClass regexpClass, Pattern pattern) {
+    public RubyRegexp(RubyClass regexpClass, Regex regex, String source) {
         this(regexpClass);
-        initialize(pattern);
+        initialize(regex, source);
     }
 
-    public void initialize(String setPattern) {
-        pattern = compile(setPattern);
+    public void initialize(String setRegex) {
+        regex = compile(getRubyClass().getContext(), setRegex, Option.DEFAULT);
+        source = setRegex;
     }
 
-    public void initialize(Pattern setPattern) {
-        pattern = setPattern;
+    public void initialize(Regex setRegex, String setSource) {
+        regex = setRegex;
+        source = setSource;
     }
 
+    public Regex getRegex() {
+        return regex;
+    }
+
+    @CompilerDirectives.SlowPath
     public Object matchOperator(Frame frame, String string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final Matcher matcher = pattern.matcher(string);
+        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final Matcher matcher = regex.matcher(stringBytes);
+        final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
-        if (matcher.find()) {
-            for (int n = 1; n < matcher.groupCount() + 1; n++) {
+        if (match != -1) {
+            final Region region = matcher.getEagerRegion();
+
+            for (int n = 1; n < region.numRegs + 1; n++) {
                 final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
 
                 if (slot != null) {
-                    frame.setObject(slot, context.makeString(matcher.group(n)));
+                    final int start = region.beg[n];
+                    final int end = region.end[n];
+                    final RubyString groupString = context.makeString(string.substring(start, end));
+                    frame.setObject(slot, groupString);
                 }
             }
 
-            return matcher.start();
+            return matcher.getBegin();
         } else {
             return NilPlaceholder.INSTANCE;
         }
     }
 
-    public Pattern getPattern() {
-        return pattern;
-    }
-
+    @CompilerDirectives.SlowPath
     public Object match(String string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final Matcher matcher = pattern.matcher(string);
+        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final Matcher matcher = regex.matcher(stringBytes);
+        final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
-        if (!matcher.find()) {
+        if (match != -1) {
+            final Region region = matcher.getEagerRegion();
+
+            final Object[] values = new Object[region.numRegs];
+
+            for (int n = 0; n < region.numRegs; n++) {
+                final int start = region.beg[n];
+                final int end = region.end[n];
+
+                if (start == -1 || end == -1) {
+                    values[n] = NilPlaceholder.INSTANCE;
+                } else {
+                    final RubyString groupString = context.makeString(string.substring(start, end));
+                    values[n] = groupString;
+                }
+            }
+
+            return new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+        } else {
             return NilPlaceholder.INSTANCE;
         }
+    }
 
-        final Object[] values = new Object[matcher.groupCount() + 1];
+    @CompilerDirectives.SlowPath
+    public RubyString gsub(String string, String replacement) {
+        final RubyContext context = getRubyClass().getContext();
 
-        for (int n = 0; n < matcher.groupCount() + 1; n++) {
-            final String group = matcher.group(n);
+        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final Matcher matcher = regex.matcher(stringBytes);
 
-            if (group == null) {
-                values[n] = NilPlaceholder.INSTANCE;
+        final StringBuilder builder = new StringBuilder();
+
+        int p = 0;
+
+        while (true) {
+            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+
+            if (match == -1) {
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, stringBytes.length - p)));
+                break;
             } else {
-                values[n] = context.makeString(group);
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, matcher.getBegin() - p)));
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
             }
+
+            p = matcher.getEnd();
         }
 
-        return new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+        return context.makeString(builder.toString());
+    }
+
+    @CompilerDirectives.SlowPath
+    public RubyString[] split(String string) {
+        final RubyContext context = getRubyClass().getContext();
+
+        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final Matcher matcher = regex.matcher(stringBytes);
+
+        final ArrayList<RubyString> strings = new ArrayList<>();
+
+        int p = 0;
+
+        while (true) {
+            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+
+            if (match == -1) {
+                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, stringBytes.length - p)).toString()));
+                break;
+            } else {
+                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, matcher.getBegin() - p)).toString()));
+            }
+
+            p = matcher.getEnd();
+        }
+
+        return strings.toArray(new RubyString[strings.size()]);
+    }
+
+    @CompilerDirectives.SlowPath
+    public RubyString[] scan(RubyString string) {
+        final RubyContext context = getRubyClass().getContext();
+
+        final byte[] stringBytes = string.getBytes();
+        final Matcher matcher = regex.matcher(stringBytes);
+
+        final ArrayList<RubyString> strings = new ArrayList<>();
+
+        int p = 0;
+
+        while (true) {
+            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+
+            if (match == -1) {
+                break;
+            } else {
+                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, matcher.getBegin(), matcher.getEnd() - matcher.getBegin())).toString()));
+            }
+
+            p = matcher.getEnd();
+        }
+
+        return strings.toArray(new RubyString[strings.size()]);
     }
 
     @Override
     public int hashCode() {
-        return pattern.pattern().hashCode();
+        return regex.hashCode();
     }
 
     @Override
@@ -128,17 +236,27 @@ public class RubyRegexp extends RubyObject {
             return false;
         }
         RubyRegexp other = (RubyRegexp) obj;
-        if (pattern == null) {
-            if (other.pattern != null) {
+        if (source == null) {
+            if (other.source != null) {
                 return false;
             }
-        } else if (!pattern.pattern().equals(other.pattern.pattern())) {
+        } else if (!source.equals(other.source)) {
             return false;
         }
         return true;
     }
 
-    public static Pattern compile(String pattern) {
-        return Pattern.compile(pattern, Pattern.MULTILINE | Pattern.UNIX_LINES);
+    public static Regex compile(RubyContext context, String pattern, int options) {
+        final byte[] bytes = pattern.getBytes(StandardCharsets.UTF_8);
+        return compile(context, bytes, UTF8Encoding.INSTANCE, options);
     }
+
+    public static Regex compile(RubyContext context, byte[] bytes, Encoding encoding, int options) {
+        try {
+            return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
+        } catch (ValueException e) {
+            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex"));
+        }
+    }
+
 }

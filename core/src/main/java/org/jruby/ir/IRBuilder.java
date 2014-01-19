@@ -421,7 +421,6 @@ public class IRBuilder {
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
         IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -858,14 +857,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
         s.addInstr(new LabelInstr(gebLabel));
         Variable exc = s.getNewTemporaryVariable();
-        // FIXME: This should be rethrowable-exception-instr
-        // (for ensure blocks and can receive Unrescuable exceptions)
-        //
-        // UGLY HACK: For now, we are going to piggyback on top of the
-        // no-type-checking field which is indicating the same thing
-        // but worth thinking over and either adding a new flag or a
-        // new instruction
-        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
@@ -903,7 +895,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         s.addInstr(new LabelInstr(rescueLabel));
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc, false));
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
@@ -1283,7 +1275,7 @@ public class IRBuilder {
 
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         m.addInstr(new LabelInstr(rescueLabel));
-        m.addInstr(new ReceiveExceptionInstr(exc));
+        m.addInstr(new ReceiveRubyExceptionInstr(exc));
         m.addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
         outputExceptionCheck(m, excType, exc, caughtLabel);
 
@@ -2088,7 +2080,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         s.addInstr(new LabelInstr(rescueLabel));
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
@@ -2274,14 +2266,7 @@ public class IRBuilder {
         Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        // FIXME: This should be rethrowable-exception-instr
-        // (for ensure blocks and can receive Unrescuable exceptions)
-        //
-        // UGLY HACK: For now, we are going to piggyback on top of the
-        // no-type-checking field which is indicating the same thing
-        // but worth thinking over and either adding a new flag or a
-        // new instruction
-        s.addInstr(new ReceiveExceptionInstr(exc, false)); // Dont check type since we are simply throwing it back
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
         s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
 
         // Generate the ensure block now
@@ -2446,7 +2431,6 @@ public class IRBuilder {
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
         IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2598,7 +2582,6 @@ public class IRBuilder {
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
         IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
-        s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -3115,7 +3098,6 @@ public class IRBuilder {
         Label rescueLabel = s.getNewLabel(); // Label marking start of the first rescue code.
 
         // Save $! in a temp var so it can be restored when the exception gets handled.
-        // SSS FIXME: Dont yet understand why an exception needs to be saved/restored.
         Variable savedGlobalException = s.getNewTemporaryVariable();
         s.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
@@ -3188,7 +3170,7 @@ public class IRBuilder {
 
         // Save off exception & exception comparison type
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc));
+        s.addInstr(new ReceiveRubyExceptionInstr(exc));
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(s, rescueNode.getRescueNode(), rv, exc, rEndLabel);
@@ -3302,9 +3284,15 @@ public class IRBuilder {
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
-        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
-        else if (!_rescueBlockStack.empty()) s.addInstr(new PutGlobalVarInstr("$!", manager.getNil()));
-
+        if (!_ensureBlockStack.empty()) {
+            Variable ret = s.getNewTemporaryVariable();
+            s.addInstr(new CopyInstr(ret, retVal));
+            retVal = ret;
+            EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
+        }
+        else if (!_rescueBlockStack.empty()) {
+            s.addInstr(new PutGlobalVarInstr("$!", manager.getNil()));
+        }
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if

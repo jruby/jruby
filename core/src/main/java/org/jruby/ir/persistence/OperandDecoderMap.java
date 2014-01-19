@@ -47,7 +47,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
-import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 /**
@@ -74,7 +73,7 @@ class OperandDecoderMap {
             case BOOLEAN_LITERAL: return new BooleanLiteral(d.decodeBoolean());
             case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
-            case CURRENT_SCOPE: return new CurrentScope(d.getCurrentScope());
+            case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
@@ -127,42 +126,30 @@ class OperandDecoderMap {
     }
 
     private Operand decodeLabel() {
-        final String labelName = d.decodeString();
+        String prefix = d.decodeString();
+        int id = d.decodeInt();
 
         // Special case of label
-        if ("_GLOBAL_ENSURE_BLOCK".equals(labelName)) return new Label("_GLOBAL_ENSURE_BLOCK");
+        if ("_GLOBAL_ENSURE_BLOCK".equals(prefix)) return new Label("_GLOBAL_ENSURE_BLOCK", 0);
 
         // Check if this label was already created
         // Important! Program would not be interpreted correctly
         // if new name will be created every time
-        if (d.getVars().containsKey(labelName)) return d.getVars().get(labelName);
-
-
-        // FIXME? Warning! This code is relies on current realization of IRScope#getNewLable
-        // which constructs name in format '${prefix}_\d+'
-        // so '_\d+' is removed here and newly recreated label will have the same name
-        // with one that was persisted
-        final int lastIndexOfPrefix = labelName.lastIndexOf("_");
-        final int lastIndexNotFound = -1;
-        String prefix = labelName;
-        if(lastIndexOfPrefix != lastIndexNotFound) {
-            prefix = labelName.substring(0, lastIndexOfPrefix);
+        String fullLabel = prefix + "_" + id;
+        if (d.getVars().containsKey(fullLabel)) {
+            return d.getVars().get(fullLabel);
         }
 
-        Label newLabel = d.getCurrentScope().getNewLabel(prefix);
-
+        Label newLabel = new Label(prefix, id);
+        
         // Add to context for future reuse
-        d.getVars().put(labelName, newLabel);
+        d.getVars().put(fullLabel, newLabel);
 
         return newLabel;
     }
 
     private Regexp decodeRegexp() {
-        Operand regexp = d.decodeOperand();
-        KCode kcode = KCode.values()[d.decodeByte()];
-        boolean isKCodeDefault = d.decodeBoolean();
-
-        return new Regexp(regexp, new RegexpOptions(kcode, isKCodeDefault));
+        return new Regexp(d.decodeOperand(), RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
     }
 
     private Operand decodeTemporaryVariable() {

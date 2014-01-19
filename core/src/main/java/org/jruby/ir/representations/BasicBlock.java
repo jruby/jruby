@@ -17,7 +17,7 @@ import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
-public class BasicBlock implements ExplicitVertexID {
+public class BasicBlock implements ExplicitVertexID, Comparable {
     private int         id;             // Basic Block id
     private CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
@@ -184,6 +184,16 @@ public class BasicBlock implements ExplicitVertexID {
         return clonedBB;
     }
 
+    @Override
+    public int compareTo(Object o) {
+        BasicBlock other = (BasicBlock) o;
+        
+        if (id == other.id) return 0;
+        if (id < other.id) return -1;
+        
+        return 1;
+    }
+    
     @Override
     public String toString() {
         return "BB [" + id + ":" + label + "]";

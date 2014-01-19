@@ -4,7 +4,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.operands.Label;
@@ -99,8 +99,8 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         BasicBlock geb;
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
-            geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
+            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);
                 if (value == null) {

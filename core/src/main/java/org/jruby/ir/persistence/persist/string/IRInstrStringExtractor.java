@@ -76,7 +76,8 @@ import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -661,9 +662,9 @@ class IRInstrStringExtractor extends IRVisitor {
         stringProducer.appendParameters(required, opt, rest, numArgs);
     }
 
-    @Override public void ReceiveExceptionInstr(ReceiveExceptionInstr instr) {
-        stringProducer.appendParameters(instr.isCheckType());
-    }
+    @Override public void ReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr instr) { }
+
+    @Override public void ReceiveJRubyExceptionInstr(ReceiveJRubyExceptionInstr instr) { }
 
     @Override public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
         stringProducer.appendParameters(instr.getArgIndex());

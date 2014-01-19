@@ -7,5 +7,4 @@ fails:The alias keyword operates on the object's metaclass when used in instance
 fails:The alias keyword operates on methods with splat arguments
 fails:The alias keyword operates on methods with splat arguments on eigenclasses
 fails:The alias keyword operates on methods with splat arguments defined in a superclass
-fails:The alias keyword operates on methods with splat arguments defined in a superclass using text block for class eval
 fails:The alias keyword is not allowed against Fixnum or String instances

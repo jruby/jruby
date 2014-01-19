@@ -15,6 +15,7 @@ import java.util.regex.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.joni.Option;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -293,13 +294,13 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
-            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString());
+            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
         @Specialization
         public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
-            return getContext().makeString(regexp.getPattern().matcher(string.toString()).replaceAll(replacement.toString()));
+            return regexp.gsub(string.toString(), replacement.toString());
         }
     }
 
@@ -373,7 +374,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(RubyString string, RubyString regexpString) {
-            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString());
+            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return regexp.match(string.toString());
         }
 
@@ -418,13 +419,14 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyString regexp) {
-            return RubyString.scan(getContext(), string.toString(), Pattern.compile(regexp.toString()));
+        public RubyArray scan(RubyString string, RubyString regexpString) {
+            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            return scan(string, regexp);
         }
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp) {
-            return RubyString.scan(getContext(), string.toString(), regexp.getPattern());
+            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
         }
 
     }
@@ -442,32 +444,20 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray split(RubyString string, RubyString sep) {
-            final RubyContext context = getContext();
-
             final String[] components = string.toString().split(Pattern.quote(sep.toString()));
 
             final Object[] objects = new Object[components.length];
 
             for (int n = 0; n < objects.length; n++) {
-                objects[n] = context.makeString(components[n]);
+                objects[n] = getContext().makeString(components[n]);
             }
 
-            return RubyArray.specializedFromObjects(context.getCoreLibrary().getArrayClass(), objects);
+            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
         }
 
         @Specialization
         public RubyArray split(RubyString string, RubyRegexp sep) {
-            final RubyContext context = getContext();
-
-            final String[] components = string.toString().split(sep.getPattern().pattern());
-
-            final Object[] objects = new Object[components.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                objects[n] = context.makeString(components[n]);
-            }
-
-            return RubyArray.specializedFromObjects(context.getCoreLibrary().getArrayClass(), objects);
+            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
         }
     }
 

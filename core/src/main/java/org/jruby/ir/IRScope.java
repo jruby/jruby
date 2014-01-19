@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 
@@ -154,27 +152,8 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentScopeVariable;
     private HashMap<Label,Integer> labelIPCMap;
 
-    protected static class LocalVariableAllocator {
-        public int nextSlot;
-        public Map<String, LocalVariable> varMap;
-
-        public LocalVariableAllocator() {
-            varMap = new HashMap<String, LocalVariable>();
-            nextSlot = 0;
-        }
-
-        public final LocalVariable getVariable(String name) {
-            return varMap.get(name);
-        }
-
-        public final void putVariable(String name, LocalVariable var) {
-            varMap.put(name, var);
-            nextSlot++;
-        }
-    }
-
-    LocalVariableAllocator localVars;
-    LocalVariableAllocator evalScopeVars;
+    Map<String, LocalVariable> localVars;
+    Map<String, LocalVariable> evalScopeVars;
 
     /** Have scope flags been computed? */
     private boolean flagsComputed;
@@ -307,8 +286,7 @@ public abstract class IRScope implements ParseResult {
         this.usesZSuper = s.usesZSuper;
         this.hasExplicitCallProtocol = s.hasExplicitCallProtocol;
 
-        this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
-        this.localVars.nextSlot = s.localVars.nextSlot;
+        this.localVars = new HashMap<String, LocalVariable>(s.localVars);
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
@@ -353,7 +331,7 @@ public abstract class IRScope implements ParseResult {
 
         this.hasExplicitCallProtocol = false;
 
-        this.localVars = new LocalVariableAllocator();
+        this.localVars = new HashMap<String, LocalVariable>();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.relinearizeCFG = false;
 
@@ -449,7 +427,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public Label getNewLabel(String prefix) {
-        return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
+        return new Label(prefix, allocateNextPrefixedName(prefix));
     }
 
     public Label getNewLabel() {
@@ -976,52 +954,6 @@ public abstract class IRScope implements ParseResult {
         return b.toString();
     }
 
-    public String toStringVariables() {
-        Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
-        Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
-        SortedSet<Variable> variables = new TreeSet<Variable>();
-
-        for (int i = instrList.size() - 1; i >= 0; i--) {
-            Instr instr = instrList.get(i);
-
-            if (instr instanceof ResultInstr) {
-                Variable var = ((ResultInstr) instr).getResult();
-                variables.add(var);
-                starts.put(var, i);
-            }
-
-            for (Operand operand : instr.getOperands()) {
-                if (operand != null && operand instanceof Variable && ends.get((Variable)operand) == null) {
-                    ends.put((Variable)operand, i);
-                    variables.add((Variable)operand);
-                }
-            }
-        }
-
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        for (Variable var : variables) {
-            Integer end = ends.get(var);
-            if (end != null) { // Variable is actually used somewhere and not dead
-                if (i > 0) sb.append("\n");
-                i++;
-                sb.append("    ").append(var).append(": ").append(starts.get(var)).append("-").append(end);
-            }
-        }
-
-        return sb.toString();
-    }
-
-    /** ---------------------------------------
-     * SSS FIXME: What is this method for?
-    @Interp
-    public void calculateParameterCounts() {
-        for (int i = instrList.size() - 1; i >= 0; i--) {
-            Instr instr = instrList.get(i);
-        }
-    }
-     ------------------------------------------ **/
-
     public LocalVariable getSelf() {
         return Self.SELF;
     }
@@ -1053,13 +985,34 @@ public abstract class IRScope implements ParseResult {
     public void markUnusedImplicitBlockArg() {
         hasUnusedImplicitBlockArg = true;
     }
+    
+    /**
+     * Get the local variables for this scope.  This should only be used by persistence
+     * layer.
+     */
+    public Map<String, LocalVariable> getLocalVariables() {
+        return localVars;
+    }
+    
+    /**
+     * Set the local variables for this scope. This should only be used by persistence
+     * layer.
+     */
+    // FIXME: Consider making constructor for persistence to pass in all of this stuff
+    public void setLocalVariables(Map<String, LocalVariable> variables) {
+        this.localVars = variables;
+    }
+    
+    public void setLabelIndices(Map<String, Integer> indices) {
+        nextVarIndex = indices;
+    }
 
     public LocalVariable lookupExistingLVar(String name) {
-        return localVars.getVariable(name);
+        return localVars.get(name);
     }
 
     public LocalVariable findExistingLocalVariable(String name, int depth) {
-        return localVars.getVariable(name);
+        return localVars.get(name);
     }
 
     /**
@@ -1070,8 +1023,8 @@ public abstract class IRScope implements ParseResult {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
-            lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
-            localVars.putVariable(name, lvar);
+            lvar = new LocalVariable(name, scopeDepth, localVars.size());
+            localVars.put(name, lvar);
         }
 
         return lvar;
@@ -1082,7 +1035,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
-        if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
+        if (reset || evalScopeVars == null) evalScopeVars = new HashMap<String, LocalVariable>();
     }
 
     public TemporaryLocalVariable getNewTemporaryVariable() {
@@ -1158,7 +1111,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public int getLocalVariablesCount() {
-        return localVars.nextSlot;
+        return localVars.size();
     }
 
     public int getUsedVariablesCount() {
@@ -1372,9 +1325,21 @@ public abstract class IRScope implements ParseResult {
 
         return index;
     }
+    
+    // This is how IR Persistence can re-read existing saved labels and reset
+    // scope back to proper index.
+    public void setPrefixedNameIndexTo(String prefix, int newIndex) {
+        int index = getPrefixCountSize(prefix);
+
+        nextVarIndex.put(prefix, index);        
+    }
 
     protected void resetVariableCounter(String prefix) {
         nextVarIndex.remove(prefix);
+    }
+    
+    public Map<String, Integer> getVarIndices() {
+        return nextVarIndex;
     }
 
     protected int getPrefixCountSize(String prefix) {

@@ -10,8 +10,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -33,7 +31,8 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
@@ -293,23 +292,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
-        case RECV_EXCEPTION: {
-            ReceiveExceptionInstr rei = (ReceiveExceptionInstr)instr;
-            // FIXME: HACK for now .. make semantics explicit rather
-            // than piggybacking on top of the checkType field
-            //
-            // Unrescuable:
-            //    IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
-            //    These cannot be rescued -- only run ensure blocks
-            //
-            // Others:
-            //    IRBreakJump, Ruby exceptions, errors, and other java exceptions.
-            //    These can be rescued -- run rescue blocks
-            if (rei.checkType && (exception instanceof Unrescuable)) {
-                Helpers.throwException((Throwable)exception);
-            }
-            result = (exception instanceof RaiseException && rei.checkType) ? ((RaiseException)exception).getException() : exception;
-            setResult(temp, currDynScope, instr.getResult(), result);
+        case RECV_RUBY_EXC: {
+            setResult(temp, currDynScope, instr.getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
+            return;
+        }
+        case RECV_JRUBY_EXC: {
+            setResult(temp, currDynScope, instr.getResult(), exception);
             return;
         }
         default:

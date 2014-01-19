@@ -309,7 +309,7 @@ public class IROperandFactory {
 
         // Special case of label
         if("_GLOBAL_ENSURE_BLOCK".equals(labelName)) {
-            return new Label("_GLOBAL_ENSURE_BLOCK");
+            return new Label("_GLOBAL_ENSURE_BLOCK", 0);
         }
 
         // Check if this label was already created

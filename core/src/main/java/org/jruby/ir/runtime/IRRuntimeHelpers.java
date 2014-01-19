@@ -8,15 +8,16 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.StaticScope;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.IRException;
+import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -201,11 +202,22 @@ public class IRRuntimeHelpers {
         return v1 > v2;
     }
 
+    public static Object unwrapRubyException(Object excObj) {
+        // Unrescuable:
+        //   IRBreakJump, IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
+        //   These cannot be rescued -- only run ensure blocks
+        if (excObj instanceof Unrescuable) {
+            Helpers.throwException((Throwable)excObj);
+        }
+        // Ruby exceptions, errors, and other java exceptions.
+        // These can be rescued -- run rescue blocks
+        return (excObj instanceof RaiseException) ? ((RaiseException)excObj).getException() : excObj;
+    }
+
     // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
     public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         Ruby runtime = context.runtime;
-        if (excObj instanceof IRubyObject ||
-                (excObj instanceof RaiseException && ((excObj = ((RaiseException) excObj).getException()) != null))) {
+        if (excObj instanceof IRubyObject) {
             // regular ruby exception
             if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
             return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();

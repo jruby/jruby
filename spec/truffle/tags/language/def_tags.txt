@@ -1,8 +1,6 @@
 fails:Defining an 'initialize' method sets the method's visibility to private
 fails:Defining an 'initialize_copy' method sets the method's visibility to private
 fails:An instance method with a default argument assigns an empty Array to an unused splat argument
-fails:An instance method with a default argument prefers to assign to a default argument when there are no required arguments
-fails:An instance method with a default argument does not evaluate the default when passed a value and a * argument
 fails:A singleton method definition raises RuntimeError if frozen
 fails:Redefining a singleton method does not inherit a previously set visibility 
 fails:Redefining a singleton method does not inherit a previously set visibility 

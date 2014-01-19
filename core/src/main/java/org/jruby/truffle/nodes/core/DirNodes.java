@@ -17,14 +17,17 @@ import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.nodes.call.CallNode;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 2, maxArgs = 2)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
@@ -36,7 +39,9 @@ public abstract class DirNodes {
         }
 
         @Specialization
-        public RubyArray glob(RubyString glob) {
+        public RubyArray glob(RubyString glob, Node callNode) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "globbing");
+
             return glob(getContext(), glob.toString());
         }
 
@@ -46,8 +51,6 @@ public abstract class DirNodes {
              * Globbing is quite complicated. We've implemented a subset of the functionality that
              * satisfies MSpec, but it will likely break for anyone else.
              */
-
-            context.implementationMessage("globbing %s", glob);
 
             String absoluteGlob;
 
@@ -113,14 +116,14 @@ public abstract class DirNodes {
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
             final RubyContext context = getContext();
 
-            final String previous = context.getCurrentDirectory();
-            context.setCurrentDirectory(path.toString());
+            final String previous = context.getRuntime().getCurrentDirectory();
+            context.getRuntime().setCurrentDirectory(path.toString());
 
             if (block != null) {
                 try {
                     return yield(frame, block, path);
                 } finally {
-                    context.setCurrentDirectory(previous);
+                    context.getRuntime().setCurrentDirectory(previous);
                 }
             } else {
                 return 0;
@@ -160,7 +163,7 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
-            return getContext().makeString(getContext().getCurrentDirectory());
+            return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }
 
     }

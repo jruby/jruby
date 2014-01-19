@@ -19,6 +19,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArgsFile;
 import org.jruby.truffle.nodes.*;
@@ -214,16 +215,6 @@ public abstract class KernelNodes {
 
         @SlowPath
         private static void exec(RubyContext context, String[] commandLine) {
-            context.implementationMessage("starting child process to simulate exec: ");
-
-            for (int n = 0; n < commandLine.length; n++) {
-                if (n > 0) {
-                    System.err.print(" ");
-                }
-
-                System.err.print(commandLine[n]);
-            }
-
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
@@ -252,8 +243,6 @@ public abstract class KernelNodes {
                     continue;
                 }
             }
-
-            context.implementationMessage("child process simulating exec finished");
 
             System.exit(exitCode);
         }

@@ -53,7 +53,8 @@ public enum Operation {
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
     RECV_CLOSURE(OpFlags.f_is_arg_receive),
-    RECV_EXCEPTION(OpFlags.f_is_arg_receive),
+    RECV_RUBY_EXC(OpFlags.f_is_arg_receive),
+    RECV_JRUBY_EXC(OpFlags.f_is_arg_receive),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,
