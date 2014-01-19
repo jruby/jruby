@@ -56,7 +56,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr, FixedAr
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReceiveExceptionInstr(ii.getRenamedVariable(result));
+        return new ReceiveExceptionInstr(ii.getRenamedVariable(result), checkType);
     }
 
     @Override
