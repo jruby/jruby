@@ -34,7 +34,6 @@ public class BasicCompilerPassListener implements CompilerPassListener {
             LOG.info("\nInstructions:\n" + c.toStringInstrs());
         } else {
             LOG.info("\n  instrs:\n" + scope.toStringInstrs());
-            LOG.info("\n  live variables:\n" + scope.toStringVariables());
         }
 
 

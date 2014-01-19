@@ -976,52 +976,6 @@ public abstract class IRScope implements ParseResult {
         return b.toString();
     }
 
-    public String toStringVariables() {
-        Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
-        Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
-        SortedSet<Variable> variables = new TreeSet<Variable>();
-
-        for (int i = instrList.size() - 1; i >= 0; i--) {
-            Instr instr = instrList.get(i);
-
-            if (instr instanceof ResultInstr) {
-                Variable var = ((ResultInstr) instr).getResult();
-                variables.add(var);
-                starts.put(var, i);
-            }
-
-            for (Operand operand : instr.getOperands()) {
-                if (operand != null && operand instanceof Variable && ends.get((Variable)operand) == null) {
-                    ends.put((Variable)operand, i);
-                    variables.add((Variable)operand);
-                }
-            }
-        }
-
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        for (Variable var : variables) {
-            Integer end = ends.get(var);
-            if (end != null) { // Variable is actually used somewhere and not dead
-                if (i > 0) sb.append("\n");
-                i++;
-                sb.append("    ").append(var).append(": ").append(starts.get(var)).append("-").append(end);
-            }
-        }
-
-        return sb.toString();
-    }
-
-    /** ---------------------------------------
-     * SSS FIXME: What is this method for?
-    @Interp
-    public void calculateParameterCounts() {
-        for (int i = instrList.size() - 1; i >= 0; i--) {
-            Instr instr = instrList.get(i);
-        }
-    }
-     ------------------------------------------ **/
-
     public LocalVariable getSelf() {
         return Self.SELF;
     }
