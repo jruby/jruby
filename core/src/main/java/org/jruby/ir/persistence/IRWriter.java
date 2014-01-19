@@ -2,6 +2,7 @@ package org.jruby.ir.persistence;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -73,6 +74,14 @@ public class IRWriter {
         file.encode(scope.getLineNumber());
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
         file.encode(scope.getTemporaryVariablesCount());
+        
+        Map<String,Integer> labelIndices = scope.getVarIndices();
+
+        file.encode(labelIndices.size());        
+        for (String key : labelIndices.keySet()) {
+            file.encode(key);
+            file.encode(labelIndices.get(key).intValue());
+        }
 
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 

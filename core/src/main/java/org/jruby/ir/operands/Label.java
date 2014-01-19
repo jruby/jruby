@@ -8,23 +8,23 @@ import java.util.List;
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
-    public final String label;
+    public final String prefix;
+    public final int id;
 
     // This is the PC (program counter == array index) for the label target -- this field is used during interpretation
     // to fetch the instruction to jump to given a label
     private int targetPC = -1;
 
-    public static int index = 0;
-
-    public Label(String l) {
+    public Label(String prefix, int id) {
         super(OperandType.LABEL);
 
-        label = l;
+        this.prefix = prefix;
+        this.id = id;
     }
 
     @Override
     public String toString() {
-        return label + ":" + targetPC;
+        return prefix + "_" + id + ":" + targetPC;
     }
 
     @Override
@@ -39,16 +39,16 @@ public class Label extends Operand {
 
     @Override
     public int hashCode() {
-        return label.hashCode();
+        return 11 * (77 + System.identityHashCode(prefix)) + id;
     }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof Label) && label.equals(((Label)o).label);
+        return (o instanceof Label) && id == ((Label) o).id && prefix.equals(((Label)o).prefix);
     }
 
     public Label clone() {
-        return new Label(label);
+        return new Label(prefix, id);
     }
 
     @Override
@@ -56,9 +56,13 @@ public class Label extends Operand {
         return ii.getRenamedLabel(this);
     }
 
-    public void setTargetPC(int i) { this.targetPC = i; }
+    public void setTargetPC(int i) {
+        this.targetPC = i;
+    }
 
-    public int getTargetPC() { return this.targetPC; }
+    public int getTargetPC() {
+        return this.targetPC;
+    }
 
     @Override
     public void visit(IRVisitor visitor) {

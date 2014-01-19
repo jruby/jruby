@@ -92,7 +92,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 // Allocate GEB if necessary for popping
                 if (geb == null && scopeHasUnrescuedExceptions) {
                     Variable exc = scope.getNewTemporaryVariable();
-                    geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+                    geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);

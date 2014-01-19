@@ -7,6 +7,8 @@
 package org.jruby.ir.persistence;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
@@ -55,6 +57,13 @@ public class IRReader {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
+        
+        int labelIndicesSize = decoder.decodeInt();
+        Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
+        
+        for (int i = 0; i < labelIndicesSize; i++) {
+            indices.put(decoder.decodeString(), decoder.decodeInt());
+        }
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
@@ -65,6 +74,8 @@ public class IRReader {
         IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
         
         scope.setTemporaryVariableCount(tempVarsCount);
+        // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
+        scope.getVarIndices().putAll(indices);
 
         decoder.addScope(scope);
 

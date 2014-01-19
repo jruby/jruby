@@ -334,7 +334,7 @@ public class IRClosure extends IRScope {
         CFG        cfg = cfg();
         BasicBlock geb = cfg.getGlobalEnsureBB();
         if (geb == null) {
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
             Variable exc = getNewTemporaryVariable();
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break using runtime helper

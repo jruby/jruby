@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
@@ -473,7 +474,14 @@ public class InstrEncoderMap {
     }
 
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
-        e.encode(instr.getMethodToReturnFrom());
+        IRMethod method = instr.methodToReturnFrom;
+        
+        if (method == null) {
+            e.encode(false);
+        } else {
+            e.encode(true);
+            e.encode(method);
+        }
     }
 
     private void encodeCallBaseInstr(CallBase instr) {

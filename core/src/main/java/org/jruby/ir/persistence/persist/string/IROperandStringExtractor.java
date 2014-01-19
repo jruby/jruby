@@ -205,7 +205,7 @@ class IROperandStringExtractor extends IRVisitor {
     }
 
     @Override public void Label(Label label) {
-        stringProducer.appendParameters(label.label);
+        stringProducer.appendParameters(label.prefix);
     }
 
     @Override public void MethAddr(MethAddr methaddr) {

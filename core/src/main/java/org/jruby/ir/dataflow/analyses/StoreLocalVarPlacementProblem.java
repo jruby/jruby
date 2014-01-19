@@ -99,7 +99,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         BasicBlock geb;
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);

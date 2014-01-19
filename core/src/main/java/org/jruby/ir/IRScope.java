@@ -449,7 +449,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public Label getNewLabel(String prefix) {
-        return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
+        return new Label(prefix, allocateNextPrefixedName(prefix));
     }
 
     public Label getNewLabel() {
@@ -1326,9 +1326,21 @@ public abstract class IRScope implements ParseResult {
 
         return index;
     }
+    
+    // This is how IR Persistence can re-read existing saved labels and reset
+    // scope back to proper index.
+    public void setPrefixedNameIndexTo(String prefix, int newIndex) {
+        int index = getPrefixCountSize(prefix);
+
+        nextVarIndex.put(prefix, index);        
+    }
 
     protected void resetVariableCounter(String prefix) {
         nextVarIndex.remove(prefix);
+    }
+    
+    public Map<String, Integer> getVarIndices() {
+        return nextVarIndex;
     }
 
     protected int getPrefixCountSize(String prefix) {
