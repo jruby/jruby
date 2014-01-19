@@ -82,7 +82,7 @@ public class IRWriter {
             file.encode(key);
             file.encode(labelIndices.get(key).intValue());
         }
-
+        
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 
         if (scope instanceof IRClosure) {
