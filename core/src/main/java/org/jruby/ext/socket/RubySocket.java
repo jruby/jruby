@@ -55,7 +55,6 @@ import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -92,10 +91,8 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, TCP.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
 
-        // this value seems to be hardcoded in MRI to 5 when not defined, but
-        // it is 128 on OS X. We use 128 for now until we can get it added to
-        // jnr-constants.
-        rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
+        // this value seems to be hardcoded in MRI when not present in headers; only available on Linux?
+        rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.five(runtime));
 
         // mandatory constants we haven't implemented
         rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
@@ -503,6 +500,7 @@ public class RubySocket extends RubyBasicSocket {
 
     protected void doBind(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
         Ruby runtime = context.runtime;
+
         try {
             if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel)channel).socket();
