@@ -6,8 +6,6 @@ fails:A Proc taking |a, b| arguments raises an ArgumentError if passed no values
 fails:A Proc taking |a, b| arguments raises an ArgumentError if passed one value
 fails:A Proc taking |a, b| arguments does not call #to_ary to convert a single passed object to an Array
 fails:A Proc taking |a, *b| arguments raises an ArgumentError if passed no values
-fails:A Proc taking |a, *b| arguments does not call #to_ary to convert a single passed object to an Array
-fails:A Proc taking |*| arguments does not call #to_ary to convert a single passed object to an Array
 fails:A Proc taking |*a| arguments does not call #to_ary to convert a single passed object to an Array
 fails:A Proc taking |a, | arguments raises an ArgumentError when passed no values
 fails:A Proc taking |a, | arguments raises an ArgumentError when passed more than one value
