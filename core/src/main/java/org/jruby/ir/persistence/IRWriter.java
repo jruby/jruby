@@ -8,6 +8,9 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.ClosureLocalVariable;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Self;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -74,14 +77,8 @@ public class IRWriter {
         file.encode(scope.getLineNumber());
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
         file.encode(scope.getTemporaryVariablesCount());
-        
-        Map<String,Integer> labelIndices = scope.getVarIndices();
 
-        file.encode(labelIndices.size());        
-        for (String key : labelIndices.keySet()) {
-            file.encode(key);
-            file.encode(labelIndices.get(key).intValue());
-        }
+        persistScopeLabelIndices(scope, file);
         
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 
@@ -94,7 +91,27 @@ public class IRWriter {
         }
 
         persistStaticScope(file, scope.getStaticScope());
+        persistLocalVariables(scope, file);
         file.endEncodingScopeHeader(scope);
+    }
+
+    // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
+    private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
+        Map<String, LocalVariable> localVariables = scope.getLocalVariables();
+        file.encode(localVariables.size());
+        for (String name: localVariables.keySet()) {
+            file.encode(name);
+            file.encode(localVariables.get(name).getOffset()); // No need to write depth..it is zero.
+        }
+    }
+
+    private static void persistScopeLabelIndices(IRScope scope, IRWriterEncoder file) {
+        Map<String,Integer> labelIndices = scope.getVarIndices();
+        file.encode(labelIndices.size());
+        for (String key : labelIndices.keySet()) {
+            file.encode(key);
+            file.encode(labelIndices.get(key).intValue());
+        }
     }
 
     // {type,[variables],required_args}

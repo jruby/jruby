@@ -985,6 +985,27 @@ public abstract class IRScope implements ParseResult {
     public void markUnusedImplicitBlockArg() {
         hasUnusedImplicitBlockArg = true;
     }
+    
+    /**
+     * Get the local variables for this scope.  This should only be used by persistence
+     * layer.
+     */
+    public Map<String, LocalVariable> getLocalVariables() {
+        return localVars;
+    }
+    
+    /**
+     * Set the local variables for this scope. This should only be used by persistence
+     * layer.
+     */
+    // FIXME: Consider making constructor for persistence to pass in all of this stuff
+    public void setLocalVariables(Map<String, LocalVariable> variables) {
+        this.localVars = variables;
+    }
+    
+    public void setLabelIndices(Map<String, Integer> indices) {
+        nextVarIndex = indices;
+    }
 
     public LocalVariable lookupExistingLVar(String name) {
         return localVars.get(name);

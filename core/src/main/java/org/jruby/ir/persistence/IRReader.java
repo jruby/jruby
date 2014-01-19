@@ -20,6 +20,9 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.operands.ClosureLocalVariable;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Self;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -57,31 +60,54 @@ public class IRReader {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
-        
-        int labelIndicesSize = decoder.decodeInt();
-        Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
-        
-        for (int i = 0; i < labelIndicesSize; i++) {
-            indices.put(decoder.decodeString(), decoder.decodeInt());
-        }
+        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);        
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
         int arity = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
+        // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
+        // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
         IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
-        
+       
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
-        scope.getVarIndices().putAll(indices);
+        scope.setLabelIndices(indices);
+        
+        // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
+        // But because of this we have to push decoding lvars to the end of the scope info.
+        scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
 
         decoder.addScope(scope);
 
         scope.savePersistenceInfo(decoder.decodeInt(), decoder);
 
         return scope;
+    }
+    
+    private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+        int size = decoder.decodeInt();
+        Map<String, LocalVariable> localVariables = new HashMap(size);
+        for (int i = 0; i < size; i++) {
+            String name = decoder.decodeString();
+            int offset = decoder.decodeInt();
+
+            localVariables.put(name, scope instanceof IRClosure ?
+                    new ClosureLocalVariable((IRClosure) scope, name, 0, offset) : new LocalVariable(name, 0, offset));
+        }
+        
+        return localVariables;
+    }
+
+    private static Map<String, Integer> decodeScopeLabelIndices(IRReaderDecoder decoder) {
+        int labelIndicesSize = decoder.decodeInt();
+        Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
+        for (int i = 0; i < labelIndicesSize; i++) {
+            indices.put(decoder.decodeString(), decoder.decodeInt());
+        }
+        return indices;
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
