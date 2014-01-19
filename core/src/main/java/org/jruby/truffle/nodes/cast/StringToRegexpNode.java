@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
+import org.joni.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -33,7 +34,7 @@ public abstract class StringToRegexpNode extends RubyNode {
 
     @Specialization
     public RubyRegexp doString(RubyString string) {
-        return new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), string.toString());
+        return new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), string.toString(), Option.DEFAULT);
     }
 
 }

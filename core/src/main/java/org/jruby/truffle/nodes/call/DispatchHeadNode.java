@@ -53,12 +53,9 @@ public class DispatchHeadNode extends DispatchNode {
     public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
         CompilerAsserts.neverPartOfCompilation();
 
-        replace(new DispatchHeadNode(context, getSourceSection(), name, isSplatted), reason);
-
-        final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
-
-        final RubyMethod method = lookup(frame, receiverBasicObject, name);
-        return method.call(frame.pack(), receiverBasicObject, blockObject, argumentObjects);
+        final DispatchHeadNode newHead = new DispatchHeadNode(context, getSourceSection(), name, isSplatted);
+        replace(newHead, reason);
+        return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
     }
 
     public UnboxedDispatchNode getDispatch() {

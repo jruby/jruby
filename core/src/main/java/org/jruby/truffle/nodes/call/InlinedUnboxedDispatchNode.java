@@ -16,6 +16,8 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+import java.util.Arrays;
+
 public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     private final Class expectedClass;
@@ -58,7 +60,18 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
 
         // Call the method
 
-        final RubyArguments arguments = new RubyArguments(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects);
+        Object[] modifiedArgumentsObjects;
+
+        CompilerAsserts.compilationConstant(method.getShouldAppendCallNode());
+
+        if (method.getShouldAppendCallNode()) {
+            modifiedArgumentsObjects = Arrays.copyOf(argumentsObjects, argumentsObjects.length + 1);
+            modifiedArgumentsObjects[modifiedArgumentsObjects.length - 1] = this;
+        } else {
+            modifiedArgumentsObjects = argumentsObjects;
+        }
+
+        final RubyArguments arguments = new RubyArguments(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects);
         final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, method.getFrameDescriptor());
         return rootNode.execute(inlinedFrame);
     }

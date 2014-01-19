@@ -18,6 +18,8 @@ import com.oracle.truffle.api.nodes.instrument.*;
 import com.oracle.truffle.api.nodes.instrument.InstrumentationProbeNode.ProbeChain;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.*;
+import org.joni.Option;
+import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
@@ -1712,32 +1714,15 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        RubyRegexp regexp;
+        Regex regex;
 
-        try {
-            final String patternText = node.getValue().toString();
-
-            int flags = Pattern.MULTILINE | Pattern.UNIX_LINES;
-
-            final org.jruby.util.RegexpOptions options = node.getOptions();
-
-            if (options.isIgnorecase()) {
-                flags |= Pattern.CASE_INSENSITIVE;
-            }
-
-            if (options.isMultiline()) {
-                // TODO(cs): isn't this the default?
-                flags |= Pattern.MULTILINE;
-            }
-
-            final Pattern pattern = Pattern.compile(patternText, flags);
-
-            regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), pattern);
-        } catch (PatternSyntaxException e) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "failed to parse Ruby regexp, translating as .");
-            regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), ".");
+        if (node.getPattern() != null) {
+            regex = node.getPattern().getPattern();
+        } else {
+            regex = RubyRegexp.compile(context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
         }
 
+        final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue().toString());
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
         return literalNode;
     }

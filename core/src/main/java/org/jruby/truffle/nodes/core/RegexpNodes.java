@@ -14,8 +14,10 @@ import java.util.regex.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -69,7 +71,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString sqrt(RubyString pattern) {
-            return getContext().makeString(Pattern.quote(pattern.toString()));
+            return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
         }
 
     }
@@ -93,7 +95,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "match", appendCallNode = true, minArgs = 2, maxArgs = 2)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -105,7 +107,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
+        public Object match(RubyRegexp regexp, RubyString string, Node callNode) {
             return regexp.match(string.toString());
         }
 

@@ -15,6 +15,7 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
+import org.joni.Regex;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.core.range.*;
@@ -92,6 +93,10 @@ public class RubyString extends RubyObject {
     }
 
     public byte[] getBytes() {
+        if (bytes == null) {
+            bytes = cachedStringValue.getBytes(StandardCharsets.UTF_8);
+        }
+
         return bytes;
     }
 
@@ -246,28 +251,6 @@ public class RubyString extends RubyObject {
         builder.append(string);
 
         return builder.toString();
-    }
-
-    public static RubyArray scan(RubyContext context, String string, Pattern pattern) {
-        final Matcher matcher = pattern.matcher(string);
-
-        final RubyArray results = new RubyArray(context.getCoreLibrary().getArrayClass());
-
-        while (matcher.find()) {
-            if (matcher.groupCount() == 0) {
-                results.push(context.makeString(matcher.group(0)));
-            } else {
-                final RubyArray subResults = new RubyArray(context.getCoreLibrary().getArrayClass());
-
-                for (int n = 1; n < matcher.groupCount() + 1; n++) {
-                    subResults.push(context.makeString(matcher.group(n)));
-                }
-
-                results.push(subResults);
-            }
-        }
-
-        return results;
     }
 
     public Object toInteger() {
