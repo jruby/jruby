@@ -138,7 +138,6 @@ class InstrDecoderMap implements IRPersistenceValues {
     }*/
     
     public Instr decode(Operation operation) {
-        try {
         switch(operation) {
             case ALIAS: return new AliasInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
@@ -238,11 +237,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case ZSUPER: return new ZSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
         }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        return null;
+        throw new IllegalArgumentException("Whoa bro: " + operation);
     }
 
     private Instr decodeAttrAssignInstr() {

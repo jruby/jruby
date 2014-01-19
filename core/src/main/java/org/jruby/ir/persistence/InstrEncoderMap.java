@@ -474,6 +474,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
+        e.encode(instr.getReturnValue());
         IRMethod method = instr.methodToReturnFrom;
         
         if (method == null) {
