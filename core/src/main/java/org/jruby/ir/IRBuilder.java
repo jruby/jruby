@@ -3301,9 +3301,15 @@ public class IRBuilder {
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
-        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
-        else if (!_rescueBlockStack.empty()) s.addInstr(new PutGlobalVarInstr("$!", manager.getNil()));
-
+        if (!_ensureBlockStack.empty()) {
+            Variable ret = s.getNewTemporaryVariable();
+            s.addInstr(new CopyInstr(ret, retVal));
+            retVal = ret;
+            EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
+        }
+        else if (!_rescueBlockStack.empty()) {
+            s.addInstr(new PutGlobalVarInstr("$!", manager.getNil()));
+        }
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if

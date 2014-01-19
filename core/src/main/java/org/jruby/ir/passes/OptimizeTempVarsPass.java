@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.ir.passes;
 
 import java.util.ArrayList;
@@ -25,10 +21,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 
-/**
- *
- * @author enebo
- */
 public class OptimizeTempVarsPass extends CompilerPass {
     boolean optimizedTempVars = false;
 
@@ -138,16 +130,34 @@ public class OptimizeTempVarsPass extends CompilerPass {
                     // %v not used or defined anywhere else
                     // So, %v can be replaced by the operand
                     else if ((uses.size() == 1) && (defs != null) && (defs.size() == 1) && (i instanceof CopyInstr)) {
-                        CopyInstr ci = (CopyInstr)i;
-                        Operand src = ci.getSource();
-                        i.markDead();
-                        instrs.remove();
-
-                        // Fix up use
-                        Map<Operand, Operand> copyMap = new HashMap<Operand, Operand>();
-                        copyMap.put(v, src);
                         Instr soleUse = uses.get(0);
-                        soleUse.simplifyOperands(copyMap, true);
+
+                        // Conservatively avoid optimizing return values since
+                        // intervening jumps to ensure block code can modify the
+                        // copy source (if it is a variable).
+                        //
+                        // Ex:
+                        //    v = 1
+                        //    %v_1 = v
+                        //    %v_2 = L2
+                        //    jump L1
+                        // L2:
+                        //    return %v_1 <-- cannot be replaced with v
+                        //    ....
+                        // L1:
+                        //    v = 42
+                        //    jmp_indirect %v_2
+                        if (!(soleUse instanceof ReturnInstr)) {
+                            CopyInstr ci = (CopyInstr)i;
+                            Operand src = ci.getSource();
+                            i.markDead();
+                            instrs.remove();
+
+                            // Fix up use
+                            Map<Operand, Operand> copyMap = new HashMap<Operand, Operand>();
+                            copyMap.put(v, src);
+                            soleUse.simplifyOperands(copyMap, true);
+                        }
                     }
                 }
                 // Deal with this code pattern:
