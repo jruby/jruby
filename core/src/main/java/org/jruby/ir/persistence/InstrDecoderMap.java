@@ -68,7 +68,8 @@ import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
@@ -210,7 +211,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (IRClosure) d.decodeScope());
             case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
-            case RECV_EXCEPTION: return decodeReceiveException();
+            case RECV_RUBY_EXC: return decodeReceiveRubyException();
+            case RECV_JRUBY_EXC: return decodeReceiveJRubyException();
             case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
             case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
             case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
@@ -362,8 +364,12 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new BUndefInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
 
-    private Instr decodeReceiveException() {
-        return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
+    private Instr decodeReceiveRubyException() {
+        return new ReceiveRubyExceptionInstr(d.decodeVariable());
+    }
+
+    private Instr decodeReceiveJRubyException() {
+        return new ReceiveJRubyExceptionInstr(d.decodeVariable());
     }
 
     private Instr decodeSuperInstr(Operation operation) {

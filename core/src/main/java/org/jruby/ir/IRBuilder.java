@@ -858,14 +858,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
         s.addInstr(new LabelInstr(gebLabel));
         Variable exc = s.getNewTemporaryVariable();
-        // FIXME: This should be rethrowable-exception-instr
-        // (for ensure blocks and can receive Unrescuable exceptions)
-        //
-        // UGLY HACK: For now, we are going to piggyback on top of the
-        // no-type-checking field which is indicating the same thing
-        // but worth thinking over and either adding a new flag or a
-        // new instruction
-        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
@@ -903,7 +896,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         s.addInstr(new LabelInstr(rescueLabel));
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc, false));
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
@@ -1283,7 +1276,7 @@ public class IRBuilder {
 
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         m.addInstr(new LabelInstr(rescueLabel));
-        m.addInstr(new ReceiveExceptionInstr(exc));
+        m.addInstr(new ReceiveRubyExceptionInstr(exc));
         m.addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
         outputExceptionCheck(m, excType, exc, caughtLabel);
 
@@ -2088,7 +2081,7 @@ public class IRBuilder {
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         s.addInstr(new LabelInstr(rescueLabel));
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc, false));  // no type-checking
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
@@ -2274,14 +2267,7 @@ public class IRBuilder {
         Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        // FIXME: This should be rethrowable-exception-instr
-        // (for ensure blocks and can receive Unrescuable exceptions)
-        //
-        // UGLY HACK: For now, we are going to piggyback on top of the
-        // no-type-checking field which is indicating the same thing
-        // but worth thinking over and either adding a new flag or a
-        // new instruction
-        s.addInstr(new ReceiveExceptionInstr(exc, false)); // Dont check type since we are simply throwing it back
+        s.addInstr(new ReceiveJRubyExceptionInstr(exc));
         s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
 
         // Generate the ensure block now
@@ -3187,7 +3173,7 @@ public class IRBuilder {
 
         // Save off exception & exception comparison type
         Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new ReceiveExceptionInstr(exc));
+        s.addInstr(new ReceiveRubyExceptionInstr(exc));
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(s, rescueNode.getRescueNode(), rv, exc, rEndLabel);

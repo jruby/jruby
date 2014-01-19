@@ -16,7 +16,8 @@ import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveExceptionBase;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.operands.TemporaryVariableType;
@@ -334,7 +335,7 @@ public class IRClosure extends IRScope {
         if (geb == null) {
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
             Variable exc = getNewTemporaryVariable();
-            geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
+            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break using runtime helper
             // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
             geb.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
@@ -342,11 +343,11 @@ public class IRClosure extends IRScope {
         } else {
             // SSS FIXME: Assumptions:
             //
-            // First instr is a 'ReceiveExceptionInstr'
+            // First instr is a 'ReceiveExceptionBase'
             // Last instr is a 'ThrowExceptionInstr'
 
             List<Instr> instrs = geb.getInstrs();
-            Variable exc = ((ReceiveExceptionInstr)instrs.get(0)).getResult();
+            Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
             instrs.set(instrs.size()-1, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
         }
 

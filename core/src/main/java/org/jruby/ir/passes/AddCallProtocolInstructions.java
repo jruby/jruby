@@ -15,7 +15,7 @@ import org.jruby.ir.instructions.PopBindingInstr;
 import org.jruby.ir.instructions.PopFrameInstr;
 import org.jruby.ir.instructions.PushBindingInstr;
 import org.jruby.ir.instructions.PushFrameInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
@@ -93,7 +93,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (geb == null && scopeHasUnrescuedExceptions) {
                     Variable exc = scope.getNewTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
-                    geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
+                    geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);
                 }
