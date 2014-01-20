@@ -22,7 +22,7 @@ freezing to) a specific jruby-complete jar version.</description>
     <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <tesla.version>0.0.8</tesla.version>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
     <dependency>

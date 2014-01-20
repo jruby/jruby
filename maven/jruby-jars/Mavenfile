@@ -28,7 +28,7 @@ end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
-            'tesla.version' => '0.0.8',
+            'tesla.version' => '0.0.9',
             # we share the already installed gems
             'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
             'jruby.home' => '${basedir}/../../' )

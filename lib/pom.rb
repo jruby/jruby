@@ -23,7 +23,7 @@ project 'JRuby Lib Setup' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'tesla.version' => '0.0.8',
+              'tesla.version' => '0.0.9',
               'jruby.home' => '${basedir}/..' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place

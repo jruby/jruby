@@ -17,7 +17,7 @@
     <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <tesla.version>0.0.8</tesla.version>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <build>
     <resources>
