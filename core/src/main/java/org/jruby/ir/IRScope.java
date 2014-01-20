@@ -103,20 +103,24 @@ public abstract class IRScope implements ParseResult {
     /** Lexical parent scope */
     private IRScope lexicalParent;
 
+    /** List of (nested) closures in this scope */
+    private List<IRClosure> nestedClosures;
+
+    // Index values to guarantee we don't assign same internal index twice
+    private int nextClosureIndex;
+
+    // List of all scopes this scope contains lexically.  This is not used
+    // for execution, but is used during dry-runs for debugging.
+    private List<IRScope> lexicalChildren;
+
     /** Parser static-scope that this IR scope corresponds to */
     private StaticScope staticScope;
-
-    /** Live version of module within whose context this method executes */
-    private RubyModule containerModule;
 
     /** List of IR instructions for this method */
     private List<Instr> instrList;
 
     /** Control flow graph representation of this method's instructions */
     private CFG cfg;
-
-    /** List of (nested) closures in this scope */
-    private List<IRClosure> nestedClosures;
 
     /** Local variables defined in this scope */
     private Set<Variable> definedLocalVars;
@@ -138,13 +142,6 @@ public abstract class IRScope implements ParseResult {
 
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
-
-    // Index values to guarantee we don't assign same internal index twice
-    private int nextClosureIndex;
-
-    // List of all scopes this scope contains lexically.  This is not used
-    // for execution, but is used during dry-runs for debugging.
-    List<IRScope> lexicalChildren;
 
     private int instructionsOffsetInfoPersistenceBuffer = -1;
     private IRReaderDecoder persistenceStore = null;
@@ -1230,38 +1227,6 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    public void splitCalls() {
-        // FIXME: (Enebo) We are going to make a SplitCallInstr so this logic can be separate
-        // from unsplit calls.  Comment out until new SplitCall is created.
-//        for (BasicBlock b: getNodes()) {
-//            List<Instr> bInstrs = b.getInstrs();
-//            for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
-//                Instr i = it.next();
-//                // Only user calls, not Ruby & JRuby internal calls
-//                if (i.operation == Operation.CALL) {
-//                    CallInstr call = (CallInstr)i;
-//                    Operand   r    = call.getReceiver();
-//                    Operand   m    = call.getMethodAddr();
-//                    Variable  mh   = _scope.getNewTemporaryVariable();
-//                    MethodLookupInstr mli = new MethodLookupInstr(mh, m, r);
-//                    // insert method lookup at the right place
-//                    it.previous();
-//                    it.add(mli);
-//                    it.next();
-//                    // update call address
-//                    call.setMethodAddr(mh);
-//                }
-//            }
-//        }
-//
-//        List<IRClosure> nestedClosures = _scope.getClosures();
-//        if (!nestedClosures.isEmpty()) {
-//            for (IRClosure c : nestedClosures) {
-//                c.getCFG().splitCalls();
-//            }
-//        }
-    }
-
     public void resetDFProblemsState() {
         dfProbs = new HashMap<String, DataFlowProblem>();
         for (IRClosure c: nestedClosures) c.resetDFProblemsState();
@@ -1348,11 +1313,6 @@ public abstract class IRScope implements ParseResult {
         if (index == null) return 0;
 
         return index.intValue();
-    }
-
-    public RubyModule getContainerModule() {
-//        System.out.println("GET: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
-        return containerModule;
     }
 
     public int getNextClosureId() {
