@@ -5,10 +5,10 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>1.7.10</version>
+    <version>1.7.11-SNAPSHOT</version>
   </parent>
   <artifactId>ripper</artifactId>
-  <version>1.7.10</version>
+  <version>1.7.11-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>JRuby Ripper</name>

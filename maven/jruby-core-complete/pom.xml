@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.10</version>
+    <version>1.7.11-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core-complete</artifactId>
   <name>JRuby Core Complete</name>

@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>1.7.10</version>
+    <version>1.7.11-SNAPSHOT</version>
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-ext</artifactId>
-  <version>1.7.10</version>
+  <version>1.7.11-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>JRuby Ext</name>
