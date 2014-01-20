@@ -427,7 +427,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
-        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(closure.getSelf()));
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);
@@ -443,7 +443,7 @@ public class IRBuilder {
 
         Variable lambda = s.getNewTemporaryVariable();
         // SSS FIXME: Is this the right self here?
-        WrappedIRClosure lambdaBody = new WrappedIRClosure(getSelf(s), closure);
+        WrappedIRClosure lambdaBody = new WrappedIRClosure(s.getSelf(), closure);
         s.addInstr(new BuildLambdaInstr(lambda, lambdaBody, node.getPosition()));
         return lambda;
     }
@@ -470,10 +470,6 @@ public class IRBuilder {
             case LAMBDANODE: return buildLambda((LambdaNode)node, s);
             default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
-    }
-
-    protected Variable getSelf(IRScope s) {
-        return s.getSelf();
     }
 
     protected Variable copyAndReturnValue(IRScope s, Operand val) {
@@ -596,7 +592,7 @@ public class IRBuilder {
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), rhsVal));
+                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), rhsVal));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -694,7 +690,7 @@ public class IRBuilder {
                 v = s.getNewTemporaryVariable();
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -713,7 +709,7 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        s.addInstr(new AliasInstr(getSelf(s), newName, oldName));
+        s.addInstr(new AliasInstr(s.getSelf(), newName, oldName));
 
         return manager.getNil();
     }
@@ -1140,7 +1136,7 @@ public class IRBuilder {
             return new ScopeModule(cvarScope);
         } else {
             Variable tmp = s.getNewTemporaryVariable();
-            s.addInstr(new GetClassVarContainerModuleInstr(tmp, s.getCurrentScopeVariable(), declContext ? null : getSelf(s)));
+            s.addInstr(new GetClassVarContainerModuleInstr(tmp, s.getCurrentScopeVariable(), declContext ? null : s.getSelf()));
             return tmp;
         }
     }
@@ -1494,7 +1490,7 @@ public class IRBuilder {
             case GLOBALVARNODE:
                 return buildDefinitionCheck(s, new GlobalIsDefinedInstr(s.getNewTemporaryVariable(), new StringLiteral(((GlobalVarNode) node).getName())), "global-variable");
             case INSTVARNODE:
-                return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
+                return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), s.getSelf(), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
             case YIELDNODE:
                 return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable(), s.getImplicitBlockArg()), "yield");
             case BACKREFNODE:
@@ -1579,13 +1575,13 @@ public class IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
-                s.addInstr(new IsMethodBoundInstr(tmpVar, getSelf(s), mName));
+                s.addInstr(new IsMethodBoundInstr(tmpVar, s.getSelf(), mName));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
                 return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
             }
             case VCALLNODE:
-                return buildDefinitionCheck(s, new IsMethodBoundInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((VCallNode) node).getName())), "method");
+                return buildDefinitionCheck(s, new IsMethodBoundInstr(s.getNewTemporaryVariable(), s.getSelf(), new StringLiteral(((VCallNode) node).getName())), "method");
             case CALLNODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
@@ -1662,7 +1658,7 @@ public class IRBuilder {
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
                         s.addInstr(new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                        s.addInstr(new IsMethodBoundInstr(tmpVar, getSelf(s), attrMethodName));
+                        s.addInstr(new IsMethodBoundInstr(tmpVar, s.getSelf(), attrMethodName));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(((AttrAssignNode) node).getArgsNode(), s, "assignment");
                         return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
@@ -1678,11 +1674,11 @@ public class IRBuilder {
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
             }
             case ZSUPERNODE:
-                return buildDefinitionCheck(s, new SuperMethodBoundInstr(s.getNewTemporaryVariable(), getSelf(s)), "super");
+                return buildDefinitionCheck(s, new SuperMethodBoundInstr(s.getNewTemporaryVariable(), s.getSelf()), "super");
             case SUPERNODE: {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new SuperMethodBoundInstr(tmpVar, getSelf(s)));
+                s.addInstr(new SuperMethodBoundInstr(tmpVar, s.getSelf()));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
                 return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
@@ -1744,7 +1740,7 @@ public class IRBuilder {
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(manager, s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
-        method.addInstr(new ReceiveSelfInstr(getSelf(s)));
+        method.addInstr(new ReceiveSelfInstr(s.getSelf()));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
@@ -2305,7 +2301,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), s.getSelf(), args.toArray(new Operand[args.size()]), block);
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2437,7 +2433,7 @@ public class IRBuilder {
         IRBuilder forBuilder = newIRBuilder(manager);
 
             // Receive self
-        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(closure.getSelf()));
 
             // Build args
         Node varNode = forNode.getVarNode();
@@ -2460,7 +2456,7 @@ public class IRBuilder {
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
 
-        return new WrappedIRClosure(getSelf(s), closure);
+        return new WrappedIRClosure(s.getSelf(), closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope s) {
@@ -2570,13 +2566,13 @@ public class IRBuilder {
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode, IRScope s) {
         Operand val = build(instAsgnNode.getValueNode(), s);
         // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        s.addInstr(new PutFieldInstr(getSelf(s), instAsgnNode.getName(), val));
+        s.addInstr(new PutFieldInstr(s.getSelf(), instAsgnNode.getName(), val));
         return val;
     }
 
     public Operand buildInstVar(InstVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new GetFieldInstr(ret, getSelf(s), node.getName()));
+        s.addInstr(new GetFieldInstr(ret, s.getSelf(), node.getName()));
         return ret;
     }
 
@@ -2588,7 +2584,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
-        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(closure.getSelf()));
 
         // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -2613,7 +2609,7 @@ public class IRBuilder {
             closure.addInstr(new ReturnInstr(closureRetVal));
         }
 
-        return new WrappedIRClosure(getSelf(s), closure);
+        return new WrappedIRClosure(s.getSelf(), closure);
     }
 
     public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
@@ -3352,7 +3348,7 @@ public class IRBuilder {
     }
 
     public Operand buildSelf(Node node, IRScope s) {
-        return getSelf(s);
+        return s.getSelf();
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
@@ -3380,7 +3376,7 @@ public class IRBuilder {
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(ret, getSelf(s), args, block);
+            superInstr = new UnresolvedSuperInstr(ret, s.getSelf(), args, block);
         }
 
         receiveBreakException(s, block, superInstr);
@@ -3398,7 +3394,7 @@ public class IRBuilder {
 
     private Operand buildSuperInScriptBody(IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new UnresolvedSuperInstr(ret, getSelf(s), NO_ARGS, null));
+        s.addInstr(new UnresolvedSuperInstr(ret, s.getSelf(), NO_ARGS, null));
         return ret;
     }
 
@@ -3499,7 +3495,7 @@ public class IRBuilder {
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         Variable callResult = s.getNewTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
+        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), s.getSelf(), NO_ARGS, null);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -3563,7 +3559,7 @@ public class IRBuilder {
             // receive args from the nearest method the block is embedded in.  But,
             // in the presence of 'define_method', all bets are off.
             Variable ret = s.getNewTemporaryVariable();
-            receiveBreakException(s, block, new ZSuperInstr(ret, getSelf(s), block));
+            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block));
             return ret;
         }
     }
