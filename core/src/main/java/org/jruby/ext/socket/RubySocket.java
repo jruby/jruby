@@ -204,7 +204,14 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        InetSocketAddress iaddr = Sockaddr.addressFromArg(context, arg);
+        InetSocketAddress iaddr = null;
+        
+        if (arg instanceof Addrinfo){
+            Addrinfo addr = (Addrinfo) arg;
+            iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
+        } else {
+             iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        }
 
         doBind(context, getChannel(), iaddr);
 
