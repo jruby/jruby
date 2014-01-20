@@ -179,14 +179,6 @@ mvn -Pjruby-jars
 
 the gem will be in ./maven/jruby-jars/target
 
-### gems - excluding jruby jars gem###
-
-```
-mvn -Pgems
-```
-
-the gem will be in ./maven/gems/*/pkg
-
 ### building ALL packages ###
 
 ```
@@ -210,3 +202,29 @@ mvn clean deploy -Psonatype-oss-release -Prelease
 ```
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
+
+# RUBY-MAVEN #
+
+install/update the gem with (MRI or jruby) - needs version 3.1.1.0.2 or newer
+
+```
+gem install ruby-maven
+```
+
+for the embedded ruby script ruby-maven uses jruby 1.7.10 with MRI or the jruby version launching rmvn
+
+```
+rmvn clean install
+```
+
+regular maven uses the the jruby from the installion, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
+
+ruby-maven is just maven with a ruby DSL and it is a stripped version of [tesla-polyglot-cli](https://github.com/tesla/tesla-polyglot) which comes with further DSL like yaml, scala, groovy, etc
+
+running rmvn or tesla-poluglot-cli will generate the pom.xml from pom.rb or Mavenfile (with the accompanied gemspec file).
+
+changes on the scripts in **pom.rb** or **Mavenfile** will work directly with regular maven. any changes with the actual pom DSL needs to be translated to opm.xml via
+
+```
+rmvn validate -Pall
+```
