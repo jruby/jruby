@@ -383,7 +383,16 @@ public class Addrinfo extends RubyObject {
         // unimplemented
         return context.nil;
     }
-
+    
+    @JRubyMethod
+    public IRubyObject to_str(ThreadContext context){
+        return context.runtime.newString(toString());
+    }
+    
+    public String toString(){  
+        return inetAddress.getHostAddress() + ":" + port;
+    }
+    
     private InetAddress inetAddress;
     private int port;
     private ProtocolFamily pfamily;
