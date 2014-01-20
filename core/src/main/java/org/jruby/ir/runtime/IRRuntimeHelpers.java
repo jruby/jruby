@@ -139,9 +139,10 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject handlePropagatedBreak(ThreadContext context, IRScope scope, Object bjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handlePropagatedBreak(ThreadContext context, IRScope scope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
-            throw (RuntimeException)bjExc;
+            Helpers.throwException((Throwable)bjExc);
+            return null;
         }
 
         IRBreakJump bj = (IRBreakJump)bjExc;
