@@ -267,8 +267,9 @@ public class IRBuilder {
         for (int i = n-1; i >= 0; i--) {
             EnsureBlockInfo ebi = ebArray[i];
 
-            //
-            if (ebi.innermostLoop != loop) break;
+            // For "break" and "next" instructions, we only want to run
+            // to run ensure blocks from the loops they are present in.
+            if (loop != null && ebi.innermostLoop != loop) break;
 
             Label retLabel = s.getNewLabel();
             if (ebi.savedGlobalException != null) {
