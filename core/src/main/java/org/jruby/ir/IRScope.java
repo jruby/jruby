@@ -415,14 +415,6 @@ public abstract class IRScope implements ParseResult {
         instrList.add(0, new CopyInstr(v, initState));
     }
 
-    public boolean isForLoopBody() {
-        return false;
-    }
-
-    public boolean isBeginEndBlock() {
-        return false;
-    }
-
     public Label getNewLabel(String prefix) {
         return new Label(prefix, allocateNextPrefixedName(prefix));
     }
@@ -602,9 +594,9 @@ public abstract class IRScope implements ParseResult {
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
         this.instrList = null;
-        
+
         setCFG(newCFG);
-        
+
         return newCFG;
     }
 
@@ -982,15 +974,15 @@ public abstract class IRScope implements ParseResult {
     public void markUnusedImplicitBlockArg() {
         hasUnusedImplicitBlockArg = true;
     }
-    
+
     /**
-     * Get the local variables for this scope.  This should only be used by persistence
-     * layer.
+     * Get the local variables for this scope.
+     * This should only be used by persistence layer.
      */
     public Map<String, LocalVariable> getLocalVariables() {
         return localVars;
     }
-    
+
     /**
      * Set the local variables for this scope. This should only be used by persistence
      * layer.
@@ -999,7 +991,7 @@ public abstract class IRScope implements ParseResult {
     public void setLocalVariables(Map<String, LocalVariable> variables) {
         this.localVars = variables;
     }
-    
+
     public void setLabelIndices(Map<String, Integer> indices) {
         nextVarIndex = indices;
     }
@@ -1290,19 +1282,19 @@ public abstract class IRScope implements ParseResult {
 
         return index;
     }
-    
+
     // This is how IR Persistence can re-read existing saved labels and reset
     // scope back to proper index.
     public void setPrefixedNameIndexTo(String prefix, int newIndex) {
         int index = getPrefixCountSize(prefix);
 
-        nextVarIndex.put(prefix, index);        
+        nextVarIndex.put(prefix, index);
     }
 
     protected void resetVariableCounter(String prefix) {
         nextVarIndex.remove(prefix);
     }
-    
+
     public Map<String, Integer> getVarIndices() {
         return nextVarIndex;
     }
@@ -1319,6 +1311,14 @@ public abstract class IRScope implements ParseResult {
         nextClosureIndex++;
 
         return nextClosureIndex;
+    }
+
+    public boolean isForLoopBody() {
+        return false;
+    }
+
+    public boolean isBeginEndBlock() {
+        return false;
     }
 
     /**
