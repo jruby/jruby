@@ -1032,20 +1032,20 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClassBody c = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
-        Variable classBody = s.getNewTemporaryVariable();
-        s.addInstr(new DefineClassInstr(classBody, c, container, superClass));
+        IRClassBody classBody = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
+        Variable tmpVar = s.getNewTemporaryVariable();
+        s.addInstr(new DefineClassInstr(tmpVar, classBody, container, superClass));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new ProcessModuleBodyInstr(ret, classBody));
+        s.addInstr(new ProcessModuleBodyInstr(ret, tmpVar));
 
-        c.addInstr(new ReceiveSelfInstr(c.getSelf()));
+        classBody.addInstr(new ReceiveSelfInstr(classBody.getSelf()));
         // Set %current_scope = <c>
         // Set %current_module = module<c>
-        c.addInstr(new CopyInstr(c.getCurrentScopeVariable(), new CurrentScope(c)));
-        c.addInstr(new CopyInstr(c.getCurrentModuleVariable(), new ScopeModule(c)));
+        classBody.addInstr(new CopyInstr(classBody.getCurrentScopeVariable(), new CurrentScope(classBody)));
+        classBody.addInstr(new CopyInstr(classBody.getCurrentModuleVariable(), new ScopeModule(classBody)));
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(classNode.getBodyNode(), c);
-        if (rv != null) c.addInstr(new ReturnInstr(rv));
+        Operand rv = newIRBuilder(manager).build(classNode.getBodyNode(), classBody);
+        if (rv != null) classBody.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
@@ -1064,21 +1064,21 @@ public class IRBuilder {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
 
         // Create a dummy meta class and record it as being lexically defined in scope s
-        IRModuleBody mc = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
-        Variable classBody = s.getNewTemporaryVariable();
-        s.addInstr(new DefineMetaClassInstr(classBody, receiver, mc));
+        IRModuleBody metaClassBody = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
+        Variable tmpVar = s.getNewTemporaryVariable();
+        s.addInstr(new DefineMetaClassInstr(tmpVar, receiver, metaClassBody));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new ProcessModuleBodyInstr(ret, classBody));
+        s.addInstr(new ProcessModuleBodyInstr(ret, tmpVar));
 
-        mc.addInstr(new ReceiveSelfInstr(mc.getSelf()));
+        metaClassBody.addInstr(new ReceiveSelfInstr(metaClassBody.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        mc.addInstr(new ReceiveClosureInstr(mc.getImplicitBlockArg()));
-        mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope(mc)));
-        mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new ScopeModule(mc)));
+        metaClassBody.addInstr(new ReceiveClosureInstr(metaClassBody.getImplicitBlockArg()));
+        metaClassBody.addInstr(new CopyInstr(metaClassBody.getCurrentScopeVariable(), new CurrentScope(metaClassBody)));
+        metaClassBody.addInstr(new CopyInstr(metaClassBody.getCurrentModuleVariable(), new ScopeModule(metaClassBody)));
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(sclassNode.getBodyNode(), mc);
-        if (rv != null) mc.addInstr(new ReturnInstr(rv));
+        Operand rv = newIRBuilder(manager).build(sclassNode.getBodyNode(), metaClassBody);
+        if (rv != null) metaClassBody.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
@@ -1239,22 +1239,22 @@ public class IRBuilder {
         public Operand run(Object[] args);
     }
 
-    private Operand protectCodeWithRescue(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
+    private Operand protectCodeWithRescue(IRScope s, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
         // This effectively mimics a begin-rescue-end code block
         // Except this catches all exceptions raised by the protected code
 
-        Variable rv = m.getNewTemporaryVariable();
-        Label rBeginLabel = m.getNewLabel();
-        Label rEndLabel   = m.getNewLabel();
-        Label rescueLabel = m.getNewLabel();
+        Variable rv = s.getNewTemporaryVariable();
+        Label rBeginLabel = s.getNewLabel();
+        Label rEndLabel   = s.getNewLabel();
+        Label rescueLabel = s.getNewLabel();
 
         // Protected region code
-        m.addInstr(new LabelInstr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
+        s.addInstr(new LabelInstr(rBeginLabel));
+        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
-        m.addInstr(new CopyInstr(rv, (Operand)v1));
-        m.addInstr(new JumpInstr(rEndLabel));
-        m.addInstr(new ExceptionRegionEndMarkerInstr());
+        s.addInstr(new CopyInstr(rv, (Operand)v1));
+        s.addInstr(new JumpInstr(rEndLabel));
+        s.addInstr(new ExceptionRegionEndMarkerInstr());
 
         // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
         // We could preload a set of constant objects that are preloaded at boot time and use them
@@ -1269,26 +1269,26 @@ public class IRBuilder {
         // But, unsure if this caching is safe ... so, just an idea here for now.
 
         // Rescue code
-        Label caughtLabel = m.getNewLabel();
-        Variable exc = m.getNewTemporaryVariable();
-        Variable excType = m.getNewTemporaryVariable();
+        Label caughtLabel = s.getNewLabel();
+        Variable exc = s.getNewTemporaryVariable();
+        Variable excType = s.getNewTemporaryVariable();
 
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
-        m.addInstr(new LabelInstr(rescueLabel));
-        m.addInstr(new ReceiveRubyExceptionInstr(exc));
-        m.addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
-        outputExceptionCheck(m, excType, exc, caughtLabel);
+        s.addInstr(new LabelInstr(rescueLabel));
+        s.addInstr(new ReceiveRubyExceptionInstr(exc));
+        s.addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
+        outputExceptionCheck(s, excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
-        m.addInstr(new ThrowExceptionInstr(exc));
+        s.addInstr(new ThrowExceptionInstr(exc));
 
         // exc === Exception; Run the rescue block
-        m.addInstr(new LabelInstr(caughtLabel));
+        s.addInstr(new LabelInstr(caughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
-        if (v2 != null) m.addInstr(new CopyInstr(rv, manager.getNil()));
+        if (v2 != null) s.addInstr(new CopyInstr(rv, manager.getNil()));
 
         // End
-        m.addInstr(new LabelInstr(rEndLabel));
+        s.addInstr(new LabelInstr(rEndLabel));
 
         return rv;
     }
@@ -1560,8 +1560,8 @@ public class IRBuilder {
                 CodeBlock rescueBlock = new CodeBlock() {
                     public Operand run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
-                        IRScope  m  = (IRScope)args[0];
-                        m.addInstr(new RestoreErrorInfoInstr((Operand) args[1]));
+                        IRScope s  = (IRScope)args[0];
+                        s.addInstr(new RestoreErrorInfoInstr((Operand) args[1]));
                         return manager.getNil();
                     }
                 };
@@ -2700,20 +2700,20 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRModuleBody m = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
-        Variable moduleBody = s.getNewTemporaryVariable();
-        s.addInstr(new DefineModuleInstr(moduleBody, m, container));
+        IRModuleBody moduleBody = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
+        Variable tmpVar = s.getNewTemporaryVariable();
+        s.addInstr(new DefineModuleInstr(tmpVar, moduleBody, container));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new ProcessModuleBodyInstr(ret, moduleBody));
+        s.addInstr(new ProcessModuleBodyInstr(ret, tmpVar));
 
-        m.addInstr(new ReceiveSelfInstr(m.getSelf()));
+        moduleBody.addInstr(new ReceiveSelfInstr(moduleBody.getSelf()));
         // Set %current_scope = <c>
         // Set %current_module = module<c>
-        m.addInstr(new CopyInstr(m.getCurrentScopeVariable(), new CurrentScope(m)));
-        m.addInstr(new CopyInstr(m.getCurrentModuleVariable(), new ScopeModule(m)));
+        moduleBody.addInstr(new CopyInstr(moduleBody.getCurrentScopeVariable(), new CurrentScope(moduleBody)));
+        moduleBody.addInstr(new CopyInstr(moduleBody.getCurrentModuleVariable(), new ScopeModule(moduleBody)));
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(moduleNode.getBodyNode(), m);
-        if (rv != null) m.addInstr(new ReturnInstr(rv));
+        Operand rv = newIRBuilder(manager).build(moduleNode.getBodyNode(), moduleBody);
+        if (rv != null) moduleBody.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
