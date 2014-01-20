@@ -149,7 +149,11 @@ class OperandDecoderMap {
     }
 
     private Regexp decodeRegexp() {
-        return new Regexp(d.decodeOperand(), RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
+        Operand regex = d.decodeOperand();
+        boolean isNone = d.decodeBoolean();
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(d.decodeInt());
+        options.setEncodingNone(isNone);
+        return new Regexp(regex, options);
     }
 
     private Operand decodeTemporaryVariable() {

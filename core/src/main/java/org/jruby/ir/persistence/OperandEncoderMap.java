@@ -166,6 +166,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Regexp(Regexp regexp) {
         encode(regexp.getRegexp());
+        encoder.encode(regexp.options.isEncodingNone());
         encoder.encode(regexp.options.toEmbeddedOptions());
     }
 
