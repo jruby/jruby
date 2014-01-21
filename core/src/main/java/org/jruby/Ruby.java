@@ -2578,12 +2578,9 @@ public final class Ruby {
         try {
             // Get IR from .ir file
             return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
-        } catch (Exception e) {
-            System.out.println(e);
-            e.printStackTrace();
-            // If something gone wrong with ir -
-//            return parseFileAndGetAST(in, file, scope, lineNumber, false);
-            return null;
+        } catch (IOException e) {
+            // FIXME: What is something actually throws IOException
+            return parseFileAndGetAST(in, file, scope, lineNumber, false);
         }
     }
 
@@ -2602,11 +2599,10 @@ public final class Ruby {
         
         try {
             return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println(e);
             e.printStackTrace();
-//            return parseFileFromMainAndGetAST(in, file, scope);
-            return null;
+            return parseFileFromMainAndGetAST(in, file, scope);
         }
     }
 
