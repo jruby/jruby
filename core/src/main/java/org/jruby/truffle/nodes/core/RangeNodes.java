@@ -129,7 +129,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "include?", maxArgs = 1)
+    @CoreMethod(names = {"include?", "==="}, maxArgs = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode callLess;
