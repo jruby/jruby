@@ -6,8 +6,6 @@
 require 'rbconfig'
 require 'ffi'
 
-FFI_RUBY_SIGNATURE = "#{RUBY_ENGINE}-#{RUBY_VERSION}"
-
 CPU = case RbConfig::CONFIG['host_cpu'].downcase
   when /i[3456]86/
     # Darwin always reports i686, even when running in 64bit mode
@@ -78,6 +76,16 @@ require "ffi"
 
 module TestLibrary
   PATH = compile_library("fixtures", "libtest.#{FFI::Platform::LIBSUFFIX}")
+
+  def self.force_gc
+    if RUBY_PLATFORM =~ /java/
+      java.lang.System.gc
+    elsif defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
+      GC.run(true)
+    else
+      GC.start
+    end
+  end
 end
 module LibTest
   extend FFI::Library

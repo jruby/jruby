@@ -72,8 +72,13 @@ describe "Custom type definitions" do
       Module.new do
         extend FFI::Library
         ffi_lib "c"
-        # read(2) is a standard UNIX function
-        attach_function :read, [:int, :pointer, :size_t], :ssize_t
+        if FFI::Platform.windows?
+          # _read() is a function of msvcrt.dll
+          attach_function :_read, [:int, :pointer, :uint], :int
+        else
+          # read(2) is a standard UNIX function
+          attach_function :read, [:int, :pointer, :size_t], :ssize_t
+        end
       end
     end.should_not raise_error
   end

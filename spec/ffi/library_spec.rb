@@ -26,6 +26,17 @@ describe "Library" do
     end
   end
 
+  describe "ffi_lib" do
+    it "empty name list should raise error" do
+      lambda {
+        Module.new do |m|
+          m.extend FFI::Library
+          ffi_lib
+        end
+      }.should raise_error(LoadError)
+    end
+    
+  end
   unless RbConfig::CONFIG['target_os'] =~ /mswin|mingw/
     it "attach_function with no library specified" do
       lambda {
@@ -79,6 +90,14 @@ describe "Library" do
           attach_function :getpid, [ ], :uint
         end.getpid.should == Process.pid
       }.should raise_error(LoadError)
+    end
+    it "attach_function :bool_return_true from [ File.expand_path(#{TestLibrary::PATH.inspect}) ]" do
+      Module.new do |m|
+        m.extend FFI::Library
+        ffi_lib File.expand_path(TestLibrary::PATH)
+        attach_function :bool_return_true, [ ], :bool
+        m.bool_return_true.should == true
+      end
     end
   end
 

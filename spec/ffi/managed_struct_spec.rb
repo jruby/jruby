@@ -39,11 +39,7 @@ describe "Managed Struct" do
         loop = 5
         while loop > 0 && @@count < count
           loop -= 1
-          if RUBY_PLATFORM =~ /java/
-            java.lang.System.gc
-          else
-            GC.start
-          end
+          TestLibrary.force_gc
           sleep 0.05 if @@count < count
         end
       end

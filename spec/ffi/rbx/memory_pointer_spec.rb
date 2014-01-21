@@ -116,4 +116,12 @@ describe "MemoryPointer" do
     m.write_long(0x12345678)
     m.read_pointer.null?.should == false
   end
+  
+  it "initialize with block should execute block" do
+    block_executed = false
+    FFI::MemoryPointer.new(:pointer) do |ptr|
+      block_executed = true
+    end
+    block_executed.should be_true
+  end
 end
