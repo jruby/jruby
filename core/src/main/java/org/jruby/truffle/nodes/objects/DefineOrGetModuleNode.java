@@ -63,7 +63,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             if (constantValue instanceof RubyModule) {
                 definingModule = (RubyModule) constantValue;
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constantValue.toString(), "module"));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module"));
             }
         }
 
