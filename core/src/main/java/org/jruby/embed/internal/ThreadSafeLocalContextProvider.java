@@ -30,6 +30,8 @@
 package org.jruby.embed.internal;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
 
@@ -38,17 +40,31 @@ import org.jruby.embed.LocalVariableBehavior;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider {
-    private ThreadLocal<LocalContext> contextHolder =
-            new ThreadLocal<LocalContext>() {
+    private volatile ConcurrentLinkedQueue<AtomicReference<LocalContext>> contextRefs =
+        new ConcurrentLinkedQueue<AtomicReference<LocalContext>>();
+
+    private ThreadLocal<AtomicReference<LocalContext>> contextHolder =
+            new ThreadLocal<AtomicReference<LocalContext>>() {
                 @Override
-                public LocalContext initialValue() {
-                    return getInstance();
-                }
-                
-                @Override
-                public void remove() {
-                    LocalContext localContext = get();
-                    localContext.remove();
+                public AtomicReference<LocalContext> initialValue() {
+                    AtomicReference<LocalContext> contextRef = null;
+
+                    try {
+                        contextRef = new AtomicReference<LocalContext>(getInstance());
+                        contextRefs.add(contextRef);
+                        return contextRef;
+                    } catch (NullPointerException npe) {
+                        if (contextRefs == null) {
+                            // contextRefs became null, we've been terminated
+                            if (contextRef != null) {
+                                contextRef.get().remove();
+                            }
+
+                            return null;
+                        } else {
+                            throw npe;
+                        }
+                    }
                 }
             };
 
@@ -58,22 +74,34 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
     }
 
     public Ruby getRuntime() {
-        return contextHolder.get().getThreadSafeRuntime();
+        return contextHolder.get().get().getThreadSafeRuntime();
     }
 
     public BiVariableMap getVarMap() {
-        return contextHolder.get().getVarMap(this);
+        return contextHolder.get().get().getVarMap(this);
     }
 
     public Map getAttributeMap() {
-        return contextHolder.get().getAttributeMap();
+        return contextHolder.get().get().getAttributeMap();
     }
 
     public boolean isRuntimeInitialized() {
-        return contextHolder.get().initialized;
+        return contextHolder.get().get().initialized;
     }
-    
+
     public void terminate() {
+        ConcurrentLinkedQueue<AtomicReference<LocalContext>> terminated = contextRefs;
+        contextRefs = null;
+
+        if (terminated != null) {
+            for (AtomicReference<LocalContext> contextRef : terminated) {
+                contextRef.get().remove();
+                contextRef.lazySet(null);
+            }
+
+            terminated.clear();
+        }
+
         contextHolder.remove();
         contextHolder.set(null);
     }
