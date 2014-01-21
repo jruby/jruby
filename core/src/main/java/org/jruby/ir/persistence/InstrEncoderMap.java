@@ -647,7 +647,15 @@ public class InstrEncoderMap {
     }
 
     private void encodeZSuperInstr(ZSuperInstr instr) {
-        encodeCallBaseInstr(instr);
+        e.encode(instr.getReceiver());
+        Operand closure = instr.getClosureArg(null);
+        
+        if (closure != null) {
+            e.encode(true);
+            e.encode(closure);
+        } else {
+            e.encode(false);
+        }
     }
 
     private void encodeTwoOperandBranchInstr(TwoOperandBranchInstr instr) {
