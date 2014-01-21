@@ -83,7 +83,7 @@ public class JRubyTruffleBridge {
     public Object execute(RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
             final RubyParserResult parseResult = truffleContext.getParser().parse(truffleContext, DUMMY_SOURCE, parserContext, parentFrame, rootNode);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode(), parseResult.getFrameDescriptor());
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
             return callTarget.call(null, arguments);
