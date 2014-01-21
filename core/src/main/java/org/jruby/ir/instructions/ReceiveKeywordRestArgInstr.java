@@ -7,6 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyHash;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final int numUsedArgs;
@@ -24,6 +25,11 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
+    }
+
+    @Override
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), numUsedArgs);
     }
 
     @Override
