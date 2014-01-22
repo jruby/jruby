@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-public class ExceptionRegion {
+// This class is currently only used during CFG building and is hence made private.
+// A scope's CFG exception regions are currently not exposed anywhere after the CFG is built.
+// If in future, it is useful somewhere else, this class can be made public and a scope's
+// exception regions can be exposed as well.
+class ExceptionRegion {
     private Label firstRescueBlockLabel; // Label of the first rescue block
 
     private List<BasicBlock> exclusiveBBs;  // Basic blocks exclusively contained within this region
@@ -44,24 +48,6 @@ public class ExceptionRegion {
     public void addNestedRegion(ExceptionRegion r) {
         nestedRegions.add(r);
         exclusiveBBs.remove(r.exclusiveBBs.get(0));
-    }
-
-    // BB b has been merged into BB a.
-    // Update the exception region.
-    public void mergeBBs(BasicBlock a, BasicBlock b) {
-
-        // Remove b from exclusiveBBs.
-        exclusiveBBs.remove(b);
-
-        // Update endBB if it is b
-        if (endBB == b) {
-            endBB = a;
-        }
-
-        // Process nested regions
-        for (ExceptionRegion er: nestedRegions) {
-            er.mergeBBs(a, b);
-        }
     }
 
     public void setFirstRescueBB(BasicBlock frbb) {

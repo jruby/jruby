@@ -13,7 +13,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;

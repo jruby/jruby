@@ -56,8 +56,6 @@ public class CFG {
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     private Map<BasicBlock, BasicBlock> rescuerMap;
 
-    private List<ExceptionRegion> outermostERs;
-
     /** Entry BB */
     private BasicBlock entryBB;
 
@@ -79,7 +77,6 @@ public class CFG {
         this.graph = new DirectedGraph<BasicBlock>();
         this.bbMap = new HashMap<Label, BasicBlock>();
         this.rescuerMap = new HashMap<BasicBlock, BasicBlock>();
-        this.outermostERs = new ArrayList<ExceptionRegion>();
         this.nextBBId = 0;
         this.entryBB = this.exitBB = null;
         this.globalEnsureBB = null;
@@ -113,10 +110,6 @@ public class CFG {
 
     public BasicBlock getGlobalEnsureBB() {
         return globalEnsureBB;
-    }
-
-    public List<ExceptionRegion> getOutermostExceptionRegions() {
-        return outermostERs;
     }
 
     public LinkedList<BasicBlock> postOrderList() {
@@ -315,9 +308,7 @@ public class CFG {
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
-                if (nestedExceptionRegions.empty()) {
-                    outermostERs.add(rr);
-                } else {
+                if (!nestedExceptionRegions.empty()) {
                     nestedExceptionRegions.peek().addNestedRegion(rr);
                 }
 
@@ -403,12 +394,6 @@ public class CFG {
         buildExitBasicBlock(nestedExceptionRegions, firstBB, returnBBs, exceptionBBs, nextBBIsFallThrough, currBB, entryBB);
 
         optimize(); // remove useless cfg edges & orphaned bbs
-
-        /*
-        for (ExceptionRegion er: this.outermostERs) {
-            System.out.println(er);
-        }
-        */
 
         return graph;
     }
@@ -540,11 +525,6 @@ public class CFG {
             // Update rescue map
             if (aR == null && bR != null) {
                 setRescuerBB(a, bR);
-            }
-
-            // Fix up exception regions
-            for (ExceptionRegion er: this.outermostERs) {
-                er.mergeBBs(a, b);
             }
 
             return true;
@@ -724,9 +704,6 @@ public class CFG {
 
         this.entryBB = cloneBBMap.get(sourceCFG.entryBB);
         this.exitBB  = cloneBBMap.get(sourceCFG.exitBB);
-
-        // SSS FIXME: Is this field required after cfg is built?
-        this.outermostERs = null;
 
         // Clone rescuer map
         for (BasicBlock b: sourceCFG.rescuerMap.keySet()) {

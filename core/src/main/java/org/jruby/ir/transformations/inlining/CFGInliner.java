@@ -1,9 +1,7 @@
 package org.jruby.ir.transformations.inlining;
 
-import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
@@ -24,7 +22,6 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
-import org.jruby.ir.representations.ExceptionRegion;
 import org.jruby.ir.util.Edge;
 
 public class CFGInliner {
@@ -219,13 +216,6 @@ public class CFGInliner {
             }
         }
 
-        // SSS FIXME: Are these used anywhere post-CFG building?
-        // Clone exception regions
-        List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
-        for (ExceptionRegion r : methodCFG.getOutermostExceptionRegions()) {
-            exceptionRegions.add(r.cloneForInlining(ii));
-        }
-
         // Update bb rescuer map
         // splitBB will be protected by the same bb as callBB
         BasicBlock callBBrescuer = cfg.getRescuerBBFor(callBB);
@@ -347,13 +337,6 @@ public class CFGInliner {
                     cfg.addEdge(clonedSource, splitBB, e.getType());
                 }
             }
-        }
-
-        // SSS FIXME: Are these used anywhere post-CFG building?
-        // 5. No need to clone rescued regions -- just assimilate them
-        List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
-        for (ExceptionRegion r : closureCFG.getOutermostExceptionRegions()) {
-            exceptionRegions.add(r.cloneForInlining(ii));
         }
 
         // 6. Update bb rescuer map
