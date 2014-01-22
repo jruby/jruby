@@ -18,8 +18,8 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
- * Define a method. That is, store the definition of a method and when executed produce the
- * executable object that results.
+ * Define a method. That is, store the definition of a method and when executed
+ * produce the executable object that results.
  */
 @NodeInfo(shortName = "method-def")
 public class MethodDefinitionNode extends RubyNode {
@@ -35,7 +35,7 @@ public class MethodDefinitionNode extends RubyNode {
     protected final boolean requiresDeclarationFrame;
 
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
-                    boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
+            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -60,21 +60,27 @@ public class MethodDefinitionNode extends RubyNode {
 
         Visibility visibility;
 
-        if (visibilitySlot == null) {
-            visibility = Visibility.PUBLIC;
+        if (name.equals("initialize_copy")) {
+            visibility = Visibility.PRIVATE;
         } else {
-            Object visibilityObject;
+            if (visibilitySlot == null) {
 
-            try {
-                visibilityObject = frame.getObject(visibilitySlot);
-            } catch (FrameSlotTypeException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (visibilityObject instanceof Visibility) {
-                visibility = (Visibility) visibilityObject;
-            } else {
                 visibility = Visibility.PUBLIC;
+
+            } else {
+                Object visibilityObject;
+
+                try {
+                    visibilityObject = frame.getObject(visibilitySlot);
+                } catch (FrameSlotTypeException e) {
+                    throw new RuntimeException(e);
+                }
+
+                if (visibilityObject instanceof Visibility) {
+                    visibility = (Visibility) visibilityObject;
+                } else {
+                    visibility = Visibility.PUBLIC;
+                }
             }
         }
 
