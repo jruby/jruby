@@ -15,7 +15,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.0.8</tesla.version>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <build>
     <plugins>

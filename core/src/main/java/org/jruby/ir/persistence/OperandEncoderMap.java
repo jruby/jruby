@@ -42,7 +42,6 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.util.RegexpOptions;
 
 /**
  * Can cycles develop or will IR output guarantee non-cyclical nested operands?
@@ -113,8 +112,9 @@ class OperandEncoderMap extends IRVisitor {
         }
     }
 
-    // FIXME: Can't I determine this instead of persisting it?
-    @Override public void CurrentScope(CurrentScope scope) {  }
+    @Override public void CurrentScope(CurrentScope scope) {
+        encoder.encode(scope.getScope());
+    }
 
     //@Override public void DynamicSymbol(DynamicSymbol dsym) { encode(dsym.getSymbolName()); }
     @Override public void DynamicSymbol(DynamicSymbol dsym) {  }
@@ -135,7 +135,10 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void IRException(IRException irexception) { encoder.encode((byte) irexception.getType().ordinal()); }
 
-    @Override public void Label(Label label) { encoder.encode(label.label); }
+    @Override public void Label(Label label) { 
+        encoder.encode(label.prefix);
+        encoder.encode(label.id);
+    }
 
     @Override public void LocalVariable(LocalVariable variable) {
         encoder.encode(variable.getName());
@@ -162,11 +165,9 @@ class OperandEncoderMap extends IRVisitor {
     }
 
     @Override public void Regexp(Regexp regexp) {
-        RegexpOptions options = regexp.options;
-
         encode(regexp.getRegexp());
-        encoder.encode((byte) options.getKCode().ordinal());
-        encoder.encode(options.isKcodeDefault());
+        encoder.encode(regexp.options.isEncodingNone());
+        encoder.encode(regexp.options.toEmbeddedOptions());
     }
 
     @Override public void ScopeModule(ScopeModule scope) { encoder.encode(scope.getScope()); }

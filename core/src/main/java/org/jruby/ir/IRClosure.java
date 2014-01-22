@@ -16,7 +16,8 @@ import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveExceptionBase;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.operands.TemporaryVariableType;
@@ -70,6 +71,7 @@ public class IRClosure extends IRScope {
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
         this.arity = arity;
+        lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
             this.body = null;
@@ -203,7 +205,7 @@ public class IRClosure extends IRScope {
 
     @Override
     public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = localVars.getVariable(name);
+        LocalVariable lvar = localVars.get(name);
         if (lvar != null) return lvar;
 
         int newDepth = isForLoopBody ? scopeDepth : scopeDepth - 1;
@@ -215,8 +217,8 @@ public class IRClosure extends IRScope {
         if (isForLoopBody) return getLexicalParent().getNewLocalVariable(name, depth);
 
         if (depth == 0) {
-            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
-            localVars.putVariable(name, lvar);
+            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.size());
+            localVars.put(name, lvar);
             return lvar;
         } else {
             return getLexicalParent().getNewLocalVariable(name, depth-1);
@@ -332,9 +334,9 @@ public class IRClosure extends IRScope {
         CFG        cfg = cfg();
         BasicBlock geb = cfg.getGlobalEnsureBB();
         if (geb == null) {
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
             Variable exc = getNewTemporaryVariable();
-            geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
+            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break using runtime helper
             // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
             geb.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
@@ -342,11 +344,11 @@ public class IRClosure extends IRScope {
         } else {
             // SSS FIXME: Assumptions:
             //
-            // First instr is a 'ReceiveExceptionInstr'
+            // First instr is a 'ReceiveExceptionBase'
             // Last instr is a 'ThrowExceptionInstr'
 
             List<Instr> instrs = geb.getInstrs();
-            Variable exc = ((ReceiveExceptionInstr)instrs.get(0)).getResult();
+            Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
             instrs.set(instrs.size()-1, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
         }
 

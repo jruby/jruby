@@ -13,11 +13,13 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.instancevariables.*;
+import org.jruby.truffle.nodes.call.CallNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.RubyParser.*;
 import org.jruby.truffle.runtime.core.*;
@@ -96,7 +98,7 @@ public abstract class ModuleNodes {
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, readInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, name + "(attr_reader)", block);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_reader)", block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
             final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), null, name, Visibility.PUBLIC, false, methodImplementation);
@@ -139,7 +141,7 @@ public abstract class ModuleNodes {
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, name + "(attr_writer)", block);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_writer)", block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
             final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), null, name + "=", Visibility.PUBLIC, false, methodImplementation);
@@ -233,7 +235,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "constants", maxArgs = 0)
+    @CoreMethod(names = "constants", appendCallNode = true, minArgs = 1, maxArgs = 1)
     public abstract static class ConstantsNode extends CoreMethodNode {
 
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
@@ -245,8 +247,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
-            getContext().implementationMessage("Module#constants returns an empty array");
+        public RubyArray constants(@SuppressWarnings("unused") RubyModule module, Node callNode) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Module#constants returns an empty array");
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
     }
@@ -519,7 +521,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "private_constant", isSplatted = true)
+    @CoreMethod(names = "private_constant", appendCallNode = true, isSplatted = true)
     public abstract static class PrivateConstantNode extends CoreMethodNode {
 
         public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
@@ -531,13 +533,14 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule privateConstnat(RubyModule module, @SuppressWarnings("unused") Object... args) {
-            getContext().implementationMessage("private_constant does nothing at the moment");
+        public RubyModule privateConstant(RubyModule module, Object[] args) {
+            final Node callNode = (Node) args[args.length - 1];
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "private_constant does nothing at the moment");
             return module;
         }
     }
 
-    @CoreMethod(names = "protected", isSplatted = true)
+    @CoreMethod(names = "protected", appendCallNode = true, isSplatted = true)
     public abstract static class ProtectedNode extends CoreMethodNode {
 
         public ProtectedNode(RubyContext context, SourceSection sourceSection) {
@@ -549,8 +552,9 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doProtected(RubyModule module, @SuppressWarnings("unused") Object... args) {
-            getContext().implementationMessage("protected does nothing at the moment");
+        public RubyModule doProtected(RubyModule module, @SuppressWarnings("unused") Object[] args) {
+            final Node callNode = (Node) args[args.length - 1];
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "protected does nothing at the moment");
             return module;
         }
     }

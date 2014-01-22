@@ -2,7 +2,6 @@ fails:Literal (A::X) constant resolution sends #const_missing to the original cl
 fails:Literal (A::X) constant resolution raises a TypeError if a non-class or non-module qualifier is given
 fails:Literal (A::X) constant resolution with statically assigned constants does not search the singleton class of the class or module
 fails:Literal (A::X) constant resolution with dynamically assigned constants does not search the singleton class of the class or module
-fails:Literal (A::X) constant resolution with dynamically assigned constants evaluates the right hand side before evaluating a constant path
 fails:Constant resolution within methods sends #const_missing to the original class or module scope
 fails:Constant resolution within methods with statically assigned constants searches the lexical scope of the method not the receiver's immediate class
 fails:Constant resolution within methods with statically assigned constants searches the lexical scope of a singleton method
@@ -36,10 +35,7 @@ fails:Module#public_constant marked constants in a class is defined? with A::B f
 fails:Module#public_constant marked constants in Object can be accessed using ::Const form
 fails:Module#public_constant marked constants in Object is defined? using ::Const form
 fails:Module#private_constant marked constants in a class is defined? from lexical scope
-fails:Literal (A::X) constant resolution with statically assigned constants searches a module included in the superclass
-fails:Constant resolution within methods with statically assigned constants searches a module included in the superclass
 fails:Constant resolution within methods with statically assigned constants searches the superclass chain
 fails:Literal (A::X) constant resolution with statically assigned constants searches Object if no class or module qualifier is given
 fails:Literal (A::X) constant resolution with statically assigned constants searches Object after searching other scopes
-fails:Constant resolution within methods with statically assigned constants searches the superclass chain
 fails:Literal (A::X) constant resolution with statically assigned constants searches the superclass chain

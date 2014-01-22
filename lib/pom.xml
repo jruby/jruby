@@ -14,12 +14,19 @@
     <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>9000.dev</version>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>jruby-openssl</artifactId>
+      <version>${jopenssl.version}</version>
+      <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
@@ -63,12 +70,6 @@
       <version>${bc.version}</version>
       <type>gem</type>
     </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jruby-openssl</artifactId>
-      <version>${jopenssl.version}</version>
-      <type>gem</type>
-    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -95,6 +96,14 @@
             </goals>
             <configuration>
               <artifactItems>
+                <artifactItem>
+                  <groupId>rubygems</groupId>
+                  <artifactId>jruby-openssl</artifactId>
+                  <version>${jopenssl.version}</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>rake</artifactId>
@@ -151,14 +160,6 @@
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
                 </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>jruby-openssl</artifactId>
-                  <version>${jopenssl.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
@@ -167,7 +168,7 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.8</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -185,7 +186,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>

@@ -1,16 +1,23 @@
 #-*- mode: ruby -*-
-
-gemspec :include_jars => true
-
-model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT').sub( /-SNAPSHOT-SNAPSHOT/, '-SNAPSHOT' )
-inherit "org.jruby:jruby-artifacts:#{model.version}"
+require 'fileutils'
 
 name "JRuby Jars Gem"
 
-jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
-jar 'org.jruby:jruby-stdlib-complete', '${project.parent.version}'
+# tell maven to include the jar files into gem
+gemspec :include_jars => true
 
-plugin( :clean, '2.5' ) do
+#version = File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+version = model.version.gsub( /-SNAPSHOT$/, '' ).sub(/\.SNAPSHOT/, '-SNAPSHOT')
+# overwrite the version from gemspec
+model.version = version
+inherit "org.jruby:jruby-artifacts:#{model.version}"
+
+# we do not declare them in the gemspec
+jar 'org.jruby:jruby-stdlib', '${project.version}'
+
+# TODO this clean should be part of upstream when generating 
+# the pom for the gemspec 
+plugin( :clean ) do
   execute_goals( :clean,
                  :phase => :clean, 
                  :id => 'clean-lib',
@@ -21,20 +28,34 @@ end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
+            'tesla.version' => '0.0.9',
+            # we share the already installed gems
+            'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
             'jruby.home' => '${basedir}/../../' )
 
-jruby_plugin :gem do
+execute 'copy jruby.jar', 'prepare-package' do |ctx|
+  FileUtils.cp( File.join( ctx.project.properties[ 'jruby.home' ],
+                           'lib',
+                           'jruby.jar' ),
+                File.join( ctx.project.basedir.to_s, 
+                           'lib',
+                           "jruby-core-complete-#{ctx.project.version}.jar" ) )
+end
+
+# do not push the gem during deploy phase
+# the bang reuses the plugin declaration which is already in place and
+# adds the extra execute_goal to it
+jruby_plugin!( :gem ) do
   execute_goals :id => 'default-push', :skip => true
 end
 
 execute 'rename gem file', :package do |ctx|
-
-  require 'fileutils'
   gem = File.join( ctx.project.build.directory,
                    ctx.project.build.final_name + ".gem" )
   source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
-  FileUtils.mv( source, gem ) if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
-
+  if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
+    FileUtils.mv( source, gem )
+  end
 end
 
 plugin( :invoker )

@@ -13,8 +13,10 @@ import java.math.*;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -321,7 +323,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "methods", minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
     public abstract static class MethodsNode extends CoreMethodNode {
 
         public MethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -332,17 +334,17 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyArray methods(RubyObject self, boolean includeInherited) {
+        @Specialization(order = 1)
+        public RubyArray methods(RubyObject self, boolean includeInherited, Node callNode) {
             if (!includeInherited) {
-                self.getRubyClass().getContext().implementationMessage("Object#methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
 
-            return methods(self, UndefinedPlaceholder.INSTANCE);
+            return methods(self, callNode, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        @Specialization(order = 2)
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
@@ -460,7 +462,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "singleton_methods", minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "singleton_methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
     public abstract static class SingletonMethodsNode extends CoreMethodNode {
 
         public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -471,17 +473,17 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
+        @Specialization(order = 1)
+        public RubyArray singletonMethods(RubyObject self, boolean includeInherited, Node callNode) {
             if (!includeInherited) {
-                self.getRubyClass().getContext().implementationMessage("Object#singleton_methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
             }
 
-            return singletonMethods(self, UndefinedPlaceholder.INSTANCE);
+            return singletonMethods(self, callNode, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization
-        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        @Specialization(order = 2)
+        public RubyArray singletonMethods(RubyObject self, Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {

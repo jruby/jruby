@@ -68,9 +68,11 @@ import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
 import org.jruby.ir.instructions.ReceiveClosureInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
@@ -136,7 +138,6 @@ class InstrDecoderMap implements IRPersistenceValues {
     }*/
     
     public Instr decode(Operation operation) {
-        try {
         switch(operation) {
             case ALIAS: return new AliasInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
@@ -194,7 +195,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case METHOD_DEFINED: return new MethodDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_IS_PUBLIC: return new MethodIsPublicInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
+            case NONLOCAL_RETURN: return decodeNonlocalReturnInstr();
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
             case NOT: return new NotInstr(d.decodeVariable(), d.decodeOperand());
@@ -210,10 +211,11 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (IRClosure) d.decodeScope());
             case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
-            case RECV_EXCEPTION: return decodeReceiveException();
+            case RECV_RUBY_EXC: return decodeReceiveRubyException();
+            case RECV_JRUBY_EXC: return decodeReceiveJRubyException();
             case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
             case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
-            case RECV_OPT_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case RECV_OPT_ARG: return new ReceiveOptArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
             case RECV_REST_ARG: return decodeReceiveRestArgInstr();
@@ -235,11 +237,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case ZSUPER: return new ZSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
         }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        return null;
+        throw new IllegalArgumentException("Whoa bro: " + operation);
     }
 
     private Instr decodeAttrAssignInstr() {
@@ -362,8 +361,12 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new BUndefInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
 
-    private Instr decodeReceiveException() {
-        return new ReceiveExceptionInstr(d.decodeVariable(), d.decodeBoolean());
+    private Instr decodeReceiveRubyException() {
+        return new ReceiveRubyExceptionInstr(d.decodeVariable());
+    }
+
+    private Instr decodeReceiveJRubyException() {
+        return new ReceiveJRubyExceptionInstr(d.decodeVariable());
     }
 
     private Instr decodeSuperInstr(Operation operation) {
@@ -412,5 +415,14 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         
         return new UnresolvedSuperInstr(result, receiver, args, closure);
+    }
+
+    private Instr decodeNonlocalReturnInstr() {
+        Operand returnValue = d.decodeOperand();
+        boolean hasMethod = d.decodeBoolean();
+        
+        if (hasMethod) return new NonlocalReturnInstr(returnValue, (IRMethod) d.decodeScope());
+        
+        return new NonlocalReturnInstr(returnValue);
     }
  }

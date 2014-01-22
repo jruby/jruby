@@ -10,13 +10,15 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.dsl.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 
 @CoreClass(name = "Signal")
 public abstract class SignalNodes {
 
-    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 2, maxArgs = 2)
     public abstract static class SignalNode extends CoreMethodNode {
 
         public SignalNode(RubyContext context, SourceSection sourceSection) {
@@ -28,8 +30,8 @@ public abstract class SignalNodes {
         }
 
         @Specialization
-        public NilPlaceholder trap(@SuppressWarnings("unused") Object signal) {
-            getContext().implementationMessage("Signal#trap doesn't do anything");
+        public NilPlaceholder trap(@SuppressWarnings("unused") Object signal, Node callNode) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Signal#trap doesn't do anything");
             return NilPlaceholder.INSTANCE;
         }
 

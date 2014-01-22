@@ -1,67 +1,38 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
     <version>9000.dev</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby-stdlib</artifactId>
-  <packaging>jar</packaging>
   <name>JRuby Stdlib</name>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>readline</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>openssl</artifactId>
-      <version>0.9.4</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
   <properties>
-    <jruby.basedir>${basedir}/../../</jruby.basedir>
-    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
-    <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <bundle.name>JRuby Stdlib</bundle.name>
-    <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
+    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
-
   <build>
     <resources>
       <resource>
-        <directory>${gem.home}</directory>
         <targetPath>${jruby.complete.gems}</targetPath>
+        <directory>${gem.home}</directory>
         <includes>
-	  <include>gems/rake-${rake.version}/bin/r*</include>
-	  <include>gems/rdoc-${rdoc.version}/bin/r*</include>
+          <include>gems/rake-${rake.version}/bin/r*</include>
+          <include>gems/rdoc-${rdoc.version}/bin/r*</include>
           <include>specifications/default/*.gemspec</include>
         </includes>
       </resource>
       <resource>
-        <directory>${jruby.basedir}</directory>
         <targetPath>${jruby.complete.home}</targetPath>
+        <directory>${jruby.home}</directory>
         <includes>
           <include>bin/ast*</include>
           <include>bin/gem*</include>
@@ -76,103 +47,53 @@
           <include>lib/ruby/2.1/**</include>
           <include>lib/ruby/shared/**</include>
         </includes>
-	<excludes>
+        <excludes>
           <exclude>bin/jruby</exclude>
           <exclude>bin/jruby*_*</exclude>
           <exclude>bin/jruby*-*</exclude>
           <exclude>**/.*</exclude>
           <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
-	</excludes>
+        </excludes>
       </resource>
     </resources>
-
     <plugins>
       <plugin>
-	<artifactId>maven-source-plugin</artifactId>
-	<configuration>
-	  <skipSource>true</skipSource>
-	</configuration>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
       </plugin>
       <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
             <phase>process-resources</phase>
             <goals>
-              <goal>exec</goal>
+              <goal>execute</goal>
             </goals>
             <configuration>
-	      <script>
-		puts 'fix the gem stub files'
-		Dir[ '../../lib/ruby/gems/shared/bin/*' ].each do |f|
-		  content = File.read( f )
-		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
-")
-		  File.open( f, "w" ) { |file| file.print( new_content ) }
-		end
-	
-		puts 'generate the missing bat files'
-		RbConfig::CONFIG['bindir'] = File.join( '${jruby.basedir}', 'bin' )
-		require '${jruby.basedir}/core/src/main/ruby/jruby/commands.rb'
-		JRuby::Commands.generate_bat_stubs
-
-		puts 'copy jruby.bash to jruby'
-		require 'fileutils'
-		FileUtils.cp( File.join( '${jruby.complete.home}', 'bin', 'jruby.bash' ), File.join( '${jruby.complete.home}', 'bin', 'jruby' ) )
-		
-	      </script>
-	    </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-artifacts</id>
-            <phase>package</phase>
-            <goals>
-              <goal>attach-artifact</goal>
-            </goals>
-            <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>sources</classifier>
-                </artifact>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>javadoc</classifier>
-                </artifact>
-              </artifacts>
+              <taskId>fix shebang on gem bin files and add *.bat files</taskId>
+              <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-	<groupId>org.apache.felix</groupId>
-	<artifactId>maven-bundle-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-	    <configuration>
-	      <archive>
-		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-	      </archive>
-	    </configuration>
-          </execution>
-        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>${tesla.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>

@@ -1,20 +1,20 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
     <version>9000.dev</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby</artifactId>
-  <!--
-       keep it as jar even with empty content but that is easier
-       to add it as dependency to a project
-  -->
-  <packaging>jar</packaging>
   <name>JRuby Main Maven Artifact</name>
-
+  <properties>
+    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -27,87 +27,20 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-
-  <properties>
-    <jruby.basedir>${basedir}/../../</jruby.basedir>
-    <main.basedir>${project.parent.parent.basedir}</main.basedir>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
-	<artifactId>maven-source-plugin</artifactId>
-	<configuration>
-	  <skipSource>true</skipSource>
-	</configuration>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-artifacts</id>
-            <phase>package</phase>
-            <goals>
-              <goal>attach-artifact</goal>
-            </goals>
-            <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>sources</classifier>
-                </artifact>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>javadoc</classifier>
-                </artifact>
-              </artifacts>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-	<groupId>org.apache.felix</groupId>
-	<artifactId>maven-bundle-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-	    <configuration>
-	      <archive>
-		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-	      </archive>
-	    </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <preBuildHookScript>setup.bsh</preBuildHookScript>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

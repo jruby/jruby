@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class LabelInstr extends Instr implements FixedArityInstr {
     public final Label label;
@@ -22,6 +23,11 @@ public class LabelInstr extends Instr implements FixedArityInstr {
     @Override
     public String toString() {
         return label + ":";
+    }
+
+    @Override
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new LabelInstr(ii.getRenamedLabel(label));
     }
 
     @Override

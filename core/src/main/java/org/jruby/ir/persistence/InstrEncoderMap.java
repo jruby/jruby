@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
@@ -65,7 +66,8 @@ import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.PutInstr;
 import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
-import org.jruby.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
@@ -193,7 +195,8 @@ public class InstrEncoderMap {
             case RAISE_ARGUMENT_ERROR: encodeRaiseArgumentErrorInstr((RaiseArgumentErrorInstr) instr); break;
             case RECORD_END_BLOCK: encodeRecordEndBlockInstr((RecordEndBlockInstr) instr); break;
             case RECV_CLOSURE: /* no state */ break;
-            case RECV_EXCEPTION: encodeReceiveExceptionInstr((ReceiveExceptionInstr) instr); break;
+            case RECV_RUBY_EXC: encodeReceiveRubyExceptionInstr((ReceiveRubyExceptionInstr) instr); break;
+            case RECV_JRUBY_EXC: encodeReceiveJRubyExceptionInstr((ReceiveJRubyExceptionInstr) instr); break;
             case RECV_KW_ARG: encodeReceiveKeywordArgInstr((ReceiveKeywordArgInstr) instr); break;
             case RECV_KW_REST_ARG: encodeReceiveKeywordRestArgInstr((ReceiveKeywordRestArgInstr) instr); break;
             case RECV_OPT_ARG: encodeReceiveOptArgInstr((ReceiveOptArgInstr) instr); break;
@@ -471,7 +474,15 @@ public class InstrEncoderMap {
     }
 
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
-        e.encode(instr.getMethodToReturnFrom());
+        e.encode(instr.getReturnValue());
+        IRMethod method = instr.methodToReturnFrom;
+        
+        if (method == null) {
+            e.encode(false);
+        } else {
+            e.encode(true);
+            e.encode(method);
+        }
     }
 
     private void encodeCallBaseInstr(CallBase instr) {
@@ -529,10 +540,10 @@ public class InstrEncoderMap {
         e.encode(instr.getDeclaringScope());
         e.encode(instr.getEndBlockClosure());
     }
-    
-    private void encodeReceiveExceptionInstr(ReceiveExceptionInstr instr) {
-        e.encode(instr.isCheckType());
-    }
+
+    private void encodeReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr instr) { }
+
+    private void encodeReceiveJRubyExceptionInstr(ReceiveJRubyExceptionInstr instr) { }
 
     private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         e.encode(instr.argName);
@@ -542,12 +553,12 @@ public class InstrEncoderMap {
     private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
         e.encode(instr.numUsedArgs);
     }
-    
+
     private void encodeReceiveOptArgInstr(ReceiveOptArgInstr instr) {
         e.encode(instr.numUsedArgs);
         e.encode(instr.getArgOffset());
         e.encode(instr.getArgIndex());
-    }    
+    }
 
     private void encodeReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
         e.encode(instr.getArgIndex());

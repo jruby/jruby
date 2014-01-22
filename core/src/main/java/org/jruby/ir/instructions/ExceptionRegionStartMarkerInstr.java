@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
     final public Label begin;
@@ -31,6 +32,11 @@ public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArity
         buf.append(")");
 
         return buf.toString();
+    }
+
+    @Override
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(begin), ii.getRenamedLabel(end), ii.getRenamedLabel(firstRescueBlockLabel));
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.jruby.ir.representations;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -627,7 +628,10 @@ public class CFG {
             buf.append(b.toStringInstrs());
         }
         buf.append("\n\n------ Rescue block map ------\n");
-        for (BasicBlock bb : rescuerMap.keySet()) {
+        List<BasicBlock> e = new ArrayList<BasicBlock>(rescuerMap.keySet());
+        Collections.sort(e);
+        
+        for (BasicBlock bb : e) {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
         }
 
@@ -642,7 +646,7 @@ public class CFG {
 
         return buf.toString();
     }
-
+    
     public void removeEdge(BasicBlock a, BasicBlock b) {
        graph.removeEdge(a, b);
     }

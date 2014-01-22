@@ -15,6 +15,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -363,7 +364,7 @@ public final class RubyArray extends RubyObject {
 
     @Override
     public int hashCode() {
-        getRubyClass().getContext().implementationMessage("Array#hash returns nonsense");
+        getRubyClass().getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "Array#hash returns nonsense");
         return 0;
     }
 

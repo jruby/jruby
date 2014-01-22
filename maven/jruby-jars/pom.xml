@@ -10,7 +10,7 @@
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
   <packaging>gem</packaging>
-  <name>JRuby Jars Gem</name>
+  <name>The core JRuby code and the JRuby stdlib as jar files.</name>
   <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
 It provides a way to have other gems depend on JRuby without including (and
 freezing to) a specific jruby-complete jar version.</description>
@@ -18,19 +18,23 @@ freezing to) a specific jruby-complete jar version.</description>
   <properties>
     <jruby.home>${basedir}/../../</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
+    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core-complete</artifactId>
-      <version>${project.parent.version}</version>
+      <groupId>rubygems</groupId>
+      <artifactId>rake</artifactId>
+      <version>[0,)</version>
+      <type>gem</type>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib-complete</artifactId>
-      <version>${project.parent.version}</version>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -53,6 +57,14 @@ freezing to) a specific jruby-complete jar version.</description>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
+        <executions>
+          <execution>
+            <id>default-push</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+        </executions>
         <configuration>
           <gemspec>jruby-jars.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
@@ -60,7 +72,6 @@ freezing to) a specific jruby-complete jar version.</description>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
         <executions>
           <execution>
             <id>clean-lib</id>
@@ -83,29 +94,24 @@ freezing to) a specific jruby-complete jar version.</description>
         </executions>
       </plugin>
       <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-        <executions>
-          <execution>
-            <id>default-push</id>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.8</version>
-        <configuration>
-          <nativePom>Mavenfile</nativePom>
-        </configuration>
+        <version>${tesla.version}</version>
         <executions>
+          <execution>
+            <id>copy jruby.jar</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>copy jruby.jar</taskId>
+              <nativePom>Mavenfile</nativePom>
+            </configuration>
+          </execution>
           <execution>
             <id>rename gem file</id>
             <phase>package</phase>
@@ -122,7 +128,7 @@ freezing to) a specific jruby-complete jar version.</description>
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>

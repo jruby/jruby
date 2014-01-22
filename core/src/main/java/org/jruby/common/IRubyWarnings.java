@@ -96,7 +96,8 @@ public interface IRubyWarnings {
         UNSUPPORTED_SUBPROCESS_OPTION,
         GC_STRESS_UNIMPLEMENTED,
         GC_ENABLE_UNIMPLEMENTED,
-        GC_DISABLE_UNIMPLEMENTED;
+        GC_DISABLE_UNIMPLEMENTED,
+        TRUFFLE;
         
         public String getID() {
             return name();

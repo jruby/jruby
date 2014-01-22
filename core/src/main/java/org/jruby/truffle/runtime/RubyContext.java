@@ -47,10 +47,6 @@ public class RubyContext implements ExecutionContext {
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
-    private String currentDirectory = System.getProperty("user.dir");
-
-    private POSIX posix = POSIXFactory.getPOSIX();
-
     public RubyContext(Ruby runtime, RubyParser parser) {
         assert runtime != null;
 
@@ -87,10 +83,6 @@ public class RubyContext implements ExecutionContext {
     @Override
     public ASTPrinter getASTPrinter() {
         throw new UnsupportedOperationException();
-    }
-
-    public void implementationMessage(String format, Object... arguments) {
-        System.err.println("rubytruffle: " + String.format(format, arguments));
     }
 
     public void load(Source source) {
@@ -170,7 +162,7 @@ public class RubyContext implements ExecutionContext {
         try {
             final RubyParserResult parseResult = parser.parse(context, source, parserContext, parentFrame);
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode(), parseResult.getFrameDescriptor());
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             return callTarget.call(null, arguments);
         } catch (RaiseException e) {
@@ -276,18 +268,6 @@ public class RubyContext implements ExecutionContext {
         }
 
         return true;
-    }
-
-    public void setCurrentDirectory(String currentDirectory) {
-        this.currentDirectory = currentDirectory;
-    }
-
-    public String getCurrentDirectory() {
-        return currentDirectory;
-    }
-
-    public POSIX getPOSIX() {
-        return posix;
     }
 
     public AtExitManager getAtExitManager() {
