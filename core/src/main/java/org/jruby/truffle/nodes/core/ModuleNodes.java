@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import java.util.List;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
@@ -518,6 +519,37 @@ public abstract class ModuleNodes {
             }
 
             return module;
+        }
+    }
+    @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1, isSplatted = true)
+    public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
+
+        public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PrivateInstanceMethodsNode(PrivateInstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray privateInstanceMethods(RubyModule module, Object argument) {
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            List<RubyMethod> methods = module.getDeclaredMethods();
+            if (argument instanceof RubyTrueClass) {
+                RubyModule parent = module.getParentModule();
+                while(parent != null){
+                    methods.addAll(parent.getDeclaredMethods());
+                    parent = parent.getParentModule();
+                }
+            }
+            for (RubyMethod method : methods) {
+                if (method.getVisibility() == Visibility.PRIVATE){
+                    RubySymbol m = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), method.getName());
+                    array.push(m);
+                }
+            }
+            return array;
         }
     }
 
