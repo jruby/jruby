@@ -129,15 +129,17 @@ class InstrDecoderMap implements IRPersistenceValues {
         this.d = decoder;
     }
 
-    /*
     public Instr decode(Operation operation) {
-        Instr instr = decodeInner(operation);
-        
-        System.out.println("Got: " + instr + ", :" + d.getCurrentScope().getClass().getName());
+        Instr instr = null;
+        try {
+            instr = decodeInner(operation);
+        } catch (Exception e) {
+            System.out.println("Got: " + instr + ", :" + d.getCurrentScope().getClass().getName());
+        }
         return instr;
-    }*/
+    }
     
-    public Instr decode(Operation operation) {
+    public Instr decodeInner(Operation operation) {
         switch(operation) {
             case ALIAS: return new AliasInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case ATTR_ASSIGN: return decodeAttrAssignInstr();
@@ -235,7 +237,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case TO_ARY: return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
             case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
             case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case ZSUPER: return new ZSuperInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case ZSUPER: return decodeZSuperInstr();
         }
 
         throw new IllegalArgumentException("Whoa bro: " + operation);
@@ -415,6 +417,15 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         
         return new UnresolvedSuperInstr(result, receiver, args, closure);
+    }
+    
+    public Instr decodeZSuperInstr() {
+        Variable result = d.decodeVariable();
+        Operand receiver = d.decodeOperand();
+        boolean hasClosure = d.decodeBoolean();
+        Operand closure = hasClosure ? d.decodeOperand() : null;
+        
+        return new ZSuperInstr(result, receiver, closure);
     }
 
     private Instr decodeNonlocalReturnInstr() {
