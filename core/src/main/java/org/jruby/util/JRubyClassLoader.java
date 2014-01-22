@@ -79,6 +79,19 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         indexJarContents(url);
     }
 
+    @Override
+    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        Class<?> c = findLoadedClass(name);
+        if (c == null) {
+            try {
+                c = findClass(name);
+            } catch (ClassNotFoundException e) {
+                return super.loadClass(name, resolve);
+            }
+        }
+        return c;
+    }
+
     /**
      * Called when the parent runtime is torn down.
      */
