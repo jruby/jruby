@@ -54,6 +54,7 @@ import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ComplexNode;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
@@ -170,6 +171,7 @@ public interface NodeVisitor {
     public Object visitClassNode(ClassNode iVisited);
     public Object visitColon2Node(Colon2Node iVisited);
     public Object visitColon3Node(Colon3Node iVisited);
+    public Object visitComplexNode(ComplexNode iVisited);
     public Object visitConstNode(ConstNode iVisited);
     public Object visitDAsgnNode(DAsgnNode iVisited);
     public Object visitDRegxNode(DRegexpNode iVisited);

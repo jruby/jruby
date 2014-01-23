@@ -7,21 +7,25 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  * @author enebo
  */
-public class RationalNode extends Node {
-    public RationalNode(ISourcePosition position) {
+public class ComplexNode extends Node {
+    public ComplexNode(ISourcePosition position, Node y) {
         super(position);
     }
-
+    
     @Override
     public Object accept(NodeVisitor visitor) {
-        return visitor.visitRationalNode(this);
+       return visitor.visitComplexNode(this);
     }
 
     @Override
@@ -31,7 +35,11 @@ public class RationalNode extends Node {
 
     @Override
     public NodeType getNodeType() {
-        return NodeType.RATIONALNODE;
+        return NodeType.COMPLEXNODE;
     }
-    
+
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return null;
+    }
 }

@@ -618,6 +618,11 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         return new UninitializedReadConstantNode(context, sourceSection, node.getName(), root);
     }
+    
+    @Override
+    public Object visitComplexNode(org.jruby.ast.ComplexNode node) {
+        return unimplemented(node);
+    }
 
     @Override
     public Object visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {

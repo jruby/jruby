@@ -50,9 +50,12 @@ import org.joni.Regex;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.ComplexNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.RationalNode;
 import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
@@ -71,10 +74,14 @@ public class RubyYaccLexer {
     public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
     public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
     
-    private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
-    private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
-    private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
+    private static final ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
+    private static final ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
+    private static final ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
     private static final HashMap<String, Keyword> map;
+    
+    private static final int SUFFIX_R = 1<<0;
+    private static final int SUFFIX_I = 1<<1;
+    private static final int SUFFIX_ALL = 3;
 
     static {
         map = new HashMap<String, Keyword>();
@@ -129,6 +136,7 @@ public class RubyYaccLexer {
     }
 
     private int getFloatToken(String number) {
+        // FIXME: Rational support is needed here.
         double d;
         try {
             d = SafeDoubleParser.parseDouble(number);
@@ -141,12 +149,20 @@ public class RubyYaccLexer {
         return Tokens.tFLOAT;
     }
 
-    private Object newBignumNode(String value, int radix) {
+    private BignumNode newBignumNode(String value, int radix) {
         return new BignumNode(getPosition(), new BigInteger(value, radix));
     }
 
-    private Object newFixnumNode(String value, int radix) throws NumberFormatException {
+    private FixnumNode newFixnumNode(String value, int radix) throws NumberFormatException {
         return new FixnumNode(getPosition(), Long.parseLong(value, radix));
+    }
+    
+    private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
+        return null;
+    }
+    
+    private ComplexNode newComplexNode(Node number) {
+        return null;
     }
     
     private void ambiguousOperator(String op, String syn) {
@@ -182,6 +198,27 @@ public class RubyYaccLexer {
         } else {
             src.unread(b1);
         }
+    }
+
+    private int numberLiteralSuffix(int mask) throws IOException {
+        int c = src.read();
+        
+        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
+        
+        if (c == 'r') {
+            int result = 0;
+            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
+            
+            if (src.peek('i') && (mask & SUFFIX_I) != 0) {
+                c = src.read();
+                result |= (mask & SUFFIX_I);
+            }
+            
+            return result;
+        }
+        src.unread(c);
+
+        return 0;
     }
    
     public enum Keyword {
@@ -494,13 +531,21 @@ public class RubyYaccLexer {
             break;
         }
     }
+    
+    private Object getInteger(String value, int radix, int suffix) {
+        Node literalValue = null;
 
-    private Object getInteger(String value, int radix) {
-        try {
-            return newFixnumNode(value, radix);
-        } catch (NumberFormatException e) {
-            return newBignumNode(value, radix);
+        if ((suffix & SUFFIX_R) != 0) {
+            literalValue = newRationalNode(value, radix);
+        } else {
+            try {
+                literalValue = newFixnumNode(value, radix);
+            } catch (NumberFormatException e) {
+                literalValue = newBignumNode(value, radix);
+            }
         }
+        
+        return (suffix & SUFFIX_I) != 0 ? newComplexNode(literalValue) : literalValue;
     }
 
 	/**
@@ -531,6 +576,10 @@ public class RubyYaccLexer {
         return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
     }
 
+    public boolean isASCII(int c) {
+        return !isMultiByteChar(c);
+    }
+    
     /**
      * Is this a multibyte character from a multibyte encoding?
      *
@@ -2238,7 +2287,7 @@ public class RubyYaccLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 16);
+                    yaccValue = getInteger(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                     return Tokens.tINTEGER;
                 case 'b' :
                 case 'B' : // binary
@@ -2265,7 +2314,7 @@ public class RubyYaccLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2);
+                    yaccValue = getInteger(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                     return Tokens.tINTEGER;
                 case 'd' :
                 case 'D' : // decimal
@@ -2292,7 +2341,7 @@ public class RubyYaccLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                                 getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 10);
+                    yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                     return Tokens.tINTEGER;
                 case 'o':
                 case 'O':
@@ -2319,7 +2368,7 @@ public class RubyYaccLexer {
                                     getPosition(), getCurrentLine(), "Trailing '_' in number.");
                         }
 
-                        yaccValue = getInteger(tokenBuffer.toString(), 8);
+                        yaccValue = getInteger(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                         return Tokens.tINTEGER;
                     }
                 case '8' :
@@ -2363,7 +2412,7 @@ public class RubyYaccLexer {
                                 getCurrentLine(), "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         src.unread(c);
-                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
+                        return getNumberToken(tokenBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
                     	int c2;
                         if (!Character.isDigit(c2 = src.read())) {
@@ -2373,7 +2422,7 @@ public class RubyYaccLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(tokenBuffer.toString(), 10);
+                                yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                                 return Tokens.tINTEGER;
                             }
                         } else {
@@ -2391,7 +2440,7 @@ public class RubyYaccLexer {
                                 getCurrentLine(), "Trailing '_' in number.");
                     } else if (seen_e) {
                         src.unread(c);
-                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
+                        return getNumberToken(tokenBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
                         tokenBuffer.append((char) c);
                         seen_e = true;
@@ -2414,19 +2463,20 @@ public class RubyYaccLexer {
                     break;
                 default :
                     src.unread(c);
-                return getNumberToken(tokenBuffer.toString(), seen_e || seen_point, nondigit);
+                return getNumberToken(tokenBuffer.toString(), seen_e, seen_point, nondigit);
             }
         }
     }
 
-    private int getNumberToken(String number, boolean isFloat, int nondigit) {
+    private int getNumberToken(String number, boolean seen_e, boolean seen_point, int nondigit) throws IOException {
+        boolean isFloat = seen_e || seen_point;
         if (nondigit != '\0') {
             throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                     getCurrentLine(), "Trailing '_' in number.");
         } else if (isFloat) {
             return getFloatToken(number);
         }
-        yaccValue = getInteger(number, 10);
+        yaccValue = getInteger(number, 10, numberLiteralSuffix(SUFFIX_ALL));
         return Tokens.tINTEGER;
     }
 
@@ -2665,15 +2715,5 @@ public class RubyYaccLexer {
         }
 
         return value;
-    }
-
-    @Deprecated
-    public RubyYaccLexer(boolean isOneEight) {
-        reset();
-    }
-
-    @Deprecated
-    public boolean isOneEight() {
-        return false;
     }
 }

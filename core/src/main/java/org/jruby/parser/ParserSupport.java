@@ -1670,7 +1670,7 @@ public class ParserSupport {
             case FIXNUMNODE:
             case BIGNUMNODE:
                 return negateInteger(node);
-            case RATIONAL: // FIXME: impl
+            case COMPLEXNODE: // FIXME: impl
                 // COMPLEX
             case FLOATNODE:
                 return negateFloat((FloatNode) node);
