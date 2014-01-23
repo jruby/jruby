@@ -1563,7 +1563,7 @@ public class ParserSupport {
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
         RegexpOptions options = end.getOptions();
-        Encoding optionsEncoding = options.setup19(configuration.getRuntime()) ;
+        Encoding optionsEncoding = options.setup(configuration.getRuntime()) ;
 
         // Change encoding to one specified by regexp options as long as the string is compatible.
         if (optionsEncoding != null) {
@@ -1638,7 +1638,7 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        Encoding encoding = options.setup19(configuration.getRuntime());
+        Encoding encoding = options.setup(configuration.getRuntime());
 
         return new ByteList(new byte[] {}, encoding);
     }
