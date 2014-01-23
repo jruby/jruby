@@ -158,7 +158,7 @@ public class RubyYaccLexer {
     }
     
     private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return null;
+        return new RationalNode(getPosition(), Long.parseLong(value, radix));
     }
     
     private ComplexNode newComplexNode(Node number) {
