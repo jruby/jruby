@@ -2091,7 +2091,11 @@ kwrest_mark     : tPOW {
                 }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
+                    support.shadowing_lvar($2);
                     $$ = $2;
+                }
+                | kwrest_mark {
+                    $$ = support.internalId();
                 }
 
 f_opt           : f_norm_arg '=' arg_value {

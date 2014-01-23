@@ -1683,4 +1683,8 @@ public class ParserSupport {
     public Node new_defined(ISourcePosition position, Node something) {
         return new DefinedNode(position, something);
     }
+    
+    public Token internalId() {
+        return new Token("", null);
+    }
 }
