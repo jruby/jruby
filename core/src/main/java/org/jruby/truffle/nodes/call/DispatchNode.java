@@ -72,6 +72,9 @@ public class DispatchNode extends Node {
             throw new RaiseException(context.getCoreLibrary().nameErrorNoMethod(name, receiverBasicObject.toString()));
         }
 
+        if (self == receiverBasicObject.getRubyClass()){
+            return method;
+        }
         if (!method.isVisibleTo(self)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
