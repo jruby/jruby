@@ -19,6 +19,7 @@ public class ReturnInstr extends ReturnBase implements FixedArityInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new ReturnInstr(returnValue.cloneForInlining(ii));
             case CLOSURE_INLINE:

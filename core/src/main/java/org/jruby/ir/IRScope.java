@@ -261,7 +261,7 @@ public abstract class IRScope implements ParseResult {
         this.floatVariableIndex = s.floatVariableIndex;
         this.hasLoops = s.hasLoops;
         this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
-        this.instrList = null;
+        this.instrList = new ArrayList<Instr>();
         this.nestedClosures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!

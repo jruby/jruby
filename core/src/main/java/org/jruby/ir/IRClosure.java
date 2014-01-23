@@ -14,6 +14,8 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionBase;
@@ -60,8 +62,13 @@ public class IRClosure extends IRScope {
         setName("_CLOSURE_CLONE_" + closureId);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
-        this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+        if (getManager().isDryRun()) {
+            this.body = null;
+        } else {
+            this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+        }
         this.addedGEBForUncaughtBreaks = false;
+        this.blockArgs = new ArrayList<Operand>();
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
@@ -305,8 +312,6 @@ public class IRClosure extends IRScope {
     public IRClosure cloneForInlining(InlinerInfo ii) {
         // FIXME: This is buggy! Is this not dependent on clone-mode??
         IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
-        CFG clonedCFG = new CFG(clonedClosure);
-        clonedClosure.setCFG(clonedCFG);
 
         clonedClosure.isForLoopBody = this.isForLoopBody;
         clonedClosure.nestingDepth  = this.nestingDepth;
@@ -315,8 +320,23 @@ public class IRClosure extends IRScope {
         // Create a new inliner info object
         InlinerInfo clonedII = ii.cloneForCloningClosure(clonedClosure);
 
-        // Clone the cfg and all instructions
-        clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
+        if (getCFG() != null) {
+            // Clone the cfg
+            CFG clonedCFG = new CFG(clonedClosure);
+            clonedClosure.setCFG(clonedCFG);
+            clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
+        } else {
+            // Clone the instruction list
+            for (Instr i: getInstrs()) {
+                Instr clonedInstr = i.cloneForInlining(clonedII);
+                if (clonedInstr instanceof CallBase) {
+                    CallBase call = (CallBase)clonedInstr;
+                    Operand block = call.getClosureArg(null);
+                    if (block instanceof WrappedIRClosure) clonedClosure.addClosure(((WrappedIRClosure)block).getClosure());
+                }
+                clonedClosure.addInstr(clonedInstr);
+            }
+        }
 
         return clonedClosure;
     }

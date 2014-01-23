@@ -48,7 +48,6 @@ import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
@@ -74,13 +73,13 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
-import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExe19Node;
+import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -116,15 +115,15 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 
-public class Ruby20Parser implements RubyParser {
-    protected ParserSupport19 support;
+public class RubyParser {
+    protected ParserSupport support;
     protected RubyYaccLexer lexer;
 
-    public Ruby20Parser() {
-        this(new ParserSupport19());
+    public RubyParser() {
+        this(new ParserSupport());
     }
 
-    public Ruby20Parser(ParserSupport19 support) {
+    public RubyParser(ParserSupport support) {
         this.support = support;
         lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
@@ -197,14 +196,16 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <Token> tSTRING_DBEG tSTRING_DVAR tSTRING_END
 %token <Token> tLAMBDA tLAMBEG
-%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER
+%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <FloatNode> tFLOAT  
+%token <RationalNode> tRATIONAL
 %token <RegexpNode>  tREGEXP_END
 %type <RestArgNode> f_rest_arg 
 %type <Node> singleton strings string string1 xstring regexp
 %type <Node> string_contents xstring_contents string_content method_call
 %type <Node> regexp_contents
-%type <Node> words qwords word literal numeric dsym cpath command_asgn command_call
+%type <Node> words qwords word literal numeric simple_numeric dsym cpath command_asgn command_call
+%type <Node> mrhs_arg
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
 %type <Node> expr_value primary_value opt_else cases if_tail exc_var
@@ -249,7 +250,7 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tQSYMBOLS_BEG
 %token <Token> tDSTAR
 %token <Token> tSTRING_DEND
-%type <Token> kwrest_mark, f_kwrest
+%type <Token> kwrest_mark, f_kwrest, f_label
 
 /*
  *    precedence table
@@ -465,11 +466,7 @@ stmt            : kALIAS fitem {
                 | lhs '=' mrhs {
                     $$ = support.node_assign($1, $3);
                 }
-                | mlhs '=' arg_value {
-                    $1.setValueNode($3);
-                    $$ = $1;
-                }
-                | mlhs '=' mrhs {
+                | mlhs '=' mrhs_arg {
                     $<AssignableNode>1.setValueNode($3);
                     $$ = $1;
                     $1.setPosition(support.getPosition($1));
@@ -873,10 +870,7 @@ arg             : lhs '=' arg {
                 | arg tPOW arg {
                     $$ = support.getOperatorCallNode($1, "**", $3, lexer.getPosition());
                 }
-                | tUMINUS_NUM tINTEGER tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, lexer.getPosition()), "-@");
-                }
-                | tUMINUS_NUM tFLOAT tPOW arg {
+                | tUMINUS_NUM simple_numeric tPOW arg {
                     $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, lexer.getPosition()), "-@");
                 }
                 | tUPLUS arg {
@@ -949,7 +943,7 @@ arg             : lhs '=' arg {
                     $$ = support.newOrNode($2.getPosition(), $1, $3);
                 }
                 | kDEFINED opt_nl arg {
-                    $$ = new DefinedNode($1.getPosition(), $3);
+                    $$ = support.new_defined($1.getPosition(), $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
@@ -1057,6 +1051,14 @@ args            : arg_value {
                     }
                 }
 
+mrhs_arg	: mrhs {
+                    $$ = $1;
+                }
+		| arg_value {
+                    $$ = $1;
+                }
+
+
 mrhs            : args ',' arg_value {
                     Node node = support.splat_array($1);
 
@@ -1151,7 +1153,7 @@ primary         : literal
                     $$ = new ZYieldNode($1.getPosition());
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
-                    $$ = new DefinedNode($1.getPosition(), $4);
+                    $$ = support.new_defined($1.getPosition(), $4);
                 }
                 | kNOT tLPAREN2 expr rparen {
                     $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
@@ -1477,7 +1479,7 @@ f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = $2;
                     $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
-                | f_args opt_bv_decl {
+                | f_args {
                     $$ = $1;
                 }
 
@@ -1835,17 +1837,24 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      }
                 }
 
-numeric         : tINTEGER {
+ numeric        : simple_numeric {
+                    $$ = $1;  
+                }
+                | tUMINUS_NUM simple_numeric %prec tLOWEST {
+                     $$ = support.negateNumeric($1.getPosition(), $2);
+                }
+
+simple_numeric  : tINTEGER {
                     $$ = $1;
                 }
                 | tFLOAT {
                      $$ = $1;
                 }
-                | tUMINUS_NUM tINTEGER %prec tLOWEST {
-                     $$ = support.negateInteger($2);
+                | tRATIONAL {
+                     $$ = $1;
                 }
-                | tUMINUS_NUM tFLOAT %prec tLOWEST {
-                     $$ = support.negateFloat($2);
+                | tIMAGINARY {
+                     $$ = $1;
                 }
 
 // [!null]
@@ -2040,15 +2049,25 @@ f_arg           : f_arg_item {
                     $$ = $1;
                 }
 
-f_kw            : tLABEL arg_value {
+f_label 	: tLABEL {
                     support.arg_var(support.formal_argument($1));
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
+                    $$ = $1;
                 }
 
-f_block_kw      : tLABEL primary_value {
-                    support.arg_var(support.formal_argument($1));
+f_kw            : f_label arg_value {
                     $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
                 }
+                | f_label {
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, null));
+                }
+
+f_block_kw      : f_label primary_value {
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
+                }
+                | f_label {
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, null));
+                }
+             
 
 f_block_kwarg   : f_block_kw {
                     $$ = new ArrayNode($1.getPosition(), $1);
@@ -2072,11 +2091,15 @@ kwrest_mark     : tPOW {
                 }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
+                    support.shadowing_lvar($2);
                     $$ = $2;
                 }
+                | kwrest_mark {
+                    $$ = support.internalId();
+                }
 
-f_opt           : tIDENTIFIER '=' arg_value {
-                    support.arg_var(support.formal_argument($1));
+f_opt           : f_norm_arg '=' arg_value {
+                    support.arg_var($1);
                     $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
                 }
 

@@ -43,7 +43,6 @@ import org.jruby.ir.instructions.GetInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LexicalSearchConstInstr;
@@ -82,7 +81,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
@@ -165,7 +163,6 @@ public class InstrEncoderMap {
             case INHERITANCE_SEARCH_CONST: encodeInheritanceSearchConstInstr((InheritanceSearchConstInstr) instr); break;
             case IS_METHOD_BOUND: encodeIsMethodBoundInstr((IsMethodBoundInstr) instr); break;
             case JUMP: encodeJumpInstr((JumpInstr) instr); break;
-            case JUMP_INDIRECT: encodeJumpIndirectInstr((JumpIndirectInstr) instr); break;
             case LABEL: encodeLabelInstr((LabelInstr) instr); break;
             case LAMBDA: encodeBuildLambdaInstr((BuildLambdaInstr) instr); break;
             case LEXICAL_SEARCH_CONST: encodeLexicalSearchConstInstr((LexicalSearchConstInstr) instr); break;
@@ -209,7 +206,6 @@ public class InstrEncoderMap {
             case RETURN: encodeReturnInstr((ReturnInstr) instr); break;
             case RUNTIME_HELPER: encodeRuntimeHelperCall((RuntimeHelperCall) instr); break;
             case SEARCH_CONST: encodeSearchConstInstr((SearchConstInstr) instr); break;
-            case SET_RETADDR: encodeSetReturnAddressInstr((SetReturnAddressInstr) instr); break;
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
             case INSTANCE_SUPER: encodeInstanceSuperInstr((InstanceSuperInstr) instr); break;
             case UNRESOLVED_SUPER: encodeUnresolvedSuperInstr((UnresolvedSuperInstr) instr); break;
@@ -353,8 +349,6 @@ public class InstrEncoderMap {
     }
 
     private void encodeExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr instr) {
-        e.encode(instr.begin);
-        e.encode(instr.end);
         e.encode(instr.firstRescueBlockLabel);
     }
 
@@ -399,10 +393,6 @@ public class InstrEncoderMap {
     }
 
     private void encodeJumpInstr(JumpInstr instr) {
-        e.encode(instr.getJumpTarget());
-    }
-
-    private void encodeJumpIndirectInstr(JumpIndirectInstr instr) {
         e.encode(instr.getJumpTarget());
     }
 
@@ -592,10 +582,6 @@ public class InstrEncoderMap {
         e.encode(instr.getConstName());
         e.encode(instr.getStartingScope());
         e.encode(instr.isNoPrivateConsts());
-    }
-
-    private void encodeSetReturnAddressInstr(SetReturnAddressInstr instr) {
-        e.encode(instr.getReturnAddr());
     }
 
     private void encodeClassSuperInstr(ClassSuperInstr instr) {

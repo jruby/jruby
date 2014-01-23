@@ -3727,7 +3727,7 @@ public class ASTCompiler {
     }
 
     public void compileSValue(Node node, BodyCompiler context, boolean expr) {
-        SValue19Node svalueNode = (SValue19Node)node;
+        SValueNode svalueNode = (SValueNode) node;
 
         compile(svalueNode.getValue(), context,true);
 

@@ -36,7 +36,6 @@ public enum Operation {
 
     /** control-flow **/
     JUMP(OpFlags.f_is_jump_or_branch),
-    JUMP_INDIRECT(OpFlags.f_is_jump_or_branch),
     BEQ(OpFlags.f_is_jump_or_branch),
     BNE(OpFlags.f_is_jump_or_branch),
     B_UNDEF(OpFlags.f_is_jump_or_branch),
@@ -146,7 +145,6 @@ public enum Operation {
     MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    SET_RETADDR(0),
     CLASS_VAR_MODULE(0),
     EQQ(0), // (FIXME: Exceptions?) a === call used in when
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue

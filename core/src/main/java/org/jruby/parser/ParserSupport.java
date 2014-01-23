@@ -36,8 +36,9 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.jcodings.Encoding;
-import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
@@ -185,8 +186,8 @@ public class ParserSupport {
     }
     
     protected void getterIdentifierError(ISourcePosition position, String identifier) {
-        throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
-                "identifier " + identifier + " is not valid", identifier);
+        throw new SyntaxException(PID.BAD_IDENTIFIER, position, "identifier " +
+                identifier + " is not valid to get", identifier);
     }
     
     public AssignableNode assignable(Token lhs, Node value) {
@@ -211,7 +212,12 @@ public class ParserSupport {
             case Tokens.k__LINE__:
                 throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
                         lexer.getCurrentLine(), "Can't assign to __LINE__", "__LINE__");
-            case Tokens.tIDENTIFIER:
+            case Tokens.k__ENCODING__:
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __ENCODING__", "__ENCODING__");
+            case Tokens.tLABEL: // keyword args (only 2.0 grammar can ever call assignable with this token)
+            case Tokens.tIDENTIFIER: // normal locals
+                // ENEBO: 1.9 has CURR nodes for local/block variables.  We don't.  I believe we follow proper logic
                 return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
@@ -222,16 +228,13 @@ public class ParserSupport {
             case Tokens.tIVAR:
                 return new InstAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
             case Tokens.tCVAR:
-                if (isInDef() || isInSingle()) {
-                    return new ClassVarAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
-                }
-                return new ClassVarDeclNode(lhs.getPosition(), (String) lhs.getValue(), value);
+                return new ClassVarAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
             case Tokens.tGVAR:
                 return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
         }
 
         throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), lexer.getCurrentLine(),
-                "identifier " + (String) lhs.getValue() + " is not valid", lhs.getValue());
+                "identifier " + (String) lhs.getValue() + " is not valid to set", lhs.getValue());
     }
 
     /**
@@ -315,11 +318,23 @@ public class ParserSupport {
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
-        if (firstNode instanceof DRegexpNode || firstNode instanceof RegexpNode) {
+        if (firstNode instanceof DRegexpNode) {
             return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
+        } else if (firstNode instanceof RegexpNode) {
+            List<Integer> locals = allocateNamedLocals((RegexpNode) firstNode);
+
+            if (locals.size() > 0) {
+                int[] primitiveLocals = new int[locals.size()];
+                for (int i = 0; i < primitiveLocals.length; i++) {
+                    primitiveLocals[i] = locals.get(i);
+                }
+                return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode, primitiveLocals);
+            } else {
+                return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
+            }
         } else if (secondNode instanceof DRegexpNode || secondNode instanceof RegexpNode) {
             return new Match3Node(firstNode.getPosition(), secondNode, firstNode);
-        } 
+        }
 
         return getOperatorCallNode(firstNode, "=~", secondNode);
     }
@@ -1138,9 +1153,9 @@ public class ParserSupport {
     }
 
     public DStrNode createDStrNode(ISourcePosition position) {
-        return new DStrNode(position);
+        return new DStrNode(position, lexer.getEncoding());
     }
-    
+        
     public Node asSymbol(ISourcePosition position, Node value) {
         // FIXME: This might have an encoding issue since toString generally uses iso-8859-1
         if (value instanceof StrNode) return new SymbolNode(position, ((StrNode) value).getValue().toString().intern());
@@ -1219,22 +1234,12 @@ public class ParserSupport {
     }
     
     public Node new_yield(ISourcePosition position, Node node) {
-        boolean state = true;
-        
-        if (node != null) {
-            if (node instanceof BlockPassNode) {
-                throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
-                        lexer.getCurrentLine(), "Block argument should not be given.");
-            }
-            
-            if (node != null && node instanceof SplatNode) {
-                state = true;
-            }
-        } else {
-            return new ZYieldNode(position);
+        if (node != null && node instanceof BlockPassNode) {
+            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
+                    lexer.getCurrentLine(), "Block argument should not be given.");
         }
 
-        if (state && node instanceof ArrayNode) {
+        if (node instanceof ArrayNode) {
             ArrayNode args = (ArrayNode) node;
 
             switch (args.size()) {
@@ -1249,11 +1254,7 @@ public class ParserSupport {
             }
         }
 
-        if (node instanceof FixnumNode) {
-            return new YieldOneNode(position, (FixnumNode) node);
-        }
-
-        return new YieldNode(position, node, state);
+        return new Yield19Node(position, node); 
     }
     
     public Node negateInteger(Node integerNode) {
@@ -1512,9 +1513,78 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
+    // MRI: reg_fragment_check
     public void regexpFragmentCheck(RegexpNode end, ByteList value) {
-        // 1.9 mode overrides to do extra checking...
+        setRegexpEncoding(end, value);
+        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+    }        // 1.9 mode overrides to do extra checking...
+    private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
+        String[] names = regexpNode.loadPattern(configuration.getRuntime()).getNames();
+        int length = names.length;
+        List<Integer> locals = new ArrayList<Integer>();
+        StaticScope scope = getCurrentScope();
+
+        for (int i = 0; i < length; i++) {
+            // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
+            
+            if (RubyYaccLexer.getKeyword(names[i]) == null) {
+                int slot = scope.isDefined(names[i]);
+                if (slot >= 0) {
+                    locals.add(slot);
+                } else {
+                    locals.add(getCurrentScope().addVariableThisScope(names[i]));
+                }
+            }
+        }
+
+        return locals;
     }
+
+    private boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    // TODO: Put somewhere more consolidated (similiar
+    private char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == RubyYaccLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == RubyYaccLexer.UTF8_ENCODING) return 'u';
+
+        return ' ';
+    }
+
+    protected void compileError(Encoding optionEncoding, Encoding encoding) {
+        throw new SyntaxException(PID.REGEXP_ENCODING_MISMATCH, lexer.getPosition(), lexer.getCurrentLine(),
+                "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+    
+    // MRI: reg_fragment_setenc_gen
+    public void setRegexpEncoding(RegexpNode end, ByteList value) {
+        RegexpOptions options = end.getOptions();
+        Encoding optionsEncoding = options.setup(configuration.getRuntime()) ;
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+
+            value.setEncoding(optionsEncoding);
+        } else if (options.isEncodingNone()) {
+            if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(RubyYaccLexer.USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+            }
+        }
+    }    
 
     protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
         RubyRegexp.newRegexp(getConfiguration().getRuntime(), value, options);
@@ -1568,7 +1638,7 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        Encoding encoding = options.setup19(configuration.getRuntime());
+        Encoding encoding = options.setup(configuration.getRuntime());
 
         return new ByteList(new byte[] {}, encoding);
     }
@@ -1593,5 +1663,28 @@ public class ParserSupport {
     
     public KeywordArgNode keyword_arg(ISourcePosition position, AssignableNode assignable) {
         return new KeywordArgNode(position, assignable);
+    }
+    
+    public Node negateNumeric(ISourcePosition position, Node node) {
+        switch (node.getNodeType()) {
+            case FIXNUMNODE:
+            case BIGNUMNODE:
+                return negateInteger(node);
+            case COMPLEXNODE: // FIXME: impl
+                // COMPLEX
+            case FLOATNODE:
+                return negateFloat((FloatNode) node);
+        }
+        
+        yyerror("Invalid or unimplemented numeric to negate: " + node.toString());
+        return null;
+    }
+    
+    public Node new_defined(ISourcePosition position, Node something) {
+        return new DefinedNode(position, something);
+    }
+    
+    public Token internalId() {
+        return new Token("", null);
     }
 }

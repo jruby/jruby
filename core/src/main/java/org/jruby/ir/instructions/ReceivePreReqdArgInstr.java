@@ -16,6 +16,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new ReceivePreReqdArgInstr(ii.getRenamedVariable(result), argIndex);
             default:

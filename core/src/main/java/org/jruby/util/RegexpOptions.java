@@ -137,7 +137,7 @@ public class RegexpOptions implements Cloneable {
      * 2.kcode.none will set 'none' option
      * @return null if no explicit encoding is specified.
      */
-    public Encoding setup19(Ruby runtime) {
+    public Encoding setup(Ruby runtime) {
         KCode explicitKCode = getExplicitKCode();
         
         // None will not set fixed

@@ -90,8 +90,7 @@ mri/ruby/test_stringchar
 mri/ruby/test_struct
 mri/ruby/test_super
 mri/ruby/test_symbol
-# TODO 2.1 parser
-#mri/ruby/test_syntax
+mri/ruby/test_syntax
 mri/ruby/test_system
 mri/ruby/test_thread
 mri/ruby/test_time

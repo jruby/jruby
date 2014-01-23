@@ -73,6 +73,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
                     return (v == null) ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
                 }
                 // fall through
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);
             default:

@@ -106,7 +106,7 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new Ruby20Parser();
+        RubyParser parser = new RubyParser();
         RubyParserResult result = null;
         parser.setWarnings(runtime.getWarnings());
         try {

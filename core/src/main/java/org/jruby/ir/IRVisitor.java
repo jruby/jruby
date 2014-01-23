@@ -100,7 +100,6 @@ public abstract class IRVisitor {
     public void InheritanceSearchConstInstr(InheritanceSearchConstInstr inheritancesearchconstinstr) { error(inheritancesearchconstinstr); }
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) { error(instancesuperinstr); }
     public void Instr(Instr instr) { error(instr); }
-    public void JumpIndirectInstr(JumpIndirectInstr jumpindirectinstr) { error(jumpindirectinstr); }
     public void JumpInstr(JumpInstr jumpinstr) { error(jumpinstr); }
     public void LabelInstr(LabelInstr labelinstr) { error(labelinstr); }
     public void LexicalSearchConstInstr(LexicalSearchConstInstr lexicalsearchconstinstr) { error(lexicalsearchconstinstr); }
@@ -140,7 +139,6 @@ public abstract class IRVisitor {
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
-    public void SetReturnAddressInstr(SetReturnAddressInstr setreturnaddressinstr) { error(setreturnaddressinstr); }
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) { error(threadpollinstr); }
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }

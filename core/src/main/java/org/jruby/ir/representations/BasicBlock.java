@@ -143,18 +143,13 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
             for (Instr i: oldInstrs) {
                 Instr clonedInstr = i.cloneForInlining(ii);
-                if (clonedInstr == null)  {
-                    System.out.println("i: " + i);
-                    System.out.println("clonedInstr: " + clonedInstr);
-                } else {
-                    clonedInstr.setIPC(i.getIPC());
-                    if (clonedInstr instanceof CallBase) {
-                        CallBase call = (CallBase)clonedInstr;
-                        Operand block = call.getClosureArg(null);
-                        if (block instanceof WrappedIRClosure) cfg.getScope().addClosure(((WrappedIRClosure)block).getClosure());
-                    }
-                    instrs.add(clonedInstr);
+                clonedInstr.setIPC(i.getIPC());
+                if (clonedInstr instanceof CallBase) {
+                    CallBase call = (CallBase)clonedInstr;
+                    Operand block = call.getClosureArg(null);
+                    if (block instanceof WrappedIRClosure) cfg.getScope().addClosure(((WrappedIRClosure)block).getClosure());
                 }
+                instrs.add(clonedInstr);
             }
         }
 
@@ -187,13 +182,13 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     @Override
     public int compareTo(Object o) {
         BasicBlock other = (BasicBlock) o;
-        
+
         if (id == other.id) return 0;
         if (id < other.id) return -1;
-        
+
         return 1;
     }
-    
+
     @Override
     public String toString() {
         return "BB [" + id + ":" + label + "]";

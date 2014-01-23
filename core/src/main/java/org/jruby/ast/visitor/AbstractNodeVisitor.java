@@ -51,6 +51,7 @@ import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ComplexNode;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
@@ -106,6 +107,7 @@ import org.jruby.ast.OptArgNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
+import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -138,13 +140,7 @@ import org.jruby.ast.ZSuperNode;
  * Abstract implementation of NodeVisitor that simply walks each node's
  * childNodes() in sequence and returns null from all visit methods.
  */
-public class AbstractNodeVisitor implements NodeVisitor {
-    Set<String> foundVariables = new HashSet<String>();
-    
-    public Set<String> getFoundVariables() {
-        return foundVariables;
-    }
-    
+public class AbstractNodeVisitor implements NodeVisitor {    
     private Object defaultVisit(Node iVisited) {
         for (Node node : iVisited.childNodes()) node.accept(this);
         return null;
@@ -225,6 +221,11 @@ public class AbstractNodeVisitor implements NodeVisitor {
         return defaultVisit(iVisited);
     }
 
+    @Override
+    public Object visitComplexNode(ComplexNode iVisited) {
+        return defaultVisit(iVisited);
+    }
+    
     @Override
     public Object visitConstDeclNode(ConstDeclNode iVisited) {
         return defaultVisit(iVisited);
@@ -535,6 +536,11 @@ public class AbstractNodeVisitor implements NodeVisitor {
         return defaultVisit(iVisited);
     }
 
+    @Override
+    public Object visitRationalNode(RationalNode iVisited) {
+        return defaultVisit(iVisited);
+    }
+    
     @Override
     public Object visitRedoNode(RedoNode iVisited) {
         return defaultVisit(iVisited);

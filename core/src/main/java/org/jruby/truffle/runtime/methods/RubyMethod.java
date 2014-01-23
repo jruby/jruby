@@ -66,6 +66,8 @@ public class RubyMethod {
         return intrinsicName;
     }
 
+    public RubyModule getDeclaringModule() { return declaringModule; }
+
     public String getName() {
         return name;
     }

@@ -8,6 +8,8 @@ import java.util.List;
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
+    public static final Label UNRESCUED_REGION_LABEL = new Label("UNRESCUED_REGION", 0);
+
     public final String prefix;
     public final int id;
 

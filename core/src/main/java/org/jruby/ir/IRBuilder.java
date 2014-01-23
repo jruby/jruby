@@ -48,6 +48,8 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.CloneMode;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -148,71 +150,11 @@ public class IRBuilder {
         }
     }
 
-    /* -----------------------------------------------------------------------------------
-     * Every ensure block has a start label and end label, and at the end, it will jump
-     * to an address stored in a return address variable.
-     *
-     * This ruby code will translate to the IR shown below
-     * -----------------
-     *   begin
-     *       ... protected body ...
-     *   ensure
-     *       ... ensure block to run
-     *   end
-     * -----------------
-     *  L_region_start
-     *     IR instructions for the protected body
-     *  L_start:
-     *     .. ensure block IR ...
-     *     jump %ret_addr
-     *  L_end:
-     * -----------------
-     *
-     * If N is a node in the protected body that might exit this scope (exception rethrows
-     * and returns), N has to first jump to the ensure block and let the ensure block run.
-     * In addition, N has to set up a return address label in the return address var of
-     * this ensure block so that the ensure block can transfer control block to N.
-     *
-     * Since we can have a nesting of ensure blocks, we are maintaining a stack of these
-     * well-nested ensure blocks.  Every node N that will exit this scope will have to
-     * co-ordinate the jumps in-and-out of the ensure blocks in the top-to-bottom stacked
-     * order.
-     * ----------------------------------------------------------------------------------- */
-    private static class EnsureBlockInfo {
-        Label    regionStart;
-        Label    start;
-        Label    end;
-        Label    dummyRescueBlockLabel;
-        Variable returnAddr;
-        Variable savedGlobalException;
-
-        // Innermost loop within which this ensure block is nested, if any
-        IRLoop   innermostLoop;
-
-        // AST node for any associated rescue node in the case of begin-rescue-ensure-end block
-        // Will be null in the case of begin-ensure-end block
-        RescueNode matchingRescueNode;
-
-        public EnsureBlockInfo(IRScope s, RescueNode n, IRLoop l) {
-            regionStart = s.getNewLabel();
-            start       = s.getNewLabel();
-            end         = s.getNewLabel();
-            returnAddr  = s.getNewTemporaryVariable();
-            dummyRescueBlockLabel = s.getNewLabel();
-            savedGlobalException = null;
-            innermostLoop = l;
-            matchingRescueNode = n;
-        }
-    }
-
-    // Stack encoding nested ensure blocks
-    private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
-
     private static class RescueBlockInfo {
         RescueNode rescueNode;             // Rescue node for which we are tracking info
         Label      entryLabel;             // Entry of the rescue block
         Variable   savedExceptionVariable; // Variable that contains the saved $! variable
-        IRLoop     innermostLoop;          // Innermost loop within which this ensure block is nested, if any
+        IRLoop     innermostLoop;          // Innermost loop within which this rescue block is nested, if any
 
         public RescueBlockInfo(RescueNode n, Label l, Variable v, IRLoop loop) {
             rescueNode = n;
@@ -226,8 +168,109 @@ public class IRBuilder {
         }
     }
 
-    // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
-    private Stack<RescueBlockInfo> _rescueBlockStack = new Stack<RescueBlockInfo>();
+    /* -----------------------------------------------------------------------------------
+     * Every ensure block has a start label and end label
+     *
+     * This ruby code will translate to the IR shown below
+     * -----------------
+     *   begin
+     *       ... protected body ...
+     *   ensure
+     *       ... ensure block to run
+     *   end
+     * -----------------
+     *  L_region_start
+     *     IR instructions for the protected body
+     *     .. copy of ensure block IR ..
+     *  L_dummy_rescue:
+     *     e = recv_exc
+     *  L_start:
+     *     .. ensure block IR ..
+     *     throw e
+     *  L_end:
+     * -----------------
+     *
+     * If N is a node in the protected body that might exit this scope (exception rethrows
+     * and returns), N has to first run the ensure block before exiting.
+     *
+     * Since we can have a nesting of ensure blocks, we are maintaining a stack of these
+     * well-nested ensure blocks.  Every node N that will exit this scope will have to
+     * run the stack of ensure blocks in the right order.
+     * ----------------------------------------------------------------------------------- */
+    private static class EnsureBlockInfo {
+        Label    regionStart;
+        Label    start;
+        Label    end;
+        Label    dummyRescueBlockLabel;
+        Variable savedGlobalException;
+
+        // Label of block that will rescue exceptions raised by ensure code
+        Label    bodyRescuer;
+
+        // Innermost loop within which this ensure block is nested, if any
+        IRLoop   innermostLoop;
+
+        // AST node for any associated rescue node in the case of begin-rescue-ensure-end block
+        // Will be null in the case of begin-ensure-end block
+        RescueNode matchingRescueNode;
+
+        // This ensure block's instructions
+        List<Instr> instrs;
+
+        public EnsureBlockInfo(IRScope s, RescueNode n, IRLoop l, Label bodyRescuer) {
+            regionStart = s.getNewLabel();
+            start       = s.getNewLabel();
+            end         = s.getNewLabel();
+            dummyRescueBlockLabel = s.getNewLabel();
+            instrs = new ArrayList<Instr>();
+            savedGlobalException = null;
+            innermostLoop = l;
+            matchingRescueNode = n;
+            this.bodyRescuer = bodyRescuer;
+        }
+
+        public void addInstr(Instr i) {
+            instrs.add(i);
+        }
+
+        public void emitBody(IRBuilder b, IRScope s) {
+            b.addInstr(s, new LabelInstr(start));
+            for (Instr i: instrs) {
+                b.addInstr(s, i);
+            }
+        }
+
+        public void cloneIntoHostScope(IRBuilder b, IRScope s) {
+            InlinerInfo ii = new InlinerInfo(null, s, CloneMode.ENSURE_BLOCK_CLONE);
+            b.addInstr(s, new LabelInstr(ii.getRenamedLabel(start)));
+            b.addInstr(s, new ExceptionRegionStartMarkerInstr(bodyRescuer));
+            for (Instr i: instrs) {
+                Instr clonedInstr = i.cloneForInlining(ii);
+                if (clonedInstr instanceof CallBase) {
+                    CallBase call = (CallBase)clonedInstr;
+                    Operand block = call.getClosureArg(null);
+                    if (block instanceof WrappedIRClosure) s.addClosure(((WrappedIRClosure)block).getClosure());
+                }
+                b.addInstr(s, clonedInstr);
+            }
+            b.addInstr(s, new ExceptionRegionEndMarkerInstr());
+        }
+    }
+
+    // Stack of nested rescue blocks -- this just tracks the start label of the blocks
+    private Stack<RescueBlockInfo> activeRescueBlockStack = new Stack<RescueBlockInfo>();
+
+    // Stack of ensure blocks that are currently active
+    private Stack<EnsureBlockInfo> activeEnsureBlockStack = new Stack<EnsureBlockInfo>();
+
+    // Stack of ensure blocks whose bodies are being constructed
+    private Stack<EnsureBlockInfo> ensureBodyBuildStack   = new Stack<EnsureBlockInfo>();
+
+    // Combined stack of active rescue/ensure nestings -- required to properly set up
+    // rescuers for ensure block bodies cloned into other regions -- those bodies are
+    // rescued by the active rescuers at the point of definition rather than the point
+    // of cloning.
+    private Stack<Label> activeRescuers = new Stack<Label>();
 
     private int _lastProcessedLineNum = -1;
 
@@ -246,24 +289,24 @@ public class IRBuilder {
 
     public IRBuilder(IRManager manager) {
         this.manager = manager;
+        this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
     }
 
     public void addInstr(IRScope s, Instr i) {
-        s.addInstr(i);
+        // If we are building an ensure body, stash the instruction
+        // in the ensure body's list. If not, add it to the scope directly.
+        if (ensureBodyBuildStack.empty()) {
+            s.addInstr(i);
+        } else {
+            ensureBodyBuildStack.peek().addInstr(i);
+        }
     }
 
-    // Emit jump chain by walking up the ensure block stack
-    // If we have been passed a loop value, then emit values that are nested within that loop
-    private void emitEnsureBlockJumpChain(IRScope s, IRLoop loop) {
-        // SSS: There are 2 ways of encoding this:
-        // 1. Jump to ensure block 1, return back here, jump ensure block 2, return back here, ...
-        //    Generates 3*n instrs. where n is the # of ensure blocks to execute
-        // 2. Jump to ensure block 1, then to block 2, then to 3, ...
-        //    Generates n+1 instrs. where n is the # of ensure blocks to execute
-        // Doesn't really matter all that much since we shouldn't have deep nesting of ensure blocks often
-        // but is there a reason to go with technique 1 at all??
-        int n = _ensureBlockStack.size();
-        EnsureBlockInfo[] ebArray = _ensureBlockStack.toArray(new EnsureBlockInfo[n]);
+    // Emit cloned ensure bodies by walking up the ensure block stack.
+    // If we have been passed a loop value, only emit bodies that are nested within that loop.
+    private void emitEnsureBlocks(IRScope s, IRLoop loop) {
+        int n = activeEnsureBlockStack.size();
+        EnsureBlockInfo[] ebArray = activeEnsureBlockStack.toArray(new EnsureBlockInfo[n]);
         for (int i = n-1; i >= 0; i--) {
             EnsureBlockInfo ebi = ebArray[i];
 
@@ -275,9 +318,9 @@ public class IRBuilder {
             if (ebi.savedGlobalException != null) {
                 addInstr(s, new PutGlobalVarInstr("$!", ebi.savedGlobalException));
             }
-            addInstr(s, new SetReturnAddressInstr(ebi.returnAddr, retLabel));
-            addInstr(s, new JumpInstr(ebi.start));
-            addInstr(s, new LabelInstr(retLabel));
+
+            // Clone into host scope
+            ebi.cloneIntoHostScope(this, s);
         }
     }
 
@@ -432,7 +475,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
-        addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);
@@ -441,7 +484,7 @@ public class IRBuilder {
         Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
 
         // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) addInstr(closure, new ReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
 
         // Added as part of 'prepareForInterpretation' code.
         // catchUncaughtBreakInLambdas(closure);
@@ -818,8 +861,8 @@ public class IRBuilder {
 
         Operand rv = build(breakNode.getValueNode(), s);
         // If we have ensure blocks, have to run those first!
-        if (!_ensureBlockStack.empty()) emitEnsureBlockJumpChain(s, currLoop);
-        else if (!_rescueBlockStack.empty()) _rescueBlockStack.peek().restoreException(this, s, currLoop);
+        if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(s, currLoop);
+        else if (!activeRescueBlockStack.empty()) activeRescueBlockStack.peek().restoreException(this, s, currLoop);
 
         if (currLoop != null) {
             addInstr(s, new CopyInstr(currLoop.loopResult, rv));
@@ -851,7 +894,7 @@ public class IRBuilder {
         //
         // Add label and marker instruction in reverse order to the beginning
         // so that the label ends up being the first instr.
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, gebLabel));
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(gebLabel));
         s.addInstrAtBeginning(new LabelInstr(rBeginLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
@@ -888,7 +931,7 @@ public class IRBuilder {
 
         // Protected region
         addInstr(s, new LabelInstr(rBeginLabel));
-        addInstr(s, new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
+        addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
         addInstr(s, callInstr);
         addInstr(s, new JumpInstr(rEndLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
@@ -1251,7 +1294,7 @@ public class IRBuilder {
 
         // Protected region code
         addInstr(s, new LabelInstr(rBeginLabel));
-        addInstr(s, new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
+        addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         addInstr(s, new CopyInstr(rv, (Operand)v1));
         addInstr(s, new JumpInstr(rEndLabel));
@@ -2075,7 +2118,7 @@ public class IRBuilder {
         Label rescueLabel = s.getNewLabel();
 
         // protect the entire body as it exists now with the global ensure block
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
+        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rescueLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
@@ -2201,26 +2244,26 @@ public class IRBuilder {
 
           begin
             .. protected body ..
+            .. copy of ensure body code ..
           rescue <any-exception-or-error> => e
-            jump to eb-code, execute it, and come back here
+            .. ensure body code ..
             raise e
           end
 
       which in IR looks like this:
 
           L1:
-            Exception region start marker
+            Exception region start marker_1 (protected by L10)
             ... IR for protected body ...
-            Exception region end marker
-            %v = L3       <--- skipped if the protected body had a return!
+            Exception region end marker_1
           L2:
-            .. IR for ensure block ..
-            jump_indirect %v
-          L10:            <--- dummy rescue block
+            Exception region start marker_2 (protected by whichever block handles exceptions for ensure body)
+            .. copy of IR for ensure block ..
+            Exception region end marker_2
+            jump L3
+          L10:          <----- dummy rescue block
             e = recv_exception
-            %v = L11
-            jump L2
-          L11:
+            .. IR for ensure block ..
             throw e
           L3:
 
@@ -2228,67 +2271,69 @@ public class IRBuilder {
     public Operand buildEnsureNode(EnsureNode ensureNode, IRScope s) {
         Node bodyNode = ensureNode.getBodyNode();
 
-        // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s, (bodyNode instanceof RescueNode) ? (RescueNode)bodyNode : null, getCurrentLoop());
-        _ensureBlockStack.push(ebi);
+        // ------------ Build the body of the ensure block ------------
+        //
+        // The ensure code is built first so that when the protected body is being built,
+        // the ensure code can be cloned at break/next/return sites in the protected body.
 
-        Label rBeginLabel = ebi.regionStart;
-        Label rEndLabel   = ebi.end;
+        // Push a new ensure block node onto the stack of ensure bodies being built
+        // The body's instructions are stashed and emitted later.
+        EnsureBlockInfo ebi = new EnsureBlockInfo(s,
+            (bodyNode instanceof RescueNode) ? (RescueNode)bodyNode : null,
+            getCurrentLoop(),
+            activeRescuers.peek());
 
-        // start of protected region
-        addInstr(s, new LabelInstr(rBeginLabel));
-        addInstr(s, new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel));
+        ensureBodyBuildStack.push(ebi);
+        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode(), s);
+        ensureBodyBuildStack.pop();
+
+        // ------------ Build the protected region ------------
+        activeEnsureBlockStack.push(ebi);
+
+        // Start of protected region
+        addInstr(s, new LabelInstr(ebi.regionStart));
+        addInstr(s, new ExceptionRegionStartMarkerInstr(ebi.dummyRescueBlockLabel));
+        activeRescuers.push(ebi.dummyRescueBlockLabel);
 
         // Generate IR for code being protected
-        Operand rv;
-        if (bodyNode instanceof RescueNode) {
-            // The rescue code will ensure that the region is ended
-            rv = buildRescueInternal((RescueNode) bodyNode, s, ebi);
-        } else {
-            rv = build(bodyNode, s);
-
-            // Jump to start of ensure block -- dont bother if we had a return in the protected body
-            if (rv != U_NIL) addInstr(s, new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
-        }
+        Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, s, ebi) : build(bodyNode, s);
 
         // end of protected region
         addInstr(s, new ExceptionRegionEndMarkerInstr());
+        activeRescuers.pop();
 
-        // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
-        _ensureBlockStack.pop();
+        // Clone the ensure body and jump to the end.
+        // Dont bother if the protected body ended in a return.
+        if (rv != U_NIL) {
+            ebi.cloneIntoHostScope(this, s);
+            addInstr(s, new JumpInstr(ebi.end));
+        }
 
-        // Run the ensure block now
-        addInstr(s, new JumpInstr(ebi.start));
+        // Pop the current ensure block info node
+        activeEnsureBlockStack.pop();
 
+        // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that:
         // * catches all exceptions thrown by the body
-        // * jumps to the ensure block code
-        // * returns back (via set_retaddr instr)
         Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
-        addInstr(s, new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
 
-        // Generate the ensure block now
-        addInstr(s, new LabelInstr(ebi.start));
+        // Now emit the ensure body's stashed instructions
+        ebi.emitBody(this, s);
 
-        // Two cases:
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
-        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode(), s);
         // U_NIL => there was a return from within the ensure block!
         if (ensureRetVal == U_NIL) rv = U_NIL;
 
         // Return (rethrow exception/end)
-        addInstr(s, new JumpIndirectInstr(ebi.returnAddr));
-
         // rethrows the caught exception from the dummy ensure block
-        addInstr(s, new LabelInstr(rethrowExcLabel));
         addInstr(s, new ThrowExceptionInstr(exc));
 
         // End label for the exception region
-        addInstr(s, new LabelInstr(rEndLabel));
+        addInstr(s, new LabelInstr(ebi.end));
 
         return rv;
     }
@@ -2438,7 +2483,7 @@ public class IRBuilder {
         IRBuilder forBuilder = newIRBuilder(manager);
 
             // Receive self
-        addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        forBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
 
             // Build args
         Node varNode = forNode.getVarNode();
@@ -2446,19 +2491,19 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
 
         // Thread poll on entry of closure
-        addInstr(closure, new ThreadPollInstr());
+        forBuilder.addInstr(closure, new ThreadPollInstr());
 
             // Start label -- used by redo!
-        addInstr(closure, new LabelInstr(closure.startLabel));
+        forBuilder.addInstr(closure, new LabelInstr(closure.startLabel));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
-            addInstr(closure, new ReturnInstr(closureRetVal));
+            forBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
         }
 
         return new WrappedIRClosure(s.getSelf(), closure);
@@ -2589,7 +2634,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Receive self
-        addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
 
         // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -2599,19 +2644,19 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
 
         // Thread poll on entry of closure
-        addInstr(closure, new ThreadPollInstr());
+        closureBuilder.addInstr(closure, new ThreadPollInstr());
 
         // start label -- used by redo!
-        addInstr(closure, new LabelInstr(closure.startLabel));
+        closureBuilder.addInstr(closure, new LabelInstr(closure.startLabel));
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : closureBuilder.build(iterNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
-            addInstr(closure, new ReturnInstr(closureRetVal));
+            closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
         }
 
         return new WrappedIRClosure(s.getSelf(), closure);
@@ -2775,8 +2820,8 @@ public class IRBuilder {
         Operand rv = (nextNode.getValueNode() == null) ? manager.getNil() : build(nextNode.getValueNode(), s);
 
         // If we have ensure blocks, have to run those first!
-        if (!_ensureBlockStack.empty()) emitEnsureBlockJumpChain(s, currLoop);
-        else if (!_rescueBlockStack.empty()) _rescueBlockStack.peek().restoreException(this, s, currLoop);
+        if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(s, currLoop);
+        else if (!activeRescueBlockStack.empty()) activeRescueBlockStack.peek().restoreException(this, s, currLoop);
 
         if (currLoop != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
@@ -3044,10 +3089,14 @@ public class IRBuilder {
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
         IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        // Create a new nested builder to ensure this gets its own IR builder state
+        // like the ensure block stack
+        IRBuilder closureBuilder = newIRBuilder(manager);
+
         // Set up %current_scope and %current_module
-        addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
-        addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
-        build(postExeNode.getBodyNode(), endClosure);
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
+        closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction to record the end block at runtime
         addInstr(s, new RecordEndBlockInstr(s, endClosure));
@@ -3056,10 +3105,14 @@ public class IRBuilder {
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        // Create a new nested builder to ensure this gets its own IR builder state
+        // like the ensure block stack
+        IRBuilder closureBuilder = newIRBuilder(manager);
+
         // Set up %current_scope and %current_module
-        addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
-        addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(beginClosure)));
-        build(preExeNode.getBodyNode(), beginClosure);
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(beginClosure)));
+        closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
@@ -3106,7 +3159,8 @@ public class IRBuilder {
         if (ensure == null) addInstr(s, new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        addInstr(s, new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabel));
+        addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
+        activeRescuers.push(rescueLabel);
 
         // Body
         Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -3129,12 +3183,13 @@ public class IRBuilder {
         //
         // The retry should jump to 1, not 2.
         // If we push the rescue block before building the body, we will jump to 2.
-        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException, getCurrentLoop()));
+        RescueBlockInfo rbi = new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException, getCurrentLoop());
+        activeRescueBlockStack.push(rbi);
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        ExceptionRegionEndMarkerInstr rbEndInstr = new ExceptionRegionEndMarkerInstr();
-        addInstr(s, rbEndInstr);
+        addInstr(s, new ExceptionRegionEndMarkerInstr());
+        activeRescuers.pop();
 
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
         Label elseLabel = rescueNode.getElseNode() == null ? null : s.getNewLabel();
@@ -3148,14 +3203,11 @@ public class IRBuilder {
 
             // No explicit return from the protected body
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
-            // - If we do, get the innermost ensure block, set up the return address to the end of the ensure block, and go execute the ensure code.
-            if (ensure == null) {
-                addInstr(s, new JumpInstr(rEndLabel));
-            } else {
-                // NOTE: rEndLabel is identical to ensure.end, but less confusing to use rEndLabel since that makes more semantic sense
-                addInstr(s, new SetReturnAddressInstr(ensure.returnAddr, rEndLabel));
-                addInstr(s, new JumpInstr(ensure.start));
+            // - If we do, execute the ensure code.
+            if (ensure != null) {
+                ensure.cloneIntoHostScope(this, s);
             }
+            addInstr(s, new JumpInstr(rEndLabel));
         } else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
             // up execution of all necessary ensure blocks.  So, nothing to do here!
@@ -3179,7 +3231,7 @@ public class IRBuilder {
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (ensure == null) addInstr(s, new LabelInstr(rEndLabel));
 
-        _rescueBlockStack.pop();
+        activeRescueBlockStack.pop();
         return rv;
     }
 
@@ -3236,24 +3288,15 @@ public class IRBuilder {
         Operand x = build(realBody, s);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Restore "$!"
-            RescueBlockInfo rbi = _rescueBlockStack.peek();
+            RescueBlockInfo rbi = activeRescueBlockStack.peek();
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
 
             // Set up node return value 'rv'
             addInstr(s, new CopyInstr(rv, x));
 
             // If we dont have a matching ensure block, jump to the end of the rescue block.
-            // If we have a match, jump to that ensure block.  On return, jump to the end of the rescue block.
-            if (_ensureBlockStack.empty()) {
+            if (activeEnsureBlockStack.empty() || rbi.rescueNode != activeEnsureBlockStack.peek().matchingRescueNode) {
                 addInstr(s, new JumpInstr(endLabel));
-            } else {
-                EnsureBlockInfo ebi = _ensureBlockStack.peek();
-                if (rbi.rescueNode == ebi.matchingRescueNode) {
-                    addInstr(s, new SetReturnAddressInstr(ebi.returnAddr, endLabel));
-                    addInstr(s, new JumpInstr(ebi.start));
-                } else {
-                    addInstr(s, new JumpInstr(endLabel));
-                }
             }
         }
     }
@@ -3264,12 +3307,12 @@ public class IRBuilder {
 
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
-        if (_rescueBlockStack.empty()) {
+        if (activeRescueBlockStack.empty()) {
             addInstr(s, new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
         } else {
             addInstr(s, new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
-            RescueBlockInfo rbi = _rescueBlockStack.peek();
+            RescueBlockInfo rbi = activeRescueBlockStack.peek();
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
             addInstr(s, new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
@@ -3285,15 +3328,15 @@ public class IRBuilder {
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
-        if (!_ensureBlockStack.empty()) {
+        if (!activeEnsureBlockStack.empty()) {
             Variable ret = s.getNewTemporaryVariable();
             addInstr(s, new CopyInstr(ret, retVal));
             retVal = ret;
-            emitEnsureBlockJumpChain(s, null);
-        }
-        else if (!_rescueBlockStack.empty()) {
+            emitEnsureBlocks(s, null);
+        } else if (!activeRescueBlockStack.empty()) {
             addInstr(s, new PutGlobalVarInstr("$!", manager.getNil()));
         }
+
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if
