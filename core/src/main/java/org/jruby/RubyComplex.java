@@ -126,7 +126,7 @@ public class RubyComplex extends RubyNumeric {
     /** rb_complex_raw
      * 
      */
-    static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x, RubyObject y) {
+    public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return new RubyComplex(runtime, runtime.getComplex(), x, y);
     }
 

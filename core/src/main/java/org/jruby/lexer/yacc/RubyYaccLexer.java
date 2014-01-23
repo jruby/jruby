@@ -162,7 +162,7 @@ public class RubyYaccLexer {
     }
     
     private ComplexNode newComplexNode(Node number) {
-        return null;
+        return new ComplexNode(getPosition(), number);
     }
     
     private void ambiguousOperator(String op, String syn) {
