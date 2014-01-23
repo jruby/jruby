@@ -106,6 +106,7 @@ import org.jruby.ast.OptArgNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
+import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -535,6 +536,11 @@ public class AbstractNodeVisitor implements NodeVisitor {
         return defaultVisit(iVisited);
     }
 
+    @Override
+    public Object visitRationalNode(RationalNode iVisited) {
+        return defaultVisit(iVisited);
+    }
+    
     @Override
     public Object visitRedoNode(RedoNode iVisited) {
         return defaultVisit(iVisited);

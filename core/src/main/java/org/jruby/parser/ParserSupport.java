@@ -1594,4 +1594,23 @@ public class ParserSupport {
     public KeywordArgNode keyword_arg(ISourcePosition position, AssignableNode assignable) {
         return new KeywordArgNode(position, assignable);
     }
+    
+    public Node negateNumeric(ISourcePosition position, Node node) {
+        switch (node.getNodeType()) {
+            case FIXNUMNODE:
+            case BIGNUMNODE:
+                return negateInteger(node);
+            case RATIONAL: // FIXME: impl
+                // COMPLEX
+            case FLOATNODE:
+                return negateFloat((FloatNode) node);
+        }
+        
+        yyerror("Invalid or unimplemented numeric to negate: " + node.toString());
+        return null;
+    }
+    
+    public Node new_defined(ISourcePosition position, Node something) {
+        return new DefinedNode(position, something);
+    }
 }

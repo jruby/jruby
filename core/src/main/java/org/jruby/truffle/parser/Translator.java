@@ -11,14 +11,12 @@ package org.jruby.truffle.parser;
 
 import java.math.*;
 import java.util.*;
-import java.util.regex.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.instrument.*;
 import com.oracle.truffle.api.nodes.instrument.InstrumentationProbeNode.ProbeChain;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.*;
-import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.common.IRubyWarnings;
@@ -1704,6 +1702,11 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitPreExeNode(org.jruby.ast.PreExeNode node) {
+        return unimplemented(node);
+    }
+    
+    @Override
+    public Object visitRationalNode(org.jruby.ast.RationalNode node) {
         return unimplemented(node);
     }
 
