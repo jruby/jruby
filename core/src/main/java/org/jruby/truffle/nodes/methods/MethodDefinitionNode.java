@@ -60,7 +60,7 @@ public class MethodDefinitionNode extends RubyNode {
 
         Visibility visibility;
 
-        if (name.equals("initialize_copy")) {
+        if (name.equals("initialize") || name.equals("initialize_copy")) {
             visibility = Visibility.PRIVATE;
         } else {
             if (visibilitySlot == null) {
