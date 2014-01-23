@@ -50,10 +50,12 @@ public class SplatNode extends Node {
         this.node = node;
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.SPLATNODE;
     }
 
+    @Override
     public Object accept(NodeVisitor visitor) {
         return visitor.visitSplatNode(this);
     }
@@ -62,12 +64,13 @@ public class SplatNode extends Node {
         return node;
     }
 
+    @Override
     public List<Node> childNodes() {
         return createList(node);
     }
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return Helpers.splatValue(node.interpret(runtime, context, self, aBlock));
+        return Helpers.splatValue19(node.interpret(runtime, context, self, aBlock));
     }
 }

@@ -703,7 +703,7 @@ public class ParserSupport {
     }
     
     public SplatNode newSplatNode(ISourcePosition position, Node node) {
-        return new Splat19Node(position, makeNullNil(node));
+        return new SplatNode(position, makeNullNil(node));
     }
     
     public ArrayNode newArrayNode(ISourcePosition position, Node firstNode) {

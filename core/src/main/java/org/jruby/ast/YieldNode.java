@@ -102,6 +102,7 @@ public class YieldNode extends Node {
         return expandedArguments;
     }
 
+    @Override
     public List<Node> childNodes() {
         return createList(argsNode);
     }
@@ -111,7 +112,7 @@ public class YieldNode extends Node {
         IRubyObject argsResult = argsNode.interpret(runtime, context, self, aBlock);
         
         if (expandedArguments) {
-            if (argsNode instanceof Splat19Node) argsResult = Helpers.unsplatValue19(argsResult);
+            if (argsNode instanceof SplatNode) argsResult = Helpers.unsplatValue19(argsResult);
 
             return context.getCurrentFrame().getBlock().yieldArray(context, argsResult, null, null);
         } 
