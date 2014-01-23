@@ -90,11 +90,6 @@ public class GeneralSuperCallNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, self.toString()));
         }
 
-        if (!method.isVisibleTo(self)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError("(unknown)"));
-        }
-
         // Call the method
 
         if (isSplatted) {
