@@ -39,7 +39,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
-import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
@@ -700,7 +699,7 @@ public class ParserSupport {
     }
 
     public SValueNode newSValueNode(ISourcePosition position, Node node) {
-        return new SValue19Node(position, node);
+        return new SValueNode(position, node);
     }
     
     public SplatNode newSplatNode(ISourcePosition position, Node node) {
