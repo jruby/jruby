@@ -858,11 +858,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void JumpIndirectInstr(JumpIndirectInstr jumpindirectinstr) {
-        super.JumpIndirectInstr(jumpindirectinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void JumpInstr(JumpInstr jumpinstr) {
         jvm.method().goTo(getJVMLabel(jumpinstr.getJumpTarget()));
     }
@@ -1185,11 +1180,6 @@ public class JVMVisitor extends IRVisitor {
         visit(searchconstinstr.getStartingScope());
         jvm.method().searchConst(searchconstinstr.getConstName());
         jvmStoreLocal(searchconstinstr.getResult());
-    }
-
-    @Override
-    public void SetReturnAddressInstr(SetReturnAddressInstr setreturnaddressinstr) {
-        super.SetReturnAddressInstr(setreturnaddressinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

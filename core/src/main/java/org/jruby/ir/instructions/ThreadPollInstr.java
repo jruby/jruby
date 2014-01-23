@@ -26,6 +26,7 @@ public class ThreadPollInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return this;
             default:

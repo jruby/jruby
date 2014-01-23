@@ -42,7 +42,6 @@ import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LexicalSearchConstInstr;
@@ -84,7 +83,6 @@ import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
@@ -169,7 +167,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case DEF_MODULE: return new DefineModuleInstr(d.decodeVariable(), (IRModuleBody) d.decodeScope(), d.decodeOperand());
             case EQQ: return new EQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case EXC_REGION_END: return new ExceptionRegionEndMarkerInstr();
-            case EXC_REGION_START: return new ExceptionRegionStartMarkerInstr((Label) d.decodeOperand(), (Label) d.decodeOperand(), (Label) d.decodeOperand());
+            case EXC_REGION_START: return new ExceptionRegionStartMarkerInstr((Label) d.decodeOperand());
             case GET_BACKREF: return new GetBackrefInstr(d.decodeVariable());
             case GET_CVAR: return new GetClassVariableInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
                 // FIXME: Encoding load is likely wrong here but likely will work :)
@@ -183,7 +181,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
             case IS_METHOD_BOUND: return new IsMethodBoundInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
-            case JUMP_INDIRECT: return new JumpIndirectInstr(d.decodeVariable());
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
@@ -227,7 +224,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RETURN: return new ReturnInstr(d.decodeOperand());
             case RUNTIME_HELPER: return decodeRuntimeHelperCall();
             case SEARCH_CONST: return decodeSearchConst();
-            case SET_RETADDR: return new SetReturnAddressInstr(d.decodeVariable(), (Label) d.decodeOperand());
             case CLASS_SUPER: return decodeSuperInstr(operation);
             case INSTANCE_SUPER: return decodeSuperInstr(operation);
             case UNRESOLVED_SUPER: return decodeUnresolvedSuperInstr();

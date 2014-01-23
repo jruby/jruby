@@ -40,7 +40,6 @@ import org.jruby.ir.instructions.GetInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LexicalSearchConstInstr;
@@ -80,7 +79,6 @@ import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.SuperInstrType;
 import org.jruby.ir.instructions.ThreadPollInstr;
@@ -177,8 +175,6 @@ public class IRInstructionFactory {
         switch (operation) {
         case JUMP:
             return createJump(paramsIterator);
-        case JUMP_INDIRECT:
-            return createJumpInderect(paramsIterator);
         case LABEL:
             return createLabel(paramsIterator);
         case LINE_NUM:
@@ -247,12 +243,6 @@ public class IRInstructionFactory {
         final Label target = (Label) paramsIterator.next();
 
         return new JumpInstr(target);
-    }
-
-    private JumpIndirectInstr createJumpInderect(final ParametersIterator paramsIterator) {
-        final Variable target = (Variable) paramsIterator.next();
-
-        return new JumpIndirectInstr(target);
     }
 
     private LabelInstr createLabel(final ParametersIterator paramsIterator) {
@@ -402,11 +392,9 @@ public class IRInstructionFactory {
     }
 
     private ExceptionRegionStartMarkerInstr createExceptionRegionStartMarker(final ParametersIterator paramsIterator) {
-        final Label begin = (Label) paramsIterator.next();
-        final Label end = (Label) paramsIterator.next();
         final Label firstRescueBlockLabel = (Label) paramsIterator.next();
 
-        return new ExceptionRegionStartMarkerInstr(begin, end, firstRescueBlockLabel);
+        return new ExceptionRegionStartMarkerInstr(firstRescueBlockLabel);
     }
 
     private GVarAliasInstr createGvarAlias(final ParametersIterator paramsIterator) {
@@ -578,8 +566,6 @@ public class IRInstructionFactory {
             return createReceivePreReqdArg(result, paramsIterator);
         case RECORD_END_BLOCK:
             return createRecordEndBlock(result, paramsIterator);
-        case SET_RETADDR:
-            return createSetReturnAddress(result, paramsIterator);
         case SUPER_METHOD_BOUND:
             return createSuperMetodBound(result, paramsIterator);
         case UNDEF_METHOD:
@@ -733,12 +719,6 @@ public class IRInstructionFactory {
         final IRClosure endBlockClosure = (IRClosure) paramsIterator.nextScope();
 
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
-    }
-
-    private SetReturnAddressInstr createSetReturnAddress(final Variable result, final ParametersIterator paramsIterator) {
-        final Label l = (Label) paramsIterator.next();
-
-        return new SetReturnAddressInstr(result, l);
     }
 
     private SuperMethodBoundInstr createSuperMetodBound(final Variable result, final ParametersIterator paramsIterator) {

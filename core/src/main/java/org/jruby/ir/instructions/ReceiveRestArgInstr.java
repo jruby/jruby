@@ -34,6 +34,7 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new ReceiveRestArgInstr(ii.getRenamedVariable(result), numUsedArgs, argIndex);
             default:

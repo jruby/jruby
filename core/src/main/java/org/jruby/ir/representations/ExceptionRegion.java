@@ -16,7 +16,6 @@ class ExceptionRegion {
     private List<ExceptionRegion> nestedRegions; // Rescue regions nested within this one
     private BasicBlock startBB;       // First BB of the rescued region
     private BasicBlock endBB;         // Last BB of the rescued region
-    private BasicBlock firstRescueBB; // First BB of the first rescue block of this region
 
     public ExceptionRegion(Label firstRescueBlockLabel, BasicBlock startBB) {
         this.firstRescueBlockLabel = firstRescueBlockLabel;
@@ -50,10 +49,6 @@ class ExceptionRegion {
         exclusiveBBs.remove(r.exclusiveBBs.get(0));
     }
 
-    public void setFirstRescueBB(BasicBlock frbb) {
-        firstRescueBB = frbb;
-    }
-
     public Label getFirstRescueBlockLabel() {
         return firstRescueBlockLabel;
     }
@@ -62,7 +57,6 @@ class ExceptionRegion {
         ExceptionRegion newR = new ExceptionRegion(ii.getRenamedLabel(firstRescueBlockLabel),
             ii.getRenamedBB(this.startBB));
         newR.endBB = ii.getRenamedBB(endBB);
-        newR.firstRescueBB = ii.getRenamedBB(firstRescueBB);
 
         for (BasicBlock b: exclusiveBBs) {
             newR.addBB(ii.getRenamedBB(b));

@@ -20,10 +20,8 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
@@ -247,10 +245,6 @@ public class CFG {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
 
-        // Map of return address variable and all possible targets (required to connect up ensure blocks with their targets)
-        Map<Variable, Set<Label>> retAddrMap = new HashMap<Variable, Set<Label>>();
-        Map<Variable, BasicBlock> retAddrTargetMap = new HashMap<Variable, BasicBlock>();
-
         // List of bbs that have a 'return' instruction
         List<BasicBlock> returnBBs = new ArrayList<BasicBlock>();
 
@@ -275,6 +269,7 @@ public class CFG {
         boolean bbEnded = false;
         boolean nextBBIsFallThrough = true;
         for (Instr i : instrs) {
+            // System.out.println("Processing: " + i);
             Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
                 Label l = ((LabelInstr) i).label;
@@ -332,14 +327,6 @@ public class CFG {
                 } else if (i instanceof ThrowExceptionInstr) {
                     tgt = null;
                     exceptionBBs.add(currBB);
-                } else if (i instanceof JumpIndirectInstr) {
-                    tgt = null;
-                    Set<Label> retAddrs = retAddrMap.get(((JumpIndirectInstr) i).getJumpTarget());
-                    for (Label l : retAddrs) {
-                        addEdge(currBB, l, forwardRefs);
-                    }
-                    // Record the target bb for the retaddr var for any set_addr instrs that appear later and use the same retaddr var
-                    retAddrTargetMap.put(((JumpIndirectInstr) i).getJumpTarget(), currBB);
                 } else {
                     throw new RuntimeException("Unhandled case in CFG builder for basic block ending instr: " + i);
                 }
@@ -349,23 +336,7 @@ public class CFG {
                 currBB.addInstr(i);
             }
 
-            if (i instanceof SetReturnAddressInstr) {
-                Variable v = ((SetReturnAddressInstr) i).getResult();
-                Label tgtLbl = ((SetReturnAddressInstr) i).getReturnAddr();
-                BasicBlock tgtBB = retAddrTargetMap.get(v);
-                // If we have the target bb, add the edge
-                // If not, record it for fixup later
-                if (tgtBB != null) {
-                    addEdge(tgtBB, tgtLbl, forwardRefs);
-                } else {
-                    Set<Label> addrs = retAddrMap.get(v);
-                    if (addrs == null) {
-                        addrs = new HashSet<Label>();
-                        retAddrMap.put(v, addrs);
-                    }
-                    addrs.add(tgtLbl);
-                }
-            } else if (i instanceof CallBase) { // Build CFG for the closure if there exists one
+            if (i instanceof CallBase) { // Build CFG for the closure if there exists one
                 Operand closureArg = ((CallBase) i).getClosureArg(getScope().getManager().getNil());
                 if (closureArg instanceof WrappedIRClosure) {
                     ((WrappedIRClosure) closureArg).getClosure().buildCFG();
@@ -375,23 +346,28 @@ public class CFG {
 
         // Process all rescued regions
         for (ExceptionRegion rr : allExceptionRegions) {
-            BasicBlock firstRescueBB = bbMap.get(rr.getFirstRescueBlockLabel());
+            // When this exception region represents an unrescued region
+            // from a copied ensure block, we have a dummy label
+            Label rescueLabel = rr.getFirstRescueBlockLabel();
+            if (rescueLabel != Label.UNRESCUED_REGION_LABEL) {
+                BasicBlock firstRescueBB = bbMap.get(rescueLabel);
+                // Mark the BB as a rescue entry BB
+                firstRescueBB.markRescueEntryBB();
 
-            // Mark the BB as a rescue entry BB
-            firstRescueBB.markRescueEntryBB();
-
-            // 1. Tell the region that firstRescueBB is its protector!
-            rr.setFirstRescueBB(firstRescueBB);
-
-            // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
-            // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
-            for (BasicBlock b : rr.getExclusiveBBs()) {
-                setRescuerBB(b, firstRescueBB);
-                graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
+                // Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
+                // Add an exception edge from every exclusive bb of the region to firstRescueBB
+                for (BasicBlock b : rr.getExclusiveBBs()) {
+                    setRescuerBB(b, firstRescueBB);
+                    graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
+                }
             }
         }
 
         buildExitBasicBlock(nestedExceptionRegions, firstBB, returnBBs, exceptionBBs, nextBBIsFallThrough, currBB, entryBB);
+
+        // System.out.println("-------------- CFG before optimizing --------------");
+        // System.out.println("\nGraph:\n" + toStringGraph());
+        // System.out.println("\nInstructions:\n" + toStringInstrs());
 
         optimize(); // remove useless cfg edges & orphaned bbs
 
@@ -459,10 +435,10 @@ public class CFG {
         return createBB(scope.getNewLabel(), nestedExceptionRegions);
     }
 
-   public void addBasicBlock(BasicBlock bb) {
+    public void addBasicBlock(BasicBlock bb) {
         graph.findOrCreateVertexFor(bb); // adds vertex to graph
         bbMap.put(bb.getLabel(), bb);
-   }
+    }
 
     public void removeEdge(Edge edge) {
         graph.removeEdge(edge);
@@ -610,7 +586,7 @@ public class CFG {
         buf.append("\n\n------ Rescue block map ------\n");
         List<BasicBlock> e = new ArrayList<BasicBlock>(rescuerMap.keySet());
         Collections.sort(e);
-        
+
         for (BasicBlock bb : e) {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
         }
@@ -626,7 +602,7 @@ public class CFG {
 
         return buf.toString();
     }
-    
+
     public void removeEdge(BasicBlock a, BasicBlock b) {
        graph.removeEdge(a, b);
     }

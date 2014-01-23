@@ -23,11 +23,14 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
+// SSS FIXME: This class needs some refactoring / subclassing to more cleanly
+// provide support for the various inlining scenarios elaborated in CloneMode.java
 public class InlinerInfo {
     private static Integer globalInlineCount = 0;
 
-    private CFG hostCFG;
     private CallBase call;
+    private CFG hostCFG;
+    private IRScope hostScope;  // This can be provided independent of CFG during IR building
 
     private Operand[] callArgs;
     private boolean canMapArgsStatically;
@@ -60,24 +63,28 @@ public class InlinerInfo {
         return false;
     }
 
-    private void init(CFG c) {
+    private void init() {
         this.varRenameMap = new HashMap<Variable, Variable>();
         this.lblRenameMap = new HashMap<Label, Label>();
         this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
-        this.hostCFG = c;
     }
 
-    public InlinerInfo(CFG c) {
-        init(c);
-        this.cloneMode = CloneMode.NORMAL_CLONE;
+    public InlinerInfo(CFG c, IRScope s, CloneMode m) {
+        init();
+        this.hostCFG = c;
+        this.hostScope = s;
+        this.cloneMode = m;
         this.canMapArgsStatically = false;
         this.argsArray = null;
     }
 
+    public InlinerInfo(CFG c) {
+        this(c, c.getScope(), CloneMode.NORMAL_CLONE);
+    }
+
     public InlinerInfo(CallBase call, CFG c, Variable callReceiver) {
-        init(c);
-        this.cloneMode = CloneMode.METHOD_INLINE;
+        this(c, c.getScope(), CloneMode.METHOD_INLINE);
         this.call = call;
         this.callArgs = call.getCallArgs();
         this.callReceiver = callReceiver;
@@ -99,7 +106,14 @@ public class InlinerInfo {
     }
 
     public InlinerInfo cloneForCloningClosure(IRClosure clonedClosure) {
-        InlinerInfo clone = new InlinerInfo(clonedClosure.getCFG());
+        InlinerInfo clone;
+        CFG cfg = clonedClosure.getCFG();
+        if (cfg == null || cloneMode == CloneMode.ENSURE_BLOCK_CLONE) {
+            clone = new InlinerInfo(null, clonedClosure, CloneMode.NORMAL_CLONE);
+        } else {
+            clone = new InlinerInfo(cfg);
+        }
+
         clone.cloneMode = CloneMode.NORMAL_CLONE;
         for (Variable v: varRenameMap.keySet()) {
             clone.varRenameMap.put(v, varRenameMap.get(v));
@@ -116,14 +130,17 @@ public class InlinerInfo {
      * Returns the scope into which code is being inlined.
      */
     public IRScope getInlineHostScope() {
-        return hostCFG.getScope();
+        return hostScope;
     }
 
     public IRScope getNewLexicalParentForClosure() {
-        return hostCFG.getScope();
+        return hostScope;
     }
 
     public Label getRenamedLabel(Label l) {
+        // Special case -- is there a way to avoid this?
+        if (l == Label.UNRESCUED_REGION_LABEL) return l;
+
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
            newLbl = cloneMode == CloneMode.NORMAL_CLONE ? l.clone() : getInlineHostScope().getNewLabel();
@@ -159,7 +176,7 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         // Special case for %self
         if (v instanceof Self) {
-            return cloneMode == CloneMode.NORMAL_CLONE ? v : callReceiver;
+            return cloneMode == CloneMode.NORMAL_CLONE || cloneMode == CloneMode.ENSURE_BLOCK_CLONE ? v : callReceiver;
         }
 
         // Everything else
@@ -167,6 +184,7 @@ public class InlinerInfo {
         if (newVar == null) {
             switch (cloneMode) {
                 case NORMAL_CLONE:
+                case ENSURE_BLOCK_CLONE:
                     newVar = v.clone(this);
                     break;
                 case CLOSURE_INLINE:
@@ -187,7 +205,7 @@ public class InlinerInfo {
                     break;
             }
             this.varRenameMap.put(v, newVar);
-        } else if ((cloneMode == CloneMode.NORMAL_CLONE) && (v instanceof LocalVariable)) {
+        } else if ((cloneMode == CloneMode.NORMAL_CLONE || cloneMode == CloneMode.ENSURE_BLOCK_CLONE) && (v instanceof LocalVariable)) {
             LocalVariable l_v = (LocalVariable)v;
             LocalVariable l_newVar = (LocalVariable)newVar;
             if (l_v.getScopeDepth() != l_newVar.getScopeDepth()) newVar = l_newVar.cloneForDepth(l_v.getScopeDepth());
@@ -247,7 +265,7 @@ public class InlinerInfo {
     }
 
     public Operand getCallClosure() {
-        return call.getClosureArg(hostCFG.getScope().getManager().getNil());
+        return call.getClosureArg(hostScope.getManager().getNil());
     }
 
     // SSS FIXME: Ugly?

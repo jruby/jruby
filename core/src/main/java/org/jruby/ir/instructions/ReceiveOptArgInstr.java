@@ -47,6 +47,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         // argIndex is relative to start of opt args and not the start of arg array
         int optArgIndex = this.argIndex;
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new ReceiveOptArgInstr(ii.getRenamedVariable(result), numUsedArgs, argOffset, optArgIndex);
             default: {

@@ -46,7 +46,6 @@ import org.jruby.ir.instructions.GetInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LexicalSearchConstInstr;
@@ -90,7 +89,6 @@ import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.SuperInstrType;
 import org.jruby.ir.instructions.ThreadPollInstr;
@@ -370,12 +368,6 @@ class IRInstrStringExtractor extends IRVisitor {
 
     // Jump Instructions
 
-    public void JumpIndirectInstr(JumpIndirectInstr jumpindirectinstr) {
-        Variable jumpTarget = jumpindirectinstr.getJumpTarget();
-
-        stringProducer.appendParameters(jumpTarget);
-    }
-
     public void JumpInstr(JumpInstr jumpinstr) {
         Label jumpTarget = jumpinstr.getJumpTarget();
 
@@ -573,11 +565,9 @@ class IRInstrStringExtractor extends IRVisitor {
 
     public void ExceptionRegionStartMarkerInstr(
             ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) {
-        Label begin =  exceptionregionstartmarkerinstr.begin;
-        Label end =  exceptionregionstartmarkerinstr.end;
         Label firstRescueBlockLabel =  exceptionregionstartmarkerinstr.firstRescueBlockLabel;
 
-        stringProducer.appendParameters(begin, end, firstRescueBlockLabel);
+        stringProducer.appendParameters(firstRescueBlockLabel);
     }
 
     @Override public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
@@ -684,10 +674,6 @@ class IRInstrStringExtractor extends IRVisitor {
 
     @Override public void SearchConstInstr(SearchConstInstr instr) {
         stringProducer.appendParameters(instr.getConstName(), instr.getStartingScope(), instr.isNoPrivateConsts());
-    }
-
-    @Override public void SetReturnAddressInstr(SetReturnAddressInstr instr) {
-        stringProducer.appendParameters(instr.getReturnAddr());
     }
 
     @Override public void StoreLocalVarInstr(StoreLocalVarInstr instr) {

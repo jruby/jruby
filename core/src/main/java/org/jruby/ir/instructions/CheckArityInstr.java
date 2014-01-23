@@ -34,6 +34,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new CheckArityInstr(required, opt, rest);
             default:

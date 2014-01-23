@@ -37,6 +37,7 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArit
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new ReceiveClosureInstr(ii.getRenamedVariable(result));
             case METHOD_INLINE:

@@ -44,6 +44,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
                     return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
                 }
                 // fall through
+            case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
                 return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
             default:
