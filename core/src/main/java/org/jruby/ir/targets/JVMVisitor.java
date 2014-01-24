@@ -84,6 +84,7 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -145,12 +146,14 @@ public class JVMVisitor extends IRVisitor {
         this.currentScope = scope;
         name = name + scope.getLineNumber();
 
+        boolean debug = false;
+
         Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
         Instr[] instrs = t.a;
         Map<Integer, Label[]> jumpTable = t.b;
         Map<Integer, Integer> rescueTable = scope.getRescueMap();
-//        System.out.println("rescues: " + rescueTable);
-//        System.out.println("jumps: " + jumpTable);
+        if (debug) System.out.println("rescues: " + rescueTable);
+        if (debug) System.out.println("jumps: " + jumpTable);
 
         jvm.pushmethod(name, arity);
         IRBytecodeAdapter m = jvm.method();
@@ -186,13 +189,14 @@ public class JVMVisitor extends IRVisitor {
         });
 
         for (int[] range : allCatches) {
+            if (debug) System.out.println("rescue range: " + Arrays.toString(range));
             jvm.method().adapter.trycatch(allLabels[range[0]], allLabels[range[1]], allLabels[range[2]], p(Throwable.class));
         }
 
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
-//            System.out.println("ipc " + instr.getIPC() + " rescued by " + rescueTable.get(instr.getIPC()));
-//            System.out.println("ipc " + instr.getIPC() + " is: " + instr + " (" + instr.getClass() + ")");
+            if (debug) System.out.println("ipc " + instr.getIPC() + " rescued by " + rescueTable.get(instr.getIPC()));
+            if (debug) System.out.println("ipc " + instr.getIPC() + " is: " + instr + " (" + instr.getClass() + ")");
 
             if (jumpTable.get(i) != null) {
                 for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
@@ -203,6 +207,9 @@ public class JVMVisitor extends IRVisitor {
 
             visit(instr);
         }
+
+        // mark last label
+        m.mark(allLabels[allLabels.length - 1]);
 
         jvm.popmethod();
 
