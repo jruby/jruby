@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -521,7 +521,7 @@ public abstract class ModuleNodes {
             return module;
         }
     }
-    @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1, isSplatted = true)
+    @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1)
     public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
         public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -533,10 +533,15 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, Object argument) {
+        public RubyArray privateInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return privateInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            List<RubyMethod> methods = module.getDeclaredMethods();
-            if (argument instanceof RubyTrueClass) {
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
                 RubyModule parent = module.getParentModule();
                 while(parent != null){
                     methods.addAll(parent.getDeclaredMethods());
