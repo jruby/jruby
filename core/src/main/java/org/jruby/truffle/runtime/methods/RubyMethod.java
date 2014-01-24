@@ -120,6 +120,10 @@ public class RubyMethod {
         if (caller == receiver.getRubyClass()){
             return true;
         }
+
+        if (caller == receiver){
+            return true;
+        }
         return isVisibleTo(caller);
     }
 
