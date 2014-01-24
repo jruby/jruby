@@ -195,10 +195,10 @@ if RUBY_VERSION >= "1.9.0"
     len = format_message.call(format_message_ignore_inserts + format_message_from_system, 0, code, 0, msg, 1024, nil, nil, nil, nil, nil, nil, nil, nil)
     msg[0, len].tr("\r", '').chomp
   end
+end
 
   # Load the JRuby native ext
   JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
-end
 
   class << self
   private
