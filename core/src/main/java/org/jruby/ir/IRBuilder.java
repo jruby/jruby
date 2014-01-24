@@ -2304,7 +2304,7 @@ public class IRBuilder {
 
         // Clone the ensure body and jump to the end.
         // Dont bother if the protected body ended in a return.
-        if (rv != U_NIL) {
+        if (rv != U_NIL && !(bodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this, s);
             addInstr(s, new JumpInstr(ebi.end));
         }
@@ -3294,10 +3294,11 @@ public class IRBuilder {
             // Set up node return value 'rv'
             addInstr(s, new CopyInstr(rv, x));
 
-            // If we dont have a matching ensure block, jump to the end of the rescue block.
-            if (activeEnsureBlockStack.empty() || rbi.rescueNode != activeEnsureBlockStack.peek().matchingRescueNode) {
-                addInstr(s, new JumpInstr(endLabel));
+            // If we have a matching ensure block, clone it so ensure block runs here
+            if (!activeEnsureBlockStack.empty() && rbi.rescueNode == activeEnsureBlockStack.peek().matchingRescueNode) {
+                activeEnsureBlockStack.peek().cloneIntoHostScope(this, s);
             }
+            addInstr(s, new JumpInstr(endLabel));
         }
     }
 
