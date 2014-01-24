@@ -218,6 +218,12 @@ public class IRRuntimeHelpers {
     // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
     public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         Ruby runtime = context.runtime;
+
+        // unwrap Ruby exceptions
+        if (excObj instanceof RaiseException) {
+            excObj = ((RaiseException)excObj).getException();
+        }
+
         if (excObj instanceof IRubyObject) {
             // regular ruby exception
             if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);

@@ -1061,7 +1061,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr receiveexceptioninstr) {
         // exception should be on stack from try/catch, so unwrap and store it
-        jvm.method().invokeIRHelper("unwrapRubyException", sig(Object.class, Object.class));
         jvmStoreLocal(receiveexceptioninstr.getResult());
     }
 

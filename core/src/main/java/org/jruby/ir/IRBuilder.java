@@ -3156,7 +3156,7 @@ public class IRBuilder {
         addInstr(s, new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
 
-        if (ensure == null) addInstr(s, new LabelInstr(rBeginLabel));
+        addInstr(s, new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
