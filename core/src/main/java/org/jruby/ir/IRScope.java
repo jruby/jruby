@@ -1178,6 +1178,13 @@ public abstract class IRScope implements ParseResult {
         return linearizedInstrArray;
     }
 
+    public Instr[] getInstrsForInterpretation(boolean isLambda) {
+        if (linearizedInstrArray == null) {
+            prepareForInterpretation(isLambda);
+        }
+        return linearizedInstrArray;
+    }
+
     public void resetLinearizationData() {
         linearizedBBList = null;
         relinearizeCFG = false;

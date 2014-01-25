@@ -5,6 +5,7 @@ public enum OpClass {
     ARG_OP,
     BRANCH_OP,
     CALL_OP,
+    RET_OP,
     BOOK_KEEPING_OP,
     OTHER_OP
 }

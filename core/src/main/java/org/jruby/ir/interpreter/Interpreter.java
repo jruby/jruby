@@ -292,14 +292,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
-        case RECV_RUBY_EXC: {
+        case RECV_RUBY_EXC:
             setResult(temp, currDynScope, instr.getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
             return;
-        }
-        case RECV_JRUBY_EXC: {
+        case RECV_JRUBY_EXC:
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
-        }
         default:
             result = ((ReceiveArgBase)instr).receiveArg(context, kwArgHashCount, args);
             setResult(temp, currDynScope, instr.getResult(), result);
@@ -359,11 +357,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, int kwArgHashCount, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
     {
         switch(operation) {
-        case PUSH_FRAME: {
+        case PUSH_FRAME:
             context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
             context.setCurrentVisibility(visibility);
             break;
-        }
         case POP_FRAME:
             context.popFrame();
             context.popRubyClass();
@@ -387,13 +384,36 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    private static IRubyObject processReturnOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block.Type blockType)
+    {
+        switch(operation) {
+        // --------- Return flavored instructions --------
+        case BREAK: {
+            BreakInstr bi = (BreakInstr)instr;
+            IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
+            // This also handles breaks in lambdas -- by converting them to a return
+            return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
+        }
+        case RETURN: {
+            return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
+        }
+        case NONLOCAL_RETURN: {
+            NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
+            IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, temp);
+            // If not in a lambda, check if this was a non-local return
+            if (!IRRuntimeHelpers.inLambda(blockType)) {
+                IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
+            }
+            return rv;
+        }
+        }
+        return null;
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
-        Instr[] instrs = scope.getInstrsForInterpretation();
-
-        // The base IR may not have been processed yet
-        if (instrs == null) instrs = scope.prepareForInterpretation(blockType == Block.Type.LAMBDA);
-
+            IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType)
+    {
+        Instr[] instrs = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
         Map<Integer, Integer> rescueMap = scope.getRescueMap();
 
         int      numTempVars    = scope.getTemporaryVariablesCount();
@@ -429,28 +449,25 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             }
 
             try {
+                Object result = null;
                 switch (operation.opClass) {
-                case ALU_OP: {
+                case ALU_OP:
                     computeResult((AluInstr)instr, operation, context, floats, temp);
                     break;
-                }
-                case ARG_OP: {
+                case ARG_OP:
                     receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
                     break;
-                }
-                case BRANCH_OP: {
+                case BRANCH_OP:
                     switch (operation) {
                     case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
                     default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc); break;
                     }
                     break;
-                }
-                case CALL_OP: {
+                case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
                     processCall(context, instr, operation, scope, currDynScope, temp, self, block, blockType);
                     break;
-                }
-                case BOOK_KEEPING_OP: {
+                case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
                         // SSS NOTE: Method scopes only!
                         //
@@ -462,32 +479,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         processBookKeepingOp(context, instr, operation, scope, args.length, kwArgHashCount, self, block, implClass, visibility);
                     }
                     break;
-                }
-                case OTHER_OP: {
-                    Object result = null;
+                case RET_OP:
+                    return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
+                case OTHER_OP:
                     switch(operation) {
-                    // --------- Return flavored instructions --------
-                    case BREAK: {
-                        BreakInstr bi = (BreakInstr)instr;
-                        IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
-                        // This also handles breaks in lambdas -- by converting them to a return
-                        return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
-                    }
-                    case RETURN: {
-                        return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
-                    }
-                    case NONLOCAL_RETURN: {
-                        NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
-                        IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, temp);
-                        ipc = n;
-                        // If not in a lambda, check if this was a non-local return
-                        if (!IRRuntimeHelpers.inLambda(blockType)) {
-                            IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
-                        }
-                        return rv;
-                    }
-
-                    // ---------- Common instruction ---------
+                    // ---------- Other instructions ---------
                     case COPY: {
                         CopyInstr c = (CopyInstr)instr;
                         Operand  src = c.getSource();
@@ -545,7 +541,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
 
                     break;
-                }
                 }
             } catch (Throwable t) {
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
