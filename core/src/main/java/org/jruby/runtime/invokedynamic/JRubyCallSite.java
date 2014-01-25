@@ -123,7 +123,7 @@ public class JRubyCallSite extends MutableCallSite {
         return arity;
     }
 
-    private static int getSiteCount(Class[] args) {
+    public static int getSiteCount(Class[] args) {
         if (args[args.length - 1] == Block.class) {
             if (args[args.length - 2] == IRubyObject[].class) {
                 return 4;

@@ -72,6 +72,21 @@ public class JVM {
         return clsData().method();
     }
 
+    public void pushmethodVarargs(String name) {
+        clsData().pushmethodVarargs(name);
+        method().startMethod();
+
+        // locals for ThreadContext and self
+        methodData().local("$context", JVM.THREADCONTEXT_TYPE);
+        methodData().local("$scope", JVM.STATICSCOPE_TYPE);
+        methodData().local("$self");//, JVM.OBJECT_TYPE);
+        methodData().local("$arguments", JVM.OBJECT_ARRAY_TYPE);
+        methodData().local("$block", Type.getType(Block.class));
+
+        // TODO: this should go into the PushBinding instruction
+        methodData().local("$dynamicScope");
+    }
+
     public void pushmethod(String name, int arity) {
         clsData().pushmethod(name, arity);
         method().startMethod();
@@ -110,10 +125,12 @@ public class JVM {
     }
 
     public static final Class OBJECT = IRubyObject.class;
+    public static final Class OBJECT_ARRAY = IRubyObject[].class;
     public static final Class BLOCK = Block.class;
     public static final Class THREADCONTEXT = ThreadContext.class;
     public static final Class STATICSCOPE = StaticScope.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
+    public static final Type OBJECT_ARRAY_TYPE = Type.getType(OBJECT_ARRAY);
     public static final Type BOOLEAN_TYPE = Type.BOOLEAN_TYPE;
     public static final Type DOUBLE_TYPE = Type.DOUBLE_TYPE;
     public static final Type LONG_TYPE = Type.LONG_TYPE;

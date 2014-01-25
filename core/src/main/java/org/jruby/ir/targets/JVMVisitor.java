@@ -155,7 +155,12 @@ public class JVMVisitor extends IRVisitor {
         if (debug) System.out.println("rescues: " + rescueTable);
         if (debug) System.out.println("jumps: " + jumpTable);
 
-        jvm.pushmethod(name, arity);
+        if (arity == 0) {
+            jvm.pushmethod(name, arity);
+        } else {
+            jvm.pushmethodVarargs(name);
+        }
+
         IRBytecodeAdapter m = jvm.method();
         org.objectweb.asm.Label[] allLabels = new org.objectweb.asm.Label[instrs.length + 1];
         for (int i = 0; i < allLabels.length; i++) {
@@ -235,7 +240,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         // push a method handle for binding purposes
-        jvm.method().pushHandle(jvm.clsData().clsName, name, method.getStaticScope().getRequiredArgs());
+        jvm.method().pushHandleVarargs(jvm.clsData().clsName, name);
     }
 
     public void emit(IRClosure closure) {
@@ -530,7 +535,8 @@ public class JVMVisitor extends IRVisitor {
             visit(callInstr.getReceiver());
             m.invokeFixnumOp(name, ((Fixnum)args[0]).value);
         } else {
-            m.loadLocal(0);
+            m.loadLocal(0); // tc
+            m.loadLocal(2); // caller
             visit(callInstr.getReceiver());
             for (Operand operand : args) {
                 visit(operand);
@@ -671,10 +677,6 @@ public class JVMVisitor extends IRVisitor {
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         IRMethod method = defineinstancemethodinstr.getMethod();
         StaticScope scope = method.getStaticScope();
-
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
         String scopeString = Helpers.encodeScope(scope);
 
@@ -1080,7 +1082,9 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
         int index = getJVMLocalVarIndex(instr.getResult());
-        jvm.method().loadLocal(3 + instr.getArgIndex());
+        jvm.method().loadLocal(3); // index of arg array
+        jvm.method().adapter.ldc(instr.getArgIndex());
+        jvm.method().adapter.aaload();
         jvm.method().storeLocal(index);
     }
 
@@ -1090,7 +1094,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         jvm.method().adapter.pushInt(instr.getArgIndex() + instr.numUsedArgs); // MIN reqd args
         jvm.method().adapter.pushInt(instr.getArgIndex() + instr.argOffset); // args array offset
-        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
     }
 
@@ -1102,7 +1106,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.pushInt(instr.getArgIndex());
         jvm.method().adapter.pushInt(instr.preReqdArgsCount);
         jvm.method().adapter.pushInt(instr.postReqdArgsCount);
-        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadPostReqdArg", IRubyObject.class, int.class, int.class, int.class, IRubyObject[].class);
     }
 
@@ -1113,7 +1117,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().loadContext();
         jvm.method().adapter.pushInt(instr.numUsedArgs); // MIN reqd args
         jvm.method().adapter.pushInt(instr.getArgIndex()); // args array offset
-        jvm.method().adapter.aload(3); // FIXME: what is the correct lvar index for args[]?
+        jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);
     }
 
