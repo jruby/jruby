@@ -3028,7 +3028,7 @@ public class Helpers {
         }
     }
 
-    public static IRubyObject irPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
+    public static IRubyObject irLoadPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         int kwArgHashCount = 0;
         int n = args.length;

@@ -1096,6 +1096,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.pushInt(instr.getArgIndex() + instr.argOffset); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1108,6 +1109,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.pushInt(instr.postReqdArgsCount);
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadPostReqdArg", IRubyObject.class, int.class, int.class, int.class, IRubyObject[].class);
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1119,6 +1121,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.pushInt(instr.getArgIndex()); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override

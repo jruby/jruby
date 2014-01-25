@@ -552,7 +552,7 @@ public class Bootstrap {
 
             // IR compiled methods only support varargs right now
             if (site.arity == 0) {
-                binder = binder.insert(3, "args", IRubyObject.NULL_ARRAY);
+                binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
             } else {
                 binder = binder.collect("args", "arg.*");
             }
