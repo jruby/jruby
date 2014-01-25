@@ -31,8 +31,6 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
-import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
@@ -410,6 +408,67 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats)
+    {
+        Object result = null;
+        switch(operation) {
+        case COPY: {
+            CopyInstr c = (CopyInstr)instr;
+            Operand  src = c.getSource();
+            Variable res = c.getResult();
+            if (res instanceof TemporaryFloatVariable) {
+                setFloatVar(floats, (TemporaryFloatVariable)res, getFloatArg(floats, src));
+            } else {
+                setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, temp));
+            }
+            break;
+        }
+
+        case GET_FIELD: {
+            GetFieldInstr gfi = (GetFieldInstr)instr;
+            IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currDynScope, temp);
+            VariableAccessor a = gfi.getAccessor(object);
+            result = a == null ? null : (IRubyObject)a.get(object);
+            if (result == null) {
+                result = context.nil;
+            }
+            setResult(temp, currDynScope, gfi.getResult(), result);
+            break;
+        }
+
+        case SEARCH_CONST: {
+            SearchConstInstr sci = (SearchConstInstr)instr;
+            result = sci.getCachedConst();
+            if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
+            setResult(temp, currDynScope, sci.getResult(), result);
+            break;
+        }
+
+        case BOX_FLOAT: {
+            RubyFloat f = context.runtime.newFloat(getFloatArg(floats, ((BoxFloatInstr)instr).getValue()));
+            setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
+            break;
+        }
+
+        case UNBOX_FLOAT: {
+            UnboxInstr ui = (UnboxInstr)instr;
+            Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
+            if (val instanceof RubyFloat) {
+                floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
+            } else {
+                floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
+            }
+            break;
+        }
+
+        // ---------- All the rest ---------
+        default:
+            result = instr.interpret(context, currDynScope, self, temp, block);
+            setResult(temp, currDynScope, instr, result);
+            break;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType)
     {
@@ -417,7 +476,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Map<Integer, Integer> rescueMap = scope.getRescueMap();
 
         int      numTempVars    = scope.getTemporaryVariablesCount();
-//        System.out.println("NUM: temp vars: " + numTempVars);
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
         int      numFloatVars   = scope.getFloatVariablesCount();
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
@@ -427,8 +485,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Object   exception      = null;
         int      kwArgHashCount = (scope.receivesKeywordArgs() && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
         DynamicScope currDynScope = context.getCurrentScope();
-
-        // Counter tpCount = null;
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -449,7 +505,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             }
 
             try {
-                Object result = null;
                 switch (operation.opClass) {
                 case ALU_OP:
                     computeResult((AluInstr)instr, operation, context, floats, temp);
@@ -457,15 +512,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 case ARG_OP:
                     receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
                     break;
+                case CALL_OP:
+                    if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                    processCall(context, instr, operation, scope, currDynScope, temp, self, block, blockType);
+                    break;
+                case RET_OP:
+                    return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
                 case BRANCH_OP:
                     switch (operation) {
                     case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
                     default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, self, temp, ipc); break;
                     }
-                    break;
-                case CALL_OP:
-                    if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, scope, currDynScope, temp, self, block, blockType);
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
@@ -479,67 +536,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         processBookKeepingOp(context, instr, operation, scope, args.length, kwArgHashCount, self, block, implClass, visibility);
                     }
                     break;
-                case RET_OP:
-                    return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
                 case OTHER_OP:
-                    switch(operation) {
-                    // ---------- Other instructions ---------
-                    case COPY: {
-                        CopyInstr c = (CopyInstr)instr;
-                        Operand  src = c.getSource();
-                        Variable res = c.getResult();
-                        if (res instanceof TemporaryFloatVariable) {
-                            setFloatVar(floats, (TemporaryFloatVariable)res, getFloatArg(floats, src));
-                        } else {
-                            setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, temp));
-                        }
-                        break;
-                    }
-
-                    case GET_FIELD: {
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-
-                    case SEARCH_CONST: {
-                        SearchConstInstr sci = (SearchConstInstr)instr;
-                        result = sci.getCachedConst();
-                        if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
-                        setResult(temp, currDynScope, sci.getResult(), result);
-                        break;
-                    }
-
-                    case BOX_FLOAT: {
-                        RubyFloat f = context.runtime.newFloat(getFloatArg(floats, ((BoxFloatInstr)instr).getValue()));
-                        setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
-                        break;
-                    }
-
-                    case UNBOX_FLOAT: {
-                        UnboxInstr ui = (UnboxInstr)instr;
-                        Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
-                        if (val instanceof RubyFloat) {
-                            floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
-                        } else {
-                            floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
-                        }
-                        break;
-                    }
-
-                    // ---------- All the rest ---------
-                    default:
-                        result = instr.interpret(context, currDynScope, self, temp, block);
-                        setResult(temp, currDynScope, instr, result);
-                        break;
-                    }
-
+                    processOtherOp(context, instr, operation, scope, currDynScope, temp, self, block, floats);
                     break;
                 }
             } catch (Throwable t) {
