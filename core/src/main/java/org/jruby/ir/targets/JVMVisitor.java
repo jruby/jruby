@@ -1057,10 +1057,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) {
-        // -- NOP --
-        // The JVM always sets up $block to be at the same lvar index where it comes in.
-        // jvmLoadLocal("$block");
-        // jvmStoreLocal(receiveclosureinstr.getResult());
+        jvmLoadLocal("$block");
+        jvmStoreLocal(receiveclosureinstr.getResult());
     }
 
     @Override
