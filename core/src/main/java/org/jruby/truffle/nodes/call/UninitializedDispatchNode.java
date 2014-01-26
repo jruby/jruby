@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.objects.*;
@@ -48,10 +49,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
 
         final RubyContext context = getContext();
 
-        final RubyMethod method = lookup(frame, receiverObject, name);
-
         final int depth = getDepth();
-
         final DispatchHeadNode dispatchHead = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
 
         if (depth == MAX_DEPTH) {
@@ -67,61 +65,85 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
 
             dispatchHead.getDispatch().replace(newBoxing);
             return newBoxing.dispatch(frame, receiverObject, blockObject, argumentsObjects);
-        } else if (receiverObject instanceof Unboxable) {
+        }
+
+
+        RubyMethod method;
+
+        try {
+            method = lookup(frame, receiverObject, name);
+        } catch (UseMethodMissingException e) {
+            try {
+                method = lookup(frame, receiverObject, "method_missing");
+            } catch (UseMethodMissingException e2) {
+                throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+            }
+
+            final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name);
+
+            BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, newUninitializedDispatch);
+            replace(newDispatch, "appending new boxed method missing dispatch node to chain");
+            return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        }
+
+        if (receiverObject instanceof Unboxable) {
             /*
              * Unboxed dispatch nodes are prepended to the chain of dispatch nodes, so they're
              * before the point where receivers will definitely be boxed.
              */
 
             final Object receiverUnboxed = ((Unboxable) receiverObject).unbox();
-
             final UnboxedDispatchNode firstDispatch = dispatchHead.getDispatch();
 
             if (receiverObject instanceof RubyTrueClass || receiverObject instanceof RubyFalseClass) {
-                final Assumption falseUnmodifiedAssumption = context.getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
-                final RubyMethod falseMethod = lookup(frame, context.getCoreLibrary().box(false), name);
-                final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
-                final RubyMethod trueMethod = lookup(frame, context.getCoreLibrary().box(true), name);
+                try {
+                    final Assumption falseUnmodifiedAssumption = context.getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
+                    final RubyMethod falseMethod = lookup(frame, context.getCoreLibrary().box(false), name);
+                    final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
+                    final RubyMethod trueMethod = lookup(frame, context.getCoreLibrary().box(true), name);
 
-                final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), getSourceSection(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
-                firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
-                newDispatch.setNext(firstDispatch);
-                return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
-            } else {
-                UnboxedDispatchNode newDispatch;
-
-                if (method.getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInline((InlinableMethodImplementation) method.getImplementation())) {
-                    newDispatch = new InlinedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(),
-                                    (InlinableMethodImplementation) method.getImplementation(), null);
-                } else {
-                    newDispatch = new CachedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
+                    final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), getSourceSection(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
+                    firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
+                    newDispatch.setNext(firstDispatch);
+                    return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
+                } catch (UseMethodMissingException e) {
+                    throw new UnsupportedOperationException();
                 }
-
-                firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
-                newDispatch.setNext(firstDispatch);
-
-                return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
             }
-        } else {
-            /*
-             * Boxed dispatch nodes are appended to the chain of dispatch nodes, so they're after
-             * the point where receivers are guaranteed to be boxed.
-             */
 
-            final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name);
-
-            BoxedDispatchNode newDispatch;
+            UnboxedDispatchNode newDispatch;
 
             if (method.getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInline((InlinableMethodImplementation) method.getImplementation())) {
-                newDispatch = new InlinedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), (InlinableMethodImplementation) method.getImplementation(),
-                                newUninitializedDispatch);
+                newDispatch = new InlinedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(),
+                        (InlinableMethodImplementation) method.getImplementation(), null);
             } else {
-                newDispatch = new CachedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+                newDispatch = new CachedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
             }
 
-            replace(newDispatch, "appending new boxed dispatch node to chain");
+            firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
+            newDispatch.setNext(firstDispatch);
 
-            return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+            return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
         }
+
+        /*
+         * Boxed dispatch nodes are appended to the chain of dispatch nodes, so they're after
+         * the point where receivers are guaranteed to be boxed.
+        */
+
+        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name);
+
+        BoxedDispatchNode newDispatch;
+
+        if (method.getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInline((InlinableMethodImplementation) method.getImplementation())) {
+            newDispatch = new InlinedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), (InlinableMethodImplementation) method.getImplementation(),
+                    newUninitializedDispatch);
+        } else {
+            newDispatch = new CachedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+        }
+
+        replace(newDispatch, "appending new boxed dispatch node to chain");
+
+        return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 }

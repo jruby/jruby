@@ -11,7 +11,9 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.objects.*;
@@ -23,6 +25,8 @@ import org.jruby.truffle.runtime.objects.*;
 public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
 
     private final String name;
+    private final BranchProfile missingProfile = new BranchProfile();
+    private final BranchProfile doubleMissingProfile = new BranchProfile();
 
     public GeneralBoxedDispatchNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
@@ -39,8 +43,26 @@ public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
          * MRI and JRuby do and might avoid some pathological cases.
          */
 
-        final RubyMethod method = lookup(frame, receiverObject, name);
-        return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        try {
+            final RubyMethod method = lookup(frame, receiverObject, name);
+            return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        } catch (UseMethodMissingException e) {
+            missingProfile.enter();
+
+            try {
+                final RubyMethod method = lookup(frame, receiverObject, "method_missing");
+
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
+                modifiedArgumentsObjects[0] = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), name);
+                System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+
+                return method.call(frame.pack(), receiverObject, blockObject, modifiedArgumentsObjects);
+            } catch (UseMethodMissingException e2) {
+                doubleMissingProfile.enter();
+
+                throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+            }
+        }
     }
 
 }

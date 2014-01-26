@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -62,20 +62,41 @@ public class DispatchNode extends Node {
     /**
      * The central point for method lookup.
      */
-    protected RubyMethod lookup(VirtualFrame frame, RubyBasicObject receiverBasicObject, String name) {
-        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+    protected RubyMethod lookup(VirtualFrame frame, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+        CompilerAsserts.neverPartOfCompilation();
 
-        final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
+        final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
 
-        if (method == null || method.isUndefined()) {
-            CompilerDirectives.transferToInterpreter();
+        RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+
+        // If no method was found, use #method_missing
+
+        if (method == null) {
+            throw new UseMethodMissingException();
+        }
+
+        // Check for methods that are explicitly undefined
+
+        if (method.isUndefined()) {
             throw new RaiseException(context.getCoreLibrary().nameErrorNoMethod(name, receiverBasicObject.toString()));
         }
 
-        if (self == receiverBasicObject.getRubyClass()){
+        /**
+         * If there was still nothing found it's an error. Normally we should at least find BasicObject#method_missing,
+         * but it might have been removed or something.
+         */
+
+        if (method == null) {
+            throw new RaiseException(context.getCoreLibrary().nameErrorNoMethod(name, receiverBasicObject.toString()));
+        }
+
+        // Check visibility
+
+        if (boxedCallingSelf == receiverBasicObject.getRubyClass()){
             return method;
         }
-        if (!method.isVisibleTo(self)) {
+
+        if (!method.isVisibleTo(boxedCallingSelf)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
         }

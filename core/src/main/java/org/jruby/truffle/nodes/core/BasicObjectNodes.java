@@ -15,6 +15,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.objects.*;
 
@@ -132,7 +133,43 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"send", "__send__"}, needsSelf = true, needsBlock = true, minArgs = 1, isSplatted = true)
+    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true)
+    public abstract static class MethodMissingNode extends CoreMethodNode {
+
+        public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MethodMissingNode(MethodMissingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+
+            final RubySymbol name = (RubySymbol) args[0];
+            final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
+            return methodMissing(self, name, sentArgs, null);
+        }
+
+        @Specialization
+        public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+
+            final RubySymbol name = (RubySymbol) args[0];
+            final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
+            return methodMissing(self, name, sentArgs, block);
+        }
+
+        private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString()));
+        }
+
+
+    }
+
+    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)
     public abstract static class SendNode extends CoreMethodNode {
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
