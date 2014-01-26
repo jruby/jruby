@@ -90,7 +90,15 @@ class MethodTranslator extends Translator {
 
             // ReadPre reads from the start of the arguments array
 
-            final ReadPreArgumentNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, false);
+            MissingArgumentBehaviour missingArgumentBehaviour;
+
+            if (isBlock) {
+                missingArgumentBehaviour = MissingArgumentBehaviour.NIL;
+            } else {
+                missingArgumentBehaviour = MissingArgumentBehaviour.RUNTIME_ERROR;
+            }
+
+            final ReadPreArgumentNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, missingArgumentBehaviour);
 
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, param, readArgumentNode);
 

@@ -137,7 +137,7 @@ public abstract class ModuleNodes {
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.ONE_ARG);
 
             final SelfNode self = new SelfNode(context, sourceSection);
-            final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, false);
+            final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final UninitializedWriteInstanceVariableNode writeInstanceVariable = new UninitializedWriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument);
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, writeInstanceVariable);

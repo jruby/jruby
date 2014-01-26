@@ -164,7 +164,7 @@ public abstract class CoreMethodNodeManager {
             assert arity.getMaximum() != Arity.NO_MAXIMUM;
 
             for (int n = 0; n < arity.getMaximum(); n++) {
-                argumentsNodes.add(new ReadPreArgumentNode(context, sourceSection, n, true));
+                argumentsNodes.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
             }
         }
 
