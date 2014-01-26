@@ -116,9 +116,8 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
         try {
             return callback.call(context, self, args, Block.NULL_BLOCK);
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -134,9 +133,8 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         try {
             IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self, type);
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -160,9 +158,8 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
             IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(preppedArgs), type, true);
             return callback.call(context, self, realArgs, block);
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
