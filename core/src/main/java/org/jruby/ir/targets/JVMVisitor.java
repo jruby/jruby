@@ -521,6 +521,9 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = callInstr.getCallArgs();
         int numArgs = args.length;
 
+        // This is disabled to remove another special-case path. Such things should be restored through
+        // manipulations of the IR and numeric specializations in the future.
+        /**
         if (   (name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/"))
             && numArgs == 1
             && args[0] instanceof Fixnum
@@ -531,6 +534,7 @@ public class JVMVisitor extends IRVisitor {
             visit(callInstr.getReceiver());
             m.invokeFixnumOp(name, ((Fixnum)args[0]).value);
         } else {
+         **/
             m.loadLocal(0); // tc
             m.loadLocal(2); // caller
             visit(callInstr.getReceiver());
@@ -549,7 +553,7 @@ public class JVMVisitor extends IRVisitor {
                     m.invokeSuper(name, numArgs);
                     break;
             }
-        }
+        //}
 
         jvmStoreLocal(callInstr.getResult());
     }
