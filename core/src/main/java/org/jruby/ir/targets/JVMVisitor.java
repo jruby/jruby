@@ -155,11 +155,7 @@ public class JVMVisitor extends IRVisitor {
         if (debug) System.out.println("rescues: " + rescueTable);
         if (debug) System.out.println("jumps: " + jumpTable);
 
-        if (arity == 0) {
-            jvm.pushmethod(name, arity);
-        } else {
-            jvm.pushmethodVarargs(name);
-        }
+        jvm.pushmethodVarargs(name);
 
         IRBytecodeAdapter m = jvm.method();
         org.objectweb.asm.Label[] allLabels = new org.objectweb.asm.Label[instrs.length + 1];

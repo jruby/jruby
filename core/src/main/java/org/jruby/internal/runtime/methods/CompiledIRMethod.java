@@ -91,7 +91,9 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
             context.postMethodScopeOnly();
         }
     }
-
+// Because compiled IR methods have been simplified to just use IRubyObject[], we have no specific-arity paths.
+// This will come later by specializing the IR.
+/*
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) {
@@ -191,7 +193,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
             context.postMethodScopeOnly();
         }
     }
-
+*/
     @Override
     public DynamicMethod dup() {
         return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass, getParameterList());
