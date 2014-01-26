@@ -96,6 +96,10 @@ import org.jruby.ir.operands.TemporaryVariable;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
+
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -104,6 +108,7 @@ import org.objectweb.asm.commons.Method;
  */
 public class JVMVisitor extends IRVisitor {
 
+    private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
 
     public JVMVisitor() {
@@ -150,10 +155,29 @@ public class JVMVisitor extends IRVisitor {
 
         Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
         Instr[] instrs = t.a;
+
         Map<Integer, Label[]> jumpTable = t.b;
         Map<Integer, Integer> rescueTable = scope.getRescueMap();
-        if (debug) System.out.println("rescues: " + rescueTable);
-        if (debug) System.out.println("jumps: " + jumpTable);
+
+        if (Options.IR_COMPILER_DEBUG.load()) {
+            StringBuilder b = new StringBuilder();
+
+            b.append("\n\nLinearized instructions for JIT:\n");
+
+            int i = 0;
+            for (Instr instr : instrs) {
+                if (i > 0) b.append("\n");
+
+                b.append("  ").append(i).append('\t').append(instr);
+
+                i++;
+            }
+
+            b.append("\n\nRescues: \n" + rescueTable);
+
+            LOG.info("Starting JVM compilation on scope " + scope);
+            LOG.info(b.toString());
+        }
 
         jvm.pushmethodVarargs(name);
 
