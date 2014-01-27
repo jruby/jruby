@@ -439,8 +439,18 @@ public class Helpers {
         return map;
     }
 
-    public static IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj) {
-        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
+    /**
+     * Should be called on jumps out of blocks.  Inspects the jump, returning or rethrowing as appropriate
+     */
+    public static IRubyObject handleBlockJump(ThreadContext context, JumpException.FlowControlException jump, Block.Type type) {
+        // 'next' and Lambda 'return' are local returns from the block, ending the call or yield
+        if (jump instanceof JumpException.NextJump
+                || (jump instanceof JumpException.ReturnJump && type == Block.Type.LAMBDA)) {
+            return jump.getValue() == null ? context.runtime.getNil() : (IRubyObject)jump.getValue();
+        }
+
+        // other jumps propagate up
+        throw jump;
     }
 
     private static class MethodMissingMethod extends DynamicMethod {
