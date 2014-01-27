@@ -2002,7 +2002,13 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitYieldNode(org.jruby.ast.YieldNode node) {
         final List<org.jruby.ast.Node> arguments = new ArrayList<>();
 
-        final org.jruby.ast.Node argsNode = node.getArgsNode();
+        org.jruby.ast.Node argsNode = node.getArgsNode();
+
+        final boolean unsplat = argsNode instanceof org.jruby.ast.SplatNode;
+
+        if (unsplat) {
+            argsNode = ((org.jruby.ast.SplatNode) argsNode).getValue();
+        }
 
         if (argsNode != null) {
             if (argsNode instanceof org.jruby.ast.ListNode) {
@@ -2020,7 +2026,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
-        return new YieldNode(context, translate(node.getPosition()), argumentsTranslatedArray);
+        return new YieldNode(context, translate(node.getPosition()), argumentsTranslatedArray, unsplat);
     }
 
     @Override

@@ -425,8 +425,10 @@ public abstract class KernelNodes {
 
         public LoopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            whileNode = adoptChild(new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection, new BooleanLiteralNode(context, sourceSection, true)), new YieldNode(
-                            context, getSourceSection(), new RubyNode[]{})));
+            whileNode = adoptChild(
+                    new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
+                            new BooleanLiteralNode(context, sourceSection, true)),
+                            new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)));
         }
 
         public LoopNode(LoopNode prev) {
