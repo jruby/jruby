@@ -1,3 +1,8 @@
+#
+# This file is part of ruby-ffi.
+# For licensing, see LICENSE.SPECS
+#
+
 require 'ffi'
 
 if false # disabled for #390
