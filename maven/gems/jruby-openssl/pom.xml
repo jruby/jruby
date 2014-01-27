@@ -4,21 +4,22 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>rubygems</groupId>
   <artifactId>jruby-openssl</artifactId>
-  <version>0.9.4</version>
+  <version>0.9.5</version>
   <packaging>gem</packaging>
   <name>OpenSSL add-on for JRuby</name>
   <description>JRuby-OpenSSL is an add-on gem for JRuby that emulates the Ruby OpenSSL native library.</description>
   <url>https://github.com/jruby/jruby</url>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>bouncy-castle-java</artifactId>
-      <version>[1.5.0147,)</version>
+      <artifactId>rake</artifactId>
+      <version>[0,)</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -36,9 +37,19 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>1.49</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.49</version>
+    </dependency>
+    <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>openssl</artifactId>
-      <version>0.9.4</version>
+      <version>0.9.5-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
