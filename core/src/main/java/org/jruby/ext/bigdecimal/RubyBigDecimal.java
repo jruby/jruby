@@ -798,7 +798,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus19(ThreadContext context, IRubyObject b) {
-        return subInternal(context, getVpValue19(context, b, false), b);
+        return subInternal(context, getVpValue19(context, b, true), b);
     }
 
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
