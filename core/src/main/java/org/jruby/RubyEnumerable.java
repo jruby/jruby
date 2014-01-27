@@ -961,8 +961,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         RubyEnumerable.callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                block.call(ctx, new IRubyObject[]{runtime.newArray(packEnumValues(runtime, largs), arg)});
-                return runtime.getNil();
+                return block.call(ctx, new IRubyObject[]{runtime.newArray(packEnumValues(runtime, largs), arg)});
             }
         });
         return arg;
