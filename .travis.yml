@@ -28,6 +28,7 @@ branches:
   only:
     - master
     - jruby-1_7
+    - /^test-.*$/
 
 script: "ant $TARGET"
 install: /bin/true
