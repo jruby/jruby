@@ -31,7 +31,7 @@ module Gem
     # as appropriate.
     def jar_path(p)
       path = p.sub(/^file:/, "").sub(/!.*/, "")
-      path = path.sub(/^\//, "") if path =~ /^\/[A-Za-z]:/
+      path = path.sub(/^\//, "") if win_platform? && path =~ /^\/[A-Za-z]:/
       path
     end
   end
