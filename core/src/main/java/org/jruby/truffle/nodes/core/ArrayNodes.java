@@ -111,6 +111,15 @@ public abstract class ArrayNodes {
             return a.equals(b);
         }
 
+        @Specialization
+        public boolean equal(RubyArray a, Object b) {
+            if (b instanceof RubyArray) {
+                return equal(a, (RubyArray) b);
+            }
+
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2)
