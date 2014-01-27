@@ -9,7 +9,7 @@ module Gem
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
 
   post_install do |gem_installer|
-    ::JarInstaller.install( gem_installer )
+    ::JarInstaller.new( gem_installer.spec ).vendor_jars
   end
 
   class << self
