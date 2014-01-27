@@ -557,7 +557,44 @@ public abstract class ModuleNodes {
             return array;
         }
     }
-    
+
+    @CoreMethod(names = "instance_methods", minArgs = 0, maxArgs = 1)
+    public abstract static class InstanceMethodsNode extends CoreMethodNode {
+
+        public InstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceMethodsNode(InstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return instanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
+                RubyModule parent = module.getParentModule();
+                while(parent != null){
+                    methods.addAll(parent.getDeclaredMethods());
+                    parent = parent.getParentModule();
+                }
+            }
+            for (RubyMethod method : methods) {
+                if (method.getVisibility() != Visibility.PRIVATE){
+                    RubySymbol m = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), method.getName());
+                    array.push(m);
+                }
+            }
+            return array;
+        }
+    }
+
     @CoreMethod(names = "private_constant", appendCallNode = true, isSplatted = true)
     public abstract static class PrivateConstantNode extends CoreMethodNode {
 
