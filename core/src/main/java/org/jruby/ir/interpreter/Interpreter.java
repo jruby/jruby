@@ -303,12 +303,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
         Object result = null;
         switch(operation) {
         case RUNTIME_HELPER: {
             RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
-            result = rhc.callHelper(context, currDynScope, self, temp, scope, blockType);
+            result = rhc.callHelper(context, currDynScope, self, temp, blockType);
             setResult(temp, currDynScope, rhc.getResult(), result);
             break;
         }
@@ -514,7 +514,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, scope, currDynScope, temp, self, block, blockType);
+                    processCall(context, instr, operation, currDynScope, temp, self, block, blockType);
                     break;
                 case RET_OP:
                     return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);

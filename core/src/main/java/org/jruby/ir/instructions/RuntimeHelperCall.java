@@ -14,6 +14,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.parser.IRStaticScope;
+
 import java.util.Map;
 import org.jruby.ir.operands.StringLiteral;
 
@@ -78,8 +80,9 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         return (getResult() == null ? "" : (getResult() + " = ")) + getOperation()  + "(" + helperMethod + ", " + Arrays.toString(args) + ")";
     }
 
-    public IRubyObject callHelper(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, IRScope scope, Block.Type blockType) {
+    public IRubyObject callHelper(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
         Object exc = args[0].retrieve(context, self, currDynScope, temp);
+        IRScope scope = ((IRStaticScope)currDynScope.getStaticScope()).getIRScope();
         if (helperMethod.equals("handlePropagatedBreak")) {
             return IRRuntimeHelpers.handlePropagatedBreak(context, scope, exc, blockType);
         } else if (helperMethod.equals("handleNonlocalReturn")) {
