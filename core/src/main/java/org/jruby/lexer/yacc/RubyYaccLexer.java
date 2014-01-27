@@ -494,6 +494,10 @@ public class RubyYaccLexer {
         return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
     }
     
+    private boolean isLabelPossible(boolean commandState) {
+        return ((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !commandState) || isARG();
+    }
+    
     private boolean isSpaceArg(int c, boolean spaceSeen) {
         return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
@@ -1707,8 +1711,8 @@ public class RubyYaccLexer {
         }
 
         String tempVal = tokenBuffer.toString().intern();
-
-	    if (!isOneEight && (lex_state == LexState.EXPR_BEG && !commandState) || isARG()) {
+        
+        if (isLabelPossible(commandState)) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
                 src.unread(c2);
@@ -1748,7 +1752,7 @@ public class RubyYaccLexer {
 
         if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
             setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
-        } else if (!isOneEight && lex_state == LexState.EXPR_ENDFN) {
+        } else if (!isOneEight && lex_state == LexState.EXPR_FNAME) {
             setState(LexState.EXPR_ENDFN);
         } else {
             setState(LexState.EXPR_END);
