@@ -1,29 +1,13 @@
 require 'fileutils'
 
-# Workaround for http://jira.codehaus.org/browse/JRUBY-2518
-class Dir
-  class << self
-    alias_method :original_glob, :glob
-  end
-  def self.glob(path)
-    match_data = path.match(/\/?(.+?\.jar)!\/(.*)/)
-    if match_data.nil?
-      original_glob(path)
-    else
-      jar_file_path = match_data.captures[0].sub('file:', '')
-      internal_path = match_data.captures[1].sub('**/*', '').gsub('.', "\\.").gsub('*', '[^/]*')
-      return original_glob(path) if internal_path.nil? || internal_path.empty? || internal_path =~ /^[^\w]/
-
-      jar_file = java.util.jar.JarFile.new(jar_file_path)
-      jar_paths = jar_file.entries.map {|jar_entry| jar_entry.to_s }
-      jar_file.close
-      regex = Regexp.new(internal_path)
-      jar_paths.reject {|jar_path| jar_path !~ regex}
-    end
+RSpec::Matchers.define :have_jar_entries do |expected|
+  def jar_entries(full_entries)
+    full_entries.map { |e| e.gsub /^[^!]+!/, '' }
   end
 
-  def self.[](path)
-    glob(path)
+  match { |actual| jar_entries(actual).sort == expected.sort }
+  failure_message_for_should do |actual|
+    "\nexpected: #{expected.sort.inspect}\n    got: #{jar_entries(actual).sort.inspect}\n"
   end
 end
 
@@ -57,25 +41,37 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
   
   it "finds the contents inside a jar with Dir.[] in a dir inside the jar" do
     FileUtils.cd('glob_test') do
-      Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*"].should have(1).glob_result
+      Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*"].should have_jar_entries([
+        '/glob_target/bar.txt'
+      ])
     end
   end
   
   it "finds the contents inside a jar with Dir.glob in a dir inside the jar" do
     FileUtils.cd('glob_test') do
-      Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*").should have(1).glob_result
+      Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*").should have_jar_entries([
+        '/glob_target/bar.txt'
+      ])
     end
   end
 
   it "finds the contents inside a jar with Dir.[] at the root of the jar" do
     FileUtils.cd('glob_test') do
-      Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*"].should have(2).glob_results # one for the file, two for the dir
+      Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*"].should have_jar_entries([
+        '/META-INF',
+        '/META-INF/MANIFEST.MF',
+        '/glob_target/bar.txt'
+      ])
     end
   end
     
   it "finds the contents inside a jar with Dir.glob at the root of the jar" do
     FileUtils.cd('glob_test') do
-      Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*").should have(2).glob_results # one for the file, two for the dir
+      Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*").should have_jar_entries([
+        '/META-INF',
+        '/META-INF/MANIFEST.MF',
+        '/glob_target/bar.txt'
+      ])
     end
   end
 end
