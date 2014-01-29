@@ -271,4 +271,12 @@ public class RubyString extends RubyObject {
         }
     }
 
+    public String getReverseString() {
+        return new StringBuilder(cachedStringValue).reverse().toString();
+    }
+
+    public void reverseStringValue(){
+        this.cachedStringValue = getReverseString();
+    }
+
 }
