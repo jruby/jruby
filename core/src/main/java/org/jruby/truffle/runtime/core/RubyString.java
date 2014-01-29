@@ -276,6 +276,7 @@ public class RubyString extends RubyObject {
     }
 
     public void reverseStringValue(){
+        checkFrozen();
         this.cachedStringValue = getReverseString();
     }
 
