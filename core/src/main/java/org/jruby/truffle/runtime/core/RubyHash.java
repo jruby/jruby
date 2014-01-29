@@ -64,6 +64,11 @@ public class RubyHash extends RubyObject {
     public void put(Object key, Object value) {
         checkFrozen();
 
+        if (key instanceof RubyString) {
+            key = new RubyString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
+            ((RubyString) key).frozen = true;
+        }
+
         storage.put(key, value);
     }
 
