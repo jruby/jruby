@@ -586,7 +586,7 @@ class TestLogDevice < Test::Unit::TestCase
   def run_children(n, args, src)
     r, w = IO.pipe
     [w, *(1..n).map do
-       f = IO.popen([EnvUtil.rubybin, *%w[--disable=gems -rlogger -], *args], "w", err: w)
+       f = IO.popen([EnvUtil.rubybin, *%w[--disable-gems -rlogger -], *args], "w", err: w)
        f.puts(src)
        f
      end].each(&:close)
