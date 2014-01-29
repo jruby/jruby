@@ -68,7 +68,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(id, position.getFile(), position.getStartLine(), message);
+        warn(id, position.getFile(), position.getStartLine() + 1, message);
     }
 
     /**
