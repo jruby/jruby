@@ -3606,7 +3606,15 @@ public class IRBuilder {
             // the super instr is going to get -- if there were no 'define_method'
             // for defining methods, we could guarantee that the super is going to
             // receive args from the nearest method the block is embedded in.  But,
-            // in the presence of 'define_method', all bets are off.
+            // in the presence of 'define_method' (and eval and aliasing), all bets
+            // are off because, any of the intervening block scopes could be a method
+            // via a define_method call.
+            //
+            // FIXME: We can actually collect all arguments of all scopes from here
+            // till the nearest block scope and select the right set at runtime based
+            // on which one happened to be a method scope. This has the additional
+            // advantage of making explicit all used arguments and not marking zsuper
+            // as a side-effecting operation.
             Variable ret = s.getNewTemporaryVariable();
             receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block));
             return ret;
