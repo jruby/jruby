@@ -102,12 +102,10 @@ public class JRubyTruffleBridge {
     public IRubyObject toJRuby(Object object) {
         if (object instanceof NilPlaceholder) {
             return runtime.getNil();
-        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
-            return runtime.getTopSelf();
         } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();
         } else {
-            return JavaUtil.convertJavaToUsableRubyObject(runtime, object);
+            return runtime.getTopSelf();
         }
     }
 

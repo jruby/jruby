@@ -96,7 +96,7 @@ public class DispatchNode extends Node {
             return method;
         }
 
-        if (!method.isVisibleTo(boxedCallingSelf)) {
+        if (!method.isVisibleTo(self, receiverBasicObject)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
         }
