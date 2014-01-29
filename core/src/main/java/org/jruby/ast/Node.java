@@ -59,7 +59,6 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     private ISourcePosition position;
 
     public Node(ISourcePosition position) {
-        assert position != null;
         this.position = position;
     }
 
