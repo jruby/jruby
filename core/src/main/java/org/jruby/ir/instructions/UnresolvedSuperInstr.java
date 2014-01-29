@@ -19,13 +19,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnresolvedSuperInstr extends CallInstr {
-	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
-    public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.UNRESOLVED_SUPER, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, args, closure);
+    // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
+    public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand[] args, Operand closure) {
+        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, args, closure);
     }
 
-    public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand closure) {
-        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, EMPTY_OPERANDS, closure);
+    public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
+        this(Operation.UNRESOLVED_SUPER, result, receiver, args, closure);
     }
 
     @Override

@@ -3610,13 +3610,39 @@ public class IRBuilder {
             // are off because, any of the intervening block scopes could be a method
             // via a define_method call.
             //
-            // FIXME: We can actually collect all arguments of all scopes from here
-            // till the nearest block scope and select the right set at runtime based
+            // Instead, we can actually collect all arguments of all scopes from here
+            // till the nearest method scope and select the right set at runtime based
             // on which one happened to be a method scope. This has the additional
-            // advantage of making explicit all used arguments and not marking zsuper
-            // as a side-effecting operation.
+            // advantage of making explicit all used arguments.
             Variable ret = s.getNewTemporaryVariable();
-            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block));
+            List<Integer> argsCount = new ArrayList<Integer>();
+            List<Operand> allPossibleArgs = new ArrayList<Operand>();
+            IRScope superScope = s;
+            while (superScope instanceof IRClosure) {
+                IRClosure cl = (IRClosure)superScope;
+                Operand[] args = ((IRClosure)superScope).getBlockArgs();
+                int n = args.length;
+                // Accummulate the closure's args
+                for (Operand o: args) {
+                    allPossibleArgs.add(o);
+                }
+                // Record args count of the closure
+                argsCount.add(n);
+                superScope = superScope.getLexicalParent();
+            }
+
+            if (superScope instanceof IRMethod) {
+                Operand[] args = ((IRMethod)superScope).getCallArgs();
+                int n = args.length;
+                // Accummulate the method's args
+                for (Operand o: args) {
+                    allPossibleArgs.add(o);
+                }
+                // Record args count of the method
+                argsCount.add(n);
+            }
+
+            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block, allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]), argsCount.toArray(new Integer[argsCount.size()])));
             return ret;
         }
     }

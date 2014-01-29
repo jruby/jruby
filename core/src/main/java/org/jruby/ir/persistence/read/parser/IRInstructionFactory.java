@@ -1053,7 +1053,10 @@ public class IRInstructionFactory {
             closure = paramsIterator.nextOperand();
         }
 
-        return new ZSuperInstr(result, receiver, closure);
+        final Operand[] allPossibleArgs = paramsIterator.nextOperandArray();
+        final Integer[] argCounts = (Integer[])paramsIterator.nextList().toArray();
+
+        return new ZSuperInstr(result, receiver, closure, allPossibleArgs, argCounts);
     }
 
 

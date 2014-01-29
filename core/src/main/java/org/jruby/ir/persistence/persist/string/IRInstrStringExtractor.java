@@ -339,8 +339,10 @@ class IRInstrStringExtractor extends IRVisitor {
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
         Operand receiver = zsuperinstr.getReceiver();
         Operand closure = zsuperinstr.getClosureArg(null);
+        Operand[] callArgs = zsuperinstr.getCallArgs();
+        Integer[] argCounts = zsuperinstr.getArgCounts();
 
-        stringProducer.appendParameters(receiver, closure);
+        stringProducer.appendParameters(receiver, closure, callArgs, argCounts);
     }
 
     // Get Instructions
