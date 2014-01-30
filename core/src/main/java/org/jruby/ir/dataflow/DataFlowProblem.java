@@ -3,7 +3,7 @@ package org.jruby.ir.dataflow;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.ListIterator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,35 +49,33 @@ public abstract class DataFlowProblem {
     /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
      * This implements a standard worklist algorithm. */
     public void compute_MOP_Solution() {
-        /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
-        if (!isEmpty()) {
-            // 2. Initialize work list based on flow direction to make processing efficient!
-            LinkedList<FlowGraphNode> workList = getInitialWorkList();
+        if (isEmpty()) return;  // Don't bother to compute soln if we have no facts available.
 
-            // 3. Initialize a bitset with a flag set for all basic blocks
-            int numNodes = scope.cfg().getMaxNodeID();
-            BitSet bbSet = new BitSet(1+numNodes);
-            bbSet.flip(0, numNodes);
+        // 1. Initialize work list based on flow direction to make processing efficient!
+        LinkedList<FlowGraphNode> workList = generateWorkList();
 
-            // 4. Iteratively compute data flow info
-            while (!workList.isEmpty()) {
-                workList.removeFirst().computeDataFlowInfo(workList, bbSet);
-            }
+        // 2. Initialize a bitset with a flag set for all basic blocks
+        int numNodes = scope.cfg().getMaxNodeID();
+        BitSet bbSet = new BitSet(1+numNodes);
+        bbSet.flip(0, numNodes); // set all bits from default of 0 to 1 (enebo: could we invert this in algo?)
+
+        // 3. Iteratively compute data flow info
+        while (!workList.isEmpty()) {
+            workList.removeFirst().computeDataFlowInfo(workList, bbSet);
         }
     }
 
-    protected LinkedList<FlowGraphNode> getInitialWorkList() {
+    /**
+     * Generate an ordered list of flow graph nodes in a forward or backward order depending
+     * on direction.
+     */
+    protected LinkedList<FlowGraphNode> generateWorkList() {
         LinkedList<FlowGraphNode> wl = new LinkedList<FlowGraphNode>();
-        if (direction == DF_Direction.FORWARD) {
-           ListIterator<BasicBlock> it = scope.cfg().getReversePostOrderTraverser();
-           while (it.hasPrevious()) {
-              wl.add(getFlowGraphNode(it.previous()));
-           }
-        } else {
-           ListIterator<BasicBlock> it = scope.cfg().getPostOrderTraverser();
-           while (it.hasNext()) {
-              wl.add(getFlowGraphNode(it.next()));
-           }
+        Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
+                scope.cfg().getReversePostOrderTraverser() : scope.cfg().getPostOrderTraverser();
+ 
+        while (it.hasNext()) {
+            wl.add(getFlowGraphNode(it.next()));
         }
 
         return wl;
