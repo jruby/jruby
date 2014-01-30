@@ -659,6 +659,10 @@ public class RipperLexer {
         return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
     }
     
+    private boolean isLabelPossible(boolean commandState) {
+        return ((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !commandState) || isARG();
+    }    
+    
     private boolean isSpaceArg(int c, boolean spaceSeen) {
         return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
@@ -2015,8 +2019,7 @@ public class RipperLexer {
 
         String tempVal = tokenBuffer.toString().intern();
 
-	    if ((lex_state == LexState.EXPR_BEG && !commandState) ||
-                lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) {
+        if (isLabelPossible(commandState)) {        
             int c2 = nextc();
             if (c2 == ':' && !peek(':')) {
                 setState(LexState.EXPR_BEG);
@@ -2054,7 +2057,7 @@ public class RipperLexer {
 
         if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
             setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
-        } else if (lex_state == LexState.EXPR_ENDFN) {
+        } else if (lex_state == LexState.EXPR_FNAME) {
             setState(LexState.EXPR_ENDFN);
         } else {
             setState(LexState.EXPR_END);

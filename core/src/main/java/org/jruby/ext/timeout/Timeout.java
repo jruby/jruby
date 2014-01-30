@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -79,7 +78,7 @@ public class Timeout implements Library {
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
-    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(RubyInstanceConfig.TIMEOUT_POOL_MAX, new DaemonThreadFactory("JRubyTimeoutWorker"));
+    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
@@ -217,14 +216,13 @@ public class Timeout implements Library {
     }
 
     private static void killTimeoutThread(ThreadContext context, Future timeoutFuture, AtomicBoolean latch) {
-        if (latch.compareAndSet(false, true)) {
+        if (latch.compareAndSet(false, true) && timeoutFuture.cancel(false)) {
             // ok, exception will not fire
-            timeoutFuture.cancel(false);
             if (timeoutExecutor instanceof ScheduledThreadPoolExecutor && timeoutFuture instanceof Runnable) {
                 ((ScheduledThreadPoolExecutor) timeoutExecutor).remove((Runnable) timeoutFuture);
             }
         } else {
-            // future is already in progress, wait for it to run and then poll
+            // future is not cancellable, wait for it to run and then poll
             try {
                 timeoutFuture.get();
             } catch (ExecutionException ex) {
