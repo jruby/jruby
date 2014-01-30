@@ -12,7 +12,6 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.BFalseInstr;
@@ -41,7 +40,7 @@ import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
 
-public class UnboxableOpsAnalysisNode extends FlowGraphNode {
+public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysisProblem, UnboxableOpsAnalysisNode> {
     private class UnboxState {
         Map<Variable, Class> types;        // known types of variables
         Map<Variable, Class> unboxedVars;  // variables that exist in unboxed form of a specific type
@@ -124,7 +123,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         }
     }
 
-    public UnboxableOpsAnalysisNode(DataFlowProblem prob, BasicBlock n) {
+    public UnboxableOpsAnalysisNode(UnboxableOpsAnalysisProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -133,11 +132,13 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         outState = new UnboxState();
     }
 
+    @Override
     public void buildDataFlowVars(Instr i) {
         // Nothing to do -- because we are going to simply use variables as our data flow variables
         // rather than build a new data flow type for it
     }
 
+    @Override
     public void applyPreMeetHandler() {
         IRScope s = problem.getScope();
         if (s instanceof IRClosure && basicBlock == s.getCFG().getEntryBB()) {
@@ -150,11 +151,10 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         }
     }
 
-    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
+    @Override
+    public void compute_MEET(Edge e, BasicBlock source, UnboxableOpsAnalysisNode pred) {
         // Ignore rescue entries -- everything is unboxed, as necessary.
-        if (!source.isRescueEntry()) {
-            inState.computeMEET(((UnboxableOpsAnalysisNode)pred).outState);
-        }
+        if (!source.isRescueEntry()) inState.computeMEET(pred.outState);
     }
 
     private Class getOperandType(UnboxState state, Operand o) {
@@ -238,10 +238,12 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         }
     }
 
+    @Override
     public void initSolution() {
         tmpState = new UnboxState(inState);
     }
 
+    @Override
     public void applyTransferFunction(Instr i) {
         // Rescue node, if any
         boolean scopeBindingHasEscaped = problem.getScope().bindingHasEscaped();
@@ -326,8 +328,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
                         cl.setDataFlowSolution(DataFlowConstants.UNBOXING, subProblem);
                     }
 
-                    UnboxableOpsAnalysisNode exitNode  = (UnboxableOpsAnalysisNode)subProblem.getExitNode();
-                    UnboxableOpsAnalysisNode entryNode = (UnboxableOpsAnalysisNode)subProblem.getEntryNode();
+                    UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
+                    UnboxableOpsAnalysisNode entryNode = subProblem.getEntryNode();
 
                     // Init it to MEET(state-on-entry, state-on-exit).
                     // The meet is required to account for participation of the closure in a loop.
@@ -397,7 +399,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         if (unboxedVar == null || (createNew && !matchingTypes(reqdType, unboxedVar.getType()))) {
             unboxedVar = this.problem.getScope().getNewUnboxedVariable(reqdType);
             unboxMap.put(v, unboxedVar);
-        } else if (unboxedVar == null) {
+        } else {
             // FIXME: throw an exception here
             System.out.println("ERROR: No unboxed var for : " + v);
         }
@@ -578,8 +580,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
         for (Edge e: cfg.getOutgoingEdges(basicBlock)) {
             BasicBlock b = (BasicBlock)e.getDestination().getData();
             if (b != cfg.getExitBB()) {
-                UnboxableOpsAnalysisNode x = (UnboxableOpsAnalysisNode)problem.getFlowGraphNode(b);
-                Map<Variable, Class> xVars = x.inState.unboxedVars;
+                Map<Variable, Class> xVars = problem.getFlowGraphNode(b).inState.unboxedVars;
                 for (Variable v2: xVars.keySet()) {
                     // VERY IMPORTANT: Pay attention!
                     //
@@ -702,7 +703,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode {
                             // Fetch the nested unboxing-analysis problem, creating one if necessary
                             IRClosure cl = ((WrappedIRClosure)o).getClosure();
                             UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getDataFlowSolution(DataFlowConstants.UNBOXING);
-                            UnboxableOpsAnalysisNode exitNode  = (UnboxableOpsAnalysisNode)subProblem.getExitNode();
+                            UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
 
                             // Compute solution
                             subProblem.unbox();

@@ -11,12 +11,11 @@ import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowVar;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
-public class LiveVariablesProblem extends DataFlowProblem {
+public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, LiveVariableNode> {
     public static final String NAME = "Live Variables Analysis";
     private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
 
@@ -42,7 +41,8 @@ public class LiveVariablesProblem extends DataFlowProblem {
         return varDfVarMap.get(id);
     }
 
-    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
+    @Override
+    public LiveVariableNode buildFlowGraphNode(BasicBlock bb) {
         return new LiveVariableNode(this, bb);
     }
 
@@ -93,7 +93,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
      */
     public List<Variable> getVarsLiveOnScopeEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(getScope().cfg().getEntryBB())).getLiveOutBitSet();
+        BitSet liveIn = getFlowGraphNode(getScope().cfg().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (liveIn.get(i) == true) {
@@ -141,8 +141,8 @@ public class LiveVariablesProblem extends DataFlowProblem {
     }
 
     public void markDeadInstructions() {
-        for (FlowGraphNode n : flowGraphNodes) {
-            ((LiveVariableNode) n).markDeadInstructions();
+        for (LiveVariableNode n : flowGraphNodes) {
+            n.markDeadInstructions();
         }
     }
 

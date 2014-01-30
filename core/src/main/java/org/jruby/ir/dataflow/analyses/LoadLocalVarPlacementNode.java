@@ -9,7 +9,6 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
@@ -25,8 +24,8 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
 
-public class LoadLocalVarPlacementNode extends FlowGraphNode {
-    public LoadLocalVarPlacementNode(DataFlowProblem prob, BasicBlock n) {
+public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlacementProblem, LoadLocalVarPlacementNode> {
+    public LoadLocalVarPlacementNode(LoadLocalVarPlacementProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -42,15 +41,13 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
     }
 
     public void applyPreMeetHandler() {
-        if (basicBlock == problem.getScope().cfg().getExitBB()) {
-            inRequiredLoads = ((LoadLocalVarPlacementProblem) problem).getLoadsOnScopeExit();
-        }
+        if (basicBlock == problem.getScope().cfg().getExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
     }
 
-    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
-        LoadLocalVarPlacementNode n = (LoadLocalVarPlacementNode) pred;
-        inRequiredLoads.addAll(n.outRequiredLoads);
-    }
+    @Override
+    public void compute_MEET(Edge e, BasicBlock source, LoadLocalVarPlacementNode pred) {
+        inRequiredLoads.addAll(pred.outRequiredLoads);
+    }   
 
     public void initSolution() {
         reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);

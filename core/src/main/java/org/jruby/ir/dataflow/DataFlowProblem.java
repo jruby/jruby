@@ -11,7 +11,7 @@ import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.BasicBlock;
 
-public abstract class DataFlowProblem {
+public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends FlowGraphNode<T, U>> {
 /* -------------- Public fields and methods below ---------------- */
     public enum DF_Direction { FORWARD, BACKWARD, BIDIRECTIONAL };
 
@@ -24,7 +24,7 @@ public abstract class DataFlowProblem {
     }
 
 // ------- Abstract methods without a default implementation -------
-    abstract public FlowGraphNode buildFlowGraphNode(BasicBlock bb);
+    abstract public U buildFlowGraphNode(BasicBlock bb);
     abstract public String getName();
 
 // ------- Default implementation methods below -------
@@ -52,7 +52,7 @@ public abstract class DataFlowProblem {
         if (isEmpty()) return;  // Don't bother to compute soln if we have no facts available.
 
         // 1. Initialize work list based on flow direction to make processing efficient!
-        LinkedList<FlowGraphNode> workList = generateWorkList();
+        LinkedList<U> workList = generateWorkList();
 
         // 2. Initialize a bitset with a flag set for all basic blocks
         int numNodes = scope.cfg().getMaxNodeID();
@@ -69,8 +69,8 @@ public abstract class DataFlowProblem {
      * Generate an ordered list of flow graph nodes in a forward or backward order depending
      * on direction.
      */
-    protected LinkedList<FlowGraphNode> generateWorkList() {
-        LinkedList<FlowGraphNode> wl = new LinkedList<FlowGraphNode>();
+    protected LinkedList<U> generateWorkList() {
+        LinkedList<U> wl = new LinkedList<U>();
         Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
                 scope.cfg().getReversePostOrderTraverser() : scope.cfg().getPostOrderTraverser();
  
@@ -114,15 +114,15 @@ public abstract class DataFlowProblem {
         return buf.toString();
     }
 
-    public FlowGraphNode getFlowGraphNode(BasicBlock b) {
+    public U getFlowGraphNode(BasicBlock b) {
         return basicBlockToFlowGraph.get(b.getID());
     }
 
-    public FlowGraphNode getEntryNode() {
+    public U getEntryNode() {
         return getFlowGraphNode(scope.cfg().getEntryBB());
     }
 
-    public FlowGraphNode getExitNode() {
+    public U getExitNode() {
         return getFlowGraphNode(scope.cfg().getExitBB());
     }
 
@@ -135,20 +135,20 @@ public abstract class DataFlowProblem {
     }
 
 /* -------------- Protected fields and methods below ---------------- */
-    protected List<FlowGraphNode> flowGraphNodes;
+    protected List<U> flowGraphNodes;
     protected IRScope scope;
 
 /* -------------- Private fields and methods below ---------------- */
     private int     nextVariableId;
     private ArrayList<DataFlowVar> variables;
-    private Map<Integer, FlowGraphNode> basicBlockToFlowGraph;
+    private Map<Integer, U> basicBlockToFlowGraph;
 
     private void buildFlowGraph() {
-        flowGraphNodes = new LinkedList<FlowGraphNode>();
-        basicBlockToFlowGraph = new HashMap<Integer, FlowGraphNode>();
+        flowGraphNodes = new LinkedList<U>();
+        basicBlockToFlowGraph = new HashMap<Integer, U>();
 
         for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
-            FlowGraphNode fgNode = buildFlowGraphNode(bb);
+            U fgNode = buildFlowGraphNode(bb);
             fgNode.init();
             fgNode.buildDataFlowVars();
             flowGraphNodes.add(fgNode);

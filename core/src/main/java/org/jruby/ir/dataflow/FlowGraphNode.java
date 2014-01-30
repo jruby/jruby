@@ -14,8 +14,8 @@ import org.jruby.ir.util.Edge;
  * the basic block.  As such, a flow graph is not explicitly constructed.
  *
  * Different dataflow problems encapsulate different dataflow properties, and a different flow graph node is built in each case */
-public abstract class FlowGraphNode {
-    public FlowGraphNode(DataFlowProblem p, BasicBlock n) {
+public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends FlowGraphNode<T, U>> {
+    public FlowGraphNode(T p, BasicBlock n) {
         problem = p;
         basicBlock = n;
         rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
@@ -43,7 +43,7 @@ public abstract class FlowGraphNode {
      * is a predecessor of the current node!  The choice of "IN/OUT" is
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred);
+    public abstract void compute_MEET(Edge e, BasicBlock source, U pred);
 
     /**
      * Any setting up of state/initialization before applying transfer function
@@ -79,7 +79,7 @@ public abstract class FlowGraphNode {
         }
     }
 
-    private void processDestBB(List<FlowGraphNode> workList, BitSet bbSet, BasicBlock d) {
+    private void processDestBB(List<U> workList, BitSet bbSet, BasicBlock d) {
         int id = d.getID();
         if (bbSet.get(id) == false) {
             bbSet.set(id);
@@ -87,7 +87,7 @@ public abstract class FlowGraphNode {
         }
     }
 
-    public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet) {
+    public void computeDataFlowInfo(List<U> workList, BitSet bbSet) {
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BIDIRECTIONAL) {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
         }
@@ -160,13 +160,13 @@ public abstract class FlowGraphNode {
         return rescuer != null;
     }
 
-    public FlowGraphNode getExceptionTargetNode() {
+    public U getExceptionTargetNode() {
         // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
         return problem.getFlowGraphNode(rescuer == null ? problem.getScope().cfg().getExitBB() : rescuer);
     }
 
 /* --------- protected fields/methods below --------- */
-    protected DataFlowProblem problem;   // Dataflow problem with which this node is associated
+    protected T problem;   // Dataflow problem with which this node is associated
     protected BasicBlock basicBlock;     // CFG node for which this node contains info.
     private   BasicBlock rescuer;        // Basicblock that protects any exceptions raised in this node
 }
