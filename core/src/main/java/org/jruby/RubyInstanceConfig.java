@@ -1676,13 +1676,6 @@ public class RubyInstanceConfig {
     public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
 
     /**
-     * Maximum timeout thread pool size (integer, default # of cores).
-     *
-     * Set with the <tt>jruby.timeout.thread.pool.max</tt> system property.
-     */
-    public static final int TIMEOUT_POOL_MAX = Options.TIMEOUT_THREADPOOL_MAX.load();
-
-    /**
      * Enable use of the native Java version of the 'net/protocol' library.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.

@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -79,7 +78,7 @@ public class Timeout implements Library {
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
-    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(RubyInstanceConfig.TIMEOUT_POOL_MAX, new DaemonThreadFactory("JRubyTimeoutWorker"));
+    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
