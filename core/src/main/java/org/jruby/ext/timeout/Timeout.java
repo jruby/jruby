@@ -217,14 +217,13 @@ public class Timeout implements Library {
     }
 
     private static void killTimeoutThread(ThreadContext context, Future timeoutFuture, AtomicBoolean latch) {
-        if (latch.compareAndSet(false, true)) {
+        if (latch.compareAndSet(false, true) && timeoutFuture.cancel(false)) {
             // ok, exception will not fire
-            timeoutFuture.cancel(false);
             if (timeoutExecutor instanceof ScheduledThreadPoolExecutor && timeoutFuture instanceof Runnable) {
                 ((ScheduledThreadPoolExecutor) timeoutExecutor).remove((Runnable) timeoutFuture);
             }
         } else {
-            // future is already in progress, wait for it to run and then poll
+            // future is not cancellable, wait for it to run and then poll
             try {
                 timeoutFuture.get();
             } catch (ExecutionException ex) {
