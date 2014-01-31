@@ -35,13 +35,15 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         outRequiredLoads = new HashSet<LocalVariable>();
     }
 
+    @Override
     public void buildDataFlowVars(Instr i) {
         // Nothing to do -- because we are going to simply use non-closure, non-self, non-block LocalVariables as our data flow variables
         // rather than build a new data flow type for it
     }
 
+    @Override
     public void applyPreMeetHandler() {
-        if (basicBlock == problem.getScope().cfg().getExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
+        if (basicBlock == getCFG().getExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
     }
 
     @Override
@@ -49,10 +51,12 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         inRequiredLoads.addAll(pred.outRequiredLoads);
     }   
 
+    @Override
     public void initSolution() {
         reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
     }
 
+    @Override
     public void applyTransferFunction(Instr i) {
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
@@ -116,19 +120,21 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         }
     }
 
+    @Override
     public boolean solutionChanged() {
         // At the beginning of the scope and rescue block entries, required loads can be discarded
         // since all these loads will be executed there.
-        if (basicBlock == problem.getScope().cfg().getEntryBB() || basicBlock.isRescueEntry()) {
+        if (basicBlock == getCFG().getEntryBB() || basicBlock.isRescueEntry()) {
             reqdLoads.clear();
         }
 
-        //System.out.println("\n For CFG " + problem.getCFG() + " BB " + _bb.getID());
+        //System.out.println("\n For CFG " + getCFG() + " BB " + _bb.getID());
         //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
         //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
         return !outRequiredLoads.equals(reqdLoads);
     }
 
+    @Override
     public void finalizeSolution() {
 
         outRequiredLoads = reqdLoads;
@@ -149,9 +155,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        LoadLocalVarPlacementProblem blp = (LoadLocalVarPlacementProblem) problem;
-
-        IRScope scope                  = blp.getScope();
+        IRScope scope                  = problem.getScope();
         boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
@@ -260,8 +264,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         }
 
         // Load first use of variables in closures
-        if ((scope instanceof IRClosure) && (basicBlock == problem.getScope().cfg().getEntryBB())) {
-            // System.out.println("\n[In Entry BB] For CFG " + problem.getScope().cfg() + ":");
+        if ((scope instanceof IRClosure) && (basicBlock == getCFG().getEntryBB())) {
+            // System.out.println("\n[In Entry BB] For CFG " + getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {
                 if (scope.usesLocalVariable(v) || scope.definesLocalVariable(v)) {

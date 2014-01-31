@@ -140,8 +140,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     @Override
     public void applyPreMeetHandler() {
-        IRScope s = problem.getScope();
-        if (s instanceof IRClosure && basicBlock == s.getCFG().getEntryBB()) {
+        if (problem.getScope() instanceof IRClosure && basicBlock == getCFG().getEntryBB()) {
             // If it is not null, it has already been initialized
             if (inState == null) {
                 inState = new UnboxState();
@@ -572,7 +571,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         // System.out.println("------");
 
         boolean scopeBindingHasEscaped = problem.getScope().bindingHasEscaped();
-        CFG cfg = problem.getScope().cfg();
+        CFG cfg = getCFG();
 
         // Compute UNION(unboxedVarsIn(all-successors)) - this.unboxedVarsOut
         // All vars in this new set have to be unboxed on exit from this BB

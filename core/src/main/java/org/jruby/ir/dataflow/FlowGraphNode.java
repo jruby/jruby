@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.ListIterator;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.ir.util.Edge;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
@@ -15,9 +16,11 @@ import org.jruby.ir.util.Edge;
  *
  * Different dataflow problems encapsulate different dataflow properties, and a different flow graph node is built in each case */
 public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends FlowGraphNode<T, U>> {
-    public FlowGraphNode(T p, BasicBlock n) {
-        problem = p;
-        basicBlock = n;
+    public FlowGraphNode(T problem, BasicBlock basicBlock) {
+        this.problem = problem;
+        this.basicBlock = basicBlock;
+
+        // FIXME: Enebo: Does this really needed to be calculaed here?  Can analysis change this value?
         rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
     }
 
@@ -69,6 +72,13 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         return basicBlock;
     }
 
+    /**
+     * Get the control flow graph
+     */
+    public CFG getCFG() {
+        return problem.scope.getCFG();
+    }
+
     /** Builds the data-flow variables (or facts) for a particular node.
         Need only create the DF_Var for them to be added to the  problem.
         Goes over the instructions in this basic block and collect
@@ -81,7 +91,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
 
     private void processDestBB(List<U> workList, BitSet bbSet, BasicBlock d) {
         int id = d.getID();
-        if (bbSet.get(id) == false) {
+        if (!bbSet.get(id)) {
             bbSet.set(id);
             workList.add(problem.getFlowGraphNode(d));
         }
@@ -99,61 +109,64 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         // sources & targets depends on direction of the data flow problem
         applyPreMeetHandler();
 
-        boolean isForwardProblem = problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD;
-        if (isForwardProblem) {
-            for (Edge e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
-                BasicBlock b = (BasicBlock)e.getSource().getData();
-                compute_MEET(e, b, problem.getFlowGraphNode(b));
-            }
-
-            // Initialize computation
-            initSolution();
-
-            // Apply transfer function (analysis-specific) based on new facts after computing MEET
-            for (Instr i : basicBlock.getInstrs()) {
-                // System.out.println("TF: Processing: " + i);
-                applyTransferFunction(i);
-            }
-
-           // If the solution has changed, add "dsts" to the work list.
-           // No duplicates please which is why we have bbset.
-            if (solutionChanged()) {
-                for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
-                    processDestBB(workList, bbSet, b);
-                }
-            }
-
-            // Any post-computation cleanup
-            finalizeSolution();
+        if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
+            computeDataFlowInfoForward(workList, bbSet);
         } else {
-            for (Edge e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
-                BasicBlock b = (BasicBlock)e.getDestination().getData();
-                compute_MEET(e, b, problem.getFlowGraphNode(b));
-            }
-
-            // Initialize computation
-            initSolution();
-
-            // Apply transfer function (analysis-specific) based on new facts after computing MEET
-            List<Instr> instrs = basicBlock.getInstrs();
-            ListIterator<Instr> it = instrs.listIterator(instrs.size());
-            while (it.hasPrevious()) {
-                Instr i = it.previous();
-                // System.out.println("TF: Processing: " + i);
-                applyTransferFunction(i);
-            }
-
-           // If the solution has changed, add "dsts" to the work list.
-           // No duplicates please which is why we have bbset.
-            if (solutionChanged()) {
-                for (BasicBlock b: problem.getScope().cfg().getIncomingSources(basicBlock)) {
-                    processDestBB(workList, bbSet, b);
-                }
-            }
-
-            // Any post-computation cleanup
-            finalizeSolution();
+            computeDataFlowInfoBackward(workList, bbSet);
         }
+    }
+    
+    public void computeDataFlowInfoBackward(List<U> workList, BitSet bbSet) {
+        for (Edge e: getCFG().getOutgoingEdges(basicBlock)) {
+            BasicBlock b = (BasicBlock)e.getDestination().getData();
+            compute_MEET(e, b, problem.getFlowGraphNode(b));
+        }
+
+        initSolution();                                  // Initialize computation
+
+        // Apply transfer function (analysis-specific) based on new facts after computing MEET
+        List<Instr> instrs = basicBlock.getInstrs();
+        ListIterator<Instr> it = instrs.listIterator(instrs.size());
+        while (it.hasPrevious()) {
+            Instr i = it.previous();
+            // System.out.println("TF: Processing: " + i);
+            applyTransferFunction(i);
+        }
+
+        // If the solution has changed, add "dsts" to the work list.
+        // No duplicates please which is why we have bbset.
+        if (solutionChanged()) {
+            for (BasicBlock b: getCFG().getIncomingSources(basicBlock)) {
+                processDestBB(workList, bbSet, b);
+            }
+        }
+
+        finalizeSolution();                              // Any post-computation cleanup
+    }
+
+    public void computeDataFlowInfoForward(List<U> workList, BitSet bbSet) {
+        for (Edge e: getCFG().getIncomingEdges(basicBlock)) {
+            BasicBlock b = (BasicBlock)e.getSource().getData();
+            compute_MEET(e, b, problem.getFlowGraphNode(b));
+        }
+
+        initSolution();                                  // Initialize computation
+
+        // Apply transfer function (analysis-specific) based on new facts after computing MEET
+        for (Instr i : basicBlock.getInstrs()) {
+            // System.out.println("TF: Processing: " + i);
+            applyTransferFunction(i);
+        }
+
+        // If the solution has changed, add "dsts" to the work list.
+        // No duplicates please which is why we have bbset.
+        if (solutionChanged()) {
+            for (BasicBlock b: getCFG().getOutgoingDestinations(basicBlock)) {
+                processDestBB(workList, bbSet, b);
+            }
+        }
+
+        finalizeSolution();                              // Any post-computation cleanup
     }
 
     public boolean hasExceptionsRescued() {
@@ -162,11 +175,11 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
 
     public U getExceptionTargetNode() {
         // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
-        return problem.getFlowGraphNode(rescuer == null ? problem.getScope().cfg().getExitBB() : rescuer);
+        return problem.getFlowGraphNode(rescuer == null ? getCFG().getExitBB() : rescuer);
     }
 
 /* --------- protected fields/methods below --------- */
-    protected T problem;   // Dataflow problem with which this node is associated
-    protected BasicBlock basicBlock;     // CFG node for which this node contains info.
-    private   BasicBlock rescuer;        // Basicblock that protects any exceptions raised in this node
+    protected final T problem;   // Dataflow problem with which this node is associated
+    protected final BasicBlock basicBlock;     // CFG node for which this node contains info.
+    private final BasicBlock rescuer;        // Basicblock that protects any exceptions raised in this node
 }

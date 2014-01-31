@@ -57,7 +57,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
     public void applyPreMeetHandler() {
         in = new BitSet(setSize);
 
-        if (basicBlock == problem.getScope().cfg().getExitBB()) {
+        if (basicBlock == getCFG().getExitBB()) {
             Collection<LocalVariable> lv = problem.getVarsLiveOnScopeExit();
             if (lv != null && !lv.isEmpty()) {
                 for (Variable v: lv) {

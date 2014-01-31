@@ -1,7 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
@@ -48,8 +47,7 @@ public class LoadLocalVarPlacementProblem extends DataFlowProblem<LoadLocalVarPl
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        for (FlowGraphNode n: flowGraphNodes) {
-            LoadLocalVarPlacementNode blpn = (LoadLocalVarPlacementNode)n;
+        for (LoadLocalVarPlacementNode blpn: flowGraphNodes) {
             blpn.addLoads(varRenameMap);
         }
     }
