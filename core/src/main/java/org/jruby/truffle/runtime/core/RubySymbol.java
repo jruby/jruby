@@ -34,7 +34,7 @@ public class RubySymbol extends RubyObject {
         return runtime.getSymbolTable().getSymbol(name);
     }
 
-        public RubyProc toProc() {
+    public RubyProc toProc() {
         final RubyContext context = getRubyClass().getContext();
 
         final CallTarget callTarget = new CallTarget() {
