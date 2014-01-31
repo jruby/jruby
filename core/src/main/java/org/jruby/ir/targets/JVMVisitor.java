@@ -987,6 +987,7 @@ public class JVMVisitor extends IRVisitor {
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvm.method();
         m.loadLocal(0);
+        m.loadSelf(); // caller
         visit(noResultCallInstr.getReceiver());
         for (Operand operand : noResultCallInstr.getCallArgs()) {
             visit(operand);
