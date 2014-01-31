@@ -689,8 +689,10 @@ public abstract class IRScope implements ParseResult {
             pass = new UnboxingPass();
             pass.run(this);
         }
+    }
 
-        // For methods with unescaped bindings, inline the binding
+    private void runDeadCodeAndVarLoadStorePasses() {
+        CompilerPass pass;// For methods with unescaped bindings, inline the binding
         // by converting local var loads/store to tmp var loads/stores
         if (this instanceof IRMethod && !this.bindingHasEscaped()) {
             pass = new DeadCodeElimination();
@@ -719,7 +721,12 @@ public abstract class IRScope implements ParseResult {
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses(getManager().getCompilerPasses(this));
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getCompilerPasses(this));
+
+            // run DCE and var load/store
+            runDeadCodeAndVarLoadStorePasses();
+        }
 
         // Linearize CFG, etc.
         return prepareInstructionsForInterpretation();
@@ -729,7 +736,12 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses(getManager().getJITPasses(this));
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getJITPasses(this));
+
+            // no DCE for now to stress-test JIT
+            //runDeadCodeAndVarLoadStorePasses();
+        }
 
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
