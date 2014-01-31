@@ -3413,7 +3413,7 @@ public class IRBuilder {
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
         CallInstr superInstr;
         Variable ret = s.getNewTemporaryVariable();
-        if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
+        if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody || s.getLexicalParent() instanceof IRScriptBody)) {
             IRMethod m = (IRMethod)s;
             if (m.isInstanceMethod) {
                 superInstr = new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
