@@ -353,7 +353,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.push(new RubySymbol(self.getRubyClass().getContext().getCoreLibrary().getSymbolClass(), method.getName()));
+                    array.push(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
                 }
             }
 
@@ -487,7 +487,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {
-                array.push(new RubySymbol(self.getRubyClass().getContext().getCoreLibrary().getSymbolClass(), method.getName()));
+                array.push(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 
             return array;

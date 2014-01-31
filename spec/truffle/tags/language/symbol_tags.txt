@@ -1,4 +1,3 @@
 fails:A Symbol literal is a ':' followed by a single- or double-quoted string that may contain otherwise invalid characters
 fails:A Symbol literal can be created by the %s-delimited expression
-fails:A Symbol literal is the same object when created from identical strings
 fails:A Symbol literal can contain null in the string

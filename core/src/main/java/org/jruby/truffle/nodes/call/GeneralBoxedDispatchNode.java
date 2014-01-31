@@ -53,7 +53,7 @@ public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
                 final RubyMethod method = lookup(frame, receiverObject, "method_missing");
 
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-                modifiedArgumentsObjects[0] = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), name);
+                modifiedArgumentsObjects[0] = RubySymbol.newSymbol(getContext(), name);
                 System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
                 return method.call(frame.pack(), receiverObject, blockObject, modifiedArgumentsObjects);
