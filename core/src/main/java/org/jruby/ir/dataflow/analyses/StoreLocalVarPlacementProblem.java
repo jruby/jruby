@@ -66,10 +66,9 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
         boolean mightRequireGlobalEnsureBlock = false;
 
         Set<LocalVariable> dirtyVars = null;
-
-        CFG     cfg      = getScope().cfg();
-        IRScope cfgScope = cfg.getScope();
-
+        IRScope cfgScope = getScope();
+        CFG     cfg      = cfgScope.cfg();
+        
         this.scopeHasLocalVarStores      = false;
         this.scopeHasUnrescuedExceptions = false;
 
@@ -96,11 +95,12 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
         }
 
         // Allocate global-ensure block, if necessary
-        BasicBlock geb;
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+            
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);
                 if (value == null) {
@@ -109,6 +109,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
                 }
                 geb.addInstr(new StoreLocalVarInstr(value, (IRClosure) cfgScope, v));
             }
+            
             geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBB(geb);
         }
