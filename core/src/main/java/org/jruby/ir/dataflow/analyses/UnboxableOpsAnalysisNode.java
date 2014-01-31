@@ -2,6 +2,7 @@ package org.jruby.ir.dataflow.analyses;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -187,31 +188,20 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 // We are going to exit if an exception is raised.
                 // So, only need to bother with dirty live local vars for closures
                 if (problem.getScope() instanceof IRClosure) {
-                    for (Variable v: state.unboxedDirtyVars) {
-                        if (v instanceof LocalVariable) {
-                            varsToBox.add(v);
-                        }
-                    }
+                    markLocalVariables(varsToBox, state.unboxedDirtyVars);
                 }
             }
         }
 
         if (isDFBarrier) {
             // All dirty unboxed local vars will get reboxed.
-            for (Variable v: state.unboxedDirtyVars) {
-                if (v instanceof LocalVariable) {
-                    varsToBox.add(v);
-                }
-            }
+            markLocalVariables(varsToBox, state.unboxedDirtyVars);
 
             // We have to re-unbox local variables as necessary since we don't
             // know how they are going to change once we get past this instruction.
             List<Variable> lvs = new ArrayList<Variable>();
-            for (Variable v: state.unboxedVars.keySet()) {
-                if (v instanceof LocalVariable) {
-                    lvs.add(v);
-                }
-            }
+            markLocalVariables(lvs, state.unboxedVars.keySet());
+
             state.unboxedVars.keySet().removeAll(lvs);
         }
 
@@ -460,6 +450,12 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             return arg;
         }
     }
+    
+    private void markLocalVariables(Collection<Variable> varsToBox, Set<Variable> varsToCheck) {
+        for (Variable v: varsToCheck) {
+            if (v instanceof LocalVariable) varsToBox.add(v);
+        }
+    }
 
     private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
         // Special treatment for instructions that can raise exceptions
@@ -473,38 +469,23 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else if (isClosure) {
                 // We are going to exit if an exception is raised.
                 // So, only need to bother with dirty live local vars for closures
-                for (Variable v: state.unboxedDirtyVars) {
-                    if (v instanceof LocalVariable) {
-                        varsToBox.add(v);
-                    }
-                }
+                markLocalVariables(varsToBox, state.unboxedDirtyVars);
             }
         }
 
         if (isClosure && (i instanceof ReturnInstr || i instanceof BreakInstr)) {
-            for (Variable v: state.unboxedDirtyVars) {
-                if (v instanceof LocalVariable) {
-                    varsToBox.add(v);
-                }
-            }
+            markLocalVariables(varsToBox, state.unboxedDirtyVars);
         }
 
         if (isDFBarrier) {
             // All dirty unboxed (local) vars will get reboxed.
-            for (Variable v: state.unboxedDirtyVars) {
-                if (v instanceof LocalVariable) {
-                    varsToBox.add(v);
-                }
-            }
+            markLocalVariables(varsToBox, state.unboxedDirtyVars);
 
             // We have to re-unbox local variables as necessary since we don't
             // know how they are going to change once we get past this instruction.
             List<Variable> lvs = new ArrayList<Variable>();
-            for (Variable v: state.unboxedVars.keySet()) {
-                if (v instanceof LocalVariable) {
-                    lvs.add(v);
-                }
-            }
+            markLocalVariables(lvs, state.unboxedVars.keySet());
+
             state.unboxedVars.keySet().removeAll(lvs);
         }
 
