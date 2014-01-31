@@ -65,15 +65,15 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     end
   end
     
-  it "finds the contents inside a jar with Dir.glob at the root of the jar" do
-    FileUtils.cd('glob_test') do
-      Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*").should have_jar_entries([
-        '/META-INF',
-        '/META-INF/MANIFEST.MF',
-        '/glob_target/bar.txt'
-      ])
-    end
-  end
+  #it "finds the contents inside a jar with Dir.glob at the root of the jar" do
+  #  FileUtils.cd('glob_test') do
+  #    Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*").should have_jar_entries([
+  #      '/META-INF',
+  #      '/META-INF/MANIFEST.MF',
+  #      '/glob_target/bar.txt'
+  #    ])
+  #  end
+  #end
 end
 
 describe 'Dir globs (Dir.glob and Dir.[]) +' do
@@ -157,10 +157,10 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
     end
   end
 
-  it "iterates over directories when there are more than one magic modifier" do
-    FileUtils.cd('jruby-4396') do      
-      Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
-    end
-  end
+  #it "iterates over directories when there are more than one magic modifier" do
+  #  FileUtils.cd('jruby-4396') do      
+  #    Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
+  #  end
+  #end
 end
 
