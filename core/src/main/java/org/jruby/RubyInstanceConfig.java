@@ -1772,6 +1772,7 @@ public class RubyInstanceConfig {
     public static boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
     public static boolean IR_UNBOXING = Options.IR_UNBOXING.load();
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
+    public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
     
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();

@@ -3,7 +3,6 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
-import com.headius.invokebinder.SmartHandle;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -109,7 +108,7 @@ public class Bootstrap {
     public static CallSite invoke(Lookup lookup, String name, MethodType type) {
         InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
         MethodHandle handle;
-        if (site.arity < 4) {
+        if (site.arity > 0 && site.arity < 4) {
             handle =
                     insertArguments(
                         findStatic(
@@ -121,7 +120,7 @@ public class Bootstrap {
                         site);
         } else {
             handle = SmartBinder.from(site.signature)
-                    .collect("args", "arg.*")
+                    .collect("args", "arg[0-9]+")
                     .insert(0, "site", site)
                     .invokeStaticQuiet(lookup, Bootstrap.class, "invoke")
                     .handle();
@@ -148,7 +147,7 @@ public class Bootstrap {
     public static CallSite invokeSelf(Lookup lookup, String name, MethodType type) {
         InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
         MethodHandle handle;
-        if (site.arity < 4) {
+        if (site.arity > 0 && site.arity < 4) {
             handle =
                     insertArguments(
                             findStatic(
@@ -160,7 +159,7 @@ public class Bootstrap {
                             site);
         } else {
             handle = SmartBinder.from(site.signature)
-                    .collect("args", "arg.*")
+                    .collect("args", "arg[0-9]+")
                     .insert(0, "site", site)
                     .invokeStaticQuiet(lookup, Bootstrap.class, "invokeSelf")
                     .handle();
@@ -502,42 +501,58 @@ public class Bootstrap {
 
     private static MethodHandle getHandle(RubyClass selfClass, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity, boolean block) throws Throwable {
         MethodHandle mh = null;
-        SmartBinder binder = SmartBinder.from(lookup(), site.signature);
+        SmartBinder binder = null;
         if (method.getNativeCall() != null) {
+            int nativeArgCount = InvocationLinker.getNativeArgCount(method, method.getNativeCall());
             DynamicMethod.NativeCall nc = method.getNativeCall();
-            if (method.getArity().isFixed() && method.getArity().getValue() < 4) { // native methods only support arity 3
+            if (nativeArgCount < 4) { // native methods only support arity 3
                 if (method.getArity().getValue() == site.arity) {
                     // nothing to do
+                    binder = SmartBinder.from(lookup(), site.signature);
                 } else {
-                    // arity mismatch...bind to error or fall back on DynamicMethod dispatch?
+                    // arity mismatch...leave null and use DynamicMethod.call below
                 }
             } else {
-                binder = binder.collect("args", "arg.*");
+                if (site.arity == -1) {
+                    // ok, already passing []
+                    binder = SmartBinder.from(lookup(), site.signature);
+                } else if (site.arity == 0) {
+                    // no args, insert dummy
+                    binder = SmartBinder.from(lookup(), site.signature)
+                            .insert(2, "args", IRubyObject.NULL_ARRAY);
+                } else {
+                    // 1-3 args, collect into []
+                    binder = SmartBinder.from(lookup(), site.signature)
+                            .collect("args", "arg.*");
+                }
             }
 
-            // clean up non-arguments, ordering, types
-            if (!nc.hasContext()) {
-                binder = binder.drop("context");
-            }
+            if (binder != null) {
 
-            if (nc.hasBlock() && !block) {
-                binder = binder.append("block", Block.NULL_BLOCK);
-            } else if (!nc.hasBlock() && block) {
-                binder = binder.drop("block");
-            }
+                // clean up non-arguments, ordering, types
+                if (!nc.hasContext()) {
+                    binder = binder.drop("context");
+                }
 
-            if (nc.isStatic()) {
-                mh = binder
-                        .permute("context", "self", "arg*", "block") // filter caller
-                        .cast(nc.getNativeReturn(), nc.getNativeSignature())
-                        .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
-                        .handle();
-            } else {
-                mh = binder
-                        .permute("self", "context", "arg*", "block") // filter caller, move self
-                        .castArg("self", nc.getNativeTarget())
-                        .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
-                        .handle();
+                if (nc.hasBlock() && !block) {
+                    binder = binder.append("block", Block.NULL_BLOCK);
+                } else if (!nc.hasBlock() && block) {
+                    binder = binder.drop("block");
+                }
+
+                if (nc.isStatic()) {
+                    mh = binder
+                            .permute("context", "self", "arg*", "block") // filter caller
+                            .cast(nc.getNativeReturn(), nc.getNativeSignature())
+                            .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
+                            .handle();
+                } else {
+                    mh = binder
+                            .permute("self", "context", "arg*", "block") // filter caller, move self
+                            .castArg("self", nc.getNativeTarget())
+                            .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
+                            .handle();
+                }
             }
         }
 
@@ -551,7 +566,9 @@ public class Bootstrap {
                     .drop("caller");
 
             // IR compiled methods only support varargs right now
-            if (site.arity == 0) {
+            if (site.arity == -1) {
+                // already [], nothing to do
+            } else if (site.arity == 0) {
                 binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
             } else {
                 binder = binder.collect("args", "arg.*");
@@ -567,22 +584,13 @@ public class Bootstrap {
         }
 
         if (mh == null) {
-//            System.out.println(site.type());
-
             // use DynamicMethod binding
-            MethodType type2 = site.type()
-                    .insertParameterTypes(2, RubyModule.class, String.class)
-                    .insertParameterTypes(0, DynamicMethod.class);
-            mh = Binder.from(site.type())
-                    .insert(2, selfClass, site.name)
-//                    .printType()
-                    .insert(0, method)
-//                    .printType()
-                    .cast(type2)
-                    .invokeVirtual(LOOKUP, "call");
-
-//            System.out.println("binding to DynamicMethod: " + mh);
-//            System.out.println("binding to DynamicMethod.call: " + site.name);
+            mh = SmartBinder.from(site.signature)
+                    .drop("caller")
+                    .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, selfClass, site.name)
+                    .insert(0, "method", method)
+                    .invokeVirtualQuiet(LOOKUP, "call")
+                    .handle();
         }
 
         SmartBinder fallbackBinder = SmartBinder

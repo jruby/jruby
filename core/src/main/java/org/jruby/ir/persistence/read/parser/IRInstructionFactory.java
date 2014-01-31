@@ -142,8 +142,6 @@ public class IRInstructionFactory {
             return createPopBinding();
         case POP_FRAME:
             return createPopFrame();
-        case PUSH_FRAME:
-            return createPushFrame();
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
@@ -163,10 +161,6 @@ public class IRInstructionFactory {
 
     private PopFrameInstr createPopFrame() {
         return new PopFrameInstr();
-    }
-
-    private PushFrameInstr createPushFrame() {
-        return new PushFrameInstr();
     }
 
     public Instr createInstrWithParams(final InstrWithParams instr) {
@@ -229,6 +223,8 @@ public class IRInstructionFactory {
         case PUT_CONST:
         case PUT_FIELD:
             return createPutInstrOtherThanGlobalVar(operation, paramsIterator);
+        case PUSH_FRAME:
+            return createPushFrame(paramsIterator);
         case RESTORE_ERROR_INFO:
             return createRestoreErrorInfo(paramsIterator);
         case RETURN:
@@ -237,6 +233,11 @@ public class IRInstructionFactory {
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
+    }
+
+    public PushFrameInstr createPushFrame(final ParametersIterator paramsIterator) {
+        final MethAddr methAddr = (MethAddr) paramsIterator.next();
+        return new PushFrameInstr(methAddr);
     }
 
     private JumpInstr createJump(final ParametersIterator paramsIterator) {

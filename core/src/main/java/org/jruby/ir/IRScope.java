@@ -667,7 +667,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runCompilerPasses() {
+    private void runCompilerPasses(List<CompilerPass> passes) {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true);
@@ -678,7 +678,7 @@ public abstract class IRScope implements ParseResult {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
-        CompilerPassScheduler scheduler = getManager().schedulePasses();
+        CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
             pass.run(this);
         }
@@ -719,7 +719,7 @@ public abstract class IRScope implements ParseResult {
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
+        if (getCFG() == null) runCompilerPasses(getManager().getCompilerPasses(this));
 
         // Linearize CFG, etc.
         return prepareInstructionsForInterpretation();
@@ -729,7 +729,7 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
+        if (getCFG() == null) runCompilerPasses(getManager().getJITPasses(this));
 
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other

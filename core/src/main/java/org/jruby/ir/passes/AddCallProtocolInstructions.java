@@ -21,6 +21,7 @@ import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -86,7 +87,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores;
             if (scope.usesBackrefOrLastline() || requireBinding || scopeHasUnrescuedExceptions) {
                 // Push
-                entryBB.addInstr(new PushFrameInstr());
+                entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr(scope));
 
                 // Allocate GEB if necessary for popping

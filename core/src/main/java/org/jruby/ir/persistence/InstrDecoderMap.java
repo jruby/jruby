@@ -202,7 +202,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
             case PUSH_BINDING: return new PushBindingInstr(d.decodeScope());
-            case PUSH_FRAME: return new PushFrameInstr();
+            case PUSH_FRAME: return decodeFrame();
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
@@ -275,6 +275,11 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
         return CallInstr.create(CallType.fromOrdinal(callTypeOrdinal), result, new MethAddr(methAddr), receiver, args, closure);
+    }
+
+    private Instr decodeFrame() {
+        String methAddr = d.decodeString();
+        return new PushFrameInstr(new MethAddr(methAddr));
     }
     
     private Instr decodeConstMissingInstr() {

@@ -190,28 +190,27 @@ public class JVMVisitor extends IRVisitor {
         // set up try/catch table
         int[][] tryCatchTable = new int[instrs.length][];
         List<int[]> allCatches = new ArrayList<int[]>();
+        int[] rescueRange = null;
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
 
             int rescueIPC = rescueTable.get(instr.getIPC());
             if (rescueIPC != -1) {
-                int[] rescueRange = tryCatchTable[rescueIPC];
                 if (rescueRange == null) {
-                    rescueRange = new int[]{i, i + 1, rescueIPC};
-                    tryCatchTable[rescueIPC] = rescueRange;
-                    allCatches.add(rescueRange);
+                    // new range
+                    rescueRange = new int[]{i, i+1, rescueIPC};
+                    continue;
                 } else {
                     rescueRange[1] = i + 1;
                 }
+            } else {
+                if (rescueRange == null) continue;
+
+                // found end of range, done
+                allCatches.add(rescueRange);
+                rescueRange = null;
             }
         }
-
-        Collections.sort(allCatches, new Comparator<int[]>() {
-            @Override
-            public int compare(int[] o1, int[] o2) {
-                return Integer.compare(o1[0], o2[0]);
-            }
-        });
 
         for (int[] range : allCatches) {
             if (debug) System.out.println("rescue range: " + Arrays.toString(range));
@@ -1027,6 +1026,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PopFrameInstr(PopFrameInstr popframeinstr) {
+        jvm.method().loadContext();
+        jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void postMethodFrameOnly()"));
+    }
+
+    @Override
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvm.method().loadLocal(0);
         visit(processmodulebodyinstr.getModuleBody());
@@ -1041,6 +1046,16 @@ public class JVMVisitor extends IRVisitor {
         jvmStoreLocal(DYNAMIC_SCOPE);
 
         // TODO push
+    }
+
+    @Override
+    public void PushFrameInstr(PushFrameInstr pushframeinstr) {
+        jvm.method().loadContext();
+        jvm.method().adapter.ldc(pushframeinstr.getFrameName().getName());
+        jvm.method().loadSelf();
+        jvm.method().loadLocal(4);
+        jvm.method().loadStaticScope();
+        jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameAndClass(String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block, org.jruby.parser.StaticScope)"));
     }
 
     @Override

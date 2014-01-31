@@ -19,6 +19,7 @@ import org.jruby.ir.passes.CompilerPassScheduler;
  */
 public class IRManager {
     public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
+    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,LinearizeCFG";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private int dummyMetaClassCount = 0;
@@ -38,6 +39,7 @@ public class IRManager {
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
     private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
     private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
+    private List<CompilerPass> jitPasses = new ArrayList<CompilerPass>();
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
@@ -45,6 +47,7 @@ public class IRManager {
     public IRManager() {
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
+        jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_JIT_PASSES);
     }
 
     public boolean isDryRun() {
@@ -72,10 +75,14 @@ public class IRManager {
     }
 
     public CompilerPassScheduler schedulePasses() {
+        return schedulePasses(compilerPasses);
+    }
+
+    public static CompilerPassScheduler schedulePasses(final List<CompilerPass> passes) {
         CompilerPassScheduler scheduler = new CompilerPassScheduler() {
             private Iterator<CompilerPass> iterator;
             {
-                this.iterator = compilerPasses.iterator();
+                this.iterator = passes.iterator();
             }
 
             @Override
@@ -93,6 +100,10 @@ public class IRManager {
 
     public List<CompilerPass> getInliningCompilerPasses(IRScope scope) {
         return inliningCompilerPasses;
+    }
+
+    public List<CompilerPass> getJITPasses(IRScope scope) {
+        return jitPasses;
     }
 
     public Set<CompilerPassListener> getListeners() {

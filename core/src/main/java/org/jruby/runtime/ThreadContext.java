@@ -1035,6 +1035,13 @@ public final class ThreadContext {
         pushRubyClass(ssModule);
         pushCallFrame(implClass, name, self, block);
     }
+
+    // FIXME: This may not be correct for RubyClass in all cases
+    public void preMethodFrameAndClass(String name, IRubyObject self, Block block, StaticScope staticScope) {
+        RubyModule ssModule = staticScope.getModule();
+        pushRubyClass(ssModule);
+        pushCallFrame(ssModule, name, self, block);
+    }
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope) {
