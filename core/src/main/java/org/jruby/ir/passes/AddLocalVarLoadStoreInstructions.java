@@ -66,13 +66,13 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
                     if (i instanceof ResultInstr) {
                         Variable v = ((ResultInstr) i).getResult();
                         // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                        if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) {
+                        if (v instanceof LocalVariable && !v.isSelf()) {
                             // Make sure there is a replacement tmp-var allocated for lv
                             setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
                         }
                     }
                     for (Variable v : i.getUsedVariables()) {
-                        if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) {
+                        if (v instanceof LocalVariable && !v.isSelf()) {
                             setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
                         }
                     }

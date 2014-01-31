@@ -113,7 +113,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             // The variables used as arguments will need to be loaded
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
+                if (x instanceof LocalVariable && !x.isSelf()) {
                     reqdLoads.add((LocalVariable)x);
                 }
             }

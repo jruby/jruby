@@ -50,7 +50,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         DataFlowVar dfv = new DataFlowVar(this);
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv.id, v);
-        if ((v instanceof LocalVariable) && !((LocalVariable) v).isSelf()) {
+        if (v instanceof LocalVariable && !v.isSelf()) {
             //System.out.println("Adding df var for " + v + ":" + dfv.id);
             int n = ((LocalVariable)v).getScopeDepth();
             IRScope s = getScope();
@@ -125,7 +125,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         // Init vars live on scope exit to vars that always live throughout the scope
         this.varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
 
-        for (Variable v : allVars) {
+        for (LocalVariable v : allVars) {
             if (getDFVar(v) == null) addDFVar(v);
         }
     }

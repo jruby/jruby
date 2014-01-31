@@ -71,11 +71,6 @@ public class LocalVariable extends Variable {
         return name.compareTo(((LocalVariable) arg0).name);
     }
 
-
-    public boolean isSelf() {
-        return false;
-    }
-
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject value = currDynScope.getValue(offset, scopeDepth);
