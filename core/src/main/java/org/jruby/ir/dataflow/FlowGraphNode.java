@@ -46,7 +46,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
      * is a predecessor of the current node!  The choice of "IN/OUT" is
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(Edge e, BasicBlock source, U pred);
+    public abstract void compute_MEET(Edge e, U pred);
 
     /**
      * Any setting up of state/initialization before applying transfer function
@@ -117,9 +117,8 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
     }
     
     public void computeDataFlowInfoBackward(List<U> workList, BitSet bbSet) {
-        for (Edge e: getCFG().getOutgoingEdges(basicBlock)) {
-            BasicBlock b = (BasicBlock)e.getDestination().getData();
-            compute_MEET(e, b, problem.getFlowGraphNode(b));
+        for (Edge<BasicBlock> e: getCFG().getOutgoingEdges(basicBlock)) {
+            compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getData()));
         }
 
         initSolution();                                  // Initialize computation
@@ -145,9 +144,8 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
     }
 
     public void computeDataFlowInfoForward(List<U> workList, BitSet bbSet) {
-        for (Edge e: getCFG().getIncomingEdges(basicBlock)) {
-            BasicBlock b = (BasicBlock)e.getSource().getData();
-            compute_MEET(e, b, problem.getFlowGraphNode(b));
+        for (Edge<BasicBlock> e: getCFG().getIncomingEdges(basicBlock)) {
+            compute_MEET(e, problem.getFlowGraphNode(e.getSource().getData()));
         }
 
         initSolution();                                  // Initialize computation

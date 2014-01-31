@@ -151,9 +151,9 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
     }
 
     @Override
-    public void compute_MEET(Edge e, BasicBlock source, UnboxableOpsAnalysisNode pred) {
+    public void compute_MEET(Edge e, UnboxableOpsAnalysisNode pred) {
         // Ignore rescue entries -- everything is unboxed, as necessary.
-        if (!source.isRescueEntry()) inState.computeMEET(pred.outState);
+        if (!pred.basicBlock.isRescueEntry()) inState.computeMEET(pred.outState);
     }
 
     private Class getOperandType(UnboxState state, Operand o) {

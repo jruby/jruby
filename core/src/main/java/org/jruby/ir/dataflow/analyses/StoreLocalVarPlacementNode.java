@@ -51,9 +51,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
     }
 
     @Override
-    public void compute_MEET(Edge e, BasicBlock source, StoreLocalVarPlacementNode pred) {
+    public void compute_MEET(Edge e, StoreLocalVarPlacementNode pred) {
         // Ignore rescue entries -- dirty vars are handled specially for these
-        if (!source.isRescueEntry()) inDirtyVars.addAll(pred.outDirtyVars);
+        if (!pred.basicBlock.isRescueEntry()) inDirtyVars.addAll(pred.outDirtyVars);
     }
 
     @Override

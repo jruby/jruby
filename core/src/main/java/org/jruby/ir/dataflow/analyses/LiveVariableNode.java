@@ -69,7 +69,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
     }
 
     @Override
-    public void compute_MEET(Edge e, BasicBlock source, LiveVariableNode pred) {
+    public void compute_MEET(Edge e, LiveVariableNode pred) {
         // System.out.println("computing meet for BB " + basicBlock.getID() + " with BB " + pred.basicBlock.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(pred.out);
