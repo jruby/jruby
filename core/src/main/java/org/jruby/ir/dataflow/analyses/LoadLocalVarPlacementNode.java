@@ -124,9 +124,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
     public boolean solutionChanged() {
         // At the beginning of the scope and rescue block entries, required loads can be discarded
         // since all these loads will be executed there.
-        if (basicBlock == getCFG().getEntryBB() || basicBlock.isRescueEntry()) {
-            reqdLoads.clear();
-        }
+        if (basicBlock.isEntryBB() || basicBlock.isRescueEntry()) reqdLoads.clear();
 
         //System.out.println("\n For CFG " + getCFG() + " BB " + _bb.getID());
         //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
@@ -264,7 +262,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         }
 
         // Load first use of variables in closures
-        if ((scope instanceof IRClosure) && (basicBlock == getCFG().getEntryBB())) {
+        if (scope instanceof IRClosure && basicBlock.isEntryBB()) {
             // System.out.println("\n[In Entry BB] For CFG " + getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {

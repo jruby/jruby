@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
@@ -140,7 +139,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     @Override
     public void applyPreMeetHandler() {
-        if (problem.getScope() instanceof IRClosure && basicBlock == getCFG().getEntryBB()) {
+        if (problem.getScope() instanceof IRClosure && basicBlock.isEntryBB()) {
             // If it is not null, it has already been initialized
             if (inState == null) {
                 inState = new UnboxState();
@@ -187,7 +186,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else {
                 // We are going to exit if an exception is raised.
                 // So, only need to bother with dirty live local vars for closures
-                if (this.problem.getScope() instanceof IRClosure) {
+                if (problem.getScope() instanceof IRClosure) {
                     for (Variable v: state.unboxedDirtyVars) {
                         if (v instanceof LocalVariable) {
                             varsToBox.add(v);
@@ -396,7 +395,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         TemporaryLocalVariable unboxedVar = unboxMap.get(v);
         // FIXME: This is a bit broken -- SSA will eliminate this need for type verification
         if ((unboxedVar == null && createNew) || !matchingTypes(reqdType, unboxedVar.getType())) {
-            unboxedVar = this.problem.getScope().getNewUnboxedVariable(reqdType);
+            unboxedVar = problem.getScope().getNewUnboxedVariable(reqdType);
             unboxMap.put(v, unboxedVar);
         } else if (unboxedVar == null) {
             // FIXME: throw an exception here
@@ -464,7 +463,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
         // Special treatment for instructions that can raise exceptions
-        boolean isClosure = this.problem.getScope() instanceof IRClosure;
+        boolean isClosure = problem.getScope() instanceof IRClosure;
         HashSet<Variable> varsToBox = new HashSet<Variable>();
         if (i.canRaiseException()) {
             if (hasRescuer) {
@@ -552,7 +551,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
     }
 
     public void unbox(Map<Variable, TemporaryLocalVariable> unboxMap) {
-        // System.out.println("BB : " + basicBlock + " in " + this.problem.getScope().getName());
+        // System.out.println("BB : " + basicBlock + " in " + problem.getScope().getName());
         // System.out.println("-- known types on entry:");
         // for (Variable v: inState.types.keySet()) {
         //     if (inState.types.get(v) != Object.class) {
@@ -604,8 +603,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         BitSet liveVarsSet = ((LiveVariableNode)lvp.getFlowGraphNode(basicBlock)).getLiveInBitSet();
 
         // Rescue node, if any
-        IRScope scope = this.problem.getScope();
-        boolean isClosure = scope instanceof IRClosure;
+        boolean isClosure = problem.getScope() instanceof IRClosure;
 
         List<Instr> newInstrs = new ArrayList<Instr>();
         boolean unboxedLiveVars = false;

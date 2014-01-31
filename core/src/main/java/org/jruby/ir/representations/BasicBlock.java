@@ -59,6 +59,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return label.hashCode();
     }
 
+    public boolean isEntryBB() {
+        return cfg.getEntryBB() == this;
+    }
+
     public void markRescueEntryBB() {
         this.isRescueEntry = true;
     }
