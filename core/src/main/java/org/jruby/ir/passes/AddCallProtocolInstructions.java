@@ -100,12 +100,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
 
                 // Pop on all scope-exit paths
-                BasicBlock exitBB = cfg.getExitBB();
                 for (BasicBlock bb: cfg.getBasicBlocks()) {
                     ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                     while (instrs.hasNext()) {
                         Instr i = instrs.next();
-                        if ((bb != exitBB) && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
+                        if (!bb.isExitBB() && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
@@ -114,7 +113,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         }
                     }
 
-                    if (bb == exitBB && !bb.isEmpty()) {
+                    if (bb.isExitBB() && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
                         if (requireBinding) instrs.add(new PopBindingInstr());

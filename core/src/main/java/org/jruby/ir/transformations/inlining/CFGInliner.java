@@ -25,7 +25,7 @@ import org.jruby.ir.representations.CFG.EdgeType;
 import org.jruby.ir.util.Edge;
 
 public class CFGInliner {
-    private CFG cfg;
+    private final CFG cfg;
 
     public CFGInliner(CFG build) {
         this.cfg = build;
@@ -46,22 +46,18 @@ public class CFGInliner {
         CFG selfClone = new CFG(cfg.getScope());
 
         // clone bbs
-        BasicBlock entry = cfg.getEntryBB();
-        BasicBlock exit = cfg.getExitBB();
         for (BasicBlock b : cfg.getBasicBlocks()) {
-            if ((b != entry) && (b != exit)) {
-                selfClone.addBasicBlock(b.cloneForInlining(ii));
-            }
+            if (!b.isEntryBB() && !b.isExitBB()) selfClone.addBasicBlock(b.cloneForInlining(ii));
         }
 
         // clone edges
         for (BasicBlock b: cfg.getBasicBlocks()) {
-            if ((b != entry) && (b != exit)) {
-                BasicBlock rb = ii.getRenamedBB(b);
-                for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
-                    BasicBlock destination = e.getDestination().getData();
-                    if (destination != exit) selfClone.addEdge(rb, ii.getRenamedBB(destination), e.getType());
-                }
+            if (b.isEntryBB() || b.isExitBB()) continue;
+
+            BasicBlock rb = ii.getRenamedBB(b);
+            for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
+                BasicBlock destination = e.getDestination().getData();
+                if (!destination.isExitBB()) selfClone.addEdge(rb, ii.getRenamedBB(destination), e.getType());
             }
         }
 
@@ -132,8 +128,6 @@ public class CFGInliner {
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
-        BasicBlock mEntry = methodCFG.getEntryBB();
-        BasicBlock mExit = methodCFG.getExitBB();
         List<BasicBlock> methodBBs = new ArrayList<BasicBlock>();
         for (BasicBlock b: methodCFG.getBasicBlocks()) methodBBs.add(b);
 
@@ -154,65 +148,63 @@ public class CFGInliner {
         } else {
             // clone callee and add it to the host cfg
             for (BasicBlock b : methodCFG.getBasicBlocks()) {
-                if (b != mEntry && b != mExit) {
-                    cfg.addBasicBlock(b.cloneForInlining(ii));
-                }
+                if (!b.isEntryBB() && !b.isExitBB()) cfg.addBasicBlock(b.cloneForInlining(ii));
             }
             for (BasicBlock x : methodCFG.getBasicBlocks()) {
-                if (x != mEntry && x != mExit) {
-                    BasicBlock rx = ii.getRenamedBB(x);
-                    for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
-                        BasicBlock b = e.getDestination().getData();
-                        if (b != mExit) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
-                    }
+                if (x.isEntryBB() || x.isExitBB()) continue;
+
+                BasicBlock rx = ii.getRenamedBB(x);
+                for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
+                    BasicBlock b = e.getDestination().getData();
+                    if (!b.isExitBB()) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
                 }
             }
         }
 
         // Hook up entry edges
-        assert methodCFG.outDegree(mEntry) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
-        for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(mEntry)) {
-            BasicBlock destination = e.getDestination().getData();
-            if (destination != mExit) {
-                BasicBlock dstBB = ii.getRenamedBB(destination);
-                if (callReceiver != callReceiverVar) {
-                    dstBB.insertInstr(new CopyInstr(callReceiverVar, callReceiver));
-                }
-                if (!ii.canMapArgsStatically()) {
-                    // SSS FIXME: This is buggy!
-                    // This code has to mimic whatever CallBase.prepareArguments does!
-                    // We may need a special instruction that takes care of this.
-                    Operand args;
-                    Operand[] callArgs = call.cloneCallArgs(hostCloneInfo);
-                    if (callArgs.length == 1 && callArgs[0] instanceof Splat) {
-                        args = callArgs[0];
-                    } else {
-                        args = new Array(callArgs);
-                    }
-                    dstBB.insertInstr(new CopyInstr((Variable)ii.getArgs(), args));
-                }
-                cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
+        assert methodCFG.outDegree(cfg.getEntryBB()) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
+        for (BasicBlock destination : methodCFG.getOutgoingDestinations(cfg.getEntryBB())) {
+            if (destination.isExitBB()) continue;
+
+            BasicBlock dstBB = ii.getRenamedBB(destination);
+            if (callReceiver != callReceiverVar) {
+                dstBB.insertInstr(new CopyInstr(callReceiverVar, callReceiver));
             }
+
+            if (!ii.canMapArgsStatically()) {
+                // SSS FIXME: This is buggy!
+                // This code has to mimic whatever CallBase.prepareArguments does!
+                // We may need a special instruction that takes care of this.
+                Operand args;
+                Operand[] callArgs = call.cloneCallArgs(hostCloneInfo);
+                if (callArgs.length == 1 && callArgs[0] instanceof Splat) {
+                    args = callArgs[0];
+                } else {
+                    args = new Array(callArgs);
+                }
+                dstBB.insertInstr(new CopyInstr((Variable)ii.getArgs(), args));
+            }
+            cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(mExit)) {
+        for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(cfg.getExitBB())) {
             BasicBlock source = e.getSource().getData();
-            if (source != mEntry) {
-                BasicBlock clonedSource = ii.getRenamedBB(source);
-                if (e.getType() == EdgeType.EXCEPTION) {
-                    // e._src has an explicit throw that returns from the callee
-                    // after inlining, if the caller instruction has a rescuer, then the
-                    // throw has to be captured by the rescuer as well.
-                    BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
-                    if (rescuerOfSplitBB != null) {
-                        cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
-                    } else {
-                        cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);
-                    }
+            if (source.isEntryBB()) continue;
+
+            BasicBlock clonedSource = ii.getRenamedBB(source);
+            if (e.getType() == EdgeType.EXCEPTION) {
+                // e._src has an explicit throw that returns from the callee
+                // after inlining, if the caller instruction has a rescuer, then the
+                // throw has to be captured by the rescuer as well.
+                BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
+                if (rescuerOfSplitBB != null) {
+                    cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
                 } else {
-                    cfg.addEdge(clonedSource, splitBB, e.getType());
+                    cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);
                 }
+            } else {
+                cfg.addEdge(clonedSource, splitBB, e.getType());
             }
         }
 
@@ -224,14 +216,14 @@ public class CFGInliner {
         // Remap existing protections for bbs in mcfg to their renamed bbs.
         // bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
         for (BasicBlock x : methodBBs) {
-            if (x != mEntry && x != mExit) {
-                BasicBlock xRenamed = ii.getRenamedBB(x);
-                BasicBlock xProtector = methodCFG.getRescuerBBFor(x);
-                if (xProtector != null) {
-                    cfg.setRescuerBB(xRenamed, ii.getRenamedBB(xProtector));
-                } else if (callBBrescuer != null) {
-                    cfg.setRescuerBB(xRenamed, callBBrescuer);
-                }
+            if (x.isEntryBB() || x.isExitBB()) continue;
+
+            BasicBlock xRenamed = ii.getRenamedBB(x);
+            BasicBlock xProtector = methodCFG.getRescuerBBFor(x);
+            if (xProtector != null) {
+                cfg.setRescuerBB(xRenamed, ii.getRenamedBB(xProtector));
+            } else if (callBBrescuer != null) {
+                cfg.setRescuerBB(xRenamed, callBBrescuer);
             }
         }
 
@@ -292,37 +284,34 @@ public class CFGInliner {
 
         // 2. Merge closure cfg into the current cfg
         CFG closureCFG = cl.getCFG();
-        BasicBlock cEntry = closureCFG.getEntryBB();
-        BasicBlock cExit = closureCFG.getExitBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
-            if (b != cEntry && b != cExit) {
-                cfg.addBasicBlock(b.cloneForInlining(ii));
-            }
+            if (!b.isEntryBB() && !b.isExitBB()) cfg.addBasicBlock(b.cloneForInlining(ii));
         }
 
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
-            if (b != cEntry && b != cExit) {
-                BasicBlock bClone = ii.getRenamedBB(b);
-                for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(b)) {
-                    BasicBlock edst = e.getDestination().getData();
-                    if (edst != cExit) cfg.addEdge(bClone, ii.getRenamedBB(edst), e.getType());
-                }
+            if (b.isEntryBB() || b.isExitBB()) continue;
+
+            BasicBlock bClone = ii.getRenamedBB(b);
+            for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(b)) {
+                BasicBlock edst = e.getDestination().getData();
+                if (!edst.isExitBB()) cfg.addEdge(bClone, ii.getRenamedBB(edst), e.getType());
             }
         }
 
         // Hook up entry edges
-        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cEntry)) {
+        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cfg.getEntryBB())) {
             BasicBlock destination = e.getDestination().getData();
-            if (destination != cExit) {
+            if (!destination.isExitBB()) {
                 cfg.addEdge(yieldBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
             }
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cExit)) {
+        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cfg.getExitBB())) {
             BasicBlock source = e.getSource().getData();
-            if (source != cEntry) {
+            if (source.isEntryBB()) continue;
                 BasicBlock clonedSource = ii.getRenamedBB(source);
+
                 if (e.getType() == EdgeType.EXCEPTION) {
                     // e._src has an explicit throw that returns from the closure.
                     // After inlining, if the yield instruction has a rescuer, then the
@@ -336,7 +325,6 @@ public class CFGInliner {
                 } else {
                     cfg.addEdge(clonedSource, splitBB, e.getType());
                 }
-            }
         }
 
         // 6. Update bb rescuer map
@@ -347,13 +335,13 @@ public class CFGInliner {
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by yieldBBrescuer/yieldBBensurer
         for (BasicBlock cb : closureCFG.getBasicBlocks()) {
-            if (cb != cEntry && cb != cExit) {
-                BasicBlock cbProtector = ii.getRenamedBB(closureCFG.getRescuerBBFor(cb));
-                if (cbProtector != null) {
-                    cfg.setRescuerBB(cb, cbProtector);
-                } else if (yieldBBrescuer != null) {
-                    cfg.setRescuerBB(cb, yieldBBrescuer);
-                }
+            if (cb.isEntryBB() || cb.isExitBB()) continue;
+
+            BasicBlock cbProtector = ii.getRenamedBB(closureCFG.getRescuerBBFor(cb));
+            if (cbProtector != null) {
+                cfg.setRescuerBB(cb, cbProtector);
+            } else if (yieldBBrescuer != null) {
+                cfg.setRescuerBB(cb, yieldBBrescuer);
             }
         }
     }

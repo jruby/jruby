@@ -189,9 +189,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
         //       i,j are dirty inside the block, but not used outside
 
-        boolean amExitBB = basicBlock == scope.cfg().getExitBB();
-
-        if (amExitBB) {
+        if (basicBlock.isExitBB()) {
             LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
             if (liveVars != null) {
@@ -270,7 +268,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 //
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
-                if (!amExitBB) {
+                if (!basicBlock.isExitBB()) {
                     LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                     if (liveVars != null) {
@@ -334,7 +332,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty
-        if (amExitBB) {
+        if (basicBlock.isExitBB()) {
             // Last instr could be a return -- so, move iterator one position back
             if (instrs.hasPrevious()) instrs.previous();
             boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);

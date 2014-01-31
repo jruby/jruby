@@ -556,21 +556,20 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         // Compute UNION(unboxedVarsIn(all-successors)) - this.unboxedVarsOut
         // All vars in this new set have to be unboxed on exit from this BB
         HashMap<Variable, Class> succUnboxedVars = new HashMap<Variable, Class>();
-        for (Edge e: cfg.getOutgoingEdges(basicBlock)) {
-            BasicBlock b = (BasicBlock)e.getDestination().getData();
-            if (b != cfg.getExitBB()) {
-                Map<Variable, Class> xVars = problem.getFlowGraphNode(b).inState.unboxedVars;
-                for (Variable v2: xVars.keySet()) {
-                    // VERY IMPORTANT: Pay attention!
-                    //
-                    // Technically, the successors of this node may not all agree on what
-                    // the unboxed type ought to be for 'v2'. For example, one successor might
-                    // want 'v2' in Fixnum form and other might want it in Float form. If that
-                    // happens, we have to add unboxing instructions for each of those expected
-                    // types. However, for now, we are going to punt and assume that our successors
-                    // agree on unboxed types for 'v2'.
-                    succUnboxedVars.put(v2, xVars.get(v2));
-                }
+        for (BasicBlock b: cfg.getOutgoingDestinations(basicBlock)) {
+            if (b.isExitBB()) continue;
+
+            Map<Variable, Class> xVars = problem.getFlowGraphNode(b).inState.unboxedVars;
+            for (Variable v2: xVars.keySet()) {
+                // VERY IMPORTANT: Pay attention!
+                //
+                // Technically, the successors of this node may not all agree on what
+                // the unboxed type ought to be for 'v2'. For example, one successor might
+                // want 'v2' in Fixnum form and other might want it in Float form. If that
+                // happens, we have to add unboxing instructions for each of those expected
+                // types. However, for now, we are going to punt and assume that our successors
+                // agree on unboxed types for 'v2'.
+                succUnboxedVars.put(v2, xVars.get(v2));
             }
         }
 

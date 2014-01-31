@@ -43,7 +43,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
     @Override
     public void applyPreMeetHandler() {
-        if (basicBlock == getCFG().getExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
+        if (basicBlock.isExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
     }
 
     @Override

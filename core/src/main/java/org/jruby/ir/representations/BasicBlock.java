@@ -63,6 +63,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return cfg.getEntryBB() == this;
     }
 
+    public boolean isExitBB() {
+        return cfg.getExitBB() == this;
+    }
+
     public void markRescueEntryBB() {
         this.isRescueEntry = true;
     }
