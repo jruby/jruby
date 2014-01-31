@@ -104,8 +104,16 @@ public class JRubyTruffleBridge {
             return runtime.getNil();
         } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();
-        } else {
+        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
             return runtime.getTopSelf();
+        } else if (object instanceof Boolean) {
+            return runtime.newBoolean((boolean) object);
+        } else if (object instanceof Integer) {
+            return runtime.newFixnum((int) object);
+        } else if (object instanceof Double) {
+            return runtime.newFloat((double) object);
+        } else {
+            throw new UnsupportedOperationException("can't convert " + object.getClass() + " to JRuby");
         }
     }
 
