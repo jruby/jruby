@@ -91,7 +91,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return InterpreterHolder.instance;
     }
 
-    private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
+    private static IRScope getEvalContainerScope(StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
         // that is going on
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
@@ -107,7 +107,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(runtime, ss);
+        IRScope containingIRScope = getEvalContainerScope(ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation(false);
         ThreadContext context = runtime.getCurrentContext();
@@ -268,7 +268,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, int kwArgHashCount, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
-        Object result = null;
+        Object result;
         ResultInstr instr = (ResultInstr)i;
         switch(operation) {
         case RECV_PRE_REQD_ARG:
@@ -304,7 +304,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
-        Object result = null;
+        Object result;
         switch(operation) {
         case RUNTIME_HELPER: {
             RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
@@ -408,9 +408,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats)
     {
-        Object result = null;
+        Object result;
         switch(operation) {
         case COPY: {
             CopyInstr c = (CopyInstr)instr;
@@ -481,7 +481,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
         int      n              = instrs.length;
         int      ipc            = 0;
-        Instr    instr          = null;
         Object   exception      = null;
         int      kwArgHashCount = (scope.receivesKeywordArgs() && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
         DynamicScope currDynScope = context.getCurrentScope();
@@ -493,7 +492,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // Enter the looooop!
         while (ipc < n) {
-            instr = instrs[ipc];
+            Instr instr = instrs[ipc];
             ipc++;
             Operation operation = instr.getOperation();
             if (debug) {
@@ -537,7 +536,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, scope, currDynScope, temp, self, block, floats);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, floats);
                     break;
                 }
             } catch (Throwable t) {

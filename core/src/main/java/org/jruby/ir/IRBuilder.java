@@ -60,11 +60,8 @@ import org.jruby.util.ByteList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
+
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.TemporaryVariable;
 
@@ -146,7 +143,7 @@ public class IRBuilder {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
-            try { if (fis != null) fis.close(); } catch(Exception e) { }
+            try { if (fis != null) fis.close(); } catch(Exception ignored) { }
         }
     }
 
@@ -314,7 +311,6 @@ public class IRBuilder {
             // to run ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
-            Label retLabel = s.getNewLabel();
             if (ebi.savedGlobalException != null) {
                 addInstr(s, new PutGlobalVarInstr("$!", ebi.savedGlobalException));
             }
@@ -402,7 +398,7 @@ public class IRBuilder {
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass((SClassNode) node, s);
-            case SELFNODE: return buildSelf((SelfNode) node, s);
+            case SELFNODE: return buildSelf(node, s);
             case SPLATNODE: return buildSplat((SplatNode) node, s);
             case STRNODE: return buildStr((StrNode) node, s);
             case SUPERNODE: return buildSuper((SuperNode) node, s);
@@ -710,7 +706,7 @@ public class IRBuilder {
                 break;
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getBlockArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                v = getBlockArgVariable(s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
@@ -743,7 +739,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                v = getBlockArgVariable((IRClosure)s, localVariable.getName(), depth);
+                v = getBlockArgVariable(s, localVariable.getName(), depth);
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
@@ -921,7 +917,7 @@ public class IRBuilder {
             !(((WrappedIRClosure)block).getClosure()).hasBreakInstrs)
         {
             // No protection needed -- add the call and return
-            addInstr(s, (Instr)callInstr);
+            addInstr(s, callInstr);
             return;
         }
 
@@ -1957,7 +1953,6 @@ public class IRBuilder {
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
             addInstr(s, new ReceiveRestArgInstr(s.getNewLocalVariable(argName, 0), required + opt, argIndex));
-            argIndex++;
         }
 
         // Post(-opt and rest) required args
@@ -2034,7 +2029,6 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGN19NODE: {
-                Variable oldArgs = null;
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
@@ -2315,7 +2309,6 @@ public class IRBuilder {
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that:
         // * catches all exceptions thrown by the body
-        Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
@@ -2361,7 +2354,7 @@ public class IRBuilder {
 
         switch (node.getNodeType()) {
             case ITERNODE:
-                return build((IterNode)node, s);
+                return build(node, s);
             case BLOCKPASSNODE:
                 return build(((BlockPassNode)node).getBodyNode(), s);
             default:
@@ -2525,9 +2518,7 @@ public class IRBuilder {
         if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
             return copyAndReturnValue(s, new Hash(new ArrayList<KeyValuePair>()));
         } else {
-            int     i     = 0;
             Operand key   = null;
-            Operand value = null;
             List<KeyValuePair> args = new ArrayList<KeyValuePair>();
             for (Node nextNode : hashNode.getListNode().childNodes()) {
                 Operand v = build(nextNode, s);
@@ -3250,7 +3241,7 @@ public class IRBuilder {
         Label caughtLabel = s.getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-               for (Node excType : ((ListNode) exceptionList).childNodes()) {
+               for (Node excType : exceptionList.childNodes()) {
                    outputExceptionCheck(s, build(excType, s), exc, caughtLabel);
                }
             } else { // splatnode, catch
@@ -3619,13 +3610,10 @@ public class IRBuilder {
             List<Operand> allPossibleArgs = new ArrayList<Operand>();
             IRScope superScope = s;
             while (superScope instanceof IRClosure) {
-                IRClosure cl = (IRClosure)superScope;
                 Operand[] args = ((IRClosure)superScope).getBlockArgs();
                 int n = args.length;
                 // Accummulate the closure's args
-                for (Operand o: args) {
-                    allPossibleArgs.add(o);
-                }
+                Collections.addAll(allPossibleArgs, args);
                 // Record args count of the closure
                 argsCount.add(n);
                 superScope = superScope.getLexicalParent();
@@ -3635,9 +3623,7 @@ public class IRBuilder {
                 Operand[] args = ((IRMethod)superScope).getCallArgs();
                 int n = args.length;
                 // Accummulate the method's args
-                for (Operand o: args) {
-                    allPossibleArgs.add(o);
-                }
+                Collections.addAll(allPossibleArgs, args);
                 // Record args count of the method
                 argsCount.add(n);
             }
