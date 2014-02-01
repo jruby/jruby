@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jruby.truffle.runtime.objects.*;
 
@@ -37,8 +38,8 @@ public class RubyHash extends RubyObject {
 
     }
 
-    public final Map<Object, Object> storage = new LinkedHashMap<>();
-    @CompilationFinal public RubyProc defaultBlock = null;
+    @CompilationFinal public Map<Object, Object> storage;
+    @CompilationFinal public RubyProc defaultBlock;
 
     public RubyHash(RubyClass rubyClass, RubyProc defaultBlock) {
         super(rubyClass);
@@ -47,9 +48,12 @@ public class RubyHash extends RubyObject {
 
     public RubyHash(RubyClass rubyClass) {
         super(rubyClass);
+        initialize(null);
     }
 
+    @CompilerDirectives.SlowPath
     public void initialize(RubyProc setDefaultBlock) {
+        storage = new LinkedHashMap<>();
         defaultBlock = setDefaultBlock;
     }
 
