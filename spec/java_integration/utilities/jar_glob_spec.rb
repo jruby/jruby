@@ -60,6 +60,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*"].should have_jar_entries([
         '/META-INF',
         '/META-INF/MANIFEST.MF',
+        '/glob_target',
         '/glob_target/bar.txt'
       ])
     end
@@ -70,6 +71,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*").should have_jar_entries([
         '/META-INF',
         '/META-INF/MANIFEST.MF',
+        '/glob_target',
         '/glob_target/bar.txt'
       ])
     end
