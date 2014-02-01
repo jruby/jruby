@@ -76,16 +76,17 @@ class JarDirectoryResource extends JarResource {
             String subPath;
             if (isRoot()) {
                 subPath = entryPath;
-            } else if (entryPath.startsWith(path)) {
+            } else if (entryPath.startsWith(path) && (entryPath.length() > path.length())) {
                 subPath = entryPath.substring(path.length());
             } else {
-                // entry's path doesn't match the directory
+                // entry's path doesn't match the directory or it's <this> path
                 continue;
             }
 
-            // trim '/' from jar entry directories
-            if (subPath.endsWith("/") && subPath.length() > 1) {
-                subPath = subPath.substring(0, subPath.length() - 1);
+            // If entry is <path>/foo/bar.txt, we want to only return 'foo'
+            int slashIndex = subPath.indexOf('/');
+            if (slashIndex > 0) {
+                subPath = subPath.substring(0, slashIndex);
             }
 
             dirs.add(subPath);
