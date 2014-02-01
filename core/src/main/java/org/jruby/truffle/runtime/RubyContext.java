@@ -44,6 +44,7 @@ public class RubyContext implements ExecutionContext {
     private final AtExitManager atExitManager;
     private final RubyDebugManager debugManager;
     private final SourceManager sourceManager;
+    private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
@@ -98,6 +99,9 @@ public class RubyContext implements ExecutionContext {
         execute(this, source, RubyParser.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
+    public RubySymbol.SymbolTable getSymbolTable() {
+        return symbolTable;
+    }
     /**
      * Receives runtime notification that execution has halted.
      */

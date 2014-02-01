@@ -550,7 +550,7 @@ public abstract class ModuleNodes {
             }
             for (RubyMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
-                    RubySymbol m = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), method.getName());
+                    RubySymbol m = RubySymbol.newSymbol(getContext(), method.getName());
                     array.push(m);
                 }
             }
@@ -587,7 +587,7 @@ public abstract class ModuleNodes {
             }
             for (RubyMethod method : methods) {
                 if (method.getVisibility() != Visibility.PRIVATE){
-                    RubySymbol m = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), method.getName());
+                    RubySymbol m = RubySymbol.newSymbol(getContext(), method.getName());
                     array.push(m);
                 }
             }

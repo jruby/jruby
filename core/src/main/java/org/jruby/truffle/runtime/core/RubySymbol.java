@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
@@ -24,9 +26,13 @@ public class RubySymbol extends RubyObject {
 
     private final String symbol;
 
-    public RubySymbol(RubyClass symbolClass, String symbol) {
+    private RubySymbol(RubyClass symbolClass, String symbol) {
         super(symbolClass);
         this.symbol = symbol.intern();
+    }
+
+    public static RubySymbol newSymbol(RubyContext runtime, String name) {
+        return runtime.getSymbolTable().getSymbol(name);
     }
 
     public RubyProc toProc() {
@@ -76,6 +82,31 @@ public class RubySymbol extends RubyObject {
             return other.equals(symbol);
         } else {
             return super.equals(other);
+        }
+    }
+
+    public static final class SymbolTable {
+
+        private final ConcurrentHashMap<String, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
+        private final RubyContext context;
+
+        public SymbolTable(RubyContext context) {
+            this.context = context;
+        }
+
+        public RubySymbol getSymbol(String name) {
+            RubySymbol symbol = symbolsTable.get(name);
+
+            if (symbol == null) {
+                symbol = createSymbol(name);
+            }
+            return symbol;
+        }
+
+        private RubySymbol createSymbol(String name) {
+            RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name);
+            symbolsTable.put(name, symbol);
+            return symbol;
         }
     }
 

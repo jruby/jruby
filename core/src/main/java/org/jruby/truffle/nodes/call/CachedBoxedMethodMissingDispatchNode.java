@@ -43,7 +43,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
         this.next = adoptChild(next);
-        symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name);
+        symbol = RubySymbol.newSymbol(context, name);
     }
 
     @Override
