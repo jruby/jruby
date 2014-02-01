@@ -160,6 +160,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal '[assign(aref_field(vcall(a),[1]),2)]', parse('a[1]=2')
   end
 
+  # GH-1467
   #def test_arg_ambiguous
   #  thru_arg_ambiguous = false
   #  parse('m //', :on_arg_ambiguous) {thru_arg_ambiguous = true}
@@ -798,18 +799,21 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal true, thru_redo
   end
 
+  # GH-1467
   #def test_regexp_add
   #  thru_regexp_add = false
   #  parse('/foo/', :on_regexp_add) {thru_regexp_add = true}
   #  assert_equal true, thru_regexp_add
   #end
 
+  # GH-1467
   #def test_regexp_literal
   #  thru_regexp_literal = false
   #  parse('//', :on_regexp_literal) {thru_regexp_literal = true}
   #  assert_equal true, thru_regexp_literal
   #end
 
+  # GH-1467
   #def test_regexp_new
   #  thru_regexp_new = false
   #  parse('//', :on_regexp_new) {thru_regexp_new = true}
@@ -1170,6 +1174,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     end
   end
 
+  # GH-1467
   #def test_unterminated_regexp
   #  assert_equal("unterminated regexp meets end of file", compile_error('/'))
   #end

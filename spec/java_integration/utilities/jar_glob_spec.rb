@@ -157,6 +157,7 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
     end
   end
 
+  # GH-1466
   #it "iterates over directories when there are more than one magic modifier" do
   #  FileUtils.cd('jruby-4396') do      
   #    Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
