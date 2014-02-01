@@ -164,7 +164,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         } else if (o instanceof Bignum) {
             return Bignum.class;
         } else if (o instanceof Variable) {
-            return state.types.get((Variable)o);
+            return state.types.get(o);
         } else {
             return null;
         }
@@ -233,8 +233,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     @Override
     public void applyTransferFunction(Instr i) {
-        // Rescue node, if any
-        boolean scopeBindingHasEscaped = problem.getScope().bindingHasEscaped();
 
         Variable dst = null;
         boolean dirtied = false;
@@ -441,7 +439,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
     }
 
-    private Operand getUnboxedOperand(UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg, List<Instr> newInstrs) {
+    private Operand getUnboxedOperand(UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg) {
         if (arg instanceof Variable) {
             Variable v = (Variable)arg;
             Class unboxedType = state.unboxedVars.get(v);
@@ -512,7 +510,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         if (isBranch) {
             OneOperandBranchInstr bi = (OneOperandBranchInstr)i;
             Operand a = bi.getArg1();
-            Operand ua = getUnboxedOperand(state, unboxMap, a, newInstrs);
+            Operand ua = getUnboxedOperand(state, unboxMap, a);
             if (ua == a) {
                 newInstrs.add(i);
             } else if (op == Operation.B_TRUE) {
@@ -550,7 +548,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         // }
         // System.out.println("------");
 
-        boolean scopeBindingHasEscaped = problem.getScope().bindingHasEscaped();
         CFG cfg = getCFG();
 
         // Compute UNION(unboxedVarsIn(all-successors)) - this.unboxedVarsOut
@@ -580,10 +577,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
         // Only worry about vars live on exit from the BB
         LiveVariablesProblem lvp = (LiveVariablesProblem)problem.getScope().getDataFlowSolution(DataFlowConstants.LVP_NAME);
-        BitSet liveVarsSet = ((LiveVariableNode)lvp.getFlowGraphNode(basicBlock)).getLiveInBitSet();
-
-        // Rescue node, if any
-        boolean isClosure = problem.getScope() instanceof IRClosure;
+        BitSet liveVarsSet = lvp.getFlowGraphNode(basicBlock).getLiveInBitSet();
 
         List<Instr> newInstrs = new ArrayList<Instr>();
         boolean unboxedLiveVars = false;

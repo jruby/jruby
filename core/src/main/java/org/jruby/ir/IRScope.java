@@ -147,7 +147,6 @@ public abstract class IRScope implements ParseResult {
     private IRReaderDecoder persistenceStore = null;
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
-    private HashMap<Label,Integer> labelIPCMap;
 
     Map<String, LocalVariable> localVars;
     Map<String, LocalVariable> evalScopeVars;
@@ -357,9 +356,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null || getClass() != other.getClass()) return false;
-
-        return scopeId == ((IRScope) other).scopeId;
+        return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
     protected void addChildScope(IRScope scope) {
@@ -617,7 +614,7 @@ public abstract class IRScope implements ParseResult {
 
         // Set up IPCs
         List<Instr> newInstrs = new ArrayList<Instr>();
-        labelIPCMap = new HashMap<Label, Integer>();
+        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
             Label l = b.getLabel();

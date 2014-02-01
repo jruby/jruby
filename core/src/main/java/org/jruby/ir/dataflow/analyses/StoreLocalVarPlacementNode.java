@@ -127,7 +127,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             Variable v = ((ResultInstr) i).getResult();
 
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) dirtyVars.add((LocalVariable) v);
+            if (v instanceof LocalVariable && !v.isSelf()) dirtyVars.add((LocalVariable) v);
         }
 
         if (i.getOperation().isReturn()) dirtyVars.clear();
@@ -174,7 +174,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
         boolean addedStores            = false;
         boolean isClosure              = scope instanceof IRClosure;
-        boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
@@ -321,7 +320,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 Variable v = ((ResultInstr) i).getResult();
 
                 // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) {
+                if (v instanceof LocalVariable && !v.isSelf()) {
                     LocalVariable lv = (LocalVariable) v;
                     dirtyVars.add(lv);
 

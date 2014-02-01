@@ -89,8 +89,7 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     @Interp
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Object resultValue;
-        Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
+        Object blk = blockArg.retrieve(context, self, currDynScope, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;

@@ -70,7 +70,7 @@ public class UnresolvedSuperInstr extends CallInstr {
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
         // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
         if (frameClass == null) {
-            if (methodName == null || methodName != "") {
+            if (methodName == null || !methodName.equals("")) {
                 throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
             } else {
                 throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());

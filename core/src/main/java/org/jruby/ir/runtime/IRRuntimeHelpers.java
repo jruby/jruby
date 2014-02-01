@@ -251,7 +251,7 @@ public class IRRuntimeHelpers {
         if (excType instanceof RubyArray) {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
-                IRubyObject testType = (IRubyObject)testTypes.eltInternal(i);
+                IRubyObject testType = testTypes.eltInternal(i);
                 boolean handled = isUndefExc ? testType.isTrue() : IRRuntimeHelpers.exceptionHandled(context, testType, excObj);
                 if (handled) return runtime.newBoolean(true);
             }
@@ -261,4 +261,4 @@ public class IRRuntimeHelpers {
             return isUndefExc ? excType : runtime.newBoolean(IRRuntimeHelpers.exceptionHandled(context, excType, excObj));
         }
     }
-};
+}
