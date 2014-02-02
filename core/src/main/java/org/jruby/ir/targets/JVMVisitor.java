@@ -201,7 +201,13 @@ public class JVMVisitor extends IRVisitor {
                     rescueRange = new int[]{i, i+1, rescueIPC};
                     continue;
                 } else {
-                    rescueRange[1] = i + 1;
+                    if (rescueIPC != rescueRange[2]) {
+                        // new range
+                        allCatches.add(rescueRange);
+                        rescueRange = new int[]{i, i+1, rescueIPC};
+                    } else {
+                        rescueRange[1] = i + 1;
+                    }
                 }
             } else {
                 if (rescueRange == null) continue;
