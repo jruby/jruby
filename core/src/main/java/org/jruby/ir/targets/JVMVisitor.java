@@ -1028,7 +1028,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PopBindingInstr(PopBindingInstr popbindinginstr) {
-        // TODO pop
+        jvm.method().loadContext();
+        jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void popScope()"));
     }
 
     @Override
@@ -1047,11 +1048,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PushBindingInstr(PushBindingInstr pushbindinginstr) {
+        jvm.method().loadContext();
         jvm.method().loadStaticScope();
         jvm.method().adapter.invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
+        jvm.method().adapter.dup();
         jvmStoreLocal(DYNAMIC_SCOPE);
-
-        // TODO push
+        jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
     }
 
     @Override
