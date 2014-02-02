@@ -16,6 +16,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.objects.*;
 
 public class CoreLibrary {

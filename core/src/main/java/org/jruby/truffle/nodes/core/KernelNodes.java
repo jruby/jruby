@@ -17,11 +17,7 @@ import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 
-import org.jruby.common.IRubyWarnings;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyArgsFile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
@@ -32,6 +28,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.subsystems.*;
 

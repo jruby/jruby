@@ -7,12 +7,16 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core;
+package org.jruby.truffle.runtime.core.hash;
 
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.objects.*;
 
 /**
@@ -22,7 +26,7 @@ public class RubyHash extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Hash}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link org.jruby.truffle.runtime.core.RubyClass} so that we can override {@link #newInstance} and allocate a
      * {@link RubyHash} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyHashClass extends RubyClass {
