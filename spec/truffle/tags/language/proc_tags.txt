@@ -14,3 +14,6 @@ fails:A Proc taking |(a, b)| arguments raises an ArgumentError when passed no va
 fails:A Proc taking |(a, b)| arguments calls #to_ary to convert a single passed object to an Array
 fails:A Proc taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
 fails:A Proc taking |(a, b)| arguments destructures a single Array value yielded
+fails:A Proc taking |a, *b| arguments does not destructure a single Array value yielded
+fails:A Proc taking |a, *b| arguments does not call #to_ary to convert a single passed object to an Array
+fails:A Proc taking |a, | arguments does not destructure when passed a single Array

@@ -20,6 +20,8 @@ import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.core.ArrayGetTailNode;
+import org.jruby.truffle.nodes.core.ArrayGetTailNodeFactory;
 import org.jruby.truffle.nodes.core.ArrayIndexNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.literal.*;
@@ -151,19 +153,14 @@ class MethodTranslator extends Translator {
             }
 
             final ReadRestArgumentNode readArgumentNode = new ReadRestArgumentNode(context, sourceSection, preCount);
-
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, environment.getRestParameter(), readArgumentNode);
-
             loadIndividualArgumentsNodes.add(writeLocal);
         }
 
         if (environment.getBlockParameter() != null) {
             final FrameSlot param = environment.getBlockParameter();
-
             final ReadBlockArgumentNode readArgumentNode = new ReadBlockArgumentNode(context, sourceSection, false);
-
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, param, readArgumentNode);
-
             loadIndividualArgumentsNodes.add(writeLocal);
         }
 
@@ -180,13 +177,11 @@ class MethodTranslator extends Translator {
          * BlockDestructureSwitchNode for how it works.
          */
 
-        if (preCount + postCount == 1 && environment.getOptionalParameters().size() == 0) {
+        if (preCount + postCount == 1 && environment.getOptionalParameters().size() == 0 && environment.getRestParameter() == null) {
             return noSwitch;
         }
 
-        // Never destrcuture when there is a rest parameter
-
-        if (environment.getRestParameter() != null) {
+        if (preCount == 0 && environment.getRestParameter() != null) {
             return noSwitch;
         }
 
@@ -198,18 +193,28 @@ class MethodTranslator extends Translator {
         final FrameSlot destructureArrayFrameSlot = environment.declareVar(destructureArrayTemp);
         final ArrayCastNode arrayCast = ArrayCastNodeFactory.create(context, sourceSection, new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR));
         final WriteLocalVariableNode writeArrayToTemp = WriteLocalVariableNodeFactory.create(context, sourceSection, destructureArrayFrameSlot, arrayCast);
-
         destructureLoadArgumentsNodes.add(writeArrayToTemp);
-
         final ReadLocalVariableNode readArrayFromTemp = ReadLocalVariableNodeFactory.create(context, sourceSection, destructureArrayFrameSlot);
 
         for (int n = 0; n < environment.getPreParameters().size(); n++) {
             final FrameSlot param = environment.getPreParameters().get(n);
-
             final ArrayIndexNode readArgumentNode = ArrayIndexNodeFactory.create(context, sourceSection, n, NodeUtil.cloneNode(readArrayFromTemp));
-
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, param, readArgumentNode);
+            destructureLoadArgumentsNodes.add(writeLocal);
+        }
 
+        if (environment.getRestParameter() != null) {
+            /*
+             * TODO(cs): this assumes there are no optionals and therefore also no posts, which may
+             * not be a valid assumption.
+             */
+
+            if (postCount != 0) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, body.getSourceSection().getSource().getName(), body.getSourceSection().getStartLine(), "post arguments as well as a rest argument - they will conflict");
+            }
+
+            final RubyNode readRestNode = ArrayGetTailNodeFactory.create(context, sourceSection, preCount, NodeUtil.cloneNode(readArrayFromTemp));
+            final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, environment.getRestParameter(), readRestNode);
             destructureLoadArgumentsNodes.add(writeLocal);
         }
 

@@ -56,7 +56,7 @@ public class BlockDestructureSwitchNode extends RubyNode {
 
         // If we only accept one argument, there's never any need to destructure
 
-        if (arity.getMinimum() == 1) {
+        if (arity.getMinimum() == 1 && arity.getMaximum() == 1) {
             return false;
         }
 
