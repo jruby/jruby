@@ -191,34 +191,6 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         List<ByteList> dirs;
         if (args.length == 1) {
-            Pattern pattern = Pattern.compile("file:(.*)!/(.*)");
-            String glob = args[0].toString();
-            Matcher matcher = pattern.matcher(glob);
-            if (matcher.find()) {
-                String jarFileName = matcher.group(1);
-                String jarUri = "file:" + jarFileName + "!/";
-                String fileGlobString = matcher.group(2);
-                String filePatternString = convertGlobToRegEx(fileGlobString);
-                Pattern filePattern = Pattern.compile(filePatternString);
-                try {
-                    JarFile jarFile = new JarFile(jarFileName);
-                    List<RubyString> allFiles = new ArrayList<RubyString>();
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        String entry = entries.nextElement().getName();
-                        String chomped_entry = entry.endsWith("/") ? entry.substring(0, entry.length() - 1) : entry;
-                        if (filePattern.matcher(chomped_entry).find()) {
-                            allFiles.add(RubyString.newString(runtime, jarUri + chomped_entry.toString()));
-                        }
-                    }
-                    IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
-                    allFiles.toArray(tempFileList);
-                    return runtime.newArrayNoCopy(tempFileList);
-                } catch (IOException e) {
-                    return runtime.newArrayNoCopy(new IRubyObject[0]);
-                }
-            }
-
             dirs = Dir.push_glob(getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), args, 0);
@@ -231,84 +203,6 @@ public class RubyDir extends RubyObject {
         if (context.runtime.is1_9()) return RubyFile.get_path(context, arg).getByteList();
 
         return arg.convertToString().getByteList();
-    }
-
-    private static String convertGlobToRegEx(String line) {
-        line = line.trim();
-        StringBuilder sb = new StringBuilder(line.length());
-        sb.append("^");
-        boolean escaping = false;
-        int inCurlies = 0;
-        for (char currentChar : line.toCharArray()) {
-            switch (currentChar) {
-            case '*':
-                if (escaping)
-                    sb.append("\\*");
-                else
-                    sb.append("[^/]*");
-                escaping = false;
-                break;
-            case '?':
-                if (escaping)
-                    sb.append("\\?");
-                else
-                    sb.append('.');
-                escaping = false;
-                break;
-            case '.':
-            case '(':
-            case ')':
-            case '+':
-            case '|':
-            case '^':
-            case '$':
-            case '@':
-            case '%':
-                sb.append('\\');
-                sb.append(currentChar);
-                escaping = false;
-                break;
-            case '\\':
-                if (escaping) {
-                    sb.append("\\\\");
-                    escaping = false;
-                } else
-                    escaping = true;
-                break;
-            case '{':
-                if (escaping) {
-                    sb.append("\\{");
-                } else {
-                    sb.append('(');
-                    inCurlies++;
-                }
-                escaping = false;
-                break;
-            case '}':
-                if (inCurlies > 0 && !escaping) {
-                    sb.append(')');
-                    inCurlies--;
-                } else if (escaping)
-                    sb.append("\\}");
-                else
-                    sb.append("}");
-                escaping = false;
-                break;
-            case ',':
-                if (inCurlies > 0 && !escaping) {
-                    sb.append('|');
-                } else if (escaping)
-                    sb.append("\\,");
-                else
-                    sb.append(",");
-                break;
-            default:
-                escaping = false;
-                sb.append(currentChar);
-            }
-        }
-        sb.append("$");
-        return sb.toString().replace("[^/]*[^/]*/", ".*").replace("[^/]*[^/]*", ".*");
     }
 
     /**
