@@ -353,6 +353,10 @@ public class CoreLibrary {
         return new RubyException(typeErrorClass, message);
     }
 
+    public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
+        return typeError(String.format("%s#%s should return %s", object, method, expectedType));
+    }
+
     public RubyException typeError(String from, String to) {
         return typeError(String.format("can't convert %s to %s", from, to));
     }

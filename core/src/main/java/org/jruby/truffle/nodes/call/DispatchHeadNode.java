@@ -62,4 +62,8 @@ public class DispatchHeadNode extends DispatchNode {
         return dispatch;
     }
 
+    public String getName() {
+        return name;
+    }
+
 }

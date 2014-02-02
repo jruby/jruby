@@ -25,8 +25,6 @@ public class ReadPreArgumentNode extends RubyNode {
     private final int index;
     private final MissingArgumentBehaviour missingArgumentBehaviour;
 
-    private final BranchProfile notPresentProfile = new BranchProfile();
-
     public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);
         this.index = index;
