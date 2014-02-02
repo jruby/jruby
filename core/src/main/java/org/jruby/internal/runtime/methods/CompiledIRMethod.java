@@ -33,6 +33,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         this.file = file;
         this.line = line;
         this.scope = scope;
+        this.scope.determineModule();
         this.arity = calculateArity();
 
         setParameterDesc(parameterDesc);
@@ -48,6 +49,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         this.file = file;
         this.line = line;
         this.scope = scope;
+        this.scope.determineModule();
         this.arity = calculateArity();
 
         setParameterList(parameterList);
