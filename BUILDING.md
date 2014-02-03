@@ -93,6 +93,14 @@ mvn -Pbootstrap
 This only needs to be run once to install these gems or if you update
 one of the gems to a newer version or clean out all installed gems.
 
+### Incremental compiling
+
+After changing Java code, you can recompile quickly by running:
+
+```
+mvn compile
+```
+
 ### Day to Day Testing
 
 For normal day-to-day testing, we recommend running the Ruby 1.9 tests
@@ -141,6 +149,10 @@ mvn clean install -Pjruby-jars
 ```
 
 this first cleans everything and then starts the new build in one go !
+
+Cleaning the build may be necessary after switching to a different
+version of JRuby (for example, after switching git branches) to ensure
+that everything is rebuilt properly.
 
 NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar** !
 
