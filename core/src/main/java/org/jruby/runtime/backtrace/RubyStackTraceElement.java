@@ -1,7 +1,5 @@
 package org.jruby.runtime.backtrace;
 
-import org.jruby.runtime.backtrace.FrameType;
-
 public class RubyStackTraceElement {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
     private final StackTraceElement element;
