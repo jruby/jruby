@@ -38,7 +38,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bouncy-castle-java</artifactId>
-      <version>1.5.0149</version>
+      <version>1.5.0146.1</version>
       <type>gem</type>
     </dependency>
   </dependencies>
@@ -53,7 +53,7 @@
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <version>1.0.0-beta-1-SNAPSHOT</version>
+        <version>1.0.0-rc2</version>
         <executions>
           <execution>
             <goals><goal>initialize</goal></goals>

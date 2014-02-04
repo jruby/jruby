@@ -23,7 +23,7 @@ public class BouncyCastleTestCase {
     @Test
     public void ruby(){
         ScriptingContainer container = new ScriptingContainer();
-        Object result = container.parse( "gem 'bouncy-castle-java'; require 'bouncy-castle-java'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
-        assertEquals( "BouncyCastle Security Provider v1.49", result.toString() );
+        Object result = container.parse( "gem 'bouncy-castle-java', '1.5.0146'; require 'bouncy-castle-java'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
+        assertEquals( "BouncyCastle Security Provider v1.45", result.toString() );
     }
 }
