@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -100,6 +101,29 @@ public abstract class SymbolNodes {
         @Specialization
         public RubySymbol toSym(RubySymbol symbol) {
             return symbol;
+        }
+
+    }
+
+    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class AllSymbolsNode extends CoreMethodNode {
+
+        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AllSymbolsNode(AllSymbolsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray allSymbols() {
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
+                array.push(s);
+            }
+            return array;
         }
 
     }
