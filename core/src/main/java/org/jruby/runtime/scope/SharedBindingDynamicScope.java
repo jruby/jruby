@@ -11,7 +11,7 @@ import org.jruby.ir.IRMethod;
  */
 public class SharedBindingDynamicScope extends DynamicScope {
     // Our values holder (name of variables are kept in staticScope)
-    private IRubyObject[] variableValues;
+    private Object[] variableValues;
     private IRMethod irMethod;
 
     public SharedBindingDynamicScope(StaticScope staticScope, IRMethod irMethod) {
@@ -24,7 +24,7 @@ public class SharedBindingDynamicScope extends DynamicScope {
         if(variableValues == null) {
             int size = irMethod.getLocalVariablesCount();
 //            System.out.println("Have " + size + " variables");
-            variableValues = new IRubyObject[size];
+            variableValues = new Object[size];
         }
     }
     
@@ -33,6 +33,12 @@ public class SharedBindingDynamicScope extends DynamicScope {
     }
 
     public IRubyObject[] getValues() {
+        IRubyObject[] iary = new IRubyObject[variableValues.length];
+        System.arraycopy(variableValues, 0, iary, 0, variableValues.length);
+        return iary;
+    }
+
+    public Object[] getObjectValues() {
         return variableValues;
     }
     
@@ -47,75 +53,76 @@ public class SharedBindingDynamicScope extends DynamicScope {
      * @return the value here
      */
     public IRubyObject getValue(int offset, int depth) {
+        return (IRubyObject)getObjectValue(offset, depth);
+    }
+    public Object getObjectValue(int offset, int depth) {
         if (depth > 0) {
-            return parent.getValue(offset, depth - 1);
+            return parent.getObjectValue(offset, depth - 1);
         }
         assertGetValue(offset, depth);
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         return variableValues[offset];
     }
-    
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
-     */
-    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
-        if (depth > 0) {
-            return parent.getValueOrNil(offset, depth - 1, nil);
-        } else {
-            return getValueDepthZeroOrNil(offset, nil);
-        }
-    }
-    
+
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        return (IRubyObject)getObjectValueDepthZeroOrDefault(offset, nil);
+    }
+
+    public Object getObjectValueDepthZeroOrDefault(int offset, Object defval) {
         assertGetValueDepthZeroOrNil(offset);
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        IRubyObject value = variableValues[offset];
-        if (value == null) {
-            return setValueDepthZero(value, offset);
-        }
-        return value;
+        Object value = variableValues[offset];
+        return value == null ? setObjectValueDepthZero(defval, offset) : value;
     }
+
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
+        return (IRubyObject)getObjectValueZeroDepthZeroOrDefault(nil);
+    }
+
+    public Object getObjectValueZeroDepthZeroOrDefault(Object defval) {
         assertGetValueZeroDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        IRubyObject value = variableValues[0];
-        if (value == null) {
-            return setValueZeroDepthZero(value);
-        }
-        return value;
+        Object value = variableValues[0];
+        return value == null ? setObjectValueZeroDepthZero(defval) : value;
     }
+
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+        return (IRubyObject)getObjectValueOneDepthZeroOrDefault(nil);
+    }
+
+    public Object getObjectValueOneDepthZeroOrDefault(Object defval) {
         assertGetValueOneDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        IRubyObject value = variableValues[1];
-        if (value == null) {
-            return setValueOneDepthZero(value);
-        }
-        return value;
+        Object value = variableValues[1];
+        return value == null ? setObjectValueOneDepthZero(defval) : value;
     }
+
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        return (IRubyObject)getObjectValueTwoDepthZeroOrDefault(nil);
+    }
+
+    public Object getObjectValueTwoDepthZeroOrDefault(Object defval) {
         assertGetValueTwoDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        IRubyObject value = variableValues[2];
-        if (value == null) {
-            return setValueTwoDepthZero(value);
-        }
-        return value;
+        Object value = variableValues[2];
+        return value == null ? setObjectValueTwoDepthZero(defval) : value;
     }
+
     public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+        return (IRubyObject)getObjectValueThreeDepthZeroOrDefault(nil);
+    }
+
+    public Object getObjectValueThreeDepthZeroOrDefault(Object defval) {
         assertGetValueThreeDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        IRubyObject value = variableValues[3];
-        if (value == null) {
-            return setValueThreeDepthZero(value);
-        }
-        return value;
+        Object value = variableValues[3];
+        return value == null ? setObjectValueThreeDepthZero(defval) : value;
     }
 
     /**
@@ -126,38 +133,66 @@ public class SharedBindingDynamicScope extends DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+        return (IRubyObject)setObjectValue(offset, value, depth);
+    }
+    public Object setObjectValue(int offset, Object value, int depth) {
         if (depth > 0) {
             assertParent();
-            
-            return parent.setValue(offset, value, depth - 1);
+
+            return parent.setObjectValue(offset, value, depth - 1);
         } else {
             assertSetValue(offset, value);
-            
-            return setValueDepthZero(value, offset);
+
+            return setObjectValueDepthZero(value, offset);
         }
     }
 
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assertSetValueDepthZero(offset, value);
 
-        return variableValues[offset] = value;
+        return (IRubyObject)(variableValues[offset] = value);
     }
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
         assertSetValueZeroDepthZero(value);
 
-        return variableValues[0] = value;
+        return (IRubyObject)(variableValues[0] = value);
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
         assertSetValueOneDepthZero(value);
 
-        return variableValues[1] = value;
+        return (IRubyObject)(variableValues[1] = value);
     }
     public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         assertSetValueTwoDepthZero(value);
 
-        return variableValues[2] = value;
+        return (IRubyObject)(variableValues[2] = value);
     }
     public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        return (IRubyObject)(variableValues[3] = value);
+    }
+    public Object setObjectValueDepthZero(Object value, int offset) {
+        assertSetValueDepthZero(offset, value);
+
+        return variableValues[offset] = value;
+    }
+    public Object setObjectValueZeroDepthZero(Object value) {
+        assertSetValueZeroDepthZero(value);
+
+        return variableValues[0] = value;
+    }
+    public Object setObjectValueOneDepthZero(Object value) {
+        assertSetValueOneDepthZero(value);
+
+        return variableValues[1] = value;
+    }
+    public Object setObjectValueTwoDepthZero(Object value) {
+        assertSetValueTwoDepthZero(value);
+
+        return variableValues[2] = value;
+    }
+    public Object setObjectValueThreeDepthZero(Object value) {
         assertSetValueThreeDepthZero(value);
 
         return variableValues[3] = value;
@@ -182,21 +217,47 @@ public class SharedBindingDynamicScope extends DynamicScope {
     public void setArgValues(IRubyObject arg0) {
         variableValues[0] = arg0;
     }
-    
+
     @Override
     public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
         variableValues[0] = arg0;
         variableValues[1] = arg1;
     }
-    
+
     @Override
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         variableValues[0] = arg0;
         variableValues[1] = arg1;
         variableValues[2] = arg2;
     }
-    
+
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        System.arraycopy(values, values.length - size, variableValues, index, size);
+    }
+
+    public void setArgObjectValues(Object[] values, int size) {
+        System.arraycopy(values, 0, variableValues, 0, size);
+    }
+
+    @Override
+    public void setArgObjectValues(Object arg0) {
+        variableValues[0] = arg0;
+    }
+
+    @Override
+    public void setArgObjectValues(Object arg0, Object arg1) {
+        variableValues[0] = arg0;
+        variableValues[1] = arg1;
+    }
+
+    @Override
+    public void setArgObjectValues(Object arg0, Object arg1, Object arg2) {
+        variableValues[0] = arg0;
+        variableValues[1] = arg1;
+        variableValues[2] = arg2;
+    }
+
+    public void setEndArgObjectValues(Object[] values, int index, int size) {
         System.arraycopy(values, values.length - size, variableValues, index, size);
     }
 
@@ -244,7 +305,7 @@ public class SharedBindingDynamicScope extends DynamicScope {
         int dynamicSize = variableValues == null ? 0: variableValues.length;
         
         if (staticScope.getNumberOfVariables() > dynamicSize) {
-            IRubyObject values[] = new IRubyObject[staticScope.getNumberOfVariables()];
+            Object values[] = new Object[staticScope.getNumberOfVariables()];
             
             if (dynamicSize > 0) {
                 System.arraycopy(variableValues, 0, values, 0, dynamicSize);
@@ -255,32 +316,32 @@ public class SharedBindingDynamicScope extends DynamicScope {
     }
 
     private void assertGetValue(int offset, int depth) {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && offset < values.length : "No variables or index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
     }
 
     private void assertGetValueDepthZeroOrNil(int offset) {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && offset < values.length : "No variables or index too big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueZeroDepthZeroOrNil() {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && 0 < values.length : "No variables or index to big for getValue off: " + 0 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueOneDepthZeroOrNil() {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && 1 < values.length : "No variables or index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueTwoDepthZeroOrNil() {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && 3 < values.length : "No variables or index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueThreeDepthZeroOrNil() {
-        IRubyObject[] values = variableValues;
+        Object[] values = variableValues;
         assert values != null && 2 < values.length : "No variables or index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
     }
 
@@ -288,27 +349,27 @@ public class SharedBindingDynamicScope extends DynamicScope {
         assert parent != null : "If depth > 0, then parent should not ever be null";
     }
 
-    private void assertSetValue(int offset, IRubyObject value) {
+    private void assertSetValue(int offset, Object value) {
         assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueDepthZero(int offset, IRubyObject value) {
+    private void assertSetValueDepthZero(int offset, Object value) {
         assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueZeroDepthZero(IRubyObject value) {
+    private void assertSetValueZeroDepthZero(Object value) {
         assert 0 < variableValues.length : "Setting " + 0 + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueOneDepthZero(IRubyObject value) {
+    private void assertSetValueOneDepthZero(Object value) {
         assert 1 < variableValues.length : "Setting " + 1 + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueThreeDepthZero(IRubyObject value) {
+    private void assertSetValueThreeDepthZero(Object value) {
         assert 3 < variableValues.length : "Setting " + 3 + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueTwoDepthZero(IRubyObject value) {
+    private void assertSetValueTwoDepthZero(Object value) {
         assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this;
     }
 }
