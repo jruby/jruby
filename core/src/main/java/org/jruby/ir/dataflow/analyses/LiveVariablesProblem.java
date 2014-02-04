@@ -29,7 +29,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         setup(scope, nonSelfLocalVars);
     }
 
-    public DataFlowVar getDFVar(Variable v) {
+    public Integer getDFVar(Variable v) {
         return dfVarMap.get(v);
     }
 
@@ -47,9 +47,9 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     public void addDFVar(Variable v) {
-        DataFlowVar dfv = new DataFlowVar(this);
+        Integer dfv = new DataFlowVar(this).getId();
         dfVarMap.put(v, dfv);
-        varDfVarMap.put(dfv.id, v);
+        varDfVarMap.put(dfv, v);
         if (v instanceof LocalVariable && !v.isSelf()) {
             //System.out.println("Adding df var for " + v + ":" + dfv.id);
             int n = ((LocalVariable)v).getScopeDepth();
@@ -134,7 +134,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     public String getDataFlowVarsForOutput() {
         StringBuilder buf = new StringBuilder();
         for (Variable v : dfVarMap.keySet()) {
-            buf.append("DF Var ").append(dfVarMap.get(v).getId()).append(" = ").append(v).append("\n");
+            buf.append("DF Var ").append(dfVarMap.get(v)).append(" = ").append(v).append("\n");
         }
 
         return buf.toString();
@@ -162,12 +162,13 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         return localVars;
     }
 
+    @Override
     public String getName() {
         return NAME;
     }
 
     /* ----------- Private Interface ------------ */
-    private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();
+    private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
     // SSS FIXME: Should this be part of IRScope??

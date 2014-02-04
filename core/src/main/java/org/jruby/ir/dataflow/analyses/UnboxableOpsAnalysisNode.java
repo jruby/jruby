@@ -164,7 +164,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         } else if (o instanceof Bignum) {
             return Bignum.class;
         } else if (o instanceof Variable) {
-            return state.types.get(o);
+            return state.types.get((Variable) o);
         } else {
             return null;
         }
@@ -592,7 +592,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             if (i.getOperation().transfersControl()) {
                 // Add unboxing instrs.
                 for (Variable v: succUnboxedVars.keySet()) {
-                    if (liveVarsSet.get(lvp.getDFVar(v).getId())) {
+                    if (liveVarsSet.get(lvp.getDFVar(v))) {
                         unboxVar(tmpState, succUnboxedVars.get(v), unboxMap, v, newInstrs);
                     }
                 }
@@ -713,7 +713,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         // Add unboxing instrs.
         if (!unboxedLiveVars) {
             for (Variable v: succUnboxedVars.keySet()) {
-                if (liveVarsSet.get(lvp.getDFVar(v).getId())) {
+                if (liveVarsSet.get(lvp.getDFVar(v))) {
                     unboxVar(tmpState, succUnboxedVars.get(v), unboxMap, v, newInstrs);
                 }
             }
